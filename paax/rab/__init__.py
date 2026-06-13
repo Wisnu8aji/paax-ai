@@ -15,11 +15,15 @@ from paax.rab.loader import (
 from paax.rab.private_importer import (
     build_private_component_master,
     create_private_validation_report,
+    deduplicate_private_ahsp_index,
     export_private_processed_csvs,
     load_private_ahsp_index_excel,
     load_private_coeff_excel,
+    normalize_private_ahsp_items,
     normalize_private_ahsp_index,
     normalize_private_coefficients,
+    reconcile_coefficient_ahsp_codes,
+    supplement_index_from_private_ahsp_items,
     validate_private_ahsp_dataset,
 )
 from paax.rab.samples import get_sample_project_items
@@ -36,11 +40,15 @@ __all__ = [
     "normalize_project_item_columns",
     "build_private_component_master",
     "create_private_validation_report",
+    "deduplicate_private_ahsp_index",
     "export_private_processed_csvs",
     "load_private_ahsp_index_excel",
     "load_private_coeff_excel",
+    "normalize_private_ahsp_items",
     "normalize_private_ahsp_index",
     "normalize_private_coefficients",
+    "reconcile_coefficient_ahsp_codes",
+    "supplement_index_from_private_ahsp_items",
     "validate_private_ahsp_dataset",
     "validate_project_items",
 ]

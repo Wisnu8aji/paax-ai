@@ -11,7 +11,7 @@ import pandas as pd
 
 from paax.rab.private_importer import (
     COMPONENT_MASTER_COLUMNS,
-    PRIVATE_COEFFICIENT_COLUMNS,
+    PROCESSED_COEFFICIENT_COLUMNS,
     validate_private_ahsp_dataset,
 )
 
@@ -34,6 +34,7 @@ PRIVATE_PROCESSED_DIR = (
 PRIVATE_AHSP_INDEX_FILENAME = "ahsp_index.csv"
 PRIVATE_COEFFICIENTS_FILENAME = "ahsp_coefficients_long.csv"
 PRIVATE_COMPONENT_MASTER_FILENAME = "component_master.csv"
+PRIVATE_VALIDATION_REPORT_FILENAME = "validation_report.xlsx"
 
 COLUMN_ALIASES = {
     "item": "item_name",
@@ -167,7 +168,15 @@ def load_ahsp_data_bundle(
     index_path = processed_dir / PRIVATE_AHSP_INDEX_FILENAME
     coefficients_path = processed_dir / PRIVATE_COEFFICIENTS_FILENAME
     components_path = processed_dir / PRIVATE_COMPONENT_MASTER_FILENAME
-    required_paths = [index_path, coefficients_path, components_path]
+    validation_report_path = (
+        processed_dir / PRIVATE_VALIDATION_REPORT_FILENAME
+    )
+    required_paths = [
+        index_path,
+        coefficients_path,
+        components_path,
+        validation_report_path,
+    ]
     missing_paths = [path for path in required_paths if not path.is_file()]
     if missing_paths:
         missing_names = ", ".join(path.name for path in missing_paths)
@@ -183,9 +192,36 @@ def load_ahsp_data_bundle(
         ahsp_index = load_ahsp_index(index_path)
         coefficients = pd.read_csv(coefficients_path)
         components = pd.read_csv(components_path)
+        report_summary = pd.read_excel(
+            validation_report_path,
+            sheet_name="SUMMARY",
+        )
+        report_issues = pd.read_excel(
+            validation_report_path,
+            sheet_name="ISSUES",
+        )
+        _validate_columns(
+            report_summary,
+            {"metric", "value"},
+            "Private validation report summary",
+        )
+        _validate_columns(
+            report_issues,
+            {"severity", "code", "dataset", "reference", "message"},
+            "Private validation report issues",
+        )
+        report_metrics = dict(
+            zip(report_summary["metric"], report_summary["value"])
+        )
+        report_error_count = int(report_metrics.get("error_count", -1))
+        if report_error_count != 0:
+            raise ValueError(
+                "private validation report contains "
+                f"{report_error_count} error(s)"
+            )
         _validate_columns(
             coefficients,
-            set(PRIVATE_COEFFICIENT_COLUMNS),
+            set(PROCESSED_COEFFICIENT_COLUMNS),
             "Private AHSP coefficients",
         )
         _validate_columns(
@@ -226,6 +262,20 @@ def load_ahsp_data_bundle(
         "hsp_library_path": _display_path(HSP_LIBRARY_PATH),
         "coefficients_path": _display_path(coefficients_path),
         "component_master_path": _display_path(components_path),
+        "validation_report_path": _display_path(validation_report_path),
+        "validation_issues": (
+            report_issues.fillna("").to_dict(orient="records")
+        ),
+        "validation_warning_count": int(
+            report_issues["severity"].astype("string").str.lower().eq(
+                "warning"
+            ).sum()
+        ),
+        "validation_info_count": int(
+            report_issues["severity"].astype("string").str.lower().eq(
+                "info"
+            ).sum()
+        ),
         "fallback_warning": None,
     }
     return ahsp_index, hsp_library, metadata

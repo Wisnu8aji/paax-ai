@@ -2,6 +2,8 @@ from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
 
+import paax.rab.loader as rab_loader
+
 APP_PATH = Path(__file__).parents[1] / "app.py"
 
 
@@ -43,9 +45,17 @@ def test_rab_lite_renders_sample_without_calling_gemini(monkeypatch):
     )
 
 
-def test_rab_lite_private_mode_missing_files_falls_back(monkeypatch):
+def test_rab_lite_private_mode_missing_files_falls_back(
+    monkeypatch,
+    tmp_path,
+):
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.setenv("PAAX_AHSP_DATA_MODE", "private")
+    monkeypatch.setattr(
+        rab_loader,
+        "PRIVATE_PROCESSED_DIR",
+        tmp_path / "missing_private_processed",
+    )
 
     app = AppTest.from_file(str(APP_PATH))
     app.run()
@@ -58,6 +68,6 @@ def test_rab_lite_private_mode_missing_files_falls_back(monkeypatch):
         for metric in app.metric
     )
     assert any(
-        "Private AHSP mode was requested" in warning.value
+        "Using public demo data" in warning.value
         for warning in app.warning
     )

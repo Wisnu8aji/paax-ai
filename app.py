@@ -228,6 +228,23 @@ def render_rab_lite(selected_model: str) -> None:
     if data_metadata["fallback_warning"]:
         st.warning(data_metadata["fallback_warning"])
     st.warning(data_metadata["disclaimer"])
+    if data_metadata["active_mode"] == "private":
+        validation_warning_count = data_metadata.get(
+            "validation_warning_count",
+            0,
+        )
+        if validation_warning_count:
+            st.warning(
+                "Private AHSP data loaded with "
+                f"{validation_warning_count} validation warning(s). "
+                "Review validation_report.xlsx before professional use."
+            )
+            with st.expander("Private AHSP validation issues"):
+                st.dataframe(
+                    pd.DataFrame(data_metadata["validation_issues"]),
+                    use_container_width=True,
+                    hide_index=True,
+                )
 
     with st.expander("AHSP index preview"):
         st.dataframe(ahsp_index, use_container_width=True, hide_index=True)

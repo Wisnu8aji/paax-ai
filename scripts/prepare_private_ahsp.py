@@ -13,9 +13,14 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from paax.rab.private_importer import (  # noqa: E402
     build_private_component_master,
+    deduplicate_private_ahsp_index,
     export_private_processed_csvs,
     load_private_ahsp_index_excel,
     load_private_coeff_excel,
+    normalize_private_ahsp_index,
+    normalize_private_coefficients,
+    reconcile_coefficient_ahsp_codes,
+    supplement_index_from_private_ahsp_items,
     validate_private_ahsp_dataset,
 )
 
@@ -49,15 +54,39 @@ def main() -> int:
         return 0
 
     try:
-        index = load_private_ahsp_index_excel(PRIVATE_FILES["AHSP index"])
-        div_1_2 = load_private_coeff_excel(
-            PRIVATE_FILES["Divisi 1-2 coefficients"]
+        raw_index = load_private_ahsp_index_excel(
+            PRIVATE_FILES["AHSP index"]
         )
-        div_3 = load_private_coeff_excel(
-            PRIVATE_FILES["Divisi 3 coefficients"]
+        normalized_index = normalize_private_ahsp_index(raw_index)
+        index = deduplicate_private_ahsp_index(normalized_index)
+
+        div_1_2, div_1_2_items = load_private_coeff_excel(
+            PRIVATE_FILES["Divisi 1-2 coefficients"],
+            include_ahsp_items=True,
+            source_workbook_scope="div1_2",
         )
+        div_3, div_3_items = load_private_coeff_excel(
+            PRIVATE_FILES["Divisi 3 coefficients"],
+            include_ahsp_items=True,
+            source_workbook_scope="div3_arch",
+        )
+        div_1_2 = normalize_private_coefficients(div_1_2)
+        div_3 = normalize_private_coefficients(div_3)
         coefficients = pd.concat([div_1_2, div_3], ignore_index=True)
-        components = build_private_component_master([div_1_2, div_3])
+        coefficients = reconcile_coefficient_ahsp_codes(
+            coefficients,
+            index,
+        )
+        index = supplement_index_from_private_ahsp_items(
+            index,
+            [div_1_2_items, div_3_items],
+            coefficients,
+        )
+        coefficients = reconcile_coefficient_ahsp_codes(
+            coefficients,
+            index,
+        )
+        components = build_private_component_master(coefficients)
         validation = validate_private_ahsp_dataset(
             index,
             coefficients,
@@ -68,6 +97,7 @@ def main() -> int:
             coefficients,
             components,
             PROCESSED_DIR,
+            validation_result=validation,
         )
     except (OSError, ValueError, ImportError) as exc:
         print(f"Private AHSP preparation failed: {exc}")
@@ -80,7 +110,8 @@ def main() -> int:
     print(
         "Validation: "
         f"{summary['error_count']} error(s), "
-        f"{summary['warning_count']} warning(s)."
+        f"{summary['warning_count']} warning(s), "
+        f"{summary['info_count']} info item(s)."
     )
     return 0 if validation["is_valid"] else 1
 

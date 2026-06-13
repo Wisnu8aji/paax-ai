@@ -102,6 +102,16 @@ synthetic demo data remains under `data/ahsp/`. The current private importer
 does not add a private HSP price source, so RAB Lite continues to identify the
 synthetic public HSP library separately.
 
+Private imports may produce traceable duplicate-code or suffix-reconciliation
+warnings without blocking private mode. Always inspect
+`validation_report.xlsx`, especially `ISSUES`, `RECONCILIATION_SUMMARY`, and
+`DUPLICATE_INDEX_ROWS` when present, before any professional use.
+
+Private AHSP index extraction can also be supplemented from coefficient
+workbook `1_AHSP_ITEMS` sheets when a coefficient item code exists there but
+was missed by the main index extraction. These additions are traceable in
+`SUPPLEMENTED_INDEX_ROWS` within `validation_report.xlsx`.
+
 ## Run Locally
 
 ```bash
