@@ -1,0 +1,15 @@
+{
+  "dataset_name": "PAAX AI Synthetic AHSP Index Demo",
+  "dataset_version": "0.2-demo",
+  "row_count": 34,
+  "official_data": false,
+  "status": "SYNTHETIC_UNVERIFIED",
+  "scope": [
+    "Divisi 1 Persiapan Lapangan / Site Work",
+    "Divisi 2 Pekerjaan Struktur",
+    "Divisi 3 Pekerjaan Arsitektur"
+  ],
+  "source": "Synthetic records created for PAAX AI v0.2 workflow testing.",
+  "full_pdf_parsed": false,
+  "disclaimer": "This index is demo data, is not an official AHSP publication, and must not be used as a final professional cost basis."
+}

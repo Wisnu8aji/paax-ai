@@ -1,162 +1,131 @@
-# PAAX AI v0.1
+# PAAX AI v0.2
 
-PAAX AI is a bilingual, LLM-powered chatbot built with Python, Streamlit, and
-the Gemini API. It is a beginner-friendly portfolio project demonstrating a
-complete AI application workflow, from API integration and session state to
-secure configuration and cloud deployment.
+PAAX AI is a Streamlit application with two modes:
 
-## Live Demo
+- **General Chat:** the existing bilingual Gemini-powered chatbot.
+- **RAB Lite:** a deterministic AHSP index and Excel workflow for Indonesian
+  Cipta Karya / building-work cost assistance.
 
-Try the deployed application:
+Live demo: **[Open PAAX AI](https://paax-ai.streamlit.app/)**
 
-**[Open PAAX AI](https://paax-ai.streamlit.app/)**
+## What Changed in v0.2
 
-> The hosted demo depends on Gemini API availability and may be affected by
-> free-tier usage limits.
+RAB Lite adds structure that a general chatbot does not provide:
 
-## Features
+- A built-in synthetic AHSP index for site, structural, and architectural work
+- A synthetic demo HSP unit-price library
+- A fixed project-item input template
+- Python-based validation, joins, subtotals, and totals
+- Missing-code, unknown-code, unit, price, and quantity warnings
+- Downloadable RAB output in Excel and CSV
+- An optional Gemini explanation of assumptions and warnings
 
-- Real LLM-powered chatbot
-- Gemini API backend
-- Streamlit web interface
-- Indonesian-English conversation support
-- Session-based chat history
-- Model selector
-- Secure API key handling
-- Chat reset and API error handling
+Gemini does not calculate final cost numbers. All quantities, unit prices,
+subtotals, and totals are handled deterministically in Python.
 
-## Tech Stack
+## AHSP Index Approach
 
-- Python
-- Streamlit
-- Gemini API
-- Google GenAI SDK
-- Pytest
-- Streamlit Community Cloud
+PAAX AI v0.2 intentionally does **not** parse or convert the full 1,563-page
+AHSP PDF. It includes a small synthetic index in `data/ahsp/ahsp_index.csv`
+plus a manifest that marks the records as demo and unverified. No official
+AHSP content or official unit prices are bundled.
 
-## How to Run Locally
+The current workflow joins:
 
-### 1. Clone the repository
+```text
+project_items.ahsp_code
+  -> ahsp_index.ahsp_code
+  -> hsp_library.ahsp_code
+```
+
+This validates the product workflow before a future official-data ingestion
+or full AHSP coefficient engine is considered.
+
+## Project Item Template
+
+RAB Lite provides a downloadable Excel template with these columns:
+
+| Column | Purpose |
+| --- | --- |
+| `item_name` | Project work item |
+| `quantity` | Positive numeric volume or quantity |
+| `unit` | Unit that must match the selected AHSP row |
+| `ahsp_code` | Code from the bundled demo index |
+| `notes` | Optional project note |
+
+Users can also start with the built-in sample project items or upload
+Excel/CSV.
+
+## Excel Output
+
+The generated workbook contains:
+
+- `1_RINGKASAN` - total, item counts, and warning count
+- `2_RAB` - calculated item table
+- `3_AHSP_TERPAKAI` - AHSP/HSP references used by the estimate
+- `4_WARNING` - row-level validation and lookup warnings
+- `5_ASUMSI` - calculation and data assumptions
+- `6_AUDIT_LOG` - calculation and data-classification events
+
+## Run Locally
 
 ```bash
 git clone https://github.com/your-username/paax-ai.git
 cd paax-ai
-```
-
-Replace `your-username` with the GitHub account that hosts your fork or copy
-of this repository.
-
-### 2. Create and activate a virtual environment
-
-```bash
 python -m venv .venv
 ```
 
-On Windows PowerShell:
+Activate the environment on Windows PowerShell:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
 ```
 
-On macOS or Linux:
-
-```bash
-source .venv/bin/activate
-```
-
-### 3. Install dependencies
+Install dependencies and start Streamlit:
 
 ```bash
 python -m pip install -r requirements.txt
-```
-
-### 4. Configure the environment
-
-Follow the instructions in [Environment Setup](#environment-setup) to add a
-Gemini API key locally.
-
-### 5. Start the application
-
-```bash
 streamlit run app.py
 ```
 
-Streamlit will display the local URL in the terminal, usually
-`http://localhost:8501`.
-
 ## Environment Setup
 
-PAAX AI reads the Gemini API key from Streamlit secrets or the
-`GEMINI_API_KEY` environment variable. For local Streamlit development, copy
-the provided example file:
+General Chat and the optional RAB explanation use the Gemini API. RAB
+calculation and downloads work without Gemini.
 
-```powershell
-Copy-Item .streamlit\secrets.toml.example .streamlit\secrets.toml
-```
-
-On macOS or Linux:
-
-```bash
-cp .streamlit/secrets.toml.example .streamlit/secrets.toml
-```
-
-Then update `.streamlit/secrets.toml` with your own Gemini API key:
+Copy `.streamlit/secrets.toml.example` to `.streamlit/secrets.toml` and add
+your own key:
 
 ```toml
 GEMINI_API_KEY = "your_gemini_api_key_here"
 ```
 
-The local `.streamlit/secrets.toml` file is excluded by `.gitignore`. Never
-commit this file, paste a real API key into the README, or expose a key in
-screenshots and logs. For deployment, add `GEMINI_API_KEY` through the
-Streamlit Community Cloud secrets settings.
+The local secrets file is ignored by Git. Never commit API keys.
 
 ## Testing
-
-Run the test suite from the project root:
 
 ```bash
 python -m pytest
 ```
 
+Tests mock Gemini SDK behavior and do not make real Gemini requests.
+
 ## Limitations
 
-- No real-time web browsing
-- No database-backed persistent memory yet
-- No file upload or retrieval-augmented generation (RAG) yet
-- Real-time data, such as currency exchange rates, requires future tool or API
-  integration
-- Session chat history is cleared when the Streamlit session ends
-- Generated responses may be inaccurate and should not be treated as
-  professional advice
-
-## Roadmap
-
-- **v0.2:** Live tool integration, such as exchange rate lookup
-- **v0.3:** Persistent memory
-- **v0.4:** Document upload and RAG
-- **v0.5:** Persona selector
+- The bundled AHSP index is synthetic demo data only.
+- The bundled HSP unit prices are synthetic demo values only.
+- Output is not a final professional RAB and must not be presented as one.
+- Official AHSP data and local HSD/HSP must be independently verified.
+- PAAX AI performs no drawing takeoff.
+- v0.2 does not include a full AHSP coefficient engine.
+- Quantities, specifications, taxes, overhead, profit, escalation, and local
+  project conditions still require professional review.
 
 ## Safety and Privacy
 
-- Do not enter confidential, sensitive, or personal information into the demo.
-- API providers and free tiers may enforce rate and usage limits.
-- AI-generated content should be reviewed before it is used for important
-  decisions.
+- Do not enter confidential, sensitive, or personal information.
+- Review AI explanations before using them for decisions.
+- Treat every demo estimate as an auditable workflow example, not professional
+  cost advice.
 
-## Portfolio Purpose
-
-This project demonstrates foundational skills in:
-
-- LLM API integration
-- AI chatbot development
-- Prompt and system instruction design
-- Python application structure
-- Streamlit deployment
-- Session-state management
-- Secure secret handling
-- Automated testing
-
-## Version
-
-Current version: `0.1`
+Current version: `0.2`

@@ -1,0 +1,35 @@
+ahsp_code,description,unit,division,subdivision,ahsp_type,status,source_page
+CK-D1-001,Pembersihan lahan ringan,m2,Divisi 1 Persiapan Lapangan / Site Work,Pembersihan dan pembongkaran,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-001
+CK-D1-002,Pengukuran dan pemasangan bouwplank,m1,Divisi 1 Persiapan Lapangan / Site Work,Pengukuran dan pematokan,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-002
+CK-D1-003,Pembuatan direksi keet sementara,m2,Divisi 1 Persiapan Lapangan / Site Work,Fasilitas sementara,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-003
+CK-D1-004,Pembuatan pagar pengaman sementara,m1,Divisi 1 Persiapan Lapangan / Site Work,Fasilitas sementara,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-004
+CK-D1-005,Mobilisasi peralatan ringan,ls,Divisi 1 Persiapan Lapangan / Site Work,Mobilisasi,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-005
+CK-D1-006,Galian tanah biasa manual,m3,Divisi 1 Persiapan Lapangan / Site Work,Pekerjaan tanah,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-006
+CK-D1-007,Urugan kembali tanah galian,m3,Divisi 1 Persiapan Lapangan / Site Work,Pekerjaan tanah,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-007
+CK-D1-008,Urugan pasir bawah lantai,m3,Divisi 1 Persiapan Lapangan / Site Work,Pekerjaan tanah,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-008
+CK-D1-009,Pemadatan tanah dengan stamper,m2,Divisi 1 Persiapan Lapangan / Site Work,Pekerjaan tanah,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-009
+CK-D1-010,Pembuangan tanah sisa galian,m3,Divisi 1 Persiapan Lapangan / Site Work,Pekerjaan tanah,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-010
+CK-D2-001,Lantai kerja beton kurus,m3,Divisi 2 Pekerjaan Struktur,Beton,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-011
+CK-D2-002,Beton pondasi mutu demo,m3,Divisi 2 Pekerjaan Struktur,Beton,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-012
+CK-D2-003,Beton sloof mutu demo,m3,Divisi 2 Pekerjaan Struktur,Beton,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-013
+CK-D2-004,Beton kolom mutu demo,m3,Divisi 2 Pekerjaan Struktur,Beton,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-014
+CK-D2-005,Beton balok mutu demo,m3,Divisi 2 Pekerjaan Struktur,Beton,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-015
+CK-D2-006,Beton pelat lantai mutu demo,m3,Divisi 2 Pekerjaan Struktur,Beton,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-016
+CK-D2-007,Pembesian tulangan polos atau ulir,kg,Divisi 2 Pekerjaan Struktur,Pembesian,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-017
+CK-D2-008,Bekisting pondasi,m2,Divisi 2 Pekerjaan Struktur,Bekisting,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-018
+CK-D2-009,Bekisting sloof,m2,Divisi 2 Pekerjaan Struktur,Bekisting,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-019
+CK-D2-010,Bekisting kolom,m2,Divisi 2 Pekerjaan Struktur,Bekisting,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-020
+CK-D2-011,Bekisting balok,m2,Divisi 2 Pekerjaan Struktur,Bekisting,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-021
+CK-D2-012,Bekisting pelat lantai,m2,Divisi 2 Pekerjaan Struktur,Bekisting,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-022
+CK-D3-001,Dinding bata ringan tebal demo,m2,Divisi 3 Pekerjaan Arsitektur,Dinding,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-023
+CK-D3-002,Plesteran dinding mortar,m2,Divisi 3 Pekerjaan Arsitektur,Finishing dinding,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-024
+CK-D3-003,Acian dinding,m2,Divisi 3 Pekerjaan Arsitektur,Finishing dinding,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-025
+CK-D3-004,Pasangan keramik lantai,m2,Divisi 3 Pekerjaan Arsitektur,Finishing lantai,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-026
+CK-D3-005,Pasangan keramik dinding,m2,Divisi 3 Pekerjaan Arsitektur,Finishing dinding,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-027
+CK-D3-006,Plafon papan gipsum rangka metal,m2,Divisi 3 Pekerjaan Arsitektur,Plafon,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-028
+CK-D3-007,Pengecatan dinding interior,m2,Divisi 3 Pekerjaan Arsitektur,Pengecatan,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-029
+CK-D3-008,Pengecatan dinding eksterior,m2,Divisi 3 Pekerjaan Arsitektur,Pengecatan,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-030
+CK-D3-009,Pemasangan kusen aluminium,m1,Divisi 3 Pekerjaan Arsitektur,Pintu dan jendela,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-031
+CK-D3-010,Pemasangan daun pintu kayu,unit,Divisi 3 Pekerjaan Arsitektur,Pintu dan jendela,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-032
+CK-D3-011,Pemasangan kaca jendela,m2,Divisi 3 Pekerjaan Arsitektur,Pintu dan jendela,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-033
+CK-D3-012,Penutup atap metal ringan,m2,Divisi 3 Pekerjaan Arsitektur,Atap,Demo AHSP,SYNTHETIC_UNVERIFIED,DEMO-034
