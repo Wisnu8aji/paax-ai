@@ -1,0 +1,1 @@
+"""PAAX AI application package."""
