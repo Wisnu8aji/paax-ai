@@ -9,3 +9,6 @@ __pycache__/
 .pytest_cache/
 data_private/
 *.xlsx
+
+.pytest_tmp/
+tmp_pytest/
