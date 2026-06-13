@@ -1,24 +1,29 @@
 # PAAX AI v0.1
 
-PAAX AI v0.1 is a simple LLM-powered chatbot built as a beginner-friendly AI application portfolio project.
+PAAX AI is a bilingual, LLM-powered chatbot built with Python, Streamlit, and
+the Gemini API. It is a beginner-friendly portfolio project demonstrating a
+complete AI application workflow, from API integration and session state to
+secure configuration and cloud deployment.
 
-This is not a rule-based chatbot and not a fixed-template bot. PAAX AI sends user messages to a large language model through an API and returns generated responses.
+## Live Demo
 
-## Project Goal
+Try the deployed application:
 
-The goal of PAAX AI v0.1 is to build a basic but real AI chatbot that can:
+**[Open PAAX AI](https://paax-ai.streamlit.app/)**
 
-- Chat naturally with users
-- Respond in Indonesian or English
-- Maintain conversation context during the active session
-- Use Gemini API as the LLM backend
-- Run locally with Streamlit
-- Be deployed online as a portfolio project
-- Handle API keys securely without exposing secrets in GitHub
+> The hosted demo depends on Gemini API availability and may be affected by
+> free-tier usage limits.
 
-## Version
+## Features
 
-Current version: `0.1`
+- Real LLM-powered chatbot
+- Gemini API backend
+- Streamlit web interface
+- Indonesian-English conversation support
+- Session-based chat history
+- Model selector
+- Secure API key handling
+- Chat reset and API error handling
 
 ## Tech Stack
 
@@ -26,68 +31,132 @@ Current version: `0.1`
 - Streamlit
 - Gemini API
 - Google GenAI SDK
-- GitHub
-- Codex-assisted development
+- Pytest
+- Streamlit Community Cloud
 
-## Core Features for v0.1
+## How to Run Locally
 
-1. Streamlit chat interface
-2. Gemini API integration
-3. Session-based chat history
-4. Bilingual Indonesian-English behavior
-5. Reset chat button
-6. Model selector
-7. Secure API key handling
-8. Error handling for missing API key and failed API calls
-9. Professional README and setup instructions
+### 1. Clone the repository
 
-## Out of Scope for v0.1
+```bash
+git clone https://github.com/your-username/paax-ai.git
+cd paax-ai
+```
 
-The following features are intentionally not included in v0.1:
+Replace `your-username` with the GitHub account that hosts your fork or copy
+of this repository.
 
-- User login system
-- Permanent database memory
-- File upload
-- RAG / document-based Q&A
-- Voice input/output
-- Payment system
-- Fine-tuning a custom model
-- Mobile app version
+### 2. Create and activate a virtual environment
 
-These may be considered for future versions.
+```bash
+python -m venv .venv
+```
 
-## Safety and Privacy Notes
+On Windows PowerShell:
 
-- Do not commit API keys to GitHub.
-- Do not input confidential personal data into the demo app.
-- Free API tiers may have rate limits.
-- Model responses may be inaccurate and should not be treated as final professional advice.
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+On macOS or Linux:
+
+```bash
+source .venv/bin/activate
+```
+
+### 3. Install dependencies
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+### 4. Configure the environment
+
+Follow the instructions in [Environment Setup](#environment-setup) to add a
+Gemini API key locally.
+
+### 5. Start the application
+
+```bash
+streamlit run app.py
+```
+
+Streamlit will display the local URL in the terminal, usually
+`http://localhost:8501`.
+
+## Environment Setup
+
+PAAX AI reads the Gemini API key from Streamlit secrets or the
+`GEMINI_API_KEY` environment variable. For local Streamlit development, copy
+the provided example file:
+
+```powershell
+Copy-Item .streamlit\secrets.toml.example .streamlit\secrets.toml
+```
+
+On macOS or Linux:
+
+```bash
+cp .streamlit/secrets.toml.example .streamlit/secrets.toml
+```
+
+Then update `.streamlit/secrets.toml` with your own Gemini API key:
+
+```toml
+GEMINI_API_KEY = "your_gemini_api_key_here"
+```
+
+The local `.streamlit/secrets.toml` file is excluded by `.gitignore`. Never
+commit this file, paste a real API key into the README, or expose a key in
+screenshots and logs. For deployment, add `GEMINI_API_KEY` through the
+Streamlit Community Cloud secrets settings.
+
+## Testing
+
+Run the test suite from the project root:
+
+```bash
+python -m pytest
+```
+
+## Limitations
+
+- No real-time web browsing
+- No database-backed persistent memory yet
+- No file upload or retrieval-augmented generation (RAG) yet
+- Real-time data, such as currency exchange rates, requires future tool or API
+  integration
+- Session chat history is cleared when the Streamlit session ends
+- Generated responses may be inaccurate and should not be treated as
+  professional advice
+
+## Roadmap
+
+- **v0.2:** Live tool integration, such as exchange rate lookup
+- **v0.3:** Persistent memory
+- **v0.4:** Document upload and RAG
+- **v0.5:** Persona selector
+
+## Safety and Privacy
+
+- Do not enter confidential, sensitive, or personal information into the demo.
+- API providers and free tiers may enforce rate and usage limits.
+- AI-generated content should be reviewed before it is used for important
+  decisions.
 
 ## Portfolio Purpose
 
-This project is designed to demonstrate foundational skills in:
+This project demonstrates foundational skills in:
 
 - LLM API integration
 - AI chatbot development
-- Prompt/system instruction design
+- Prompt and system instruction design
 - Python application structure
 - Streamlit deployment
-- Secure environment variable handling
-- GitHub-based project documentation
+- Session-state management
+- Secure secret handling
+- Automated testing
 
-## Planned Roadmap
+## Version
 
-### v0.1
-Basic LLM-powered chatbot.
-
-### v0.2
-Add better streaming responses and improved chat UX.
-
-### v0.3
-Add persistent chat history with SQLite.
-
-### v0.4
-Add document upload and simple RAG.
-
-### v0.5
-Add multiple chatbot personas.
+Current version: `0.1`
