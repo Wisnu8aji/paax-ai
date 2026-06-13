@@ -2,10 +2,18 @@
 
 from __future__ import annotations
 
+import json
+import os
 from pathlib import Path
 from typing import BinaryIO
 
 import pandas as pd
+
+from paax.rab.private_importer import (
+    COMPONENT_MASTER_COLUMNS,
+    PRIVATE_COEFFICIENT_COLUMNS,
+    validate_private_ahsp_dataset,
+)
 
 PROJECT_ITEM_COLUMNS = [
     "item_name",
@@ -15,9 +23,17 @@ PROJECT_ITEM_COLUMNS = [
     "notes",
 ]
 
-DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "ahsp"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DATA_DIR = PROJECT_ROOT / "data" / "ahsp"
 AHSP_INDEX_PATH = DATA_DIR / "ahsp_index.csv"
 HSP_LIBRARY_PATH = DATA_DIR / "hsp_library_demo.csv"
+AHSP_MANIFEST_PATH = DATA_DIR / "ahsp_manifest.json"
+PRIVATE_PROCESSED_DIR = (
+    PROJECT_ROOT / "data_private" / "ahsp" / "processed"
+)
+PRIVATE_AHSP_INDEX_FILENAME = "ahsp_index.csv"
+PRIVATE_COEFFICIENTS_FILENAME = "ahsp_coefficients_long.csv"
+PRIVATE_COMPONENT_MASTER_FILENAME = "component_master.csv"
 
 COLUMN_ALIASES = {
     "item": "item_name",
@@ -53,7 +69,7 @@ def _validate_columns(
 
 
 def load_ahsp_index(path: str | Path | None = None) -> pd.DataFrame:
-    """Load the bundled synthetic AHSP index."""
+    """Load an AHSP index from a path or the bundled synthetic demo."""
     dataframe = pd.read_csv(path or AHSP_INDEX_PATH, dtype=str)
     _validate_columns(
         dataframe,
@@ -74,7 +90,7 @@ def load_ahsp_index(path: str | Path | None = None) -> pd.DataFrame:
 
 
 def load_hsp_library(path: str | Path | None = None) -> pd.DataFrame:
-    """Load the bundled synthetic HSP unit-price library."""
+    """Load an HSP library from a path or the bundled synthetic demo."""
     dataframe = pd.read_csv(path or HSP_LIBRARY_PATH)
     _validate_columns(
         dataframe,
@@ -95,6 +111,124 @@ def load_hsp_library(path: str | Path | None = None) -> pd.DataFrame:
         dataframe["unit_price"], errors="coerce"
     )
     return dataframe
+
+
+def _display_path(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(PROJECT_ROOT))
+    except ValueError:
+        return str(path.resolve())
+
+
+def _load_demo_bundle(
+    requested_mode: str,
+    fallback_warning: str | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+    ahsp_index = load_ahsp_index(AHSP_INDEX_PATH)
+    hsp_library = load_hsp_library(HSP_LIBRARY_PATH)
+    with AHSP_MANIFEST_PATH.open(encoding="utf-8") as manifest_file:
+        manifest = json.load(manifest_file)
+
+    metadata = {
+        "requested_mode": requested_mode,
+        "active_mode": "demo",
+        "status": manifest["status"],
+        "disclaimer": manifest["disclaimer"],
+        "ahsp_index_path": _display_path(AHSP_INDEX_PATH),
+        "hsp_library_path": _display_path(HSP_LIBRARY_PATH),
+        "fallback_warning": fallback_warning,
+    }
+    return ahsp_index, hsp_library, metadata
+
+
+def load_ahsp_data_bundle(
+    requested_mode: str | None = None,
+    private_processed_dir: str | Path | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+    """Load demo or private AHSP data with a non-fatal demo fallback."""
+    configured_mode = (
+        requested_mode
+        if requested_mode is not None
+        else os.getenv("PAAX_AHSP_DATA_MODE", "demo")
+    )
+    normalized_mode = str(configured_mode).strip().lower() or "demo"
+    if normalized_mode not in {"demo", "private"}:
+        return _load_demo_bundle(
+            normalized_mode,
+            (
+                "Unsupported PAAX_AHSP_DATA_MODE value "
+                f"{configured_mode!r}; using demo data."
+            ),
+        )
+    if normalized_mode == "demo":
+        return _load_demo_bundle(normalized_mode)
+
+    processed_dir = Path(private_processed_dir or PRIVATE_PROCESSED_DIR)
+    index_path = processed_dir / PRIVATE_AHSP_INDEX_FILENAME
+    coefficients_path = processed_dir / PRIVATE_COEFFICIENTS_FILENAME
+    components_path = processed_dir / PRIVATE_COMPONENT_MASTER_FILENAME
+    required_paths = [index_path, coefficients_path, components_path]
+    missing_paths = [path for path in required_paths if not path.is_file()]
+    if missing_paths:
+        missing_names = ", ".join(path.name for path in missing_paths)
+        return _load_demo_bundle(
+            normalized_mode,
+            (
+                "Private AHSP mode was requested, but processed files are "
+                f"missing ({missing_names}). Using public demo data."
+            ),
+        )
+
+    try:
+        ahsp_index = load_ahsp_index(index_path)
+        coefficients = pd.read_csv(coefficients_path)
+        components = pd.read_csv(components_path)
+        _validate_columns(
+            coefficients,
+            set(PRIVATE_COEFFICIENT_COLUMNS),
+            "Private AHSP coefficients",
+        )
+        _validate_columns(
+            components,
+            set(COMPONENT_MASTER_COLUMNS),
+            "Private component master",
+        )
+        validation = validate_private_ahsp_dataset(
+            ahsp_index,
+            coefficients,
+            components,
+        )
+        if not validation["is_valid"]:
+            error_count = validation["summary"]["error_count"]
+            raise ValueError(
+                f"private dataset validation found {error_count} error(s)"
+            )
+        hsp_library = load_hsp_library(HSP_LIBRARY_PATH)
+    except (OSError, ValueError, pd.errors.ParserError) as exc:
+        return _load_demo_bundle(
+            normalized_mode,
+            (
+                "Private AHSP processed files could not be loaded "
+                f"({exc}). Using public demo data."
+            ),
+        )
+
+    metadata = {
+        "requested_mode": normalized_mode,
+        "active_mode": "private",
+        "status": "PRIVATE_PROCESSED",
+        "disclaimer": (
+            "Private processed AHSP extraction data is active. HSP unit "
+            "prices still come from the synthetic public demo library and "
+            "must not be treated as official or professionally verified."
+        ),
+        "ahsp_index_path": _display_path(index_path),
+        "hsp_library_path": _display_path(HSP_LIBRARY_PATH),
+        "coefficients_path": _display_path(coefficients_path),
+        "component_master_path": _display_path(components_path),
+        "fallback_warning": None,
+    }
+    return ahsp_index, hsp_library, metadata
 
 
 def normalize_project_item_columns(dataframe: pd.DataFrame) -> pd.DataFrame:

@@ -1,0 +1,3 @@
+ahsp_code,description,unit,division,subdivision,sub_subdivision,ahsp_type,status,source_page,raw_text,confidence,notes
+PRV-001,Synthetic excavation item,m3,Synthetic Division 1,Synthetic earthwork,Synthetic manual work,Synthetic AHSP,PRIVATE_TEST_UNVERIFIED,TEST-001,Synthetic fixture text only,0.95,Not official data
+PRV-002,Synthetic wall item,m2,Synthetic Division 3,Synthetic architecture,Synthetic wall,Synthetic AHSP,PRIVATE_TEST_UNVERIFIED,TEST-002,Synthetic fixture text only,0.9,Not official data

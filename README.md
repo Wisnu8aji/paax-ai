@@ -67,6 +67,41 @@ The generated workbook contains:
 - `5_ASUMSI` - calculation and data assumptions
 - `6_AUDIT_LOG` - calculation and data-classification events
 
+## Using Private AHSP Extraction Files
+
+Private AHSP extraction workbooks must stay outside the public demo dataset.
+Place the three expected files in `data_private/ahsp/raw/`:
+
+- `ahsp_ck_index_2026_v02.xlsx`
+- `ahsp_ck_coeff_div1_2_v02.xlsx`
+- `ahsp_ck_coeff_div3_arch_v02.xlsx`
+
+Prepare normalized private outputs with:
+
+```bash
+python scripts/prepare_private_ahsp.py
+```
+
+The script validates the expected worksheets and columns, then writes
+processed CSV files and `validation_report.xlsx` under
+`data_private/ahsp/processed/`.
+
+Enable the processed private AHSP index with:
+
+```powershell
+$env:PAAX_AHSP_DATA_MODE = "private"
+streamlit run app.py
+```
+
+Use `PAAX_AHSP_DATA_MODE=demo` or leave it unset for the default public demo
+mode. If private mode is requested but processed files are unavailable or
+invalid, PAAX AI falls back to demo mode and shows a warning.
+
+Do not commit official AHSP files or anything under `data_private/`. Public
+synthetic demo data remains under `data/ahsp/`. The current private importer
+does not add a private HSP price source, so RAB Lite continues to identify the
+synthetic public HSP library separately.
+
 ## Run Locally
 
 ```bash

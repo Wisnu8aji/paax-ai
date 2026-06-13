@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
+import os
 
 import pandas as pd
 import streamlit as st
@@ -29,15 +29,11 @@ from paax.rab import (
     create_project_template_excel,
     export_rab_to_excel,
     get_sample_project_items,
-    load_ahsp_index,
-    load_hsp_library,
+    load_ahsp_data_bundle,
     load_project_items,
 )
 
 APP_MODES = ("General Chat", "RAB Lite")
-AHSP_MANIFEST_PATH = (
-    Path(__file__).resolve().parent / "data" / "ahsp" / "ahsp_manifest.json"
-)
 GREETING = (
     "Halo, saya PAAX AI v0.2. Tulis pesan apa saja, "
     "saya akan bantu jawab."
@@ -75,14 +71,12 @@ def reset_chat() -> None:
     ]
 
 
-@st.cache_data
-def get_rab_reference_data() -> tuple[pd.DataFrame, pd.DataFrame, dict]:
-    """Load bundled RAB reference files once per application process."""
-    ahsp_index = load_ahsp_index()
-    hsp_library = load_hsp_library()
-    with AHSP_MANIFEST_PATH.open(encoding="utf-8") as manifest_file:
-        manifest = json.load(manifest_file)
-    return ahsp_index, hsp_library, manifest
+@st.cache_data(ttl=5)
+def get_rab_reference_data(
+    requested_mode: str,
+) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+    """Load the requested AHSP data bundle with graceful demo fallback."""
+    return load_ahsp_data_bundle(requested_mode=requested_mode)
 
 
 @st.cache_data
@@ -204,21 +198,36 @@ def render_rab_lite(selected_model: str) -> None:
     """Render the deterministic AHSP index and RAB workflow."""
     st.title("RAB Lite — AHSP Index Cost Assistant")
     st.caption(
-        "PAAX AI v0.2 uses synthetic demo references. "
-        "It is not a final professional RAB."
+        "PAAX AI v0.2 supports public demo and private processed AHSP "
+        "indexes. It is not a final professional RAB."
     )
 
     try:
-        ahsp_index, hsp_library, manifest = get_rab_reference_data()
+        requested_data_mode = os.getenv("PAAX_AHSP_DATA_MODE", "demo")
+        ahsp_index, hsp_library, data_metadata = get_rab_reference_data(
+            requested_data_mode
+        )
     except (OSError, ValueError, pd.errors.ParserError) as exc:
         st.error(f"RAB reference data could not be loaded: {exc}")
         return
 
-    status_columns = st.columns(3)
+    status_columns = st.columns(4)
     status_columns[0].metric("AHSP index rows", len(ahsp_index))
-    status_columns[1].metric("Demo HSP prices", len(hsp_library))
-    status_columns[2].metric("Reference status", manifest["status"])
-    st.warning(manifest["disclaimer"])
+    status_columns[1].metric("HSP prices", len(hsp_library))
+    status_columns[2].metric("Data mode", data_metadata["active_mode"])
+    status_columns[3].metric(
+        "Reference status",
+        data_metadata["status"],
+    )
+    st.caption(
+        f"AHSP index source: `{data_metadata['ahsp_index_path']}`"
+    )
+    st.caption(
+        f"HSP library source: `{data_metadata['hsp_library_path']}`"
+    )
+    if data_metadata["fallback_warning"]:
+        st.warning(data_metadata["fallback_warning"])
+    st.warning(data_metadata["disclaimer"])
 
     with st.expander("AHSP index preview"):
         st.dataframe(ahsp_index, use_container_width=True, hide_index=True)
@@ -350,10 +359,10 @@ def main() -> None:
         st.divider()
         st.write(
             "General Chat provides bilingual assistance. RAB Lite provides "
-            "a deterministic demo AHSP index and Excel cost workflow."
+            "a deterministic AHSP index and Excel cost workflow."
         )
         st.warning(
-            "Do not enter sensitive data. Demo AHSP/HSP records require "
+            "Do not enter sensitive data. AHSP/HSP references require "
             "professional verification."
         )
 

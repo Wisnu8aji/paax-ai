@@ -178,7 +178,7 @@ def calculate_rab(
                     row_number,
                     row,
                     "AHSP_CODE_NOT_FOUND",
-                    "AHSP code was not found in the bundled demo index.",
+                    "AHSP code was not found in the active AHSP index.",
                 )
             )
         if code_found.iloc[index] and not unit_matches.iloc[index]:
@@ -197,7 +197,7 @@ def calculate_rab(
                     row_number,
                     row,
                     "MISSING_UNIT_PRICE",
-                    "No demo unit price is available for this AHSP code.",
+                    "No unit price is available in the active HSP library.",
                 )
             )
 
