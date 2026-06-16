@@ -1,9 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Python and Streamlit local files
 .venv/
 __pycache__/
-.env
-.streamlit/secrets.toml
 *.pyc
+.pytest_cache/
+.pytest_tmp/
+/.streamlit/
+
+# Private or external source data
+data_private/
+*.zip
+
+# Temporary work folders
+.tmp/
+tmp/
+temp/
+
+# OS/editor noise
 .DS_Store
 .vscode/
-
-.pytest_cache/
