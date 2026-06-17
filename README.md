@@ -1,162 +1,118 @@
-# PAAX AI v0.1
+# PAAX AI
 
-PAAX AI is a bilingual, LLM-powered chatbot built with Python, Streamlit, and
-the Gemini API. It is a beginner-friendly portfolio project demonstrating a
-complete AI application workflow, from API integration and session state to
-secure configuration and cloud deployment.
+## Project Overview
 
-## Live Demo
+PAAX AI is a portfolio project exploring how AI-assisted workflows can support early-stage civil construction cost planning. The current repository version is a browser-based demo app for RAB (Rencana Anggaran Biaya) exploration, preliminary drawing screening, scheduling assistance, and demo rate/template review.
 
-Try the deployed application:
+This project is not production software. It is designed to demonstrate product thinking, full-stack implementation, and safe AI boundaries for civil engineering workflows.
 
-**[Open PAAX AI](https://paax-ai.streamlit.app/)**
+## Current Version
 
-> The hosted demo depends on Gemini API availability and may be affected by
-> free-tier usage limits.
+The current version is **PAAX AI v0.2-demo**.
+
+PAAX AI started as **v0.1**, a Python + Streamlit + Gemini chatbot baseline. That version focused on conversational interaction and is retained under `legacy/streamlit-v0.1/` for reference.
+
+PAAX AI **v0.2-demo** transitions the project into a full-stack React + Vite + Express application. The demo now separates deterministic RAB calculation logic from assistant text generation, uses TypeScript for the main app workflow, and presents the experience through a browser-based workspace.
 
 ## Features
 
-- Real LLM-powered chatbot
-- Gemini API backend
-- Streamlit web interface
-- Indonesian-English conversation support
-- Session-based chat history
-- Model selector
-- Secure API key handling
-- Chat reset and API error handling
+- RAB Demo Workspace for exploring demo construction cost items.
+- PAAX Assistant tab, using the Gemini API when configured.
+- Deterministic mock assistant mode when no Gemini API key is available.
+- Drawing Screening tab for preliminary civil/structural review prompts.
+- Schedule tab for demo construction schedule generation.
+- Rates tab for reviewing bundled demo AHSP/RAB template data.
+- TypeScript deterministic RAB calculation flow.
+- Demo AHSP/RAB template data only.
 
 ## Tech Stack
 
-- Python
-- Streamlit
-- Gemini API
-- Google GenAI SDK
-- Pytest
-- Streamlit Community Cloud
+- React + Vite frontend.
+- Express backend.
+- TypeScript application logic.
+- Gemini API via `@google/genai`.
+- Deterministic mock mode for local demos without an API key.
+- Node.js development workflow.
 
 ## How to Run Locally
 
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/your-username/paax-ai.git
-cd paax-ai
-```
-
-Replace `your-username` with the GitHub account that hosts your fork or copy
-of this repository.
-
-### 2. Create and activate a virtual environment
-
-```bash
-python -m venv .venv
-```
-
-On Windows PowerShell:
+Install dependencies:
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
+npm install
 ```
 
-On macOS or Linux:
+Create a local environment file:
 
-```bash
-source .venv/bin/activate
+```powershell
+Copy-Item .env.example .env.local
 ```
 
-### 3. Install dependencies
+Open the local environment file and add your own values if needed:
 
-```bash
-python -m pip install -r requirements.txt
+```powershell
+notepad .env.local
 ```
 
-### 4. Configure the environment
+Start the development server:
 
-Follow the instructions in [Environment Setup](#environment-setup) to add a
-Gemini API key locally.
-
-### 5. Start the application
-
-```bash
-streamlit run app.py
+```powershell
+npm run dev
 ```
 
-Streamlit will display the local URL in the terminal, usually
-`http://localhost:8501`.
+Open `http://localhost:3000` in your browser.
 
 ## Environment Setup
 
-PAAX AI reads the Gemini API key from Streamlit secrets or the
-`GEMINI_API_KEY` environment variable. For local Streamlit development, copy
-the provided example file:
+The app reads local configuration from `.env.local`. To enable Gemini-backed assistant responses, set:
 
-```powershell
-Copy-Item .streamlit\secrets.toml.example .streamlit\secrets.toml
+```dotenv
+GEMINI_API_KEY=your_key_here
 ```
 
-On macOS or Linux:
+If `GEMINI_API_KEY` is not set, the PAAX Assistant runs in deterministic mock mode. This keeps the demo usable without requiring a live AI service or secret key.
 
-```bash
-cp .streamlit/secrets.toml.example .streamlit/secrets.toml
-```
+Do not commit `.env`, `.env.local`, API keys, private AHSP files, private project data, or client data.
 
-Then update `.streamlit/secrets.toml` with your own Gemini API key:
+## Data & Safety Boundary
 
-```toml
-GEMINI_API_KEY = "your_gemini_api_key_here"
-```
+PAAX AI v0.2-demo includes demo AHSP/RAB template data only. It does not include an official AHSP database, private AHSP Excel files, vendor quotes, client budgets, or real project cost data.
 
-The local `.streamlit/secrets.toml` file is excluded by `.gitignore`. Never
-commit this file, paste a real API key into the README, or expose a key in
-screenshots and logs. For deployment, add `GEMINI_API_KEY` through the
-Streamlit Community Cloud secrets settings.
+The final RAB calculation path must remain deterministic. LLM-generated text can assist with explanation, extraction, or drafting, but final cost totals should not be trusted directly from LLM prose.
 
-## Testing
+Structural and drawing-related outputs are preliminary screening only. They are not engineering approvals, construction instructions, or substitutes for review by a qualified engineer.
 
-Run the test suite from the project root:
+## What v0.2-demo Can Do
 
-```bash
-python -m pytest
-```
+- Demonstrate a full-stack civil RAB workflow in a browser app.
+- Calculate demo RAB totals through deterministic TypeScript logic.
+- Show how an AI assistant can support explanation and workflow guidance.
+- Fall back to mock assistant behavior when no Gemini API key is configured.
+- Screen drawing-related input at a preliminary level for demo purposes.
+- Generate demo schedule output for planning exploration.
+- Present demo rates and template items in a portfolio-friendly interface.
 
-## Limitations
+## What v0.2-demo Cannot Do Yet
 
-- No real-time web browsing
-- No database-backed persistent memory yet
-- No file upload or retrieval-augmented generation (RAG) yet
-- Real-time data, such as currency exchange rates, requires future tool or API
-  integration
-- Session chat history is cleared when the Streamlit session ends
-- Generated responses may be inaccurate and should not be treated as
-  professional advice
+- It cannot be used as production estimating software.
+- It cannot replace a licensed engineer, estimator, QS, or project manager.
+- It does not include real/private AHSP Excel data.
+- It does not include an official AHSP database.
+- It does not guarantee drawing, structural, schedule, or cost correctness.
+- It does not resolve the intermittent connection error yet.
+- It does not make final RAB decisions from LLM text.
 
 ## Roadmap
 
-- **v0.2:** Live tool integration, such as exchange rate lookup
-- **v0.3:** Persistent memory
-- **v0.4:** Document upload and RAG
-- **v0.5:** Persona selector
-
-## Safety and Privacy
-
-- Do not enter confidential, sensitive, or personal information into the demo.
-- API providers and free tiers may enforce rate and usage limits.
-- AI-generated content should be reviewed before it is used for important
-  decisions.
+- Improve reliability of local and deployed API connections.
+- Add safer import flows for user-provided RAB/AHSP data.
+- Expand validation around deterministic RAB calculations.
+- Add clearer export and reporting workflows.
+- Improve drawing screening with stronger input structure and review states.
+- Prepare deployment documentation for a controlled demo environment.
 
 ## Portfolio Purpose
 
-This project demonstrates foundational skills in:
+PAAX AI v0.2-demo is intended to show the evolution from an AI chatbot prototype into a structured full-stack civil engineering demo product. It highlights React, Vite, Express, TypeScript, deterministic calculation design, AI integration boundaries, and responsible handling of sensitive construction data.
 
-- LLM API integration
-- AI chatbot development
-- Prompt and system instruction design
-- Python application structure
-- Streamlit deployment
-- Session-state management
-- Secure secret handling
-- Automated testing
-
-## Version
-
-Current version: `0.1`
+The project is suitable for portfolio review, technical discussion, and controlled demonstration. It should not be presented as production-ready software.
