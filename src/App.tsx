@@ -1,6 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle,
   Bot,
   Calculator,
   CalendarRange,
@@ -44,9 +43,39 @@ interface ExtractedRabItem extends WorkItem {
   confidence?: number;
 }
 
+interface ChatApiResponse {
+  text?: string;
+}
+
+interface ChatApiErrorResponse {
+  error?: string;
+  code?: string;
+  retryable?: boolean;
+}
+
+class ChatRequestError extends Error {
+  code?: string;
+  retryable: boolean;
+  status?: number;
+
+  constructor(
+    message: string,
+    options: { code?: string; retryable?: boolean; status?: number } = {},
+  ) {
+    super(message);
+    this.name = "ChatRequestError";
+    this.code = options.code;
+    this.retryable = Boolean(options.retryable);
+    this.status = options.status;
+  }
+}
+
 const STORAGE_KEY = "paax-ai-v02-demo-project";
 const EMPTY_IMAGE_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
+const CHAT_CONTEXT_LIMIT = 10;
+const CHAT_MAX_RETRIES = 2;
+const CHAT_RETRY_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
 
 const tabs: Array<{ id: TabId; label: string; icon: typeof Calculator }> = [
   { id: "rab", label: "RAB", icon: Calculator },
@@ -118,6 +147,120 @@ function parseRabItemsFromChat(text: string): WorkItem[] {
   } catch {
     return [];
   }
+}
+
+function visibleChatContent(content: string): string {
+  return (
+    content.replace(/===RAB_ITEMS===[\s\S]*?===RAB_ITEMS===/g, "").trim() ||
+    "Suggested RAB items are ready for review before import."
+  );
+}
+
+function waitForRetry(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+function isNetworkError(error: unknown): boolean {
+  return error instanceof TypeError;
+}
+
+function isRetryableChatError(error: unknown): boolean {
+  if (error instanceof ChatRequestError) {
+    return (
+      error.retryable ||
+      (typeof error.status === "number" && CHAT_RETRY_STATUS_CODES.has(error.status))
+    );
+  }
+
+  return isNetworkError(error);
+}
+
+async function readChatError(response: Response): Promise<ChatApiErrorResponse> {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    return {};
+  }
+
+  try {
+    return (await response.json()) as ChatApiErrorResponse;
+  } catch {
+    return {};
+  }
+}
+
+function fallbackChatErrorMessage(status: number): string {
+  if (status === 429) {
+    return "PAAX Assistant is rate-limited. Please wait a moment and try again.";
+  }
+
+  if (CHAT_RETRY_STATUS_CODES.has(status)) {
+    return "PAAX Assistant is temporarily unavailable. Please try again shortly.";
+  }
+
+  return "PAAX Assistant could not process this request safely.";
+}
+
+function safeChatFailureMessage(error: unknown): string {
+  if (error instanceof ChatRequestError) {
+    return error.message;
+  }
+
+  if (isNetworkError(error)) {
+    return "The local PAAX Assistant server could not be reached. Please check the connection and try again.";
+  }
+
+  return "PAAX Assistant could not complete the request. Please try again.";
+}
+
+async function requestChat(messages: Array<{ role: ChatMessage["role"]; content: string }>) {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= CHAT_MAX_RETRIES; attempt += 1) {
+    try {
+      const response = await fetch("/api/paax/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages }),
+      });
+
+      if (!response.ok) {
+        const errorData = await readChatError(response);
+        throw new ChatRequestError(
+          errorData.error || fallbackChatErrorMessage(response.status),
+          {
+            code: errorData.code,
+            retryable:
+              errorData.retryable ?? CHAT_RETRY_STATUS_CODES.has(response.status),
+            status: response.status,
+          },
+        );
+      }
+
+      return (await response.json()) as ChatApiResponse;
+    } catch (error) {
+      lastError = error;
+
+      if (attempt < CHAT_MAX_RETRIES && isRetryableChatError(error)) {
+        await waitForRetry(500 * (attempt + 1));
+        continue;
+      }
+
+      break;
+    }
+  }
+
+  if (isNetworkError(lastError)) {
+    throw new ChatRequestError(
+      "The local PAAX Assistant server could not be reached. Please check the connection and try again.",
+      { code: "NETWORK_ERROR", retryable: true },
+    );
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new ChatRequestError("PAAX Assistant could not complete the request. Please try again.");
 }
 
 function fileToBase64(file: File): Promise<string> {
@@ -202,6 +345,42 @@ export default function App() {
     }));
   };
 
+  const importPendingItems = () => {
+    addWorkItems(pendingItems);
+    setPendingItems([]);
+    setActiveTab("rab");
+  };
+
+  const renderPendingItemsPanel = () => {
+    if (pendingItems.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="result-block">
+        <h2>Review Suggested RAB Items</h2>
+        <p>Assistant suggestions stay out of the RAB table until you import them.</p>
+        <div className="compact-list">
+          {pendingItems.map((item) => (
+            <div key={item.id}>
+              <span>{item.name}</span>
+              <strong>
+                {item.volume} {item.unit} / {item.ahspCode}
+              </strong>
+            </div>
+          ))}
+        </div>
+        <button type="button" className="button primary" onClick={importPendingItems}>
+          <Plus size={15} />
+          Import
+        </button>
+        <button type="button" className="button ghost" onClick={() => setPendingItems([])}>
+          Dismiss
+        </button>
+      </div>
+    );
+  };
+
   const handleAddItem = (event: FormEvent) => {
     event.preventDefault();
     const template = DEMO_AHSP_TEMPLATES.find((item) => item.code === newItem.ahspCode);
@@ -244,22 +423,11 @@ export default function App() {
     setChatLoading(true);
 
     try {
-      const response = await fetch("/api/paax/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: nextHistory.map((message) => ({
-            role: message.role,
-            content: message.content,
-          })),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Chat request failed.");
-      }
-
-      const data = (await response.json()) as { text?: string };
+      const chatContext = nextHistory.slice(-CHAT_CONTEXT_LIMIT).map((message) => ({
+        role: message.role,
+        content: message.content,
+      }));
+      const data = await requestChat(chatContext);
       const assistantMessage: ChatMessage = {
         id: `chat-${Date.now()}-assistant`,
         role: "assistant",
@@ -270,13 +438,13 @@ export default function App() {
       setPendingItems(parseRabItemsFromChat(assistantMessage.content));
       setChatHistory((current) => [...current, assistantMessage]);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Chat request failed.";
+      const message = safeChatFailureMessage(error);
       setChatHistory((current) => [
         ...current,
         {
           id: `chat-${Date.now()}-error`,
           role: "assistant",
-          content: `Connection error: ${message}`,
+          content: `PAAX Assistant error: ${message}`,
           timestamp: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
         },
       ]);
@@ -431,26 +599,7 @@ export default function App() {
                 </div>
               </div>
 
-              {pendingItems.length > 0 && (
-                <div className="import-strip">
-                  <AlertTriangle size={18} />
-                  <span>{pendingItems.length} suggested RAB item ready for review.</span>
-                  <button
-                    type="button"
-                    className="button primary"
-                    onClick={() => {
-                      addWorkItems(pendingItems);
-                      setPendingItems([]);
-                    }}
-                  >
-                    <Plus size={15} />
-                    Import
-                  </button>
-                  <button type="button" className="button ghost" onClick={() => setPendingItems([])}>
-                    Dismiss
-                  </button>
-                </div>
-              )}
+              {renderPendingItemsPanel()}
 
               <div className="table-wrap">
                 <table>
@@ -595,11 +744,13 @@ export default function App() {
               <textarea value={extractText} onChange={(event) => setExtractText(event.target.value)} />
             </div>
 
+            {renderPendingItemsPanel()}
+
             <div className="chat-log">
               {chatHistory.map((message) => (
                 <article key={message.id} className={`message ${message.role}`}>
                   <span>{message.role === "user" ? "You" : "PAAX AI"}</span>
-                  <p>{message.content.replace(/===RAB_ITEMS===[\s\S]*?===RAB_ITEMS===/g, "").trim()}</p>
+                  <p>{visibleChatContent(message.content)}</p>
                 </article>
               ))}
               {chatLoading && (

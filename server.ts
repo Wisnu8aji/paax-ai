@@ -19,6 +19,7 @@ const MODEL_FAST = process.env.GEMINI_MODEL_FAST || DEFAULT_MODEL;
 const MODEL_REASONING = process.env.GEMINI_MODEL_REASONING || MODEL_FAST;
 const MAX_IMAGE_PAYLOAD_CHARS = 35_000_000;
 const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+const CHAT_RETRY_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
 
 let aiClient: GoogleGenAI | null = null;
 
@@ -44,14 +45,60 @@ function safeJsonParse<T>(text: string, fallback: T): T {
   }
 }
 
-function assertArray(value: unknown, message: string): asserts value is unknown[] {
-  if (!Array.isArray(value)) {
-    throw new Error(message);
-  }
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 function normalizeMessageRole(role: unknown): "user" | "model" {
   return role === "assistant" || role === "model" ? "model" : "user";
+}
+
+function readErrorStatus(error: unknown): number | undefined {
+  if (!isRecord(error)) {
+    return undefined;
+  }
+
+  const status = error.status ?? error.statusCode;
+  return typeof status === "number" ? status : undefined;
+}
+
+function buildSafeChatError(error: unknown) {
+  const status = readErrorStatus(error) || 500;
+  const retryable = CHAT_RETRY_STATUS_CODES.has(status);
+
+  if (status === 429) {
+    return {
+      status,
+      code: "RATE_LIMITED",
+      retryable,
+      error: "PAAX Assistant is temporarily rate-limited. Please retry shortly.",
+    };
+  }
+
+  if (status === 401 || status === 403) {
+    return {
+      status,
+      code: "AI_SERVICE_UNAUTHORIZED",
+      retryable: false,
+      error: "PAAX Assistant is not authorized to use the configured AI service.",
+    };
+  }
+
+  if (retryable) {
+    return {
+      status,
+      code: "AI_SERVICE_UNAVAILABLE",
+      retryable,
+      error: "PAAX Assistant is temporarily unavailable. Please retry shortly.",
+    };
+  }
+
+  return {
+    status,
+    code: "CHAT_REQUEST_FAILED",
+    retryable: false,
+    error: "PAAX Assistant could not complete the request safely.",
+  };
 }
 
 const demoCodeList = DEMO_AHSP_TEMPLATES.map(
@@ -273,12 +320,22 @@ async function startServer() {
   app.post("/api/paax/chat", async (req, res) => {
     try {
       const { messages } = req.body as { messages?: Array<{ role?: string; content?: string }> };
-      assertArray(messages, "messages array is required");
+      if (!Array.isArray(messages)) {
+        return res.status(400).json({
+          error: "messages array is required.",
+          code: "BAD_REQUEST",
+          retryable: false,
+        });
+      }
 
       const lastMessage = messages[messages.length - 1];
       const lastText = String(lastMessage?.content || "").trim();
       if (!lastText) {
-        return res.status(400).json({ error: "Last message content is required." });
+        return res.status(400).json({
+          error: "Last message content is required.",
+          code: "BAD_REQUEST",
+          retryable: false,
+        });
       }
 
       if (!hasGeminiApiKey()) {
@@ -304,8 +361,18 @@ async function startServer() {
         mode: "gemini",
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "PAAX chat failed.";
-      return res.status(500).json({ error: message });
+      const safeError = buildSafeChatError(error);
+      console.warn("PAAX chat request failed", {
+        code: safeError.code,
+        retryable: safeError.retryable,
+        status: safeError.status,
+        type: error instanceof Error ? error.name : typeof error,
+      });
+      return res.status(safeError.status).json({
+        error: safeError.error,
+        code: safeError.code,
+        retryable: safeError.retryable,
+      });
     }
   });
 
