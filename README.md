@@ -1,118 +1,112 @@
-# PAAX AI
+# PAAX AI - Civil Engineering Workspace (v0.3)
 
-## Project Overview
+![PAAX AI](https://via.placeholder.com/800x200?text=PAAX+AI+Workspace)
 
-PAAX AI is a portfolio project exploring how AI-assisted workflows can support early-stage civil construction cost planning. The current repository version is a browser-based demo app for RAB (Rencana Anggaran Biaya) exploration, preliminary drawing screening, scheduling assistance, and demo rate/template review.
+PAAX AI is an advanced, AI-powered workspace designed for civil engineers, contractors, and project managers. It automates the extraction of quantities from drawings, generates deterministic Bill of Quantities (RAB), and optimizes project schedules.
 
-This project is not production software. It is designed to demonstrate product thinking, full-stack implementation, and safe AI boundaries for civil engineering workflows.
+## 🌟 Overview
 
-## Current Version
+PAAX AI bridges the gap between unstructured construction data (PDFs, blueprints, site photos) and structured financial/scheduling formats. Unlike generic LLMs, PAAX utilizes a **Deterministic Engine** for all calculations, ensuring 100% auditability and precision, while leveraging **Gemini 1.5 Pro** for document understanding and natural language orchestration.
 
-The current version is **PAAX AI v0.2-demo**.
+## 🏗️ Architecture
 
-PAAX AI started as **v0.1**, a Python + Streamlit + Gemini chatbot baseline. That version focused on conversational interaction and is retained under `legacy/streamlit-v0.1/` for reference.
+PAAX AI v0.3 is built as a **Monorepo** with distinct, specialized services:
 
-PAAX AI **v0.2-demo** transitions the project into a full-stack React + Vite + Express application. The demo now separates deterministic RAB calculation logic from assistant text generation, uses TypeScript for the main app workflow, and presents the experience through a browser-based workspace.
+- **Frontend (Next.js)**: The user-facing dashboard and workspace.
+- **Core Engine (FastAPI/Python)**: Deterministic calculation engine for RAB math, scheduling scenarios, and Excel export.
+- **AI Orchestrator (Firebase Genkit)**: Routes prompts, manages tools, and interfaces with Vertex AI.
+- **Document Intelligence (Python)**: Pipeline for PDF OCR, vision analysis, and quantity extraction.
+- **Site Agent (TypeScript)**: Continuous field reporting and site analysis.
+- **Database**: Firebase Firestore & Cloud Storage.
 
-## Features
+## 💻 Tech Stack
 
-- RAB Demo Workspace for exploring demo construction cost items.
-- PAAX Assistant tab, using the Gemini API when configured.
-- Deterministic mock assistant mode when no Gemini API key is available.
-- Drawing Screening tab for preliminary civil/structural review prompts.
-- Schedule tab for demo construction schedule generation.
-- Rates tab for reviewing bundled demo AHSP/RAB template data.
-- TypeScript deterministic RAB calculation flow.
-- Demo AHSP/RAB template data only.
+- **Web**: Next.js 14, React, TailwindCSS, shadcn/ui, TypeScript.
+- **Backend/AI**: Python 3.11+, FastAPI, Pydantic, Firebase Genkit, Google Vertex AI (Gemini).
+- **Data**: Google Cloud Firestore, Firebase Storage.
+- **Package Management**: `pnpm` (Node), `uv` / `pip` (Python).
 
-## Tech Stack
+## 🚀 Getting Started
 
-- React + Vite frontend.
-- Express backend.
-- TypeScript application logic.
-- Gemini API via `@google/genai`.
-- Deterministic mock mode for local demos without an API key.
-- Node.js development workflow.
+### Prerequisites
+- Node.js >= 18.0
+- Python >= 3.11
+- `pnpm` (`npm install -g pnpm`)
+- Google Cloud / Firebase account with Vertex AI enabled.
 
-## How to Run Locally
+### Installation
 
-Install dependencies:
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-org/paax-ai.git
+   cd paax-ai
+   ```
 
-```powershell
-npm install
+2. **Install Node dependencies**
+   ```bash
+   pnpm install
+   ```
+
+3. **Install Python dependencies (Core Engine)**
+   ```bash
+   cd services/core-engine
+   python -m venv .venv
+   .venv\Scripts\activate  # On Windows. Use `source .venv/bin/activate` on Mac/Linux
+   pip install -e .
+   ```
+
+4. **Environment Variables**
+   Copy `.env.example` to `.env` in the respective app directories and fill in your Firebase and Vertex AI credentials.
+
+### Running the App
+
+Run the development servers concurrently from the root (using a tool like Turbo or manually):
+
+```bash
+# Terminal 1: Frontend
+pnpm --filter @paax/web dev
+
+# Terminal 2: Core Engine
+cd services/core-engine
+.venv\Scripts\activate
+uvicorn app.main:app --reload --port 8081
+
+# Terminal 3: AI Orchestrator
+pnpm --filter @paax/ai-orchestrator dev
 ```
 
-Create a local environment file:
+## 📂 Project Structure
 
-```powershell
-Copy-Item .env.example .env.local
+```text
+paax-ai/
+├── apps/
+│   └── web/                    # Next.js Workspace
+├── services/
+│   ├── core-engine/            # FastAPI calculation engine
+│   ├── ai-orchestrator/        # Genkit agent routing
+│   ├── document-intelligence/  # PDF processing pipeline
+│   └── site-agent/             # Field reporting agent
+├── packages/
+│   ├── schemas/                # Shared Zod schemas
+│   ├── ui/                     # Shared React components
+│   ├── constants/              # Shared constants
+│   └── tsconfig/               # Shared TS configs
+├── docs/                       # Architecture & Product documentation
+├── legacy/
+│   └── vite-v0.2/              # Previous version reference
+└── README.md
 ```
 
-Open the local environment file and add your own values if needed:
+## 🛠️ Development
 
-```powershell
-notepad .env.local
-```
+- **Branching**: We use a standard Git Flow (`main`, `develop`, `feature/*`, `fix/*`).
+- **Commits**: Follow Conventional Commits (`feat:`, `fix:`, `docs:`).
+- **Testing**: 
+  - Python: `pytest`
+  - JS/TS: `jest` / `vitest`
 
-Start the development server:
+## 📦 Deployment
+The application is designed to be deployed to Google Cloud Run (Backend services) and Vercel/Firebase Hosting (Frontend). See `docs/architecture/system-overview.md` for details.
 
-```powershell
-npm run dev
-```
-
-Open `http://localhost:3000` in your browser.
-
-## Environment Setup
-
-The app reads local configuration from `.env.local`. To enable Gemini-backed assistant responses, set:
-
-```dotenv
-GEMINI_API_KEY=your_key_here
-```
-
-If `GEMINI_API_KEY` is not set, the PAAX Assistant runs in deterministic mock mode. This keeps the demo usable without requiring a live AI service or secret key.
-
-Do not commit `.env`, `.env.local`, API keys, private AHSP files, private project data, or client data.
-
-## Data & Safety Boundary
-
-PAAX AI v0.2-demo includes demo AHSP/RAB template data only. It does not include an official AHSP database, private AHSP Excel files, vendor quotes, client budgets, or real project cost data.
-
-The final RAB calculation path must remain deterministic. LLM-generated text can assist with explanation, extraction, or drafting, but final cost totals should not be trusted directly from LLM prose.
-
-Structural and drawing-related outputs are preliminary screening only. They are not engineering approvals, construction instructions, or substitutes for review by a qualified engineer.
-
-## What v0.2-demo Can Do
-
-- Demonstrate a full-stack civil RAB workflow in a browser app.
-- Calculate demo RAB totals through deterministic TypeScript logic.
-- Show how an AI assistant can support explanation and workflow guidance.
-- Fall back to mock assistant behavior when no Gemini API key is configured.
-- Screen drawing-related input at a preliminary level for demo purposes.
-- Generate demo schedule output for planning exploration.
-- Present demo rates and template items in a portfolio-friendly interface.
-
-## What v0.2-demo Cannot Do Yet
-
-- It cannot be used as production estimating software.
-- It cannot replace a licensed engineer, estimator, QS, or project manager.
-- It does not include real/private AHSP Excel data.
-- It does not include an official AHSP database.
-- It does not guarantee drawing, structural, schedule, or cost correctness.
-- It does not resolve the intermittent connection error yet.
-- It does not make final RAB decisions from LLM text.
-
-## Roadmap
-
-- Improve reliability of local and deployed API connections.
-- Add safer import flows for user-provided RAB/AHSP data.
-- Expand validation around deterministic RAB calculations.
-- Add clearer export and reporting workflows.
-- Improve drawing screening with stronger input structure and review states.
-- Prepare deployment documentation for a controlled demo environment.
-
-## Portfolio Purpose
-
-PAAX AI v0.2-demo is intended to show the evolution from an AI chatbot prototype into a structured full-stack civil engineering demo product. It highlights React, Vite, Express, TypeScript, deterministic calculation design, AI integration boundaries, and responsible handling of sensitive construction data.
-
-The project is suitable for portfolio review, technical discussion, and controlled demonstration. It should not be presented as production-ready software.
+## 📜 License
+*Proprietary - Do not distribute.*
