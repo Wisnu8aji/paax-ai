@@ -1,4 +1,5 @@
-import { defineFlow } from "@genkit-ai/flow";
+import { defineFlow } from '../genkit-placeholder';
+
 import { z } from "zod";
 
 export const rabAdvisorFlow = defineFlow(
@@ -7,7 +8,7 @@ export const rabAdvisorFlow = defineFlow(
         inputSchema: z.object({ rabId: z.string() }),
         outputSchema: z.object({ advice: z.string() })
     },
-    async (input) => {
+    async (input: any) => {
         return { advice: "Gunakan semen lokal untuk menghemat budget. Angka final dihitung oleh core-engine, bukan LLM." };
     }
 );

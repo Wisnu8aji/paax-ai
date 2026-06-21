@@ -1,4 +1,5 @@
-import { defineFlow } from "@genkit-ai/flow";
+import { defineFlow } from '../genkit-placeholder';
+
 import { z } from "zod";
 
 export const projectSetupFlow = defineFlow(
@@ -7,7 +8,7 @@ export const projectSetupFlow = defineFlow(
         inputSchema: z.object({ projectName: z.string() }),
         outputSchema: z.object({ status: z.string(), projectId: z.string() })
     },
-    async (input) => {
+    async (input: any) => {
         return { status: "setup_complete", projectId: "proj-123" };
     }
 );

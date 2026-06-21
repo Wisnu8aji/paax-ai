@@ -1,4 +1,5 @@
-import { defineTool } from "@genkit-ai/core";
+import { defineTool } from '../genkit-placeholder';
+
 import { z } from "zod";
 
 export const editRabDraftTool = defineTool(
@@ -8,7 +9,7 @@ export const editRabDraftTool = defineTool(
         inputSchema: z.object({ rabId: z.string(), items: z.array(z.any()) }),
         outputSchema: z.object({ status: z.string() })
     },
-    async (input) => {
+    async (input: any) => {
         return { status: "success" };
     }
 );

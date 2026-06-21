@@ -1,4 +1,5 @@
-import { defineTool } from "@genkit-ai/core";
+import { defineTool } from '../genkit-placeholder';
+
 import { z } from "zod";
 
 export const analyzeDrawingTool = defineTool(
@@ -8,7 +9,7 @@ export const analyzeDrawingTool = defineTool(
         inputSchema: z.object({ fileId: z.string() }),
         outputSchema: z.object({ summary: z.string() })
     },
-    async (input) => {
+    async (input: any) => {
         return { summary: "Analysis complete." };
     }
 );

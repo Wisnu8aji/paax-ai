@@ -1,4 +1,5 @@
-import { defineFlow } from "@genkit-ai/flow";
+import { defineFlow } from '../genkit-placeholder';
+
 import { z } from "zod";
 
 export const scheduleAdvisorFlow = defineFlow(
@@ -7,7 +8,7 @@ export const scheduleAdvisorFlow = defineFlow(
         inputSchema: z.object({ scheduleId: z.string() }),
         outputSchema: z.object({ advice: z.string() })
     },
-    async (input) => {
+    async (input: any) => {
         return { advice: "Pertimbangkan overlap pekerjaan struktur dan arsitektur." };
     }
 );

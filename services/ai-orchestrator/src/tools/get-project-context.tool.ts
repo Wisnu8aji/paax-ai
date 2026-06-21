@@ -1,4 +1,5 @@
-import { defineTool } from "@genkit-ai/core";
+import { defineTool } from '../genkit-placeholder';
+
 import { z } from "zod";
 
 export const getProjectContextTool = defineTool(
@@ -8,7 +9,7 @@ export const getProjectContextTool = defineTool(
         inputSchema: z.object({ projectId: z.string() }),
         outputSchema: z.object({ context: z.string() })
     },
-    async (input) => {
+    async (input: any) => {
         return { context: "Proyek pembangunan rumah 2 lantai di Jakarta." };
     }
 );

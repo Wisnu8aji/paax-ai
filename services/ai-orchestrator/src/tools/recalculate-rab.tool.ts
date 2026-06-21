@@ -1,4 +1,5 @@
-import { defineTool } from "@genkit-ai/core";
+import { defineTool } from '../genkit-placeholder';
+
 import { z } from "zod";
 
 export const recalculateRabTool = defineTool(
@@ -8,7 +9,7 @@ export const recalculateRabTool = defineTool(
         inputSchema: z.object({ rabId: z.string() }),
         outputSchema: z.object({ newTotal: z.number() })
     },
-    async (input) => {
+    async (input: any) => {
         return { newTotal: 510000000 };
     }
 );
