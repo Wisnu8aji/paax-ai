@@ -1,31 +1,46 @@
 # Dependencies
 node_modules/
+.pnpm-store/
 
-# Build output
+# Build
+.next/
 dist/
+build/
+.turbo/
+out/
 
-# Local environment
-.env
-.env.local
-.env.*.local
-
-# Python and Streamlit local files
-.venv/
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+.venv/
+*.egg-info/
 .pytest_cache/
 .pytest_tmp/
-/.streamlit/
 
-# Private or external source data
+# Environment
+.env
+.env.local
+.env.*
+!.env.example
+
+# Security / Secrets
+*.pem
+*.key
+secrets.toml
+.streamlit/secrets.toml
+
+# Private data
+data/private/
 data_private/
-*.zip
+legacy/**/data_private/
 
-# Temporary work folders
-.tmp/
-tmp/
-temp/
-
-# OS/editor noise
-.DS_Store
+# IDE & OS
 .vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Legacy artifacts
+*.zip

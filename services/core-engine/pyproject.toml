@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "paax-core-engine"
+version = "0.3.0"
+description = "PAAX Core Engine"
+authors = ["Basrenggg <basrenggg@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "*"
+uvicorn = "*"
+pydantic = "*"
+openpyxl = "*"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
