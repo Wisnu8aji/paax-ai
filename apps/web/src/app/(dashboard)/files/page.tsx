@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { 
   File, 
   FolderOpen, 
@@ -8,18 +10,36 @@ import {
   Filter,
   FileText,
   Image as ImageIcon,
-  FileSpreadsheet
+  FileSpreadsheet,
+  X
 } from 'lucide-react';
+import { LocalStorage, STORAGE_KEYS } from '@/lib/local-storage';
 
 export default function FilesPage() {
-  const files = [
-    { id: 1, name: 'Gambar_Kerja_Arsitektur_v2.pdf', type: 'pdf', size: '4.2 MB', date: '20 Jun 2026', project: 'Rumah Tinggal Pak Ahmad', author: 'Budi Santoso' },
-    { id: 2, name: 'RAB_Draft_Initial.xlsx', type: 'excel', size: '1.1 MB', date: '19 Jun 2026', project: 'Rumah Tinggal Pak Ahmad', author: 'System AI' },
-    { id: 3, name: 'Dokumen_Kontrak_Final.docx', type: 'doc', size: '2.5 MB', date: '15 Jun 2026', project: 'Renovasi Ruko Sudirman', author: 'Admin' },
-    { id: 4, name: 'Foto_Progress_M1.jpg', type: 'image', size: '3.8 MB', date: '14 Jun 2026', project: 'Gedung Kantor 3 Lantai', author: 'Site Agent' },
-    { id: 5, name: 'Jadwal_Kurva_S.xlsx', type: 'excel', size: '850 KB', date: '12 Jun 2026', project: 'Renovasi Ruko Sudirman', author: 'System AI' },
-    { id: 6, name: 'Spesifikasi_Teknis_MEP.pdf', type: 'pdf', size: '5.6 MB', date: '10 Jun 2026', project: 'Gedung Kantor 3 Lantai', author: 'Budi Santoso' },
-  ];
+  const [files, setFiles] = useState<any[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadForm, setUploadForm] = useState({
+    name: '',
+    project_id: '',
+    type: 'pdf',
+  });
+
+  useEffect(() => {
+    // Load Projects
+    const savedProjects = LocalStorage.get<any[]>(STORAGE_KEYS.PROJECTS, []);
+    setProjects(savedProjects);
+    if (savedProjects.length > 0 && !uploadForm.project_id) {
+      setUploadForm(prev => ({...prev, project_id: savedProjects[0].id}));
+    }
+
+    // Load Files
+    const savedFiles = LocalStorage.get<any[]>('paax_files', [
+      { id: 1, name: 'Gambar_Kerja_Arsitektur_v2.pdf', type: 'pdf', size: '4.2 MB', date: '20 Jun 2026', project_id: 'default', project_name: 'Rumah Tinggal Pak Ahmad', author: 'Budi Santoso' },
+      { id: 2, name: 'RAB_Draft_Initial.xlsx', type: 'excel', size: '1.1 MB', date: '19 Jun 2026', project_id: 'default', project_name: 'Rumah Tinggal Pak Ahmad', author: 'System AI' },
+    ]);
+    setFiles(savedFiles);
+  }, []);
 
   const getFileIcon = (type: string) => {
     switch(type) {
@@ -30,14 +50,35 @@ export default function FilesPage() {
     }
   };
 
+  const handleUpload = (e: React.FormEvent) => {
+    e.preventDefault();
+    const project = projects.find(p => p.id === uploadForm.project_id);
+    const newFile = {
+      id: Date.now(),
+      name: uploadForm.name,
+      type: uploadForm.type,
+      size: (Math.random() * 5 + 0.5).toFixed(1) + ' MB',
+      date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+      project_id: uploadForm.project_id,
+      project_name: project ? project.name : 'Unknown Project',
+      author: 'User',
+    };
+
+    const updatedFiles = [newFile, ...files];
+    setFiles(updatedFiles);
+    LocalStorage.set('paax_files', updatedFiles);
+    setIsUploadModalOpen(false);
+    setUploadForm({ ...uploadForm, name: '' });
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-[1400px]">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">File & Dokumen</h1>
-          <p className="text-slate-400 text-sm mt-1">Manajemen terpusat untuk semua dokumen proyek</p>
+          <p className="text-paax-text-muted text-sm mt-1">Manajemen terpusat untuk semua dokumen proyek</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 rounded-lg text-sm font-medium text-white hover:bg-indigo-700 transition-colors">
+        <button onClick={() => setIsUploadModalOpen(true)} className="btn-primary text-sm">
           <UploadCloud className="w-4 h-4" />
           Upload Dokumen
         </button>
@@ -67,10 +108,10 @@ export default function FilesPage() {
             <input 
               type="text" 
               placeholder="Cari nama file, proyek, atau tipe..." 
-              className="w-full bg-slate-800 border border-slate-700 text-sm text-slate-200 rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-indigo-500"
+              className="input-field pl-10 text-[13px] w-full"
             />
           </div>
-          <button className="flex items-center gap-2 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-300 hover:bg-slate-700 transition-colors w-full sm:w-auto justify-center">
+          <button className="btn-secondary text-sm w-full sm:w-auto justify-center">
             <Filter className="w-4 h-4" />
             Filter
           </button>
@@ -97,7 +138,7 @@ export default function FilesPage() {
                       <span className="font-medium text-slate-200 cursor-pointer group-hover:text-indigo-400 transition-colors">{file.name}</span>
                     </div>
                   </td>
-                  <td className="p-4 text-slate-400">{file.project}</td>
+                  <td className="p-4 text-slate-400">{file.project_name}</td>
                   <td className="p-4 text-slate-400">{file.author}</td>
                   <td className="p-4 text-slate-400">{file.date}</td>
                   <td className="p-4 text-slate-400">{file.size}</td>
@@ -112,6 +153,52 @@ export default function FilesPage() {
           </table>
         </div>
       </div>
+
+      {/* Upload Modal */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-white/[0.08] rounded-xl w-full max-w-md shadow-2xl overflow-hidden animate-fade-in">
+            <div className="flex items-center justify-between p-4 border-b border-white/[0.08]">
+              <h2 className="text-lg font-bold text-white">Upload Dokumen (Mock)</h2>
+              <button onClick={() => setIsUploadModalOpen(false)} className="text-paax-text-muted hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpload} className="p-4 space-y-4">
+              <div className="space-y-1">
+                <label className="text-[12px] font-medium text-paax-text-secondary">Nama Dokumen</label>
+                <input required value={uploadForm.name} onChange={e => setUploadForm({...uploadForm, name: e.target.value})} type="text" className="input-field" placeholder="Misal: Denah_Lantai_1.pdf" />
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-[12px] font-medium text-paax-text-secondary">Proyek</label>
+                <select value={uploadForm.project_id} onChange={e => setUploadForm({...uploadForm, project_id: e.target.value})} className="input-field appearance-none">
+                  {projects.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                  {projects.length === 0 && <option value="default">Default Project</option>}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[12px] font-medium text-paax-text-secondary">Tipe Dokumen</label>
+                <select value={uploadForm.type} onChange={e => setUploadForm({...uploadForm, type: e.target.value})} className="input-field appearance-none">
+                  <option value="pdf">PDF</option>
+                  <option value="excel">Excel</option>
+                  <option value="image">Gambar / Foto</option>
+                  <option value="doc">Word</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.08]">
+                <button type="button" onClick={() => setIsUploadModalOpen(false)} className="btn-secondary">Batal</button>
+                <button type="submit" className="btn-primary">Upload Mock</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

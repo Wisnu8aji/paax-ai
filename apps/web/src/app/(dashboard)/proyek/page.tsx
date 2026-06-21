@@ -1,3 +1,6 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Plus,
@@ -11,106 +14,10 @@ import {
   ChevronRight,
   LayoutGrid,
   List,
+  X
 } from 'lucide-react';
-
-const projects = [
-  {
-    id: 'proj-001',
-    name: 'Rumah Tinggal Pak Ahmad',
-    location: 'Depok, Jawa Barat',
-    client: 'Pak Ahmad Suryadi',
-    status: 'active',
-    type: 'Residensial',
-    rabValue: 'Rp 850.000.000',
-    progress: 65,
-    warnings: 3,
-    health: 82,
-    startDate: '15 Mar 2026',
-    dueDate: '15 Sep 2026',
-    lastActivity: '15 menit lalu',
-    description: 'Pembangunan rumah tinggal 2 lantai, luas bangunan 180m²',
-  },
-  {
-    id: 'proj-002',
-    name: 'Gedung Kantor 3 Lantai',
-    location: 'BSD, Tangerang Selatan',
-    client: 'PT Maju Bersama',
-    status: 'rab-review',
-    type: 'Komersial',
-    rabValue: 'Rp 12.450.000.000',
-    progress: 40,
-    warnings: 7,
-    health: 68,
-    startDate: '01 Apr 2026',
-    dueDate: '01 Dec 2026',
-    lastActivity: '2 jam lalu',
-    description: 'Gedung perkantoran 3 lantai + basement, luas total 2.400m²',
-  },
-  {
-    id: 'proj-003',
-    name: 'Renovasi Ruko Jl. Sudirman',
-    location: 'Jakarta Pusat',
-    client: 'Ibu Siti Rahayu',
-    status: 'active',
-    type: 'Komersial',
-    rabValue: 'Rp 1.200.000.000',
-    progress: 85,
-    warnings: 2,
-    health: 91,
-    startDate: '10 Jan 2026',
-    dueDate: '10 Jul 2026',
-    lastActivity: '6 jam lalu',
-    description: 'Renovasi total ruko 3 lantai, facade baru, interior modern',
-  },
-  {
-    id: 'proj-004',
-    name: 'Masjid Al-Ikhlas',
-    location: 'Bogor, Jawa Barat',
-    client: 'Yayasan Al-Ikhlas',
-    status: 'scheduling',
-    type: 'Ibadah',
-    rabValue: 'Rp 3.750.000.000',
-    progress: 25,
-    warnings: 4,
-    health: 75,
-    startDate: '01 May 2026',
-    dueDate: '01 May 2027',
-    lastActivity: '1 hari lalu',
-    description: 'Pembangunan masjid 2 lantai, kapasitas 500 jamaah, kubah utama 12m',
-  },
-  {
-    id: 'proj-005',
-    name: 'Gudang Logistik Modern',
-    location: 'Cikarang, Bekasi',
-    client: 'PT Logistics Prima',
-    status: 'drawing',
-    type: 'Industri',
-    rabValue: 'Rp 8.200.000.000',
-    progress: 15,
-    warnings: 1,
-    health: 88,
-    startDate: '15 Jun 2026',
-    dueDate: '15 Mar 2027',
-    lastActivity: '3 hari lalu',
-    description: 'Gudang logistik 5.000m², struktur baja, lantai heavy duty',
-  },
-  {
-    id: 'proj-006',
-    name: 'Cluster Perumahan Griya Asri',
-    location: 'Cibubur, Jakarta Timur',
-    client: 'PT Griya Asri Developer',
-    status: 'draft',
-    type: 'Residensial',
-    rabValue: 'Rp 24.500.000.000',
-    progress: 5,
-    warnings: 0,
-    health: 95,
-    startDate: '-',
-    dueDate: '-',
-    lastActivity: '5 hari lalu',
-    description: 'Cluster 20 unit rumah tipe 45/90, fasilitas umum, jalan lingkungan',
-  },
-];
+import { LocalStorage, STORAGE_KEYS } from '@/lib/local-storage';
+import { formatRupiah } from '@/lib/format';
 
 function getStatusBadge(status: string) {
   const map: Record<string, { label: string; className: string }> = {
@@ -134,6 +41,52 @@ function getTypeBadge(type: string) {
 }
 
 export default function ProyekPage() {
+  const [projects, setProjects] = useState<any[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    location: '',
+    client: '',
+    type: 'Residensial',
+    description: '',
+    budget: 0,
+  });
+
+  useEffect(() => {
+    const savedProjects = LocalStorage.get<any[]>(STORAGE_KEYS.PROJECTS, []);
+    setProjects(savedProjects);
+  }, []);
+
+  const handleCreateProject = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newProject = {
+      id: `proj-${Date.now()}`,
+      name: formData.name,
+      location: formData.location,
+      client: formData.client,
+      status: 'draft',
+      type: formData.type,
+      rabValue: formData.budget,
+      progress: 0,
+      warnings: 0,
+      health: 100,
+      startDate: '-',
+      dueDate: '-',
+      lastActivity: 'Baru saja',
+      description: formData.description,
+      created_at: new Date().toISOString()
+    };
+
+    const updatedProjects = [newProject, ...projects];
+    setProjects(updatedProjects);
+    LocalStorage.set(STORAGE_KEYS.PROJECTS, updatedProjects);
+    setIsModalOpen(false);
+    setFormData({ name: '', location: '', client: '', type: 'Residensial', description: '', budget: 0 });
+  };
+
+  const totalRab = projects.reduce((sum, p) => sum + (p.rabValue || 0), 0);
+  const activeCount = projects.filter((p) => p.status === 'active').length;
+
   return (
     <div className="space-y-6 max-w-[1400px]">
       {/* Header */}
@@ -142,43 +95,19 @@ export default function ProyekPage() {
           <h1 className="text-2xl font-bold text-white">Proyek</h1>
           <p className="text-sm text-paax-text-muted mt-1">Kelola semua proyek konstruksi Anda</p>
         </div>
-        <button className="btn-primary">
+        <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
           <Plus className="w-4 h-4" />
           Buat Proyek Baru
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-paax-text-muted" />
-          <input
-            type="text"
-            placeholder="Cari nama proyek, lokasi, klien..."
-            className="input-field pl-10 text-[13px]"
-          />
-        </div>
-        <button className="btn-secondary text-[13px]">
-          <Filter className="w-4 h-4" />
-          Filter
-        </button>
-        <div className="flex items-center gap-1 ml-auto bg-white/[0.03] rounded-lg p-1 border border-white/[0.06]">
-          <button className="p-1.5 rounded-md bg-white/[0.06] text-white">
-            <LayoutGrid className="w-4 h-4" />
-          </button>
-          <button className="p-1.5 rounded-md text-paax-text-muted hover:text-white transition-colors">
-            <List className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
       {/* Stats Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'Total Proyek', value: '12', sub: '6 aktif' },
-          { label: 'Total RAB', value: 'Rp 50,9M', sub: '+12% bulan ini' },
+          { label: 'Total Proyek', value: projects.length.toString(), sub: `${activeCount} aktif` },
+          { label: 'Total RAB', value: formatRupiah(totalRab), sub: 'Estimasi nilai proyek' },
           { label: 'Avg. Health', value: '83%', sub: 'Above target' },
-          { label: 'Total Warnings', value: '17', sub: '3 critical' },
+          { label: 'Total Warnings', value: projects.reduce((sum, p) => sum + (p.warnings || 0), 0).toString(), sub: 'Across all' },
         ].map((stat) => (
           <div key={stat.label} className="stat-card py-3 px-4">
             <div className="text-[10px] text-paax-text-muted uppercase tracking-wider">{stat.label}</div>
@@ -218,7 +147,7 @@ export default function ProyekPage() {
                 <span className="text-[11px] text-paax-text-muted">· {project.client}</span>
               </div>
 
-              <div className="text-lg font-bold text-white mb-3">{project.rabValue}</div>
+              <div className="text-lg font-bold text-white mb-3">{formatRupiah(project.rabValue)}</div>
 
               {/* Progress */}
               <div className="mb-3">
@@ -257,6 +186,76 @@ export default function ProyekPage() {
           );
         })}
       </div>
+
+      {projects.length === 0 && (
+        <div className="text-center py-20 bg-white/[0.02] border border-white/[0.04] rounded-xl">
+          <Building2 className="w-10 h-10 text-paax-text-muted mx-auto mb-3" />
+          <h3 className="text-white font-medium mb-1">Belum ada proyek</h3>
+          <p className="text-[13px] text-paax-text-muted mb-4">Buat proyek pertama Anda untuk mulai menggunakan PAAX AI.</p>
+          <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
+            <Plus className="w-4 h-4" />
+            Buat Proyek
+          </button>
+        </div>
+      )}
+
+      {/* Modal Buat Proyek */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-white/[0.08] rounded-xl w-full max-w-lg shadow-2xl overflow-hidden animate-fade-in">
+            <div className="flex items-center justify-between p-4 border-b border-white/[0.08]">
+              <h2 className="text-lg font-bold text-white">Buat Proyek Baru</h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-paax-text-muted hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateProject} className="p-4 space-y-4">
+              <div className="space-y-1">
+                <label className="text-[12px] font-medium text-paax-text-secondary">Nama Proyek</label>
+                <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} type="text" className="input-field" placeholder="Misal: Pembangunan Rumah Tinggal" />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-paax-text-secondary">Lokasi</label>
+                  <input required value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} type="text" className="input-field" placeholder="Misal: Jakarta Selatan" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-paax-text-secondary">Nama Klien</label>
+                  <input required value={formData.client} onChange={e => setFormData({...formData, client: e.target.value})} type="text" className="input-field" placeholder="Misal: Bp. Budi" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-paax-text-secondary">Tipe Proyek</label>
+                  <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="input-field appearance-none">
+                    <option value="Residensial">Residensial</option>
+                    <option value="Komersial">Komersial</option>
+                    <option value="Industri">Industri</option>
+                    <option value="Ibadah">Ibadah</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-paax-text-secondary">Estimasi Budget Awal (Opsional)</label>
+                  <input value={formData.budget} onChange={e => setFormData({...formData, budget: Number(e.target.value)})} type="number" className="input-field" placeholder="0" />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[12px] font-medium text-paax-text-secondary">Deskripsi Singkat</label>
+                <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="input-field h-20 py-2 resize-none" placeholder="Deskripsikan ruang lingkup proyek..."></textarea>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.08]">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary">Batal</button>
+                <button type="submit" className="btn-primary">Buat Proyek</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

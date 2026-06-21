@@ -1,4 +1,4 @@
-# PAAX AI - Civil Engineering Workspace (v0.3)
+# PAAX AI - Civil Engineering Workspace (v0.4)
 
 ![PAAX AI](https://via.placeholder.com/800x200?text=PAAX+AI+Workspace)
 
@@ -10,7 +10,7 @@ PAAX AI bridges the gap between unstructured construction data (PDFs, blueprints
 
 ## 🏗️ Architecture
 
-PAAX AI v0.3 is built as a **Monorepo** with distinct, specialized services:
+PAAX AI v0.4 is built as a **Monorepo** with distinct, specialized services:
 
 - **Frontend (Next.js)**: The user-facing dashboard and workspace.
 - **Core Engine (FastAPI/Python)**: Deterministic calculation engine for RAB math, scheduling scenarios, and Excel export.
