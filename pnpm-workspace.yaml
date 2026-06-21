@@ -1,0 +1,5 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "services/ai-orchestrator"
+  - "services/site-agent"

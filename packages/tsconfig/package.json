@@ -1,0 +1,6 @@
+{
+  "name": "@paax/tsconfig",
+  "version": "0.3.0",
+  "private": true,
+  "files": ["base.json", "react.json", "node.json"]
+}

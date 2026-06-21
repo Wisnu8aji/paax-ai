@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "paax-document-intelligence"
+version = "0.3.0"
+description = "PAAX Document Intelligence"
+authors = ["Basrenggg <basrenggg@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "*"
+uvicorn = "*"
+pydantic = "*"
+python-multipart = "*"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

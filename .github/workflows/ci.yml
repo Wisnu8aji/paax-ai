@@ -1,0 +1,42 @@
+name: PAAX AI CI
+
+on:
+  push:
+    branches: [ "main", "develop", "feature/*" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile --config.optional=true
+        
+      - name: Build Monorepo Workspace
+        run: pnpm build --concurrency=1
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install Core Engine dependencies
+        working-directory: ./services/core-engine
+        run: pip install -e . pytest httpx
+      - name: Run Python Tests
+        working-directory: ./services/core-engine
+        run: pytest
