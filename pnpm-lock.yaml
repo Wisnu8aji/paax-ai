@@ -160,6 +160,9 @@ importers:
 
   services/ai-orchestrator:
     dependencies:
+      '@genkit-ai/ai':
+        specifier: ^0.5.17
+        version: 0.5.17
       '@genkit-ai/core':
         specifier: ^0.5.17
         version: 0.5.17
