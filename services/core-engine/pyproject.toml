@@ -3,6 +3,7 @@ name = "paax-core-engine"
 version = "0.3.0"
 description = "PAAX Core Engine"
 authors = ["Basrenggg <basrenggg@example.com>"]
+packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"

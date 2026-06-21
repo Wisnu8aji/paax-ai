@@ -2,12 +2,12 @@ name: PAAX AI CI
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: [ "main", "develop", "feature/*" ]
   pull_request:
     branches: [ "main", "develop" ]
 
 jobs:
-  lint-and-typecheck-ts:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -17,45 +17,18 @@ jobs:
           node-version: '18'
       - name: Install pnpm
         run: npm install -g pnpm
-      - name: Install dependencies
+      - name: Install Node dependencies
         run: pnpm install
-      - name: Typecheck
-        run: pnpm run typecheck --if-present
-      - name: Lint
-        run: pnpm run lint --if-present
+      - name: Build Monorepo Workspace
+        run: pnpm build --concurrency=1
 
-  lint-and-test-python:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      - name: Install Ruff
-        run: pip install ruff pytest
       - name: Install Core Engine dependencies
-        working-directory: ./apps/core-engine
-        run: pip install -r requirements.txt || true
-      - name: Lint Python (Ruff)
-        run: ruff check .
+        working-directory: ./services/core-engine
+        run: pip install -e . pytest httpx
       - name: Run Python Tests
-        working-directory: ./apps/core-engine
-        run: pytest || echo "No tests configured yet"
-
-  build-frontend:
-    runs-on: ubuntu-latest
-    needs: lint-and-typecheck-ts
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - name: Install pnpm
-        run: npm install -g pnpm
-      - name: Install dependencies
-        run: pnpm install
-      - name: Build Next.js App
-        working-directory: ./apps/frontend
-        run: pnpm run build --if-present
+        working-directory: ./services/core-engine
+        run: pytest

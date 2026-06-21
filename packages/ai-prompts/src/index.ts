@@ -294,11 +294,11 @@ export function getFewShotMessages(
   category: keyof typeof fewShotExamples
 ): { role: string; content: string }[] {
   const examples = fewShotExamples[category];
-  return examples.map((ex) => ({
+  return examples.map((ex: any) => ({
     role: ex.role,
     content:
       typeof ex.content === "string"
         ? ex.content
-        : JSON.stringify(ex.content, null, 2),
+        : JSON.stringify(ex.expectedOutput || ex.content, null, 2),
   }));
 }

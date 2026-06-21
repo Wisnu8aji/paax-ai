@@ -9,7 +9,7 @@ export const engineeringChatFlow = defineFlow(
     },
     async (input) => {
         // Mock implementation
-        const reply = Menerima pesan: . Angka final dihitung oleh core-engine, bukan LLM.;
+        const reply = "Menerima pesan: " + input.message + ". Angka final dihitung oleh core-engine, bukan LLM.";
         return { reply, actions: ["recalculate_rab"] };
     }
 );

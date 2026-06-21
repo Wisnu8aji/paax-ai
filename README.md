@@ -16,6 +16,7 @@ PAAX AI v0.3 is built as a **Monorepo** with distinct, specialized services:
 - **Core Engine (FastAPI/Python)**: Deterministic calculation engine for RAB math, scheduling scenarios, and Excel export.
 - **AI Orchestrator (Firebase Genkit)**: Routes prompts, manages tools, and interfaces with Vertex AI.
 - **Document Intelligence (Python)**: Pipeline for PDF OCR, vision analysis, and quantity extraction.
+- **Site Agent (TypeScript)**: Continuous field reporting and site analysis.
 - **Database**: Firebase Firestore & Cloud Storage.
 
 ## 💻 Tech Stack
@@ -48,10 +49,10 @@ PAAX AI v0.3 is built as a **Monorepo** with distinct, specialized services:
 
 3. **Install Python dependencies (Core Engine)**
    ```bash
-   cd apps/core-engine
-   python -m venv venv
-   source venv/bin/activate  # or venv\Scripts\activate on Windows
-   pip install -r requirements.txt
+   cd services/core-engine
+   python -m venv .venv
+   .venv\Scripts\activate  # On Windows. Use `source .venv/bin/activate` on Mac/Linux
+   pip install -e .
    ```
 
 4. **Environment Variables**
@@ -63,13 +64,15 @@ Run the development servers concurrently from the root (using a tool like Turbo 
 
 ```bash
 # Terminal 1: Frontend
-cd apps/frontend && pnpm dev
+pnpm --filter @paax/web dev
 
 # Terminal 2: Core Engine
-cd apps/core-engine && uvicorn main:app --reload
+cd services/core-engine
+.venv\Scripts\activate
+uvicorn app.main:app --reload --port 8081
 
 # Terminal 3: AI Orchestrator
-cd apps/ai-orchestrator && pnpm run start
+pnpm --filter @paax/ai-orchestrator dev
 ```
 
 ## 📂 Project Structure
@@ -77,13 +80,17 @@ cd apps/ai-orchestrator && pnpm run start
 ```text
 paax-ai/
 ├── apps/
-│   ├── frontend/               # Next.js Workspace
+│   └── web/                    # Next.js Workspace
+├── services/
 │   ├── core-engine/            # FastAPI calculation engine
 │   ├── ai-orchestrator/        # Genkit agent routing
-│   └── document-intelligence/  # PDF processing pipeline
+│   ├── document-intelligence/  # PDF processing pipeline
+│   └── site-agent/             # Field reporting agent
 ├── packages/
-│   ├── shared-schemas/         # TS/Python data models
-│   └── ui-components/          # Shared React components
+│   ├── schemas/                # Shared Zod schemas
+│   ├── ui/                     # Shared React components
+│   ├── constants/              # Shared constants
+│   └── tsconfig/               # Shared TS configs
 ├── docs/                       # Architecture & Product documentation
 ├── legacy/
 │   └── vite-v0.2/              # Previous version reference

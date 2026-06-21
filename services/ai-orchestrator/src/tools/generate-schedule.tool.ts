@@ -1,4 +1,4 @@
-import { defineTool } from "@genkit-ai/ai/tool";
+import { defineTool } from "@genkit-ai/core";
 import { z } from "zod";
 
 export const generateScheduleTool = defineTool(

@@ -1,1 +1,1 @@
-export const drawingReaderPrompt = Anda ahli membaca gambar teknik.;
+export const drawingReaderPrompt = "Anda ahli membaca gambar teknik.";

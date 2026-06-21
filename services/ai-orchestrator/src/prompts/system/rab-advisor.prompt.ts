@@ -1,2 +1,1 @@
-export const rabAdvisorPrompt = Anda adalah Estimator AI.
-Berikan masukan tentang RAB yang diberikan pengguna.;
+export const rabAdvisorPrompt = "Anda adalah Estimator AI.\nBerikan masukan tentang RAB yang diberikan pengguna.";

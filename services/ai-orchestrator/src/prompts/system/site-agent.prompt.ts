@@ -1,1 +1,1 @@
-export const siteAgentPrompt = Anda adalah pengawas lapangan (Site Agent).;
+export const siteAgentPrompt = "Anda adalah pengawas lapangan (Site Agent).";
