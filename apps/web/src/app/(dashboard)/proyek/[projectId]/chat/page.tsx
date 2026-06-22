@@ -12,14 +12,18 @@ import {
   FileText,
   Wrench,
   Search,
-  Bot
+  Bot,
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
 import { LocalStorage, STORAGE_KEYS } from '@/lib/local-storage';
+import { DrawingToRabContext } from '@paax/types';
 
 export default function ChatPage() {
   const params = useParams();
   const projectId = params.projectId as string;
   const [project, setProject] = useState<any>(null);
+  const [drawingContext, setDrawingContext] = useState<DrawingToRabContext | null>(null);
   
   const [messages, setMessages] = useState([
     {
@@ -44,6 +48,11 @@ export default function ChatPage() {
     const savedProjects = LocalStorage.get<any[]>(STORAGE_KEYS.PROJECTS, []);
     const found = savedProjects.find(p => p.id === projectId);
     if (found) setProject(found);
+
+    const savedContext = LocalStorage.get<DrawingToRabContext | null>("paax_drawing_to_rab_context", null);
+    if (savedContext && (savedContext.project_id === projectId || savedContext.project_id === "demo-project")) {
+      setDrawingContext(savedContext);
+    }
   }, [projectId]);
 
   useEffect(() => {
@@ -81,6 +90,12 @@ export default function ChatPage() {
         botResponse = 'Baik, saya telah menyesuaikan harga Beton K-250 menjadi Rp 1.450.000/m³ dan Besi Tulangan Polos menjadi Rp 16.200/kg. Total RAB telah diperbarui dan health score proyek meningkat. Anda dapat melihat perubahannya di menu RAB.';
       } else if (text.toLowerCase().includes('jadwal') || text.toLowerCase().includes('durasi')) {
         botResponse = 'Berdasarkan data schedule saat ini, durasi kritis proyek Anda adalah 90 hari. Apakah Anda ingin saya men-generate skenario "Cepat" untuk mencoba memampatkan jadwal ke 75 hari?';
+      } else if (text.toLowerCase().includes('gambar') || text.toLowerCase().includes('drawing') || text.toLowerCase().includes('denah')) {
+        if (drawingContext) {
+          botResponse = `Saya melihat Anda sudah memverifikasi ${drawingContext.verified_quantities.length} kandidat kuantitas dari gambar ${drawingContext.drawing_file}. Terdapat ${drawingContext.warnings.length} warning yang perlu diperhatikan sebelum finalisasi RAB.`;
+        } else {
+          botResponse = 'Belum ada data gambar kerja yang diverifikasi untuk proyek ini. Silakan buka menu Gambar Kerja AI untuk mengunggah dan menganalisis gambar Anda.';
+        }
       }
 
       const reply = {
@@ -205,6 +220,16 @@ export default function ChatPage() {
             <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
               <div className="text-xs text-slate-400 mb-1">Total Nilai Saat Ini</div>
               <div className="text-sm font-medium text-slate-200">{project?.rabValue ? `Rp ${project.rabValue.toLocaleString('id-ID')}` : 'Belum dihitung'}</div>
+            </div>
+            <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+              <div className="text-xs text-slate-400 mb-1">Drawing Data</div>
+              <div className="text-sm font-medium text-slate-200">
+                {drawingContext ? (
+                  <span className="text-emerald-400 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> {drawingContext.verified_quantities.length} Verified Items</span>
+                ) : (
+                  <span className="text-amber-400 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Not Available</span>
+                )}
+              </div>
             </div>
           </div>
         </div>

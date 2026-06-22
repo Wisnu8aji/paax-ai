@@ -12,6 +12,13 @@ import {
   BOQItemSchema,
   HSPItemSchema,
   PriceComponentSchema,
+  QuantityCandidateSchema,
+  VerifiedDrawingQuantitySchema,
+  BoqDraftItemSchema,
+  DrawingWarningSchema,
+  DrawingAnalysisResultSchema,
+  DrawingToRabContextSchema,
+  DocumentIntelligenceHealthSchema,
   ScheduleTaskSchema,
   ScheduleVersionSchema,
   WarningSchema,
@@ -30,6 +37,7 @@ import {
   FileTypeEnum,
   WarningLevelEnum,
   DrawingTypeEnum,
+  DrawingCandidateStatusEnum,
   ScheduleStatusEnum,
   ExportFormatEnum,
   ChatModeEnum,
@@ -54,6 +62,13 @@ export type ProjectFile = z.infer<typeof ProjectFileSchema>;
 export type DrawingPage = z.infer<typeof DrawingPageSchema>;
 export type DrawingExtraction = z.infer<typeof DrawingExtractionSchema>;
 export type DrawingElement = z.infer<typeof DrawingElementSchema>;
+export type QuantityCandidate = z.infer<typeof QuantityCandidateSchema>;
+export type VerifiedDrawingQuantity = z.infer<typeof VerifiedDrawingQuantitySchema>;
+export type BoqDraftItem = z.infer<typeof BoqDraftItemSchema>;
+export type DrawingWarning = z.infer<typeof DrawingWarningSchema>;
+export type DrawingAnalysisResult = z.infer<typeof DrawingAnalysisResultSchema>;
+export type DrawingToRabContext = z.infer<typeof DrawingToRabContextSchema>;
+export type DocumentIntelligenceHealth = z.infer<typeof DocumentIntelligenceHealthSchema>;
 
 // ─── Cost Estimation Types ───────────────────────────────────────────────────
 
@@ -97,6 +112,7 @@ export type RABStatus = z.infer<typeof RABStatusEnum>;
 export type FileType = z.infer<typeof FileTypeEnum>;
 export type WarningLevel = z.infer<typeof WarningLevelEnum>;
 export type DrawingType = z.infer<typeof DrawingTypeEnum>;
+export type DrawingCandidateStatus = z.infer<typeof DrawingCandidateStatusEnum>;
 export type ScheduleStatus = z.infer<typeof ScheduleStatusEnum>;
 export type ExportFormat = z.infer<typeof ExportFormatEnum>;
 export type ChatMode = z.infer<typeof ChatModeEnum>;
