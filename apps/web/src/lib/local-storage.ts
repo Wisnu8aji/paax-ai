@@ -13,6 +13,16 @@ export const STORAGE_KEYS = {
   SITE_LOGS: 'paax_site_logs'
 };
 
+export const projectStorageKey = (key: string, projectId: string): string =>
+  `${key}:${projectId}`;
+
+export const DRAWING_STORAGE_KEYS = {
+  CONTEXT: 'paax_drawing_to_rab_context',
+  FILES: 'paax_drawing_files',
+  ANALYSIS: 'paax_drawing_analysis',
+  BOQ_DRAFT: 'paax_boq_draft',
+} as const;
+
 export function getLocalStorageItem<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') {
     return fallback;
@@ -62,5 +72,18 @@ export const LocalStorage = {
     } catch (error) {
       console.warn('Error clearing PAAX data:', error);
     }
+  },
+  getActiveProjectId: (): string | null => {
+    return getLocalStorageItem<string | null>(STORAGE_KEYS.CURRENT_PROJECT, null);
+  },
+  setActiveProjectId: (projectId: string): void => {
+    setLocalStorageItem(STORAGE_KEYS.CURRENT_PROJECT, projectId);
+  },
+  clearActiveProjectId: (): void => {
+    removeLocalStorageItem(STORAGE_KEYS.CURRENT_PROJECT);
+  },
+  getProjectById: (projectId: string): any => {
+    const projects = getLocalStorageItem<any[]>(STORAGE_KEYS.PROJECTS, []);
+    return projects.find(p => p.id === projectId) || null;
   }
 };

@@ -17,7 +17,7 @@ import {
   FileText
 } from 'lucide-react';
 import { CoreEngineAPI, ScheduleVersion, ScheduleTask, ScenarioRequest, DelayRecoveryRequest, DelayRecoveryResponse } from '@/lib/core-engine-client';
-import { LocalStorage, STORAGE_KEYS } from '@/lib/local-storage';
+import { DRAWING_STORAGE_KEYS, LocalStorage, projectStorageKey, STORAGE_KEYS } from '@/lib/local-storage';
 import { formatRupiah, formatDate } from '@/lib/format';
 import { DrawingToRabContext } from '@paax/types';
 
@@ -60,10 +60,8 @@ export default function SchedulePage() {
     }
 
     // Load Drawing Context
-    const savedContext = LocalStorage.get<DrawingToRabContext | null>("paax_drawing_to_rab_context", null);
-    if (savedContext && (savedContext.project_id === projectId || savedContext.project_id === "demo-project")) {
-      setDrawingContext(savedContext);
-    }
+    const savedContext = LocalStorage.get<DrawingToRabContext | null>(projectStorageKey(DRAWING_STORAGE_KEYS.CONTEXT, projectId), null);
+    setDrawingContext(savedContext?.project_id === projectId ? savedContext : null);
   }, [projectId]);
 
   const saveSchedule = (data: ScheduleVersion) => {

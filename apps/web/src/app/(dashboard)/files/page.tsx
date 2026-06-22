@@ -13,7 +13,7 @@ import {
   FileSpreadsheet,
   X
 } from 'lucide-react';
-import { LocalStorage, STORAGE_KEYS } from '@/lib/local-storage';
+import { DRAWING_STORAGE_KEYS, LocalStorage, projectStorageKey, STORAGE_KEYS } from '@/lib/local-storage';
 
 export default function FilesPage() {
   const [files, setFiles] = useState<any[]>([]);
@@ -40,15 +40,18 @@ export default function FilesPage() {
     ]);
 
     // Load Drawing Files from v0.5 workflow
-    const drawingFiles = LocalStorage.get<any[]>('paax_drawing_files', []);
+    const drawingFiles = savedProjects.flatMap(project =>
+      LocalStorage.get<any[]>(projectStorageKey(DRAWING_STORAGE_KEYS.FILES, project.id), [])
+        .map(file => ({ ...file, project_name: project.name })),
+    );
     const mappedDrawingFiles = drawingFiles.map((df, idx) => ({
-      id: `drawing-${idx}`,
+      id: `drawing-${df.project_id}-${idx}`,
       name: df.name,
       type: df.type === 'DRAWING_PDF' ? 'pdf' : df.type === 'IMAGE' ? 'image' : 'pdf',
       size: 'AI Processed',
       date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
-      project_id: 'demo-project',
-      project_name: 'Drawing Verified',
+      project_id: df.project_id,
+      project_name: df.project_name,
       author: 'PAAX Document Intelligence'
     }));
 
