@@ -10,7 +10,7 @@ import {
   FileBadge
 } from 'lucide-react';
 import { CoreEngineAPI } from '@/lib/core-engine-client';
-import { LocalStorage, STORAGE_KEYS } from '@/lib/local-storage';
+import { DRAWING_STORAGE_KEYS, LocalStorage, projectStorageKey, STORAGE_KEYS } from '@/lib/local-storage';
 import { DrawingToRabContext } from '@paax/types';
 
 export default function LaporanExportPage() {
@@ -33,8 +33,8 @@ export default function LaporanExportPage() {
   }, []);
 
   useEffect(() => {
-    const savedContext = LocalStorage.get<DrawingToRabContext | null>("paax_drawing_to_rab_context", null);
-    if (savedContext && (savedContext.project_id === selectedProjectId || savedContext.project_id === "demo-project")) {
+    const savedContext = LocalStorage.get<DrawingToRabContext | null>(projectStorageKey(DRAWING_STORAGE_KEYS.CONTEXT, selectedProjectId), null);
+    if (savedContext?.project_id === selectedProjectId) {
       setDrawingContext(savedContext);
     } else {
       setDrawingContext(null);

@@ -21,14 +21,20 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
-const menuItems = [
+const topMenuItems = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { label: 'Proyek', icon: FolderKanban, href: '/proyek' },
-  { label: 'Gambar Kerja AI', icon: FileImage, href: '/proyek/proj-001/gambar-kerja' },
-  { label: 'RAB & BOQ', icon: Calculator, href: '/proyek/proj-001/rab' },
-  { label: 'Schedule & Skenario', icon: CalendarClock, href: '/proyek/proj-001/schedule' },
-  { label: 'Engineering Chat', icon: MessageSquare, href: '/proyek/proj-001/chat' },
-  { label: 'Site Agent', icon: HardHat, href: '/proyek/proj-001/site-agent' },
+];
+
+const projectModules = [
+  { label: 'Gambar Kerja AI', icon: FileImage, href: '/gambar-kerja', gateway: '/gambar-kerja-ai' },
+  { label: 'RAB & BOQ', icon: Calculator, href: '/rab', gateway: '/proyek?selectModule=rab' },
+  { label: 'Schedule & Skenario', icon: CalendarClock, href: '/schedule', gateway: '/proyek?selectModule=schedule' },
+  { label: 'Engineering Chat', icon: MessageSquare, href: '/chat', gateway: '/proyek?selectModule=chat' },
+  { label: 'Site Agent', icon: HardHat, href: '/site-agent', gateway: '/proyek?selectModule=site-agent' },
+];
+
+const bottomMenuItems = [
   { label: 'File & Dokumen', icon: Files, href: '/files' },
   { label: 'Database AHSP', icon: Database, href: '/database-ahsp' },
   { label: 'Laporan & Export', icon: FileSpreadsheet, href: '/laporan' },
@@ -39,6 +45,40 @@ const menuItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const projectMatch = pathname.match(/^\/proyek\/([^/]+)/);
+  const activeProjectId = projectMatch?.[1] ?? null;
+
+  const renderMenuItem = (item: { label: string, icon: any, href: string }, indent = false, isSubtle = false) => {
+    const isActive = pathname === item.href || (item.href !== '/dashboard' && item.href !== '/proyek' && pathname.startsWith(item.href));
+    const Icon = item.icon;
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={`group flex items-center gap-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 relative ${
+          indent ? (collapsed ? 'px-3' : 'pl-9 pr-3') : 'px-3'
+        } ${
+          isActive
+            ? 'bg-gradient-to-r from-indigo-500/15 to-blue-500/10 text-white'
+            : isSubtle
+              ? 'text-paax-text-muted/60 hover:text-paax-text-muted hover:bg-white/[0.02]'
+              : 'text-paax-text-muted hover:text-paax-text-secondary hover:bg-white/[0.03]'
+        }`}
+        title={collapsed ? item.label : undefined}
+      >
+        {isActive && (
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-gradient-to-b from-indigo-400 to-blue-400" />
+        )}
+        <Icon
+          className={`w-[18px] h-[18px] flex-shrink-0 transition-colors ${
+            isActive ? 'text-indigo-400' : isSubtle ? 'text-paax-text-muted/60 group-hover:text-paax-text-muted' : 'text-paax-text-muted group-hover:text-paax-text-secondary'
+          }`}
+        />
+        {!collapsed && <span>{item.label}</span>}
+      </Link>
+    );
+  };
 
   return (
     <aside
@@ -76,35 +116,52 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-0.5">
-        {menuItems.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== '/dashboard' && pathname.startsWith(item.href));
-          const Icon = item.icon;
+        {/* Top Level */}
+        {topMenuItems.map(item => renderMenuItem(item))}
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 relative ${
-                isActive
-                  ? 'bg-gradient-to-r from-indigo-500/15 to-blue-500/10 text-white'
-                  : 'text-paax-text-muted hover:text-paax-text-secondary hover:bg-white/[0.03]'
-              }`}
-              title={collapsed ? item.label : undefined}
-            >
-              {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-gradient-to-b from-indigo-400 to-blue-400" />
-              )}
-              <Icon
-                className={`w-[18px] h-[18px] flex-shrink-0 transition-colors ${
-                  isActive ? 'text-indigo-400' : 'text-paax-text-muted group-hover:text-paax-text-secondary'
+        {/* Project Modules */}
+        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${activeProjectId ? 'max-h-[500px] opacity-100' : 'max-h-[500px] opacity-100'}`}>
+          {projectModules.map((module) => {
+            const targetHref = activeProjectId ? `/proyek/${activeProjectId}${module.href}` : module.gateway;
+            const isActive = activeProjectId
+              ? pathname.startsWith(targetHref)
+              : targetHref === '/gambar-kerja-ai' && pathname === targetHref;
+            const isSubtle = !activeProjectId;
+            const Icon = module.icon;
+
+            return (
+              <Link
+                key={module.label}
+                href={targetHref}
+                className={`group flex items-center gap-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 relative ${
+                  collapsed ? 'px-3' : 'pl-9 pr-3'
+                } ${
+                  isActive
+                    ? 'bg-gradient-to-r from-indigo-500/15 to-blue-500/10 text-white'
+                    : isSubtle
+                      ? 'text-paax-text-muted/60 hover:text-paax-text-muted hover:bg-white/[0.02]'
+                      : 'text-paax-text-muted hover:text-paax-text-secondary hover:bg-white/[0.03]'
                 }`}
-              />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
-          );
-        })}
+                title={collapsed ? module.label : undefined}
+              >
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-gradient-to-b from-indigo-400 to-blue-400" />
+                )}
+                <Icon
+                  className={`w-[18px] h-[18px] flex-shrink-0 transition-colors ${
+                    isActive ? 'text-indigo-400' : isSubtle ? 'text-paax-text-muted/60 group-hover:text-paax-text-muted' : 'text-paax-text-muted group-hover:text-paax-text-secondary'
+                  }`}
+                />
+                {!collapsed && <span>{module.label}</span>}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Bottom Level */}
+        <div className="pt-2 mt-2 border-t border-white/5 space-y-0.5">
+          {bottomMenuItems.map(item => renderMenuItem(item))}
+        </div>
       </nav>
 
       {/* User Section */}

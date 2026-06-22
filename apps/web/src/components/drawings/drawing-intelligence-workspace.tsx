@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DocumentIntelligenceClient, DrawingFileMetadata } from "@/lib/document-intelligence-client";
 import { DocumentIntelligenceHealth, DrawingAnalysisResult, QuantityCandidate, BoqDraftItem, DrawingToRabContext } from "@paax/types";
-import { LocalStorage } from "@/lib/local-storage";
+import { DRAWING_STORAGE_KEYS, LocalStorage, projectStorageKey } from "@/lib/local-storage";
 import { Bot, FileText, CheckCircle2, AlertTriangle, Play, Save, Check, X, ArrowRight } from "lucide-react";
 
 interface DrawingIntelligenceWorkspaceProps {
@@ -26,13 +26,28 @@ export function DrawingIntelligenceWorkspace({ projectId = "demo-project" }: Dra
     DocumentIntelligenceClient.getHealth().then(setHealth);
     
     // Load existing state from localStorage if any
-    const savedContext = LocalStorage.get<DrawingToRabContext | null>("paax_drawing_to_rab_context", null);
+    const savedContext = LocalStorage.get<DrawingToRabContext | null>(
+      projectStorageKey(DRAWING_STORAGE_KEYS.CONTEXT, projectId),
+      null,
+    );
+    const savedAnalysis = LocalStorage.get<DrawingAnalysisResult | null>(
+      projectStorageKey(DRAWING_STORAGE_KEYS.ANALYSIS, projectId),
+      null,
+    );
+    const savedBoqDraft = LocalStorage.get<BoqDraftItem[]>(
+      projectStorageKey(DRAWING_STORAGE_KEYS.BOQ_DRAFT, projectId),
+      [],
+    );
     if (savedContext && savedContext.analysis_result) {
       setAnalysisResult(savedContext.analysis_result);
       setVerifiedQuantities(savedContext.verified_quantities || []);
       setBoqDraft(savedContext.boq_draft_items || []);
+    } else {
+      setAnalysisResult(savedAnalysis);
+      setVerifiedQuantities(savedAnalysis?.quantity_candidates || []);
+      setBoqDraft(savedBoqDraft);
     }
-  }, []);
+  }, [projectId]);
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
@@ -45,6 +60,7 @@ export function DrawingIntelligenceWorkspace({ projectId = "demo-project" }: Dra
       
       const result = await DocumentIntelligenceClient.analyzeDrawing(metadata);
       setAnalysisResult(result);
+      LocalStorage.set(projectStorageKey(DRAWING_STORAGE_KEYS.ANALYSIS, projectId), result);
       
       // Initialize verification state
       setVerifiedQuantities(result.quantity_candidates || []);
@@ -58,7 +74,8 @@ export function DrawingIntelligenceWorkspace({ projectId = "demo-project" }: Dra
   };
 
   const handleVerify = (candidateId: string, status: "APPROVED" | "REJECTED", newValue?: number) => {
-    setVerifiedQuantities(prev => prev.map(c => {
+    setVerifiedQuantities(prev => {
+      const updated = prev.map(c => {
       if (c.id === candidateId) {
         return {
           ...c,
@@ -68,7 +85,14 @@ export function DrawingIntelligenceWorkspace({ projectId = "demo-project" }: Dra
         };
       }
       return c;
-    }));
+      });
+      if (analysisResult) {
+        const updatedAnalysis = { ...analysisResult, quantity_candidates: updated };
+        setAnalysisResult(updatedAnalysis);
+        LocalStorage.set(projectStorageKey(DRAWING_STORAGE_KEYS.ANALYSIS, projectId), updatedAnalysis);
+      }
+      return updated;
+    });
   };
 
   const handleGenerateBoqPreview = async () => {
@@ -83,6 +107,7 @@ export function DrawingIntelligenceWorkspace({ projectId = "demo-project" }: Dra
       
       const res = await DocumentIntelligenceClient.getBoqPreview(approved);
       setBoqDraft(res.draft_items);
+      LocalStorage.set(projectStorageKey(DRAWING_STORAGE_KEYS.BOQ_DRAFT, projectId), res.draft_items);
     } catch (e) {
       console.error(e);
       alert("Failed to generate BOQ preview.");
@@ -105,11 +130,14 @@ export function DrawingIntelligenceWorkspace({ projectId = "demo-project" }: Dra
       updated_at: new Date().toISOString()
     };
     
-    LocalStorage.set("paax_drawing_to_rab_context", context);
+    LocalStorage.set(projectStorageKey(DRAWING_STORAGE_KEYS.CONTEXT, projectId), context);
+    LocalStorage.set(projectStorageKey(DRAWING_STORAGE_KEYS.ANALYSIS, projectId), analysisResult);
+    LocalStorage.set(projectStorageKey(DRAWING_STORAGE_KEYS.BOQ_DRAFT, projectId), boqDraft);
     
     // Save to files for the files dashboard
-    const existingFiles = LocalStorage.get<any[]>("paax_drawing_files", []);
-    LocalStorage.set("paax_drawing_files", [...existingFiles, { name: fileName, type: fileType }]);
+    const filesKey = projectStorageKey(DRAWING_STORAGE_KEYS.FILES, projectId);
+    const existingFiles = LocalStorage.get<any[]>(filesKey, []);
+    LocalStorage.set(filesKey, [...existingFiles, { name: fileName, type: fileType, project_id: projectId }]);
     
     router.push(`/proyek/${projectId}/rab`);
   };
