@@ -35,6 +35,12 @@ importers:
 
   apps/web:
     dependencies:
+      '@paax/schemas':
+        specifier: workspace:*
+        version: link:../../packages/schemas
+      '@paax/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       lucide-react:
         specifier: ^0.460.0
         version: 0.460.0(react@19.2.7)

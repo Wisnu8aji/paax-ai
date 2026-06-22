@@ -313,6 +313,90 @@ export const DrawingExtractionSchema = z.object({
   createdAt: z.string().datetime(),
 });
 
+// ─── Drawing-to-Estimate Workflow ─────────────────────────────────────────
+
+export const DrawingCandidateStatusEnum = z.enum([
+  "CANDIDATE",
+  "APPROVED",
+  "REJECTED",
+  "EDITED",
+]);
+
+export const QuantityCandidateSchema = z.object({
+  id: z.string().uuid(),
+  quantity_name: z.string(),
+  unit: UnitEnum,
+  value: z.number().nonnegative(),
+  source: z.string(),
+  confidence: z.number().min(0).max(1),
+  needs_verification: z.boolean().default(true),
+  linked_rab_category: z.string().optional(),
+  source_page: z.number().int().positive().optional(),
+  evidence_note: z.string().optional(),
+  status: DrawingCandidateStatusEnum.default("CANDIDATE"),
+  notes: z.string().optional(),
+});
+
+export const VerifiedDrawingQuantitySchema = z.object({
+  id: z.string().uuid(),
+  candidate_id: z.string().uuid(),
+  quantity_name: z.string(),
+  unit: UnitEnum,
+  verified_value: z.number().nonnegative(),
+  verified_by: z.string().uuid().optional(),
+  verified_at: z.string().datetime(),
+  notes: z.string().optional(),
+});
+
+export const BoqDraftItemSchema = z.object({
+  id: z.string().uuid(),
+  category: z.string(),
+  item_name: z.string(),
+  unit: UnitEnum,
+  quantity: z.number().nonnegative(),
+  source_candidate_ids: z.array(z.string().uuid()).default([]),
+  confidence: z.number().min(0).max(1),
+  status: z.enum(["DRAFT", "READY", "WARNING"]),
+  warning: z.string().optional(),
+});
+
+export const DrawingWarningSchema = z.object({
+  id: z.string().uuid(),
+  message: z.string(),
+  level: WarningLevelEnum,
+  related_elements: z.array(z.string()).default([]),
+});
+
+export const DrawingAnalysisResultSchema = z.object({
+  file_id: z.string().uuid(),
+  classification: z.string(),
+  rooms: z.array(z.string()).default([]),
+  doors: z.array(z.string()).default([]),
+  windows: z.array(z.string()).default([]),
+  quantity_candidates: z.array(QuantityCandidateSchema).default([]),
+  warnings: z.array(DrawingWarningSchema).default([]),
+});
+
+export const DrawingToRabContextSchema = z.object({
+  project_id: z.string().uuid(),
+  drawing_file: z.string(), // name or id
+  analysis_result: DrawingAnalysisResultSchema.optional(),
+  verified_quantities: z.array(QuantityCandidateSchema).default([]),
+  boq_draft_items: z.array(BoqDraftItemSchema).default([]),
+  confidence_summary: z.number().min(0).max(1).optional(),
+  warnings: z.array(z.string()).default([]),
+  created_at: z.string().datetime(),
+  updated_at: z.string().datetime(),
+});
+
+export const DocumentIntelligenceHealthSchema = z.object({
+  status: z.string(),
+  service: z.string(),
+  version: z.string(),
+  mode: z.enum(["real_ai", "fallback_demo"]),
+  ai_provider_configured: z.boolean(),
+});
+
 // ─── Cost Estimation: RAB / BOQ / HSP ────────────────────────────────────────
 
 export const PriceComponentSchema = z.object({

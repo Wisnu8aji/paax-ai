@@ -11,13 +11,17 @@ import {
   CheckCircle2,
   XCircle,
   RefreshCw,
-  Server
+  Server,
+  FileBadge
 } from 'lucide-react';
 import { CoreEngineAPI } from '@/lib/core-engine-client';
+import { DocumentIntelligenceClient } from '@/lib/document-intelligence-client';
+import { DocumentIntelligenceHealth } from '@paax/types';
 
 export default function PengaturanPage() {
   const [activeTab, setActiveTab] = useState('profil');
   const [healthInfo, setHealthInfo] = useState<any>(null);
+  const [docHealthInfo, setDocHealthInfo] = useState<DocumentIntelligenceHealth | null>(null);
   const [isChecking, setIsChecking] = useState(false);
 
   const checkHealth = async () => {
@@ -27,6 +31,13 @@ export default function PengaturanPage() {
       setHealthInfo(info);
     } catch (error) {
       setHealthInfo({ status: 'offline', version: 'unknown', error: true });
+    }
+    
+    try {
+      const docInfo = await DocumentIntelligenceClient.getHealth();
+      setDocHealthInfo(docInfo);
+    } catch (error) {
+      setDocHealthInfo({ status: 'offline', version: 'unknown', service: 'document-intelligence', mode: 'fallback_demo', ai_provider_configured: false });
     } finally {
       setIsChecking(false);
     }
@@ -170,6 +181,40 @@ export default function PengaturanPage() {
                     <div className="text-sm text-slate-200 font-medium">{healthInfo?.uptime ? `${healthInfo.uptime} seconds` : 'N/A'}</div>
                   </div>
                 </div>
+
+                <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/50 flex items-center justify-between mt-4">
+                  <div className="flex items-center gap-3">
+                    {docHealthInfo?.status === 'ok' ? (
+                      <CheckCircle2 className="w-8 h-8 text-indigo-500" />
+                    ) : docHealthInfo?.status === 'offline' ? (
+                      <XCircle className="w-8 h-8 text-red-500" />
+                    ) : (
+                      <RefreshCw className="w-8 h-8 text-slate-500 animate-spin" />
+                    )}
+                    <div>
+                      <h3 className="text-sm font-medium text-white">Document Intelligence Engine</h3>
+                      <p className="text-xs text-paax-text-muted mt-0.5">http://127.0.0.1:8083</p>
+                    </div>
+                  </div>
+                  <div className="text-right flex flex-col gap-1 items-end">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-medium uppercase tracking-wider ${
+                      docHealthInfo?.status === 'ok' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 
+                      docHealthInfo?.status === 'offline' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 
+                      'bg-slate-500/10 text-slate-400 border border-slate-500/20'
+                    }`}>
+                      {docHealthInfo?.status === 'ok' ? 'Online' : docHealthInfo?.status === 'offline' ? 'Offline' : 'Checking...'}
+                    </span>
+                    {docHealthInfo?.mode && (
+                       <span className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-medium uppercase tracking-wider ${
+                        docHealthInfo?.mode === 'real_ai' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 
+                        'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      }`}>
+                        {docHealthInfo?.mode === 'real_ai' ? 'Gemini AI Active' : 'Demo Mode (No API Key)'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
               </div>
             </div>
           )}
