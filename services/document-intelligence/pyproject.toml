@@ -1,8 +1,9 @@
 [tool.poetry]
 name = "paax-document-intelligence"
-version = "0.3.0"
+version = "0.5.0"
 description = "PAAX Document Intelligence"
 authors = ["Basrenggg <basrenggg@example.com>"]
+packages = [{ include = "app" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"

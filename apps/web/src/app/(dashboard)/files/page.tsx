@@ -38,7 +38,21 @@ export default function FilesPage() {
       { id: 1, name: 'Gambar_Kerja_Arsitektur_v2.pdf', type: 'pdf', size: '4.2 MB', date: '20 Jun 2026', project_id: 'default', project_name: 'Rumah Tinggal Pak Ahmad', author: 'Budi Santoso' },
       { id: 2, name: 'RAB_Draft_Initial.xlsx', type: 'excel', size: '1.1 MB', date: '19 Jun 2026', project_id: 'default', project_name: 'Rumah Tinggal Pak Ahmad', author: 'System AI' },
     ]);
-    setFiles(savedFiles);
+
+    // Load Drawing Files from v0.5 workflow
+    const drawingFiles = LocalStorage.get<any[]>('paax_drawing_files', []);
+    const mappedDrawingFiles = drawingFiles.map((df, idx) => ({
+      id: `drawing-${idx}`,
+      name: df.name,
+      type: df.type === 'DRAWING_PDF' ? 'pdf' : df.type === 'IMAGE' ? 'image' : 'pdf',
+      size: 'AI Processed',
+      date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+      project_id: 'demo-project',
+      project_name: 'Drawing Verified',
+      author: 'PAAX Document Intelligence'
+    }));
+
+    setFiles([...mappedDrawingFiles, ...savedFiles]);
   }, []);
 
   const getFileIcon = (type: string) => {

@@ -13,11 +13,13 @@ import {
   Filter,
   Activity,
   Zap,
-  X
+  X,
+  FileText
 } from 'lucide-react';
 import { CoreEngineAPI, ScheduleVersion, ScheduleTask, ScenarioRequest, DelayRecoveryRequest, DelayRecoveryResponse } from '@/lib/core-engine-client';
 import { LocalStorage, STORAGE_KEYS } from '@/lib/local-storage';
 import { formatRupiah, formatDate } from '@/lib/format';
+import { DrawingToRabContext } from '@paax/types';
 
 export default function SchedulePage() {
   const params = useParams();
@@ -29,6 +31,7 @@ export default function SchedulePage() {
   const [activeScenario, setActiveScenario] = useState<string>('normal');
   const [isGenerating, setIsGenerating] = useState(false);
   const [recoveryData, setRecoveryData] = useState<DelayRecoveryResponse | null>(null);
+  const [drawingContext, setDrawingContext] = useState<DrawingToRabContext | null>(null);
   
   const [generateForm, setGenerateForm] = useState({
     luas_bangunan: 150,
@@ -54,6 +57,12 @@ export default function SchedulePage() {
     if (savedSchedules[projectId]) {
       setScheduleData(savedSchedules[projectId]);
       setActiveScenario(savedSchedules[projectId].scenario || 'normal');
+    }
+
+    // Load Drawing Context
+    const savedContext = LocalStorage.get<DrawingToRabContext | null>("paax_drawing_to_rab_context", null);
+    if (savedContext && (savedContext.project_id === projectId || savedContext.project_id === "demo-project")) {
+      setDrawingContext(savedContext);
     }
   }, [projectId]);
 
@@ -187,6 +196,35 @@ export default function SchedulePage() {
           </button>
         </div>
       </div>
+
+      {/* Schedule Readiness Panel */}
+      {drawingContext && (
+        <div className="bg-indigo-900/20 border border-indigo-500/30 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <FileText className="h-5 w-5 text-indigo-400 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-indigo-100">Schedule Readiness from Verified Drawing</h3>
+              <p className="text-xs text-indigo-200/70 mt-1">
+                Verified drawing data is available. Currently, scheduling requires RAB completion first.
+                Drawing-aware scheduling will be fully implemented in v0.6 Core Engine expansion.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="px-2 py-1 bg-indigo-500/10 text-indigo-300 text-[10px] rounded border border-indigo-500/20">
+                  {drawingContext.verified_quantities.length} Verified Quantities
+                </span>
+                <span className="px-2 py-1 bg-indigo-500/10 text-indigo-300 text-[10px] rounded border border-indigo-500/20">
+                  {drawingContext.boq_draft_items.length} BOQ Items
+                </span>
+                {drawingContext.warnings.length > 0 && (
+                  <span className="px-2 py-1 bg-amber-500/10 text-amber-300 text-[10px] rounded border border-amber-500/20">
+                    {drawingContext.warnings.length} Warnings
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Skenario Selector */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -6,15 +6,18 @@ import {
   FileText, 
   Download, 
   Clock, 
-  AlertCircle
+  AlertCircle,
+  FileBadge
 } from 'lucide-react';
 import { CoreEngineAPI } from '@/lib/core-engine-client';
 import { LocalStorage, STORAGE_KEYS } from '@/lib/local-storage';
+import { DrawingToRabContext } from '@paax/types';
 
 export default function LaporanExportPage() {
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [isExporting, setIsExporting] = useState(false);
+  const [drawingContext, setDrawingContext] = useState<DrawingToRabContext | null>(null);
   
   const [history, setHistory] = useState<any[]>([
     { id: 1, name: 'Laporan RAB Lengkap - Rumah Tinggal Pak Ahmad', type: 'excel', status: 'completed', date: '21 Jun 2026, 14:30', size: '1.2 MB' },
@@ -28,6 +31,15 @@ export default function LaporanExportPage() {
       setSelectedProjectId(savedProjects[0].id);
     }
   }, []);
+
+  useEffect(() => {
+    const savedContext = LocalStorage.get<DrawingToRabContext | null>("paax_drawing_to_rab_context", null);
+    if (savedContext && (savedContext.project_id === selectedProjectId || savedContext.project_id === "demo-project")) {
+      setDrawingContext(savedContext);
+    } else {
+      setDrawingContext(null);
+    }
+  }, [selectedProjectId]);
 
   const handleExportRABExcel = async () => {
     if (!selectedProjectId) return alert("Pilih proyek terlebih dahulu");
@@ -195,6 +207,36 @@ export default function LaporanExportPage() {
               >
                 Generate PDF
               </button>
+            </div>
+
+            {/* Template Card 5: Drawing AI Analysis */}
+            <div className="p-5 bg-slate-900 border border-slate-800 rounded-xl hover:border-indigo-500/50 transition-colors group">
+              <div className="flex items-start justify-between mb-4">
+                <div className="p-3 bg-indigo-500/10 rounded-lg text-indigo-400 group-hover:bg-indigo-500/20 transition-colors">
+                  <FileBadge className="w-6 h-6" />
+                </div>
+                <span className="text-xs font-medium px-2 py-1 bg-slate-800 text-slate-300 rounded-md">PDF</span>
+              </div>
+              <h3 className="font-semibold text-white mb-1">Drawing AI Analysis Report</h3>
+              <p className="text-sm text-paax-text-muted mb-4 leading-relaxed">
+                Laporan hasil ekstraksi AI dari gambar kerja, mencakup verifikasi kuantitas BOQ draft, dan rekapitulasi anomali/warnings.
+              </p>
+              {drawingContext ? (
+                <button 
+                  onClick={() => handleMockExport('Drawing AI Analysis Report', 'pdf')}
+                  disabled={isExporting || !selectedProjectId}
+                  className="btn-secondary w-full justify-center text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/10"
+                >
+                  Generate PDF
+                </button>
+              ) : (
+                <button 
+                  disabled
+                  className="btn-secondary w-full justify-center opacity-50 cursor-not-allowed"
+                >
+                  Drawing Data Not Available
+                </button>
+              )}
             </div>
           </div>
         </div>

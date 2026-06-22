@@ -23,6 +23,7 @@ import {
 import { CoreEngineAPI, RABVersion, GenerateRABRequest, RABWarning, RABSummary } from '@/lib/core-engine-client';
 import { LocalStorage, STORAGE_KEYS } from '@/lib/local-storage';
 import { formatRupiah } from '@/lib/format';
+import { DrawingToRabContext } from '@paax/types';
 
 export default function RABPage() {
   const params = useParams();
@@ -35,6 +36,7 @@ export default function RABPage() {
   const [healthScore, setHealthScore] = useState(100);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingModalOpen, setIsGeneratingModalOpen] = useState(false);
+  const [drawingContext, setDrawingContext] = useState<DrawingToRabContext | null>(null);
   
   const [generateForm, setGenerateForm] = useState({
     project_type: 'rumah_tinggal',
@@ -54,6 +56,12 @@ export default function RABPage() {
     const savedRabs = LocalStorage.get<Record<string, RABVersion>>(STORAGE_KEYS.RAB_DATA, {});
     if (savedRabs[projectId]) {
       setRabData(savedRabs[projectId]);
+    }
+
+    // Load Drawing Context
+    const savedContext = LocalStorage.get<DrawingToRabContext | null>("paax_drawing_to_rab_context", null);
+    if (savedContext && (savedContext.project_id === projectId || savedContext.project_id === "demo-project")) {
+      setDrawingContext(savedContext);
     }
   }, [projectId]);
 
@@ -206,6 +214,27 @@ export default function RABPage() {
 
   return (
     <div className="space-y-6">
+      {/* Drawing Context Panel */}
+      {drawingContext && (
+        <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <Sparkles className="h-5 w-5 text-blue-400 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-blue-100">Verified Drawing Data Available</h3>
+              <p className="text-xs text-blue-200/70 mt-1">
+                Data extracted from <span className="font-medium text-blue-200">{drawingContext.drawing_file}</span> is ready. 
+                This context includes {drawingContext.verified_quantities.length} verified quantities and {drawingContext.boq_draft_items.length} BOQ draft items.
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button onClick={() => setIsGeneratingModalOpen(true)} className="px-3 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors">
+                  Generate RAB using Drawing Data
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
         <div className="stat-card py-3 px-4">
@@ -371,6 +400,16 @@ export default function RABPage() {
             </div>
             
             <form onSubmit={handleGenerateRAB} className="p-4 space-y-4">
+              {drawingContext && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-md mb-4">
+                  <h4 className="text-xs font-bold text-amber-400 flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" /> V0.5 Limitation
+                  </h4>
+                  <p className="text-[11px] text-amber-200/80 mt-1">
+                    Drawing-aware RAB handoff is prepared in v0.5. The final drawing-based calculation will be implemented in v0.6 Core Engine expansion. For now, it falls back to standard generation.
+                  </p>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-[12px] font-medium text-paax-text-secondary">Luas Bangunan (m²)</label>

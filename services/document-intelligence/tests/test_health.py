@@ -6,4 +6,9 @@ client = TestClient(app)
 def test_health_check():
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "service": "document-intelligence", "version": "0.3.0"}
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["service"] == "document-intelligence"
+    assert data["version"] == "0.5.0"
+    assert "mode" in data
+    assert "ai_provider_configured" in data
