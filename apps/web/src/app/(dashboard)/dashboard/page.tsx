@@ -189,7 +189,7 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-2xl font-bold text-white">Dashboard Interactive</h1>
           <p className="text-sm text-paax-text-muted mt-1">
-            Selamat datang di PAAX v0.4 Workspace
+            Selamat datang di PAAX v0.5 Workspace
           </p>
         </div>
         <div className="flex items-center gap-2">

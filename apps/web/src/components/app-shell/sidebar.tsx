@@ -61,7 +61,7 @@ export default function Sidebar() {
             <div className="flex flex-col">
               <span className="text-[15px] font-bold tracking-tight text-white">PAAX AI</span>
               <span className="text-[10px] text-paax-text-muted font-medium tracking-wider uppercase">
-                v0.3 · Civil Engineering
+                v0.5 • Civil Engineering
               </span>
             </div>
           )}

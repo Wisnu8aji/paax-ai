@@ -40,9 +40,21 @@ export class DocumentIntelligenceClient {
 
   static async getHealth(): Promise<DocumentIntelligenceHealth> {
     try {
-      return await this.fetchApi<DocumentIntelligenceHealth>("/health");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      
+      const response = await fetch(`${BASE_URL}/health`, {
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json" }
+      });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error("Health check failed");
+      }
+      return await response.json();
     } catch (e) {
-      // Fallback if service is completely offline
+      // Graceful fallback without console.error to avoid Next.js dev overlay
       return {
         status: "offline",
         service: "document-intelligence",
