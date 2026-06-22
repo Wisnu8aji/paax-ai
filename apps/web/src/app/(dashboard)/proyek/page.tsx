@@ -42,6 +42,7 @@ function getTypeBadge(type: string) {
 
 export default function ProyekPage() {
   const [projects, setProjects] = useState<any[]>([]);
+  const [selectModule, setSelectModule] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -55,6 +56,9 @@ export default function ProyekPage() {
   useEffect(() => {
     const savedProjects = LocalStorage.get<any[]>(STORAGE_KEYS.PROJECTS, []);
     setProjects(savedProjects);
+    const requestedModule = new URLSearchParams(window.location.search).get('selectModule');
+    const validModules = ['rab', 'schedule', 'chat', 'site-agent', 'gambar-kerja'];
+    setSelectModule(requestedModule && validModules.includes(requestedModule) ? requestedModule : null);
   }, []);
 
   const handleCreateProject = (e: React.FormEvent) => {
@@ -124,7 +128,7 @@ export default function ProyekPage() {
           return (
             <Link
               key={project.id}
-              href={`/proyek/${project.id}`}
+              href={`/proyek/${project.id}${selectModule ? `/${selectModule}` : ''}`}
               className="glass-card p-5 group cursor-pointer"
             >
               <div className="flex items-start justify-between mb-3">

@@ -44,7 +44,7 @@ export default function ProjectOverviewPage() {
     if (found) {
       setProject(found);
       // Set as current project globally
-      LocalStorage.set(STORAGE_KEYS.CURRENT_PROJECT, found);
+      LocalStorage.setActiveProjectId(found.id);
     }
   }, [projectId]);
 
