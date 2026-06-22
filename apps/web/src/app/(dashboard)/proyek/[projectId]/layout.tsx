@@ -43,14 +43,18 @@ export default function ProjectDetailLayout({
   const pathname = usePathname();
   const { projectId } = use(params);
   const [project, setProject] = useState<any>(null);
+  const [hasLoadedProject, setHasLoadedProject] = useState(false);
 
   useEffect(() => {
+    setProject(null);
+    setHasLoadedProject(false);
     const savedProjects = LocalStorage.get<any[]>(STORAGE_KEYS.PROJECTS, []);
     const found = savedProjects.find(p => p.id === projectId);
     if (found) {
       setProject(found);
       LocalStorage.setActiveProjectId(projectId);
     }
+    setHasLoadedProject(true);
   }, [projectId]);
 
   return (
@@ -71,7 +75,12 @@ export default function ProjectDetailLayout({
         <div className="flex items-start justify-between gap-4 mb-1">
           <div>
             <h1 className="text-xl font-bold text-white">{project.name}{project.location ? ` - ${project.location}` : ''}</h1>
-            <p className="text-[12px] text-paax-text-muted mt-1">{project.location || '-'} · Klien: {project.client || '-'} · Luas {project.luas_bangunan || '-'}m² · {project.jumlah_lantai || '-'} Lantai</p>
+            <p className="text-[12px] text-paax-text-muted mt-1">
+              {project.location || '-'} · Klien: {project.client || '-'}
+              {project.type ? ` · ${project.type}` : ''}
+              {project.luas_bangunan ? ` · Luas ${project.luas_bangunan}m²` : ''}
+              {project.jumlah_lantai ? ` · ${project.jumlah_lantai} Lantai` : ''}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <span className="badge badge-green">{statusLabels[project.status] || project.status || '-'}</span>
@@ -79,11 +88,18 @@ export default function ProjectDetailLayout({
           </div>
         </div>
       </div>
+      ) : hasLoadedProject ? (
+      <div className="glass-card p-5 mb-4">
+        <h1 className="text-lg font-semibold text-white">Proyek tidak ditemukan</h1>
+        <p className="text-[12px] text-paax-text-muted mt-1 mb-4">Proyek dengan ID {projectId} tidak tersedia di penyimpanan lokal.</p>
+        <Link href="/proyek" className="btn-secondary inline-flex">Kembali ke Proyek</Link>
+      </div>
       ) : (
       <div className="glass-card p-5 mb-4 flex justify-center text-paax-text-muted">Memuat proyek...</div>
       )}
 
       {/* Tabs */}
+      {project && (
       <div className="flex items-center gap-1 border-b border-white/[0.06] mb-6 overflow-x-auto">
         {projectTabs.map((tab) => {
           const fullHref = `/proyek/${projectId}${tab.href}`;
@@ -103,8 +119,9 @@ export default function ProjectDetailLayout({
           );
         })}
       </div>
+      )}
 
-      {children}
+      {project ? children : null}
     </div>
   );
 }
