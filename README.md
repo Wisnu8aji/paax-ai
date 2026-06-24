@@ -51,9 +51,8 @@ paax-ai/
 ├── data/
 │   ├── ahsp/                     # Koefisien AHSP per bidang
 │   └── harga-satuan/             # Harga satuan per wilayah
-├── docs/BUILD_v0.6.md            # Rencana build & daftar task
-├── legacy/                       # Kode lama (v0.1–v0.5) yang diarsipkan
-└── CLAUDE.md                     # Aturan emas untuk Claude Code
+├── docs/                         # ADR, arsitektur, API, produk, versi
+└── legacy/                       # Kode lama (v0.1–v0.5) yang diarsipkan
 ```
 
 > Service lain (`ai-orchestrator`, `document-intelligence`, `site-agent`) ada di repo
@@ -141,8 +140,12 @@ Data di `data/` bersifat **ILUSTRATIF** untuk verifikasi engine. Sebelum produks
 - Harga satuan: **SHSD daerah** atau harga pasar resmi
 
 ## Kontribusi
-Lihat [`CLAUDE.md`](CLAUDE.md) untuk aturan emas dan konvensi yang wajib diikuti, serta
-[`docs/BUILD_v0.6.md`](docs/BUILD_v0.6.md) untuk rencana build.
+**Aturan emas (wajib):** engine yang **menghitung**, AI yang **menjelaskan** — semua angka
+RAB/HSP/Kurva-S berasal dari `services/core-engine` (deterministik), tidak pernah dari LLM.
+Bangun dari koefisien AHSP (`data/ahsp`) × harga satuan (`data/harga-satuan`); jangan
+hardcode hasil RAB. Skema `packages/schemas` (Zod) wajib selaras dengan Pydantic engine
+(`services/core-engine/app/rab/models.py`). Commit mengikuti Conventional Commits
+(`feat:`, `fix:`, `docs:`, `refactor:`, `test:`).
 
 ## Lisensi
 Proprietary — Do not distribute.
