@@ -1,0 +1,67 @@
+{
+  "bidang": "Cipta Karya",
+  "source": "DATA ILUSTRATIF — ganti dengan koefisien AHSP resmi (Permen PUPR No. 8/2023 & SE DJBK) sebelum produksi",
+  "items": [
+    {
+      "code": "AHSP.CK.001",
+      "name": "Pasangan dinding bata merah 1/2 batu, camp. 1 PC : 5 PP",
+      "unit": "m2",
+      "overhead_profit": 0.10,
+      "components": [
+        { "resource_code": "BTA.01", "category": "bahan", "coefficient": 70 },
+        { "resource_code": "SMN.01", "category": "bahan", "coefficient": 9.68 },
+        { "resource_code": "PSR.01", "category": "bahan", "coefficient": 0.045 },
+        { "resource_code": "UPH.01", "category": "upah", "coefficient": 0.30 },
+        { "resource_code": "UPH.02", "category": "upah", "coefficient": 0.10 },
+        { "resource_code": "UPH.04", "category": "upah", "coefficient": 0.01 },
+        { "resource_code": "UPH.05", "category": "upah", "coefficient": 0.015 }
+      ]
+    },
+    {
+      "code": "AHSP.CK.002",
+      "name": "Plesteran 1 PC : 3 PP, tebal 15 mm",
+      "unit": "m2",
+      "overhead_profit": 0.10,
+      "components": [
+        { "resource_code": "SMN.01", "category": "bahan", "coefficient": 7.776 },
+        { "resource_code": "PSR.01", "category": "bahan", "coefficient": 0.023 },
+        { "resource_code": "UPH.01", "category": "upah", "coefficient": 0.30 },
+        { "resource_code": "UPH.02", "category": "upah", "coefficient": 0.15 },
+        { "resource_code": "UPH.04", "category": "upah", "coefficient": 0.015 },
+        { "resource_code": "UPH.05", "category": "upah", "coefficient": 0.015 }
+      ]
+    },
+    {
+      "code": "AHSP.CK.003",
+      "name": "Beton mutu f'c = 14.5 MPa (setara K-175)",
+      "unit": "m3",
+      "overhead_profit": 0.10,
+      "components": [
+        { "resource_code": "SMN.01", "category": "bahan", "coefficient": 326 },
+        { "resource_code": "PSR.02", "category": "bahan", "coefficient": 0.54 },
+        { "resource_code": "KRK.01", "category": "bahan", "coefficient": 0.82 },
+        { "resource_code": "UPH.01", "category": "upah", "coefficient": 1.65 },
+        { "resource_code": "UPH.02", "category": "upah", "coefficient": 0.275 },
+        { "resource_code": "UPH.04", "category": "upah", "coefficient": 0.028 },
+        { "resource_code": "UPH.05", "category": "upah", "coefficient": 0.083 },
+        { "resource_code": "ALT.01", "category": "alat", "coefficient": 0.30 }
+      ]
+    },
+    {
+      "code": "AHSP.CK.004",
+      "name": "Pemasangan lantai keramik 40x40 cm",
+      "unit": "m2",
+      "overhead_profit": 0.10,
+      "components": [
+        { "resource_code": "KRM.40", "category": "bahan", "coefficient": 1.05 },
+        { "resource_code": "SMN.01", "category": "bahan", "coefficient": 9.8 },
+        { "resource_code": "PSR.01", "category": "bahan", "coefficient": 0.045 },
+        { "resource_code": "SMN.02", "category": "bahan", "coefficient": 1.5 },
+        { "resource_code": "UPH.01", "category": "upah", "coefficient": 0.35 },
+        { "resource_code": "UPH.02", "category": "upah", "coefficient": 0.175 },
+        { "resource_code": "UPH.04", "category": "upah", "coefficient": 0.0175 },
+        { "resource_code": "UPH.05", "category": "upah", "coefficient": 0.0175 }
+      ]
+    }
+  ]
+}
