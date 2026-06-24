@@ -1,0 +1,128 @@
+### Health Check
+GET http://localhost:8081/health
+Content-Type: application/json
+
+###
+
+### List semua item AHSP
+GET http://localhost:8081/ahsp
+Content-Type: application/json
+
+###
+
+### Detail satu item AHSP
+GET http://localhost:8081/ahsp/AHSP.CK.001
+Content-Type: application/json
+
+###
+
+### List wilayah tersedia
+GET http://localhost:8081/regions
+Content-Type: application/json
+
+###
+
+### Hitung HSP satu item — dinding bata (AHSP.CK.001) wilayah Jawa Tengah
+POST http://localhost:8081/rab/hsp
+Content-Type: application/json
+
+{
+  "ahsp_code": "AHSP.CK.001",
+  "region_code": "jateng"
+}
+
+###
+
+### Hitung HSP — plesteran (AHSP.CK.002)
+POST http://localhost:8081/rab/hsp
+Content-Type: application/json
+
+{
+  "ahsp_code": "AHSP.CK.002",
+  "region_code": "jateng"
+}
+
+###
+
+### Hitung RAB — 2 item (nilai acuan: subtotal = 11.411.620)
+POST http://localhost:8081/rab/calculate
+Content-Type: application/json
+
+{
+  "region_code": "jateng",
+  "ppn_rate": 0.11,
+  "lines": [
+    {"ahsp_code": "AHSP.CK.001", "volume": 50},
+    {"ahsp_code": "AHSP.CK.002", "volume": 50}
+  ]
+}
+
+###
+
+### Hitung RAB — 4 item lengkap dengan durasi (nilai acuan: subtotal = 77.606.320)
+POST http://localhost:8081/rab/calculate
+Content-Type: application/json
+
+{
+  "region_code": "jateng",
+  "ppn_rate": 0.11,
+  "lines": [
+    {"ahsp_code": "AHSP.CK.001", "volume": 120, "duration_days": 6},
+    {"ahsp_code": "AHSP.CK.002", "volume": 240, "duration_days": 8},
+    {"ahsp_code": "AHSP.CK.003", "volume": 18,  "duration_days": 5},
+    {"ahsp_code": "AHSP.CK.004", "volume": 85,  "duration_days": 7}
+  ]
+}
+
+###
+
+### Kurva S — sequential, mingguan (total 26 hari, 4 periode)
+POST http://localhost:8081/schedule/s-curve
+Content-Type: application/json
+
+{
+  "region_code": "jateng",
+  "ppn_rate": 0.11,
+  "period_days": 7,
+  "mode": "sequential",
+  "lines": [
+    {"ahsp_code": "AHSP.CK.001", "volume": 120, "duration_days": 6},
+    {"ahsp_code": "AHSP.CK.002", "volume": 240, "duration_days": 8},
+    {"ahsp_code": "AHSP.CK.003", "volume": 18,  "duration_days": 5},
+    {"ahsp_code": "AHSP.CK.004", "volume": 85,  "duration_days": 7}
+  ]
+}
+
+###
+
+### Kurva S — parallel
+POST http://localhost:8081/schedule/s-curve
+Content-Type: application/json
+
+{
+  "region_code": "jateng",
+  "ppn_rate": 0.11,
+  "period_days": 7,
+  "mode": "parallel",
+  "lines": [
+    {"ahsp_code": "AHSP.CK.001", "volume": 120, "duration_days": 6},
+    {"ahsp_code": "AHSP.CK.002", "volume": 240, "duration_days": 8}
+  ]
+}
+
+###
+
+### ERROR TEST: AHSP code tidak ada → harus 400
+POST http://localhost:8081/rab/calculate
+Content-Type: application/json
+
+{
+  "region_code": "jateng",
+  "lines": [{"ahsp_code": "TIDAK_ADA", "volume": 10}]
+}
+
+###
+
+### ERROR TEST: item AHSP tidak ditemukan → harus 404
+GET http://localhost:8081/ahsp/TIDAK_ADA
+Content-Type: application/json

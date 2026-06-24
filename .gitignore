@@ -34,6 +34,9 @@ data/private/
 data_private/
 legacy/**/data_private/
 
+# Claude Code (personal/local settings)
+.claude/settings.local.json
+
 # IDE & OS
 .vscode/
 .idea/
