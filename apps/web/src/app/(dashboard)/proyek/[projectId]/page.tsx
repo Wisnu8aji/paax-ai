@@ -5,6 +5,7 @@ import { TrendingUp, AlertTriangle, Activity, CheckCircle2 } from 'lucide-react'
 import { Card, StatCard, ProgressBar, EmptyState } from '@/components/ui';
 import { scheduleTasks } from '@/lib/mock/workspace';
 import { useProjects } from '@/lib/projects/projects-context';
+import { formatRupiah } from '@/lib/format';
 
 export default function ProjectOverviewPage() {
   const params = useParams();
@@ -23,7 +24,7 @@ export default function ProjectOverviewPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }} className="pax-grid-4">
-        <StatCard label="Nilai RAB" value={project.rabValue === null ? 'Belum dihitung' : String(project.rabValue)} sub="menunggu engine" />
+        <StatCard label="Nilai RAB" value={project.rabValue === null ? 'Belum dihitung' : formatRupiah(project.rabValue)} sub={project.rabValue === null ? 'menunggu engine' : 'dari engine (RAB)'} />
         <StatCard label="Progress" value={`${project.progress}%`} sub="metadata proyek" dot="var(--ok-dot)" />
         <StatCard label="Warning" value={String(project.warnings)} sub="terbuka" dot="var(--warn-fg)" />
         <StatCard label="Health" value={`${project.health}%`} sub="indeks proyek" dot="var(--ok-dot)" />

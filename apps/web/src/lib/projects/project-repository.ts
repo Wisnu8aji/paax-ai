@@ -36,7 +36,7 @@ export function getProjectBackend(): ProjectBackend {
   return Object.values(firebaseConfig).every(Boolean) ? 'firestore' : 'localStorage';
 }
 
-function getDb() {
+export function getDb() {
   const app = getApps()[0] ?? initializeApp(firebaseConfig);
   return getFirestore(app);
 }
