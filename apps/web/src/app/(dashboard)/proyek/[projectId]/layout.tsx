@@ -1,8 +1,9 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect, use } from 'react';
+import { useEffect, use } from 'react';
 import {
   LayoutDashboard,
   FileImage,
@@ -14,10 +15,11 @@ import {
   ArrowLeft,
   MapPin,
 } from 'lucide-react';
-import { LocalStorage, STORAGE_KEYS } from '@/lib/local-storage';
+import { LocalStorage } from '@/lib/local-storage';
 import { ProjectSwitcher } from '@/components/app-shell/project-switcher';
-import { Card, StatusPill } from '@/components/ui';
-import { projects as mockProjects, statusTone, type MockProject } from '@/lib/mock/workspace';
+import { Card, StatusPill, EmptyState } from '@/components/ui';
+import { useProjects } from '@/lib/projects/projects-context';
+import { PROJECT_STATUS_LABEL, PROJECT_STATUS_TONE } from '@/lib/projects/types';
 
 const projectTabs = [
   { label: 'Overview', icon: LayoutDashboard, href: '' },
@@ -28,33 +30,38 @@ const projectTabs = [
   { label: 'Site Agent', icon: HardHat, href: '/site-agent' },
 ];
 
-function resolveProject(projectId: string): MockProject {
-  const saved = LocalStorage.get<MockProject[]>(STORAGE_KEYS.PROJECTS, []);
-  const found = saved.find((p) => p.id === projectId);
-  if (found) return found;
-  const mock = mockProjects.find((p) => p.id === projectId);
-  return mock ?? { ...mockProjects[0], id: projectId };
-}
-
 export default function ProjectDetailLayout({
   children,
   params,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   params: Promise<{ projectId: string }>;
 }) {
   const pathname = usePathname();
   const { projectId } = use(params);
-  const [project, setProject] = useState<MockProject | null>(null);
+  const { getProject, loading } = useProjects();
+  const project = getProject(projectId);
 
   useEffect(() => {
-    const p = resolveProject(projectId);
-    setProject(p);
     LocalStorage.setActiveProjectId(projectId);
   }, [projectId]);
 
+  if (loading) {
+    return <div style={{ padding: 24, color: 'var(--text3)' }}>Memuat proyek...</div>;
+  }
+
   if (!project) {
-    return <div style={{ padding: 24, color: 'var(--text3)' }}>Memuat proyek…</div>;
+    return (
+      <Card padding={18}>
+        <EmptyState
+          title="Proyek tidak ditemukan"
+          message="ID proyek ini belum tersimpan di workspace. Kembali ke daftar proyek untuk memilih proyek yang tersedia."
+        />
+        <Link href="/proyek" style={{ color: 'var(--text)', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+          Kembali ke daftar proyek
+        </Link>
+      </Card>
+    );
   }
 
   return (
@@ -72,11 +79,11 @@ export default function ProjectDetailLayout({
           <div style={{ minWidth: 0 }}>
             <h1 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: 'var(--text)' }}>{project.name}</h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, fontSize: 12, color: 'var(--text2)' }}>
-              <MapPin size={13} /> {project.location} · Klien: {project.client} · {project.type}
+              <MapPin size={13} /> {project.location || 'Lokasi belum diisi'} - Klien: {project.client} - {project.type}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <StatusPill tone={statusTone[project.status]}>{project.statusLabel}</StatusPill>
+            <StatusPill tone={PROJECT_STATUS_TONE[project.status]}>{PROJECT_STATUS_LABEL[project.status]}</StatusPill>
             <ProjectSwitcher currentProjectId={projectId} />
           </div>
         </div>

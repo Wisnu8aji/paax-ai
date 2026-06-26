@@ -1,6 +1,6 @@
-# CLAUDE.md — PAAX AI
+# AGENTS.md — PAAX AI
 
-> File ini dibaca otomatis oleh Claude Code di setiap sesi. **Patuhi sepenuhnya.**
+> File ini dibaca otomatis oleh Codex di setiap sesi. **Patuhi sepenuhnya.**
 > Sumber kebenaran lengkap ada di `docs/MASTER_PLAN.md` (Blueprint Besar v2.0).
 > Jika ragu, ikuti aturan di sini lebih dulu, lalu rujuk MASTER_PLAN.
 > Dokumen strategi tambahan: `docs/strategy/PAAX_Analisis_Strategis_Companion.md`
