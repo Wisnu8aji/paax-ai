@@ -4,7 +4,26 @@ All notable changes to the PAAX AI project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.6.0] - Current — Deterministic Foundation Release
+## [v0.7.0] - In Progress — Workspace Hidup
+> Semua angka tetap dari engine deterministik (`services/core-engine`). Tidak ada AI di rilis ini.
+
+### Added
+- **Persistensi proyek** (`apps/web/src/lib/projects`): repository proyek dengan backend Firestore + fallback localStorage; CRUD proyek tersambung ke dashboard, daftar proyek, project switcher, dan modal "Buat Proyek Baru". *(Task 1)*
+- **Editor RAB per-proyek** (`/proyek/[id]/rab`): menyimpan **input terstruktur** (kode AHSP, volume, durasi, wilayah, PPN, mode) per-proyek lewat `rab-repository`. Semua angka (HSP, jumlah, bobot, subtotal, PPN, total, Kurva S) dihitung engine via `/rab/calculate`, `/schedule/s-curve`, `/rab/hsp`; auto-hitung ulang dari engine saat dibuka. *(Task 3)*
+- **Browser Database AHSP live** (`/database-ahsp`): daftar AHSP + wilayah dibaca dari engine; rincian koefisien × harga (HSP auditable) per-wilayah; fallback daftar contoh bila engine mati. *(Task 4)*
+- **Export RAB/BoQ** (`lib/export/rab-export.ts`): unduh **Excel (CSV)** + **PDF (print)** dari hasil engine, tanpa dependency baru. *(Task 5)*
+- Komponen bersama `components/rab` (`SCurveChart`, `HspBreakdownBody`) dipakai editor & browser.
+
+### Changed
+- **Hardening repository proyek**: dokumen Firestore dinormalisasi/divalidasi saat `list`/`get` (cegah data korup lolos sebagai `Project`).
+- **Pangkas `core-engine-client.ts`**: buang `CoreEngineAPI` + tipe endpoint yang tidak ada di engine v0.6 (pola "generate dari `luas_bangunan`" yang melanggar aturan emas). Sisakan `CORE_ENGINE_URL` + `CoreEngineError`.
+- Kartu proyek menampilkan **"Belum dihitung"** sampai engine menghasilkan nilai; setelah "Simpan", `rabValue` diisi dari `RABResult.total` engine (cache tampilan, bukan hitung frontend).
+
+### Notes
+- **Belum termasuk (butuh keputusan sebelum v0.8):** editor harga regional dari UI (butuh endpoint override harga di engine), dan **Smart Import + AI** (vendor model, API key, metering — lihat `docs/strategy/PAAX_Analisis_Strategis_Companion.md`).
+- Test: engine **28 passed** (8 unit + 20 integrasi), schema **6 passed**, web build hijau.
+
+## [v0.6.0] — Deterministic Foundation Release
 ### Added
 - **Core Engine deterministik** (`services/core-engine`): perhitungan HSP, RAB (+ bobot), dan Kurva S yang sepenuhnya auditable, berbasis koefisien AHSP × harga satuan. Tidak ada LLM di jalur perhitungan.
 - **Endpoint API** (FastAPI): `GET /health`, `GET /ahsp`, `GET /ahsp/{code}`, `GET /regions`, `POST /rab/hsp`, `POST /rab/calculate`, `POST /schedule/s-curve`.
