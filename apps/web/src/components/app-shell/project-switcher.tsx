@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { ChevronDown, Building2, Check, MapPin } from 'lucide-react';
 import { LocalStorage, STORAGE_KEYS } from '@/lib/local-storage';
+import { projects as mockProjects, type MockProject } from '@/lib/mock/workspace';
 
 interface ProjectSwitcherProps {
   currentProjectId: string;
@@ -13,12 +14,12 @@ export function ProjectSwitcher({ currentProjectId }: ProjectSwitcherProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<MockProject[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const savedProjects = LocalStorage.get<any[]>(STORAGE_KEYS.PROJECTS, []);
-    setProjects(savedProjects);
+    const saved = LocalStorage.get<MockProject[]>(STORAGE_KEYS.PROJECTS, []);
+    setProjects(saved.length ? saved : mockProjects);
   }, []);
 
   useEffect(() => {
@@ -31,74 +32,83 @@ export function ProjectSwitcher({ currentProjectId }: ProjectSwitcherProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const currentProject = projects.find(p => p.id === currentProjectId);
+  const currentProject =
+    projects.find((p) => p.id === currentProjectId) ??
+    mockProjects.find((p) => p.id === currentProjectId) ??
+    { ...mockProjects[0], id: currentProjectId };
 
   const handleSwitchProject = (newProjectId: string) => {
     setIsOpen(false);
     if (newProjectId === currentProjectId) return;
-    
     LocalStorage.setActiveProjectId(newProjectId);
-    
-    // Replace the old projectId in the pathname with the new one
-    // example: /proyek/proj-001/gambar-kerja -> /proyek/proj-002/gambar-kerja
-    const newPath = pathname.replace(`/proyek/${currentProjectId}`, `/proyek/${newProjectId}`);
-    router.push(newPath);
+    router.push(pathname.replace(`/proyek/${currentProjectId}`, `/proyek/${newProjectId}`));
   };
 
-  if (!currentProject) return null;
-
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div style={{ position: 'relative' }} ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] transition-all text-left"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '8px 12px',
+          borderRadius: 11,
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          cursor: 'pointer',
+          textAlign: 'left',
+        }}
       >
-        <div className="w-8 h-8 rounded bg-gradient-to-br from-indigo-500/20 to-blue-500/20 border border-indigo-500/20 flex items-center justify-center flex-shrink-0">
-          <Building2 className="w-4 h-4 text-indigo-400" />
-        </div>
-        <div className="flex-1 min-w-[150px]">
-          <div className="text-[10px] text-paax-text-muted font-medium uppercase tracking-wider mb-0.5">Active Project</div>
-          <div className="text-[13px] font-semibold text-white truncate pr-4">{currentProject.name}</div>
-        </div>
-        <ChevronDown className={`w-4 h-4 text-paax-text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <span style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--surface2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--text2)' }}>
+          <Building2 size={15} />
+        </span>
+        <span style={{ minWidth: 130 }}>
+          <span style={{ display: 'block', fontSize: 9.5, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Proyek Aktif</span>
+          <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentProject.name}</span>
+        </span>
+        <ChevronDown size={15} color="var(--text3)" style={{ transform: isOpen ? 'rotate(180deg)' : undefined, transition: 'transform .15s' }} />
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-[280px] bg-[#0A0F1E] border border-white/[0.08] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-          <div className="p-2 border-b border-white/[0.05]">
-            <div className="text-[11px] font-medium text-paax-text-muted uppercase tracking-wider px-2 py-1">Pilih Proyek</div>
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            right: 0,
+            marginTop: 8,
+            width: 280,
+            background: 'var(--elev)',
+            border: '1px solid var(--border)',
+            borderRadius: 14,
+            boxShadow: 'var(--shadow-modal)',
+            zIndex: 50,
+            overflow: 'hidden',
+          }}
+        >
+          <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-soft)', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text3)' }}>
+            Pilih Proyek
           </div>
-          <div className="max-h-[300px] overflow-y-auto p-1.5 space-y-0.5">
-            {projects.map(project => (
-              <button
-                key={project.id}
-                onClick={() => handleSwitchProject(project.id)}
-                className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all ${
-                  project.id === currentProjectId 
-                    ? 'bg-indigo-500/10 border border-indigo-500/20' 
-                    : 'hover:bg-white/[0.04] border border-transparent'
-                }`}
-              >
-                <div className="min-w-0 pr-3">
-                  <div className={`text-[13px] font-medium truncate ${project.id === currentProjectId ? 'text-indigo-300' : 'text-white'}`}>
-                    {project.name}
-                  </div>
-                  <div className="flex items-center gap-1 mt-0.5 text-[11px] text-paax-text-muted">
-                    <MapPin className="w-3 h-3" />
-                    <span className="truncate">{project.location}</span>
-                  </div>
-                </div>
-                {project.id === currentProjectId && (
-                  <Check className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-                )}
-              </button>
-            ))}
-            
-            {projects.length === 0 && (
-              <div className="px-3 py-4 text-center text-[12px] text-paax-text-muted">
-                Tidak ada proyek lain.
-              </div>
-            )}
+          <div style={{ maxHeight: 300, overflowY: 'auto', padding: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {projects.map((project) => {
+              const active = project.id === currentProjectId;
+              return (
+                <button
+                  key={project.id}
+                  onClick={() => handleSwitchProject(project.id)}
+                  className="pax-row-hover"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: 9, borderRadius: 10, textAlign: 'left', cursor: 'pointer', background: active ? 'var(--surface)' : 'transparent', border: `1px solid ${active ? 'var(--border)' : 'transparent'}` }}
+                >
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{project.name}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2, fontSize: 11, color: 'var(--text3)' }}>
+                      <MapPin size={11} /> {project.location}
+                    </span>
+                  </span>
+                  {active && <Check size={15} color="var(--accent)" style={{ flexShrink: 0 }} />}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
