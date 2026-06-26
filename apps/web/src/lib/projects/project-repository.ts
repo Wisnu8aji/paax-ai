@@ -119,7 +119,10 @@ export const projectRepository = {
   async list(): Promise<Project[]> {
     if (getProjectBackend() === 'localStorage') return listLocalProjects();
     const snapshot = await getDocs(collection(getDb(), COLLECTION));
-    return snapshot.docs.map((item) => item.data() as Project).sort(compareProjects);
+    return snapshot.docs
+      .map((item) => normalizeProject(item.data() as Partial<Project>))
+      .filter((project): project is Project => Boolean(project))
+      .sort(compareProjects);
   },
 
   async get(id: string): Promise<Project | null> {
@@ -127,7 +130,7 @@ export const projectRepository = {
       return readLocalProjects().find((project) => project.id === id) ?? null;
     }
     const snapshot = await getDoc(doc(getDb(), COLLECTION, id));
-    return snapshot.exists() ? (snapshot.data() as Project) : null;
+    return snapshot.exists() ? normalizeProject(snapshot.data() as Partial<Project>) : null;
   },
 
   async create(input: ProjectCreateInput): Promise<Project> {
