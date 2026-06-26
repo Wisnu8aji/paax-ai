@@ -3,8 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect, use } from 'react';
-import { LocalStorage, STORAGE_KEYS } from '@/lib/local-storage';
-import { ProjectSwitcher } from '@/components/app-shell/project-switcher';
 import {
   LayoutDashboard,
   FileImage,
@@ -14,7 +12,12 @@ import {
   HardHat,
   ChevronRight,
   ArrowLeft,
+  MapPin,
 } from 'lucide-react';
+import { LocalStorage, STORAGE_KEYS } from '@/lib/local-storage';
+import { ProjectSwitcher } from '@/components/app-shell/project-switcher';
+import { Card, StatusPill } from '@/components/ui';
+import { projects as mockProjects, statusTone, type MockProject } from '@/lib/mock/workspace';
 
 const projectTabs = [
   { label: 'Overview', icon: LayoutDashboard, href: '' },
@@ -25,13 +28,13 @@ const projectTabs = [
   { label: 'Site Agent', icon: HardHat, href: '/site-agent' },
 ];
 
-const statusLabels: Record<string, string> = {
-  active: 'Aktif',
-  'rab-review': 'RAB Review',
-  scheduling: 'Scheduling',
-  draft: 'Draft',
-  drawing: 'Drawing',
-};
+function resolveProject(projectId: string): MockProject {
+  const saved = LocalStorage.get<MockProject[]>(STORAGE_KEYS.PROJECTS, []);
+  const found = saved.find((p) => p.id === projectId);
+  if (found) return found;
+  const mock = mockProjects.find((p) => p.id === projectId);
+  return mock ?? { ...mockProjects[0], id: projectId };
+}
 
 export default function ProjectDetailLayout({
   children,
@@ -42,65 +45,44 @@ export default function ProjectDetailLayout({
 }) {
   const pathname = usePathname();
   const { projectId } = use(params);
-  const [project, setProject] = useState<any>(null);
-  const [hasLoadedProject, setHasLoadedProject] = useState(false);
+  const [project, setProject] = useState<MockProject | null>(null);
 
   useEffect(() => {
-    setProject(null);
-    setHasLoadedProject(false);
-    const savedProjects = LocalStorage.get<any[]>(STORAGE_KEYS.PROJECTS, []);
-    const found = savedProjects.find(p => p.id === projectId);
-    if (found) {
-      setProject(found);
-      LocalStorage.setActiveProjectId(projectId);
-    }
-    setHasLoadedProject(true);
+    const p = resolveProject(projectId);
+    setProject(p);
+    LocalStorage.setActiveProjectId(projectId);
   }, [projectId]);
 
+  if (!project) {
+    return <div style={{ padding: 24, color: 'var(--text3)' }}>Memuat proyek…</div>;
+  }
+
   return (
-    <div className="space-y-0">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 mb-4 text-[12px]">
-        <Link href="/proyek" className="text-paax-text-muted hover:text-white transition-colors flex items-center gap-1">
-          <ArrowLeft className="w-3 h-3" />
-          Proyek
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+        <Link href="/proyek" style={{ color: 'var(--text2)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <ArrowLeft size={13} /> Proyek
         </Link>
-        <ChevronRight className="w-3 h-3 text-paax-text-muted" />
-        <span className="text-paax-text-secondary font-medium">{project ? project.name : 'Memuat...'}</span>
+        <ChevronRight size={13} color="var(--text3)" />
+        <span style={{ color: 'var(--text)', fontWeight: 600 }}>{project.name}</span>
       </div>
 
-      {/* Project Header */}
-      {project ? (
-      <div className="glass-card p-5 mb-4">
-        <div className="flex items-start justify-between gap-4 mb-1">
-          <div>
-            <h1 className="text-xl font-bold text-white">{project.name}{project.location ? ` - ${project.location}` : ''}</h1>
-            <p className="text-[12px] text-paax-text-muted mt-1">
-              {project.location || '-'} · Klien: {project.client || '-'}
-              {project.type ? ` · ${project.type}` : ''}
-              {project.luas_bangunan ? ` · Luas ${project.luas_bangunan}m²` : ''}
-              {project.jumlah_lantai ? ` · ${project.jumlah_lantai} Lantai` : ''}
-            </p>
+      <Card padding={18}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 0 }}>
+            <h1 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: 'var(--text)' }}>{project.name}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, fontSize: 12, color: 'var(--text2)' }}>
+              <MapPin size={13} /> {project.location} · Klien: {project.client} · {project.type}
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="badge badge-green">{statusLabels[project.status] || project.status || '-'}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <StatusPill tone={statusTone[project.status]}>{project.statusLabel}</StatusPill>
             <ProjectSwitcher currentProjectId={projectId} />
           </div>
         </div>
-      </div>
-      ) : hasLoadedProject ? (
-      <div className="glass-card p-5 mb-4">
-        <h1 className="text-lg font-semibold text-white">Proyek tidak ditemukan</h1>
-        <p className="text-[12px] text-paax-text-muted mt-1 mb-4">Proyek dengan ID {projectId} tidak tersedia di penyimpanan lokal.</p>
-        <Link href="/proyek" className="btn-secondary inline-flex">Kembali ke Proyek</Link>
-      </div>
-      ) : (
-      <div className="glass-card p-5 mb-4 flex justify-center text-paax-text-muted">Memuat proyek...</div>
-      )}
+      </Card>
 
-      {/* Tabs */}
-      {project && (
-      <div className="flex items-center gap-1 border-b border-white/[0.06] mb-6 overflow-x-auto">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1px solid var(--border)', overflowX: 'auto' }}>
         {projectTabs.map((tab) => {
           const fullHref = `/proyek/${projectId}${tab.href}`;
           const isActive = pathname === fullHref || (tab.href !== '' && pathname.startsWith(fullHref));
@@ -109,19 +91,27 @@ export default function ProjectDetailLayout({
             <Link
               key={tab.label}
               href={fullHref}
-              className={`flex items-center gap-2 px-4 py-3 text-[13px] font-medium whitespace-nowrap transition-all ${
-                isActive ? 'tab-active' : 'tab-inactive'
-              }`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
+                padding: '11px 14px',
+                fontSize: 13,
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                textDecoration: 'none',
+                color: isActive ? 'var(--text)' : 'var(--text3)',
+                borderBottom: `2px solid ${isActive ? 'var(--accent)' : 'transparent'}`,
+              }}
             >
-              <Icon className="w-4 h-4" />
+              <Icon size={15} />
               {tab.label}
             </Link>
           );
         })}
       </div>
-      )}
 
-      {project ? children : null}
+      <div className="pax-fade">{children}</div>
     </div>
   );
 }
