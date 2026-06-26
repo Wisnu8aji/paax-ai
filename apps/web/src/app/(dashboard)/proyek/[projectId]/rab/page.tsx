@@ -21,11 +21,14 @@ import {
   AlertCircle,
   Save,
   CheckCircle2,
+  FileSpreadsheet,
+  Printer,
 } from 'lucide-react';
 import type { HSPBreakdown, RABResult, SCurveResult } from '@paax/schemas';
 import { Card, Button, StatusPill, EmptyState, Modal } from '@/components/ui';
 import { SCurveChart } from '@/components/rab/s-curve-chart';
 import { HspBreakdownBody } from '@/components/rab/hsp-breakdown';
+import { exportRabCsv, exportRabPdf } from '@/lib/export/rab-export';
 import { useProjects } from '@/lib/projects/projects-context';
 import {
   rabRepository,
@@ -227,6 +230,23 @@ export default function ProjectRabPage() {
     }
   };
 
+  const handleExportCsv = () => {
+    if (!rabResult) return;
+    try {
+      exportRabCsv(rabResult, project?.name ?? 'proyek');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Gagal export Excel.');
+    }
+  };
+  const handleExportPdf = () => {
+    if (!rabResult) return;
+    try {
+      exportRabPdf(rabResult, project?.name ?? 'proyek');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Gagal export PDF.');
+    }
+  };
+
   if (projectsLoading) return <EmptyState title="Memuat proyek..." />;
   if (!project) return <EmptyState title="Proyek tidak ditemukan" message="Buka daftar proyek untuk memilih proyek." />;
 
@@ -360,7 +380,15 @@ export default function ProjectRabPage() {
         )}
       </Card>
 
-      {rabResult && <RabResultTable rab={rabResult} onHsp={handleHsp} hspBusy={busy.hsp} />}
+      {rabResult && (
+        <RabResultTable
+          rab={rabResult}
+          onHsp={handleHsp}
+          hspBusy={busy.hsp}
+          onExportCsv={handleExportCsv}
+          onExportPdf={handleExportPdf}
+        />
+      )}
       {scurveResult && <ScurvePanel scurve={scurveResult} />}
 
       {hspModal && (
@@ -388,13 +416,33 @@ function ErrorBox({ message, onClose }: { message: string; onClose: () => void }
   );
 }
 
-function RabResultTable({ rab, onHsp, hspBusy }: { rab: RABResult; onHsp: (code: string) => void; hspBusy: string | null }) {
+function RabResultTable({
+  rab,
+  onHsp,
+  hspBusy,
+  onExportCsv,
+  onExportPdf,
+}: {
+  rab: RABResult;
+  onHsp: (code: string) => void;
+  hspBusy: string | null;
+  onExportCsv: () => void;
+  onExportPdf: () => void;
+}) {
   const th: React.CSSProperties = { padding: '11px 14px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text2)', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' };
   const td: React.CSSProperties = { padding: '11px 14px', borderBottom: '1px solid var(--border-soft)' };
   return (
     <Card padding={18}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>Rencana Anggaran Biaya — {rab.region}</div>
-      <div style={{ fontSize: 11.5, color: 'var(--text3)', marginBottom: 12 }}>Dihitung engine deterministik · PPN {formatPercent(rab.ppn_rate * 100)}</div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>Rencana Anggaran Biaya — {rab.region}</div>
+          <div style={{ fontSize: 11.5, color: 'var(--text3)' }}>Dihitung engine deterministik · PPN {formatPercent(rab.ppn_rate * 100)}</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Button variant="secondary" onClick={onExportCsv}><FileSpreadsheet size={15} /> Excel</Button>
+          <Button variant="secondary" onClick={onExportPdf}><Printer size={15} /> PDF</Button>
+        </div>
+      </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
