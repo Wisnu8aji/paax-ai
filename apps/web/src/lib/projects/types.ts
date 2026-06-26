@@ -27,6 +27,8 @@ export interface ProjectCreateInput {
 
 export type ProjectUpdateInput = Partial<ProjectCreateInput> & {
   status?: ProjectStatus;
+  /** Cache nilai RAB dari engine (RABResult.total) untuk tampilan kartu proyek. */
+  rabValue?: number | null;
 };
 
 export const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {

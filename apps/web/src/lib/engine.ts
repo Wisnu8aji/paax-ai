@@ -17,6 +17,11 @@ export interface AHSPListItem {
   bidang: string;
 }
 
+export interface RegionItem {
+  code: string;
+  name: string;
+}
+
 export interface EngineLine {
   ahsp_code: string;
   volume: number;
@@ -52,6 +57,11 @@ async function engineFetch(endpoint: string, init?: RequestInit): Promise<unknow
 /** GET /ahsp — daftar item AHSP yang tersedia di engine. */
 export async function fetchAHSPList(): Promise<AHSPListItem[]> {
   return (await engineFetch("/ahsp")) as AHSPListItem[];
+}
+
+/** GET /regions — daftar wilayah harga satuan yang tersedia di engine. */
+export async function fetchRegions(): Promise<RegionItem[]> {
+  return (await engineFetch("/regions")) as RegionItem[];
 }
 
 /** POST /rab/calculate — RAB lengkap (lines + subtotal + PPN + total). */
