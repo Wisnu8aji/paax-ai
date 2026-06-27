@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { ChevronDown, Building2, Check, MapPin } from 'lucide-react';
-import { LocalStorage, STORAGE_KEYS } from '@/lib/local-storage';
-import { projects as mockProjects, type MockProject } from '@/lib/mock/workspace';
+import { LocalStorage } from '@/lib/local-storage';
+import { useProjects } from '@/lib/projects/projects-context';
 
 interface ProjectSwitcherProps {
   currentProjectId: string;
@@ -14,13 +14,8 @@ export function ProjectSwitcher({ currentProjectId }: ProjectSwitcherProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [projects, setProjects] = useState<MockProject[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const saved = LocalStorage.get<MockProject[]>(STORAGE_KEYS.PROJECTS, []);
-    setProjects(saved.length ? saved : mockProjects);
-  }, []);
+  const { projects } = useProjects();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -33,9 +28,7 @@ export function ProjectSwitcher({ currentProjectId }: ProjectSwitcherProps) {
   }, []);
 
   const currentProject =
-    projects.find((p) => p.id === currentProjectId) ??
-    mockProjects.find((p) => p.id === currentProjectId) ??
-    { ...mockProjects[0], id: currentProjectId };
+    projects.find((p) => p.id === currentProjectId) ?? null;
 
   const handleSwitchProject = (newProjectId: string) => {
     setIsOpen(false);
@@ -43,6 +36,10 @@ export function ProjectSwitcher({ currentProjectId }: ProjectSwitcherProps) {
     LocalStorage.setActiveProjectId(newProjectId);
     router.push(pathname.replace(`/proyek/${currentProjectId}`, `/proyek/${newProjectId}`));
   };
+
+  if (!currentProject) {
+    return null;
+  }
 
   return (
     <div style={{ position: 'relative' }} ref={dropdownRef}>

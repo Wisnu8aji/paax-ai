@@ -12,8 +12,7 @@
     "test:schemas": "pnpm --filter @paax/schemas test",
     "clean": "turbo clean",
     "dev:web": "cd apps/web && pnpm dev",
-    "dev:core": "cd services/core-engine && uvicorn app.main:app --reload --port 8081",
-    "dev:ai": "turbo dev --filter=@paax/ai-orchestrator"
+    "dev:core": "cd services/core-engine && uvicorn app.main:app --reload --port 8081"
   },
   "devDependencies": {
     "@types/body-parser": "^1.19.6",

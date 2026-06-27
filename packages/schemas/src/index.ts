@@ -942,3 +942,79 @@ export const SCurveResult = z.object({
   points: z.array(SCurvePoint),
 });
 export type SCurveResult = z.infer<typeof SCurveResult>;
+
+// ─── Scenario Simulator (selaras app/scenario/models.py) ─────────────────────
+
+export const ScenarioLineInput = z.object({
+  ahsp_code: z.string(),
+  volume: z.number(),
+  workers: z.number().int().default(4),
+});
+export type ScenarioLineInput = z.infer<typeof ScenarioLineInput>;
+
+export const ScenarioConfig = z.object({
+  region_code: z.string().default("jateng"),
+  ppn_rate: z.number().default(0.11),
+  base_mode: z.enum(["sequential", "parallel"]).default("sequential"),
+  crew_factor: z.number().default(2),
+  overtime_speedup: z.number().default(1.25),
+  overtime_cost_factor: z.number().default(1.4),
+  lines: z.array(ScenarioLineInput),
+});
+export type ScenarioConfig = z.infer<typeof ScenarioConfig>;
+
+export const ItemSchedule = z.object({
+  ahsp_code: z.string(),
+  name: z.string(),
+  unit: z.string(),
+  volume: z.number(),
+  labor_oh_per_unit: z.number(),
+  mandays: z.number(),
+  workers: z.number().int(),
+  duration_days: z.number(),
+});
+
+export const ScenarioCandidate = z.object({
+  key: z.string(),
+  label: z.string(),
+  total_days: z.number(),
+  total_cost: z.number(),
+  delta_days: z.number(),
+  delta_cost: z.number(),
+  delta_days_pct: z.number(),
+  delta_cost_pct: z.number(),
+  note: z.string(),
+});
+
+export const ScenarioResult = z.object({
+  region: z.string(),
+  region_code: z.string(),
+  base_mode: z.string(),
+  items: z.array(ItemSchedule),
+  baseline_total_days: z.number(),
+  baseline_total_cost: z.number(),
+  baseline_labor_cost: z.number(),
+  candidates: z.array(ScenarioCandidate),
+});
+export type ScenarioResult = z.infer<typeof ScenarioResult>;
+
+// ─── RAB Health Check (selaras app/rab/validate.py) ──────────────────────────
+
+export const ValidationIssue = z.object({
+  code: z.string(),
+  severity: z.enum(["info", "warning", "error"]),
+  message: z.string(),
+  ahsp_code: z.string().nullish(),
+});
+export type ValidationIssue = z.infer<typeof ValidationIssue>;
+
+export const ValidationResult = z.object({
+  score: z.number().int(),
+  ok: z.boolean(),
+  items_count: z.number().int(),
+  errors: z.number().int(),
+  warnings: z.number().int(),
+  infos: z.number().int(),
+  issues: z.array(ValidationIssue),
+});
+export type ValidationResult = z.infer<typeof ValidationResult>;

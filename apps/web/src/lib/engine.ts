@@ -7,7 +7,7 @@
  *
  * Reuse: CORE_ENGINE_URL & CoreEngineError dari core-engine-client.ts.
  */
-import { RABResult, HSPBreakdown, SCurveResult } from "@paax/schemas";
+import { RABResult, HSPBreakdown, SCurveResult, ScenarioResult, ValidationResult } from "@paax/schemas";
 import { CORE_ENGINE_URL, CoreEngineError } from "./core-engine-client";
 
 export interface AHSPListItem {
@@ -17,6 +17,11 @@ export interface AHSPListItem {
   bidang: string;
 }
 
+export interface RegionItem {
+  code: string;
+  name: string;
+}
+
 export interface EngineLine {
   ahsp_code: string;
   volume: number;
@@ -24,6 +29,19 @@ export interface EngineLine {
 }
 
 export type ScheduleMode = "sequential" | "parallel";
+
+export interface ScenarioLine {
+  ahsp_code: string;
+  volume: number;
+  workers: number;
+}
+
+export interface ScenarioParams {
+  base_mode?: ScheduleMode;
+  crew_factor?: number;
+  overtime_speedup?: number;
+  overtime_cost_factor?: number;
+}
 
 async function engineFetch(endpoint: string, init?: RequestInit): Promise<unknown> {
   let res: Response;
@@ -54,6 +72,11 @@ export async function fetchAHSPList(): Promise<AHSPListItem[]> {
   return (await engineFetch("/ahsp")) as AHSPListItem[];
 }
 
+/** GET /regions — daftar wilayah harga satuan yang tersedia di engine. */
+export async function fetchRegions(): Promise<RegionItem[]> {
+  return (await engineFetch("/regions")) as RegionItem[];
+}
+
 /** POST /rab/calculate — RAB lengkap (lines + subtotal + PPN + total). */
 export async function calculateRAB(
   lines: EngineLine[],
@@ -77,6 +100,33 @@ export async function getHSPDetail(
     body: JSON.stringify({ ahsp_code: ahspCode, region_code: regionCode }),
   });
   return HSPBreakdown.parse(data);
+}
+
+/** POST /rab/validate — health check RAB (skor + peringatan deterministik). */
+export async function validateRAB(
+  lines: EngineLine[],
+  regionCode = "jateng",
+  ppnRate = 0.11,
+): Promise<ValidationResult> {
+  const data = await engineFetch("/rab/validate", {
+    method: "POST",
+    body: JSON.stringify({ region_code: regionCode, ppn_rate: ppnRate, lines }),
+  });
+  return ValidationResult.parse(data);
+}
+
+/** POST /scenario/simulate — simulasi what-if waktu-biaya (semua angka dari engine). */
+export async function simulateScenario(
+  lines: ScenarioLine[],
+  regionCode = "jateng",
+  ppnRate = 0.11,
+  params: ScenarioParams = {},
+): Promise<ScenarioResult> {
+  const data = await engineFetch("/scenario/simulate", {
+    method: "POST",
+    body: JSON.stringify({ region_code: regionCode, ppn_rate: ppnRate, ...params, lines }),
+  });
+  return ScenarioResult.parse(data);
 }
 
 /** POST /schedule/s-curve — Kurva S rencana dari RAB + durasi tiap item. */

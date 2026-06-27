@@ -60,3 +60,4 @@ Thumbs.db
 # Temp files
 ci_log.txt
 fix-genkit.js
+.codex-*.log

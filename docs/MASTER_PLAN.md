@@ -5,6 +5,9 @@
 > Dari fondasi deterministik (v0.6) menuju workspace AI utuh (v2.0)
 > Disusun untuk Wisnu Setyo Aji · Repo: `github.com/Wisnu8aji/paax-ai`
 > Status: Draft strategis & teknis untuk direview
+> Companion strategi: `docs/strategy/PAAX_Analisis_Strategis_Companion.md`
+> untuk pressure-test bisnis, biaya AI, margin, pricing, vendor model, dan
+> prioritas roadmap.
 
 > **Inti dokumen ini.** Dokumen ini memperluas Cetak Biru PAAX sebelumnya menjadi rancangan menyeluruh: pipeline gambar→RAB, BoQ, penjadwalan, simulasi skenario, Engineering Chat ter-grounding, AI proaktif (laporan pagi, prediksi material, peringatan keterlambatan), AI Agent otonom, model paket & harga lengkap dengan estimasi biaya, riset kompetitor, serta roadmap rilis bertahap dengan rincian tugas pembangunan. Konsep inti dipertahankan sepenuhnya. **Aturan emas tetap sakral: engine yang menghitung, AI yang menjelaskan.** Setiap saran tambahan diletakkan di Bagian 19 sebagai peningkatan efisiensi tanpa mengubah konsep.
 

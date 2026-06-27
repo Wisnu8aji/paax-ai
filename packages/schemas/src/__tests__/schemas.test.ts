@@ -2,7 +2,7 @@
  * Test Zod schema parsing — memastikan schema selaras dengan response engine aktual.
  * Nilai di sini adalah contoh response aktual dari POST /rab/calculate engine.
  */
-import { RABResult, HSPBreakdown, SCurveResult, RABLineInput } from "../index";
+import { RABResult, HSPBreakdown, SCurveResult, RABLineInput, ScenarioResult, ValidationResult } from "../index";
 
 // Contoh response aktual dari POST /rab/calculate engine
 const mockRABResult = {
@@ -96,6 +96,51 @@ describe("SCurveResult schema", () => {
   it("parses valid SCurve response without error", () => {
     const result = SCurveResult.parse(mockSCurveResult);
     expect(result.points[result.points.length - 1].cumulative_pct).toBe(100.0);
+  });
+});
+
+// Contoh response /scenario/simulate (anchor manual di test_scenario.py)
+const mockScenarioResult = {
+  region: "Jawa Tengah",
+  region_code: "jateng",
+  base_mode: "sequential",
+  items: [
+    { ahsp_code: "AHSP.CK.001", name: "Dinding bata", unit: "m2", volume: 50, labor_oh_per_unit: 0.425, mandays: 21.25, workers: 5, duration_days: 4.25 },
+  ],
+  baseline_total_days: 9.05,
+  baseline_total_cost: 12666898.2,
+  baseline_labor_cost: 5956500.0,
+  candidates: [
+    { key: "baseline", label: "Baseline", total_days: 9.05, total_cost: 12666898.2, delta_days: 0, delta_cost: 0, delta_days_pct: 0, delta_cost_pct: 0, note: "Rencana awal" },
+  ],
+};
+
+// Contoh response /rab/validate
+const mockValidationResult = {
+  score: 90,
+  ok: true,
+  items_count: 2,
+  errors: 0,
+  warnings: 1,
+  infos: 0,
+  issues: [
+    { code: "DUPLICATE_ITEM", severity: "warning", message: "Item muncul 2x", ahsp_code: "AHSP.CK.001" },
+  ],
+};
+
+describe("ScenarioResult schema", () => {
+  it("parses valid scenario response without error", () => {
+    const result = ScenarioResult.parse(mockScenarioResult);
+    expect(result.baseline_total_days).toBe(9.05);
+    expect(result.candidates[0].key).toBe("baseline");
+  });
+});
+
+describe("ValidationResult schema", () => {
+  it("parses valid validation response without error", () => {
+    const result = ValidationResult.parse(mockValidationResult);
+    expect(result.score).toBe(90);
+    expect(result.issues[0].code).toBe("DUPLICATE_ITEM");
   });
 });
 
