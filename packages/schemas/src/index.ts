@@ -903,6 +903,7 @@ export const RABLineInput = z.object({
   volume: z.number(),
   duration_days: z.number().int().optional(),
   description: z.string().optional(),
+  section: z.string().nullish(),
 });
 export type RABLineInput = z.infer<typeof RABLineInput>;
 
@@ -1018,3 +1019,43 @@ export const ValidationResult = z.object({
   issues: z.array(ValidationIssue),
 });
 export type ValidationResult = z.infer<typeof ValidationResult>;
+
+// ─── Geometry → Volume (selaras app/geometry/models.py) ──────────────────────
+
+export const VolumeRequest = z.object({
+  element_type: z.string(),
+  dims: z.record(z.number()),
+});
+export type VolumeRequest = z.infer<typeof VolumeRequest>;
+
+export const VolumeResult = z.object({
+  element_type: z.string(),
+  unit: z.string(),
+  volume: z.number(),
+  formula: z.string(),
+  detail: z.string(),
+  inputs: z.record(z.number()),
+});
+export type VolumeResult = z.infer<typeof VolumeResult>;
+
+// ─── RAB tersektor / WBS (selaras app/rab/sections.py) ───────────────────────
+
+export const RABSection = z.object({
+  code: z.string(),
+  title: z.string(),
+  lines: z.array(RABLine),
+  subtotal: z.number(),
+  weight_pct: z.number(),
+});
+export type RABSection = z.infer<typeof RABSection>;
+
+export const SectionedRABResult = z.object({
+  region: z.string(),
+  region_code: z.string(),
+  sections: z.array(RABSection),
+  subtotal: z.number(),
+  ppn_rate: z.number(),
+  ppn: z.number(),
+  total: z.number(),
+});
+export type SectionedRABResult = z.infer<typeof SectionedRABResult>;
