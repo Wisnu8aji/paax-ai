@@ -915,6 +915,8 @@ export const RABLine = z.object({
   hsp: z.number(),
   amount: z.number(),
   weight_pct: z.number(),
+  tax_amount: z.number(),
+  line_total: z.number(),
 });
 
 export const RABResult = z.object({

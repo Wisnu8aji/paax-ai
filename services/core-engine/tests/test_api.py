@@ -179,6 +179,20 @@ class TestRABCalculate:
         assert "ppn" in data
         assert "total" in data
 
+    def test_rab_calculate_accepts_overhead_and_rounddown(self):
+        r = client.post("/rab/calculate", json={
+            "region_code": "jateng",
+            "ppn_rate": 0.11,
+            "overhead_override": 0.05,
+            "rounding_mode": "rounddown_int",
+            "lines": [{"ahsp_code": "AHSP.CK.001", "volume": 1}]
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert data["lines"][0]["hsp"] == 138778.0
+        assert data["lines"][0]["tax_amount"] == 15265.58
+        assert data["lines"][0]["line_total"] == 154043.58
+
 
 class TestSCurve:
     def test_scurve_sequential_cumulative_reaches_100(self):
@@ -308,3 +322,19 @@ class TestScenario:
             "lines": [{"ahsp_code": "NOPE", "volume": 5, "workers": 2}]
         })
         assert r.status_code == 400
+
+
+class TestExcelExport:
+    def test_rab_export_excel_endpoint_returns_xlsx(self):
+        r = client.post("/rab/export/excel", json={
+            "region_code": "jateng",
+            "lines": [
+                {"ahsp_code": "AHSP.CK.001", "volume": 50, "section": "III"},
+                {"ahsp_code": "AHSP.CK.002", "volume": 50, "section": "III"},
+            ]
+        })
+        assert r.status_code == 200
+        assert r.headers["content-type"].startswith(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        assert r.content[:2] == b"PK"
