@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
+  FlaskConical,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -35,6 +36,7 @@ const projectModules = [
 ];
 
 const bottomMenuItems = [
+  { label: 'Uji RAB (v0.6)', icon: FlaskConical, href: '/rab-tester' },
   { label: 'File & Dokumen', icon: Files, href: '/files' },
   { label: 'Database AHSP', icon: Database, href: '/database-ahsp' },
   { label: 'Laporan & Export', icon: FileSpreadsheet, href: '/laporan' },

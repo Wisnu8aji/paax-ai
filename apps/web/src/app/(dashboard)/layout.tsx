@@ -1,20 +1,55 @@
-import Sidebar from '@/components/app-shell/sidebar';
-import Topbar from '@/components/app-shell/topbar';
+'use client';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+import { useCallback, useState } from 'react';
+import { ThemeProvider, useTheme } from '@/components/theme/theme-provider';
+import { ShellContext, type OverlayName } from '@/components/app-shell/shell-context';
+import { IconRail } from '@/components/app-shell/icon-rail';
+import { NavPanel } from '@/components/app-shell/nav-panel';
+import Topbar from '@/components/app-shell/topbar';
+import { WorkspaceOverlays } from '@/components/app-shell/overlays';
+
+function Shell({ children }: { children: React.ReactNode }) {
+  const { theme } = useTheme();
+  const [current, setCurrent] = useState<OverlayName | null>(null);
+  const [navCollapsed, setNavCollapsed] = useState(false);
+
+  const openOverlay = useCallback((name: OverlayName) => setCurrent(name), []);
+  const closeOverlay = useCallback(() => setCurrent(null), []);
+  const toggleNav = useCallback(() => setNavCollapsed((c) => !c), []);
+
   return (
-    <div className="min-h-screen flex">
-      <Sidebar />
-      <div className="flex-1 ml-[260px] flex flex-col min-h-screen">
-        <Topbar />
-        <main className="flex-1 p-6">
-          {children}
+    <ShellContext.Provider value={{ current, openOverlay, closeOverlay, navCollapsed, toggleNav }}>
+      <div
+        data-theme={theme}
+        className="pax-scope"
+        style={{
+          display: 'flex',
+          gap: 16,
+          padding: 16,
+          minHeight: '100vh',
+          background: 'var(--bg)',
+          color: 'var(--text)',
+          fontFamily: "var(--font-hanken), 'Hanken Grotesk', system-ui, sans-serif",
+        }}
+      >
+        <IconRail />
+        <NavPanel collapsed={navCollapsed} />
+        <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Topbar />
+          <div style={{ flex: 1, minWidth: 0 }} className="pax-fade">
+            {children}
+          </div>
         </main>
+        <WorkspaceOverlays />
       </div>
-    </div>
+    </ShellContext.Provider>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider>
+      <Shell>{children}</Shell>
+    </ThemeProvider>
   );
 }

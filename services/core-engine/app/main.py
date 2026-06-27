@@ -1,52 +1,123 @@
 """
-PAAX Core Engine - FastAPI Application
-Deterministic calculation service for RAB, Schedule, Validation, and Export.
-All numerical computations happen here — never in the LLM layer.
+PAAX Core Engine — FastAPI service (v0.6).
+
+Endpoint deterministik (tidak ada LLM di sini):
+    GET  /health
+    GET  /ahsp                      -> daftar item AHSP
+    GET  /ahsp/{code}               -> detail satu item
+    GET  /regions                   -> daftar wilayah harga
+    POST /rab/hsp                   -> rincian HSP satu item
+    POST /rab/calculate             -> RAB lengkap dari daftar item
+    POST /schedule/s-curve          -> Kurva S rencana dari RAB + durasi
 """
-
-from fastapi import FastAPI
+from __future__ import annotations
+from typing import List, Optional
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
-from app.api.health_routes import router as health_router
-from app.api.rab_routes import router as rab_router
-from app.api.schedule_routes import router as schedule_router
-from app.api.export_routes import router as export_router
-from app.api.validation_routes import router as validation_router
+from .rab.loader import load_data
+from .rab.rab import compute_hsp, compute_rab
+from .rab.schedule import build_s_curve
+from .rab.models import RABLineInput, HSPBreakdown, RABResult, SCurveResult
 
-app = FastAPI(
-    title="PAAX Core Engine",
-    description=(
-        "Deterministic calculation backend for PAAX AI civil engineering workspace. "
-        "Handles RAB generation, schedule planning, validation, and Excel export. "
-        "Angka final dihitung oleh core-engine, bukan LLM."
-    ),
-    version="0.3.0",
-)
+app = FastAPI(title="PAAX Core Engine", version="0.6.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=["*"],          # ketatkan di produksi
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(health_router, tags=["Health"])
-app.include_router(rab_router, prefix="/rab", tags=["RAB"])
-app.include_router(schedule_router, prefix="/schedule", tags=["Schedule"])
-app.include_router(export_router, prefix="/export", tags=["Export"])
-app.include_router(validation_router, prefix="/validation", tags=["Validation"])
+STORE = load_data()
 
 
-@app.on_event("startup")
-async def startup_event() -> None:
-    """Log startup and initialise shared resources."""
-    import logging
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger("paax.core")
-    logger.info("PAAX Core Engine v0.3.0 started")
+# ----------------------------- Request bodies -----------------------------
+class HSPRequest(BaseModel):
+    ahsp_code: str
+    region_code: str = "jateng"
 
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8080, reload=True)
+class RABRequest(BaseModel):
+    region_code: str = "jateng"
+    ppn_rate: float = 0.11
+    lines: List[RABLineInput]
+
+
+class SCurveRequest(BaseModel):
+    region_code: str = "jateng"
+    ppn_rate: float = 0.11
+    period_days: int = 7
+    mode: str = "sequential"
+    lines: List[RABLineInput]
+
+
+# ----------------------------- Endpoints -----------------------------
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "version": "0.6.0",
+        "ahsp_items": len(STORE.ahsp),
+        "regions": list(STORE.regions),
+    }
+
+
+@app.get("/ahsp")
+def list_ahsp():
+    return [
+        {"code": i.code, "name": i.name, "unit": i.unit, "bidang": i.bidang}
+        for i in STORE.ahsp.values()
+    ]
+
+
+@app.get("/ahsp/{code}")
+def get_ahsp(code: str):
+    item = STORE.ahsp.get(code)
+    if item is None:
+        raise HTTPException(404, f"Item AHSP '{code}' tidak ditemukan")
+    return item
+
+
+@app.get("/regions")
+def list_regions():
+    return [{"code": c, "name": n} for c, n in STORE.region_names.items()]
+
+
+@app.post("/rab/hsp", response_model=HSPBreakdown)
+def hsp(req: HSPRequest):
+    item = STORE.ahsp.get(req.ahsp_code)
+    if item is None:
+        raise HTTPException(404, f"Item AHSP '{req.ahsp_code}' tidak ditemukan")
+    try:
+        return compute_hsp(item, STORE.price_book(req.region_code))
+    except KeyError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/rab/calculate", response_model=RABResult)
+def calculate(req: RABRequest):
+    try:
+        return compute_rab(
+            req.lines, STORE.ahsp, STORE.price_book(req.region_code),
+            region=STORE.region_names.get(req.region_code, req.region_code),
+            region_code=req.region_code,
+            ppn_rate=req.ppn_rate,
+        )
+    except KeyError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/schedule/s-curve", response_model=SCurveResult)
+def s_curve(req: SCurveRequest):
+    try:
+        rab = compute_rab(
+            req.lines, STORE.ahsp, STORE.price_book(req.region_code),
+            region=STORE.region_names.get(req.region_code, req.region_code),
+            region_code=req.region_code,
+            ppn_rate=req.ppn_rate,
+        )
+    except KeyError as e:
+        raise HTTPException(400, str(e))
+    return build_s_curve(rab, req.lines, period_days=req.period_days, mode=req.mode)

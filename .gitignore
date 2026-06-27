@@ -12,7 +12,9 @@ out/
 # Python
 __pycache__/
 *.py[cod]
+*.pyc
 .venv/
+venv/
 *.egg-info/
 .pytest_cache/
 .pytest_tmp/
@@ -33,6 +35,15 @@ secrets.toml
 data/private/
 data_private/
 legacy/**/data_private/
+
+# Private / proprietary concept & strategy — keep LOCAL, do NOT upload (owner's decision)
+# These files stay on your machine but are never tracked/pushed to the public repo.
+/docs/BUILD_v0.6.md
+PAAX_AI_Blueprint*
+*.docx
+
+# Claude Code (personal/local settings)
+.claude/settings.local.json
 
 # IDE & OS
 .vscode/

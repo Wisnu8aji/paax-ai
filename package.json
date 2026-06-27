@@ -1,16 +1,18 @@
 {
   "name": "paax-ai",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.6.0",
   "description": "PAAX AI - Civil Engineering AI Workspace. Professional monorepo.",
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
-    "test": "turbo test",
+    "test": "pnpm run test:core && pnpm run test:schemas",
+    "test:core": "cd services/core-engine && python -m pytest -q",
+    "test:schemas": "pnpm --filter @paax/schemas test",
     "clean": "turbo clean",
-    "dev:web": "turbo dev --filter=@paax/web",
-    "dev:core": "cd services/core-engine && python -m uvicorn app.main:app --reload --port 8081",
+    "dev:web": "cd apps/web && pnpm dev",
+    "dev:core": "cd services/core-engine && uvicorn app.main:app --reload --port 8081",
     "dev:ai": "turbo dev --filter=@paax/ai-orchestrator"
   },
   "devDependencies": {

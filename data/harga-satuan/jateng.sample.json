@@ -1,0 +1,22 @@
+{
+  "region": "Jawa Tengah",
+  "region_code": "jateng",
+  "currency": "IDR",
+  "source": "DATA ILUSTRATIF — ganti dengan SHSD daerah / harga pasar resmi sebelum produksi",
+  "effective_date": "2026-01",
+  "resources": [
+    { "code": "BTA.01", "name": "Bata merah", "category": "bahan", "unit": "buah", "price": 800 },
+    { "code": "SMN.01", "name": "Semen Portland (PC)", "category": "bahan", "unit": "kg", "price": 1500 },
+    { "code": "SMN.02", "name": "Semen warna", "category": "bahan", "unit": "kg", "price": 8000 },
+    { "code": "PSR.01", "name": "Pasir pasang", "category": "bahan", "unit": "m3", "price": 250000 },
+    { "code": "PSR.02", "name": "Pasir beton (cor)", "category": "bahan", "unit": "m3", "price": 280000 },
+    { "code": "KRK.01", "name": "Kerikil / split", "category": "bahan", "unit": "m3", "price": 320000 },
+    { "code": "KRM.40", "name": "Keramik lantai 40x40 cm", "category": "bahan", "unit": "m2", "price": 65000 },
+    { "code": "UPH.01", "name": "Pekerja", "category": "upah", "unit": "OH", "price": 110000 },
+    { "code": "UPH.02", "name": "Tukang batu", "category": "upah", "unit": "OH", "price": 135000 },
+    { "code": "UPH.03", "name": "Tukang kayu", "category": "upah", "unit": "OH", "price": 135000 },
+    { "code": "UPH.04", "name": "Kepala tukang", "category": "upah", "unit": "OH", "price": 150000 },
+    { "code": "UPH.05", "name": "Mandor", "category": "upah", "unit": "OH", "price": 160000 },
+    { "code": "ALT.01", "name": "Concrete mixer (sewa)", "category": "alat", "unit": "hari", "price": 250000 }
+  ]
+}

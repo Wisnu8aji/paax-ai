@@ -1,112 +1,151 @@
-# PAAX AI - Civil Engineering Workspace (v0.4)
+# PAAX AI — Civil Engineering AI Workspace
 
-![PAAX AI](https://via.placeholder.com/800x200?text=PAAX+AI+Workspace)
+Workspace AI untuk insinyur sipil Indonesia. Mengubah data konstruksi menjadi
+**RAB patuh AHSP**, **jadwal Kurva S**, dan simulasi skenario — dengan **setiap angka
+yang dapat diaudit**.
 
-PAAX AI is an advanced, AI-powered workspace designed for civil engineers, contractors, and project managers. It automates the extraction of quantities from drawings, generates deterministic Bill of Quantities (RAB), and optimizes project schedules.
+> **Aturan emas:** engine yang **menghitung**, AI (nanti) yang **menjelaskan**.
+> Semua angka berasal dari engine deterministik; LLM tidak pernah menghasilkan angka.
 
-## 🌟 Overview
+---
 
-PAAX AI bridges the gap between unstructured construction data (PDFs, blueprints, site photos) and structured financial/scheduling formats. Unlike generic LLMs, PAAX utilizes a **Deterministic Engine** for all calculations, ensuring 100% auditability and precision, while leveraging **Gemini 1.5 Pro** for document understanding and natural language orchestration.
+## Apa itu v0.6?
 
-## 🏗️ Architecture
+**Deterministic Foundation Release** — fondasi perhitungan yang benar & auditable
+sebelum menyentuh ekstraksi gambar/AI. Engine Python menghitung HSP, RAB, dan Kurva S
+berdasarkan koefisien AHSP × harga satuan.
 
-PAAX AI v0.4 is built as a **Monorepo** with distinct, specialized services:
+### Fitur v0.6
+- ✅ **Core Engine deterministik** (FastAPI): HSP, RAB (+ bobot), Kurva S
+- ✅ **API REST**: 7 endpoint, termasuk rincian HSP per item yang auditable
+- ✅ **Shared schemas**: Zod (TypeScript) selaras 1:1 dengan Pydantic (Python)
+- ✅ **Seed data**: AHSP Cipta Karya + harga satuan Jawa Tengah (ILUSTRATIF)
+- ✅ **Halaman web Uji RAB manual** (Next.js → engine → tampilan), tanpa kalkulasi di frontend
+- ✅ **Test**: 8 unit engine + 20 integrasi API + 6 schema (Zod)
 
-- **Frontend (Next.js)**: The user-facing dashboard and workspace.
-- **Core Engine (FastAPI/Python)**: Deterministic calculation engine for RAB math, scheduling scenarios, and Excel export.
-- **AI Orchestrator (Firebase Genkit)**: Routes prompts, manages tools, and interfaces with Vertex AI.
-- **Document Intelligence (Python)**: Pipeline for PDF OCR, vision analysis, and quantity extraction.
-- **Site Agent (TypeScript)**: Continuous field reporting and site analysis.
-- **Database**: Firebase Firestore & Cloud Storage.
+### Belum ada di v0.6 (rencana v0.7)
+- ❌ Ekstraksi gambar → BoQ (Document Intelligence)
+- ❌ AI Orchestrator, RAG, AI Engineering Chat
+- ❌ Simulasi skenario lanjutan, Monitoring multi-proyek
 
-## 💻 Tech Stack
+---
 
-- **Web**: Next.js 14, React, TailwindCSS, shadcn/ui, TypeScript.
-- **Backend/AI**: Python 3.11+, FastAPI, Pydantic, Firebase Genkit, Google Vertex AI (Gemini).
-- **Data**: Google Cloud Firestore, Firebase Storage.
-- **Package Management**: `pnpm` (Node), `uv` / `pip` (Python).
+## Tech Stack
 
-## 🚀 Getting Started
+| Lapisan | Teknologi |
+| --- | --- |
+| Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS v4, lucide-react |
+| Core Engine | Python 3.11+, FastAPI, Pydantic v2 |
+| Shared Types | Zod (TypeScript) ↔ Pydantic (Python) |
+| Monorepo | pnpm + Turborepo |
 
-### Prerequisites
-- Node.js >= 18.0
-- Python >= 3.11
-- `pnpm` (`npm install -g pnpm`)
-- Google Cloud / Firebase account with Vertex AI enabled.
+---
 
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-org/paax-ai.git
-   cd paax-ai
-   ```
-
-2. **Install Node dependencies**
-   ```bash
-   pnpm install
-   ```
-
-3. **Install Python dependencies (Core Engine)**
-   ```bash
-   cd services/core-engine
-   python -m venv .venv
-   .venv\Scripts\activate  # On Windows. Use `source .venv/bin/activate` on Mac/Linux
-   pip install -e .
-   ```
-
-4. **Environment Variables**
-   Copy `.env.example` to `.env` in the respective app directories and fill in your Firebase and Vertex AI credentials.
-
-### Running the App
-
-Run the development servers concurrently from the root (using a tool like Turbo or manually):
-
-```bash
-# Terminal 1: Frontend
-pnpm --filter @paax/web dev
-
-# Terminal 2: Core Engine
-cd services/core-engine
-.venv\Scripts\activate
-uvicorn app.main:app --reload --port 8081
-
-# Terminal 3: AI Orchestrator
-pnpm --filter @paax/ai-orchestrator dev
-```
-
-## 📂 Project Structure
+## Struktur Repo
 
 ```text
 paax-ai/
-├── apps/
-│   └── web/                    # Next.js Workspace
-├── services/
-│   ├── core-engine/            # FastAPI calculation engine
-│   ├── ai-orchestrator/        # Genkit agent routing
-│   ├── document-intelligence/  # PDF processing pipeline
-│   └── site-agent/             # Field reporting agent
-├── packages/
-│   ├── schemas/                # Shared Zod schemas
-│   ├── ui/                     # Shared React components
-│   ├── constants/              # Shared constants
-│   └── tsconfig/               # Shared TS configs
-├── docs/                       # Architecture & Product documentation
-├── legacy/
-│   └── vite-v0.2/              # Previous version reference
-└── README.md
+├── apps/web/                     # Next.js — UI & halaman /rab-tester
+├── services/core-engine/         # FastAPI — SEMUA perhitungan deterministik (fokus v0.6)
+├── packages/schemas/             # Zod schemas (selaras dengan Pydantic)
+├── data/
+│   ├── ahsp/                     # Koefisien AHSP per bidang
+│   └── harga-satuan/             # Harga satuan per wilayah
+├── docs/                         # ADR, arsitektur, API, produk, versi
+└── legacy/                       # Kode lama (v0.1–v0.5) yang diarsipkan
 ```
 
-## 🛠️ Development
+> Service lain (`ai-orchestrator`, `document-intelligence`, `site-agent`) ada di repo
+> tetapi **di luar lingkup v0.6**. Engine FastAPI v0.5 lama diarsipkan di
+> `legacy/core-engine-v0.5/`.
 
-- **Branching**: We use a standard Git Flow (`main`, `develop`, `feature/*`, `fix/*`).
-- **Commits**: Follow Conventional Commits (`feat:`, `fix:`, `docs:`).
-- **Testing**: 
-  - Python: `pytest`
-  - JS/TS: `jest` / `vitest`
+---
 
-## 📦 Deployment
-The application is designed to be deployed to Google Cloud Run (Backend services) and Vercel/Firebase Hosting (Frontend). See `docs/architecture/system-overview.md` for details.
+## Prasyarat
+- Node.js 20+ dan **pnpm** (`corepack enable` atau `npm i -g pnpm`)
+- Python 3.11+
 
-## 📜 License
-*Proprietary - Do not distribute.*
+## Quick Start
+
+### 1. Install dependencies (Node)
+```bash
+pnpm install
+```
+
+### 2. Install Core Engine (Python)
+```bash
+cd services/core-engine
+python -m venv .venv
+# Windows:  .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+### 3. Jalankan Engine (terminal 1)
+```bash
+pnpm run dev:core
+# Engine: http://localhost:8081  •  API docs: http://localhost:8081/docs
+```
+
+### 4. Jalankan Web (terminal 2)
+```bash
+pnpm run dev:web
+# Web: http://localhost:3000
+# Halaman Uji RAB: http://localhost:3000/rab-tester
+```
+
+> Web membaca `NEXT_PUBLIC_CORE_ENGINE_URL` dari `apps/web/.env.local`
+> (default `http://localhost:8081`). Salin dari `apps/web/.env.example`.
+
+---
+
+## Test
+
+```bash
+pnpm run test:core      # Engine (pytest): 8 unit + 20 integrasi API
+pnpm run test:schemas   # Schemas (jest/Zod): 6 test
+pnpm test               # test:core + test:schemas
+```
+
+## Demo Engine (tanpa server)
+```bash
+cd services/core-engine
+python -m app.demo
+# Windows: set UTF-8 dulu agar grafik Kurva S tampil →  $env:PYTHONUTF8=1; python -m app.demo
+```
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Fungsi |
+| --- | --- | --- |
+| GET | `/health` | Status engine |
+| GET | `/ahsp` | Daftar item AHSP |
+| GET | `/ahsp/{code}` | Detail item AHSP |
+| GET | `/regions` | Daftar wilayah |
+| POST | `/rab/hsp` | Hitung HSP satu item (auditable) |
+| POST | `/rab/calculate` | Hitung RAB lengkap |
+| POST | `/schedule/s-curve` | Bangun Kurva S |
+
+Contoh request lengkap: [`services/core-engine/requests.http`](services/core-engine/requests.http).
+Detail engine: [`services/core-engine/README.md`](services/core-engine/README.md).
+
+---
+
+## Data
+
+Data di `data/` bersifat **ILUSTRATIF** untuk verifikasi engine. Sebelum produksi, ganti dengan:
+- Koefisien AHSP resmi: **Permen PUPR No. 8/2023** & SE DJBK terbaru
+- Harga satuan: **SHSD daerah** atau harga pasar resmi
+
+## Kontribusi
+**Aturan emas (wajib):** engine yang **menghitung**, AI yang **menjelaskan** — semua angka
+RAB/HSP/Kurva-S berasal dari `services/core-engine` (deterministik), tidak pernah dari LLM.
+Bangun dari koefisien AHSP (`data/ahsp`) × harga satuan (`data/harga-satuan`); jangan
+hardcode hasil RAB. Skema `packages/schemas` (Zod) wajib selaras dengan Pydantic engine
+(`services/core-engine/app/rab/models.py`). Commit mengikuti Conventional Commits
+(`feat:`, `fix:`, `docs:`, `refactor:`, `test:`).
+
+## Lisensi
+Proprietary — Do not distribute.
