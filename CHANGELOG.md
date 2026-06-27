@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `lib/ai/rab-extractor.ts` — provider **rule-based** (tanpa key, gratis) + interface `RabExtractor` yang pluggable.
   - `app/api/ai/extract` — route **server-side** agar API key model tidak terekspos ke browser. Gemini (free tier Google AI Studio) tinggal di-slot lewat `GEMINI_API_KEY` di `.env.local`.
 - `engine.ts`: client `computeVolume`, `buildSectionedRAB`, `fetchElementTypes`.
+- **Parameter engine RAB**: endpoint RAB menerima `ppn_rate`, `overhead_override`, dan `rounding_mode` agar perhitungan tetap deterministik tetapi bisa mengikuti parameter proyek.
+- **Export Excel formula-based**: core engine dapat membuat workbook RAB dengan sheet `HARGA BAHAN`, `AHS`, `HSP`, dan `DKH` dari hasil engine.
+- **Ingest harga Semarang**: `scripts/harga/extract_harga.py` mengekstrak `Daftar harga bahan dan upah.xlsx` ke price book regional di `G:\paax-data` plus audit matched/unmatched/ambiguous.
 
 ### Notes
 - **Aturan emas tegak:** AI hanya mengusulkan struktur (tipe/AHSP/seksi/dimensi). Volume & biaya **100% dari engine**. Tidak ada angka yang dihitung AI/frontend.

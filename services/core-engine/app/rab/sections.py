@@ -70,9 +70,12 @@ def build_sectioned_rab(
     region: str,
     region_code: str,
     ppn_rate: float = 0.11,
+    overhead_override: float | None = None,
+    rounding_mode: str = "exact",
 ) -> SectionedRABResult:
     rab = compute_rab(lines_input, ahsp_index, price_book,
-                      region=region, region_code=region_code, ppn_rate=ppn_rate)
+                      region=region, region_code=region_code, ppn_rate=ppn_rate,
+                      overhead_override=overhead_override, rounding_mode=rounding_mode)
 
     # Kelompokkan baris hasil engine ke seksi (urutan output = urutan input).
     grouped: Dict[str, List[RABLine]] = {}
