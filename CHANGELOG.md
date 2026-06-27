@@ -4,6 +4,23 @@ All notable changes to the PAAX AI project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.8.0] - In Progress — AI Masuk (AI-first, fallback gratis)
+> AI menjadi otak tiap halaman: AI menstruktur usulan, **engine tetap menghitung**.
+> Berjalan **gratis** dengan otak rule-based; Gemini free tier opsional.
+
+### Added
+- **Smart RAB Builder** (tombol "Susun dengan AI" di editor RAB): tulis daftar elemen (mis. `Kolom 0.3 x 0.4 x 3.5 jumlah 24`) → AI memecah jadi `{tipe, dimensi, kode AHSP, seksi WBS, confidence}` → **engine** `/geometry/volume` menghitung volume tiap elemen → **engine** `/rab/build` menyusun RAB tersektor. User memverifikasi/mengoreksi (confidence ala Togal) lalu **Terapkan ke editor** untuk edit manual.
+- **Lapis orkestrasi AI (model-agnostic)**:
+  - `lib/ai/rab-extractor.ts` — provider **rule-based** (tanpa key, gratis) + interface `RabExtractor` yang pluggable.
+  - `app/api/ai/extract` — route **server-side** agar API key model tidak terekspos ke browser. Gemini (free tier Google AI Studio) tinggal di-slot lewat `GEMINI_API_KEY` di `.env.local`.
+- `engine.ts`: client `computeVolume`, `buildSectionedRAB`, `fetchElementTypes`.
+
+### Notes
+- **Aturan emas tegak:** AI hanya mengusulkan struktur (tipe/AHSP/seksi/dimensi). Volume & biaya **100% dari engine**. Tidak ada angka yang dihitung AI/frontend.
+- **Fallback manual wajib:** "Susun dengan AI" berjalan tanpa model (rule-based); bila gagal/ragu, user tetap bisa mengoreksi atau memakai editor manual.
+- **Riset kompetitor diterapkan:** confidence + verifikasi prioritas (Togal); alur AI-first lalu edit manual & RAB tersektor (Kreo Caddie).
+- **Belum (v1.0, validasi dulu):** membaca piksel gambar mentah (Computer Vision) — bagian tersulit, R&D panjang; pakai Wizard-of-Oz dulu.
+
 ## [v0.7.0] - In Progress — Workspace Hidup
 > Semua angka tetap dari engine deterministik (`services/core-engine`). Tidak ada AI di rilis ini.
 
