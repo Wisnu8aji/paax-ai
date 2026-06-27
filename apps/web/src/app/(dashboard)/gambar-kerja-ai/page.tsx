@@ -1,55 +1,78 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Building2, MapPin, ArrowRight } from 'lucide-react';
-import { LocalStorage, STORAGE_KEYS } from '@/lib/local-storage';
+import { UploadCloud, FileImage } from 'lucide-react';
+import { Card, StatCard, StatusPill, Button, PageHeader, type PillTone } from '@/components/ui';
+import { useShell } from '@/components/app-shell/shell-context';
+import { drawingSummary, drawings } from '@/lib/mock/workspace';
 
-export default function GambarKerjaAIGlobalPage() {
-  const [projects, setProjects] = useState<any[]>([]);
+const statusMap: Record<string, { tone: PillTone; label: string }> = {
+  analyzed: { tone: 'ok', label: 'DIANALISIS' },
+  pending: { tone: 'warn', label: 'MENUNGGU' },
+  failed: { tone: 'dng', label: 'GAGAL' },
+};
 
-  useEffect(() => {
-    setProjects(LocalStorage.get<any[]>(STORAGE_KEYS.PROJECTS, []));
-  }, []);
+export default function GambarKerjaAIPage() {
+  const { openOverlay } = useShell();
 
   return (
-    <div className="space-y-6 max-w-[1400px]">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Pilih Proyek untuk Gambar Kerja AI</h1>
-        <p className="text-sm text-paax-text-muted mt-1">Pilih proyek terlebih dahulu sebelum menganalisis gambar kerja.</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <PageHeader
+        title="Gambar Kerja AI"
+        subtitle="Upload, analisis, verifikasi, dan siapkan data gambar untuk BOQ/RAB"
+        actions={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 13px', borderRadius: 9, background: 'color-mix(in srgb,var(--text) 5%,transparent)', border: '1px solid color-mix(in srgb,var(--text) 10%,transparent)' }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--ok-dot)', animation: 'paxpulse 2.4s infinite' }} />
+            <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text2)' }}>Service Online · Demo Fallback</span>
+          </div>
+        }
+      />
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }} className="pax-grid-4">
+        {drawingSummary.map((s) => (
+          <StatCard key={s.label} label={s.label} value={s.value} sub={s.sub} />
+        ))}
       </div>
 
-      {projects.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {projects.map((project) => (
-            <Link key={project.id} href={`/proyek/${project.id}/gambar-kerja`} className="glass-card p-5 group">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-lg bg-indigo-500/10 flex items-center justify-center flex-shrink-0">
-                    <Building2 className="w-4 h-4 text-indigo-400" />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 14 }} className="pax-grid-2">
+        <Card padding={18}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>Unggah Gambar</div>
+          <div
+            onClick={() => openOverlay('upload')}
+            className="pax-card-hover"
+            style={{ cursor: 'pointer', border: '1.5px dashed var(--border)', borderRadius: 14, padding: '40px 16px', textAlign: 'center', color: 'var(--text3)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}
+          >
+            <UploadCloud size={30} />
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)' }}>Tarik gambar atau klik untuk unggah</div>
+            <div style={{ fontSize: 12 }}>PDF / DWG / JPG / PNG</div>
+            <Button variant="secondary" style={{ marginTop: 6 }}>Pilih File</Button>
+          </div>
+          <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>Tampilan contoh — analisis AI berjalan dalam mode demo fallback.</p>
+        </Card>
+
+        <Card padding={18}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>Gambar Terbaru</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {drawings.map((d) => {
+              const st = statusMap[d.status];
+              return (
+                <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 12, background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                  <span style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text2)' }}>
+                    <FileImage size={18} />
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{d.name}</div>
+                    <div className="pax-mono" style={{ fontSize: 11, color: 'var(--text3)' }}>{d.sheet} · {d.type}</div>
                   </div>
-                  <div className="min-w-0">
-                    <h2 className="text-[14px] font-semibold text-white group-hover:text-indigo-300 transition-colors truncate">{project.name}</h2>
-                    <div className="flex items-center gap-1.5 mt-1 text-[11px] text-paax-text-muted">
-                      <MapPin className="w-3 h-3" />
-                      <span className="truncate">{project.location || '-'}</span>
-                    </div>
-                    <p className="text-[11px] text-paax-text-muted mt-2">Klien: {project.client || '-'}</p>
-                  </div>
+                  {d.confidence > 0 && (
+                    <span className="pax-mono" style={{ fontSize: 11, color: 'var(--text2)' }}>{d.confidence.toFixed(2)}</span>
+                  )}
+                  <StatusPill tone={st.tone}>{st.label}</StatusPill>
                 </div>
-                <ArrowRight className="w-4 h-4 text-paax-text-muted group-hover:text-indigo-400 transition-colors flex-shrink-0" />
-              </div>
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <div className="glass-card p-8 text-center">
-          <Building2 className="w-10 h-10 text-paax-text-muted mx-auto mb-3" />
-          <h2 className="text-white font-medium mb-1">Belum ada proyek</h2>
-          <p className="text-[13px] text-paax-text-muted mb-4">Buat proyek terlebih dahulu untuk menggunakan Gambar Kerja AI.</p>
-          <Link href="/proyek" className="btn-primary inline-flex">Buka Proyek</Link>
-        </div>
-      )}
+              );
+            })}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }

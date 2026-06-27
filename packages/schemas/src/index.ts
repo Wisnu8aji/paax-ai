@@ -834,3 +834,111 @@ export const ApprovalRequestSchema = z.object({
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
+
+// ─── Core Engine v0.6: Deterministic RAB / HSP / Kurva S ─────────────────────
+//
+// Blok ini adalah SUMBER KEBENARAN tipe untuk output engine deterministik
+// (services/core-engine). HARUS selaras 1:1 dengan
+// services/core-engine/app/rab/models.py (Pydantic v2). Ubah keduanya bersamaan.
+//
+// Catatan v0.6: skema didefinisikan paralel di Zod & Pydantic. Rencana v0.7:
+// generate keduanya dari satu JSON Schema. Skema v0.5 di atas dipertahankan
+// agar apps/web tetap berfungsi — tidak ada tabrakan nama dengan blok ini.
+
+export const Category = z.enum(["bahan", "upah", "alat"]);
+export type Category = z.infer<typeof Category>;
+
+export const Component = z.object({
+  resource_code: z.string(),
+  category: Category,
+  coefficient: z.number(),
+});
+
+export const AHSPItem = z.object({
+  code: z.string(),
+  name: z.string(),
+  unit: z.string(),
+  bidang: z.string().default(""),
+  source: z.string().default(""),
+  overhead_profit: z.number().default(0.1),
+  components: z.array(Component),
+});
+export type AHSPItem = z.infer<typeof AHSPItem>;
+
+export const ResourcePrice = z.object({
+  code: z.string(),
+  name: z.string(),
+  category: Category,
+  unit: z.string(),
+  price: z.number(),
+});
+
+export const ComponentCost = z.object({
+  resource_code: z.string(),
+  resource_name: z.string(),
+  category: Category,
+  unit: z.string(),
+  coefficient: z.number(),
+  unit_price: z.number(),
+  subtotal: z.number(),
+});
+
+export const HSPBreakdown = z.object({
+  ahsp_code: z.string(),
+  name: z.string(),
+  unit: z.string(),
+  bahan: z.number(),
+  upah: z.number(),
+  alat: z.number(),
+  base: z.number(),
+  overhead_profit: z.number(),
+  overhead_profit_value: z.number(),
+  hsp: z.number(),
+  components: z.array(ComponentCost),
+});
+export type HSPBreakdown = z.infer<typeof HSPBreakdown>;
+
+export const RABLineInput = z.object({
+  ahsp_code: z.string(),
+  volume: z.number(),
+  duration_days: z.number().int().optional(),
+  description: z.string().optional(),
+});
+export type RABLineInput = z.infer<typeof RABLineInput>;
+
+export const RABLine = z.object({
+  ahsp_code: z.string(),
+  name: z.string(),
+  unit: z.string(),
+  volume: z.number(),
+  hsp: z.number(),
+  amount: z.number(),
+  weight_pct: z.number(),
+});
+
+export const RABResult = z.object({
+  region: z.string(),
+  region_code: z.string(),
+  lines: z.array(RABLine),
+  subtotal: z.number(),
+  ppn_rate: z.number(),
+  ppn: z.number(),
+  total: z.number(),
+});
+export type RABResult = z.infer<typeof RABResult>;
+
+export const SCurvePoint = z.object({
+  period: z.number().int(),
+  day_start: z.number().int(),
+  day_end: z.number().int(),
+  planned_pct: z.number(),
+  cumulative_pct: z.number(),
+});
+
+export const SCurveResult = z.object({
+  total_days: z.number().int(),
+  period_days: z.number().int(),
+  mode: z.string(),
+  points: z.array(SCurvePoint),
+});
+export type SCurveResult = z.infer<typeof SCurveResult>;
