@@ -23,11 +23,13 @@ import {
   CheckCircle2,
   FileSpreadsheet,
   Printer,
+  ShieldCheck,
 } from 'lucide-react';
-import type { HSPBreakdown, RABResult, SCurveResult } from '@paax/schemas';
+import type { HSPBreakdown, RABResult, SCurveResult, ValidationResult } from '@paax/schemas';
 import { Card, Button, StatusPill, EmptyState, Modal } from '@/components/ui';
 import { SCurveChart } from '@/components/rab/s-curve-chart';
 import { HspBreakdownBody } from '@/components/rab/hsp-breakdown';
+import { RabHealthPanel } from '@/components/rab/rab-health-panel';
 import { exportRabCsv, exportRabPdf } from '@/lib/export/rab-export';
 import { useProjects } from '@/lib/projects/projects-context';
 import {
@@ -44,6 +46,7 @@ import {
   calculateRAB,
   getHSPDetail,
   getSCurve,
+  validateRAB,
   type AHSPListItem,
   type RegionItem,
   type EngineLine,
@@ -64,11 +67,13 @@ export default function ProjectRabPage() {
 
   const [rabResult, setRabResult] = useState<RABResult | null>(null);
   const [scurveResult, setScurveResult] = useState<SCurveResult | null>(null);
+  const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [hspModal, setHspModal] = useState<{ code: string; data: HSPBreakdown } | null>(null);
-  const [busy, setBusy] = useState<{ rab: boolean; scurve: boolean; save: boolean; hsp: string | null }>({
+  const [busy, setBusy] = useState<{ rab: boolean; scurve: boolean; save: boolean; validate: boolean; hsp: string | null }>({
     rab: false,
     scurve: false,
     save: false,
+    validate: false,
     hsp: null,
   });
   const [error, setError] = useState<string | null>(null);
@@ -161,7 +166,27 @@ export default function ProjectRabPage() {
   const invalidateResults = () => {
     setRabResult(null);
     setScurveResult(null);
+    setValidation(null);
     setSavedAt(null);
+  };
+
+  const handleValidate = async () => {
+    const lines = draft.lines
+      .filter((r) => r.ahsp_code)
+      .map((r) => ({
+        ahsp_code: r.ahsp_code,
+        volume: r.volume ?? 0,
+        duration_days: r.duration_days && r.duration_days > 0 ? r.duration_days : undefined,
+      }));
+    setError(null);
+    setBusy((b) => ({ ...b, validate: true }));
+    try {
+      setValidation(await validateRAB(lines, draft.regionCode, draft.ppnRate));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Gagal cek kesehatan RAB.');
+    } finally {
+      setBusy((b) => ({ ...b, validate: false }));
+    }
   };
 
   const handleCalculate = async () => {
@@ -354,6 +379,9 @@ export default function ProjectRabPage() {
           <Button onClick={handleCalculate} disabled={busy.rab || !validLines}>
             {busy.rab ? <Loader2 size={15} className="animate-spin" /> : <Calculator size={15} />} Hitung RAB
           </Button>
+          <Button variant="secondary" onClick={handleValidate} disabled={busy.validate}>
+            {busy.validate ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />} Cek Kesehatan
+          </Button>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
             <select
               className="pax-input"
@@ -379,6 +407,8 @@ export default function ProjectRabPage() {
           </div>
         )}
       </Card>
+
+      {validation && <RabHealthPanel result={validation} />}
 
       {rabResult && (
         <RabResultTable
