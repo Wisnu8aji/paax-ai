@@ -7,7 +7,10 @@
  *
  * Reuse: CORE_ENGINE_URL & CoreEngineError dari core-engine-client.ts.
  */
-import { RABResult, HSPBreakdown, SCurveResult, ScenarioResult, ValidationResult } from "@paax/schemas";
+import {
+  RABResult, HSPBreakdown, SCurveResult, ScenarioResult, ValidationResult,
+  VolumeResult, SectionedRABResult,
+} from "@paax/schemas";
 import { CORE_ENGINE_URL, CoreEngineError } from "./core-engine-client";
 
 export interface AHSPListItem {
@@ -100,6 +103,44 @@ export async function getHSPDetail(
     body: JSON.stringify({ ahsp_code: ahspCode, region_code: regionCode }),
   });
   return HSPBreakdown.parse(data);
+}
+
+export interface SectionLineInput {
+  ahsp_code: string;
+  volume: number;
+  section?: string;
+  description?: string;
+}
+
+/** GET /geometry/elements — daftar tipe elemen yang didukung kalkulator volume. */
+export async function fetchElementTypes(): Promise<string[]> {
+  const data = (await engineFetch("/geometry/elements")) as { element_types: string[] };
+  return data.element_types;
+}
+
+/** POST /geometry/volume — hitung volume/luas dari dimensi (engine, untuk AI). */
+export async function computeVolume(
+  elementType: string,
+  dims: Record<string, number>,
+): Promise<VolumeResult> {
+  const data = await engineFetch("/geometry/volume", {
+    method: "POST",
+    body: JSON.stringify({ element_type: elementType, dims }),
+  });
+  return VolumeResult.parse(data);
+}
+
+/** POST /rab/build — RAB tersektor (WBS) dari item + section. */
+export async function buildSectionedRAB(
+  lines: SectionLineInput[],
+  regionCode = "jateng",
+  ppnRate = 0.11,
+): Promise<SectionedRABResult> {
+  const data = await engineFetch("/rab/build", {
+    method: "POST",
+    body: JSON.stringify({ region_code: regionCode, ppn_rate: ppnRate, lines }),
+  });
+  return SectionedRABResult.parse(data);
 }
 
 /** POST /rab/validate — health check RAB (skor + peringatan deterministik). */
