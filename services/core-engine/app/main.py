@@ -8,7 +8,9 @@ Endpoint deterministik (tidak ada LLM di sini):
     GET  /regions                   -> daftar wilayah harga
     POST /rab/hsp                   -> rincian HSP satu item
     POST /rab/calculate             -> RAB lengkap dari daftar item
+    POST /rab/validate              -> health check RAB (deterministik)
     POST /schedule/s-curve          -> Kurva S rencana dari RAB + durasi
+    POST /scenario/simulate         -> simulasi what-if waktu-biaya (deterministik)
 """
 from __future__ import annotations
 from typing import List, Optional
@@ -19,7 +21,10 @@ from pydantic import BaseModel, Field
 from .rab.loader import load_data
 from .rab.rab import compute_hsp, compute_rab
 from .rab.schedule import build_s_curve
+from .rab.validate import validate_rab, ValidationResult
 from .rab.models import RABLineInput, HSPBreakdown, RABResult, SCurveResult
+from .scenario.simulate import compute_scenarios
+from .scenario.models import ScenarioConfig, ScenarioResult
 
 app = FastAPI(title="PAAX Core Engine", version="0.6.0")
 
@@ -109,6 +114,19 @@ def calculate(req: RABRequest):
         raise HTTPException(400, str(e))
 
 
+@app.post("/rab/validate", response_model=ValidationResult)
+def rab_validate(req: RABRequest):
+    try:
+        book = STORE.price_book(req.region_code)
+    except KeyError as e:
+        raise HTTPException(400, str(e))
+    return validate_rab(
+        req.lines, STORE.ahsp, book,
+        region=STORE.region_names.get(req.region_code, req.region_code),
+        region_code=req.region_code, ppn_rate=req.ppn_rate,
+    )
+
+
 @app.post("/schedule/s-curve", response_model=SCurveResult)
 def s_curve(req: SCurveRequest):
     try:
@@ -121,3 +139,14 @@ def s_curve(req: SCurveRequest):
     except KeyError as e:
         raise HTTPException(400, str(e))
     return build_s_curve(rab, req.lines, period_days=req.period_days, mode=req.mode)
+
+
+@app.post("/scenario/simulate", response_model=ScenarioResult)
+def scenario_simulate(req: ScenarioConfig):
+    try:
+        return compute_scenarios(
+            req, STORE.ahsp, STORE.price_book(req.region_code),
+            region=STORE.region_names.get(req.region_code, req.region_code),
+        )
+    except KeyError as e:
+        raise HTTPException(400, str(e))

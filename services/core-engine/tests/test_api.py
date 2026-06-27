@@ -254,3 +254,57 @@ class TestSCurve:
             "lines": [{"ahsp_code": "AHSP.CK.001", "volume": 50, "duration_days": 7}]
         })
         assert r.status_code in (400, 422, 500)
+
+
+class TestValidate:
+    def test_validate_clean_rab_ok(self):
+        r = client.post("/rab/validate", json={
+            "region_code": "jateng",
+            "lines": [
+                {"ahsp_code": "AHSP.CK.001", "volume": 120, "duration_days": 5},
+                {"ahsp_code": "AHSP.CK.002", "volume": 240, "duration_days": 5},
+                {"ahsp_code": "AHSP.CK.003", "volume": 18, "duration_days": 5},
+                {"ahsp_code": "AHSP.CK.004", "volume": 85, "duration_days": 5}
+            ]
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert data["ok"] is True
+        assert data["score"] == 100
+        assert data["issues"] == []
+
+    def test_validate_flags_duplicate(self):
+        r = client.post("/rab/validate", json={
+            "region_code": "jateng",
+            "lines": [
+                {"ahsp_code": "AHSP.CK.001", "volume": 50, "duration_days": 3},
+                {"ahsp_code": "AHSP.CK.001", "volume": 50, "duration_days": 3}
+            ]
+        })
+        data = r.json()
+        assert any(i["code"] == "DUPLICATE_ITEM" for i in data["issues"])
+
+
+class TestScenario:
+    def test_scenario_baseline_and_candidates(self):
+        r = client.post("/scenario/simulate", json={
+            "region_code": "jateng",
+            "base_mode": "sequential",
+            "lines": [
+                {"ahsp_code": "AHSP.CK.001", "volume": 50, "workers": 5},
+                {"ahsp_code": "AHSP.CK.002", "volume": 50, "workers": 5}
+            ]
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert data["baseline_total_days"] == 9.05
+        assert data["baseline_total_cost"] == 12666898.2
+        keys = {c["key"] for c in data["candidates"]}
+        assert {"baseline", "tambah_crew", "lembur", "paralel"} <= keys
+
+    def test_scenario_unknown_ahsp_returns_400(self):
+        r = client.post("/scenario/simulate", json={
+            "region_code": "jateng",
+            "lines": [{"ahsp_code": "NOPE", "volume": 5, "workers": 2}]
+        })
+        assert r.status_code == 400
