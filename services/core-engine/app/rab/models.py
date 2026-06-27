@@ -83,6 +83,8 @@ class RABLine(BaseModel):
     hsp: float
     amount: float          # volume * hsp
     weight_pct: float      # bobot = amount / subtotal * 100
+    tax_amount: float      # pajak baris = amount * ppn_rate
+    line_total: float      # total baris = amount + tax_amount
 
 
 class RABResult(BaseModel):

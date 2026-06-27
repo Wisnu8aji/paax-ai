@@ -44,6 +44,27 @@ def test_hsp_components_sum_matches():
     assert round(upah, 2) == h.upah
 
 
+def test_overhead_override():
+    # AHSP.CK.001: base = 132170.0 (sama seperti test_hsp_known_value)
+    # override 5% (bukan default 10%): opv = 132170 * 0.05 = 6608.5
+    # hsp (mode exact) = 132170 + 6608.5 = 138778.5
+    h = compute_hsp(STORE.ahsp["AHSP.CK.001"], BOOK, overhead_override=0.05)
+    assert h.overhead_profit == 0.05
+    assert h.overhead_profit_value == 6608.5
+    assert h.hsp == 138778.5
+
+
+def test_rounddown_int_mode():
+    # sama seperti test_overhead_override, rounddown_int: floor(138778.5)=138778.0
+    h = compute_hsp(
+        STORE.ahsp["AHSP.CK.001"],
+        BOOK,
+        overhead_override=0.05,
+        rounding_mode="rounddown_int",
+    )
+    assert h.hsp == 138778.0
+
+
 def test_rab_totals():
     lines = [
         RABLineInput(ahsp_code="AHSP.CK.001", volume=50),
@@ -58,6 +79,24 @@ def test_rab_totals():
     assert rab.subtotal == 11411620.0
     assert rab.ppn == round(11411620.0 * 0.11, 2)
     assert rab.total == round(11411620.0 * 1.11, 2)
+
+
+def test_line_tax_and_total():
+    lines = [
+        RABLineInput(ahsp_code="AHSP.CK.001", volume=50),
+        RABLineInput(ahsp_code="AHSP.CK.002", volume=50),
+    ]
+    rab = compute_rab(lines, STORE.ahsp, BOOK, region="Jawa Tengah",
+                      region_code="jateng", ppn_rate=0.11)
+    # line0: amount=7269350.0 (sudah diverifikasi test_rab_totals)
+    # tax=7269350*0.11=799628.5 ; total=8068978.5
+    assert rab.lines[0].tax_amount == 799628.5
+    assert rab.lines[0].line_total == 8068978.5
+    # line1: amount=4142270.0 ; tax=4142270*0.11=455649.7 ; total=4597919.7
+    assert rab.lines[1].tax_amount == 455649.7
+    assert rab.lines[1].line_total == 4597919.7
+    # rekonsiliasi: total semua line_total = rab.total (subtotal+ppn agregat)
+    assert round(sum(l.line_total for l in rab.lines), 2) == rab.total
 
 
 def test_weights_sum_to_100():

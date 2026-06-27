@@ -14,6 +14,7 @@ Rumus (kerangka AHSP):
     Bobot Item = Harga Item / Subtotal × 100%
 """
 from __future__ import annotations
+import math
 from typing import Dict, List
 
 from .models import (
@@ -27,7 +28,19 @@ def money(x: float) -> float:
     return round(x + 1e-9, 2)
 
 
-def compute_hsp(item: AHSPItem, price_book: Dict[str, ResourcePrice]) -> HSPBreakdown:
+def apply_rounding(x: float, mode: str = "exact") -> float:
+    """Terapkan mode pembulatan HSP tanpa mengubah default historis engine."""
+    if mode == "rounddown_int":
+        return float(math.floor(x + 1e-9))
+    return money(x)
+
+
+def compute_hsp(
+    item: AHSPItem,
+    price_book: Dict[str, ResourcePrice],
+    overhead_override: float | None = None,
+    rounding_mode: str = "exact",
+) -> HSPBreakdown:
     """Hitung Harga Satuan Pekerjaan satu item dari koefisien + harga wilayah."""
     comps: List[ComponentCost] = []
     a = b = c = 0.0
@@ -57,8 +70,9 @@ def compute_hsp(item: AHSPItem, price_book: Dict[str, ResourcePrice]) -> HSPBrea
             c += subtotal
 
     base = a + b + c
-    opv = base * item.overhead_profit
-    hsp = base + opv
+    rate = overhead_override if overhead_override is not None else item.overhead_profit
+    opv = base * rate
+    hsp = apply_rounding(base + opv, rounding_mode)
 
     return HSPBreakdown(
         ahsp_code=item.code,
@@ -68,9 +82,9 @@ def compute_hsp(item: AHSPItem, price_book: Dict[str, ResourcePrice]) -> HSPBrea
         upah=money(b),
         alat=money(c),
         base=money(base),
-        overhead_profit=item.overhead_profit,
+        overhead_profit=rate,
         overhead_profit_value=money(opv),
-        hsp=money(hsp),
+        hsp=hsp,
         components=comps,
     )
 
@@ -82,6 +96,8 @@ def compute_rab(
     region: str,
     region_code: str,
     ppn_rate: float = 0.11,
+    overhead_override: float | None = None,
+    rounding_mode: str = "exact",
 ) -> RABResult:
     """Susun RAB lengkap dari daftar item (kode AHSP + volume)."""
     computed = []
@@ -91,7 +107,7 @@ def compute_rab(
         item = ahsp_index.get(li.ahsp_code)
         if item is None:
             raise KeyError(f"Item AHSP '{li.ahsp_code}' tidak ditemukan.")
-        hsp = compute_hsp(item, price_book).hsp
+        hsp = compute_hsp(item, price_book, overhead_override, rounding_mode).hsp
         amount = money(li.volume * hsp)
         computed.append((li, item, hsp, amount))
         subtotal += amount
@@ -100,6 +116,8 @@ def compute_rab(
     lines: List[RABLine] = []
     for (li, item, hsp, amount) in computed:
         weight = round(amount / subtotal * 100, 4) if subtotal else 0.0
+        tax_amount = money(amount * ppn_rate)
+        line_total = money(amount + tax_amount)
         lines.append(RABLine(
             ahsp_code=item.code,
             name=item.name,
@@ -108,6 +126,8 @@ def compute_rab(
             hsp=hsp,
             amount=amount,
             weight_pct=weight,
+            tax_amount=tax_amount,
+            line_total=line_total,
         ))
 
     ppn = money(subtotal * ppn_rate)

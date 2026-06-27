@@ -16,7 +16,9 @@ const mockRABResult = {
       volume: 120,
       hsp: 145387.0,
       amount: 17446440.0,
-      weight_pct: 22.4804
+      weight_pct: 22.4804,
+      tax_amount: 1919108.4,
+      line_total: 19365548.4
     },
     {
       ahsp_code: "AHSP.CK.002",
@@ -25,7 +27,9 @@ const mockRABResult = {
       volume: 240,
       hsp: 82845.4,
       amount: 19882896.0,
-      weight_pct: 25.6207
+      weight_pct: 25.6207,
+      tax_amount: 2188118.56,
+      line_total: 22071014.56
     }
   ],
   subtotal: 37329336.0,
@@ -76,6 +80,8 @@ describe("RABResult schema", () => {
     expect(result.subtotal).toBe(37329336.0);
     expect(result.lines).toHaveLength(2);
     expect(result.lines[0].ahsp_code).toBe("AHSP.CK.001");
+    expect(result.lines[0].tax_amount).toBe(1919108.4);
+    expect(result.lines[0].line_total).toBe(19365548.4);
   });
 
   it("rejects missing required fields", () => {
