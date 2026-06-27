@@ -42,7 +42,16 @@ dari engine deterministik.
 - ✅ **RAB Health Check** (`POST /rab/validate`): skor 0–100 + peringatan deterministik (duplikat, volume nol, bobot dominan, durasi hilang)
 - ✅ **Scenario Simulator** (`POST /scenario/simulate`, tab Schedule): frontier **waktu-biaya** ala ALICE — durasi dari produktivitas AHSP, skenario crew/lembur/paralel — semua titik dihitung engine
 - ⏳ Editor harga regional dari UI (butuh endpoint override harga di engine) — slice tambahan
-- ⛔ **v0.8 (Smart Import + AI)** ditahan sampai keputusan vendor model & metering
+
+---
+
+## v0.8 — AI Masuk (AI-first, fallback gratis)
+
+AI jadi otak tiap halaman: **AI menstruktur, engine menghitung**.
+
+- ✅ **Smart RAB Builder** ("Susun dengan AI" di editor RAB): tulis daftar elemen + dimensi → AI memecah jadi tipe + AHSP + seksi WBS + confidence → **engine hitung volume** (`/geometry/volume`) → **engine susun RAB tersektor** (`/rab/build`) → verifikasi/koreksi → terapkan ke editor untuk edit manual.
+- ✅ **Berjalan gratis** dengan otak **rule-based** (tanpa API key). Untuk ekstraksi lebih pintar, sambungkan **Gemini free tier** (Google AI Studio) lewat `GEMINI_API_KEY` di `apps/web/.env.local` — server-side, tidak terekspos browser.
+- ⛔ **v1.0 (CV / baca gambar mentah)** ditahan — validasi Wizard-of-Oz dulu (bagian tersulit & termahal).
 
 > Jalankan engine (`pnpm run dev:core`) agar halaman workspace bisa menghitung.
 > Tanpa engine, RAB/AHSP menampilkan pesan/contoh fallback.
