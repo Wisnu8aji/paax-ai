@@ -16,11 +16,14 @@ Endpoint deterministik (tidak ada LLM di sini):
     POST /geometry/volume           -> hitung volume/luas dari dimensi (untuk AI)
 """
 from __future__ import annotations
-from typing import List, Optional
+import io
+from typing import List, Optional, Literal
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from .export.excel_exporter import export_rab_to_excel
 from .rab.loader import load_data
 from .rab.rab import compute_hsp, compute_rab
 from .rab.schedule import build_s_curve
@@ -53,6 +56,8 @@ class HSPRequest(BaseModel):
 class RABRequest(BaseModel):
     region_code: str = "jateng"
     ppn_rate: float = 0.11
+    overhead_override: Optional[float] = None
+    rounding_mode: Literal["exact", "rounddown_int"] = "exact"
     lines: List[RABLineInput]
 
 
@@ -115,6 +120,8 @@ def calculate(req: RABRequest):
             region=STORE.region_names.get(req.region_code, req.region_code),
             region_code=req.region_code,
             ppn_rate=req.ppn_rate,
+            overhead_override=req.overhead_override,
+            rounding_mode=req.rounding_mode,
         )
     except KeyError as e:
         raise HTTPException(400, str(e))
@@ -140,9 +147,45 @@ def rab_build(req: RABRequest):
             req.lines, STORE.ahsp, STORE.price_book(req.region_code),
             region=STORE.region_names.get(req.region_code, req.region_code),
             region_code=req.region_code, ppn_rate=req.ppn_rate,
+            overhead_override=req.overhead_override, rounding_mode=req.rounding_mode,
         )
     except KeyError as e:
         raise HTTPException(400, str(e))
+
+
+@app.post("/rab/export/excel")
+def rab_export_excel(req: RABRequest):
+    try:
+        book = STORE.price_book(req.region_code)
+        result = build_sectioned_rab(
+            req.lines, STORE.ahsp, book,
+            region=STORE.region_names.get(req.region_code, req.region_code),
+            region_code=req.region_code, ppn_rate=req.ppn_rate,
+            overhead_override=req.overhead_override, rounding_mode=req.rounding_mode,
+        )
+        unique_codes = []
+        seen = set()
+        for li in req.lines:
+            if li.ahsp_code not in seen:
+                seen.add(li.ahsp_code)
+                unique_codes.append(li.ahsp_code)
+        breakdowns = {
+            code: compute_hsp(
+                STORE.ahsp[code],
+                book,
+                overhead_override=req.overhead_override,
+                rounding_mode=req.rounding_mode,
+            )
+            for code in unique_codes
+        }
+        xlsx_bytes = export_rab_to_excel(result, breakdowns)
+    except KeyError as e:
+        raise HTTPException(400, str(e))
+    return StreamingResponse(
+        io.BytesIO(xlsx_bytes),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=RAB_export.xlsx"},
+    )
 
 
 @app.get("/wbs/sections")
