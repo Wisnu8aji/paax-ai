@@ -14,14 +14,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Export RAB/BoQ** (`lib/export/rab-export.ts`): unduh **Excel (CSV)** + **PDF (print)** dari hasil engine, tanpa dependency baru. *(Task 5)*
 - Komponen bersama `components/rab` (`SCurveChart`, `HspBreakdownBody`) dipakai editor & browser.
 
+#### Extra deterministik (bawa nilai v0.8/v0.9 ke depan, TANPA AI)
+- **Scenario Simulator** (`POST /scenario/simulate`, tab Schedule): frontier waktu-biaya ala ALICE, tapi 100% deterministik. Durasi dari produktivitas AHSP (`mandays = volume × Σ koef upah OH`; `durasi = mandays ÷ pekerja`); skenario **baseline / tambah crew / lembur / paralel** dengan trade-off Δhari & Δbiaya. Tiap titik grafik = hasil engine.
+- **RAB Health Check** (`POST /rab/validate`, tombol di editor RAB): validasi deterministik (item duplikat, volume nol, bobot dominan >60%, durasi hilang, kode tak dikenal) → skor 0–100 + daftar peringatan. Ala Rate QS/Bobyard, tapi aturan deterministik.
+- Skema Zod baru selaras Pydantic: `ScenarioConfig/ScenarioResult`, `ValidationResult`.
+
 ### Changed
 - **Hardening repository proyek**: dokumen Firestore dinormalisasi/divalidasi saat `list`/`get` (cegah data korup lolos sebagai `Project`).
 - **Pangkas `core-engine-client.ts`**: buang `CoreEngineAPI` + tipe endpoint yang tidak ada di engine v0.6 (pola "generate dari `luas_bangunan`" yang melanggar aturan emas). Sisakan `CORE_ENGINE_URL` + `CoreEngineError`.
 - Kartu proyek menampilkan **"Belum dihitung"** sampai engine menghasilkan nilai; setelah "Simpan", `rabValue` diisi dari `RABResult.total` engine (cache tampilan, bukan hitung frontend).
 
 ### Notes
-- **Belum termasuk (butuh keputusan sebelum v0.8):** editor harga regional dari UI (butuh endpoint override harga di engine), dan **Smart Import + AI** (vendor model, API key, metering — lihat `docs/strategy/PAAX_Analisis_Strategis_Companion.md`).
-- Test: engine **28 passed** (8 unit + 20 integrasi), schema **6 passed**, web build hijau.
+- **Aturan emas dipertahankan ketat:** setiap angka (RAB, Kurva S, skenario waktu-biaya, skor health check) punya input→output engine. Tidak ada angka yang dihitung/dikarang di frontend atau oleh LLM.
+- **Belum termasuk (butuh keputusan sebelum v0.8):** editor harga regional dari UI (butuh endpoint override harga di engine), dan **Smart Import + AI** (vendor model, API key, metering — lihat `docs/strategy/PAAX_Analisis_Strategis_Companion.md`). Jalur kritis (CPM) & dependensi antar-item adalah lanjutan scenario engine.
+- Test: engine **46 passed** (8 RAB + 20 API + 7 scenario + 7 validate + 4 API baru), schema **8 passed**, web build hijau.
 
 ## [v0.6.0] — Deterministic Foundation Release
 ### Added
