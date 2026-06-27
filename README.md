@@ -39,6 +39,8 @@ dari engine deterministik.
 - ✅ **Editor RAB per-proyek** (`/proyek/[id]/rab`): pilih item AHSP + volume + durasi → RAB, bobot, Kurva S, rincian HSP — **semua dari engine**, input tersimpan per-proyek
 - ✅ **Browser Database AHSP** (`/database-ahsp`): live dari engine, rincian koefisien × harga per-wilayah
 - ✅ **Export RAB/BoQ** ke Excel (CSV) & PDF (print)
+- ✅ **RAB Health Check** (`POST /rab/validate`): skor 0–100 + peringatan deterministik (duplikat, volume nol, bobot dominan, durasi hilang)
+- ✅ **Scenario Simulator** (`POST /scenario/simulate`, tab Schedule): frontier **waktu-biaya** ala ALICE — durasi dari produktivitas AHSP, skenario crew/lembur/paralel — semua titik dihitung engine
 - ⏳ Editor harga regional dari UI (butuh endpoint override harga di engine) — slice tambahan
 - ⛔ **v0.8 (Smart Import + AI)** ditahan sampai keputusan vendor model & metering
 
@@ -143,7 +145,9 @@ python -m app.demo
 | GET | `/regions` | Daftar wilayah |
 | POST | `/rab/hsp` | Hitung HSP satu item (auditable) |
 | POST | `/rab/calculate` | Hitung RAB lengkap |
+| POST | `/rab/validate` | Health check RAB (skor + peringatan, deterministik) |
 | POST | `/schedule/s-curve` | Bangun Kurva S |
+| POST | `/scenario/simulate` | Simulasi what-if waktu-biaya (deterministik) |
 
 Contoh request lengkap: [`services/core-engine/requests.http`](services/core-engine/requests.http).
 Detail engine: [`services/core-engine/README.md`](services/core-engine/README.md).
