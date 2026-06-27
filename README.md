@@ -146,6 +146,10 @@ python -m app.demo
 | POST | `/rab/hsp` | Hitung HSP satu item (auditable) |
 | POST | `/rab/calculate` | Hitung RAB lengkap |
 | POST | `/rab/validate` | Health check RAB (skor + peringatan, deterministik) |
+| POST | `/rab/build` | RAB tersektor (WBS I–VII) |
+| GET | `/wbs/sections` | Template 7 seksi WBS |
+| POST | `/geometry/volume` | Hitung volume/luas dari dimensi (dipanggil AI) |
+| GET | `/geometry/elements` | Tipe elemen yang didukung kalkulator volume |
 | POST | `/schedule/s-curve` | Bangun Kurva S |
 | POST | `/scenario/simulate` | Simulasi what-if waktu-biaya (deterministik) |
 

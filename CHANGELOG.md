@@ -17,7 +17,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Extra deterministik (bawa nilai v0.8/v0.9 ke depan, TANPA AI)
 - **Scenario Simulator** (`POST /scenario/simulate`, tab Schedule): frontier waktu-biaya ala ALICE, tapi 100% deterministik. Durasi dari produktivitas AHSP (`mandays = volume × Σ koef upah OH`; `durasi = mandays ÷ pekerja`); skenario **baseline / tambah crew / lembur / paralel** dengan trade-off Δhari & Δbiaya. Tiap titik grafik = hasil engine.
 - **RAB Health Check** (`POST /rab/validate`, tombol di editor RAB): validasi deterministik (item duplikat, volume nol, bobot dominan >60%, durasi hilang, kode tak dikenal) → skor 0–100 + daftar peringatan. Ala Rate QS/Bobyard, tapi aturan deterministik.
-- Skema Zod baru selaras Pydantic: `ScenarioConfig/ScenarioResult`, `ValidationResult`.
+- **Substrat untuk lapis AI** (engine yang akan dipanggil orkestrator):
+  - **Geometry → Volume** (`POST /geometry/volume`, `GET /geometry/elements`): kalkulator volume/luas dari dimensi untuk 19 tipe elemen (kolom/balok/sloof/plat/pondasi/dinding/plesteran/lantai/galian, dll) + jejak rumus untuk audit. AI menyetor dimensi, engine menghitung. Contoh: kolom 0.3×0.4×3.5×5 = 2.1 m³.
+  - **RAB tersektor (WBS)** (`POST /rab/build`, `GET /wbs/sections`): kelompokkan item ke 7 seksi baku (I Persiapan … VII Akhir), urutkan kanonik, subtotal & bobot per seksi. AI cukup memberi `section` per item.
+- Skema Zod baru selaras Pydantic: `ScenarioConfig/ScenarioResult`, `ValidationResult`, `VolumeRequest/Result`, `RABSection/SectionedRABResult`, `RABLineInput.section`.
 
 ### Changed
 - **Hardening repository proyek**: dokumen Firestore dinormalisasi/divalidasi saat `list`/`get` (cegah data korup lolos sebagai `Project`).
