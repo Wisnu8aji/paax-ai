@@ -147,3 +147,24 @@ manual dan mencatat sumber koefisien AHSP-nya.
 - Bahasa: **Indonesia**.
 - Saat selesai task: tampilkan (1) apa yang berubah, (2) cara mencoba/verifikasi, (3) `git status` + commit yang dibuat, (4) usulan task berikutnya.
 - Jika menemui ambiguitas keputusan arsitektural (mis. Postgres vs Firestore), **STOP dan tanyakan** — jangan asumsi diam-diam.
+
+---
+
+## 9. PEMBAGIAN TUGAS: CLAUDE vs CODEX
+
+Sejak 2026-06-28, Wisnu memakai Claude dan Codex berdampingan di repo ini.
+Pembagian (dicerminkan juga di `AGENTS.md` untuk Codex):
+
+- **Claude** → thinking berat: frontend (`apps/web`), kerja "data" (dataset
+  AHSP, pencocokan harga by-nama, pemetaan template export ke spek ADR),
+  keputusan arsitektur, dan apa pun yang menyentuh Aturan Emas (§1) atau
+  butuh judgment domain. Claude juga me-review hasil Codex yang menyentuh
+  perhitungan sebelum dianggap selesai.
+- **Codex** → kode tanpa thinking berat: implementasi backend yang SUDAH
+  punya spek jelas (rumus §5 / ADR terkait), wiring config/env, endpoint
+  mengikuti pola yang sudah ada, script & test mekanis.
+
+Untuk task yang menyentuh angka RAB/HSP: **Claude tulis spek + nilai acuan
+test manual → Codex implementasi → Claude verifikasi pytest & angka sebelum
+commit.** Codex tidak boleh mengubah rumus inti tanpa spek itu — tetap
+pelanggaran Aturan Emas kalau dilakukan diam-diam.
