@@ -61,3 +61,4 @@ Thumbs.db
 ci_log.txt
 fix-genkit.js
 .codex-*.log
+reports/
