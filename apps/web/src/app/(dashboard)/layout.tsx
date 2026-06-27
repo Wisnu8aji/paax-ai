@@ -7,6 +7,7 @@ import { IconRail } from '@/components/app-shell/icon-rail';
 import { NavPanel } from '@/components/app-shell/nav-panel';
 import Topbar from '@/components/app-shell/topbar';
 import { WorkspaceOverlays } from '@/components/app-shell/overlays';
+import { ProjectsProvider } from '@/lib/projects/projects-context';
 
 function Shell({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
@@ -49,7 +50,9 @@ function Shell({ children }: { children: React.ReactNode }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
-      <Shell>{children}</Shell>
+      <ProjectsProvider>
+        <Shell>{children}</Shell>
+      </ProjectsProvider>
     </ThemeProvider>
   );
 }

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { Plug, Check, LogOut, UploadCloud } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { Plug, LogOut, UploadCloud } from 'lucide-react';
 import { Drawer } from '@/components/ui/drawer';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -14,17 +15,41 @@ import {
   currentUser,
   aiCredits,
 } from '@/lib/mock/workspace';
+import { useProjects } from '@/lib/projects/projects-context';
 
 const themeLabels: Record<PaaxTheme, string> = { light: 'Terang', dark: 'Gelap', grey: 'Abu' };
 
 export function WorkspaceOverlays() {
+  const router = useRouter();
   const { current, closeOverlay } = useShell();
   const { theme, setTheme, themes } = useTheme();
-  const [form, setForm] = useState({ name: '', location: '', type: 'Gedung' });
+  const { createProject, backend } = useProjects();
+  const [form, setForm] = useState({ name: '', location: '', client: '', type: 'Gedung', description: '' });
+  const [savingProject, setSavingProject] = useState(false);
+  const [projectError, setProjectError] = useState<string | null>(null);
+
+  async function handleCreateProject() {
+    if (!form.name.trim()) {
+      setProjectError('Nama proyek wajib diisi.');
+      return;
+    }
+
+    setSavingProject(true);
+    setProjectError(null);
+    try {
+      const project = await createProject(form);
+      setForm({ name: '', location: '', client: '', type: 'Gedung', description: '' });
+      closeOverlay();
+      router.push(`/proyek/${project.id}`);
+    } catch (error) {
+      setProjectError(error instanceof Error ? error.message : 'Gagal menyimpan proyek.');
+    } finally {
+      setSavingProject(false);
+    }
+  }
 
   return (
     <>
-      {/* Notifications */}
       <Drawer open={current === 'notif'} onClose={closeOverlay} title="Notifikasi">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {notifications.map((n) => (
@@ -43,7 +68,6 @@ export function WorkspaceOverlays() {
         </div>
       </Drawer>
 
-      {/* Connected apps */}
       <Drawer open={current === 'apps'} onClose={closeOverlay} title="Aplikasi Terhubung">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {connectedApps.map((a) => (
@@ -61,12 +85,11 @@ export function WorkspaceOverlays() {
         </div>
       </Drawer>
 
-      {/* Billing */}
       <Drawer open={current === 'billing'} onClose={closeOverlay} title="Langganan & Tagihan">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ padding: 14, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text2)' }}>Paket Saat Ini</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', marginTop: 4 }}>PRO · Bulanan</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', marginTop: 4 }}>PRO - Bulanan</div>
             <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>Perpanjang otomatis 01 Jul 2026</div>
           </div>
           <div style={{ padding: 14, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }}>
@@ -82,7 +105,6 @@ export function WorkspaceOverlays() {
         </div>
       </Drawer>
 
-      {/* Account */}
       <Drawer open={current === 'account'} onClose={closeOverlay} title="Akun Saya" width={340}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <span style={{ width: 44, height: 44, borderRadius: 13, background: 'var(--brand-box)', color: 'var(--brand-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15 }}>{currentUser.initials}</span>
@@ -124,7 +146,6 @@ export function WorkspaceOverlays() {
         </button>
       </Drawer>
 
-      {/* Upload */}
       <Drawer open={current === 'upload'} onClose={closeOverlay} title="Unggah File">
         <div
           style={{
@@ -141,13 +162,12 @@ export function WorkspaceOverlays() {
         >
           <UploadCloud size={28} />
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)' }}>Tarik file ke sini</div>
-          <div style={{ fontSize: 12 }}>PDF, DWG, gambar, atau spreadsheet · maks 50 MB</div>
+          <div style={{ fontSize: 12 }}>PDF, DWG, gambar, atau spreadsheet - maks 50 MB</div>
           <Button variant="secondary" style={{ marginTop: 8 }}>Pilih File</Button>
         </div>
-        <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>Tampilan contoh — unggahan belum tersambung ke backend.</p>
+        <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>Tampilan contoh - unggahan belum tersambung ke backend.</p>
       </Drawer>
 
-      {/* New project */}
       <Modal
         open={current === 'newProject'}
         onClose={closeOverlay}
@@ -155,16 +175,24 @@ export function WorkspaceOverlays() {
         footer={
           <>
             <Button variant="secondary" onClick={closeOverlay}>Batal</Button>
-            <Button onClick={closeOverlay}>Simpan</Button>
+            <Button onClick={handleCreateProject} disabled={savingProject}>
+              {savingProject ? 'Menyimpan...' : 'Simpan'}
+            </Button>
           </>
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <p style={{ margin: 0, fontSize: 11, color: 'var(--text3)' }}>
+            Penyimpanan aktif: {backend === 'firestore' ? 'Firestore' : 'localStorage fallback'}.
+          </p>
           <Field label="Nama Proyek">
             <input className="pax-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="mis. Gedung Kuliah Terpadu" />
           </Field>
           <Field label="Lokasi">
             <input className="pax-input" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Kota, Provinsi" />
+          </Field>
+          <Field label="Klien / Owner">
+            <input className="pax-input" value={form.client} onChange={(e) => setForm({ ...form, client: e.target.value })} placeholder="mis. Dinas PUPR / PT ..." />
           </Field>
           <Field label="Tipe Proyek">
             <select className="pax-input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
@@ -173,14 +201,17 @@ export function WorkspaceOverlays() {
               <option>Renovasi</option>
             </select>
           </Field>
-          <p style={{ fontSize: 11, color: 'var(--text3)' }}>Tampilan contoh — proyek belum disimpan ke penyimpanan.</p>
+          <Field label="Deskripsi">
+            <textarea className="pax-input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Ringkasan lingkup pekerjaan" rows={3} />
+          </Field>
+          {projectError && <p style={{ margin: 0, fontSize: 11, color: 'var(--dng-dot)' }}>{projectError}</p>}
         </div>
       </Modal>
     </>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text2)' }}>{label}</span>

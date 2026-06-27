@@ -23,10 +23,29 @@ berdasarkan koefisien AHSP × harga satuan.
 - ✅ **Halaman web Uji RAB manual** (Next.js → engine → tampilan), tanpa kalkulasi di frontend
 - ✅ **Test**: 8 unit engine + 20 integrasi API + 6 schema (Zod)
 
-### Belum ada di v0.6 (rencana v0.7)
+### Belum ada di v0.6 (rencana v1.0+)
 - ❌ Ekstraksi gambar → BoQ (Document Intelligence)
 - ❌ AI Orchestrator, RAG, AI Engineering Chat
 - ❌ Simulasi skenario lanjutan, Monitoring multi-proyek
+
+---
+
+## v0.7 — Workspace Hidup (sedang berjalan)
+
+Membangun **workspace nyata** di atas engine v0.6. Tetap **tanpa AI** — semua angka
+dari engine deterministik.
+
+- ✅ **Multi-proyek + CRUD** tersimpan (Firestore, dengan fallback localStorage bila env Firebase kosong)
+- ✅ **Editor RAB per-proyek** (`/proyek/[id]/rab`): pilih item AHSP + volume + durasi → RAB, bobot, Kurva S, rincian HSP — **semua dari engine**, input tersimpan per-proyek
+- ✅ **Browser Database AHSP** (`/database-ahsp`): live dari engine, rincian koefisien × harga per-wilayah
+- ✅ **Export RAB/BoQ** ke Excel (CSV) & PDF (print)
+- ✅ **RAB Health Check** (`POST /rab/validate`): skor 0–100 + peringatan deterministik (duplikat, volume nol, bobot dominan, durasi hilang)
+- ✅ **Scenario Simulator** (`POST /scenario/simulate`, tab Schedule): frontier **waktu-biaya** ala ALICE — durasi dari produktivitas AHSP, skenario crew/lembur/paralel — semua titik dihitung engine
+- ⏳ Editor harga regional dari UI (butuh endpoint override harga di engine) — slice tambahan
+- ⛔ **v0.8 (Smart Import + AI)** ditahan sampai keputusan vendor model & metering
+
+> Jalankan engine (`pnpm run dev:core`) agar halaman workspace bisa menghitung.
+> Tanpa engine, RAB/AHSP menampilkan pesan/contoh fallback.
 
 ---
 
@@ -126,7 +145,9 @@ python -m app.demo
 | GET | `/regions` | Daftar wilayah |
 | POST | `/rab/hsp` | Hitung HSP satu item (auditable) |
 | POST | `/rab/calculate` | Hitung RAB lengkap |
+| POST | `/rab/validate` | Health check RAB (skor + peringatan, deterministik) |
 | POST | `/schedule/s-curve` | Bangun Kurva S |
+| POST | `/scenario/simulate` | Simulasi what-if waktu-biaya (deterministik) |
 
 Contoh request lengkap: [`services/core-engine/requests.http`](services/core-engine/requests.http).
 Detail engine: [`services/core-engine/README.md`](services/core-engine/README.md).
