@@ -72,6 +72,7 @@ class RABLineInput(BaseModel):
     volume: float
     duration_days: Optional[int] = None   # untuk penjadwalan / Kurva S
     description: Optional[str] = None
+    section: Optional[str] = None          # kode seksi WBS (I..VII) untuk /rab/build
 
 
 class RABLine(BaseModel):

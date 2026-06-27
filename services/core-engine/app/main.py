@@ -9,8 +9,11 @@ Endpoint deterministik (tidak ada LLM di sini):
     POST /rab/hsp                   -> rincian HSP satu item
     POST /rab/calculate             -> RAB lengkap dari daftar item
     POST /rab/validate              -> health check RAB (deterministik)
+    POST /rab/build                 -> RAB tersektor (WBS I..VII)
     POST /schedule/s-curve          -> Kurva S rencana dari RAB + durasi
     POST /scenario/simulate         -> simulasi what-if waktu-biaya (deterministik)
+    GET  /geometry/elements         -> tipe elemen yang didukung kalkulator volume
+    POST /geometry/volume           -> hitung volume/luas dari dimensi (untuk AI)
 """
 from __future__ import annotations
 from typing import List, Optional
@@ -22,9 +25,12 @@ from .rab.loader import load_data
 from .rab.rab import compute_hsp, compute_rab
 from .rab.schedule import build_s_curve
 from .rab.validate import validate_rab, ValidationResult
+from .rab.sections import build_sectioned_rab, SectionedRABResult, WBS_SECTIONS
 from .rab.models import RABLineInput, HSPBreakdown, RABResult, SCurveResult
 from .scenario.simulate import compute_scenarios
 from .scenario.models import ScenarioConfig, ScenarioResult
+from .geometry.volume import compute_volume, ELEMENT_TYPES
+from .geometry.models import VolumeRequest, VolumeResult
 
 app = FastAPI(title="PAAX Core Engine", version="0.6.0")
 
@@ -125,6 +131,36 @@ def rab_validate(req: RABRequest):
         region=STORE.region_names.get(req.region_code, req.region_code),
         region_code=req.region_code, ppn_rate=req.ppn_rate,
     )
+
+
+@app.post("/rab/build", response_model=SectionedRABResult)
+def rab_build(req: RABRequest):
+    try:
+        return build_sectioned_rab(
+            req.lines, STORE.ahsp, STORE.price_book(req.region_code),
+            region=STORE.region_names.get(req.region_code, req.region_code),
+            region_code=req.region_code, ppn_rate=req.ppn_rate,
+        )
+    except KeyError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.get("/wbs/sections")
+def wbs_sections():
+    return [{"code": code, "title": title} for code, title in WBS_SECTIONS]
+
+
+@app.get("/geometry/elements")
+def geometry_elements():
+    return {"element_types": ELEMENT_TYPES}
+
+
+@app.post("/geometry/volume", response_model=VolumeResult)
+def geometry_volume(req: VolumeRequest):
+    try:
+        return compute_volume(req.element_type, req.dims)
+    except KeyError as e:
+        raise HTTPException(400, str(e))
 
 
 @app.post("/schedule/s-curve", response_model=SCurveResult)
