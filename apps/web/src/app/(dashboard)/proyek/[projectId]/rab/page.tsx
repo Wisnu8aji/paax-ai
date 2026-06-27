@@ -24,12 +24,14 @@ import {
   FileSpreadsheet,
   Printer,
   ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import type { HSPBreakdown, RABResult, SCurveResult, ValidationResult } from '@paax/schemas';
 import { Card, Button, StatusPill, EmptyState, Modal } from '@/components/ui';
 import { SCurveChart } from '@/components/rab/s-curve-chart';
 import { HspBreakdownBody } from '@/components/rab/hsp-breakdown';
 import { RabHealthPanel } from '@/components/rab/rab-health-panel';
+import { SmartRabBuilder } from '@/components/rab/smart-rab-builder';
 import { exportRabCsv, exportRabPdf } from '@/lib/export/rab-export';
 import { useProjects } from '@/lib/projects/projects-context';
 import {
@@ -78,6 +80,7 @@ export default function ProjectRabPage() {
   });
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
 
   // ── Build valid engine lines from draft (validasi input, BUKAN hitung angka) ──
   const validLines = useMemo<EngineLine[] | null>(() => {
@@ -272,17 +275,29 @@ export default function ProjectRabPage() {
     }
   };
 
+  const applyAiLines = (lines: { ahsp_code: string; volume: number }[]) => {
+    if (!lines.length) return;
+    setDraft((d) => ({
+      ...d,
+      lines: lines.map((l) => ({ ...emptyRabLine(), ahsp_code: l.ahsp_code, volume: l.volume, duration_days: null })),
+    }));
+    invalidateResults();
+  };
+
   if (projectsLoading) return <EmptyState title="Memuat proyek..." />;
   if (!project) return <EmptyState title="Proyek tidak ditemukan" message="Buka daftar proyek untuk memilih proyek." />;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Banner aturan emas */}
+      {/* Banner aturan emas + entri AI-first */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <StatusPill tone="ok"><CheckCircle2 size={12} /> Engine deterministik</StatusPill>
         <span style={{ fontSize: 12, color: 'var(--text3)' }}>
           Semua angka (HSP, jumlah, bobot, Kurva S) dihitung engine — bukan di browser.
         </span>
+        <div style={{ marginLeft: 'auto' }}>
+          <Button onClick={() => setAiOpen(true)}><Sparkles size={15} /> Susun dengan AI</Button>
+        </div>
       </div>
 
       {bootError && <ErrorBox message={bootError} onClose={() => setBootError(null)} />}
@@ -426,6 +441,15 @@ export default function ProjectRabPage() {
           <HspBreakdownBody data={hspModal.data} />
         </Modal>
       )}
+
+      <SmartRabBuilder
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        ahspList={ahspList}
+        regionCode={draft.regionCode}
+        ppnRate={draft.ppnRate}
+        onApply={applyAiLines}
+      />
     </div>
   );
 }
