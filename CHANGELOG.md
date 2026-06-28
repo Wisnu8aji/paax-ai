@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Parameter engine RAB**: endpoint RAB menerima `ppn_rate`, `overhead_override`, dan `rounding_mode` agar perhitungan tetap deterministik tetapi bisa mengikuti parameter proyek.
 - **Export Excel formula-based**: core engine dapat membuat workbook RAB dengan sheet `HARGA BAHAN`, `AHS`, `HSP`, dan `DKH` dari hasil engine.
 - **Ingest harga Semarang**: `scripts/harga/extract_harga.py` mengekstrak `Daftar harga bahan dan upah.xlsx` ke price book regional di `G:\paax-data` plus audit matched/unmatched/ambiguous.
+- **Coverage harga A-2**: extractor harga mendukung tie-break berdasarkan pemakaian AHSP, override manual tervalidasi di `data/harga-satuan/semarang_overrides.json`, dan worksheet review CSV untuk sisa pemetaan manusia.
 
 ### Notes
 - **Aturan emas tegak:** AI hanya mengusulkan struktur (tipe/AHSP/seksi/dimensi). Volume & biaya **100% dari engine**. Tidak ada angka yang dihitung AI/frontend.
