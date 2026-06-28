@@ -168,3 +168,8 @@ Untuk task yang menyentuh angka RAB/HSP: **Claude tulis spek + nilai acuan
 test manual → Codex implementasi → Claude verifikasi pytest & angka sebelum
 commit.** Codex tidak boleh mengubah rumus inti tanpa spek itu — tetap
 pelanggaran Aturan Emas kalau dilakukan diam-diam.
+
+**GERBANG REVIEW (wajib, sejak 2026-06-28):** semua pekerjaan dikerjakan di
+**branch baru → PR**, BUKAN langsung di `main`. Codex/Claude **tidak boleh
+auto-merge**: PR menunggu pemeriksaan owner + Claude dulu, merge hanya setelah
+disetujui. Jangan commit/push langsung ke `main`.
