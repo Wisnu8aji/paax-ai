@@ -3,18 +3,14 @@
   "notes": [
     "Pemetaan manual yang sudah dikonfirmasi aman oleh Claude pada Fase A-2.",
     "Extractor memakai harga persis dari XLSX sumber; file ini hanya memilih kode katalog tujuan.",
-    "Jangan isi item yang butuh judgment domain seperti mutu beton, watt lampu, atau varian keramik yang belum jelas."
+    "Jangan isi item yang butuh judgment domain seperti mutu beton, watt lampu, atau varian keramik yang belum jelas.",
+    "Granite 60x60: katalog hanya punya SATU kode generik (M.GEN.0610), tidak membedakan polished/unpolished. Dipetakan ke 'Granite 60 x60 polished' (Rp140.000) = finish lantai interior dominan. 'Granite 60 x60 unpolished' (Rp160.000) sengaja TIDAK dipetakan agar tidak menimpa harga (collision); kalau proyek butuh harga unpolished, putuskan manual saat penyusunan RAB."
   ],
   "overrides": [
     {
       "source_name": "Kloset jongkok porselen",
       "code": "M.GEN.0450",
       "catalog_name": "Kloset Jongkok"
-    },
-    {
-      "source_name": "Granite 60 x60 unpolished",
-      "code": "M.GEN.0610",
-      "catalog_name": "Ubin Granit uk. 60 cm x 60 cm"
     },
     {
       "source_name": "Granite 60 x60 polished",
