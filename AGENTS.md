@@ -167,3 +167,9 @@ Kalau task yang kamu terima ternyata butuh keputusan domain/ambigu, atau
 menyentuh rumus inti RAB/HSP TANPA spek/nilai-acuan yang sudah jelas —
 **STOP, jangan menebak. Minta Wisnu bawa ke sesi Claude dulu.** Konsisten
 dengan Aturan Emas §1: jangan mengarang angka atau logika perhitungan sendiri.
+
+**GERBANG REVIEW (wajib, sejak 2026-06-28):** kerjakan di **branch baru →
+push → buka PR**, lalu **BERHENTI**. JANGAN merge ke `main` sendiri dan jangan
+commit/push langsung ke `main`. PR menunggu pemeriksaan owner + Claude; merge
+hanya setelah disetujui. Kalau review minta perbaikan, push lagi ke branch yang
+sama.
