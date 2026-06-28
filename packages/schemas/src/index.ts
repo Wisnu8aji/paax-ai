@@ -946,6 +946,47 @@ export const SCurveResult = z.object({
 });
 export type SCurveResult = z.infer<typeof SCurveResult>;
 
+// ─── CPM Schedule (selaras app/rab/schedule.py) ──────────────────────────────
+
+export const TaskInput = z.object({
+  id: z.string(),
+  name: z.string().optional(),
+  duration_days: z.number().min(0),
+  predecessors: z.array(z.string()).default([]),
+  dep_type: z.string().default("FS").refine((value) => value === "FS", {
+    message: "v0.9A hanya mendukung dependency FS",
+  }),
+  lag_days: z.number().default(0).refine((value) => value === 0, {
+    message: "v0.9A hanya mendukung lag_days 0",
+  }),
+});
+export type TaskInput = z.infer<typeof TaskInput>;
+
+export const CPMRequest = z.object({
+  tasks: z.array(TaskInput),
+});
+export type CPMRequest = z.infer<typeof CPMRequest>;
+
+export const CPMTask = z.object({
+  id: z.string(),
+  name: z.string(),
+  duration_days: z.number(),
+  early_start: z.number(),
+  early_finish: z.number(),
+  late_start: z.number(),
+  late_finish: z.number(),
+  total_float: z.number(),
+  is_critical: z.boolean(),
+});
+export type CPMTask = z.infer<typeof CPMTask>;
+
+export const CPMResult = z.object({
+  project_duration_days: z.number(),
+  tasks: z.array(CPMTask),
+  critical_path: z.array(z.string()),
+});
+export type CPMResult = z.infer<typeof CPMResult>;
+
 // ─── Scenario Simulator (selaras app/scenario/models.py) ─────────────────────
 
 export const ScenarioLineInput = z.object({
