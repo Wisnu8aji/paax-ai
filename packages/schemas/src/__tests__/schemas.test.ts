@@ -7,6 +7,7 @@ import {
   HSPBreakdown,
   SCurveResult,
   RABLineInput,
+  ScenarioConfig,
   ScenarioResult,
   ValidationResult,
   CPMRequest,
@@ -206,6 +207,7 @@ const mockScenarioResult = {
   candidates: [
     { key: "baseline", label: "Baseline", total_days: 9.05, total_cost: 12666898.2, delta_days: 0, delta_cost: 0, delta_days_pct: 0, delta_cost_pct: 0, note: "Rencana awal" },
   ],
+  custom: null,
 };
 
 // Contoh response /rab/validate
@@ -226,6 +228,46 @@ describe("ScenarioResult schema", () => {
     const result = ScenarioResult.parse(mockScenarioResult);
     expect(result.baseline_total_days).toBe(9.05);
     expect(result.candidates[0].key).toBe("baseline");
+    expect(result.custom).toBeNull();
+  });
+
+  it("parses custom scenario params and result", () => {
+    const config = ScenarioConfig.parse({
+      lines: [{ ahsp_code: "AHSP.CK.001", volume: 50, workers: 5 }],
+      params: { crew_multiplier: 2, shifts: 2, efficiency: 0.8, target_days: null },
+    });
+
+    expect(config.params?.shift_premium_rate).toBe(0.3);
+
+    const result = ScenarioResult.parse({
+      ...mockScenarioResult,
+      custom: {
+        applied_crew_multiplier: 2,
+        shifts: 2,
+        efficiency: 0.8,
+        target_days: null,
+        resolved_from_target: false,
+        items: [{
+          ahsp_code: "AHSP.CK.001",
+          name: "Dinding bata",
+          volume: 50,
+          base_mandays: 21.25,
+          effective_workers: 16,
+          duration_days: 1.328125,
+        }],
+        total_days: 2.83,
+        subtotal: 15134432.5,
+        labor_cost: 9679312.5,
+        total_cost: 16799220.08,
+        delta_days: -6.22,
+        delta_cost: 4132321.88,
+        delta_days_pct: -68.75,
+        delta_cost_pct: 32.62,
+        note: "Skenario kustom",
+      },
+    });
+
+    expect(result.custom?.total_days).toBe(2.83);
   });
 });
 
