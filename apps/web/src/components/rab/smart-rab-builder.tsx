@@ -11,7 +11,7 @@
  * ATURAN EMAS: AI hanya mengusulkan struktur; SEMUA angka (volume, biaya) dari
  * engine. Tidak ada perhitungan di frontend.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Sparkles, Loader2, Trash2, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 import type { VolumeResult, SectionedRABResult } from '@paax/schemas';
 import { Modal, Button, StatusPill } from '@/components/ui';
@@ -52,11 +52,30 @@ export function SmartRabBuilder({
   const [text, setText] = useState(SAMPLE);
   const [els, setEls] = useState<WorkEl[]>([]);
   const [provider, setProvider] = useState<string | null>(null);
+  const [providerStatus, setProviderStatus] = useState<string | null>(null);
   const [built, setBuilt] = useState<SectionedRABResult | null>(null);
   const [busy, setBusy] = useState<{ analyze: boolean; build: boolean }>({ analyze: false, build: false });
   const [error, setError] = useState<string | null>(null);
 
   const buildable = useMemo(() => els.filter((e) => e.ahsp_code && e.vol), [els]);
+  const activeProvider = provider ?? providerStatus ?? 'rule-based';
+
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    fetch('/api/ai/extract')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { provider?: string; model?: string } | null) => {
+        if (!active || !data) return;
+        setProviderStatus(data.model ?? data.provider ?? 'rule-based');
+      })
+      .catch(() => {
+        if (active) setProviderStatus('rule-based');
+      });
+    return () => {
+      active = false;
+    };
+  }, [open]);
 
   async function handleAnalyze() {
     setError(null);
@@ -125,7 +144,9 @@ export function SmartRabBuilder({
     <Modal open={open} onClose={onClose} title="Susun RAB dengan AI" width={900}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <StatusPill tone="warn"><Sparkles size={12} /> Mode fallback (rule-based){provider ? ` · ${provider}` : ''}</StatusPill>
+          <StatusPill tone={activeProvider.includes('gemini') ? 'ok' : 'warn'}>
+            <Sparkles size={12} /> Mode {activeProvider.includes('gemini') ? 'AI' : 'fallback'}: {activeProvider}
+          </StatusPill>
           <span style={{ fontSize: 11.5, color: 'var(--text3)' }}>
             AI menstruktur item; <strong>engine</strong> menghitung volume & biaya. Sambungkan Gemini (free tier) untuk ekstraksi lebih pintar.
           </span>

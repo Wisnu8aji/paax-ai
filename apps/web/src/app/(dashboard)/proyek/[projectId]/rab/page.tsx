@@ -25,6 +25,7 @@ import {
   Printer,
   ShieldCheck,
   Sparkles,
+  Upload,
 } from 'lucide-react';
 import type { HSPBreakdown, RABResult, SCurveResult, ValidationResult } from '@paax/schemas';
 import { Card, Button, StatusPill, EmptyState, Modal } from '@/components/ui';
@@ -32,7 +33,9 @@ import { SCurveChart } from '@/components/rab/s-curve-chart';
 import { HspBreakdownBody } from '@/components/rab/hsp-breakdown';
 import { RabHealthPanel } from '@/components/rab/rab-health-panel';
 import { SmartRabBuilder } from '@/components/rab/smart-rab-builder';
+import { SmartRabImport } from '@/components/rab/smart-rab-import';
 import { exportRabCsv, exportRabPdf } from '@/lib/export/rab-export';
+import { downloadRabFormulaExcel } from '@/lib/export/rab-excel-export';
 import { useProjects } from '@/lib/projects/projects-context';
 import {
   rabRepository,
@@ -71,16 +74,18 @@ export default function ProjectRabPage() {
   const [scurveResult, setScurveResult] = useState<SCurveResult | null>(null);
   const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [hspModal, setHspModal] = useState<{ code: string; data: HSPBreakdown } | null>(null);
-  const [busy, setBusy] = useState<{ rab: boolean; scurve: boolean; save: boolean; validate: boolean; hsp: string | null }>({
+  const [busy, setBusy] = useState<{ rab: boolean; scurve: boolean; save: boolean; validate: boolean; exportExcel: boolean; hsp: string | null }>({
     rab: false,
     scurve: false,
     save: false,
     validate: false,
+    exportExcel: false,
     hsp: null,
   });
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   // ── Build valid engine lines from draft (validasi input, BUKAN hitung angka) ──
   const validLines = useMemo<EngineLine[] | null>(() => {
@@ -275,6 +280,22 @@ export default function ProjectRabPage() {
     }
   };
 
+  const handleExportFormulaExcel = async () => {
+    if (!validLines) {
+      setError('Belum ada baris RAB valid untuk export Excel rumus.');
+      return;
+    }
+    setError(null);
+    setBusy((b) => ({ ...b, exportExcel: true }));
+    try {
+      await downloadRabFormulaExcel(validLines, draft.regionCode, draft.ppnRate, project?.name ?? 'proyek');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Gagal export Excel rumus.');
+    } finally {
+      setBusy((b) => ({ ...b, exportExcel: false }));
+    }
+  };
+
   const applyAiLines = (lines: { ahsp_code: string; volume: number }[]) => {
     if (!lines.length) return;
     setDraft((d) => ({
@@ -295,7 +316,8 @@ export default function ProjectRabPage() {
         <span style={{ fontSize: 12, color: 'var(--text3)' }}>
           Semua angka (HSP, jumlah, bobot, Kurva S) dihitung engine — bukan di browser.
         </span>
-        <div style={{ marginLeft: 'auto' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <Button variant="secondary" onClick={() => setImportOpen(true)}><Upload size={15} /> Smart Import</Button>
           <Button onClick={() => setAiOpen(true)}><Sparkles size={15} /> Susun dengan AI</Button>
         </div>
       </div>
@@ -432,6 +454,8 @@ export default function ProjectRabPage() {
           hspBusy={busy.hsp}
           onExportCsv={handleExportCsv}
           onExportPdf={handleExportPdf}
+          onExportFormulaExcel={handleExportFormulaExcel}
+          exportExcelBusy={busy.exportExcel}
         />
       )}
       {scurveResult && <ScurvePanel scurve={scurveResult} />}
@@ -445,6 +469,14 @@ export default function ProjectRabPage() {
       <SmartRabBuilder
         open={aiOpen}
         onClose={() => setAiOpen(false)}
+        ahspList={ahspList}
+        regionCode={draft.regionCode}
+        ppnRate={draft.ppnRate}
+        onApply={applyAiLines}
+      />
+      <SmartRabImport
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
         ahspList={ahspList}
         regionCode={draft.regionCode}
         ppnRate={draft.ppnRate}
@@ -476,12 +508,16 @@ function RabResultTable({
   hspBusy,
   onExportCsv,
   onExportPdf,
+  onExportFormulaExcel,
+  exportExcelBusy,
 }: {
   rab: RABResult;
   onHsp: (code: string) => void;
   hspBusy: string | null;
   onExportCsv: () => void;
   onExportPdf: () => void;
+  onExportFormulaExcel: () => void;
+  exportExcelBusy: boolean;
 }) {
   const th: React.CSSProperties = { padding: '11px 14px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text2)', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' };
   const td: React.CSSProperties = { padding: '11px 14px', borderBottom: '1px solid var(--border-soft)' };
@@ -493,7 +529,10 @@ function RabResultTable({
           <div style={{ fontSize: 11.5, color: 'var(--text3)' }}>Dihitung engine deterministik · PPN {formatPercent(rab.ppn_rate * 100)}</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <Button variant="secondary" onClick={onExportCsv}><FileSpreadsheet size={15} /> Excel</Button>
+          <Button variant="secondary" onClick={onExportCsv}><FileSpreadsheet size={15} /> CSV</Button>
+          <Button variant="secondary" onClick={onExportFormulaExcel} disabled={exportExcelBusy}>
+            {exportExcelBusy ? <Loader2 size={15} className="animate-spin" /> : <FileSpreadsheet size={15} />} Excel Rumus
+          </Button>
           <Button variant="secondary" onClick={onExportPdf}><Printer size={15} /> PDF</Button>
         </div>
       </div>
