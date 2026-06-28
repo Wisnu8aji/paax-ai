@@ -12,6 +12,7 @@ Endpoint deterministik (tidak ada LLM di sini):
     POST /rab/build                 -> RAB tersektor (WBS I..VII)
     POST /schedule/s-curve          -> Kurva S rencana dari RAB + durasi
     POST /schedule/cpm              -> Critical Path Method dari dependency tugas
+    POST /schedule/plan             -> CPM + tanggal kalender + Kurva S dependency
     POST /scenario/simulate         -> simulasi what-if waktu-biaya (deterministik)
     GET  /geometry/elements         -> tipe elemen yang didukung kalkulator volume
     POST /geometry/volume           -> hitung volume/luas dari dimensi (untuk AI)
@@ -27,7 +28,10 @@ from pydantic import BaseModel, Field
 from .export.excel_exporter import export_rab_to_excel
 from .rab.loader import load_data
 from .rab.rab import compute_hsp, compute_rab
-from .rab.schedule import build_s_curve, compute_cpm, CPMRequest, CPMResult
+from .rab.schedule import (
+    build_s_curve, compute_cpm, build_schedule_plan,
+    CPMRequest, CPMResult, SchedulePlanRequest, SchedulePlanResult,
+)
 from .rab.validate import validate_rab, ValidationResult
 from .rab.sections import build_sectioned_rab, SectionedRABResult, WBS_SECTIONS
 from .rab.models import RABLineInput, HSPBreakdown, RABResult, SCurveResult
@@ -225,6 +229,14 @@ def s_curve(req: SCurveRequest):
 def schedule_cpm(req: CPMRequest):
     try:
         return compute_cpm(req)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/schedule/plan", response_model=SchedulePlanResult)
+def schedule_plan(req: SchedulePlanRequest):
+    try:
+        return build_schedule_plan(req)
     except ValueError as e:
         raise HTTPException(400, str(e))
 

@@ -987,6 +987,45 @@ export const CPMResult = z.object({
 });
 export type CPMResult = z.infer<typeof CPMResult>;
 
+export const CalendarConfig = z.object({
+  working_weekdays: z.array(z.number().int()).default([0, 1, 2, 3, 4, 5]),
+  holidays: z.array(z.string()).default([]),
+});
+export type CalendarConfig = z.infer<typeof CalendarConfig>;
+
+export const PlanTaskInput = z.object({
+  id: z.string(),
+  name: z.string().nullable().default(null),
+  duration_days: z.number(),
+  predecessors: z.array(z.string()).default([]),
+  weight_pct: z.number().nullable().default(null),
+});
+export type PlanTaskInput = z.infer<typeof PlanTaskInput>;
+
+export const SchedulePlanRequest = z.object({
+  project_start_date: z.string(),
+  calendar: CalendarConfig.nullable().default(null),
+  period_days: z.number().int().default(7),
+  tasks: z.array(PlanTaskInput),
+});
+export type SchedulePlanRequest = z.infer<typeof SchedulePlanRequest>;
+
+export const ScheduledTask = CPMTask.extend({
+  start_date: z.string(),
+  end_date: z.string(),
+});
+export type ScheduledTask = z.infer<typeof ScheduledTask>;
+
+export const SchedulePlanResult = z.object({
+  project_duration_days: z.number(),
+  project_start_date: z.string(),
+  project_end_date: z.string(),
+  tasks: z.array(ScheduledTask),
+  critical_path: z.array(z.string()),
+  s_curve: SCurveResult.nullable().default(null),
+});
+export type SchedulePlanResult = z.infer<typeof SchedulePlanResult>;
+
 // ─── Scenario Simulator (selaras app/scenario/models.py) ─────────────────────
 
 export const ScenarioLineInput = z.object({

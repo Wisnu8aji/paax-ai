@@ -7,6 +7,7 @@ Dari RAB (bobot tiap item) + durasi tiap item, bangun rencana progres kumulatif.
 Bobot tiap item didistribusikan merata sepanjang durasinya, lalu diakumulasi per periode.
 """
 from __future__ import annotations
+from datetime import date, timedelta
 from typing import List
 import math
 from pydantic import BaseModel, Field
@@ -46,6 +47,40 @@ class CPMResult(BaseModel):
     project_duration_days: float
     tasks: List[CPMTask]
     critical_path: List[str]
+
+
+class CalendarConfig(BaseModel):
+    working_weekdays: List[int] = Field(default_factory=lambda: [0, 1, 2, 3, 4, 5])
+    holidays: List[str] = Field(default_factory=list)
+
+
+class PlanTaskInput(BaseModel):
+    id: str
+    name: str | None = None
+    duration_days: float
+    predecessors: List[str] = Field(default_factory=list)
+    weight_pct: float | None = None
+
+
+class SchedulePlanRequest(BaseModel):
+    project_start_date: str
+    calendar: CalendarConfig | None = None
+    period_days: int = 7
+    tasks: List[PlanTaskInput]
+
+
+class ScheduledTask(CPMTask):
+    start_date: str
+    end_date: str
+
+
+class SchedulePlanResult(BaseModel):
+    project_duration_days: float
+    project_start_date: str
+    project_end_date: str
+    tasks: List[ScheduledTask]
+    critical_path: List[str]
+    s_curve: SCurveResult | None
 
 
 def _clean_number(value: float) -> float:
@@ -175,6 +210,157 @@ def compute_cpm(req: CPMRequest) -> CPMResult:
         project_duration_days=_clean_number(project_duration),
         tasks=output_tasks,
         critical_path=critical_path,
+    )
+
+
+def _integer_value(value: float, message: str) -> int:
+    rounded = round(value)
+    if abs(value - rounded) > EPS:
+        raise ValueError(message)
+    return int(rounded)
+
+
+def _parse_iso_date(value: str, field_name: str) -> date:
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise ValueError(f"{field_name} harus format ISO YYYY-MM-DD") from exc
+
+
+def _calendar_parts(calendar: CalendarConfig | None) -> tuple[set[int], set[date]]:
+    cfg = calendar or CalendarConfig()
+    working_weekdays = set(cfg.working_weekdays)
+    if not working_weekdays:
+        raise ValueError("working_weekdays tidak boleh kosong")
+    if any(day < 0 or day > 6 for day in working_weekdays):
+        raise ValueError("working_weekdays harus bernilai 0 sampai 6")
+    holidays = {_parse_iso_date(item, "holidays") for item in cfg.holidays}
+    return working_weekdays, holidays
+
+
+def nth_working_day(start_date: date, n: int, calendar: CalendarConfig | None = None) -> date:
+    if n < 0:
+        raise ValueError("offset hari kerja harus >= 0")
+
+    working_weekdays, holidays = _calendar_parts(calendar)
+    current = start_date
+    seen = -1
+    while True:
+        if current.weekday() in working_weekdays and current not in holidays:
+            seen += 1
+            if seen == n:
+                return current
+        current += timedelta(days=1)
+
+
+def build_s_curve_cpm(
+    tasks: List[CPMTask],
+    weights: dict[str, float],
+    period_days: int = 7,
+    total_days: int | None = None,
+) -> SCurveResult:
+    if period_days <= 0:
+        raise ValueError("period_days harus >= 1")
+
+    resolved_total_days = (
+        total_days
+        if total_days is not None
+        else max((_integer_value(task.early_finish, "offset CPM harus bilangan bulat") for task in tasks), default=0)
+    )
+    if resolved_total_days <= 0:
+        return SCurveResult(total_days=0, period_days=period_days, mode="cpm", points=[])
+
+    daily = [0.0] * resolved_total_days
+    for task in tasks:
+        duration = _integer_value(task.duration_days, "durasi harus bilangan bulat untuk plan")
+        if duration <= 0:
+            if weights.get(task.id, 0) != 0:
+                raise ValueError("durasi tugas berbobot harus > 0 untuk kurva S")
+            continue
+        start = _integer_value(task.early_start, "offset CPM harus bilangan bulat")
+        per_day = weights[task.id] / duration
+        for day in range(start, start + duration):
+            daily[day] += per_day
+
+    n_periods = math.ceil(resolved_total_days / period_days)
+    points: List[SCurvePoint] = []
+    cumulative = 0.0
+    for period_index in range(n_periods):
+        d0 = period_index * period_days
+        d1 = min(d0 + period_days, resolved_total_days)
+        planned = sum(daily[d0:d1])
+        cumulative += planned
+        points.append(SCurvePoint(
+            period=period_index + 1,
+            day_start=d0 + 1,
+            day_end=d1,
+            planned_pct=round(planned, 4),
+            cumulative_pct=round(cumulative, 4),
+        ))
+
+    if points and abs(cumulative - 100.0) < 0.5:
+        points[-1].cumulative_pct = 100.0
+
+    return SCurveResult(
+        total_days=resolved_total_days,
+        period_days=period_days,
+        mode="cpm",
+        points=points,
+    )
+
+
+def build_schedule_plan(req: SchedulePlanRequest) -> SchedulePlanResult:
+    cpm = compute_cpm(CPMRequest(tasks=[
+        TaskInput(
+            id=task.id,
+            name=task.name,
+            duration_days=task.duration_days,
+            predecessors=task.predecessors,
+        )
+        for task in req.tasks
+    ]))
+
+    project_start = _parse_iso_date(req.project_start_date, "project_start_date")
+    if req.period_days <= 0:
+        raise ValueError("period_days harus >= 1")
+
+    for task in req.tasks:
+        _integer_value(task.duration_days, "durasi harus bilangan bulat untuk plan")
+
+    project_duration = _integer_value(
+        cpm.project_duration_days,
+        "project_duration_days harus bilangan bulat untuk plan",
+    )
+    if project_duration >= 1:
+        project_end = nth_working_day(project_start, project_duration - 1, req.calendar)
+    else:
+        project_end = project_start
+
+    scheduled_tasks: List[ScheduledTask] = []
+    for task in cpm.tasks:
+        duration = _integer_value(task.duration_days, "durasi harus bilangan bulat untuk plan")
+        early_start = _integer_value(task.early_start, "offset CPM harus bilangan bulat")
+        early_finish = _integer_value(task.early_finish, "offset CPM harus bilangan bulat")
+        start = nth_working_day(project_start, early_start, req.calendar)
+        end = start if duration == 0 else nth_working_day(project_start, early_finish - 1, req.calendar)
+        scheduled_tasks.append(ScheduledTask(
+            **task.model_dump(),
+            start_date=start.isoformat(),
+            end_date=end.isoformat(),
+        ))
+
+    s_curve = None
+    if all(task.weight_pct is not None for task in req.tasks):
+        weights = {task.id: task.weight_pct or 0.0 for task in req.tasks}
+        s_curve = build_s_curve_cpm(cpm.tasks, weights, req.period_days, project_duration)
+
+    return SchedulePlanResult(
+        project_duration_days=cpm.project_duration_days,
+        project_start_date=req.project_start_date,
+        project_end_date=project_end.isoformat(),
+        tasks=scheduled_tasks,
+        critical_path=cpm.critical_path,
+        s_curve=s_curve,
     )
 
 

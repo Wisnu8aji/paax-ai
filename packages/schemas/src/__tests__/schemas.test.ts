@@ -12,6 +12,8 @@ import {
   ValidationResult,
   CPMRequest,
   CPMResult,
+  SchedulePlanRequest,
+  SchedulePlanResult,
 } from "../index";
 
 // Contoh response aktual dari POST /rab/calculate engine
@@ -146,6 +148,48 @@ describe("CPM schemas", () => {
 
     expect(result.project_duration_days).toBe(7);
     expect(result.critical_path).toEqual(["A", "B"]);
+  });
+});
+
+describe("SchedulePlan schemas", () => {
+  it("parses schedule plan request defaults and result output", () => {
+    const request = SchedulePlanRequest.parse({
+      project_start_date: "2026-06-01",
+      tasks: [
+        { id: "A", duration_days: 3, predecessors: [], weight_pct: 30 },
+        { id: "B", duration_days: 2, predecessors: ["A"], weight_pct: 20 },
+      ],
+    });
+
+    expect(request.calendar).toBeNull();
+    expect(request.period_days).toBe(7);
+    expect(request.tasks[0].name).toBeNull();
+
+    const result = SchedulePlanResult.parse({
+      project_duration_days: 5,
+      project_start_date: "2026-06-01",
+      project_end_date: "2026-06-06",
+      tasks: [
+        {
+          id: "A",
+          name: "A",
+          duration_days: 3,
+          early_start: 0,
+          early_finish: 3,
+          late_start: 0,
+          late_finish: 3,
+          total_float: 0,
+          is_critical: true,
+          start_date: "2026-06-01",
+          end_date: "2026-06-03",
+        },
+      ],
+      critical_path: ["A"],
+      s_curve: null,
+    });
+
+    expect(result.tasks[0].start_date).toBe("2026-06-01");
+    expect(result.s_curve).toBeNull();
   });
 });
 
