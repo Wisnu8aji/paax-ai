@@ -20,7 +20,7 @@ from ..rab.models import AHSPItem, ResourcePrice, RABLineInput
 from ..rab.rab import compute_hsp, compute_rab
 from .models import (
     ScenarioConfig, ScenarioLineInput, ItemSchedule,
-    ScenarioCandidate, ScenarioResult,
+    ScenarioCandidate, ScenarioResult, CustomItemSchedule, CustomScenarioResult,
 )
 
 
@@ -57,6 +57,76 @@ def project_days(durations: List[float], mode: str) -> float:
     if not durations:
         return 0.0
     return sum(durations) if mode == "sequential" else max(durations)
+
+
+def _custom_scenario(
+    cfg: ScenarioConfig,
+    items: List[ItemSchedule],
+    subtotal: float,
+    base_total: float,
+    base_days: float,
+    base_labor_cost: float,
+) -> CustomScenarioResult | None:
+    if cfg.params is None:
+        return None
+
+    params = cfg.params
+    project_days_at_c1 = project_days(
+        [
+            item.mandays / (item.workers * params.shifts * params.efficiency)
+            for item in items
+        ],
+        cfg.base_mode,
+    )
+    if params.target_days is not None:
+        crew_multiplier = project_days_at_c1 / params.target_days
+        resolved_from_target = True
+    else:
+        crew_multiplier = params.crew_multiplier
+        resolved_from_target = False
+
+    custom_items: List[CustomItemSchedule] = []
+    durations: List[float] = []
+    for item in items:
+        effective_workers = item.workers * crew_multiplier * params.shifts * params.efficiency
+        duration = item.mandays / effective_workers
+        custom_items.append(CustomItemSchedule(
+            ahsp_code=item.ahsp_code,
+            name=item.name,
+            volume=item.volume,
+            base_mandays=item.mandays,
+            effective_workers=_r4(effective_workers),
+            duration_days=duration,
+        ))
+        durations.append(duration)
+
+    total_days_raw = project_days(durations, cfg.base_mode)
+    shift_cost_factor = 1 + (params.shifts - 1) * params.shift_premium_rate
+    labor_cost = base_labor_cost * shift_cost_factor / params.efficiency
+    custom_subtotal = subtotal - base_labor_cost + labor_cost
+    total_cost = custom_subtotal * (1 + cfg.ppn_rate)
+    total_days = _r2(total_days_raw)
+    total_cost_rounded = _r2(total_cost)
+    delta_days = _r2(total_days_raw - base_days)
+    delta_cost = _r2(total_cost - base_total)
+
+    return CustomScenarioResult(
+        applied_crew_multiplier=_r4(crew_multiplier),
+        shifts=params.shifts,
+        efficiency=params.efficiency,
+        target_days=params.target_days,
+        resolved_from_target=resolved_from_target,
+        items=custom_items,
+        total_days=total_days,
+        subtotal=custom_subtotal,
+        labor_cost=labor_cost,
+        total_cost=total_cost_rounded,
+        delta_days=delta_days,
+        delta_cost=delta_cost,
+        delta_days_pct=round((total_days_raw - base_days) / base_days * 100, 2) if base_days else 0.0,
+        delta_cost_pct=round((total_cost - base_total) / base_total * 100, 2) if base_total else 0.0,
+        note="Skenario kustom dari parameter crew, shift, efisiensi, dan target.",
+    )
 
 
 def compute_scenarios(
@@ -129,4 +199,5 @@ def compute_scenarios(
         baseline_total_cost=_r2(base_total),
         baseline_labor_cost=labor_cost,
         candidates=candidates,
+        custom=_custom_scenario(cfg, items, subtotal, base_total, base_days, labor_cost),
     )
