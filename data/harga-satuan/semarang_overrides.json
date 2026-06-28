@@ -1,0 +1,25 @@
+{
+  "region_code": "semarang",
+  "notes": [
+    "Pemetaan manual yang sudah dikonfirmasi aman oleh Claude pada Fase A-2.",
+    "Extractor memakai harga persis dari XLSX sumber; file ini hanya memilih kode katalog tujuan.",
+    "Jangan isi item yang butuh judgment domain seperti mutu beton, watt lampu, atau varian keramik yang belum jelas."
+  ],
+  "overrides": [
+    {
+      "source_name": "Kloset jongkok porselen",
+      "code": "M.GEN.0450",
+      "catalog_name": "Kloset Jongkok"
+    },
+    {
+      "source_name": "Granite 60 x60 unpolished",
+      "code": "M.GEN.0610",
+      "catalog_name": "Ubin Granit uk. 60 cm x 60 cm"
+    },
+    {
+      "source_name": "Granite 60 x60 polished",
+      "code": "M.GEN.0610",
+      "catalog_name": "Ubin Granit uk. 60 cm x 60 cm"
+    }
+  ]
+}

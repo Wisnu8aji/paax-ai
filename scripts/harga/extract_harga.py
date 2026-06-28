@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import csv
 import json
 import operator
 import re
@@ -24,6 +25,26 @@ from openpyxl.worksheet.worksheet import Worksheet
 SOURCE_DEFAULT = r"G:\AHSP\Daftar harga bahan dan upah.xlsx"
 DATA_DEFAULT = r"G:\paax-data"
 CATALOG_REL = r"harga-satuan\_resources_catalog.json"
+AHSP_REL = r"ahsp\cipta-karya-2026.json"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+OVERRIDES_DEFAULT = REPO_ROOT / "data" / "harga-satuan" / "semarang_overrides.json"
+REVIEW_FIELDS = [
+    "source_name",
+    "source_unit",
+    "source_category",
+    "source_price",
+    "candidate_1_code",
+    "candidate_1_name",
+    "candidate_2_code",
+    "candidate_2_name",
+    "candidate_3_code",
+    "candidate_3_name",
+    "candidate_4_code",
+    "candidate_4_name",
+    "candidate_5_code",
+    "candidate_5_name",
+    "chosen_code",
+]
 
 
 @dataclass(frozen=True)
@@ -246,6 +267,46 @@ def load_catalog(catalog_path: Path) -> List[Dict[str, Any]]:
     return list(raw.get("resources", []))
 
 
+def load_usage_counts(ahsp_path: Path | None) -> Dict[str, int]:
+    if ahsp_path is None or not ahsp_path.exists():
+        return {}
+    raw = json.loads(ahsp_path.read_text(encoding="utf-8"))
+    counts: Dict[str, int] = {}
+    for item in raw.get("items", []):
+        codes = {
+            component.get("resource_code")
+            for component in item.get("components", [])
+            if component.get("resource_code")
+        }
+        for code in codes:
+            counts[code] = counts.get(code, 0) + 1
+    return counts
+
+
+def load_overrides(overrides_path: Path | None) -> Dict[str, str]:
+    if overrides_path is None or not overrides_path.exists():
+        return {}
+    raw = json.loads(overrides_path.read_text(encoding="utf-8"))
+    if isinstance(raw, dict) and isinstance(raw.get("overrides"), list):
+        entries = raw["overrides"]
+    elif isinstance(raw, list):
+        entries = raw
+    elif isinstance(raw, dict):
+        return {str(k).strip(): str(v).strip() for k, v in raw.items() if str(k).strip() and str(v).strip()}
+    else:
+        raise ValueError(f"Format override tidak didukung: {overrides_path}")
+
+    overrides: Dict[str, str] = {}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError(f"Entry override tidak valid di {overrides_path}: {entry!r}")
+        source_name = str(entry.get("source_name", "")).strip()
+        code = str(entry.get("code", "")).strip()
+        if source_name and code:
+            overrides[source_name] = code
+    return overrides
+
+
 def _candidate_score(source: HargaRow, resource: Dict[str, Any]) -> tuple[int, float]:
     if source.category != resource.get("category"):
         return 0, 0.0
@@ -276,14 +337,19 @@ def _candidate_score(source: HargaRow, resource: Dict[str, Any]) -> tuple[int, f
     return (1, score) if score >= 0.92 and overlap >= 3 else (0, score)
 
 
-def _match_one(source: HargaRow, catalog: List[Dict[str, Any]]) -> tuple[str, List[Dict[str, Any]], float]:
+def _match_one(
+    source: HargaRow,
+    catalog: List[Dict[str, Any]],
+    usage_counts: Dict[str, int] | None = None,
+) -> tuple[str, List[Dict[str, Any]], float, str, str]:
+    usage_counts = usage_counts or {}
     scored = []
     for resource in catalog:
         tier, score = _candidate_score(source, resource)
         if tier:
             scored.append((tier, score, resource))
     if not scored:
-        return "unmatched", [], 0.0
+        return "unmatched", [], 0.0, "none", "tidak ada kandidat aman"
     scored.sort(key=lambda item: (item[0], item[1]), reverse=True)
     best_tier, best_score, best_resource = scored[0]
     tied = [
@@ -292,19 +358,51 @@ def _match_one(source: HargaRow, catalog: List[Dict[str, Any]]) -> tuple[str, Li
     ]
     unique_codes = {r.get("code") for r in tied}
     if len(unique_codes) > 1:
-        return "ambiguous", tied, best_score
-    return "matched", [best_resource], best_score
+        used_codes = {
+            code: usage_counts.get(str(code), 0)
+            for code in unique_codes
+            if usage_counts.get(str(code), 0) > 0
+        }
+        if len(used_codes) == 1:
+            selected_code, count = next(iter(used_codes.items()))
+            selected = next(r for r in tied if r.get("code") == selected_code)
+            return (
+                "matched",
+                [selected],
+                best_score,
+                "usage_tiebreak",
+                f"dipilih karena dipakai {count} item AHSP",
+            )
+        if len(used_codes) > 1:
+            max_count = max(used_codes.values())
+            winners = [code for code, count in used_codes.items() if count == max_count]
+            if len(winners) == 1:
+                selected_code = winners[0]
+                selected = next(r for r in tied if r.get("code") == selected_code)
+                detail = ", ".join(f"{code}={count}" for code, count in sorted(used_codes.items()))
+                return (
+                    "matched",
+                    [selected],
+                    best_score,
+                    "usage_tiebreak",
+                    f"dipilih karena dipakai {max_count} item AHSP dan paling sering dipakai ({detail})",
+                )
+        return "ambiguous", tied, best_score, "ambiguous", "beberapa kandidat aman tanpa tie-break unik"
+    return "matched", [best_resource], best_score, "auto", f"auto tier {best_tier} score {round(best_score, 4)}"
 
 
 def match_price_rows(
     rows: Iterable[HargaRow],
     catalog: List[Dict[str, Any]],
+    usage_counts: Dict[str, int] | None = None,
+    overrides: Dict[str, str] | None = None,
 ) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
     matched: List[Dict[str, Any]] = []
     unmatched: List[Dict[str, Any]] = []
     ambiguous: List[Dict[str, Any]] = []
+    overrides = overrides or {}
+    catalog_by_code = {str(resource.get("code")): resource for resource in catalog}
     for source in rows:
-        status, candidates, score = _match_one(source, catalog)
         base = {
             "source_name": source.source_name,
             "source_unit": source.unit,
@@ -312,12 +410,40 @@ def match_price_rows(
             "source_price": source.price,
             "source_row": source.row_number,
             "normalized_name": normalize_name(source.source_name),
-            "match_score": round(score, 4),
+            "match_score": 0.0,
         }
+        if source.source_name in overrides:
+            code = overrides[source.source_name]
+            resource = catalog_by_code.get(code)
+            if resource is None:
+                raise ValueError(
+                    f"Override harga tidak valid: {source.source_name!r} -> {code!r} tidak ada di katalog"
+                )
+            if source.category != resource.get("category"):
+                raise ValueError(
+                    f"Override harga tidak valid: {source.source_name!r} -> {code!r} beda kategori"
+                )
+            matched.append({
+                **base,
+                "match_score": 1.0,
+                "match_method": "manual_override",
+                "match_reason": "manual override dari file pemetaan tervalidasi kode dan kategori",
+                "code": resource["code"],
+                "name": resource["name"],
+                "category": resource["category"],
+                "unit": resource["unit"],
+                "price": source.price,
+            })
+            continue
+
+        status, candidates, score, method, reason = _match_one(source, catalog, usage_counts)
+        base["match_score"] = round(score, 4)
         if status == "matched":
             resource = candidates[0]
             matched.append({
                 **base,
+                "match_method": method,
+                "match_reason": reason,
                 "code": resource["code"],
                 "name": resource["name"],
                 "category": resource["category"],
@@ -327,6 +453,8 @@ def match_price_rows(
         elif status == "ambiguous":
             ambiguous.append({
                 **base,
+                "match_method": method,
+                "match_reason": reason,
                 "candidates": [
                     {
                         "code": r.get("code"),
@@ -338,8 +466,52 @@ def match_price_rows(
                 ],
             })
         else:
-            unmatched.append(base)
+            unmatched.append({**base, "match_method": method, "match_reason": reason})
     return matched, unmatched, ambiguous
+
+
+def _review_candidate_score(source: Dict[str, Any], resource: Dict[str, Any]) -> tuple[int, int, float, int]:
+    category_score = 1 if source.get("source_category") == resource.get("category") else 0
+    source_unit = normalize_unit(source.get("source_unit", ""))
+    resource_unit = normalize_unit(resource.get("unit", ""))
+    unit_score = 1 if source_unit and resource_unit and source_unit == resource_unit else 0
+    s_tokens = set(normalize_name(source.get("source_name", "")).split())
+    r_tokens = set(normalize_name(resource.get("name", "")).split())
+    overlap = len(s_tokens & r_tokens)
+    union = len(s_tokens | r_tokens) or 1
+    similarity = overlap / union
+    return category_score, unit_score, similarity, overlap
+
+
+def build_review_rows(
+    pending: Iterable[Dict[str, Any]],
+    catalog: List[Dict[str, Any]],
+    limit: int = 5,
+) -> List[Dict[str, Any]]:
+    review_rows: List[Dict[str, Any]] = []
+    for source in pending:
+        row = {
+            "source_name": source.get("source_name", ""),
+            "source_unit": source.get("source_unit", ""),
+            "source_category": source.get("source_category", ""),
+            "source_price": source.get("source_price", ""),
+            "chosen_code": "",
+        }
+        scored = []
+        for resource in catalog:
+            score = _review_candidate_score(source, resource)
+            if score[2] <= 0 and not (score[0] and score[1]):
+                continue
+            scored.append((score, resource))
+        scored.sort(key=lambda item: item[0], reverse=True)
+        for idx, (_, resource) in enumerate(scored[:limit], start=1):
+            row[f"candidate_{idx}_code"] = resource.get("code", "")
+            row[f"candidate_{idx}_name"] = resource.get("name", "")
+        for idx in range(1, limit + 1):
+            row.setdefault(f"candidate_{idx}_code", "")
+            row.setdefault(f"candidate_{idx}_name", "")
+        review_rows.append(row)
+    return review_rows
 
 
 def build_price_book(
@@ -378,19 +550,25 @@ def build_audit(
     source_file: str,
 ) -> Dict[str, Any]:
     matched_codes = {row["code"] for row in matched}
+    manual_override_rows = sum(1 for row in matched if row.get("match_method") == "manual_override")
+    usage_tiebreak_rows = sum(1 for row in matched if row.get("match_method") == "usage_tiebreak")
     return {
         "region_code": region_code,
         "source_file": source_file,
         "policy": (
             "Match otomatis memakai category+unit, nama ternormalisasi exact/alias, "
-            "lalu token-subset/Jaccard ketat. Kandidat kode ganda masuk review manual."
+            "token-subset/Jaccard ketat, manual override tervalidasi, dan tie-break "
+            "kandidat ambigu berdasarkan pemakaian kode di AHSP. Kandidat domain tetap masuk review manual."
         ),
         "stats": {
             "source_rows": len(rows),
             "matched_rows": len(matched),
             "unique_matched_resources": len(matched_codes),
+            "manual_override_rows": manual_override_rows,
+            "usage_tiebreak_rows": usage_tiebreak_rows,
             "unmatched_rows": len(unmatched),
             "ambiguous_rows": len(ambiguous),
+            "review_rows": len(unmatched) + len(ambiguous),
             "catalog_resources": len(catalog),
             "catalog_coverage_pct": round(len(matched_codes) / len(catalog) * 100, 4) if catalog else 0,
         },
@@ -403,9 +581,10 @@ def build_audit(
 def write_outputs(
     price_book: Dict[str, Any],
     audit: Dict[str, Any],
+    review_rows: List[Dict[str, Any]],
     out_dir: Path,
     region_code: str,
-) -> tuple[Path, Path]:
+) -> tuple[Path, Path, Path]:
     harga_dir = out_dir / "harga-satuan"
     audit_dir = out_dir / "_audit"
     harga_dir.mkdir(parents=True, exist_ok=True)
@@ -413,9 +592,14 @@ def write_outputs(
 
     price_path = harga_dir / f"{region_code}.json"
     audit_path = audit_dir / f"harga_{region_code}.json"
+    review_path = audit_dir / f"harga_{region_code}_review.csv"
     price_path.write_text(json.dumps(price_book, ensure_ascii=False, indent=2), encoding="utf-8")
     audit_path.write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
-    return price_path, audit_path
+    with review_path.open("w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=REVIEW_FIELDS)
+        writer.writeheader()
+        writer.writerows(review_rows)
+    return price_path, audit_path, review_path
 
 
 def run_extract(
@@ -425,14 +609,24 @@ def run_extract(
     region: str,
     region_code: str,
     effective_date: str,
-) -> tuple[Path, Path, Dict[str, Any]]:
+    ahsp_path: Path | None = None,
+    overrides_path: Path | None = None,
+) -> tuple[Path, Path, Path, Dict[str, Any]]:
     rows = load_price_rows(source_xlsx)
     catalog = load_catalog(catalog_path)
-    matched, unmatched, ambiguous = match_price_rows(rows, catalog)
+    usage_counts = load_usage_counts(ahsp_path)
+    overrides = load_overrides(overrides_path)
+    matched, unmatched, ambiguous = match_price_rows(rows, catalog, usage_counts=usage_counts, overrides=overrides)
     price_book = build_price_book(matched, region, region_code, str(source_xlsx), effective_date)
     audit = build_audit(rows, matched, unmatched, ambiguous, catalog, region_code, str(source_xlsx))
-    price_path, audit_path = write_outputs(price_book, audit, out_dir, region_code)
-    return price_path, audit_path, audit
+    audit["ahsp_usage_path"] = str(ahsp_path) if ahsp_path else ""
+    audit["overrides_path"] = str(overrides_path) if overrides_path else ""
+    pending = [*unmatched, *ambiguous]
+    review_rows = build_review_rows(pending, catalog)
+    price_path, audit_path, review_path = write_outputs(price_book, audit, review_rows, out_dir, region_code)
+    audit["review_path"] = str(review_path)
+    audit_path.write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
+    return price_path, audit_path, review_path, audit
 
 
 def main() -> None:
@@ -440,28 +634,35 @@ def main() -> None:
     ap.add_argument("--src", default=SOURCE_DEFAULT)
     ap.add_argument("--catalog", default=str(Path(DATA_DEFAULT) / CATALOG_REL))
     ap.add_argument("--out", default=DATA_DEFAULT)
+    ap.add_argument("--ahsp", default=str(Path(DATA_DEFAULT) / AHSP_REL))
+    ap.add_argument("--overrides", default=str(OVERRIDES_DEFAULT))
     ap.add_argument("--region", default="Semarang")
     ap.add_argument("--region-code", default="semarang")
     ap.add_argument("--effective-date", default="2026-06-28")
     args = ap.parse_args()
 
-    price_path, audit_path, audit = run_extract(
+    price_path, audit_path, review_path, audit = run_extract(
         source_xlsx=Path(args.src),
         catalog_path=Path(args.catalog),
         out_dir=Path(args.out),
         region=args.region,
         region_code=args.region_code,
         effective_date=args.effective_date,
+        ahsp_path=Path(args.ahsp) if args.ahsp else None,
+        overrides_path=Path(args.overrides) if args.overrides else None,
     )
     stats = audit["stats"]
     print("=== RINGKASAN HARGA ===")
     print(f"Source rows       : {stats['source_rows']}")
     print(f"Matched rows      : {stats['matched_rows']}")
     print(f"Unique resources  : {stats['unique_matched_resources']}")
+    print(f"Manual overrides  : {stats['manual_override_rows']}")
+    print(f"Usage tie-break   : {stats['usage_tiebreak_rows']}")
     print(f"Unmatched rows    : {stats['unmatched_rows']}")
     print(f"Ambiguous rows    : {stats['ambiguous_rows']}")
     print(f"Price book        : {price_path}")
     print(f"Audit             : {audit_path}")
+    print(f"Review worksheet  : {review_path}")
 
 
 if __name__ == "__main__":
