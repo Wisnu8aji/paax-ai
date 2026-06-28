@@ -138,6 +138,8 @@ async function geminiGenerateContent(
   body: unknown,
   fetchImpl: typeof fetch,
 ): Promise<Response> {
+  const key = apiKey.trim();
+  if (!key) throw new Error("GEMINI_API_KEY kosong.");
   const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
   const timeout = controller ? setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS) : null;
   try {
@@ -147,7 +149,7 @@ async function geminiGenerateContent(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
+          "x-goog-api-key": key,
         },
         body: JSON.stringify(body),
         signal: controller?.signal,
@@ -161,6 +163,12 @@ async function geminiGenerateContent(
   } finally {
     if (timeout) clearTimeout(timeout);
   }
+}
+
+async function geminiError(response: Response): Promise<Error> {
+  const data = await response.json().catch(() => null) as { error?: { message?: string } } | null;
+  const message = data?.error?.message?.split("\n")[0] ?? response.statusText;
+  return new Error(`Gemini gagal (${response.status}): ${message}`);
 }
 
 export async function geminiElements(
@@ -181,7 +189,7 @@ export async function geminiElements(
   );
 
   if (!response.ok) {
-    throw new Error(`Gemini gagal (${response.status}).`);
+    throw await geminiError(response);
   }
 
   const data = (await response.json()) as GeminiResponse;
@@ -189,6 +197,26 @@ export async function geminiElements(
   if (!answer) throw new Error("Gemini tidak mengembalikan teks JSON.");
 
   return ExtractedElementList.parse(extractGeminiJson(answer));
+}
+
+export async function geminiText(
+  prompt: string,
+  apiKey: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<string> {
+  const response = await geminiGenerateContent(
+    apiKey,
+    {
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+    },
+    fetchImpl,
+  );
+
+  if (!response.ok) throw await geminiError(response);
+  const data = (await response.json()) as GeminiResponse;
+  const answer = data.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("\n").trim();
+  if (!answer) throw new Error("Gemini tidak mengembalikan teks.");
+  return answer;
 }
 
 export async function geminiJson(
@@ -207,7 +235,7 @@ export async function geminiJson(
     fetchImpl,
   );
 
-  if (!response.ok) throw new Error(`Gemini gagal (${response.status}).`);
+  if (!response.ok) throw await geminiError(response);
   const data = (await response.json()) as GeminiResponse;
   const answer = data.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("\n").trim();
   if (!answer) throw new Error("Gemini tidak mengembalikan teks JSON.");
