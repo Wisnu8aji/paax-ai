@@ -19,6 +19,8 @@ repo.
 python scripts/harga/extract_harga.py ^
   --src "G:\AHSP\Daftar harga bahan dan upah.xlsx" ^
   --catalog "G:\paax-data\harga-satuan\_resources_catalog.json" ^
+  --ahsp "G:\paax-data\ahsp\cipta-karya-2026.json" ^
+  --overrides "G:\paax-ai-main\data\harga-satuan\semarang_overrides.json" ^
   --out "G:\paax-data" ^
   --region "Semarang" ^
   --region-code "semarang" ^
@@ -31,14 +33,47 @@ python scripts/harga/extract_harga.py ^
 |---|---|
 | `harga-satuan/semarang.json` | Price book regional dengan resource yang berhasil dicocokkan ke kode katalog. |
 | `_audit/harga_semarang.json` | Statistik match, daftar matched, unmatched, dan ambiguous untuk review manual. |
+| `_audit/harga_semarang_review.csv` | Worksheet Excel untuk sisa item yang perlu keputusan manusia. |
+
+## Override Manual
+
+Override manual dibaca dari `data/harga-satuan/semarang_overrides.json`.
+Formatnya:
+
+```json
+{
+  "region_code": "semarang",
+  "overrides": [
+    {
+      "source_name": "Kloset jongkok porselen",
+      "code": "M.GEN.0450",
+      "catalog_name": "Kloset Jongkok"
+    }
+  ]
+}
+```
+
+`source_name` harus sama persis dengan nama di XLSX sumber. `code` harus ada di
+katalog resource. Override adalah keputusan manusia yang mengalahkan auto-match;
+extractor tetap memakai harga persis dari XLSX sumber.
+
+## Worksheet Review
+
+Untuk item yang belum tersambung, extractor menulis CSV review dengan kandidat
+top-5 dan kolom `chosen_code` kosong. Owner/Claude bisa memakai file itu sebagai
+daftar keputusan manual berikutnya. Item seperti mutu beton, watt lampu, ukuran
+keramik/plywood berbeda, atau substitusi satuan harus diputuskan di worksheet,
+bukan ditebak oleh auto-match.
 
 ## Kebijakan matching
 
 Extractor hanya memakai angka harga yang ada di file sumber. Nama dicocokkan ke
-katalog dengan urutan: kategori dan satuan harus cocok, nama dinormalisasi
-untuk exact/alias, angka atau dimensi tidak boleh konflik, lalu subset token
-hanya diterima untuk token tambahan yang aman seperti `quarry`, `lokasi`,
-`pekerjaan`, `polos`, `ulir`, `pelitur`, atau `kerikil`.
+katalog dengan urutan: override manual tervalidasi, kategori dan satuan cocok
+untuk auto-match, nama dinormalisasi untuk exact/alias, angka atau dimensi tidak
+boleh konflik, lalu subset token hanya diterima untuk token tambahan yang aman
+seperti `quarry`, `lokasi`, `pekerjaan`, `polos`, `ulir`, `pelitur`, atau
+`kerikil`. Jika beberapa kandidat sama-sama cocok, extractor memakai kode yang
+terbukti dipakai item AHSP; jika tetap seri, baris masuk review manual.
 
 Jika beberapa kode katalog sama-sama masuk akal atau nama terlalu umum, baris
 ditulis ke `ambiguous` atau `unmatched`. Harga tidak ditebak dan resource tidak
