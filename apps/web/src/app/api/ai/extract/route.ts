@@ -1,21 +1,21 @@
 /**
- * PAAX v0.8 — Endpoint ekstraksi RAB (lapis orkestrasi AI, server-side).
+ * PAAX v0.8 - Endpoint ekstraksi RAB (server-side).
  *
- * Berjalan di server agar API key model (mis. Gemini free tier) TIDAK pernah
- * terekspos ke browser. Saat ini memakai provider rule-based (tanpa key).
- *
- * Menyambungkan Gemini (free tier Google AI Studio) nanti = tambah provider
- * `geminiExtractor` dan baca `process.env.GEMINI_API_KEY` di bawah. Aturan emas
- * tetap: AI hanya menstruktur usulan; engine yang menghitung volume & biaya.
+ * API key Gemini tetap di server. AI hanya mengusulkan struktur; semua angka
+ * final tetap dihitung oleh core engine.
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { ruleBasedExtractor, type RabExtractor } from '@/lib/ai/rab-extractor';
+import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = 'nodejs';
+import { extractElementsWithProvider, getExtractorProviderStatus } from "@/lib/ai/orchestrator";
 
-function selectExtractor(): RabExtractor {
-  // if (process.env.GEMINI_API_KEY) return geminiExtractor;  // ← free tier nanti
-  return ruleBasedExtractor;
+export const runtime = "nodejs";
+
+export async function GET() {
+  const status = getExtractorProviderStatus(process.env.GEMINI_API_KEY);
+  return NextResponse.json({
+    provider: status.provider === "gemini" ? status.model : status.provider,
+    model: status.model,
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -23,14 +23,14 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Body bukan JSON valid.' }, { status: 400 });
-  }
-  const text = (body as { text?: unknown })?.text;
-  if (typeof text !== 'string' || !text.trim()) {
-    return NextResponse.json({ error: 'Teks elemen kosong.' }, { status: 400 });
+    return NextResponse.json({ error: "Body bukan JSON valid." }, { status: 400 });
   }
 
-  const extractor = selectExtractor();
-  const elements = extractor.extract(text);
-  return NextResponse.json({ provider: extractor.name, elements });
+  const text = (body as { text?: unknown })?.text;
+  if (typeof text !== "string" || !text.trim()) {
+    return NextResponse.json({ error: "Teks elemen kosong." }, { status: 400 });
+  }
+
+  const result = await extractElementsWithProvider(text, process.env.GEMINI_API_KEY);
+  return NextResponse.json(result);
 }
