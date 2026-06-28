@@ -7,6 +7,7 @@ import { IconRail } from '@/components/app-shell/icon-rail';
 import { NavPanel } from '@/components/app-shell/nav-panel';
 import Topbar from '@/components/app-shell/topbar';
 import { WorkspaceOverlays } from '@/components/app-shell/overlays';
+import { RoutePrefetcher } from '@/components/app-shell/route-prefetcher';
 import { ProjectsProvider } from '@/lib/projects/projects-context';
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -51,6 +52,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <ThemeProvider>
       <ProjectsProvider>
+        <RoutePrefetcher />
         <Shell>{children}</Shell>
       </ProjectsProvider>
     </ThemeProvider>

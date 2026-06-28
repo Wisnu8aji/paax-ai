@@ -19,10 +19,10 @@ interface ProjectsContextValue {
 const ProjectsContext = createContext<ProjectsContextValue | null>(null);
 
 export function ProjectsProvider({ children }: { children: ReactNode }) {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const backend = projectRepository.backend();
+  const [projects, setProjects] = useState<Project[]>(() => projectRepository.cachedList());
+  const [loading, setLoading] = useState(backend === 'firestore');
+  const [error, setError] = useState<string | null>(null);
 
   const refreshProjects = useCallback(async () => {
     setLoading(true);
@@ -37,8 +37,8 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void refreshProjects();
-  }, [refreshProjects]);
+    if (backend === 'firestore') void refreshProjects();
+  }, [backend, refreshProjects]);
 
   const createProject = useCallback(async (input: ProjectCreateInput) => {
     const project = await projectRepository.create(input);
