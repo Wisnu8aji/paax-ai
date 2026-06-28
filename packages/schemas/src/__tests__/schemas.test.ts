@@ -2,7 +2,17 @@
  * Test Zod schema parsing — memastikan schema selaras dengan response engine aktual.
  * Nilai di sini adalah contoh response aktual dari POST /rab/calculate engine.
  */
-import { RABResult, HSPBreakdown, SCurveResult, RABLineInput, ScenarioConfig, ScenarioResult, ValidationResult } from "../index";
+import {
+  RABResult,
+  HSPBreakdown,
+  SCurveResult,
+  RABLineInput,
+  ScenarioConfig,
+  ScenarioResult,
+  ValidationResult,
+  CPMRequest,
+  CPMResult,
+} from "../index";
 
 // Contoh response aktual dari POST /rab/calculate engine
 const mockRABResult = {
@@ -102,6 +112,40 @@ describe("SCurveResult schema", () => {
   it("parses valid SCurve response without error", () => {
     const result = SCurveResult.parse(mockSCurveResult);
     expect(result.points[result.points.length - 1].cumulative_pct).toBe(100.0);
+  });
+});
+
+describe("CPM schemas", () => {
+  it("parses CPM request defaults and result output", () => {
+    const request = CPMRequest.parse({
+      tasks: [
+        { id: "A", duration_days: 3 },
+        { id: "B", duration_days: 4, predecessors: ["A"] },
+      ],
+    });
+
+    expect(request.tasks[0].predecessors).toEqual([]);
+
+    const result = CPMResult.parse({
+      project_duration_days: 7,
+      tasks: [
+        {
+          id: "A",
+          name: "A",
+          duration_days: 3,
+          early_start: 0,
+          early_finish: 3,
+          late_start: 0,
+          late_finish: 3,
+          total_float: 0,
+          is_critical: true,
+        },
+      ],
+      critical_path: ["A", "B"],
+    });
+
+    expect(result.project_duration_days).toBe(7);
+    expect(result.critical_path).toEqual(["A", "B"]);
   });
 });
 
