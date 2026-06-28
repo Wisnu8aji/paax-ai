@@ -6,6 +6,7 @@ from openpyxl import Workbook
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT))
 
+import scripts.harga.extract_harga as harga_extract  # noqa: E402
 from scripts.harga.extract_harga import (  # noqa: E402
     HargaRow,
     build_price_book,
@@ -117,3 +118,93 @@ def test_matcher_rejects_broad_subset_and_conflicting_dimensions():
         "Cat penutup (cat tembok exterior)",
         "Plywood 9 mm (120x240)",
     ]
+
+
+def test_usage_tiebreak_selects_candidate_used_by_ahsp(tmp_path):
+    ahsp = {
+        "items": [
+            {"components": [{"resource_code": "M.SEMEN.RESMI"}]},
+            {"components": [{"resource_code": "M.SEMEN.RESMI"}]},
+            {"components": [{"resource_code": "M.SEMEN.JARANG"}]},
+        ]
+    }
+    ahsp_path = tmp_path / "ahsp.json"
+    ahsp_path.write_text(__import__("json").dumps(ahsp), encoding="utf-8")
+    usage_counts = harga_extract.load_usage_counts(ahsp_path)
+    source = HargaRow(
+        source_name="Portland cement",
+        unit="kg",
+        price=1200,
+        category="bahan",
+        row_number=52,
+    )
+    catalog = [
+        {"code": "M.SEMEN.PC", "name": "Semen Portland (PC)", "category": "bahan", "unit": "kg", "price": 0},
+        {"code": "M.SEMEN.RESMI", "name": "Semen Portland", "category": "bahan", "unit": "kg", "price": 0},
+        {"code": "M.SEMEN.JARANG", "name": "Semen Portland (SP)", "category": "bahan", "unit": "kg", "price": 0},
+    ]
+
+    matched, unmatched, ambiguous = match_price_rows([source], catalog, usage_counts=usage_counts)
+
+    assert unmatched == []
+    assert ambiguous == []
+    assert matched[0]["code"] == "M.SEMEN.RESMI"
+    assert matched[0]["match_method"] == "usage_tiebreak"
+    assert "dipakai 2 item AHSP" in matched[0]["match_reason"]
+
+
+def test_manual_override_has_priority_and_invalid_code_fails():
+    source = HargaRow(
+        source_name="Kloset jongkok porselen",
+        unit="buah",
+        price=350000,
+        category="bahan",
+        row_number=71,
+    )
+    catalog = [
+        {"code": "M.KLOSET", "name": "Kloset Jongkok", "category": "bahan", "unit": "buah", "price": 0},
+        {"code": "M.PORSELEN", "name": "Porselen 11x11", "category": "bahan", "unit": "buah", "price": 0},
+    ]
+
+    matched, unmatched, ambiguous = match_price_rows(
+        [source],
+        catalog,
+        overrides={"Kloset jongkok porselen": "M.KLOSET"},
+    )
+
+    assert unmatched == []
+    assert ambiguous == []
+    assert matched[0]["code"] == "M.KLOSET"
+    assert matched[0]["match_method"] == "manual_override"
+
+    try:
+        match_price_rows([source], catalog, overrides={"Kloset jongkok porselen": "M.TIDAK.ADA"})
+    except ValueError as exc:
+        assert "Override harga tidak valid" in str(exc)
+    else:
+        raise AssertionError("invalid override should fail clearly")
+
+
+def test_build_review_rows_outputs_top_candidates_and_empty_chosen_code():
+    pending = [{
+        "source_name": "Paku sekrup",
+        "source_unit": "kg",
+        "source_category": "bahan",
+        "source_price": 16000,
+        "source_row": 85,
+        "normalized_name": "paku sekrup",
+        "match_score": 0,
+    }]
+    catalog = [
+        {"code": "M.PAKU.SEKRUP", "name": "Paku Sekrup", "category": "bahan", "unit": "kg", "price": 0},
+        {"code": "M.PAKU", "name": "Paku", "category": "bahan", "unit": "kg", "price": 0},
+        {"code": "M.KAYU", "name": "Kayu", "category": "bahan", "unit": "m3", "price": 0},
+    ]
+
+    rows = harga_extract.build_review_rows(pending, catalog, limit=2)
+
+    assert rows[0]["source_name"] == "Paku sekrup"
+    assert rows[0]["candidate_1_code"] == "M.PAKU.SEKRUP"
+    assert rows[0]["candidate_1_name"] == "Paku Sekrup"
+    assert rows[0]["candidate_2_code"] == "M.PAKU"
+    assert rows[0]["chosen_code"] == ""
