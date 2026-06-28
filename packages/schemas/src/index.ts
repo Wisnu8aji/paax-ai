@@ -1035,6 +1035,15 @@ export const ScenarioLineInput = z.object({
 });
 export type ScenarioLineInput = z.infer<typeof ScenarioLineInput>;
 
+export const ScenarioParams = z.object({
+  crew_multiplier: z.number().gt(0).default(1.0),
+  shifts: z.number().int().min(1).default(1),
+  efficiency: z.number().gt(0).default(1.0),
+  target_days: z.number().gt(0).nullable().default(null),
+  shift_premium_rate: z.number().min(0).default(0.3),
+});
+export type ScenarioParams = z.infer<typeof ScenarioParams>;
+
 export const ScenarioConfig = z.object({
   region_code: z.string().default("jateng"),
   ppn_rate: z.number().default(0.11),
@@ -1042,6 +1051,7 @@ export const ScenarioConfig = z.object({
   crew_factor: z.number().default(2),
   overtime_speedup: z.number().default(1.25),
   overtime_cost_factor: z.number().default(1.4),
+  params: ScenarioParams.nullable().default(null),
   lines: z.array(ScenarioLineInput),
 });
 export type ScenarioConfig = z.infer<typeof ScenarioConfig>;
@@ -1069,6 +1079,33 @@ export const ScenarioCandidate = z.object({
   note: z.string(),
 });
 
+export const CustomItemSchedule = z.object({
+  ahsp_code: z.string(),
+  name: z.string(),
+  volume: z.number(),
+  base_mandays: z.number(),
+  effective_workers: z.number(),
+  duration_days: z.number(),
+});
+
+export const CustomScenarioResult = z.object({
+  applied_crew_multiplier: z.number(),
+  shifts: z.number().int(),
+  efficiency: z.number(),
+  target_days: z.number().nullable(),
+  resolved_from_target: z.boolean(),
+  items: z.array(CustomItemSchedule),
+  total_days: z.number(),
+  subtotal: z.number(),
+  labor_cost: z.number(),
+  total_cost: z.number(),
+  delta_days: z.number(),
+  delta_cost: z.number(),
+  delta_days_pct: z.number(),
+  delta_cost_pct: z.number(),
+  note: z.string(),
+});
+
 export const ScenarioResult = z.object({
   region: z.string(),
   region_code: z.string(),
@@ -1078,6 +1115,7 @@ export const ScenarioResult = z.object({
   baseline_total_cost: z.number(),
   baseline_labor_cost: z.number(),
   candidates: z.array(ScenarioCandidate),
+  custom: CustomScenarioResult.nullable().default(null),
 });
 export type ScenarioResult = z.infer<typeof ScenarioResult>;
 
