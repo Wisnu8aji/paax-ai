@@ -20,7 +20,7 @@ import {
   fetchAHSPList,
   simulateScenario,
   type ScenarioLine,
-  type ScenarioParams,
+  type ScenarioControls,
   type ScheduleMode,
 } from '@/lib/engine';
 import { formatRupiah, formatNumber } from '@/lib/format';
@@ -48,7 +48,7 @@ export default function ProjectSchedulePage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [regionCode, setRegionCode] = useState('jateng');
   const [ppnRate, setPpnRate] = useState(0.11);
-  const [cfg, setCfg] = useState<Required<ScenarioParams>>({
+  const [cfg, setCfg] = useState<Required<ScenarioControls>>({
     base_mode: 'sequential',
     crew_factor: 2,
     overtime_speedup: 1.25,
@@ -60,7 +60,7 @@ export default function ProjectSchedulePage() {
   const [error, setError] = useState<string | null>(null);
 
   const runSimulate = useCallback(
-    async (simRows: Row[], region: string, ppn: number, config: ScenarioParams) => {
+    async (simRows: Row[], region: string, ppn: number, config: ScenarioControls) => {
       const lines: ScenarioLine[] = simRows.map((r) => ({
         ahsp_code: r.ahsp_code,
         volume: r.volume,
