@@ -1,5 +1,7 @@
 # CLAUDE.md — PAAX AI
 
+> ⚡ **SEBELUM KERJA: baca `docs/ai-map/START_HERE.md` dulu** (peta + status + navigasi)
+> agar langsung terarah, tidak boros token, dan tidak meng-crawl semua file.
 > File ini dibaca otomatis oleh Claude Code di setiap sesi. **Patuhi sepenuhnya.**
 > Sumber kebenaran lengkap ada di `docs/MASTER_PLAN.md` (Blueprint Besar v2.0).
 > Jika ragu, ikuti aturan di sini lebih dulu, lalu rujuk MASTER_PLAN.
