@@ -116,6 +116,10 @@ async function deleteLocalProject(id: string): Promise<void> {
 export const projectRepository = {
   backend: getProjectBackend,
 
+  cachedList(): Project[] {
+    return getProjectBackend() === 'localStorage' ? readLocalProjects() : [];
+  },
+
   async list(): Promise<Project[]> {
     if (getProjectBackend() === 'localStorage') return listLocalProjects();
     const snapshot = await getDocs(collection(getDb(), COLLECTION));
