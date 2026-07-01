@@ -9,9 +9,21 @@
  */
 import {
   RABResult, HSPBreakdown, SCurveResult, ScenarioResult, ValidationResult,
-  VolumeResult, SectionedRABResult,
+  VolumeResult, SectionedRABResult, SchedulePlanResult,
 } from "@paax/schemas";
+import type { SchedulePlanRequest, ScenarioParams } from "@paax/schemas";
 import { CORE_ENGINE_URL, CoreEngineError } from "./core-engine-client";
+
+export type {
+  CalendarConfig,
+  PlanTaskInput,
+  ScheduledTask,
+  SchedulePlanRequest,
+  SchedulePlanResult,
+  ScenarioConfig,
+  ScenarioParams,
+  ScenarioResult,
+} from "@paax/schemas";
 
 export interface AHSPListItem {
   code: string;
@@ -39,7 +51,7 @@ export interface ScenarioLine {
   workers: number;
 }
 
-export interface ScenarioParams {
+export interface ScenarioControls {
   base_mode?: ScheduleMode;
   crew_factor?: number;
   overtime_speedup?: number;
@@ -161,7 +173,7 @@ export async function simulateScenario(
   lines: ScenarioLine[],
   regionCode = "jateng",
   ppnRate = 0.11,
-  params: ScenarioParams = {},
+  params: ScenarioControls = {},
 ): Promise<ScenarioResult> {
   const data = await engineFetch("/scenario/simulate", {
     method: "POST",
@@ -170,7 +182,37 @@ export async function simulateScenario(
   return ScenarioResult.parse(data);
 }
 
-/** POST /schedule/s-curve — Kurva S rencana dari RAB + durasi tiap item. */
+/** POST /scenario/simulate - skenario kustom v0.9B (params engine, tanpa hitung di TS). */
+export async function simulateScenarioCustom(
+  lines: ScenarioLine[],
+  regionCode = "jateng",
+  ppnRate = 0.11,
+  baseMode: ScheduleMode = "sequential",
+  params: ScenarioParams,
+): Promise<ScenarioResult> {
+  const data = await engineFetch("/scenario/simulate", {
+    method: "POST",
+    body: JSON.stringify({
+      region_code: regionCode,
+      ppn_rate: ppnRate,
+      base_mode: baseMode,
+      params,
+      lines,
+    }),
+  });
+  return ScenarioResult.parse(data);
+}
+
+/** POST /schedule/plan - CPM + tanggal kalender + Kurva S dependency dari engine. */
+export async function fetchSchedulePlan(request: SchedulePlanRequest): Promise<SchedulePlanResult> {
+  const data = await engineFetch("/schedule/plan", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+  return SchedulePlanResult.parse(data);
+}
+
+/** POST /schedule/s-curve - Kurva S rencana dari RAB + durasi tiap item. */
 export async function getSCurve(
   lines: EngineLine[],
   regionCode = "jateng",
