@@ -1,6 +1,7 @@
 'use client';
 
-import { Card, PageHeader } from '@/components/ui';
+import { Button, Card, PageHeader } from '@/components/ui';
+import { useShell } from '@/components/app-shell/shell-context';
 import { useTheme, type PaaxTheme } from '@/components/theme/theme-provider';
 import { currentUser } from '@/lib/mock/workspace';
 
@@ -9,10 +10,15 @@ const themeSwatch: Record<PaaxTheme, string> = { light: '#ECEBE6', dark: '#1D1D2
 
 export default function PengaturanPage() {
   const { theme, setTheme, themes } = useTheme();
+  const { openSettings } = useShell();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <PageHeader title="Pengaturan" subtitle="Profil, tampilan, dan preferensi workspace" />
+      <PageHeader
+        title="Pengaturan"
+        subtitle="Profil, tampilan, dan preferensi workspace"
+        actions={<Button variant="secondary" onClick={() => openSettings('umum')}>Buka Pengaturan Lengkap</Button>}
+      />
 
       <Card padding={20}>
         <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>Tampilan</div>
