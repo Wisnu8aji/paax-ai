@@ -47,8 +47,15 @@ dikerjakan sekarang karena murni deterministik & tidak menyentuh CV/vision.
   Zod mirror TKG · route `POST /api/ai/tkg` (AI menyalin→TkgDocument, P-SEC-01)
   · UI `TkgWorkspace` di gambar-kerja (sumber→transkrip→skrip→takeoff→kirim
   volume ke draft RAB) · chat ter-grounding context pack (skrip TKG+draft RAB).
-  Berikutnya: D3 besi kait/lap penuh (k_hook/n_Ld/L_stock) + BBS → D4 parameter
-  registry §Z penuh → D5 tanah F-F. Detail: `docs/BRAIN_ALIGNMENT.md` §4.
+  D3 ✅ **kait + lewatan + pinggang + BBS (2026-07-02)**: F-D02 penuh (kait
+  `k_hook_utama x d` per ujung; lewatan `n_lap = ceil(L_bat/l_stock)-1`,
+  `lap = n_ld x d`; lewatan dibutuhkan tanpa `n_ld` -> needs_review), F-D04
+  pinggang, F-D06 `waste_mode` param|bbs dgn guard AP-16 (dilarang dobel),
+  F-D08 BBS (marks + kebutuhan stok + waste nyata per diameter; batang > stok
+  dipecah; elemen review tidak menyumbang potongan) + mirror Zod
+  (`BbsResultSchema`, param baru) — 8 test anchor manual baru (pytest 134).
+  Berikutnya: D4 parameter registry §Z penuh → D5 tanah F-F; UI tabel BBS di
+  TkgWorkspace menyusul. Detail: `docs/BRAIN_ALIGNMENT.md` §4.
 - **DITUNDA (jangan dibangun)**: v1.0 Gambar→BoQ→RAB (CV) + Site Agent penuh.
   Brain v4.1 menguatkan ini via gerbang F0 (data grounding wajib sebelum
   F2/TKG) — bukan alasan untuk mulai lebih awal.
