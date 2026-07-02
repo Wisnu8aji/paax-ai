@@ -126,3 +126,228 @@ Content-Type: application/json
 ### ERROR TEST: item AHSP tidak ditemukan → harus 404
 GET http://localhost:8081/ahsp/TIDAK_ADA
 Content-Type: application/json
+
+###
+
+### TKG validate - fixture sama dengan tests/test_tkg.py::buat_tkg
+POST http://localhost:8081/tkg/validate
+Content-Type: application/json
+
+{
+  "doc": {
+    "prj_id": "PRJ-TEST",
+    "rev_id": "R0",
+    "sheets": [
+      {
+        "sheet_id": "S05",
+        "jenis": "denah",
+        "meta": {"judul": "DENAH SLOOF & KOLOM", "nomor": "S-05", "skala": "1:100"},
+        "grid": {
+          "sumbu_x": [{"label": "A"}, {"label": "B"}, {"label": "C"}],
+          "sumbu_y": [{"label": "1"}, {"label": "2"}],
+          "bentang_x": [
+            {"dari": "A", "ke": "B", "nilai": 3000, "unit": "mm", "raw": "3000"},
+            {"dari": "B", "ke": "C", "nilai": 3500, "unit": "mm", "raw": "3500"}
+          ],
+          "bentang_y": [{"dari": "1", "ke": "2", "nilai": 4000, "unit": "mm"}],
+          "total_x": {"dari": "A", "ke": "C", "nilai": 6500, "unit": "mm"},
+          "total_y": {"dari": "1", "ke": "2", "nilai": 4000, "unit": "mm"}
+        },
+        "levels": [
+          {"label_raw": "SFL +0.000", "nilai_m": 0.0, "lantai": "LT1"},
+          {"label_raw": "SFL +3.500", "nilai_m": 3.5, "lantai": "LT2"}
+        ],
+        "elements": [
+          {"kode": "K1", "alamat": "as B/1", "bentuk": "titik", "n": 4, "count_simbol": 4, "count_label": 4, "lantai": "LT1"},
+          {"kode": "SL1", "alamat": "antara as A-C pada as 1", "bentuk": "ruas", "n": 1, "ruas": {"sumbu": "x", "dari": "A", "ke": "C", "pada": "1"}}
+        ],
+        "dimensions": [{"nilai": 150, "unit": "mm", "anchor": "tebal pelat teras", "raw": "t=150"}],
+        "notes": ["Mutu beton struktur fc' 25 MPa kecuali disebut lain."]
+      },
+      {
+        "sheet_id": "S09",
+        "jenis": "tabel",
+        "meta": {"judul": "TABEL KOLOM & SLOOF", "nomor": "S-09"},
+        "tables": [
+          {
+            "judul": "TABEL KOLOM",
+            "records": [
+              {
+                "kode": "K1",
+                "lantai": "LT1",
+                "dimensi": {"b": 300, "h": 400},
+                "satuan_dimensi": "mm",
+                "mutu_beton": "fc' 25",
+                "tulangan": [
+                  {"posisi": "tul_utama", "raw": "8D16"},
+                  {"posisi": "sengkang", "raw": "D8-150"}
+                ]
+              },
+              {
+                "kode": "SL1",
+                "dimensi": {"b": 150, "h": 200},
+                "satuan_dimensi": "mm",
+                "mutu_beton": "fc' 25",
+                "tulangan": [
+                  {"posisi": "tul_utama", "raw": "4D12"},
+                  {"posisi": "sengkang", "raw": "D8-200"}
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "params": {"tinggi_per_lantai_m": 3.5}
+}
+
+###
+
+### TKG render - hasil .tkg.txt deterministik dari fixture validate
+POST http://localhost:8081/tkg/render
+Content-Type: application/json
+
+{
+  "doc": {
+    "prj_id": "PRJ-TEST",
+    "rev_id": "R0",
+    "sheets": [
+      {
+        "sheet_id": "S05",
+        "jenis": "denah",
+        "meta": {"judul": "DENAH SLOOF & KOLOM", "nomor": "S-05", "skala": "1:100"},
+        "grid": {
+          "sumbu_x": [{"label": "A"}, {"label": "B"}, {"label": "C"}],
+          "sumbu_y": [{"label": "1"}, {"label": "2"}],
+          "bentang_x": [
+            {"dari": "A", "ke": "B", "nilai": 3000, "unit": "mm", "raw": "3000"},
+            {"dari": "B", "ke": "C", "nilai": 3500, "unit": "mm", "raw": "3500"}
+          ],
+          "bentang_y": [{"dari": "1", "ke": "2", "nilai": 4000, "unit": "mm"}],
+          "total_x": {"dari": "A", "ke": "C", "nilai": 6500, "unit": "mm"},
+          "total_y": {"dari": "1", "ke": "2", "nilai": 4000, "unit": "mm"}
+        },
+        "levels": [
+          {"label_raw": "SFL +0.000", "nilai_m": 0.0, "lantai": "LT1"},
+          {"label_raw": "SFL +3.500", "nilai_m": 3.5, "lantai": "LT2"}
+        ],
+        "elements": [
+          {"kode": "K1", "alamat": "as B/1", "bentuk": "titik", "n": 4, "count_simbol": 4, "count_label": 4, "lantai": "LT1"},
+          {"kode": "SL1", "alamat": "antara as A-C pada as 1", "bentuk": "ruas", "n": 1, "ruas": {"sumbu": "x", "dari": "A", "ke": "C", "pada": "1"}}
+        ],
+        "dimensions": [{"nilai": 150, "unit": "mm", "anchor": "tebal pelat teras", "raw": "t=150"}],
+        "notes": ["Mutu beton struktur fc' 25 MPa kecuali disebut lain."]
+      },
+      {
+        "sheet_id": "S09",
+        "jenis": "tabel",
+        "meta": {"judul": "TABEL KOLOM & SLOOF", "nomor": "S-09"},
+        "tables": [
+          {
+            "judul": "TABEL KOLOM",
+            "records": [
+              {
+                "kode": "K1",
+                "lantai": "LT1",
+                "dimensi": {"b": 300, "h": 400},
+                "satuan_dimensi": "mm",
+                "mutu_beton": "fc' 25",
+                "tulangan": [
+                  {"posisi": "tul_utama", "raw": "8D16"},
+                  {"posisi": "sengkang", "raw": "D8-150"}
+                ]
+              },
+              {
+                "kode": "SL1",
+                "dimensi": {"b": 150, "h": 200},
+                "satuan_dimensi": "mm",
+                "mutu_beton": "fc' 25",
+                "tulangan": [
+                  {"posisi": "tul_utama", "raw": "4D12"},
+                  {"posisi": "sengkang", "raw": "D8-200"}
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "params": {"tinggi_per_lantai_m": 3.5}
+}
+
+###
+
+### TKG takeoff - anchor: K1 beton 1.68 m3, bekisting 19.6 m2, besi +/-221.32 kg
+POST http://localhost:8081/tkg/takeoff
+Content-Type: application/json
+
+{
+  "doc": {
+    "prj_id": "PRJ-TEST",
+    "rev_id": "R0",
+    "sheets": [
+      {
+        "sheet_id": "S05",
+        "jenis": "denah",
+        "meta": {"judul": "DENAH SLOOF & KOLOM", "nomor": "S-05", "skala": "1:100"},
+        "grid": {
+          "sumbu_x": [{"label": "A"}, {"label": "B"}, {"label": "C"}],
+          "sumbu_y": [{"label": "1"}, {"label": "2"}],
+          "bentang_x": [
+            {"dari": "A", "ke": "B", "nilai": 3000, "unit": "mm", "raw": "3000"},
+            {"dari": "B", "ke": "C", "nilai": 3500, "unit": "mm", "raw": "3500"}
+          ],
+          "bentang_y": [{"dari": "1", "ke": "2", "nilai": 4000, "unit": "mm"}],
+          "total_x": {"dari": "A", "ke": "C", "nilai": 6500, "unit": "mm"},
+          "total_y": {"dari": "1", "ke": "2", "nilai": 4000, "unit": "mm"}
+        },
+        "levels": [
+          {"label_raw": "SFL +0.000", "nilai_m": 0.0, "lantai": "LT1"},
+          {"label_raw": "SFL +3.500", "nilai_m": 3.5, "lantai": "LT2"}
+        ],
+        "elements": [
+          {"kode": "K1", "alamat": "as B/1", "bentuk": "titik", "n": 4, "count_simbol": 4, "count_label": 4, "lantai": "LT1"},
+          {"kode": "SL1", "alamat": "antara as A-C pada as 1", "bentuk": "ruas", "n": 1, "ruas": {"sumbu": "x", "dari": "A", "ke": "C", "pada": "1"}}
+        ],
+        "dimensions": [{"nilai": 150, "unit": "mm", "anchor": "tebal pelat teras", "raw": "t=150"}],
+        "notes": ["Mutu beton struktur fc' 25 MPa kecuali disebut lain."]
+      },
+      {
+        "sheet_id": "S09",
+        "jenis": "tabel",
+        "meta": {"judul": "TABEL KOLOM & SLOOF", "nomor": "S-09"},
+        "tables": [
+          {
+            "judul": "TABEL KOLOM",
+            "records": [
+              {
+                "kode": "K1",
+                "lantai": "LT1",
+                "dimensi": {"b": 300, "h": 400},
+                "satuan_dimensi": "mm",
+                "mutu_beton": "fc' 25",
+                "tulangan": [
+                  {"posisi": "tul_utama", "raw": "8D16"},
+                  {"posisi": "sengkang", "raw": "D8-150"}
+                ]
+              },
+              {
+                "kode": "SL1",
+                "dimensi": {"b": 150, "h": 200},
+                "satuan_dimensi": "mm",
+                "mutu_beton": "fc' 25",
+                "tulangan": [
+                  {"posisi": "tul_utama", "raw": "4D12"},
+                  {"posisi": "sengkang", "raw": "D8-200"}
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "params": {"tinggi_per_lantai_m": 3.5}
+}
