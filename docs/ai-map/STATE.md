@@ -39,11 +39,16 @@ dikerjakan sekarang karena murni deterministik & tidak menyentuh CV/vision.
 - **EPIC B — Engineering Chat lintas-halaman**: B1 context pack (Codex) → B2 grounding
   → B3 UI chat global (Claude) → B4 tool-calling.
 - **EPIC C — fixes**: C1 poles pembulatan 9B (`custom.subtotal`/`labor_cost` → `_r2`), dst.
-- **EPIC D — ekspansi rumus takeoff (baru, dari brain v4.1)**: D1 volume beton
-  per bentuk F-B01–B11 (`geometry/volume.py`) + skeleton schema Evidence
-  diperkaya (sedang berjalan) → D2 bekisting F-C → D3 berat besi+BBS F-D →
-  D4 parameter registry §Z → D5 tanah bank/gembur/padat F-F. Tiap D-x = 1 sesi
-  terpisah, verifikasi pytest sebelum lanjut. Detail: `docs/BRAIN_ALIGNMENT.md` §4.
+- **EPIC D — ekspansi rumus takeoff (baru, dari brain v4.1)**:
+  D1 ✅ volume beton F-B01–B11 (`geometry/volume.py`, 5 tipe baru) + Evidence
+  schema diperkaya. D2 ✅ **sistem TKG hidup (2026-07-02)**: engine `app/tkg/`
+  (models+validator V-02/04/05/08+renderer `.tkg.txt`+takeoff beton/bekisting/
+  besi F-B/F-C01-C06/F-D01-D05, endpoint `/tkg/*`, 17 test anchor manual) ·
+  Zod mirror TKG · route `POST /api/ai/tkg` (AI menyalin→TkgDocument, P-SEC-01)
+  · UI `TkgWorkspace` di gambar-kerja (sumber→transkrip→skrip→takeoff→kirim
+  volume ke draft RAB) · chat ter-grounding context pack (skrip TKG+draft RAB).
+  Berikutnya: D3 besi kait/lap penuh (k_hook/n_Ld/L_stock) + BBS → D4 parameter
+  registry §Z penuh → D5 tanah F-F. Detail: `docs/BRAIN_ALIGNMENT.md` §4.
 - **DITUNDA (jangan dibangun)**: v1.0 Gambar→BoQ→RAB (CV) + Site Agent penuh.
   Brain v4.1 menguatkan ini via gerbang F0 (data grounding wajib sebelum
   F2/TKG) — bukan alasan untuk mulai lebih awal.
