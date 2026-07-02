@@ -13,12 +13,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FileText, Sparkles, CheckCircle2, AlertTriangle, Calculator, Send, RefreshCw } from 'lucide-react';
 
-import { TkgDocumentSchema, type TkgDocument, type TkgValidationResult, type TakeoffResult } from '@paax/schemas';
+import { TkgDocumentSchema, type TkgDocument, type TkgValidationResult, type TakeoffResult, type TakeoffParams } from '@paax/schemas';
 import { Card, Button, StatusPill } from '@/components/ui';
 import { renderTkg, takeoffTkg, validateTkg } from '@/lib/engine';
 import { tkgRepository, emptyTkgRecord, type ProjectTkgRecord } from '@/lib/projects/tkg-repository';
 import { rabRepository, emptyRabLine } from '@/lib/projects/rab-repository';
-import { ReviewTaskPanel, type ReviewTaskView } from '@/components/review/review-task-panel';
+import { TriagePanel, type TriageItemView } from '@/components/review/triage-panel';
 import { formatTkgBbsNumber, hasTkgBbs } from './tkg-bbs-format';
 
 type Tab = 'sumber' | 'transkrip' | 'skrip' | 'takeoff';
@@ -36,6 +36,9 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
   const [sourceText, setSourceText] = useState('');
   const [manualJson, setManualJson] = useState('');
   const [tinggiLantai, setTinggiLantai] = useState<string>('');
+  const [nLd, setNLd] = useState<string>('');
+  const [lStock, setLStock] = useState<string>('');
+  const [reuseForm, setReuseForm] = useState<string>('');
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -55,9 +58,18 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
   }, [projectId]);
 
   const params = useMemo(() => {
-    const t = Number.parseFloat(tinggiLantai.replace(',', '.'));
-    return Number.isFinite(t) && t > 0 ? { tinggi_per_lantai_m: t } : undefined;
-  }, [tinggiLantai]);
+    // Parameter dikirim APA ADANYA ke engine — UI tidak menghitung apa pun.
+    const num = (s: string) => {
+      const v = Number.parseFloat(s.replace(',', '.'));
+      return Number.isFinite(v) && v > 0 ? v : undefined;
+    };
+    const p: Partial<TakeoffParams> = {};
+    const t = num(tinggiLantai); if (t !== undefined) p.tinggi_per_lantai_m = t;
+    const n = num(nLd); if (n !== undefined) p.n_ld = n;
+    const l = num(lStock); if (l !== undefined) p.l_stock_m = l;
+    const u = num(reuseForm); if (u !== undefined && Number.isInteger(u)) p.reuse_form = u;
+    return Object.keys(p).length ? p : undefined;
+  }, [tinggiLantai, nLd, lStock, reuseForm]);
 
   const saveTkg = useCallback(async (tkg: TkgDocument, source: string) => {
     const next = await tkgRepository.save({ ...record, projectId, tkg, source, reviewed: false });
@@ -171,16 +183,16 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     { id: 'takeoff', label: '4 · Takeoff' },
   ];
 
-  const reviewTasks: ReviewTaskView[] = useMemo(() => {
+  const triageItems: TriageItemView[] = useMemo(() => {
     if (!takeoff) return [];
     return takeoff.items
       .filter((it) => it.needs_review)
-      .map((it, i) => ({
-        id: `tkg-${i}-${it.kode}-${it.rule_id}`,
-        target_ref: `${it.kode}.${it.work_type}.${it.rule_id}`,
-        reasons: [it.review_reason ?? 'perlu review'],
-        priority: null,
-        status: 'open',
+      .map((it) => ({
+        key: `${it.kode}.${it.work_type}.${it.rule_id}`,
+        kode: it.kode,
+        work: `${it.work_type} · ${it.kategori}`,
+        rule_id: it.rule_id,
+        reason: it.review_reason ?? 'perlu review',
       }));
   }, [takeoff]);
 
@@ -373,11 +385,18 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
       {tab === 'takeoff' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-            <div>
-              <div style={S.label}>Tinggi kolom per lantai (m) — opsional, dicatat sbg asumsi</div>
-              <input value={tinggiLantai} onChange={(e) => setTinggiLantai(e.target.value)} placeholder="mis. 3.5"
-                style={{ ...S.mono, marginTop: 6, padding: '8px 10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', width: 140 }} />
-            </div>
+            {([
+              ['Tinggi/lantai (m)', tinggiLantai, setTinggiLantai, 'mis. 3.5'],
+              ['Lewatan n_ld (×d)', nLd, setNLd, 'mis. 40'],
+              ['Stok besi (m)', lStock, setLStock, 'mis. 12'],
+              ['Pakai-ulang bekisting', reuseForm, setReuseForm, 'mis. 2'],
+            ] as const).map(([label, value, set, ph]) => (
+              <div key={label}>
+                <div style={S.label}>{label}</div>
+                <input value={value} onChange={(e) => set(e.target.value)} placeholder={ph}
+                  style={{ ...S.mono, marginTop: 6, padding: '8px 10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', width: 120 }} />
+              </div>
+            ))}
             <Button onClick={runTakeoff} disabled={busy !== null || !tkg}>
               <Calculator size={14} /> {busy === 'takeoff' ? 'Menghitung (engine)…' : 'Hitung Takeoff (engine)'}
             </Button>
@@ -387,10 +406,18 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
               </Button>
             )}
           </div>
+          <p style={{ margin: 0, fontSize: 11, color: 'var(--text3)' }}>
+            Parameter opsional — diteruskan apa adanya ke engine & tercatat sebagai asumsi/params_used (RULE-BOE).
+          </p>
 
           {takeoff && (
             <>
-              <ReviewTaskPanel tasks={reviewTasks} />
+              <TriagePanel
+                projectId={projectId}
+                items={triageItems}
+                onRecompute={runTakeoff}
+                busy={busy === 'takeoff'}
+              />
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr>
                   <th style={S.th}>Kode</th><th style={S.th}>Pekerjaan</th><th style={S.th}>Kuantitas</th>
