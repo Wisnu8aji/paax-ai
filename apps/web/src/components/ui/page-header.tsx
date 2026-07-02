@@ -23,7 +23,7 @@ export function PageHeader({
       }}
     >
       <div>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text)' }}>
+        <h1 className="pax-display" style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text)' }}>
           {title}
         </h1>
         {subtitle && <p style={{ margin: '5px 0 0', fontSize: 12.5, color: 'var(--text2)' }}>{subtitle}</p>}
