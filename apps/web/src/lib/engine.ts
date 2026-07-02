@@ -10,8 +10,12 @@
 import {
   RABResult, HSPBreakdown, SCurveResult, ScenarioResult, ValidationResult,
   VolumeResult, SectionedRABResult, SchedulePlanResult,
+  TkgValidationResultSchema, TakeoffResultSchema,
 } from "@paax/schemas";
-import type { SchedulePlanRequest, ScenarioParams } from "@paax/schemas";
+import type {
+  SchedulePlanRequest, ScenarioParams,
+  TkgDocument, TkgValidationResult, TakeoffParams, TakeoffResult,
+} from "@paax/schemas";
 import { CORE_ENGINE_URL, CoreEngineError } from "./core-engine-client";
 
 export type {
@@ -140,6 +144,42 @@ export async function computeVolume(
     body: JSON.stringify({ element_type: elementType, dims }),
   });
   return VolumeResult.parse(data);
+}
+
+/** POST /tkg/validate — validasi TKG (V-02..V-08 subset, gerbang brain TXT00 §7). */
+export async function validateTkg(
+  doc: TkgDocument,
+  params?: Partial<TakeoffParams>,
+): Promise<TkgValidationResult> {
+  const data = await engineFetch("/tkg/validate", {
+    method: "POST",
+    body: JSON.stringify({ doc, params: params ?? null }),
+  });
+  return TkgValidationResultSchema.parse(data);
+}
+
+/** POST /tkg/render — render TKG menjadi skrip .tkg.txt (deterministik, auditable). */
+export async function renderTkg(
+  doc: TkgDocument,
+  params?: Partial<TakeoffParams>,
+): Promise<string> {
+  const data = (await engineFetch("/tkg/render", {
+    method: "POST",
+    body: JSON.stringify({ doc, params: params ?? null }),
+  })) as { text: string };
+  return data.text;
+}
+
+/** POST /tkg/takeoff — TKG → WorkItem beton/bekisting/besi (semua angka dari engine). */
+export async function takeoffTkg(
+  doc: TkgDocument,
+  params?: Partial<TakeoffParams>,
+): Promise<TakeoffResult> {
+  const data = await engineFetch("/tkg/takeoff", {
+    method: "POST",
+    body: JSON.stringify({ doc, params: params ?? null }),
+  });
+  return TakeoffResultSchema.parse(data);
 }
 
 /** POST /rab/build — RAB tersektor (WBS) dari item + section. */

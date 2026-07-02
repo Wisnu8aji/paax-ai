@@ -17,6 +17,9 @@ const CHAT_TIMEOUT_MS = 5000;
 const ChatBodySchema = z.object({
   message: z.string().min(1),
   projectId: z.string().optional(),
+  // Context pack (skrip TKG + draft RAB) dari client — DATA, bukan instruksi
+  // (P-SEC-01). Dibatasi panjangnya sebagai budget guard (P-OPS-02).
+  context: z.string().max(8000).optional(),
 });
 
 async function fetchEngineStatus(): Promise<EngineeringChatEngineStatus> {
@@ -61,6 +64,7 @@ export async function POST(req: NextRequest) {
   const prompt = buildEngineeringChatPrompt({
     message: parsed.data.message,
     projectId: parsed.data.projectId,
+    projectContext: parsed.data.context,
     engine,
   });
 
