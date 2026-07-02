@@ -19,6 +19,9 @@ Endpoint deterministik (tidak ada LLM di sini):
     POST /tkg/validate              -> validasi TKG (V-02..V-08 subset, brain TXT00 §7)
     POST /tkg/render                -> render TKG -> skrip .tkg.txt (deterministik)
     POST /tkg/takeoff               -> TKG -> WorkItem beton/bekisting/besi (deterministik)
+    POST /takeoff/tanah             -> galian/urugan/buangan (brain §F, deterministik)
+    POST /takeoff/dinding           -> pasangan/plester/acian/cat/screed (brain §E)
+    POST /takeoff/arsitektur        -> pondasi batu/lantai/atap miring (brain §G)
 """
 from __future__ import annotations
 import io
@@ -47,6 +50,12 @@ from .tkg.params import TakeoffParams
 from .tkg.render import render_tkg_txt
 from .tkg.takeoff import takeoff_tkg, TakeoffResult
 from .tkg.validate import validate_tkg
+from .takeoff.models import (
+    ArsitekturRequest, DindingRequest, ManualTakeoffResult, TanahRequest,
+)
+from .takeoff.tanah import takeoff_tanah
+from .takeoff.dinding import takeoff_dinding
+from .takeoff.arsitektur import takeoff_arsitektur
 
 app = FastAPI(title="PAAX Core Engine", version="0.6.0")
 
@@ -243,6 +252,22 @@ def tkg_render(req: TkgRequest):
 @app.post("/tkg/takeoff", response_model=TakeoffResult)
 def tkg_takeoff(req: TkgRequest):
     return takeoff_tkg(req.doc, req.params)
+
+
+# ----------------- Take-off arsitektur/tanah (brain §E/§F/§G) ----------------
+@app.post("/takeoff/tanah", response_model=ManualTakeoffResult)
+def takeoff_tanah_ep(req: TanahRequest):
+    return takeoff_tanah(req)
+
+
+@app.post("/takeoff/dinding", response_model=ManualTakeoffResult)
+def takeoff_dinding_ep(req: DindingRequest):
+    return takeoff_dinding(req)
+
+
+@app.post("/takeoff/arsitektur", response_model=ManualTakeoffResult)
+def takeoff_arsitektur_ep(req: ArsitekturRequest):
+    return takeoff_arsitektur(req)
 
 
 @app.post("/schedule/s-curve", response_model=SCurveResult)
