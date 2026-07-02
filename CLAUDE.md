@@ -9,6 +9,8 @@
 > adalah pressure-test bisnis, biaya AI, margin, pricing, vendor model, dan
 > prioritas roadmap. Baca saat task menyentuh roadmap, fitur AI, pricing,
 > ekstraksi gambar, agent, biaya model, atau keputusan MVP.
+> Spek rinci rumus takeoff & pipeline baca-gambar (92 rumus, TKG, 31 skill):
+> `docs/specs/brain-v4.1/` — ringkasan gap vs dokumen ini: `docs/BRAIN_ALIGNMENT.md`.
 
 ---
 
@@ -48,7 +50,7 @@ Implikasi konkret yang HARUS ditegakkan:
 - **Satu sesi = satu task sempit & terdefinisi.** Jangan overscope. Konteks terlalu lebar membuat aturan emas terlupakan.
 - **Verifikasi kriteria terima** tiap task sebelum lanjut.
 - **Commit kecil & sering**, format **Conventional Commits** (`feat:`, `fix:`, `chore:`, `test:`, `docs:`, `refactor:`).
-- Setiap **fungsi perhitungan baru** WAJIB disertai **test dengan nilai acuan yang dihitung manual**.
+- Setiap **fungsi perhitungan baru** WAJIB disertai **test dengan nilai acuan yang dihitung manual**. Target rezim testing lebih kaya (golden-anchor 1 proyek nyata, eval per-skill) ada di `docs/specs/brain-v4.1/PAAX_BRAIN_03_SKILL_API_PIPELINE_DATA.txt` §6 — diadopsi bertahap seiring modul rumus baru ditambah.
 - Setiap **fitur AI baru** WAJIB punya **fallback manual**: bila AI gagal/ragu, pengguna tetap bisa menyelesaikan pekerjaan.
 - Jangan menambah dependency / service baru tanpa alasan yang jelas terkait task aktif.
 

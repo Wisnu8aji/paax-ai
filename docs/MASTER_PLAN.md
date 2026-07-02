@@ -229,6 +229,16 @@ Engine mengonversi kuantitas mentah ke volume satuan pekerjaan, lalu menghitung 
 - **Editor & verifikasi:** pengguna menandai item terverifikasi, mengoreksi koefisien/harga/volume; engine menghitung ulang seketika.
 - **Export:** Excel/PDF untuk RAB, BoQ, jadwal; koreksi disimpan untuk feedback loop.
 
+> **Spek rinci (v4.1, 2026-07-01):** pipeline 6-tahap di atas adalah ringkasan
+> tingkat-tinggi. Detail operasional lengkap — artefak TKG (Transkrip Kanonik
+> Gambar) sebagai gerbang wajib antara persepsi & reasoning, 10 gerbang
+> validasi, arsitektur kognitif 9-lapis (L1 Triase → L9 Review), dan aturan
+> reasoning (expansion/implied-works/AHSP-selection/precedence-konflik) — ada
+> di `docs/specs/brain-v4.1/PAAX_BRAIN_00_EKSTRAKSI_GAMBAR_KERJA.txt` &amp;
+> `PAAX_BRAIN_01_PRINSIP_PENALARAN.txt`. Ringkasan gap vs dokumen ini:
+> `docs/BRAIN_ALIGNMENT.md`. **Belum diimplementasi** — tunduk ke urutan
+> gerbang di `docs/ai-map/STATE.md` (ground data dulu, v1.0/CV DITUNDA).
+
 ---
 
 ## 7. Modul Produk Lengkap
@@ -366,6 +376,15 @@ Durasi item dihitung dari produktivitas: total mandays = V × koef_OH; durasi (h
 | Paralelkan pekerjaan | jalur kritis baru; durasi total | Apakah percepatan aman terhadap dependensi? |
 | Target percepatan | kombinasi sumber daya untuk capai target; biaya minimum | Skenario termurah untuk capai target |
 | Efisiensi budget | item mana bisa dihemat; dampak ke durasi | Di mana penghematan paling aman |
+
+> **Spek rinci (v4.1, 2026-07-01):** §11.2 di atas ("Volume ke RAB") mengasumsikan
+> Volume sudah tersedia. Cara Volume itu didapat dari dimensi elemen (beton per
+> bentuk, bekisting, berat besi+BBS, tanah bank/gembur/padat, arsitektur/
+> finishing, atap/kusen/MEP) dirinci sebagai 92 rumus deterministik (F-A00–K08)
+> plus registry ~62 parameter konfigurasi di
+> `docs/specs/brain-v4.1/PAAX_BRAIN_02_RUMUS_LOGIKA_HITUNG.txt`. Ini target
+> ekspansi bertahap `services/core-engine/app/geometry/` — status implementasi
+> per rumus: lihat `docs/BRAIN_ALIGNMENT.md` §4.
 
 ---
 
