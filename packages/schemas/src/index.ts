@@ -1513,6 +1513,137 @@ export const TakeoffResultSchema = z.object({
 });
 export type TakeoffResult = z.infer<typeof TakeoffResultSchema>;
 
+// ─── Manual Takeoff arsitektur/tanah (selaras app/takeoff/*) ─────────────────
+// Brain §E (dinding/finishing), §F (tanah), §G (pondasi batu/lantai/atap).
+
+export const TanahParamsSchema = z.object({
+  w_kerja: z.number().default(0.3),
+  f_gembur: z.number().default(1.2),
+  f_susut: z.number().default(1.1),
+  kap_truk: z.number().default(4.0),
+});
+export type TanahParams = z.infer<typeof TanahParamsSchema>;
+
+export const DindingParamsSchema = z.object({
+  deduct_mode: z.enum(["all", "threshold"]).default("all"),
+  deduct_threshold: z.number().default(0.0),
+  n_lapis_cat: z.number().int().default(1),
+});
+export type DindingParams = z.infer<typeof DindingParamsSchema>;
+
+export const ArsitekturParamsSchema = z.object({}).strict();
+export type ArsitekturParams = z.infer<typeof ArsitekturParamsSchema>;
+
+export const TakeoffLineSchema = z.object({
+  kode: z.string(),
+  work: z.string(),
+  quantity: z.number().nullish(), // null = needs_review, TIDAK ditebak
+  unit: z.string(),
+  formula: z.string(),
+  detail: z.string(),
+  needs_review: z.boolean().default(false),
+  review_reason: z.string().nullish(),
+  rule_id: z.string(),
+});
+export type TakeoffLine = z.infer<typeof TakeoffLineSchema>;
+
+export const ManualTakeoffResultSchema = z.object({
+  domain: z.enum(["tanah", "dinding", "arsitektur"]),
+  items: z.array(TakeoffLineSchema).default([]),
+  assumptions: z.array(z.string()).default([]),
+  warnings: z.array(z.string()).default([]),
+  params_used: z.array(ParamUsedSchema).default([]),
+  n_needs_review: z.number().int().default(0),
+});
+export type ManualTakeoffResult = z.infer<typeof ManualTakeoffResultSchema>;
+
+// Request bodies — §F tanah
+export const GalianFootplatSchema = z.object({
+  kode: z.string(),
+  b_ft: z.number(),
+  l_ft: z.number(),
+  d_gali: z.number(),
+  n: z.number().int().default(1),
+  v_struktur_tertanam_per_lubang: z.number().nullish(),
+});
+export const GalianMenerusSchema = z.object({
+  kode: z.string(),
+  l_parit: z.number(),
+  b_bawah: z.number(),
+  b_atas: z.number().nullish(),
+  d_gali: z.number(),
+});
+export const UruganLapisSchema = z.object({
+  kode: z.string(),
+  jenis: z.enum(["pasir", "sirtu", "tanah"]),
+  a: z.number(),
+  t_lapis: z.number(),
+  material_sudah_padat: z.boolean().default(false),
+});
+export const TanahRequestSchema = z.object({
+  footplats: z.array(GalianFootplatSchema).default([]),
+  galian_menerus: z.array(GalianMenerusSchema).default([]),
+  urugan: z.array(UruganLapisSchema).default([]),
+  params: TanahParamsSchema.default({}),
+});
+export type TanahRequest = z.infer<typeof TanahRequestSchema>;
+
+// Request bodies — §E dinding/finishing
+export const BukaanSchema = z.object({
+  nama: z.string(),
+  lebar: z.number(),
+  tinggi: z.number(),
+  n: z.number().int().default(1),
+});
+export const DindingBidangSchema = z.object({
+  kode: z.string(),
+  l_dinding: z.number(),
+  h_dinding: z.number(),
+  bukaan: z.array(BukaanSchema).default([]),
+  plester_sisi: z.number().int().default(0),
+  acian: z.boolean().default(false),
+  cat: z.boolean().default(false),
+});
+export const ScreedBidangSchema = z.object({
+  kode: z.string(),
+  a: z.number(),
+  t: z.number(),
+});
+export const DindingRequestSchema = z.object({
+  dinding: z.array(DindingBidangSchema).default([]),
+  screed: z.array(ScreedBidangSchema).default([]),
+  params: DindingParamsSchema.default({}),
+});
+export type DindingRequest = z.infer<typeof DindingRequestSchema>;
+
+// Request bodies — §G arsitektur subset
+export const PondasiBatuSchema = z.object({
+  kode: z.string(),
+  a_atas: z.number(),
+  a_bawah: z.number(),
+  h_pond: z.number(),
+  l: z.number(),
+});
+export const PenutupLantaiSchema = z.object({
+  kode: z.string(),
+  panjang: z.number(),
+  lebar: z.number(),
+  lebar_pintu_total: z.number().default(0.0),
+  plin: z.boolean().default(true),
+});
+export const AtapMiringSchema = z.object({
+  kode: z.string(),
+  a_proyeksi: z.number(),
+  theta_deg: z.number(),
+});
+export const ArsitekturRequestSchema = z.object({
+  pondasi_batu: z.array(PondasiBatuSchema).default([]),
+  lantai: z.array(PenutupLantaiSchema).default([]),
+  atap: z.array(AtapMiringSchema).default([]),
+  params: ArsitekturParamsSchema.default({}),
+});
+export type ArsitekturRequest = z.infer<typeof ArsitekturRequestSchema>;
+
 // ─── RAB tersektor / WBS (selaras app/rab/sections.py) ───────────────────────
 
 export const RABSection = z.object({
