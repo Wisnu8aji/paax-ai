@@ -56,33 +56,19 @@ class VerifyCandidateRequest(BaseModel):
 class BoqPreviewRequest(BaseModel):
     verified_quantities: List[dict]
 
-# --- Helper: Demo Data Generator ---
 def generate_demo_extraction(file_name: str) -> DrawingAnalysisResponse:
-    # Deterministic fallback/demo extraction based on user request
+    # TODO (Brain v4.1): Implement real PyMuPDF and OCR extraction to TKG.
+    # Mengembalikan data kosong (tanpa karangan) sesuai INV-01 dan AP-03.
     return DrawingAnalysisResponse(
         file_id=str(uuid.uuid4()),
-        classification="Architectural Floor Plan",
-        rooms=["Ruang tamu", "Kamar tidur utama", "Kamar tidur anak", "Kamar mandi", "Dapur", "Teras"],
-        doors=["Pintu Utama", "Pintu Kamar 1", "Pintu Kamar 2", "Pintu Kamar Mandi", "Pintu Dapur", "Pintu Belakang"],
-        windows=["Jendela Depan 1", "Jendela Depan 2", "Jendela Kamar 1", "Jendela Kamar 1b", "Jendela Kamar 2", "Jendela Dapur 1", "Jendela Dapur 2", "Boven Kamar Mandi"],
-        quantity_candidates=[
-            QuantityCandidate(id=str(uuid.uuid4()), quantity_name="Floor Area", unit="m2", value=150.0, source="Floor Plan calculation", confidence=0.85, linked_rab_category="pekerjaan_lantai", evidence_note="Total area bounded by exterior walls"),
-            QuantityCandidate(id=str(uuid.uuid4()), quantity_name="Ceiling Area", unit="m2", value=150.0, source="Derived from Floor Area", confidence=0.80, linked_rab_category="pekerjaan_plafon", evidence_note="Assuming flat ceiling matching floor area"),
-            QuantityCandidate(id=str(uuid.uuid4()), quantity_name="Interior Wall Paint Area", unit="m2", value=420.0, source="Wall length * standard height (3m)", confidence=0.75, linked_rab_category="pekerjaan_cat_interior", evidence_note="Estimated from interior wall segments"),
-            QuantityCandidate(id=str(uuid.uuid4()), quantity_name="Exterior Wall Paint Area", unit="m2", value=180.0, source="Perimeter * standard height (3m)", confidence=0.78, linked_rab_category="pekerjaan_cat_eksterior", evidence_note="Estimated from building perimeter minus openings"),
-            QuantityCandidate(id=str(uuid.uuid4()), quantity_name="Door Units", unit="unit", value=6.0, source="Door schedule count", confidence=0.95, linked_rab_category="pekerjaan_pintu", evidence_note="Counted 6 distinct door symbols"),
-            QuantityCandidate(id=str(uuid.uuid4()), quantity_name="Window Units", unit="unit", value=8.0, source="Window schedule count", confidence=0.95, linked_rab_category="pekerjaan_jendela", evidence_note="Counted 8 distinct window symbols"),
-            QuantityCandidate(id=str(uuid.uuid4()), quantity_name="Bathroom Fixtures", unit="set", value=2.0, source="Plumbing fixture count", confidence=0.90, linked_rab_category="pekerjaan_sanitasi", evidence_note="Counted 1 closet and 1 shower/sink set"),
-            QuantityCandidate(id=str(uuid.uuid4()), quantity_name="Roof Area", unit="m2", value=165.0, source="Floor Area + 10% overhang", confidence=0.70, linked_rab_category="pekerjaan_atap", evidence_note="Derived assumption, requires roof plan for accuracy"),
-        ],
+        classification="Unclassified",
+        rooms=[],
+        doors=[],
+        windows=[],
+        quantity_candidates=[],
         warnings=[
-            DrawingWarning(id=str(uuid.uuid4()), message="Scale not verified", level="MEDIUM", related_elements=[]),
-            DrawingWarning(id=str(uuid.uuid4()), message="Dimensions require manual validation", level="HIGH", related_elements=["all_areas"]),
-            DrawingWarning(id=str(uuid.uuid4()), message="Wall thickness not confirmed", level="LOW", related_elements=[]),
-            DrawingWarning(id=str(uuid.uuid4()), message="Openings need user verification", level="MEDIUM", related_elements=["doors", "windows"]),
-            DrawingWarning(id=str(uuid.uuid4()), message="Quantity is candidate, not final", level="INFO", related_elements=[]),
-            DrawingWarning(id=str(uuid.uuid4()), message="MEP drawing not included", level="INFO", related_elements=[]),
-            DrawingWarning(id=str(uuid.uuid4()), message="Structural drawing not included", level="INFO", related_elements=[]),
+            DrawingWarning(id=str(uuid.uuid4()), message="Sistem dalam transisi ke arsitektur TKG (Brain v4.1). Ekstraksi gambar dinonaktifkan sementara untuk menghindari data karangan (AP-01, AP-03).", level="CRITICAL", related_elements=[]),
+            DrawingWarning(id=str(uuid.uuid4()), message="Gunakan fitur Manual Takeoff atau Smart Import sampai TKG Pipeline v1.0 aktif.", level="INFO", related_elements=[])
         ]
     )
 
