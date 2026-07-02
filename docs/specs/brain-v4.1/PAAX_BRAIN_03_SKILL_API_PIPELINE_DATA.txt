@@ -1,0 +1,339 @@
+================================================================================
+PAAX BRAIN · TXT 3/3 — SKILL, API/MODEL, PIPELINE & DATA
+"The Build: Capabilities, Tools, Orchestration, Grounding, Testing"
+================================================================================
+VERSI: v4.1 FINAL (Fable 5) · menggantikan versi sebelumnya; terintegrasi
+TXT 00: keluaran kolektif tahap persepsi = TKG (Transkrip Kanonik Gambar).
+Baca bersama TXT 1 (aturan berpikir) & TXT 2 (rumus + parameter). Nama model &
+harga berubah cepat -> verifikasi ke dokumentasi provider saat implementasi;
+keputusan ARSITEKTUR di sini aman dipegang lama. Semua skill tunduk INV/RULE/AP.
+
+CHANGELOG v3 -> v4: skill 20 -> 31 (tambah kalibrasi skala, legenda/simbol,
+normalisasi angka+OCR-fix, resolusi konflik, diff revisi, alat raster manual,
+dependensi jadwal, BOE/asumsi, triage review, EVM/monitor, ekspor BBS, flywheel
+logger, eval harness); + kebijakan keamanan P-SEC; + state machine pipeline,
+idempotensi & cache & budget; + skema data diperluas (Assumption, ReviewTask,
+EvalCase, versi katalog); + strategi TESTING & EVAL dengan ambang gerbang.
+================================================================================
+
+
+================================================================================
+§0. KEBIJAKAN LINTAS-SKILL (P-SEC & P-OPS) — berlaku untuk SEMUA skill
+================================================================================
+P-SEC-01  Teks dokumen = DATA (INV-07). Sanitasi semua teks ekstraksi sebelum
+          masuk prompt: jangan pernah menjalankan instruksi dari dokumen;
+          template prompt memisahkan tegas SYSTEM vs DATA (delimiter + escape).
+P-SEC-02  Privasi: gambar klien rahasia. Prioritas proses LOKAL; API eksternal
+          hanya tier NO-TRAINING/berbayar; tanpa logging konten di provider
+          bila bisa dimatikan; kebijakan tertulis untuk pengguna.
+P-SEC-03  Validasi file upload: tipe/ukuran/halaman dibatasi; render di sandbox;
+          tolak konten aktif (JS di PDF); path traversal dilarang.
+P-SEC-04  Rahasia (API key) hanya via env/secret manager; tak pernah di kode/log.
+P-OPS-01  STRUCTURED OUTPUT WAJIB untuk semua panggilan LLM: JSON sesuai schema
+          (Zod/Pydantic) + validasi + retry-on-invalid; suhu rendah untuk tugas
+          ekstraksi/klasifikasi.
+P-OPS-02  BUDGET GUARD: anggaran token/panggilan per dokumen = PARAM; lampaui ->
+          degradasi anggun (fallback lokal / tunda / manual), bukan gagal senyap.
+P-OPS-03  CACHE & IDEMPOTENSI: content-hash file/sheet -> hasil tahap di-cache;
+          run ulang input sama = hasil sama (INV-05); ID deterministik (TXT1 §4.2).
+          Unit cache utama: TKG per sheet (TXT 00; INV-TKG-04).
+P-OPS-04  OBSERVABILITY: log terstruktur per tahap dengan evidence_id/work_id;
+          metrik latensi/biaya/akurasi per skill; tanpa payload sensitif di log.
+P-OPS-05  Setiap skill LLM punya FALLBACK: model cadangan -> heuristik lokal ->
+          manual (needs_review). Pipeline tak pernah buntu karena satu provider.
+
+
+================================================================================
+§1. KATALOG 31 SKILL (kontrak I/O; Lapis = TXT 1 §5)
+================================================================================
+Format: SK-nn NAMA — Tujuan | Lapis | Input -> Output | Tool | Guardrail.
+
+KELUARAN KOLEKTIF SK-01..SK-15 = TKG (TXT 00 §6), lolos validasi V-01..V-10
+(TXT 00 §7) sebelum dikonsumsi skill L6 ke atas. Skill L6+ mengambil input
+HANYA dari TKG, bukan dari berkas gambar (INV-TKG-01).
+
+---------------------------------------------------------------- PERSEPSI -----
+SK-01 TRIASE & SPLIT — pecah PDF per sheet; deteksi vektor/raster; metadata.
+  L1 | file -> SheetInventory[] {sheet_id,is_vector,has_text,page} |
+  PyMuPDF | deterministik; raster ditandai utk OCR.
+SK-02 KLASIFIKASI SHEET — tipe sheet (denah/potongan/detail/schedule/notes/MEP…).
+  L2 | render+teks -> Evidence(type_tag){type,confidence} | heuristik teks
+  (vektor) -> Gemini vision fallback | JSON schema; ragu -> W.
+SK-03 LAYOUT & TABEL — temukan title-block, tabel, area denah, notes.
+  L2 | sheet -> region[]{role,locator} | garis+alignment (vektor) / layout model
+  lokal -> Gemini fallback | tanpa mengubah isi.
+SK-04 EKSTRAKSI SCHEDULE -> TypeDict — kamus tipe (dimensi/tulangan/mutu/tebal).
+  L3 | region tabel -> ElementType[] + Evidence(schedule_row) |
+  pdfplumber/camelot -> Gemini utk tabel rumit | nilai=raw; F-A00 parsing.
+SK-05 GRID & JARAK — sumbu as + koordinat + bentang.
+  L3 | sheet -> GridModel + Evidence(grid_span) | PyMuPDF | konsistensi antar
+  sheet dicek (E-GRID).
+SK-06 DIMENSI/LEVEL/TITLE-BLOCK — angka dimensi, peil/SFL, identitas gambar.
+  L3 | sheet -> Evidence(dimension_text|level_mark|title_block|scale) |
+  PyMuPDF / OCR lokal -> Gemini fallback | raw disimpan.
+SK-07 LEGENDA & KAMUS SIMBOL — pelajari legenda proyek (simbol -> makna).
+  L3 | sheet legenda -> SymbolDict + Evidence(legend_entry) | vektor blok /
+  vision | simbol tak dikenal -> W, bukan tebakan.
+SK-08 DETEKSI & HITUNG SIMBOL — count instance per tipe di denah.
+  L3/4 | denah+SymbolDict -> Evidence(symbol_count, per posisi/grid) |
+  pencocokan blok vektor / vision | selalu butuh konfirmasi (RULE-CONF-02).
+SK-09 KALIBRASI SKALA — tetapkan skala andal per sheet.
+  L3 | teks skala + dimensi vs vektor (F-A07) / dua-titik manual (F-A06) ->
+  ScaleCalib{s,method,conf} | deterministik | tak seragam -> W-SCL.
+SK-10 NORMALISASI ANGKA & KOREKSI OCR — locale id-ID + kamus koreksi domain.
+  L3 | raw string -> nilai ternormalisasi + flag koreksi | F-A00 + kamus |
+  koreksi selalu ditandai; ambigu kritis -> needs_review.
+
+------------------------------------------------------------- SEMANTIK/JOIN ---
+SK-11 JOIN INSTANCE<->TIPE — bangun ElementRegister.
+  L4 | denah(label+posisi)+GridModel+TypeDict+level -> ElementInstance[] |
+  LLM + logika deterministik | register unik (INV-10); tipe tanpa definisi ->
+  W-TYP; definisi tanpa instance -> W-DEF.
+SK-12 RESOLUSI KONFLIK & PRESEDENSI — terapkan RULE-READ-02.
+  L4 | Evidence konflik -> keputusan + Assumption + W | rule engine + LLM
+  penjelas | dampak besar -> needs_review; tak pernah diam-diam.
+SK-13 DIFF REVISI — bandingkan DrawingSet rev lama vs baru.
+  L4 | dua ElementRegister/TypeDict -> DeltaReport {add/del/change} +
+  supersede Evidence | deterministik + LLM ringkasan | RULE-REV-*.
+
+----------------------------------------------------------------- GEOMETRI ----
+SK-14 UKUR VEKTOR — panjang/luas dari koordinat (F-A03..).
+  L5 | path+ScaleCalib -> Evidence(measured_*) | PyMuPDF+engine | AP-01.
+SK-15 ALAT RASTER MANUAL — dua-titik & poligon manusia utk scan.
+  L5 | interaksi UI -> Evidence(method=manual_two_point/manual_input) |
+  frontend + engine | raster tak pernah auto-measure.
+
+---------------------------------------------------------------- PENALARAN ----
+SK-16 EKSPANSI ELEMEN->PEKERJAAN — RULE-EXP-* (beton->besi->bekisting; dinding
+  chain; dst). L6 | ElementRegister -> WorkItem[](expanded)+Evidence(rule_id) |
+  rule engine peta ekspansi + LLM orkestrasi | INV-09/10.
+SK-17 PEKERJAAN TERSIRAT — RULE-IMP-* (SMKK, persiapan, metode, tanah, uji,
+  halaman, akhir). L6 | ProjectContext+WBS -> WorkItem[](implied)+Evidence |
+  checklist engine + LLM konteks | kuantitas via rumus/param/needs_review.
+SK-18 KUANTITAS TURUNAN (prep) — susun input rumus turunan (F-E/F/G/B09).
+  L6->L8 | geometri+param -> DerivedInput -> engine | engine hitung | INV-01.
+SK-19 PENCARIAN & PEMILIHAN AHSP — semantic search + rerank + cek satuan &
+  kandungan. L6 | WorkItem+AHSP_INDEX -> AhspMapping{kandidat,alasan,terpilih?}
+  | embedding lokal (FAISS/pgvector) + LLM rerank | RULE-AHSP-01..06.
+SK-20 PENCOCOKAN HARGA (HSD) — resource -> harga wilayah+periode.
+  L6 | komponen AHSP+katalog HSD -> PriceBinding{binding,missing} | lookup
+  deterministik + LLM disambiguasi nama | RULE-HRG-*; kosong -> W-PRC.
+SK-21 KELENGKAPAN & KONSISTENSI — RULE-CHK-* + taksonomi W/E.
+  L6/9 | semua artefak -> CompletenessReport | rule engine + LLM narasi |
+  warning menempel objek.
+SK-22 DEPENDENSI JADWAL — graf urutan konstruksi (RULE-DEP-*).
+  L6 | WorkItem[] -> dependency_link Evidence + graf | rule chain + LLM
+  penyesuaian konteks | manusia konfirmasi; engine CPM.
+SK-23 ASSUMPTION/BOE GENERATOR — kumpulkan ledger jadi Basis of Estimate.
+  L6/8 | Assumption+missing+warning+param snapshot -> BOE dokumen | engine
+  (template) | RULE-BOE-01/02; bukan karangan LLM.
+SK-24 TRIAGE REVIEW — prioritas ReviewTask (RULE-TRI-01: Pareto, conf, konflik).
+  L7/9 | WorkItem+confidence+biaya -> ReviewTask[terurut] | deterministik |
+  p_pareto dari PARAM.
+SK-25 SKORING CONFIDENCE & TRIANGULASI — F-J01..J05.
+  L7 | Evidence -> confidence,corroborated_by,needs_review,state | fungsi
+  deterministik | AP-04.
+
+------------------------------------------------------------- ENGINE/OUTPUT ---
+SK-26 PERAKITAN BoQ/RAB — volume x HSP per divisi + rekap + PPN (F-H*).
+  L8 | WorkItem approved+volume+mapping+price -> BoQ,RAB | ENGINE | INV-01;
+  final butuh APPROVED/LOCKED (INV-11) + QA §K lulus.
+SK-27 JADWAL & MONITOR — durasi, kurva-S, CPM, EVM, deviasi/alert (F-I*).
+  L8 | RAB+dependensi+opname -> Schedule,CPM,EVM | ENGINE | RULE-DEP-03.
+SK-28 EKSPOR — RAB/BoQ/BOE/Kurva-S/BBS ke xlsx/pdf (+terbilang F-H12).
+  L0 | artefak -> file | engine util | format konsisten; jejak versi.
+SK-29 ENGINEERING CHAT (grounded, read-only) — tanya-jawab berbasis data proyek.
+  L0/9 | pertanyaan+context pack -> jawaban+rujukan Evidence | LLM + tool-call
+  READ-ONLY ke engine/data | angka selalu dari engine/data; tak pernah hitung
+  sendiri; sanitasi P-SEC-01.
+SK-30 FLYWHEEL LOGGER — simpan Correction & keputusan review sebagai dataset emas.
+  L9 | aksi review -> Correction records | storage | dipakai utk prompt/rerank/
+  kalibrasi (RULE-HITL-03).
+SK-31 EVAL HARNESS — jalankan golden set & laporkan metrik per skill.
+  infra | EvalCase[] -> skor (akurasi/presisi/recall/deviasi) vs ambang gerbang |
+  runner + engine | gerbang fase memakai hasil ini (§6/§8).
+
+INV-SK  Skill LLM tak pernah menjadi sumber angka final; semua eksekusi numerik
+        di ENGINE. Setiap skill mengeluarkan Evidence/objek terskema, tervalidasi.
+
+
+================================================================================
+§2. ROUTING API/MODEL — matriks, kejujuran biaya, fallback
+================================================================================
+PRINSIP: LOKAL-DULU (gratis+privat) -> API seperlunya; routing di KODE
+(orchestrator model-agnostik, apps/web/src/lib/ai/orchestrator.ts diperluas);
+JANGAN mesh banyak provider di awal; tambah hanya saat bottleneck TERBUKTI.
+
+  TUGAS                                   -> PILIHAN
+  Baca teks/tabel/grid vektor; ukur       -> PyMuPDF/pdfplumber (LOKAL) *
+  OCR raster                              -> Surya/PaddleOCR (LOKAL) *
+  Klasifikasi sheet; tabel rumit; layout  -> Gemini Flash (vision, free tier) *
+  Kasus visi sangat sulit (jarang)        -> Gemini Pro (saat perlu saja)
+  Embedding pencarian AHSP                -> model embedding LOKAL + FAISS/pgvector *
+  Rerank AHSP; narasi; ringkasan          -> 1 model teks murah (Qwen/DeepSeek)
+  Chat cepat / fallback teks              -> Groq / OpenRouter
+  SEMUA hitungan                          -> ENGINE PAAX *
+  (* = jalur utama MVP)
+
+KEJUJURAN BIAYA/AKSES (verifikasi saat implementasi):
+  DeepSeek: TIDAK gratis murni (bayar per token; teks saja). Qwen: VL bagus utk
+  OCR/vision, sebagian kuota gratis. Groq: cepat, free-tier, teks. Gemini Flash:
+  free-tier besar, PDF+vision+JSON. OpenRouter: agregator + beberapa :free
+  (rate-limit; risiko training-on-data -> JANGAN utk dokumen klien). Document
+  AI/Azure/APS: berbayar kelas produksi -> tunda (APS = fase CAD/BIM).
+  Nama model JANGAN di-hardcode; simpan di config; sediakan fallback berlapis
+  (P-OPS-05) + budget guard (P-OPS-02) + cache (P-OPS-03).
+
+
+================================================================================
+§3. ARSITEKTUR SERVICE, STATE MACHINE, STORAGE
+================================================================================
+Lapis (selaras CLAUDE.md):
+  L2A services/document-intelligence  = SK-01..SK-25 (persepsi+penalaran).
+      Subpaket: ingest, ocr, layout, tables, grid, symbols, scale, join,
+      conflict, revision, reasoning{expand,implied,derived}, mapping{ahsp,price},
+      completeness, confidence, triage, boe, details, steel,
+      tkg{builder, validator V-01..V-10, renderer .tkg.txt}, qa.
+      (Ganti semua stub lama; peta modul lengkap: TXT 00 §10.)
+  L2B services/core-engine            = SK-26..SK-28 + semua rumus TXT 2.
+      BATAS TEGAS: tak ada hitung di L2A/UI; L2A memanggil engine via API.
+  L1  orchestrator (apps/web/lib/ai)  = routing model + fallback + budget +
+      cache + structured-output enforcement.
+  L0  apps/web                        = workspace review (overlay, Evidence
+      panel, warning, ReviewTask queue, BOE view), ekspor, chat. Bukan Streamlit.
+  L3  data                            = katalog AHSP (versi/edisi), HSD (wilayah
+      +periode), indeks biaya (mode Estimate), object storage (PDF, render per
+      sheet, crop locator utk bukti visual), vector index (AHSP), flywheel store.
+
+STATE MACHINE DOKUMEN (per DrawingSet):
+  RECEIVED -> TRIAGED -> READ -> JOINED -> MEASURED -> REASONED -> GROUNDED
+  -> COMPUTED -> IN_REVIEW -> APPROVED -> LOCKED ; (+FAILED per tahap, retry;
+  +SUPERSEDED saat revisi baru). Antrian job async: FastAPI + task queue Python
+  (retry, dead-letter, resume per tahap); idempoten via content-hash.
+
+STORAGE LAYOUT (konvensi): raw/{prj}/{rev}/file.pdf ; renders/{sheet}.png ;
+crops/{evidence_id}.png ; extract/{prj}/{rev}/{sheet}.tkg.json +
+drawingset.tkg.{json,txt} ; stage/{tahap}.json ; exports/{versi}/ .
+
+
+================================================================================
+§4. SKEMA DATA GROUNDING (Lapis 3; padankan Zod<->Pydantic; PAKAI ULANG
+    @paax/schemas yang sudah ada, tambah yang belum)
+================================================================================
+  ProjectContext { prj_id, mode, tipe_bangunan, wilayah, periode_harga,
+    ahsp_edisi, precedence_order, param_snapshot, disclaimer_flags }
+  DrawingSet { rev_id, tanggal, status, files[] }
+  Sheet { sheet_id, rev_id, disiplin, jenis, skala, is_vector }
+  ElementType { type_id, kelas, dimensi{}, tulangan{}, mutu, tebal, spec, src }
+  ElementInstance { element_id, type_id, level, grid_pos, count, geom_refs }
+  WorkItem { work_id, divisi, uraian_kanonik, satuan, asal, rule_id?,
+    elemen_ref[], volume_evidence?, ahsp_ref?, price_ref?, state }
+  Evidence { ...TXT 1 §4.3 }
+  Assumption { id, kategori, deskripsi, param_ref?, sumber, dampak, objek_ref }
+  Warning { kode W-/E-, pesan, objek_ref, severity }
+  ReviewTask { id, target_ref, alasan[RULE-TRI], prioritas, status }
+  Correction { id, target_ref, field, lama, baru, alasan, user, waktu }
+  AHSP_ITEM { kode, uraian, satuan, kelas?, campuran?, metode?, edisi,
+    komponen[]{jenis(upah|bahan|alat), kode_resource, satuan, koefisien},
+    kandungan_termasuk[]  // utk RULE-AHSP-05 anti double-count }
+  RESOURCE { kode_resource, uraian, satuan }
+  HARGA { kode_resource, harga, wilayah, periode, sumber }
+  COST_INDEX { tipe_bangunan, kelas, wilayah, periode, idx_per_m2, sumber }
+  AHSP_INDEX { kode -> embedding(uraian+kelas+campuran+metode) }
+  EvalCase { id, jenis_skill, input_ref, expected, toleransi }
+  TkgDocument { doc{prj,rev,hash,locale}, sheets[{SHEET_META, GRID, LEVELS,
+    TABLES, ELEMENTS, DIMENSIONS, MEMBERS_BAJA, DETAILS, NOTES, LEGEND,
+    SECTIONS_REF, UNCLASSIFIED, WARNINGS, METRICS}],
+    crossheet{grid_fingerprint, TYPE_INDEX, orphans} } // kontrak penuh: TXT 00 §6
+INTEGRITAS: WorkItem.satuan == AHSP_ITEM.satuan (F-K05); Evidence.rev_id seragam
+per RAB (F-K06); PriceBinding wajib wilayah+periode == ProjectContext;
+katalog ber-versi; migrasi data lewat pipeline resmi (AP-07).
+
+
+================================================================================
+§5. n8n — VERDIKT (tetap)
+================================================================================
+Boleh utk OPS/lem (webhook, notifikasi, jadwal, integrasi SaaS). DILARANG untuk
+otak/logika inti (sulit dites, sulit direview, determinisme & audit lemah).
+Sekarang: SKIP; pakai FastAPI + queue Python. Nanti: hanya bila butuh otomasi
+ops yang diedit non-developer.
+
+
+================================================================================
+§6. TESTING & EVAL (budaya wajib)
+================================================================================
+T-01 UNIT rumus: setiap F-* di TXT 2 punya test nilai acuan (angka acuan berasal
+     dari perhitungan manual terdokumentasi, bukan dari LLM).
+T-02 PROPERTY-BASED geometri: invarian (A_neto<=A_kotor; V>=0; shoelace vs
+     dekomposisi persegi; skala konsisten) diuji acak.
+T-03 KONTRAK Zod<->Pydantic: skema §4 diuji paritas serialisasi dua arah.
+T-04 GOLDEN ANCHOR end-to-end: >=1 proyek berlabel lengkap (gambar + kunci
+     jawaban BoQ/RAB manual). Pipeline dijalankan; deviasi kuantitas & rupiah
+     dibanding kunci; ambang lulus = PARAM (eval.dev_qty_max, eval.dev_cost_max).
+T-05 EVAL PER SKILL (SK-31): klasifikasi sheet (akurasi), tabel->TypeDict
+     (presisi/recall sel), grid (galat bentang), count simbol (galat hitung),
+     mapping AHSP (top-k hit rate + akurasi pilihan manusia), harga (coverage),
+     kelengkapan (recall item wajib). Ambang = PARAM eval.* per gerbang fase.
+T-06 SNAPSHOT ekspor: xlsx/pdf dibandingkan struktur & angka (bukan piksel).
+T-07 REGRESI flywheel: koreksi manusia menjadi EvalCase baru otomatis.
+T-08 GOLDEN TKG: PDF sintetis kecil per pola (grid+dimensi, tabel schedule,
+     denah simbol+label, detail berlapis, denah atap) + kunci TKG; diff
+     struktural; wajib lulus V-01..V-10 (TXT 00 §7).
+INV-T  Tidak ada merge fitur ber-angka tanpa test terkait; gerbang fase memakai
+       laporan SK-31, bukan klaim.
+
+
+================================================================================
+§7. ROADMAP BERFASE + GERBANG TERUKUR (data dulu, baru mata)
+================================================================================
+Urutan tegas: 0 -> (1 paralel) -> 2 -> 3 -> 4 -> 5. Branch->PR->review->merge.
+
+F0 DATA GROUNDING (prasyarat mutlak)
+   Katalog AHSP resmi masuk jalur sistem (ber-edisi); HSD >=1 wilayah+periode
+   cukup utk 1 RAB utuh; keputusan domain (worksheet) selesai; ANCHOR golden
+   (T-04) dibuat dari RAB manual nyata.
+   GERBANG-0: 1 proyek contoh -> RAB penuh tanpa harga kosong; deviasi vs kunci
+   <= eval.dev_cost_max; BOE terbit.
+F1 WORKSPACE FRONTEND (paralel)  — Gantt+skenario+chat grounded (SK-27/29).
+   GERBANG-1: jadwal/skenario/chat hidup di data nyata.
+F2 BACA GAMBAR (SK-01..SK-13)    — bangun TKG (TXT 00): triase, TABLES->
+   TypeDict, grid/level, JOIN, konflik, revisi; BoQ terisi dari yang DIBACA
+   (volume boleh manual).
+   GERBANG-2: TKG lulus V-01..V-10 (cakupan teks 100%, Σ grid valid, count
+   ganda-metode cocok, orphan tertangani); eval T-05/T-08 >= ambang; tiap
+   angka klik->sumber.
+F3 UKUR + PENALARAN (SK-14..18, 25) — take-off vektor + triangulasi + ekspansi
+   + turunan + confidence; raster dibantu manusia.
+   GERBANG-3: deviasi kuantitas <= eval.dev_qty_max; "hijau" hanya ber-triangulasi.
+F4 MAP + RAB PENUH (SK-19..24, 26..28, 30) — AHSP+harga+kelengkapan+BOE+triage
+   +ekspor+flywheel.
+   GERBANG-4: dari gambar -> RAB auditable; QA §K lulus; review queue berfungsi.
+F5 CAD/BIM (jauh) — Autodesk APS utk DWG/RVT/IFC saat ada permintaan nyata.
+
+BISNIS: jual dulu workspace deterministik (F0-F1); validasi "gambar->RAB" via
+WIZARD-OF-OZ berbayar sebelum investasi CV; ekstraksi di-meter (kredit).
+
+
+================================================================================
+§8. METRIK & DoD
+================================================================================
+METRIK: % item BoQ auto (read+reason) diterima tanpa koreksi; deviasi kuantitas
+vs kunci; coverage harga (100% pre-final); % angka ber-audit-trail (100%);
+% kuantitas hijau ber-triangulasi; % divisi tersirat tertinjau; waktu upload->
+draft; biaya AI per dokumen (<= budget); ukuran flywheel; skor eval per skill.
+
+DoD GLOBAL: (a) angka dari engine/rumus; (b) Evidence+state lengkap; (c)
+confidence dihitung+triangulasi; (d) tersirat ditalar & tak dobel; (e) AHSP+
+harga dari katalog + satuan cocok; (f) BOE terbit; (g) QA §K & test T-* lulus;
+(h) fallback manual; (i) lolos review.
+
+================================================================================
+RINGKAS SATU KALIMAT:
+31 skill persepsi->penalaran menyiapkan input terskema bagi ENGINE tunggal,
+berjalan lokal-dulu dengan fallback, budget & cache, di atas katalog AHSP/HSD
+ber-versi, dijaga kebijakan keamanan & eval harness ber-ambang — dibangun
+berfase dengan gerbang terukur: data dulu, baru mata.
+================================================================================
+(TXT 3 v4.1 FINAL — set lengkap 4 berkas: TXT 00 scan->TKG · TXT 1 aturan
+berpikir · TXT 2 rumus · TXT 3 skill/API/arsitektur/data/testing/roadmap.)
+================================================================================

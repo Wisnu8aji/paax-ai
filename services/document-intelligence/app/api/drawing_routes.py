@@ -46,6 +46,9 @@ class DrawingAnalysisResponse(BaseModel):
     windows: List[str]
     quantity_candidates: List[QuantityCandidate]
     warnings: List[DrawingWarning]
+    # TKG Pipeline V1.0 (Real Data)
+    tkg_document: Optional[dict] = None
+    tkg_text: Optional[str] = None
 
 class VerifyCandidateRequest(BaseModel):
     candidate_id: str
@@ -56,51 +59,128 @@ class VerifyCandidateRequest(BaseModel):
 class BoqPreviewRequest(BaseModel):
     verified_quantities: List[dict]
 
-# --- Helper: Demo Data Generator ---
 def generate_demo_extraction(file_name: str) -> DrawingAnalysisResponse:
-    # Deterministic fallback/demo extraction based on user request
+    # TODO (Brain v4.1): Implement real PyMuPDF and OCR extraction to TKG.
+    # Mengembalikan data kosong (tanpa karangan) sesuai INV-01 dan AP-03.
     return DrawingAnalysisResponse(
         file_id=str(uuid.uuid4()),
-        classification="Architectural Floor Plan",
-        rooms=["Ruang tamu", "Kamar tidur utama", "Kamar tidur anak", "Kamar mandi", "Dapur", "Teras"],
-        doors=["Pintu Utama", "Pintu Kamar 1", "Pintu Kamar 2", "Pintu Kamar Mandi", "Pintu Dapur", "Pintu Belakang"],
-        windows=["Jendela Depan 1", "Jendela Depan 2", "Jendela Kamar 1", "Jendela Kamar 1b", "Jendela Kamar 2", "Jendela Dapur 1", "Jendela Dapur 2", "Boven Kamar Mandi"],
-        quantity_candidates=[
-            QuantityCandidate(id=str(uuid.uuid4()), quantity_name="Floor Area", unit="m2", value=150.0, source="Floor Plan calculation", confidence=0.85, linked_rab_category="pekerjaan_lantai", evidence_note="Total area bounded by exterior walls"),
-            QuantityCandidate(id=str(uuid.uuid4()), quantity_name="Ceiling Area", unit="m2", value=150.0, source="Derived from Floor Area", confidence=0.80, linked_rab_category="pekerjaan_plafon", evidence_note="Assuming flat ceiling matching floor area"),
-            QuantityCandidate(id=str(uuid.uuid4()), quantity_name="Interior Wall Paint Area", unit="m2", value=420.0, source="Wall length * standard height (3m)", confidence=0.75, linked_rab_category="pekerjaan_cat_interior", evidence_note="Estimated from interior wall segments"),
-            QuantityCandidate(id=str(uuid.uuid4()), quantity_name="Exterior Wall Paint Area", unit="m2", value=180.0, source="Perimeter * standard height (3m)", confidence=0.78, linked_rab_category="pekerjaan_cat_eksterior", evidence_note="Estimated from building perimeter minus openings"),
-            QuantityCandidate(id=str(uuid.uuid4()), quantity_name="Door Units", unit="unit", value=6.0, source="Door schedule count", confidence=0.95, linked_rab_category="pekerjaan_pintu", evidence_note="Counted 6 distinct door symbols"),
-            QuantityCandidate(id=str(uuid.uuid4()), quantity_name="Window Units", unit="unit", value=8.0, source="Window schedule count", confidence=0.95, linked_rab_category="pekerjaan_jendela", evidence_note="Counted 8 distinct window symbols"),
-            QuantityCandidate(id=str(uuid.uuid4()), quantity_name="Bathroom Fixtures", unit="set", value=2.0, source="Plumbing fixture count", confidence=0.90, linked_rab_category="pekerjaan_sanitasi", evidence_note="Counted 1 closet and 1 shower/sink set"),
-            QuantityCandidate(id=str(uuid.uuid4()), quantity_name="Roof Area", unit="m2", value=165.0, source="Floor Area + 10% overhang", confidence=0.70, linked_rab_category="pekerjaan_atap", evidence_note="Derived assumption, requires roof plan for accuracy"),
-        ],
+        classification="Unclassified",
+        rooms=[],
+        doors=[],
+        windows=[],
+        quantity_candidates=[],
         warnings=[
-            DrawingWarning(id=str(uuid.uuid4()), message="Scale not verified", level="MEDIUM", related_elements=[]),
-            DrawingWarning(id=str(uuid.uuid4()), message="Dimensions require manual validation", level="HIGH", related_elements=["all_areas"]),
-            DrawingWarning(id=str(uuid.uuid4()), message="Wall thickness not confirmed", level="LOW", related_elements=[]),
-            DrawingWarning(id=str(uuid.uuid4()), message="Openings need user verification", level="MEDIUM", related_elements=["doors", "windows"]),
-            DrawingWarning(id=str(uuid.uuid4()), message="Quantity is candidate, not final", level="INFO", related_elements=[]),
-            DrawingWarning(id=str(uuid.uuid4()), message="MEP drawing not included", level="INFO", related_elements=[]),
-            DrawingWarning(id=str(uuid.uuid4()), message="Structural drawing not included", level="INFO", related_elements=[]),
+            DrawingWarning(id=str(uuid.uuid4()), message="Sistem dalam transisi ke arsitektur TKG (Brain v4.1). Ekstraksi gambar dinonaktifkan sementara untuk menghindari data karangan (AP-01, AP-03).", level="CRITICAL", related_elements=[]),
+            DrawingWarning(id=str(uuid.uuid4()), message="Gunakan fitur Manual Takeoff atau Smart Import sampai TKG Pipeline v1.0 aktif.", level="INFO", related_elements=[])
         ]
     )
+
+import os
+import uuid
+from typing import List, Optional
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from datetime import datetime
+
+from app.processors.pdf_renderer import PdfRenderer
+from app.processors.drawing_classifier import DrawingClassifier
+from app.processors.ocr_extractor import OcrExtractor
+from app.processors.table_extractor import TableExtractor
+from app.processors.grid_extractor import GridExtractor
+from app.tkg.builder import build_tkg_from_text
 
 # --- Endpoints ---
 
 @router.post("/analyze", response_model=DrawingAnalysisResponse)
 async def analyze_drawing(req: DrawingAnalyzeRequest):
-    api_key = os.getenv("GEMINI_API_KEY")
+    # Pipeline Asli TKG (Brain v4.1)
+    file_name = req.file_metadata.file_name
     
-    # Check if we should use the real AI pipeline or fallback
-    if api_key and api_key.strip():
-        # TODO: Implement real Gemini 1.5 Pro multimodal processing here
-        # For now, we simulate real AI by adding a slight delay and returning demo data,
-        # but in production this would call the Vertex/Gemini API.
-        return generate_demo_extraction(req.file_metadata.file_name)
+    # Path mockup utk simulasi atau file sesungguhnya
+    base_path = os.getenv("UPLOAD_DIR", "/tmp/paax_uploads")
+    file_path = os.path.join(base_path, file_name)
+    
+    raw_text = ""
+    classification = "Unclassified"
+    tkg_doc = None
+    tkg_text = None
+    
+    warnings = [
+        DrawingWarning(
+            id=str(uuid.uuid4()), 
+            message="Sistem menggunakan TKG Pipeline V1.0 (Real PyMuPDF Extraction).", 
+            level="INFO", 
+            related_elements=[]
+        )
+    ]
+    
+    if os.path.exists(file_path) and file_name.endswith('.pdf'):
+        # 1. Triase & Split (SK-01)
+        pdf_processor = PdfRenderer()
+        pdf_res = pdf_processor.process(file_path)
+        
+        if pdf_res["status"] == "success" and pdf_res["sheets"]:
+            sheet = pdf_res["sheets"][0]
+            raw_text = sheet.get("raw_text", "")
+            
+            # 2. OCR Normalization (SK-10)
+            ocr = OcrExtractor()
+            ocr_res = ocr.process(raw_text)
+            normalized_text = ocr_res["normalized_text"]
+            
+            # 3. Klasifikasi (SK-02)
+            classifier = DrawingClassifier()
+            class_res = classifier.process(normalized_text)
+            classification = class_res["classification"]
+            
+            # 4. Tabel & Grid (SK-04, SK-05)
+            tables = TableExtractor().process(normalized_text)
+            grids = GridExtractor().process(normalized_text)
+            
+            # 5. Build TKG (SK-07)
+            builder_res = build_tkg_from_text(
+                project_id=req.file_metadata.project_id or "prj-123",
+                revision_id="rev-1",
+                sheet_id=sheet["sheet_id"],
+                title=file_name,
+                raw_text=normalized_text
+            )
+            
+            tkg_doc = builder_res.tkg_json
+            tkg_text = builder_res.tkg_txt
+            
+            # Tambah hasil tabel dan grid ke TKG (Mutate)
+            if tkg_doc and "sheets" in tkg_doc and len(tkg_doc["sheets"]) > 0:
+                tkg_doc["sheets"][0]["tables"].extend(tables["tables"])
+                tkg_doc["sheets"][0]["grid"]["bentang"].extend(grids["grid"]["bentang"])
+                tkg_doc["sheets"][0]["levels"].extend(grids["levels"])
+                
+            if class_res["needs_vision_fallback"]:
+                warnings.append(DrawingWarning(
+                    id=str(uuid.uuid4()), 
+                    message="Confidence klasifikasi rendah, butuh fallback vision LLM.", 
+                    level="MEDIUM", 
+                    related_elements=[]
+                ))
     else:
-        # Fallback mode
-        return generate_demo_extraction(req.file_metadata.file_name)
+        warnings.append(DrawingWarning(
+            id=str(uuid.uuid4()), 
+            message=f"File {file_name} tidak ditemukan di server. Ekstraksi kosong.", 
+            level="CRITICAL", 
+            related_elements=[]
+        ))
+
+    return DrawingAnalysisResponse(
+        file_id=str(uuid.uuid4()),
+        classification=classification,
+        rooms=[],
+        doors=[],
+        windows=[],
+        quantity_candidates=[], # Sengaja dikosongkan untuk menghindari halusinasi (AP-01)
+        warnings=warnings,
+        tkg_document=tkg_doc,
+        tkg_text=tkg_text
+    )
 
 @router.post("/classify")
 async def classify_drawing(req: DrawingAnalyzeRequest):

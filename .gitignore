@@ -62,3 +62,6 @@ ci_log.txt
 fix-genkit.js
 .codex-*.log
 reports/
+
+.claude/
+skills-lock.json

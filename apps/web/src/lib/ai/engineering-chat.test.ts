@@ -35,6 +35,45 @@ describe("engineering chat helpers", () => {
     expect(prompt).toContain("jelaskan RAB proyek ini");
   });
 
+  it("wraps supplied project context as data inside explicit delimiters", () => {
+    const projectContext = "TKG SCRIPT: [S05-EL-001] ELEMEN | K1 | as B/1";
+    const prompt = buildEngineeringChatPrompt({
+      message: "dari mana volume K1?",
+      engine: onlineEngine,
+      projectId: "p-1",
+      projectContext,
+    });
+
+    expect(prompt).toContain("<<<KONTEKS_PROYEK_MULAI>>>");
+    expect(prompt).toContain(projectContext);
+    expect(prompt).toContain("<<<KONTEKS_PROYEK_SELESAI>>>");
+  });
+
+  it("keeps chat grounded and read-only when project context is supplied", () => {
+    const prompt = buildEngineeringChatPrompt({
+      message: "berapa volume yang perlu saya pakai?",
+      engine: onlineEngine,
+      projectId: "p-1",
+      projectContext: "BOE: asumsi=2; REVIEW: volume K1 perlu cek",
+    });
+
+    expect(prompt).toContain("jawab hanya dari konteks proyek atau data Core Engine");
+    expect(prompt).toContain("Jika data tidak ada");
+    expect(prompt).toContain("jangan melakukan aritmetika baru");
+    expect(prompt).not.toContain("silakan hitung sendiri");
+  });
+
+  it("omits project context delimiters when no project context is supplied", () => {
+    const prompt = buildEngineeringChatPrompt({
+      message: "halo",
+      engine: onlineEngine,
+      projectId: "p-1",
+    });
+
+    expect(prompt).not.toContain("<<<KONTEKS_PROYEK_MULAI>>>");
+    expect(prompt).not.toContain("<<<KONTEKS_PROYEK_SELESAI>>>");
+  });
+
   it("returns a general fallback answer without forcing RAB context", () => {
     const answer = fallbackEngineeringAnswer({
       message: "halo",

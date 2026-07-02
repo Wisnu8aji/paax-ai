@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import health_routes, upload_routes, pdf_routes, excel_routes, drawing_routes
+from app.api import health_routes, upload_routes, pdf_routes, excel_routes, drawing_routes, tkg_routes
 
 app = FastAPI(title="PAAX Document Intelligence", version="0.5.0")
 
@@ -22,3 +22,4 @@ app.include_router(upload_routes.router)
 app.include_router(pdf_routes.router)
 app.include_router(excel_routes.router)
 app.include_router(drawing_routes.router)
+app.include_router(tkg_routes.router)
