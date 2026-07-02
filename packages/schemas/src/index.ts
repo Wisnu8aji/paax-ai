@@ -1437,7 +1437,13 @@ export const TakeoffParamsSchema = z.object({
   beam_len_mode: z.string().default("as_as"),
   selimut_beton_m: z.number().default(0.04),
   k_hook_sengkang: z.number().default(6.0),
+  // F-D02/F-D04/F-D08: kait pokok, lewatan, stok batang (None = tidak dihitung)
+  k_hook_utama: z.number().nullish(),
+  n_ld: z.number().nullish(),
+  l_stock_m: z.number().nullish(),
   zona_tumpuan_fraksi: z.number().default(0.25),
+  // F-D06/AP-16: waste "param" ATAU "bbs" (waste nyata) — tidak keduanya
+  waste_mode: z.enum(["param", "bbs"]).default("param"),
   waste_besi: z.number().default(0.0),
   t_pelat_default_m: z.number().nullish(),
   tol_grid: z.number().default(0.005),
@@ -1467,6 +1473,34 @@ export const TakeoffItemSchema = z.object({
 });
 export type TakeoffItem = z.infer<typeof TakeoffItemSchema>;
 
+// F-D08: Bar Bending Schedule (selaras app/tkg/takeoff.py BbsResult)
+export const BbsMarkSchema = z.object({
+  mark: z.string(),
+  kode: z.string(),
+  posisi: z.string(),
+  d_mm: z.number(),
+  panjang_m: z.number(),
+  jumlah: z.number().int(),
+  berat_kg: z.number(),
+});
+export type BbsMark = z.infer<typeof BbsMarkSchema>;
+
+export const BbsDiameterSummarySchema = z.object({
+  d_mm: z.number(),
+  n_potong: z.number().int(),
+  total_panjang_m: z.number(),
+  kebutuhan_stok_batang: z.number().int(),
+  waste_kg: z.number(),
+});
+
+export const BbsResultSchema = z.object({
+  l_stock_m: z.number(),
+  marks: z.array(BbsMarkSchema),
+  per_diameter: z.array(BbsDiameterSummarySchema),
+  total_waste_kg: z.number(),
+});
+export type BbsResult = z.infer<typeof BbsResultSchema>;
+
 export const TakeoffResultSchema = z.object({
   prj_id: z.string(),
   rev_id: z.string(),
@@ -1475,6 +1509,7 @@ export const TakeoffResultSchema = z.object({
   warnings: z.array(z.string()).default([]),
   params_used: z.array(ParamUsedSchema).default([]),
   n_needs_review: z.number().int().default(0),
+  bbs: BbsResultSchema.nullish(), // terisi hanya bila waste_mode="bbs" (F-D08)
 });
 export type TakeoffResult = z.infer<typeof TakeoffResultSchema>;
 
