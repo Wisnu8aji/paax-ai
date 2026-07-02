@@ -76,8 +76,8 @@ class RebarSpec(BaseModel):
 
 TypeKategori = Literal[
     "pondasi_telapak", "pondasi_menerus", "sloof", "kolom", "kolom_praktis",
-    "balok", "ring_balok", "latei", "plat", "tangga", "kuda_kuda", "gording",
-    "ikatan_angin", "trekstang", "lain",
+    "balok", "ring_balok", "latei", "plat", "dinding_beton", "tangga",
+    "kuda_kuda", "gording", "ikatan_angin", "trekstang", "lain",
 ]
 
 

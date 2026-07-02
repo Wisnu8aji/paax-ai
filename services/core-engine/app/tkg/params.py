@@ -54,6 +54,9 @@ class TakeoffParams(BaseModel):
     t_pelat_default_m: Optional[float] = None
     # F-C04 (balok penopang pelat): butuh t pelat. Tak disetor -> pakai rumus
     # balok tanpa pelat (b + 2h) dan dicatat sebagai assumption.
+    h_kategori_perancah_m: Optional[float] = None
+    # F-C10: tinggi kategori perancah untuk memilih varian AHSP. Tidak membuat
+    # volume; hanya dicatat bila perancah terpisah dihitung.
 
     # Validasi grid
     tol_grid: float = 0.005

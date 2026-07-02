@@ -12,8 +12,9 @@ default global (AP-E-04). theta >= 90 derajat -> tidak masuk akal -> review.
 """
 from __future__ import annotations
 import math
-from typing import List
+from typing import Dict, List
 
+from ..tkg.params import ParamUsed
 from .models import ArsitekturRequest, ManualTakeoffResult, TakeoffLine
 
 
@@ -23,7 +24,14 @@ def _r4(x: float) -> float:
 
 def takeoff_arsitektur(req: ArsitekturRequest) -> ManualTakeoffResult:
     items: List[TakeoffLine] = []
+    assumptions: List[str] = []
     warnings: List[str] = []
+    params_used: Dict[str, ParamUsed] = {}
+    p = req.params
+
+    def pakai(nama: str, nilai, catatan: str) -> None:
+        if nama not in params_used:
+            params_used[nama] = ParamUsed(nama=nama, nilai=nilai, catatan=catatan)
 
     # F-G01 pondasi batu belah menerus
     for pb in req.pondasi_batu:
@@ -81,8 +89,70 @@ def takeoff_arsitektur(req: ArsitekturRequest) -> ManualTakeoffResult:
             rule_id="F-G05",
         ))
 
+    # F-G02 aanstamping / batu kosong
+    for aa in req.aanstamping:
+        v = aa.a_bawah_m * aa.t_aanstamping_m * aa.panjang_m
+        items.append(TakeoffLine(
+            kode=aa.kode, work="aanstamping", quantity=_r4(v), unit="m3",
+            formula="a_bawah x t_aanstamping x L",
+            detail=f"{aa.a_bawah_m:g} x {aa.t_aanstamping_m:g} x {aa.panjang_m:g} = {_r4(v):g} m3",
+            rule_id="F-G02",
+        ))
+
+    # F-G04 keramik dinding area basah
+    for kd in req.keramik_dinding:
+        h = kd.h_pasang_m
+        if h is None:
+            h = p.h_pasang_keramik
+            pakai("h_pasang_keramik", h, "tinggi pasang keramik dinding basah")
+            assumptions.append(
+                f"{kd.kode}: h_pasang_keramik={h:g} m dari parameter karena item tidak menyetor tinggi (F-G04)"
+            )
+        a = kd.keliling_basah_m * h - kd.bukaan_m2
+        if a < 0:
+            warnings.append(f"{kd.kode}: bukaan lebih besar dari bidang keramik; quantity diset 0 (F-K07)")
+            a = 0.0
+        items.append(TakeoffLine(
+            kode=kd.kode, work="keramik_dinding_basah", quantity=_r4(a), unit="m2",
+            formula="K_basah x h_pasang - Σ bukaan",
+            detail=f"{kd.keliling_basah_m:g} x {h:g} - {kd.bukaan_m2:g} = {_r4(a):g} m2",
+            rule_id="F-G04",
+        ))
+
+    # F-G09 plafon + rangka + list
+    for pl in req.plafon:
+        items.append(TakeoffLine(
+            kode=pl.kode, work="plafon", quantity=_r4(pl.a_neto_m2), unit="m2",
+            formula="A = A_neto", detail=f"A_neto={pl.a_neto_m2:g} m2", rule_id="F-G09",
+        ))
+        items.append(TakeoffLine(
+            kode=pl.kode, work="rangka_plafon", quantity=_r4(pl.a_neto_m2), unit="m2",
+            formula="rangka = A_neto", detail=f"A_neto={pl.a_neto_m2:g} m2", rule_id="F-G09",
+        ))
+        items.append(TakeoffLine(
+            kode=pl.kode, work="list_plafon", quantity=_r4(pl.keliling_tepi_m), unit="m",
+            formula="Σ keliling tepi plafon", detail=f"{pl.keliling_tepi_m:g} m", rule_id="F-G09",
+        ))
+
+    # F-G10 waterproofing + upstand
+    for wp in req.waterproofing:
+        h = wp.h_upstand_m
+        if h is None:
+            h = p.h_upstand
+            pakai("h_upstand", h, "tinggi upstand waterproofing")
+            assumptions.append(
+                f"{wp.kode}: h_upstand={h:g} m dari parameter karena item tidak menyetor tinggi upstand (F-G10)"
+            )
+        a = wp.a_bidang_m2 + wp.keliling_upstand_m * h
+        items.append(TakeoffLine(
+            kode=wp.kode, work="waterproofing", quantity=_r4(a), unit="m2",
+            formula="A_bidang + K_upstand x h_upstand",
+            detail=f"{wp.a_bidang_m2:g} + {wp.keliling_upstand_m:g} x {h:g} = {_r4(a):g} m2",
+            rule_id="F-G10",
+        ))
+
     n_review = sum(1 for i in items if i.needs_review)
     return ManualTakeoffResult(
-        domain="arsitektur", items=items, assumptions=[], warnings=warnings,
-        params_used=[], n_needs_review=n_review,
+        domain="arsitektur", items=items, assumptions=sorted(set(assumptions)), warnings=warnings,
+        params_used=list(params_used.values()), n_needs_review=n_review,
     )

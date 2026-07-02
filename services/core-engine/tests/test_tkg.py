@@ -266,17 +266,20 @@ def test_takeoff_waste_besi_param():
 # ─── D3: kait + lewatan + pinggang (F-D02/F-D04) + BBS (F-D08) ────────────────
 
 def _doc_satu_elemen(kode: str, dimensi: dict, tulangan: list,
-                     panjang_m: float | None = None) -> TkgDocument:
+                     panjang_m: float | None = None, n: int = 1,
+                     kategori: str | None = None,
+                     satuan_dimensi: str = "mm") -> TkgDocument:
     """Dokumen minimal: satu elemen + satu record (untuk anchor besi terisolasi)."""
     denah = TkgSheet(
         sheet_id="S01", jenis="denah", meta=SheetMeta(judul="DENAH UJI"),
-        elements=[ElementInstance(kode=kode, alamat="as A/1", n=1, panjang_m=panjang_m)],
+        elements=[ElementInstance(kode=kode, alamat="as A/1", n=n, panjang_m=panjang_m)],
     )
     tabel = TkgSheet(
         sheet_id="S02", jenis="tabel", meta=SheetMeta(judul="TABEL UJI"),
         tables=[TkgTable(judul="TABEL", records=[
-            TypeRecord(kode=kode, dimensi=dimensi, satuan_dimensi="mm",
-                       mutu_beton="fc' 25", tulangan=tulangan),
+            TypeRecord(kode=kode, kategori=kategori, dimensi=dimensi,
+                       satuan_dimensi=satuan_dimensi, mutu_beton="fc' 25",
+                       tulangan=tulangan),
         ])],
     )
     return TkgDocument(prj_id="PRJ-D3", rev_id="R0", sheets=[denah, tabel])
@@ -376,3 +379,110 @@ def test_bbs_elemen_review_tidak_menyumbang_potongan():
     r = takeoff_tkg(doc, TakeoffParams(l_stock_m=12, waste_mode="bbs"))
     assert _items(r, "B1", "besi")[0].needs_review is True
     assert r.bbs is not None and r.bbs.marks == []
+
+
+# --- TKG advanced structure: F-B11 + F-C07..C10 ---
+
+def test_fc07_dinding_beton_dua_sisi_dikurangi_bukaan():
+    # Manual anchor: 2 x (H 3 x L 10) - 2 x bukaan 2 = 56 m2.
+    doc = _doc_satu_elemen(
+        "DW1",
+        {"panjang_m": 10, "tinggi_m": 3, "t_m": 0.2, "bukaan_m2": 2},
+        [],
+        kategori="dinding_beton",
+        satuan_dimensi="m",
+    )
+    r = takeoff_tkg(doc)
+    bekisting = _items(r, "DW1", "bekisting")
+    assert bekisting[0].quantity == pytest.approx(56.0)
+    assert bekisting[0].rule_id == "F-C07"
+
+
+def test_fc08_kolom_tempel_mengurangi_sisi_tempel():
+    # Manual anchor: (2 x (0.3 + 0.4) - 0.4) x 3 x 2 = 6 m2.
+    doc = _doc_satu_elemen(
+        "K3",
+        {"b": 300, "h": 400, "tinggi": 3000, "sisi_tempel_m": 0.4},
+        [],
+        n=2,
+    )
+    r = takeoff_tkg(doc)
+    bekisting = _items(r, "K3", "bekisting")
+    assert bekisting[0].quantity == pytest.approx(6.0)
+    assert bekisting[0].rule_id == "F-C08"
+
+
+def test_fb11_fc09_tangga_dihitung_bila_detail_lengkap():
+    # Beton: volume_beton_m3 disetor eksplisit, bukan dihitung dari data kurang.
+    # Bekisting manual: 1.2x5 + 2x(0.12x5) + 0.17x1.2x15 + 0.8 = 11.06 m2.
+    doc = _doc_satu_elemen(
+        "TG1",
+        {
+            "volume_beton_m3": 2.4,
+            "lebar_m": 1.2,
+            "p_miring_m": 5,
+            "t_pelat_m": 0.12,
+            "optrede_m": 0.17,
+            "n_anak": 15,
+            "a_bordes_bawah_m2": 0.8,
+        },
+        [],
+        kategori="tangga",
+        satuan_dimensi="m",
+    )
+    r = takeoff_tkg(doc)
+    beton = _items(r, "TG1", "beton")
+    assert beton[0].quantity == pytest.approx(2.4)
+    assert beton[0].rule_id == "F-B11"
+    bekisting = _items(r, "TG1", "bekisting")
+    assert bekisting[0].quantity == pytest.approx(11.06)
+    assert bekisting[0].rule_id == "F-C09"
+
+
+def test_fb11_tangga_detail_kurang_jadi_review():
+    doc = _doc_satu_elemen(
+        "TG2",
+        {"lebar_m": 1.2, "p_miring_m": 5},
+        [],
+        kategori="tangga",
+        satuan_dimensi="m",
+    )
+    r = takeoff_tkg(doc)
+    beton = _items(r, "TG2", "beton")
+    assert beton[0].needs_review is True
+    assert beton[0].quantity is None
+    assert beton[0].rule_id == "F-B11"
+
+
+def test_fc10_perancah_terpisah_dan_anti_double_count():
+    # Manual anchor: A_pelat 50 + A_dasar_balok 12 = 62 m2 bila AHSP belum include perancah.
+    doc = _doc_satu_elemen(
+        "S3",
+        {
+            "panjang": 5000,
+            "lebar": 10000,
+            "t": 120,
+            "a_pelat_didukung_m2": 50,
+            "a_dasar_balok_m2": 12,
+        },
+        [],
+    )
+    r = takeoff_tkg(doc)
+    perancah = [i for i in r.items if i.kode == "S3" and i.rule_id == "F-C10"]
+    assert perancah[0].quantity == pytest.approx(62.0)
+
+    doc_include = _doc_satu_elemen(
+        "S3",
+        {
+            "panjang": 5000,
+            "lebar": 10000,
+            "t": 120,
+            "a_pelat_didukung_m2": 50,
+            "a_dasar_balok_m2": 12,
+            "ahsp_bekisting_includes_perancah": 1,
+        },
+        [],
+    )
+    r_include = takeoff_tkg(doc_include)
+    assert [i for i in r_include.items if i.rule_id == "F-C10"] == []
+    assert any("perancah" in a and "termasuk" in a for a in r_include.assumptions)

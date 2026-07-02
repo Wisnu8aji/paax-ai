@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CoreEngineError } from "./core-engine-client";
-import { fetchSchedulePlan, simulateScenarioCustom } from "./engine";
+import { fetchSchedulePlan, simulateScenarioCustom, triageReviewTasks } from "./engine";
 
 describe("Core Engine client wiring", () => {
   afterEach(() => {
@@ -146,6 +146,49 @@ describe("Core Engine client wiring", () => {
       lines: [{ ahsp_code: "AHSP.CK.001", volume: 50, workers: 5 }],
     });
     expect(result.custom).toEqual(engineResult.custom);
+  });
+
+  it("posts review triage requests and returns deterministic tasks unchanged", async () => {
+    let capturedUrl = "";
+    let capturedBody: unknown;
+    const engineResult = {
+      project_id: "PRJ-REV",
+      tasks: [{
+        id: "rev_1",
+        project_id: "PRJ-REV",
+        target_ref: "WI-1",
+        target_type: "work_item",
+        reasons: ["RULE-TRI-01:LOW_CONFIDENCE"],
+        priority: 0.45,
+        impact_score: 0.9,
+        uncertainty_score: 0.5,
+        status: "open",
+      }],
+    };
+
+    vi.stubGlobal("fetch", async (url: string | URL | Request, init?: RequestInit) => {
+      capturedUrl = String(url);
+      capturedBody = JSON.parse(String(init?.body));
+      return new Response(JSON.stringify(engineResult), { status: 200 });
+    });
+
+    const request = {
+      project_id: "PRJ-REV",
+      ambang_conf: 0.7,
+      candidates: [{
+        target_ref: "WI-1",
+        target_type: "work_item" as const,
+        impact_score: 0.9,
+        uncertainty_score: 0.5,
+        confidence: 0.55,
+      }],
+    };
+
+    const result = await triageReviewTasks(request);
+
+    expect(capturedUrl).toBe("http://127.0.0.1:8081/review/triage");
+    expect(capturedBody).toEqual(request);
+    expect(result).toEqual(engineResult);
   });
 
   it("throws CoreEngineError when the engine cannot be reached", async () => {

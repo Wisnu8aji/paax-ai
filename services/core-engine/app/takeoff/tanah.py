@@ -132,6 +132,49 @@ def takeoff_tanah(req: TanahRequest) -> ManualTakeoffResult:
             rule_id=rule,
         ))
 
+    # F-F06 pemadatan: kuantitas mengikuti satuan AHSP (m2 atau m3 padat).
+    for pm in req.pemadatan:
+        kelas = pm.kelas_jarak_angkut
+        if kelas is None and pm.jarak_angkut_km is not None:
+            ctx.pakai("jarak_dekat_max_km", p.jarak_dekat_max_km, "batas kelas jarak dekat")
+            ctx.pakai("jarak_sedang_max_km", p.jarak_sedang_max_km, "batas kelas jarak sedang")
+            if pm.jarak_angkut_km <= p.jarak_dekat_max_km:
+                kelas = "dekat"
+            elif pm.jarak_angkut_km <= p.jarak_sedang_max_km:
+                kelas = "sedang"
+            else:
+                kelas = "jauh"
+        if pm.quantity_basis == "area":
+            if pm.area_m2 is None:
+                ctx.items.append(TakeoffLine(
+                    kode=pm.kode, work="pemadatan", unit="m2",
+                    formula="Q = A bila AHSP pemadatan berbasis area", detail="-",
+                    needs_review=True, review_reason="area_m2 wajib untuk pemadatan berbasis area",
+                    rule_id="F-F06",
+                ))
+                continue
+            qty = pm.area_m2
+            unit = "m2"
+            detail_qty = f"A={pm.area_m2:g} m2"
+        else:
+            if pm.volume_padat_m3 is None:
+                ctx.items.append(TakeoffLine(
+                    kode=pm.kode, work="pemadatan", unit="m3 (padat)",
+                    formula="Q = V_padat bila AHSP pemadatan berbasis volume", detail="-",
+                    needs_review=True, review_reason="volume_padat_m3 wajib untuk pemadatan berbasis volume",
+                    rule_id="F-F06",
+                ))
+                continue
+            qty = pm.volume_padat_m3
+            unit = "m3 (padat)"
+            detail_qty = f"V_padat={pm.volume_padat_m3:g} m3"
+        detail_jarak = f"; kelas jarak={kelas}" if kelas else ""
+        ctx.items.append(TakeoffLine(
+            kode=pm.kode, work="pemadatan", quantity=_r4(qty), unit=unit,
+            formula="Q=A atau V_padat sesuai satuan AHSP",
+            detail=f"{detail_qty}{detail_jarak}", rule_id="F-F06",
+        ))
+
     n_review = sum(1 for i in ctx.items if i.needs_review)
     return ManualTakeoffResult(
         domain="tanah", items=ctx.items,

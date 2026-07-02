@@ -16,7 +16,7 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel, Field
 
 from ..tkg.params import ParamUsed
-from .params import ArsitekturParams, DindingParams, TanahParams
+from .params import ArsitekturParams, AtapParams, BajaParams, DindingParams, MepParams, TanahParams
 
 
 # ─── Hasil umum ───────────────────────────────────────────────────────────────
@@ -34,7 +34,7 @@ class TakeoffLine(BaseModel):
 
 
 class ManualTakeoffResult(BaseModel):
-    domain: Literal["tanah", "dinding", "arsitektur"]
+    domain: Literal["tanah", "dinding", "arsitektur", "baja", "atap", "kusen", "mep"]
     items: List[TakeoffLine] = Field(default_factory=list)
     assumptions: List[str] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)
@@ -73,10 +73,20 @@ class UruganLapis(BaseModel):
     # material = V_padat (JANGAN dikali f_susut lagi; AP anti-dobel).
 
 
+class Pemadatan(BaseModel):
+    kode: str
+    quantity_basis: Literal["area", "volume"]
+    area_m2: Optional[float] = None
+    volume_padat_m3: Optional[float] = None
+    jarak_angkut_km: Optional[float] = None
+    kelas_jarak_angkut: Optional[Literal["dekat", "sedang", "jauh"]] = None
+
+
 class TanahRequest(BaseModel):
     footplats: List[GalianFootplat] = Field(default_factory=list)
     galian_menerus: List[GalianMenerus] = Field(default_factory=list)
     urugan: List[UruganLapis] = Field(default_factory=list)
+    pemadatan: List[Pemadatan] = Field(default_factory=list)
     params: TanahParams = Field(default_factory=TanahParams)
 
 
@@ -105,9 +115,24 @@ class ScreedBidang(BaseModel):
     t: float                               # tebal screed (m)
 
 
+class SponninganLine(BaseModel):
+    kode: str
+    panjang_m: float
+    jumlah: int = 1
+
+
+class PraktisPanel(BaseModel):
+    kode: str
+    panjang_segmen_m: float
+    tinggi_m: float
+    luas_panel_m2: Optional[float] = None
+
+
 class DindingRequest(BaseModel):
     dinding: List[DindingBidang] = Field(default_factory=list)
     screed: List[ScreedBidang] = Field(default_factory=list)
+    sponningan: List[SponninganLine] = Field(default_factory=list)
+    praktis: List[PraktisPanel] = Field(default_factory=list)
     params: DindingParams = Field(default_factory=DindingParams)
 
 
@@ -135,8 +160,166 @@ class AtapMiring(BaseModel):
     theta_deg: float                       # sudut kemiringan atap (derajat)
 
 
+class Aanstamping(BaseModel):
+    kode: str
+    a_bawah_m: float
+    t_aanstamping_m: float
+    panjang_m: float
+
+
+class KeramikDindingBasah(BaseModel):
+    kode: str
+    keliling_basah_m: float
+    h_pasang_m: Optional[float] = None
+    bukaan_m2: float = 0.0
+
+
+class PlafonBidang(BaseModel):
+    kode: str
+    a_neto_m2: float
+    keliling_tepi_m: float = 0.0
+
+
+class WaterproofingBidang(BaseModel):
+    kode: str
+    a_bidang_m2: float
+    keliling_upstand_m: float = 0.0
+    h_upstand_m: Optional[float] = None
+
+
 class ArsitekturRequest(BaseModel):
     pondasi_batu: List[PondasiBatu] = Field(default_factory=list)
     lantai: List[PenutupLantai] = Field(default_factory=list)
     atap: List[AtapMiring] = Field(default_factory=list)
+    aanstamping: List[Aanstamping] = Field(default_factory=list)
+    keramik_dinding: List[KeramikDindingBasah] = Field(default_factory=list)
+    plafon: List[PlafonBidang] = Field(default_factory=list)
+    waterproofing: List[WaterproofingBidang] = Field(default_factory=list)
     params: ArsitekturParams = Field(default_factory=ArsitekturParams)
+
+
+# Baja profil / atap detail
+class ProfileData(BaseModel):
+    kg_per_m: float
+    perimeter_m: Optional[float] = None
+
+
+class BajaMember(BaseModel):
+    kode: str
+    designation: str
+    length_m: float
+    qty: int = 1
+
+
+class BuiltUpPlate(BaseModel):
+    kode: str
+    t_m: float
+    width_m: float
+    length_m: float
+    qty: int = 1
+
+
+class BajaRequest(BaseModel):
+    profile_table: dict[str, ProfileData] = Field(default_factory=dict)
+    members: List[BajaMember] = Field(default_factory=list)
+    builtup_plates: List[BuiltUpPlate] = Field(default_factory=list)
+    paint_members: List[BajaMember] = Field(default_factory=list)
+    params: BajaParams = Field(default_factory=BajaParams)
+
+
+class RoofLine(BaseModel):
+    kode: str
+    work: Literal["nok", "lisplank", "talang"]
+    length_m: float
+    qty: int = 1
+
+
+class GordingInput(BaseModel):
+    kode: str
+    l_miring_sisi_m: float
+    s_gording_m: float
+    l_arah_gording_m: float
+    n_sisi_atap: int = 1
+
+
+class TrekstangInput(BaseModel):
+    kode: str
+    panjang_per_batang_m: float
+    jumlah: int
+
+
+class IkatanAngin(BaseModel):
+    kode: str
+    a_m: float
+    b_m: float
+    qty: int = 1
+
+
+class DownpipeArea(BaseModel):
+    kode: str
+    a_atap_m2: float
+    count: Optional[int] = None
+
+
+class AtapDetailRequest(BaseModel):
+    garis: List[RoofLine] = Field(default_factory=list)
+    gording: List[GordingInput] = Field(default_factory=list)
+    trekstang: List[TrekstangInput] = Field(default_factory=list)
+    ikatan_angin: List[IkatanAngin] = Field(default_factory=list)
+    downpipes: List[DownpipeArea] = Field(default_factory=list)
+    params: AtapParams = Field(default_factory=AtapParams)
+
+
+# Kusen / MEP / railing
+class AccessoryInput(BaseModel):
+    nama: str
+    per_unit: float
+    unit: str = "bh"
+
+
+class KusenScheduleItem(BaseModel):
+    kode: str
+    tipe: str
+    width_m: float
+    height_m: float
+    qty: int
+    qty_counted: Optional[int] = None
+    hitung_kusen_perimeter: bool = True
+    hitung_daun_area: bool = False
+    hitung_kaca_area: bool = False
+    accessories: List[AccessoryInput] = Field(default_factory=list)
+
+
+class KusenRequest(BaseModel):
+    items: List[KusenScheduleItem] = Field(default_factory=list)
+
+
+class RailingLine(BaseModel):
+    kode: str
+    length_m: float
+    qty: int = 1
+
+
+class MepPoint(BaseModel):
+    kode: str
+    jenis: str
+    count: int
+
+
+class PipeRoute(BaseModel):
+    kode: str
+    length_m: float
+    qty: int = 1
+
+
+class MepFixtureFallback(BaseModel):
+    kode: str
+    fixture_count: int
+
+
+class MepRequest(BaseModel):
+    railing: List[RailingLine] = Field(default_factory=list)
+    points: List[MepPoint] = Field(default_factory=list)
+    pipe_routes: List[PipeRoute] = Field(default_factory=list)
+    fixture_fallbacks: List[MepFixtureFallback] = Field(default_factory=list)
+    params: MepParams = Field(default_factory=MepParams)

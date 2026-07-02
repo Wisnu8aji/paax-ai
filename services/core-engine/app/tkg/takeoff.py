@@ -119,6 +119,7 @@ def berat_per_meter(d_mm: float) -> float:
 _PREFIKS: List[Tuple[str, str]] = [
     # urut dari yang terpanjang supaya "SL1" tidak tertangkap "S"
     ("LATEI", "latei"), ("LINTEL", "latei"), ("GORDING", "gording"),
+    ("DB", "dinding_beton"), ("DW", "dinding_beton"),
     ("PC", "pondasi_telapak"), ("SL", "sloof"), ("KP", "kolom_praktis"),
     ("RB", "ring_balok"), ("CG", "balok"), ("CB", "balok"), ("BL", "latei"),
     ("LT", "latei"), ("TG", "tangga"), ("KD", "kuda_kuda"), ("JR", "kuda_kuda"),
@@ -142,7 +143,7 @@ def kategori_dari_kode(kode: str) -> Optional[str]:
 
 _KATEGORI_BETON = {
     "kolom", "kolom_praktis", "sloof", "balok", "ring_balok", "latei",
-    "plat", "pondasi_telapak", "tangga",
+    "plat", "pondasi_telapak", "dinding_beton", "tangga",
 }
 _KATEGORI_RUAS = {"sloof", "balok", "ring_balok", "latei"}
 
@@ -206,6 +207,44 @@ def _dim_m(rec: TypeRecord, kunci: str) -> Optional[float]:
     if v is None:
         return None
     return ke_meter(v, rec.satuan_dimensi)
+
+
+def _dim_any_m(rec: TypeRecord, *kunci: str) -> Optional[float]:
+    """Ambil panjang eksplisit; nama berakhiran _m selalu dianggap meter."""
+    for k in kunci:
+        v = rec.dimensi.get(k)
+        if v is None:
+            continue
+        return float(v) if k.endswith("_m") else ke_meter(v, rec.satuan_dimensi)
+    return None
+
+
+def _area_m2(rec: TypeRecord, *kunci: str, default: Optional[float] = None) -> Optional[float]:
+    """Ambil luas eksplisit m2. Field area TKG wajib bernama *_m2 agar tidak dikonversi unit panjang."""
+    for k in kunci:
+        v = rec.dimensi.get(k)
+        if v is not None:
+            return float(v)
+    return default
+
+
+def _count_direct(rec: TypeRecord, *kunci: str) -> Optional[int]:
+    for k in kunci:
+        v = rec.dimensi.get(k)
+        if v is not None:
+            return int(v)
+    return None
+
+
+def _sisi_tempel_m(rec: TypeRecord) -> float:
+    total = 0.0
+    for k, v in rec.dimensi.items():
+        if k == "sisi_tempel_m" or k.startswith("sisi_tempel_m_"):
+            total += float(v)
+    sisi_lama = _dim_m(rec, "sisi_tempel")
+    if sisi_lama is not None:
+        total += sisi_lama
+    return total
 
 
 def _panjang_ruas_m(ctx: _Ctx, el: ElementInstance, rec: TypeRecord) -> Tuple[Optional[float], str]:
@@ -314,6 +353,31 @@ def _beton(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str) -> Op
         ))
         return None
 
+    if kategori == "dinding_beton":
+        p = _dim_any_m(rec, "panjang_m", "panjang")
+        tinggi = _dim_any_m(rec, "tinggi_m", "tinggi", "h")
+        t = _dim_any_m(rec, "t_m", "t")
+        bukaan = _area_m2(rec, "bukaan_m2", "luas_bukaan_m2", default=0.0)
+        if p is None or tinggi is None or t is None or bukaan is None:
+            _tambah_review(ctx, el, rec, kategori, "beton", "m3",
+                           f"dinding beton butuh panjang, tinggi, tebal, bukaan_m2 "
+                           f"(ada: {rec.dimensi})", "F-B08")
+            return None
+        luas_neto = p * tinggi - bukaan
+        if luas_neto < 0:
+            _tambah_review(ctx, el, rec, kategori, "beton", "m3",
+                           f"luas bukaan {bukaan:g} m2 melebihi luas bruto {p * tinggi:g} m2", "F-B08")
+            return None
+        v = luas_neto * t * el.n
+        ctx.items.append(TakeoffItem(
+            kode=el.kode, lantai=el.lantai, kategori=kategori, work_type="beton",
+            quantity=_r4(v), unit="m3",
+            formula="(H_w x L_w - sum A_bukaan) x t_w x jumlah",
+            detail=f"(({tinggi:g} x {p:g}) - {bukaan:g}) x {t:g} x {el.n} = {_r4(v):g} m3",
+            mutu_beton=rec.mutu_beton, alamat=el.alamat, rule_id="F-B08",
+        ))
+        return None
+
     if kategori == "pondasi_telapak":
         pb, lb = _dim_m(rec, "panjang_bawah"), _dim_m(rec, "lebar_bawah")
         pa, la = _dim_m(rec, "panjang_atas"), _dim_m(rec, "lebar_atas")
@@ -337,6 +401,18 @@ def _beton(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str) -> Op
             kode=el.kode, lantai=el.lantai, kategori=kategori, work_type="beton",
             quantity=r.volume, unit=r.unit, formula=r.formula, detail=r.detail,
             mutu_beton=rec.mutu_beton, alamat=el.alamat, rule_id=rule,
+        ))
+        return None
+
+    if kategori == "tangga" and rec.dimensi.get("volume_beton_m3") is not None:
+        volume = float(rec.dimensi["volume_beton_m3"])
+        v = volume * el.n
+        ctx.items.append(TakeoffItem(
+            kode=el.kode, lantai=el.lantai, kategori=kategori, work_type="beton",
+            quantity=_r4(v), unit="m3",
+            formula="V_tangga_disetor x jumlah",
+            detail=f"{volume:g} x {el.n} = {_r4(v):g} m3",
+            mutu_beton=rec.mutu_beton, alamat=el.alamat, rule_id="F-B11",
         ))
         return None
 
@@ -364,13 +440,28 @@ def _bekisting(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
             _tambah_review(ctx, el, rec, kategori, "bekisting", "m2",
                            "butuh b, h, dan tinggi kolom", "F-C01")
             return
-        a = 2 * (b + h) * panjang_efektif * el.n
+        sisi_tempel = _sisi_tempel_m(rec)
+        lebar_kontak = 2 * (b + h) - sisi_tempel
+        if lebar_kontak <= 0:
+            _tambah_review(ctx, el, rec, kategori, "bekisting", "m2",
+                           f"lebar sisi tempel {sisi_tempel:g} m membuat bidang kontak <= 0", "F-C08")
+            return
+        a = lebar_kontak * panjang_efektif * el.n
+        if sisi_tempel > 0:
+            formula = "(2 x (b + h) - sum sisi_tempel) x Lk x jumlah"
+            detail = (f"(2 x ({b:g} + {h:g}) - {sisi_tempel:g}) x "
+                      f"{panjang_efektif:g} x {el.n} = {_r4(a):g} m2")
+            rule = "F-C08"
+        else:
+            formula = "2 x (b + h) x Lk x jumlah"
+            detail = f"2 x ({b:g} + {h:g}) x {panjang_efektif:g} x {el.n} = {_r4(a):g} m2"
+            rule = "F-C01"
         ctx.items.append(TakeoffItem(
             kode=el.kode, lantai=el.lantai, kategori=kategori, work_type="bekisting",
             quantity=_r4(a), unit="m2",
-            formula="2 x (b + h) x Lk x jumlah",
-            detail=f"2 x ({b:g} + {h:g}) x {panjang_efektif:g} x {el.n} = {_r4(a):g} m2",
-            alamat=el.alamat, rule_id="F-C01",
+            formula=formula,
+            detail=detail,
+            alamat=el.alamat, rule_id=rule,
         ))
         return
 
@@ -440,6 +531,52 @@ def _bekisting(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
         ))
         return
 
+    if kategori == "dinding_beton":
+        p = _dim_any_m(rec, "panjang_m", "panjang")
+        tinggi = _dim_any_m(rec, "tinggi_m", "tinggi", "h")
+        bukaan = _area_m2(rec, "bukaan_m2", "luas_bukaan_m2", default=0.0)
+        if p is None or tinggi is None or bukaan is None:
+            _tambah_review(ctx, el, rec, kategori, "bekisting", "m2",
+                           f"dinding beton butuh panjang, tinggi, bukaan_m2 (ada: {rec.dimensi})", "F-C07")
+            return
+        a = (2 * (tinggi * p) - 2 * bukaan) * el.n
+        if a < 0:
+            _tambah_review(ctx, el, rec, kategori, "bekisting", "m2",
+                           f"luas bukaan {bukaan:g} m2 melebihi luas bruto {tinggi * p:g} m2", "F-C07")
+            return
+        ctx.items.append(TakeoffItem(
+            kode=el.kode, lantai=el.lantai, kategori=kategori, work_type="bekisting",
+            quantity=_r4(a), unit="m2",
+            formula="2 x (H_w x L_w) - 2 x sum A_bukaan, x jumlah",
+            detail=f"(2 x ({tinggi:g} x {p:g}) - 2 x {bukaan:g}) x {el.n} = {_r4(a):g} m2",
+            alamat=el.alamat, rule_id="F-C07",
+        ))
+        return
+
+    if kategori == "tangga":
+        lebar = _dim_any_m(rec, "lebar_m", "lebar")
+        p_miring = _dim_any_m(rec, "p_miring_m", "p_miring")
+        t_pelat = _dim_any_m(rec, "t_pelat_m", "t_pelat", "t")
+        optrede = _dim_any_m(rec, "optrede_m", "optrede")
+        n_anak = _count_direct(rec, "n_anak", "jumlah_anak")
+        bordes = _area_m2(rec, "a_bordes_bawah_m2", "bordes_bawah_m2")
+        if None in (lebar, p_miring, t_pelat, optrede, n_anak, bordes):
+            _tambah_review(ctx, el, rec, kategori, "bekisting", "m2",
+                           "bekisting tangga butuh lebar_m, p_miring_m, t_pelat_m, "
+                           "optrede_m, n_anak, a_bordes_bawah_m2", "F-C09")
+            return
+        a = (lebar * p_miring + 2 * (t_pelat * p_miring) +
+             optrede * lebar * n_anak + bordes) * el.n
+        ctx.items.append(TakeoffItem(
+            kode=el.kode, lantai=el.lantai, kategori=kategori, work_type="bekisting",
+            quantity=_r4(a), unit="m2",
+            formula="b_tga x P_miring + 2 x (t_plat x P_miring) + optrede x b_tga x n_anak + A_bordes_bawah",
+            detail=(f"({lebar:g} x {p_miring:g}) + 2 x ({t_pelat:g} x {p_miring:g}) + "
+                    f"{optrede:g} x {lebar:g} x {n_anak} + {bordes:g}, x {el.n} = {_r4(a):g} m2"),
+            alamat=el.alamat, rule_id="F-C09",
+        ))
+        return
+
     if kategori == "pondasi_telapak":
         p = _dim_m(rec, "panjang") or _dim_m(rec, "panjang_bawah")
         l = _dim_m(rec, "lebar") or _dim_m(rec, "lebar_bawah")
@@ -460,6 +597,35 @@ def _bekisting(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
 
 
 # ─── Besi (F-D) ───────────────────────────────────────────────────────────────
+
+def _perancah(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str) -> None:
+    a_pelat = _area_m2(rec, "a_pelat_didukung_m2", default=None)
+    a_balok = _area_m2(rec, "a_dasar_balok_m2", default=None)
+    if a_pelat is None and a_balok is None:
+        return
+
+    if rec.dimensi.get("ahsp_bekisting_includes_perancah", 0) > 0:
+        ctx.assumptions.append(
+            f"{el.kode}: perancah tidak ditambah sebagai line F-C10 karena AHSP bekisting ditandai termasuk perancah")
+        return
+
+    q = ((a_pelat or 0.0) + (a_balok or 0.0)) * el.n
+    if q <= 0:
+        _tambah_review(ctx, el, rec, kategori, "bekisting", "m2",
+                       "perancah F-C10 disetor tetapi total A_pelat_didukung_m2 + A_dasar_balok_m2 <= 0",
+                       "F-C10")
+        return
+    if ctx.params.h_kategori_perancah_m is not None:
+        ctx.pakai_param("h_kategori_perancah_m", ctx.params.h_kategori_perancah_m,
+                        "tinggi kategori perancah untuk memilih varian AHSP (F-C10)")
+    ctx.items.append(TakeoffItem(
+        kode=el.kode, lantai=el.lantai, kategori=kategori, work_type="bekisting",
+        quantity=_r4(q), unit="m2",
+        formula="A_pelat_didukung + A_dasar_balok, x jumlah",
+        detail=f"({a_pelat or 0:g} + {a_balok or 0:g}) x {el.n} = {_r4(q):g} m2",
+        alamat=el.alamat, rule_id="F-C10",
+    ))
+
 
 def _f_waste(ctx: _Ctx) -> float:
     """F-D06: mode 'param' -> 1 + waste_besi ; mode 'bbs' -> 1 (waste nyata F-D08)."""
@@ -802,6 +968,7 @@ def takeoff_tkg(doc: TkgDocument, params: TakeoffParams | None = None) -> Takeof
 
             panjang_efektif = _beton(ctx, el, rec, kategori)
             _bekisting(ctx, el, rec, kategori, panjang_efektif)
+            _perancah(ctx, el, rec, kategori)
             _besi(ctx, el, rec, kategori, panjang_efektif)
 
     n_review = sum(1 for i in ctx.items if i.needs_review)
