@@ -5,6 +5,7 @@ import { Loader2, Send, Sparkles } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { Card } from '@/components/ui';
 import { readEngineeringChatResponse } from '@/lib/ai/engineering-chat';
+import { buildProjectContextPack } from '@/lib/ai/project-context';
 import { chatMessages, currentUser } from '@/lib/mock/workspace';
 
 interface ChatMessage {
@@ -79,10 +80,13 @@ export default function ProjectChatPage() {
     }]);
 
     try {
+      // Grounding: kirim skrip TKG + draft RAB proyek supaya AI membaca data
+      // terstruktur — tidak perlu ekstrak ulang gambar/RAB (INV-TKG-01).
+      const context = await buildProjectContextPack(projectId).catch(() => null);
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, projectId }),
+        body: JSON.stringify({ message, projectId, ...(context ? { context } : {}) }),
       });
       const data = await readEngineeringChatResponse(response);
       setStatus({

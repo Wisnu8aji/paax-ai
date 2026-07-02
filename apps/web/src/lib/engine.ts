@@ -10,8 +10,19 @@
 import {
   RABResult, HSPBreakdown, SCurveResult, ScenarioResult, ValidationResult,
   VolumeResult, SectionedRABResult, SchedulePlanResult,
+  TkgValidationResultSchema, TakeoffResultSchema,
+  DataCoverageResultSchema, ConfidenceResultSchema, QaResultSchema, BrainBoeSchema,
+  ReviewTriageResultSchema, CorrectionRecordSchema, EvalRunResultSchema,
+  BoeExportPayloadSchema, BbsExportPayloadSchema,
 } from "@paax/schemas";
-import type { SchedulePlanRequest, ScenarioParams } from "@paax/schemas";
+import type {
+  SchedulePlanRequest, ScenarioParams,
+  TkgDocument, TkgValidationResult, TakeoffParams, TakeoffResult,
+  DataCoverageResult, ConfidenceRequest, ConfidenceResult, QaRequest, QaResult,
+  BrainBoeRequest, BrainBoe, ReviewTriageRequest, ReviewTriageResult,
+  CorrectionLogRequest, CorrectionRecord, EvalRunRequest, EvalRunResult,
+  BoeExportPayload, BbsExportPayload, BbsResult,
+} from "@paax/schemas";
 import { CORE_ENGINE_URL, CoreEngineError } from "./core-engine-client";
 
 export type {
@@ -92,7 +103,80 @@ export async function fetchRegions(): Promise<RegionItem[]> {
   return (await engineFetch("/regions")) as RegionItem[];
 }
 
+/** GET /data/coverage — audit cakupan AHSP/HSD wilayah (engine, tanpa harga palsu). */
+export async function fetchDataCoverage(regionCode = "jateng"): Promise<DataCoverageResult> {
+  const data = await engineFetch(`/data/coverage?region_code=${encodeURIComponent(regionCode)}`);
+  return DataCoverageResultSchema.parse(data);
+}
+
+/** POST /brain/confidence — skor confidence deterministik dari Evidence signals. */
+export async function scoreBrainConfidence(request: ConfidenceRequest): Promise<ConfidenceResult> {
+  const data = await engineFetch("/brain/confidence", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+  return ConfidenceResultSchema.parse(data);
+}
+
+/** POST /brain/qa — rekonsiliasi numerik F-K. */
+export async function runBrainQa(request: QaRequest): Promise<QaResult> {
+  const data = await engineFetch("/brain/qa", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+  return QaResultSchema.parse(data);
+}
+
+/** POST /brain/boe — Basis of Estimate dari ledger engine. */
+export async function buildBrainBoe(request: BrainBoeRequest): Promise<BrainBoe> {
+  const data = await engineFetch("/brain/boe", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+  return BrainBoeSchema.parse(data);
+}
+
 /** POST /rab/calculate — RAB lengkap (lines + subtotal + PPN + total). */
+export async function triageReviewTasks(request: ReviewTriageRequest): Promise<ReviewTriageResult> {
+  const data = await engineFetch("/review/triage", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+  return ReviewTriageResultSchema.parse(data);
+}
+
+export async function logReviewCorrection(request: CorrectionLogRequest): Promise<CorrectionRecord> {
+  const data = await engineFetch("/review/corrections", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+  return CorrectionRecordSchema.parse(data);
+}
+
+export async function runEval(request: EvalRunRequest): Promise<EvalRunResult> {
+  const data = await engineFetch("/eval/run", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+  return EvalRunResultSchema.parse(data);
+}
+
+export async function exportBoeJson(request: BrainBoe): Promise<BoeExportPayload> {
+  const data = await engineFetch("/export/boe", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+  return BoeExportPayloadSchema.parse(data);
+}
+
+export async function exportBbsJson(request: BbsResult): Promise<BbsExportPayload> {
+  const data = await engineFetch("/export/bbs", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+  return BbsExportPayloadSchema.parse(data);
+}
+
 export async function calculateRAB(
   lines: EngineLine[],
   regionCode = "jateng",
@@ -140,6 +224,42 @@ export async function computeVolume(
     body: JSON.stringify({ element_type: elementType, dims }),
   });
   return VolumeResult.parse(data);
+}
+
+/** POST /tkg/validate — validasi TKG (V-02..V-08 subset, gerbang brain TXT00 §7). */
+export async function validateTkg(
+  doc: TkgDocument,
+  params?: Partial<TakeoffParams>,
+): Promise<TkgValidationResult> {
+  const data = await engineFetch("/tkg/validate", {
+    method: "POST",
+    body: JSON.stringify({ doc, params: params ?? null }),
+  });
+  return TkgValidationResultSchema.parse(data);
+}
+
+/** POST /tkg/render — render TKG menjadi skrip .tkg.txt (deterministik, auditable). */
+export async function renderTkg(
+  doc: TkgDocument,
+  params?: Partial<TakeoffParams>,
+): Promise<string> {
+  const data = (await engineFetch("/tkg/render", {
+    method: "POST",
+    body: JSON.stringify({ doc, params: params ?? null }),
+  })) as { text: string };
+  return data.text;
+}
+
+/** POST /tkg/takeoff — TKG → WorkItem beton/bekisting/besi (semua angka dari engine). */
+export async function takeoffTkg(
+  doc: TkgDocument,
+  params?: Partial<TakeoffParams>,
+): Promise<TakeoffResult> {
+  const data = await engineFetch("/tkg/takeoff", {
+    method: "POST",
+    body: JSON.stringify({ doc, params: params ?? null }),
+  });
+  return TakeoffResultSchema.parse(data);
 }
 
 /** POST /rab/build — RAB tersektor (WBS) dari item + section. */

@@ -19,8 +19,9 @@
 /schedule/s-curve  /schedule/cpm  /schedule/plan
 /scenario/simulate            (knob params 9B → hasil .custom)
 /geometry/volume  /geometry/elements  /wbs/sections
+/tkg/validate  /tkg/render  /tkg/takeoff   (TKG brain v4.1 → skrip + takeoff)
 ```
-- Logika: `app/rab/` (rab, schedule, sections, validate), `app/scenario/`, `app/geometry/`, `app/export/`.
+- Logika: `app/rab/` (rab, schedule, sections, validate), `app/scenario/`, `app/geometry/`, `app/export/`, `app/tkg/` (models, validate, render, takeoff, params).
 - Test: `services/core-engine/tests/` · jalankan `pytest -q`.
 
 ## Web — file kunci (`apps/web/src/`)
@@ -29,9 +30,13 @@
 | `lib/engine.ts` | Client typed ke engine (fetch) |
 | `lib/core-engine-client.ts` | `CORE_ENGINE_URL`, `CoreEngineError` |
 | `lib/ai/orchestrator.ts` | Gemini (`geminiText`/`geminiJson`) + fallback rule-based |
-| `lib/ai/engineering-chat.ts` | Prompt + fallback Engineering Chat |
-| `app/api/ai/*` | Route AI server-side (chat, extract, import-map, price-justification) |
+| `lib/ai/engineering-chat.ts` | Prompt + fallback Engineering Chat (+ context pack proyek) |
+| `lib/ai/tkg-extractor.ts` | AI menyalin teks gambar → TkgDocument (usulan) |
+| `lib/ai/project-context.ts` | Context pack chat: skrip TKG + draft RAB |
+| `app/api/ai/*` | Route AI server-side (chat, extract, tkg, import-map, price-justification) |
 | `lib/projects/rab-repository.ts` | Draft RAB client-side (**INPUT saja**, bukan hasil) |
+| `lib/projects/tkg-repository.ts` | TKG per proyek (source: manual/ai_proposal + reviewed) |
+| `components/drawings/tkg-workspace.tsx` | Workspace TKG: sumber→transkrip→skrip→takeoff→RAB |
 | `components/rab/*` | Komponen RAB (s-curve, hsp-breakdown, smart-rab-*) |
 | `app/(dashboard)/proyek/[projectId]/{rab,schedule,chat,gambar-kerja,site-agent}/page.tsx` | Halaman proyek |
 - Test: `pnpm --dir apps/web test` (vitest).
