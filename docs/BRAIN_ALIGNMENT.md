@@ -77,7 +77,8 @@ sesuai `docs/ai-map/STATE.md`.
 | Fase 0 | Salin brain verbatim ke `docs/specs/brain-v4.1/` + dokumen ini + rujukan di STATE/START_HERE/MASTER_PLAN/security/CLAUDE.md | 🟢 selesai |
 | Fase 1 | Irisan pertama rumus takeoff: volume beton per bentuk (F-B01–B11) di `geometry/volume.py` + skeleton schema (Evidence diperkaya, ElementType/ElementInstance/WorkItem draft) | 🟢 selesai (2026-07-02) |
 | Fase 2 | **Sistem TKG** (2026-07-02): engine `app/tkg/` (TkgDocument Pydantic, validator V-02/V-04/V-05/V-08, renderer `.tkg.txt`, takeoff F-B + F-C01–C06 + F-D01–D05 dgn parameter tercatat), endpoint `/tkg/validate|render|takeoff`, Zod mirror, route AI `/api/ai/tkg` (transkrip, P-SEC-01), UI `TkgWorkspace` (gambar-kerja), context pack chat (skrip TKG + draft RAB) | 🟢 selesai — 17 test anchor manual |
-| Fase 3+ | Besi kait/lap penuh (k_hook/n_Ld/L_stock) + BBS (F-D08), parameter registry §Z penuh, F-F (tanah bank/gembur/padat), F-E/F-G (arsitektur/atap/kusen/MEP), F-C07-C10 (dinding beton/tangga/perancah) | ⚪ roadmap, 1 sesi terpisah per irisan |
+| Fase 3a | **Besi lanjutan (2026-07-02)**: F-D02 penuh (kait k_hook_utama, lewatan n_ld/l_stock_m, gagal-aman needs_review), F-D04 pinggang, F-D06 waste_mode param\|bbs + guard AP-16, F-D08 BBS (marks/stok/waste nyata) + mirror Zod + 8 anchor manual | 🟢 selesai |
+| Fase 3+ | Parameter registry §Z penuh, F-F (tanah bank/gembur/padat), F-E/F-G (arsitektur/atap/kusen/MEP), F-C07-C10 (dinding beton/tangga/perancah) | ⚪ roadmap, 1 sesi terpisah per irisan |
 | Kapan saja (independen) | Checklist WBS D0–D15 sbg fitur completeness-check di halaman RAB | ⚪ belum dijadwalkan |
 | Ditunda | `services/document-intelligence` (OCR/CV/vision), TKG builder sungguhan | ⚪ menunggu gerbang F0 + validasi Wizard-of-Oz |
 
