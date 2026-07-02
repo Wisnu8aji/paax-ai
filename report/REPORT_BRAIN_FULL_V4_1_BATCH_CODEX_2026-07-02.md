@@ -92,3 +92,98 @@ Batch Brain v4.1 dijalankan sebagai irisan engine deterministik, schema/client m
 
 - File report lama di folder `report` sudah dihapus sesuai instruksi terbaru.
 - File untracked yang tidak terkait tetap dibiarkan di luar commit.
+
+## Laporan Lengkap Akhir
+
+### Tujuan Implementasi
+
+Tujuan batch ini adalah membuat Brain v4.1 mulai hidup sebagai engine deterministik PAAX, bukan sekadar dokumen konsep. Fokusnya adalah membangun jalur kerja yang bisa diaudit: data AHSP/HSD dicek cakupannya, gambar kerja diarahkan menjadi TKG, quantity dihitung oleh engine, pekerjaan turunan dideteksi oleh rules, AHSP/mapping tidak dikarang, review manusia diberi queue, dan chat hanya membaca data yang sudah ada.
+
+### Prinsip Yang Dijaga
+
+- Frontend tidak menghitung angka final volume, biaya, jadwal, atau BBS.
+- LLM/chat tidak dipakai di jalur hitung deterministik.
+- AHSP, harga satuan, koefisien, profil baja, panjang pipa fallback, dan volume tangga tidak dibuat palsu.
+- Bila data kurang, output menjadi `needs_review`, warning, missing resource, atau review task.
+- Semua rumus baru punya anchor manual di test.
+- Parameter/default yang memengaruhi hasil dicatat sebagai assumption atau `params_used`.
+- Export BOE/BBS JSON menjaga payload persis, bukan merangkum ulang.
+
+### Perubahan Engine
+
+- `app/data_audit`: audit coverage AHSP/HSD wilayah.
+- `app/brain`: ProjectContext, confidence, QA numeric, BOE.
+- `app/takeoff`: perluasan tanah, dinding, arsitektur, baja, atap detail, kusen, railing, dan MEP.
+- `app/tkg`: advanced takeoff struktur untuk dinding beton, kolom tempel, tangga, perancah, dan BBS.
+- `app/workitems`: WBS D0-D15, completeness, expansion, implied works.
+- `app/mapping`: deterministic AHSP search, mapping, price binding.
+- `app/review`: review triage dan correction log.
+- `app/eval`: eval harness minimal.
+- `app/export/boe_exporter.py`: export BOE/BBS JSON.
+- `services/document-intelligence/app/tkg`: builder text/table/grid ke TKG draft.
+
+### Endpoint Baru/Diubah
+
+- `GET /data/coverage`
+- `POST /brain/confidence`
+- `POST /brain/qa`
+- `POST /brain/boe`
+- `POST /takeoff/baja`
+- `POST /takeoff/atap`
+- `POST /takeoff/kusen`
+- `POST /takeoff/mep`
+- `GET /wbs/master`
+- `POST /workitems/completeness`
+- `POST /workitems/expand`
+- `POST /workitems/implied`
+- `POST /ahsp/search`
+- `POST /ahsp/map`
+- `POST /price/bind`
+- `POST /review/triage`
+- `POST /review/corrections`
+- `POST /eval/run`
+- `POST /export/boe`
+- `POST /export/bbs`
+
+### Perubahan Web dan Schema
+
+- `packages/schemas/src/index.ts` diperluas untuk TKG advanced, manual takeoff, WBS/workitems, AHSP mapping, review, correction, eval, BOE export, dan BBS export.
+- `apps/web/src/lib/engine.ts` menambah client typed untuk endpoint audit/review/eval/export baru.
+- `TkgWorkspace` sekarang menampilkan BBS marks, rekap per diameter, total waste, dan review queue.
+- `Engineering Chat` diperketat: jawab dari context/engine saja; jika data tidak ada, sebut data missing; tidak menghitung angka baru.
+- `project-context.ts` bisa menerima BOE, warnings, dan review tasks sebagai context data.
+
+### Test Evidence
+
+- Core engine full test: `182 passed, 1 warning`.
+- Document intelligence: `2 passed, 1 warning`.
+- Import check core dan document-intelligence: `import-ok`.
+- Schema tests: `11 passed`.
+- Schema build: success.
+- Web TypeScript: success.
+- Web vitest: `30 passed`.
+- Web production build: success.
+- Diff whitespace check sebelum commit: clean.
+
+### Status GitHub
+
+- Branch: `feat/brain-full-v4-1-batch`.
+- Draft PR: `https://github.com/Wisnu8aji/paax-ai/pull/24`.
+- Base PR: `feat/engine-takeoff-arsitektur`.
+- Commit utama batch: `4589e2920888a6942b1b230d0797e4e5c4824764`.
+- Author commit: `Wisnu Setyo Aji <Ajiwisnu187@gmail.com>`.
+- PR author: `Wisnu8aji`.
+
+### Yang Sengaja Belum Dibuat
+
+- Export BOE/BBS XLSX belum dibuat karena format final laporan belum dikunci. JSON sudah tersedia dan aman untuk audit.
+- Review queue belum memakai persistent database/flywheel dataset; saat ini panel ringan dari hasil engine.
+- Integrasi full harga real masih bergantung coverage HSD/AHSP. Engine sudah menolak mengarang data kosong.
+- Vision/CV gambar kerja belum dibuat sebagai "CV ajaib"; document-intelligence saat ini deterministic text/table/grid to TKG.
+
+### Urutan Review Yang Disarankan
+
+1. Review PR base stack sebelumnya sampai `feat/engine-takeoff-arsitektur` stabil.
+2. Review PR #24 dari atas ke bawah: data audit, brain primitives, takeoff, TKG advanced, WBS/workitems, AHSP mapping, document-intelligence, review/eval/export, web/chat.
+3. Cocokkan anchor test dengan rumus Brain v4.1 sebelum merge.
+4. Setelah merge, lanjut slice XLSX BOE/BBS dan persistent review/flywheel.
