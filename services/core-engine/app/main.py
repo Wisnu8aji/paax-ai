@@ -16,6 +16,9 @@ Endpoint deterministik (tidak ada LLM di sini):
     POST /scenario/simulate         -> simulasi what-if waktu-biaya (deterministik)
     GET  /geometry/elements         -> tipe elemen yang didukung kalkulator volume
     POST /geometry/volume           -> hitung volume/luas dari dimensi (untuk AI)
+    POST /tkg/validate              -> validasi TKG (V-02..V-08 subset, brain TXT00 §7)
+    POST /tkg/render                -> render TKG -> skrip .tkg.txt (deterministik)
+    POST /tkg/takeoff               -> TKG -> WorkItem beton/bekisting/besi (deterministik)
 """
 from __future__ import annotations
 import io
@@ -39,6 +42,11 @@ from .scenario.simulate import compute_scenarios
 from .scenario.models import ScenarioConfig, ScenarioResult
 from .geometry.volume import compute_volume, ELEMENT_TYPES
 from .geometry.models import VolumeRequest, VolumeResult
+from .tkg.models import TkgDocument, TkgValidationResult
+from .tkg.params import TakeoffParams
+from .tkg.render import render_tkg_txt
+from .tkg.takeoff import takeoff_tkg, TakeoffResult
+from .tkg.validate import validate_tkg
 
 app = FastAPI(title="PAAX Core Engine", version="0.6.0")
 
@@ -209,6 +217,32 @@ def geometry_volume(req: VolumeRequest):
         return compute_volume(req.element_type, req.dims)
     except KeyError as e:
         raise HTTPException(400, str(e))
+
+
+# ----------------------------- TKG (brain v4.1) -----------------------------
+class TkgRequest(BaseModel):
+    doc: TkgDocument
+    params: Optional[TakeoffParams] = None
+
+
+class TkgRenderResult(BaseModel):
+    text: str
+
+
+@app.post("/tkg/validate", response_model=TkgValidationResult)
+def tkg_validate(req: TkgRequest):
+    return validate_tkg(req.doc, req.params)
+
+
+@app.post("/tkg/render", response_model=TkgRenderResult)
+def tkg_render(req: TkgRequest):
+    validation = validate_tkg(req.doc, req.params)
+    return TkgRenderResult(text=render_tkg_txt(req.doc, validation))
+
+
+@app.post("/tkg/takeoff", response_model=TakeoffResult)
+def tkg_takeoff(req: TkgRequest):
+    return takeoff_tkg(req.doc, req.params)
 
 
 @app.post("/schedule/s-curve", response_model=SCurveResult)
