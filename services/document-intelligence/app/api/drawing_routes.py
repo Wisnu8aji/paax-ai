@@ -46,6 +46,9 @@ class DrawingAnalysisResponse(BaseModel):
     windows: List[str]
     quantity_candidates: List[QuantityCandidate]
     warnings: List[DrawingWarning]
+    # TKG Pipeline V1.0 (Real Data)
+    tkg_document: Optional[dict] = None
+    tkg_text: Optional[str] = None
 
 class VerifyCandidateRequest(BaseModel):
     candidate_id: str
@@ -72,21 +75,112 @@ def generate_demo_extraction(file_name: str) -> DrawingAnalysisResponse:
         ]
     )
 
+import os
+import uuid
+from typing import List, Optional
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from datetime import datetime
+
+from app.processors.pdf_renderer import PdfRenderer
+from app.processors.drawing_classifier import DrawingClassifier
+from app.processors.ocr_extractor import OcrExtractor
+from app.processors.table_extractor import TableExtractor
+from app.processors.grid_extractor import GridExtractor
+from app.tkg.builder import build_tkg_from_text
+
 # --- Endpoints ---
 
 @router.post("/analyze", response_model=DrawingAnalysisResponse)
 async def analyze_drawing(req: DrawingAnalyzeRequest):
-    api_key = os.getenv("GEMINI_API_KEY")
+    # Pipeline Asli TKG (Brain v4.1)
+    file_name = req.file_metadata.file_name
     
-    # Check if we should use the real AI pipeline or fallback
-    if api_key and api_key.strip():
-        # TODO: Implement real Gemini 1.5 Pro multimodal processing here
-        # For now, we simulate real AI by adding a slight delay and returning demo data,
-        # but in production this would call the Vertex/Gemini API.
-        return generate_demo_extraction(req.file_metadata.file_name)
+    # Path mockup utk simulasi atau file sesungguhnya
+    base_path = os.getenv("UPLOAD_DIR", "/tmp/paax_uploads")
+    file_path = os.path.join(base_path, file_name)
+    
+    raw_text = ""
+    classification = "Unclassified"
+    tkg_doc = None
+    tkg_text = None
+    
+    warnings = [
+        DrawingWarning(
+            id=str(uuid.uuid4()), 
+            message="Sistem menggunakan TKG Pipeline V1.0 (Real PyMuPDF Extraction).", 
+            level="INFO", 
+            related_elements=[]
+        )
+    ]
+    
+    if os.path.exists(file_path) and file_name.endswith('.pdf'):
+        # 1. Triase & Split (SK-01)
+        pdf_processor = PdfRenderer()
+        pdf_res = pdf_processor.process(file_path)
+        
+        if pdf_res["status"] == "success" and pdf_res["sheets"]:
+            sheet = pdf_res["sheets"][0]
+            raw_text = sheet.get("raw_text", "")
+            
+            # 2. OCR Normalization (SK-10)
+            ocr = OcrExtractor()
+            ocr_res = ocr.process(raw_text)
+            normalized_text = ocr_res["normalized_text"]
+            
+            # 3. Klasifikasi (SK-02)
+            classifier = DrawingClassifier()
+            class_res = classifier.process(normalized_text)
+            classification = class_res["classification"]
+            
+            # 4. Tabel & Grid (SK-04, SK-05)
+            tables = TableExtractor().process(normalized_text)
+            grids = GridExtractor().process(normalized_text)
+            
+            # 5. Build TKG (SK-07)
+            builder_res = build_tkg_from_text(
+                project_id=req.file_metadata.project_id or "prj-123",
+                revision_id="rev-1",
+                sheet_id=sheet["sheet_id"],
+                title=file_name,
+                raw_text=normalized_text
+            )
+            
+            tkg_doc = builder_res.tkg_json
+            tkg_text = builder_res.tkg_txt
+            
+            # Tambah hasil tabel dan grid ke TKG (Mutate)
+            if tkg_doc and "sheets" in tkg_doc and len(tkg_doc["sheets"]) > 0:
+                tkg_doc["sheets"][0]["tables"].extend(tables["tables"])
+                tkg_doc["sheets"][0]["grid"]["bentang"].extend(grids["grid"]["bentang"])
+                tkg_doc["sheets"][0]["levels"].extend(grids["levels"])
+                
+            if class_res["needs_vision_fallback"]:
+                warnings.append(DrawingWarning(
+                    id=str(uuid.uuid4()), 
+                    message="Confidence klasifikasi rendah, butuh fallback vision LLM.", 
+                    level="MEDIUM", 
+                    related_elements=[]
+                ))
     else:
-        # Fallback mode
-        return generate_demo_extraction(req.file_metadata.file_name)
+        warnings.append(DrawingWarning(
+            id=str(uuid.uuid4()), 
+            message=f"File {file_name} tidak ditemukan di server. Ekstraksi kosong.", 
+            level="CRITICAL", 
+            related_elements=[]
+        ))
+
+    return DrawingAnalysisResponse(
+        file_id=str(uuid.uuid4()),
+        classification=classification,
+        rooms=[],
+        doors=[],
+        windows=[],
+        quantity_candidates=[], # Sengaja dikosongkan untuk menghindari halusinasi (AP-01)
+        warnings=warnings,
+        tkg_document=tkg_doc,
+        tkg_text=tkg_text
+    )
 
 @router.post("/classify")
 async def classify_drawing(req: DrawingAnalyzeRequest):
