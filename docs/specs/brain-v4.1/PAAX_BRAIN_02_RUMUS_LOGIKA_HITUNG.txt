@@ -1,0 +1,379 @@
+================================================================================
+PAAX BRAIN · TXT 2/3 — RUMUS & LOGIKA HITUNG
+"Formulas & Computation Logic" — dieksekusi ENGINE, disiapkan AI (TXT 1)
+================================================================================
+VERSI: v4.1 FINAL (Fable 5) · menggantikan versi sebelumnya; selaras TXT 00
+(TKG): parsing/skala/sanity di bawah dipakai DI DALAM tahap ekstraksi.
+ATURAN: tanpa angka asumsi. Konstanta FISIKA/standar boleh (ber-sumber SNI).
+Nilai lain = PARAMETER BERNAMA (registry §Z; nilai di config/katalog, bukan di
+sini, bukan di kode). Semua rumus hidup di services/core-engine + teruji.
+Notasi: b,h=penampang; t=tebal; L=panjang; H=tinggi; A=luas; V=volume; n=jumlah;
+d=diameter (mm); satuan internal meter/kg; ^ = pangkat; sqrt = akar.
+
+CHANGELOG v3 -> v4: + parsing locale & koreksi angka; + kalibrasi skala; +
+tulangan pinggang, susut pelat, BBS & mode waste; + bekisting kolom-tempel,
+pilecap, perancah terpisah; + tanah: f_gembur vs f_susut + buangan/angkut; +
+screed, upstand WP, railing, gording/ikatan; + Estimate parametrik; + EVM &
+kalender kerja; + QA rekonsiliasi numerik; + registry diperluas & dikelompokkan.
+================================================================================
+
+
+================================================================================
+§A. PARSING, SATUAN, PEMBULATAN, GRID, SKALA, SANITY
+================================================================================
+F-A00  PARSING ANGKA LOCALE (dideteksi PER DOKUMEN dari bukti internal;
+       default id-ID; keputusan dicatat sebagai Assumption — TXT 00 §2.6):
+       normalisasi: hapus pemisah ribuan; koma desimal -> titik; deteksi satuan
+       tertulis (mm/cm/m) -> konversi ke meter; simpan raw_reading. Ambiguitas
+       (mis. "1.250" bisa ribuan/desimal) -> putuskan via konteks besaran wajar
+       (F-A08) + W-ASM bila dipaksa memilih; kritis -> needs_review. Inferensi
+       SATUAN (mm/cm/m) mengikuti prosedur TXT 00 §2.7 bersama F-A08.
+F-A01  PANJANG ANTAR-AS:    L(p,q) = |coord(q) - coord(p)|
+F-A02  TINGGI ANTAR-LEVEL:  H(a,b) = |elev(b) - elev(a)|
+F-A03  LUAS POLIGON (shoelace, koordinat vektor):
+       A = 0.5 * | Σ_i (x_i*y_{i+1} - x_{i+1}*y_i) |
+F-A04  LUAS PERSEGI:        A = Lx * Ly
+F-A05  LUAS PANEL GRID:     A = L(p,q) * L(r,s)
+F-A06  SKALA DUA-TITIK (raster, manusia klik 2 titik berjarak nyata D_real):
+       s = D_real / d_piksel   -> panjang nyata = d_piksel * s
+F-A07  SKALA DARI DIMENSI TERTULIS (vektor):
+       s = nilai_dimensi_teks / L_vektor_garis_dimensi
+       Konsistensi: beberapa dimensi -> s harus seragam dalam tol (F-J04);
+       tidak seragam -> E-GRID/W-SCL + needs_review.
+F-A08  SANITY RENTANG DIMENSI: tiap kelas elemen punya rentang wajar
+       [min,max] = PARAM.dims_range[kelas]; di luar rentang -> W + review.
+A-09   PEMBULATAN: presisi penuh saat hitung; pembulatan hanya di penyajian:
+       kuantitas -> PARAM.r_qty desimal; kg -> PARAM.r_kg; rupiah -> PARAM.r_money.
+A-10   KONVERSI: mm->m = /1000; cm->m = /100; derajat<->rad standar.
+
+
+================================================================================
+§B. TAKE-OFF BETON (VOLUME)
+================================================================================
+F-B01  KOLOM persegi:   V = b * h * Lk * n
+       Lk = H(level_bwh, level_atas) - t_balok_atas   (PARAM.beam_len_mode
+       menentukan konvensi; as-ke-as -> t_balok=0; keputusan tercatat Assumption)
+F-B02  KOLOM bundar:    V = (pi/4) * D^2 * Lk * n
+F-B03  KOLOM PRAKTIS:   V = b_kp * h_kp * Lkp * n   (atau item per-m sesuai AHSP;
+       satuan mengikuti AHSP terpilih — RULE-AHSP-03)
+F-B04  SLOOF:           V = b * h * L_jalur_total
+F-B05  BALOK/RING/LATEI:V = b * h * Lb
+       Lb per PARAM.beam_len_mode {as_as | bersih}; mode bersih: Lb = L_as -
+       Σ(lebar tumpuan kolom/2 tiap ujung). LATEI: Lb = b_bukaan + 2*PARAM.L_bearing.
+F-B06  PELAT/DAK/TALANG/KANOPI/TOPI:  V = A_neto * t_pelat
+       A_neto = A_panel (F-A03/05) - Σ A_void.
+F-B07  FOOTPLAT/PILECAP:
+       datar:   V = A_base * t_ft
+       miring:  V = (t/3) * (A_bwh + A_atas + sqrt(A_bwh*A_atas))   [frustum]
+       total per tipe: Σ (V_tipe * n_tipe).
+F-B08  DINDING BETON/PARAPET: V = t_w * H_w * L_w - Σ V_bukaan
+F-B09  LANTAI KERJA/RABAT/SCREED-struktural: V = A_alas * t_lapis
+       (kelas beton rendah = item AHSP terpisah; RULE-EXP-BETON-MUTU)
+F-B10  PADANAN PENAMAAN KELAS (konvensi industri; hanya untuk memilih NAMA item):
+       fc' [MPa] ≈ K * 0.83 / 10   <->   K ≈ fc' * 10 / 0.83
+       (Konversi tepat kg/cm2->MPa memakai 0.0981; industri lazim /10. Pilihan
+       konvensi = PARAM.k_fc_mode; nilai desain SELALU dari gambar.)
+F-B11  TANGGA: V = V_pelat_miring + V_anak + V_bordes
+       V_pelat_miring = t_plat * b_tga * (P_datar / cos(alpha))
+       V_anak = 0.5 * optrede * antrede * b_tga * n_anak
+       V_bordes = t_bordes * A_bordes ; alpha = atan(optrede/antrede) atau dari
+       gambar potongan.
+
+
+================================================================================
+§C. TAKE-OFF BEKISTING (LUAS BIDANG KONTAK)
+================================================================================
+Prinsip: m2 = luas permukaan beton yang menyentuh acuan. Faktor pakai-ulang
+acuan TIDAK mengubah m2; ia memilih VARIAN AHSP (PARAM.reuse_form).
+F-C01  KOLOM bebas 4 sisi:  A = 2*(b+h) * Lk * n
+F-C02  KOLOM bundar:        A = pi * D * Lk * n
+F-C03  SLOOF (2 sisi):      A = 2 * h * L_jalur
+F-C04  BALOK penopang pelat:A = (b + 2*(h - t_pelat)) * Lb
+       balok tanpa pelat di atas: A = (b + 2*h) * Lb
+F-C05  PELAT:               A = A_neto + K_tepi_bebas * t_pelat
+F-C06  FOOTPLAT/PILECAP (sisi keliling): A = K_keliling * t_ft * n
+       (telapak miring: sisi = keliling rata2 * panjang miring bila dibekisting;
+        lazim hanya tepi tegak — konvensi + Assumption)
+F-C07  DINDING BETON (2 sisi): A = 2*(H_w*L_w) - 2*Σ A_bukaan
+F-C08  KOLOM MENEMPEL DINDING/KOLOM LAIN:
+       A = ( 2*(b+h) - Σ lebar_sisi_tempel ) * Lk * n
+F-C09  TANGGA: A = b_tga * P_miring (dasar) + 2 * (t_plat * P_miring) (sisi)
+             + optrede * b_tga * n_anak (papan tegak) + A_bordes_bawah
+F-C10  PERANCAH TERPISAH (hanya bila AHSP bekisting TIDAK termasuk perancah —
+       RULE-AHSP-05): Q_perancah[m2 proyeksi] = A_pelat_didukung + A_dasar_balok;
+       kategori tinggi = PARAM.h_kategori_perancah -> memilih varian AHSP.
+       (Bila AHSP "termasuk perancah": F-C10 TIDAK dipakai — anti double count.)
+
+
+================================================================================
+§D. TAKE-OFF PEMBESIAN (BERAT) + BBS
+================================================================================
+F-D01  BERAT/METER (fisika, SNI): w(d) = (pi/4) * d^2 * gamma_s / 1e6  [kg/m]
+       gamma_s = 7850 kg/m3 (konstanta SNI). Praktis: w(d) = 0.006165 * d^2.
+F-D02  TULANGAN MEMANJANG (per grup diameter sama pada satu elemen):
+       L_bat = L_elemen + Σ kait_ujung + Σ sambungan
+         kait  = k_hook * d/1000       (k_hook = PARAM, sumber SNI 2847)
+         lap   = n_Ld  * d/1000        (n_Ld  = PARAM, SNI 2847; jumlah lap =
+                 ceil(L_bat / PARAM.L_stock) - 1 bila memakai stok batang)
+       W_grup = n_batang * L_bat * w(d)
+F-D03  SENGKANG/BEGEL (per zona jarak s berbeda: tumpuan/lapangan):
+       n_s = Σ_zona ( floor(L_zona / s_zona) + 1 )
+       L_1s = 2*((b - 2c) + (h - 2c)) + 2 * k_hook_s * d_s/1000
+       W_s  = n_s * L_1s * w(d_s)          (c = selimut, PARAM per elemen/SNI)
+F-D04  TULANGAN PINGGANG (side bars, balok tinggi; bila schedule mencantumkan):
+       W_p = n_p * ( Lb + 2 * n_Ld * d_p/1000 ) * w(d_p)
+F-D05  TULANGAN PELAT (per arah X/Y; termasuk susut/temperature bila schedule):
+       n_arah = floor(L_tegak_lurus / s) + 1
+       W = Σ_arah Σ_lapis ( n_arah * L_sejajar * w(d) )
+F-D06  BERAT ELEMEN: W_el = (ΣW_grup + ΣW_s + ΣW_p) * f_waste
+       f_waste per PARAM.waste_mode:
+         mode "param": f_waste = 1 + PARAM.W_besi
+         mode "bbs"  : f_waste = 1 (waste nyata dari F-D08) — JANGAN keduanya (AP-16).
+F-D07  TOTAL PEKERJAAN: W = Σ_instance W_el   (per tipe/diameter untuk BBS).
+F-D08  BAR BENDING SCHEDULE (BBS) & waste nyata (opsional, mode "bbs"):
+       potongan/stok: n_per_stok = floor(PARAM.L_stock / L_potong)
+       sisa_per_stok = L_stock - n_per_stok * L_potong
+       kebutuhan_stok = ceil(n_potong_total / n_per_stok)
+       waste_nyata = (kebutuhan_stok * L_stock - Σ L_potong) * w(d)
+       (Optimasi cutting = util engine; keluaran BBS: tanda tekuk, panjang,
+        jumlah, berat per mark.)
+
+
+================================================================================
+§E. DINDING, PLESTER, ACIAN, CAT, SCREED
+================================================================================
+F-E01  PASANGAN DINDING (per jenis & campuran): A = L*H - Σ A_bukaan_terhitung
+       DEDUKSI BUKAAN: default kurangi SEMUA bukaan; konvensi alternatif
+       (bukaan < PARAM.deduct_threshold tidak dikurangi) hanya bila spek/
+       kesepakatan -> PARAM.deduct_mode + Assumption (RULE-READ-02/INV-08).
+F-E02  PLESTERAN: A = s_sisi * A_pas_terekspos   (s_sisi 1|2 per kondisi;
+       kurangi bidang berpelapis lain)
+F-E03  ACIAN: A = A_ples (atau subset per spek)
+F-E04  SPONNINGAN/TALI AIR: L = Σ panjang sudut/pertemuan sesuai spek
+F-E05  CAT: A = A_bidang_finish - Σ bukaan ; total = A * n_lapis bila AHSP per-lapis
+F-E06  KOLOM/RING PRAKTIS trigger: segmen L > PARAM.L_maks_praktis ATAU panel
+       A > PARAM.A_maks_praktis -> item praktis (F-B03) + Assumption.
+F-E07  SCREED/leveling lantai: V = A * PARAM.t_screed (atau m2 sesuai AHSP).
+
+
+================================================================================
+§F. PEKERJAAN TANAH (bank vs gembur vs padat) + BUANGAN
+================================================================================
+Definisi: volume BANK (asli/insitu), GEMBUR (loose, setelah gali), PADAT
+(terpasang, setelah dipadatkan). Dua faktor BERBEDA (jangan dicampur):
+  PARAM.f_gembur : V_gembur = V_bank * f_gembur         (f_gembur > 1)
+  PARAM.f_susut  : V_bank_dibutuhkan = V_padat * f_susut (f_susut > 1)
+F-F01  GALIAN FOOTPLAT (per lubang):
+       V_gali_bank = (b_ft + 2*w_kerja) * (l_ft + 2*w_kerja) * d_gali
+       (lereng: pakai penampang rata-rata; w_kerja=PARAM; d_gali dari level/detail)
+F-F02  GALIAN MENERUS: V = A_penampang_galian * L_parit
+F-F03  URUGAN KEMBALI (bank): V_uk = V_gali_bank - V_struktur_tertanam
+       (struktur tertanam = LK + pondasi + bagian sloof/kolom di bawah muka tanah)
+F-F04  URUGAN PASIR: V_padat = A * t_pasir ; kebutuhan material = V_padat * f_susut
+F-F05  URUGAN SIRTU/TANAH: V_padat = A * t_lapis ; material = V_padat * f_susut
+       (CEK AHSP: bila koefisien bahan sudah memuat faktor padat, JANGAN kalikan
+        lagi — pilih satu tempat; Assumption.)
+F-F06  PEMADATAN: Q = A atau V_padat sesuai satuan AHSP.
+F-F07  BUANGAN: V_buang_gembur = max(0, V_gali_bank - V_uk) * f_gembur
+       ANGKUT: ritase = ceil(V_buang_gembur / kap_truk) ; jarak -> pilih item
+       AHSP angkutan per kelas jarak (kap_truk = PARAM/alat).
+
+
+================================================================================
+§G. PONDASI BATU, LANTAI/KERAMIK, ATAP/BAJA, PLAFON, KUSEN, MEP, WP, RAILING
+================================================================================
+F-G01  PONDASI BATU BELAH menerus: V = A_trap * L
+       A_trap = 0.5*(a_atas + a_bwh)*h_pond   (campuran -> varian AHSP)
+F-G02  AANSTAMPING/batu kosong (bila detail): V = a_bwh * t_aanstamping * L
+F-G03  PENUTUP LANTAI: A = A_ruang_neto ; PLIN: L = Σ keliling ruang - Σ lebar pintu
+F-G04  KERAMIK DINDING (area basah): A = K_basah * h_pasang - Σ bukaan
+       (h_pasang dari spek; default PARAM.h_pasang_keramik + Assumption)
+F-G05  ATAP MIRING: A_miring = A_proyeksi / cos(theta)
+       (theta dari potongan; penutup, baja ringan, genteng metal memakai A_miring;
+        overlap sudah dalam koefisien AHSP — jangan dobel)
+F-G06  RANGKA BAJA PROFIL (berat): W = Σ_member w_profil(designasi) * L_member
+       * (1 + PARAM.W_baja_waste)
+       w_profil = LOOKUP tabel profil (SNI/katalog produsen) — DATA, bukan rumus.
+       Built-up dari pelat: w = gamma_s * t * lebar  [kg/m].
+       L_member: rafter = L_bentang/ cos(theta) per konfigurasi; overhang
+       ditambah bila tergambar.
+F-G07  GORDING: n_baris = floor(L_miring_sisi / s_gording) + 1  (s dari gambar/
+       spek); L_total = n_baris * L_arah_gording * n_sisi_atap.
+       TREKSTANG/SAGROD: n per bentang gording sesuai detail; L = jarak antar
+       gording (atau per detail). IKATAN ANGIN: L_diag = sqrt(a^2 + b^2) per bay
+       ter-brace; total = Σ.
+F-G08  NOK/BUBUNGAN L = Σ garis nok ; LISPLANK L = Σ tepi atap ;
+       TALANG L = Σ jalur ; PIPA HUJAN: n titik dari gambar; bila tak tergambar
+       -> n = ceil(A_atap / PARAM.A_per_downpipe) + Assumption.
+F-G09  PLAFON: A = A_neto ; rangka = A ; LIST L = Σ keliling tepi plafon.
+F-G10  WATERPROOFING: A = A_bidang + K_upstand * h_upstand
+       (h_upstand dari spek/PARAM.h_upstand + Assumption)
+F-G11  KUSEN/PINTU/JENDELA: per SCHEDULE — kusen L = Σ keliling (m') atau unit;
+       daun/kaca A = Σ luas; aksesoris n = per unit x jumlah unit; unit =
+       count denah (triangulasi vs schedule).
+F-G12  RAILING/HANDRAIL: L = Σ tepi tangga/void/ram (dari denah/potongan).
+F-G13  MEP: titik (lampu/stopkontak/saklar/data) = count; armatur/fixture = count;
+       pipa L = Σ jalur denah plumbing (tak ada denah -> PARAM.L_pipa_per_fixture
+       + Assumption ATAU needs_review); panel/proteksi/penangkal petir = unit/ls
+       per gambar; kabel umumnya termuat pada AHSP per-titik (cek kandungan —
+       RULE-AHSP-05).
+F-G14  PENGECATAN BESI/BAJA: A = Σ (keliling_penampang_profil * L_member)
+       (keliling profil dari tabel dimensi profil — DATA).
+
+
+================================================================================
+§H. AHS -> HSP -> RAB (+ mode Estimate parametrik)
+================================================================================
+F-H01  UPAH:  A = Σ_i koef_L_i * harga_L_i          [koef OH]
+F-H02  BAHAN: B = Σ_j koef_M_j * harga_M_j
+F-H03  ALAT:  C = Σ_k koef_E_k * harga_E_k          [koef jam]
+F-H04  D = A + B + C
+F-H05  E = PARAM.OP * D            (OP: kisaran diatur Permen PUPR — nilai=param)
+F-H06  HSP = D + E = D * (1 + OP)
+F-H07  BARIS: Jumlah_i = round(V_i, r_qty) * HSP_i
+F-H08  SUBTOTAL DIVISI: Σ baris ; F-H09 SUBTOTAL PROYEK: Σ divisi
+F-H10  PPN = PARAM.tarif_PPN * basis  (basis per-baris ATAU total — konsisten
+       satu mode per dokumen; mode = PARAM.ppn_mode)
+F-H11  TOTAL = Subtotal + PPN ; pembulatan akhir per kaidah dokumen.
+F-H12  TERBILANG: konversi angka->kata (util engine, id-ID) untuk dokumen resmi.
+F-M01  ESTIMATE PARAMETRIK (mode Estimate): Biaya ≈ A_bangunan * idx(tipe,
+       kelas, wilayah, periode) ; rentang = Biaya * (1 ± PARAM.u_est)
+       idx dari KATALOG indeks biaya (data); katalog kosong -> needs_review.
+
+
+================================================================================
+§I. BOBOT, DURASI, KURVA-S, CPM, EVM
+================================================================================
+F-I01  BOBOT: bobot_i = Jumlah_i / Total * 100  [%] ; Σ bobot = 100 ± tol (F-K01)
+F-I02  DURASI dari produktivitas AHSP:
+       D_i [hari] = V_i * koef_tenaga_penentu_i / ( N_regu_i * f_jam_efektif )
+       (alternatif kapasitas: D_i = V_i / kapasitas_regu; kapasitas ~ 1/koef)
+F-I03  KALENDER: hari kerja/minggu = PARAM.hari_kerja; tanggal = kalender kerja
+       (libur dilewati); konversi durasi kerja <-> kalender via kalender proyek.
+F-I04  KURVA-S RENCANA: alokasikan bobot_i sepanjang D_i (default linear);
+       S(t) = Σ_i Σ_{tau<=t} bobot_harian_i(tau).
+F-I05  CPM (PDM, default FS + lag):
+       ES_i = max(EF_pred + lag) ; EF_i = ES_i + D_i
+       LF_i = min(LS_succ - lag) ; LS_i = LF_i - D_i
+       TF_i = LS_i - ES_i ; jalur kritis = TF=0 ; durasi = max EF.
+F-I06  KURVA-S AKTUAL: dari opname bobot terpasang per periode.
+F-I07  DEVIASI: dev(t) = S_aktual(t) - S_rencana(t) ; alert bila dev <
+       -PARAM.ambang_dev (proaktif; mode Monitor).
+F-I08  EVM (BAC = total anggaran):
+       PV = S_rencana(t)/100 * BAC ; EV = S_aktual(t)/100 * BAC ; AC = biaya aktual
+       SV = EV - PV ; CV = EV - AC ; SPI = EV/PV ; CPI = EV/AC
+       EAC = AC + (BAC - EV)/CPI ; ETC = EAC - AC ; VAC = BAC - EAC
+       (AC dari data biaya bila tersedia; tanpa AC -> hanya jalur jadwal SPI.)
+
+
+================================================================================
+§J. CONFIDENCE & TRIANGULASI (deterministik, teruji)
+================================================================================
+F-J01  s_source = PARAM.rank_method[method]  ∈[0..1]
+       (urutan keandalan: read_from_grid/level/table & vector_* > read_from_text
+        vektor > ocr_local > visual LLM; manual_input tinggi bila terverifikasi)
+F-J02  s_corrob = +w bila ≥1 sumber independen setuju; −w' bila konflik
+       (bobot di PARAM)
+F-J03  confidence = clamp( w1*s_source + w2*s_corrob + w3*s_quality , 0, 1 )
+       (w1..w3 = PARAM, Σ=1; s_quality = skor kualitas baca/OCR)
+F-J04  SETUJU bila |v1 - v2| / max(|v1|,|v2|,eps) <= PARAM.tol_tri
+F-J05  needs_review = (confidence < PARAM.ambang_conf) OR (kritis tanpa
+       korroborasi) OR (terkena RULE-TRI-01: Pareto p_pareto, konflik presedensi).
+
+
+================================================================================
+§K. QA REKONSILIASI NUMERIK (wajib sebelum keluaran)
+================================================================================
+F-K01  Σ bobot divisi = 100% ± PARAM.tol_bobot ; selisih -> E.
+F-K02  CAKUPAN HARGA = resource_berharga / resource_dipakai ; final wajib 100%.
+F-K03  CAKUPAN EKSPANSI: setiap ElementInstance beton punya tepat {beton,
+       besi, bekisting} (kecuali pengecualian tercatat) ; register diff = ∅.
+F-K04  DUPLIKASI: element_id / work_id unik ; kuantitas dimiliki 1 item (INV-09).
+F-K05  SATUAN: satuan WorkItem = satuan AHSP terpilih (E-UNT bila tidak).
+F-K06  REVISI: semua Evidence dalam RAB ber-rev_id sama (E-REVMIX bila tidak).
+F-K07  SANITY: dimensi dalam PARAM.dims_range ; kuantitas negatif dilarang ;
+       A_neto ≤ A_kotor ; V_uk ≤ V_gali.
+F-K08  BOE terbit: ledger Assumption + missing + warning ikut keluaran (RULE-BOE).
+
+
+================================================================================
+§Z. REGISTRY PARAMETER (nilai di config/katalog — BUKAN di sini/kode)
+================================================================================
+Format: NAMA | makna | satuan | sumber nilai.
+-- Locale & presedensi --
+locale_id            | locale parsing angka                | -    | config
+precedence_order     | urutan presedensi konflik           | list | config/proyek
+-- Geometri & konvensi --
+beam_len_mode        | panjang balok as_as|bersih          | enum | konvensi QS
+t_balok              | pengurang tinggi kolom              | m    | schedule/0
+L_bearing            | tumpuan latei tiap sisi             | m    | praktik/spek
+dims_range           | rentang wajar dimensi per kelas     | map  | config QA
+k_fc_mode            | konvensi padanan K<->fc'            | enum | config
+-- Beton/besi/bekisting --
+c                    | selimut beton per elemen            | m    | SNI 2847/gambar
+gamma_s              | berat jenis baja = 7850             | kg/m3| KONSTANTA SNI
+k_hook, k_hook_s     | faktor kait utama/sengkang          | -    | SNI 2847
+n_Ld                 | faktor lap/penyaluran               | -    | SNI 2847
+L_stock              | panjang stok batang besi            | m    | pasar/kebijakan
+W_besi               | waste besi (mode param)             | -    | kebijakan
+waste_mode           | param|bbs (pilih satu, AP-16)       | enum | config
+W_baja_waste         | waste baja profil                   | -    | kebijakan
+reuse_form           | faktor pakai-ulang acuan (pilih AHSP)| -   | metode/spek
+h_kategori_perancah  | kategori tinggi perancah            | m    | metode/AHSP
+t_pelat, t_ft        | tebal pelat/footplat                | m    | schedule
+-- Dinding/finish --
+deduct_mode          | all|threshold                       | enum | spek/kesepakatan
+deduct_threshold     | ambang bukaan tak dikurangi         | m2   | spek/kesepakatan
+L_maks_praktis       | ambang segmen kolom praktis         | m    | praktik/spek
+A_maks_praktis       | ambang panel ring/praktis           | m2   | praktik/spek
+n_lapis              | lapis cat bila AHSP per lapis       | -    | spek
+t_screed             | tebal screed                        | m    | spek
+h_pasang_keramik     | tinggi keramik dinding basah        | m    | spek
+h_upstand            | tinggi upstand WP                   | m    | spek
+-- Tanah --
+w_kerja              | ruang kerja galian                  | m    | metode/standar
+f_gembur             | bank->gembur (>1)                   | -    | standar tanah
+f_susut              | padat->bank kebutuhan (>1)          | -    | standar tanah
+kap_truk             | kapasitas angkut                    | m3   | alat
+-- Atap/MEP --
+theta                | sudut atap                          | deg  | gambar
+s_gording            | jarak gording                       | m    | gambar/spek
+A_per_downpipe       | luas atap per pipa hujan            | m2   | praktik/spek
+L_pipa_per_fixture   | estimasi pipa per fixture (fallback)| m    | praktik + Assumption
+-- Metode trigger --
+V_pompa_min          | volume cor pemicu pompa             | m3   | metode
+H_pompa_min          | tinggi cor pemicu pompa             | m    | metode
+-- Biaya --
+OP                   | overhead & profit                   | -    | Permen PUPR (kisaran)
+tarif_PPN            | tarif PPN                           | -    | regulasi berlaku
+ppn_mode             | per_baris|total                     | enum | format dokumen
+u_est                | ketidakpastian mode Estimate        | -    | kebijakan
+-- Jadwal --
+N_regu               | regu paralel per pekerjaan          | -    | skenario
+f_jam_efektif        | efektivitas jam kerja               | -    | kebijakan
+hari_kerja           | hari kerja per minggu               | -    | proyek
+lag_default          | lag/overlap default per relasi      | hari | konvensi
+ambang_dev           | ambang alert deviasi kurva-S        | %    | kebijakan
+-- Confidence/QA --
+rank_method          | skor keandalan per metode           | map  | config
+w1,w2,w3             | bobot confidence (Σ=1)              | -    | config
+tol_tri              | toleransi triangulasi               | -    | config
+ambang_conf          | ambang needs_review                 | -    | config
+p_pareto             | porsi biaya wajib review            | -    | kebijakan
+tol_bobot            | toleransi Σ bobot                   | %    | config
+-- Pembulatan --
+r_qty, r_kg, r_money | presisi penyajian                   | int  | config/dokumen
+
+INV-Z  Tidak satu pun nilai parameter di-hardcode di kode/prompt (AP-15).
+       Snapshot parameter aktif disimpan di ProjectContext (reproducibility)
+       dan dilaporkan di BOE (RULE-BOE-01).
+
+================================================================================
+RINGKAS SATU KALIMAT:
+Setiap angka RAB & jadwal lahir dari rumus deterministik berkas ini — dari
+parsing locale, grid/level/skala, take-off beton-besi-bekisting-tanah-arsitektur
+-MEP, AHS->HSP->RAB, hingga CPM/EVM dan QA rekonsiliasi — dengan konstanta hanya
+dari fisika/SNI dan semua nilai lain sebagai parameter bernama yang tercatat.
+================================================================================
+(TXT 2 v4.1 FINAL — baca bersama TXT 00 [Scan->TKG], TXT 1 & TXT 3.)
+================================================================================

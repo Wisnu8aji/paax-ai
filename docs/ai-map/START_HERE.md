@@ -20,6 +20,8 @@
 | `docs/ai-map/GLOSSARY.md` | Istilah domain (AHSP, HSP, OH, BUK, Kurva S, CPM…) |
 | `docs/MASTER_PLAN.md` | Blueprint besar (rujuk saat menyentuh roadmap) |
 | `docs/pages/` | Aturan per-halaman web (1 file per halaman) |
+| `docs/BRAIN_ALIGNMENT.md` | Gap-analysis spek "brain" v4.1 vs dokumen ini — apa sudah selaras, apa sedang diekspansi |
+| `docs/specs/brain-v4.1/` | Spek rinci (92 rumus takeoff, TKG, 31 skill) — dirujuk, belum semua diimplementasi |
 
 ## Router — "Mau lakukan X → baca Y" (jangan baca selain ini)
 | Kalau task-nya… | Baca |
@@ -31,6 +33,7 @@
 | Kerja AI / chat / Gemini | `MAP.md` (lib/ai) + `CLAUDE.md` §1 |
 | Tidak paham istilah | `GLOSSARY.md` |
 | Keputusan arsitektur lama | `docs/adr/` |
+| Butuh rumus takeoff lengkap / spek TKG / model entitas Evidence | `docs/BRAIN_ALIGNMENT.md` → `docs/specs/brain-v4.1/` |
 
 ## Disiplin token (wajib)
 - Urutan baca: **START_HERE → STATE → (1–2 file relevan dari Router)**. Berhenti di situ.

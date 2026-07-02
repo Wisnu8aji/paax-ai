@@ -564,6 +564,28 @@ export const ScheduleVersionSchema = z.object({
 
 // ─── AI: Warnings, Assumptions, Evidence ─────────────────────────────────────
 
+// method/reviewState selaras docs/specs/brain-v4.1/PAAX_BRAIN_01_PRINSIP_PENALARAN.txt
+// §4.3 (Evidence contract) & §5 (lifecycle). rank_method (F-J01) menentukan
+// urutan keandalan method saat menghitung confidence (F-J03) — lihat §Z TXT02.
+export const EvidenceMethodEnum = z.enum([
+  "GRID_TABLE_VECTOR", // grid/level/tabel/vektor — paling andal
+  "TEXT_VECTOR",        // teks tertulis dari vektor PDF
+  "OCR_LOCAL",
+  "VISION_LLM",
+  "MANUAL_INPUT",
+  "CALCULATION",
+  "REFERENCE_LOOKUP",
+]);
+
+export const ReviewStateEnum = z.enum([
+  "EXTRACTED",
+  "CORROBORATED",
+  "NEEDS_REVIEW",
+  "APPROVED",
+  "LOCKED",
+  "SUPERSEDED",
+]);
+
 export const EvidenceSchema = z.object({
   id: z.string().uuid(),
   type: z.enum(["DRAWING_REGION", "DOCUMENT_TEXT", "CALCULATION", "REFERENCE", "USER_INPUT"]),
@@ -580,6 +602,16 @@ export const EvidenceSchema = z.object({
   excerpt: z.string().optional(),
   url: z.string().url().optional(),
   description: z.string(),
+  // ── Diperkaya (brain TXT01 §4.3) — semua opsional/berdefault, tidak
+  // mengubah bentuk data lama yang sudah ada. Belum diisi oleh pipeline
+  // manapun sampai perception layer (v1.0) mulai dibangun.
+  method: EvidenceMethodEnum.optional(),
+  ruleId: z.string().optional(), // mis. "F-B01", "RULE-EXP-BETON"
+  confidence: z.number().min(0).max(1).optional(), // F-J03
+  corroboratedBy: z.array(z.string().uuid()).default([]),
+  conflictsWith: z.array(z.string().uuid()).default([]),
+  reviewState: ReviewStateEnum.default("EXTRACTED"),
+  supersededBy: z.string().uuid().optional(),
   createdAt: z.string().datetime(),
 });
 
@@ -636,6 +668,76 @@ export const AssumptionSchema = z.object({
   acceptedAt: z.string().datetime().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+});
+
+// ─── DRAFT (brain v4.1, BELUM DIPAKAI) — ElementType/Instance/WorkItem/Review ─
+//
+// Skeleton selaras docs/specs/brain-v4.1/PAAX_BRAIN_01_PRINSIP_PENALARAN.txt §4
+// (model entitas TKG/reasoning). Inert — tidak direferensikan endpoint atau
+// komponen manapun. Akan MENGGANTIKAN DrawingElementSchema/QuantityCandidateSchema
+// (blok "Drawing-to-Estimate Workflow" v0.5 di atas) saat pipeline TKG (v1.0)
+// mulai dibangun — JANGAN aktifkan/gunakan keduanya bersamaan (schema drift,
+// lihat docs/BRAIN_ALIGNMENT.md §2). Sinkron ke Pydantic hanya saat diaktifkan.
+
+export const ElementTypeSchema = z.object({
+  id: z.string().uuid(),
+  projectId: z.string().uuid(),
+  code: z.string(), // mis. "K1", "B1" — label tipe dari schedule/legenda
+  category: z.enum(["KOLOM", "BALOK", "PELAT", "DINDING", "PONDASI", "ATAP", "KUSEN", "MEP", "LAIN"]),
+  properties: z.record(z.unknown()).default({}), // dimensi & spesifikasi per schedule
+  sourceEvidenceIds: z.array(z.string().uuid()).default([]),
+  createdAt: z.string().datetime(),
+});
+
+export const ElementInstanceSchema = z.object({
+  id: z.string(), // format id deterministik: {PRJ}.{REV}.{DISC}.{LEVEL}.{TYPE}.{SEQ}
+  projectId: z.string().uuid(),
+  elementTypeId: z.string().uuid(),
+  level: z.string(), // mis. "LT1", "LT2"
+  gridPosition: z.string().optional(), // mis. "A-1"
+  count: z.number().int().positive().default(1),
+  sourceEvidenceIds: z.array(z.string().uuid()).default([]),
+  reviewState: ReviewStateEnum.default("EXTRACTED"),
+  createdAt: z.string().datetime(),
+});
+
+export const WorkItemDraftSchema = z.object({
+  id: z.string().uuid(),
+  projectId: z.string().uuid(),
+  elementInstanceId: z.string().optional(), // kosong utk implied work (RULE-IMP)
+  ruleId: z.string(), // mis. "RULE-EXP-BETON", "RULE-IMP-SMKK"
+  workType: z.string(), // mis. "beton", "besi", "bekisting"
+  quantity: z.number().nonnegative().optional(), // diisi ENGINE, bukan LLM (INV-01)
+  unit: UnitEnum.optional(),
+  ahspCode: z.string().optional(),
+  sourceEvidenceIds: z.array(z.string().uuid()).default([]),
+  reviewState: ReviewStateEnum.default("EXTRACTED"),
+  createdAt: z.string().datetime(),
+});
+
+export const ReviewTaskSchema = z.object({
+  id: z.string().uuid(),
+  projectId: z.string().uuid(),
+  targetType: z.enum(["ELEMENT_INSTANCE", "WORK_ITEM", "EVIDENCE"]),
+  targetId: z.string(),
+  reason: z.string(), // mis. "confidence rendah", "konflik presedensi" (RULE-TRI-01)
+  priority: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
+  status: z.enum(["OPEN", "IN_PROGRESS", "RESOLVED", "DISMISSED"]).default("OPEN"),
+  assignedToId: z.string().uuid().optional(),
+  createdAt: z.string().datetime(),
+  resolvedAt: z.string().datetime().optional(),
+});
+
+export const CorrectionSchema = z.object({
+  id: z.string().uuid(),
+  projectId: z.string().uuid(),
+  reviewTaskId: z.string().uuid().optional(),
+  targetType: z.enum(["ELEMENT_INSTANCE", "WORK_ITEM", "EVIDENCE"]),
+  targetId: z.string(),
+  previousValue: z.record(z.unknown()).optional(),
+  correctedValue: z.record(z.unknown()),
+  correctedById: z.string().uuid(),
+  createdAt: z.string().datetime(),
 });
 
 // ─── Export ──────────────────────────────────────────────────────────────────
@@ -1157,6 +1259,224 @@ export const VolumeResult = z.object({
   inputs: z.record(z.number()),
 });
 export type VolumeResult = z.infer<typeof VolumeResult>;
+
+// ─── TKG — Transkrip Kanonik Gambar (selaras app/tkg/models.py) ──────────────
+//
+// Skema per docs/specs/brain-v4.1/PAAX_BRAIN_00_EKSTRAKSI_GAMBAR_KERJA.txt §6.
+// INV-TKG-05: TKG BUKAN RAB — tidak memuat harga/AHSP/ekspansi.
+// INV-TKG-03: nilai raw disimpan berdampingan dengan nilai normal.
+
+export const TkgUnitEnum = z.enum(["mm", "cm", "m"]);
+
+export const GridAxisSchema = z.object({
+  label: z.string(),
+  posisi_mm: z.number().nullish(),
+});
+
+export const GridSpanSchema = z.object({
+  dari: z.string(),
+  ke: z.string(),
+  nilai: z.number(),
+  unit: TkgUnitEnum.default("mm"),
+  raw: z.string().nullish(),
+});
+
+export const GridTotalSchema = z.object({
+  dari: z.string(),
+  ke: z.string(),
+  nilai: z.number(),
+  unit: TkgUnitEnum.default("mm"),
+  raw: z.string().nullish(),
+});
+
+export const TkgGridSchema = z.object({
+  sumbu_x: z.array(GridAxisSchema).default([]),
+  sumbu_y: z.array(GridAxisSchema).default([]),
+  bentang_x: z.array(GridSpanSchema).default([]),
+  bentang_y: z.array(GridSpanSchema).default([]),
+  total_x: GridTotalSchema.nullish(),
+  total_y: GridTotalSchema.nullish(),
+  offset_tepi: z.array(GridSpanSchema).default([]),
+});
+
+export const TkgLevelSchema = z.object({
+  label_raw: z.string(),
+  nilai_m: z.number(),
+  lantai: z.string().nullish(),
+});
+
+export const RebarPosisiEnum = z.enum([
+  "tul_atas", "tul_bawah", "tul_pinggang", "tul_utama", "tul_sebar_x",
+  "tul_sebar_y", "sengkang", "sengkang_tumpuan", "sengkang_lapangan",
+]);
+
+export const RebarSpecSchema = z.object({
+  posisi: RebarPosisiEnum,
+  raw: z.string(),
+  jumlah: z.number().int().nullish(),
+  diameter_mm: z.number().nullish(),
+  jarak_mm: z.number().nullish(),
+  jenis: z.enum(["D", "O"]).default("D"),
+});
+
+export const TypeKategoriEnum = z.enum([
+  "pondasi_telapak", "pondasi_menerus", "sloof", "kolom", "kolom_praktis",
+  "balok", "ring_balok", "latei", "plat", "tangga", "kuda_kuda", "gording",
+  "ikatan_angin", "trekstang", "lain",
+]);
+
+export const TypeRecordSchema = z.object({
+  kode: z.string(),
+  lantai: z.string().nullish(),
+  kategori: TypeKategoriEnum.nullish(),
+  dimensi: z.record(z.number()).default({}),
+  satuan_dimensi: TkgUnitEnum.default("mm"),
+  tulangan: z.array(RebarSpecSchema).default([]),
+  mutu_beton: z.string().nullish(),
+  keterangan: z.string().nullish(),
+  raw_cells: z.record(z.string()).nullish(),
+});
+
+export const TkgTableSchema = z.object({
+  judul: z.string(),
+  records: z.array(TypeRecordSchema).default([]),
+});
+
+export const RuasGridSchema = z.object({
+  sumbu: z.enum(["x", "y"]),
+  dari: z.string(),
+  ke: z.string(),
+  pada: z.string().nullish(),
+});
+
+export const TkgElementInstanceSchema = z.object({
+  kode: z.string(),
+  alamat: z.string(),
+  bentuk: z.enum(["titik", "ruas", "bidang"]).default("titik"),
+  n: z.number().int().default(1),
+  count_simbol: z.number().int().nullish(),
+  count_label: z.number().int().nullish(),
+  lantai: z.string().nullish(),
+  ruas: RuasGridSchema.nullish(),
+  panjang_m: z.number().nullish(),
+});
+
+export const TkgDimensionSchema = z.object({
+  nilai: z.number(),
+  unit: TkgUnitEnum.default("mm"),
+  anchor: z.string(),
+  raw: z.string().nullish(),
+  target_kode: z.string().nullish(),
+});
+
+export const SheetJenisEnum = z.enum([
+  "denah", "tabel", "detail", "potongan", "tampak", "denah_atap",
+  "notes", "campuran",
+]);
+
+export const SheetMetaSchema = z.object({
+  judul: z.string(),
+  nomor: z.string().nullish(),
+  skala: z.string().nullish(),
+  disiplin: z.string().nullish(),
+});
+
+export const TkgUnclassifiedSchema = z.object({
+  raw: z.string(),
+  alasan: z.string(),
+});
+
+export const TkgSheetSchema = z.object({
+  sheet_id: z.string(),
+  jenis: SheetJenisEnum,
+  meta: SheetMetaSchema,
+  grid: TkgGridSchema.nullish(),
+  levels: z.array(TkgLevelSchema).default([]),
+  tables: z.array(TkgTableSchema).default([]),
+  elements: z.array(TkgElementInstanceSchema).default([]),
+  dimensions: z.array(TkgDimensionSchema).default([]),
+  notes: z.array(z.string()).default([]),
+  unclassified: z.array(TkgUnclassifiedSchema).default([]),
+});
+
+export const TkgDocumentSchema = z.object({
+  prj_id: z.string(),
+  rev_id: z.string().default("R0"),
+  file_hash: z.string().nullish(),
+  locale: z.string().default("id-ID"),
+  satuan_default: TkgUnitEnum.default("mm"),
+  generated_by: z.string().default("manual"),
+  sheets: z.array(TkgSheetSchema).default([]),
+});
+export type TkgDocument = z.infer<typeof TkgDocumentSchema>;
+
+export const TkgIssueSchema = z.object({
+  code: z.string(),
+  severity: z.enum(["error", "warning"]),
+  sheet_id: z.string().nullish(),
+  message: z.string(),
+  subject: z.string().nullish(),
+});
+
+export const TkgValidationResultSchema = z.object({
+  ok: z.boolean(),
+  gate_passed: z.boolean(),
+  n_errors: z.number().int(),
+  n_warnings: z.number().int(),
+  issues: z.array(TkgIssueSchema),
+  type_index: z.record(z.record(z.array(z.string()))),
+  orphans_tanpa_definisi: z.array(z.string()),
+  orphans_tanpa_instance: z.array(z.string()),
+});
+export type TkgValidationResult = z.infer<typeof TkgValidationResultSchema>;
+
+// ─── Takeoff dari TKG (selaras app/tkg/takeoff.py + params.py) ───────────────
+
+export const TakeoffParamsSchema = z.object({
+  tinggi_per_lantai_m: z.number().nullish(),
+  beam_len_mode: z.string().default("as_as"),
+  selimut_beton_m: z.number().default(0.04),
+  k_hook_sengkang: z.number().default(6.0),
+  zona_tumpuan_fraksi: z.number().default(0.25),
+  waste_besi: z.number().default(0.0),
+  t_pelat_default_m: z.number().nullish(),
+  tol_grid: z.number().default(0.005),
+});
+export type TakeoffParams = z.infer<typeof TakeoffParamsSchema>;
+
+export const ParamUsedSchema = z.object({
+  nama: z.string(),
+  nilai: z.union([z.number(), z.string()]),
+  catatan: z.string(),
+});
+
+export const TakeoffItemSchema = z.object({
+  kode: z.string(),
+  lantai: z.string().nullish(),
+  kategori: z.string(),
+  work_type: z.enum(["beton", "bekisting", "besi"]),
+  quantity: z.number().nullish(),   // null = needs_review, TIDAK ditebak
+  unit: z.string(),
+  formula: z.string(),
+  detail: z.string(),
+  needs_review: z.boolean().default(false),
+  review_reason: z.string().nullish(),
+  mutu_beton: z.string().nullish(),
+  alamat: z.string().nullish(),
+  rule_id: z.string(),
+});
+export type TakeoffItem = z.infer<typeof TakeoffItemSchema>;
+
+export const TakeoffResultSchema = z.object({
+  prj_id: z.string(),
+  rev_id: z.string(),
+  items: z.array(TakeoffItemSchema),
+  assumptions: z.array(z.string()).default([]),
+  warnings: z.array(z.string()).default([]),
+  params_used: z.array(ParamUsedSchema).default([]),
+  n_needs_review: z.number().int().default(0),
+});
+export type TakeoffResult = z.infer<typeof TakeoffResultSchema>;
 
 // ─── RAB tersektor / WBS (selaras app/rab/sections.py) ───────────────────────
 

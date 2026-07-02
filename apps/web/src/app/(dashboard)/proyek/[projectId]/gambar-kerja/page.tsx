@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { FileImage, UploadCloud, ArrowRight } from 'lucide-react';
 import { Card, StatCard, StatusPill, Button, type PillTone } from '@/components/ui';
 import { useShell } from '@/components/app-shell/shell-context';
+import { TkgWorkspace } from '@/components/drawings/tkg-workspace';
 import { drawingSummary, drawings } from '@/lib/mock/workspace';
 
 const statusMap: Record<string, { tone: PillTone; label: string }> = {
@@ -14,9 +16,13 @@ const statusMap: Record<string, { tone: PillTone; label: string }> = {
 
 export default function ProjectGambarKerjaPage() {
   const { openOverlay } = useShell();
+  const params = useParams<{ projectId: string }>();
+  const projectId = params.projectId;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <TkgWorkspace projectId={projectId} />
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }} className="pax-grid-4">
         {drawingSummary.map((s) => (
           <StatCard key={s.label} label={s.label} value={s.value} sub={s.sub} />
