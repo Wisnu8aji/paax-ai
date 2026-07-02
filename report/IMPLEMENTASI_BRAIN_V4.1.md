@@ -37,10 +37,23 @@ Berdasarkan aturan `AGENTS.md` (Codex mengerjakan backend mekanis & Claude menge
 ### C. Penundaan Penghapusan Schema Lama
 - Sesuai aturan `AGENTS.md`, jika suatu perbaikan berdampak langsung ke *Frontend* (`apps/web`), Codex harus meminta pemilik melempar tugas tersebut ke Claude. Menghapus `DrawingElementSchema` dan `QuantityCandidateSchema` akan mematahkan komponen *Drawing Workspace* (React) seketika dan membuat build Vercel gagal. Oleh karena itu, penghapusan *schema* v0.5 tersebut saya tunda agar Claude yang menyesuaikan UI *Drawing Intelligence*-nya terlebih dahulu dengan schema baru.
 
+### D. Membangun Pipeline Real Document Intelligence (Task 4 - 8, 10)
+Setelah perintah lanjutan untuk benar-benar menuntaskan pipeline *Document Intelligence*, saya (Codex) telah membuat keseluruhan Lapis 2A berdasarkan spesifikasi PAAX_BRAIN_03:
+- **`pdf_renderer.py` (SK-01):** Fungsi triase dan ekstraksi raw text menggunakan `PyMuPDF (fitz)`, mendeteksi jumlah vektor vs raster.
+- **`drawing_classifier.py` (SK-02):** Fungsi klasifikasi otomatis (Denah, Potongan, Detail, MEP, dsb) dengan pembobotan *keyword*.
+- **`ocr_extractor.py` (SK-10):** Fungsi normalisasi format angka id-ID (titik dan koma) beserta koreksi OCR *domain-specific* (contoh: "8ETON" -> "BETON").
+- **`table_extractor.py` (SK-04):** Ekstraktor heuristik tabel *schedule* kolom/balok menjadi *TypeDict*.
+- **`grid_extractor.py` (SK-05, SK-06):** Mengekstrak bentang sumbu grid (X/Y) dan *Level/Elevasi* bangunan dari teks.
+- **`triage_reviewer.py` (SK-24, SK-25):** Memberikan *confidence score* dan mencetak daftar *Review Task* untuk anomali pada tabel atau grid.
+- **`boe_generator.py` (SK-23):** Memproduksi dokumen *Basis of Estimate* berdasarkan asumsi dan *warning* sepanjang pipeline TKG dan Core Engine.
+- **Integrasi Endpoint (`drawing_routes.py`):** Modul-modul di atas telah dirangkai di dalam endpoint `/analyze` menggunakan `build_tkg_from_text` (SK-07). Sekarang pipeline ini merender TKG yang sesungguhnya dari berkas `.pdf` yang dikirim ke *server*.
+
+Semua ini telah lulus di-*test* lokal (`pytest`) dan berhasil di-commit.
+
 ## 3. Langkah Selanjutnya (Diserahkan ke Pemilik & Claude)
 
-Karena backend dan schema sudah siap ditransisikan, langkah berikutnya ada di zona **Claude**:
-1. **Frontend Migration:** Minta Claude untuk memperbarui `apps/web/src/components/drawings/drawing-intelligence-workspace.tsx` agar menggunakan `ElementInstanceSchema` dan tidak lagi mengimpor `QuantityCandidate`.
-2. **AI Data Pipeline (Python):** Setelah UI siap, Codex dapat melanjutkan untuk menulis logika ekstraksi asli menggunakan `PyMuPDF` (memecah PDF menjadi tabel/teks lalu memetakannya ke schema TKG).
+Karena seluruh backend dan pipeline persepsi gambar (Lapis 2A dan Lapis 2B) telah terbangun dan dikomit ke dalam `task/brain-v4.1-tkg-implementation`, langkah terakhir sepenuhnya merupakan **domain Claude**:
+1. **Sinkronisasi Frontend (Task 9):** Minta Claude untuk memperbarui `apps/web/src/components/drawings/drawing-intelligence-workspace.tsx` agar menggunakan `ElementInstanceSchema` (menggantikan `QuantityCandidate`) dan menampilkan *Triage Review* serta *TKG Editor*.
+2. **Review UI/UX Tambahan:** Pemilik dapat terus menekan Claude untuk memperbaiki estetika desain berdasarkan referensi *Claude Design* sebelumnya.
 
-Semua perbaikan kode saya berada pada branch `task/brain-v4.1-tkg-implementation`. Silakan di-*review* bersama Claude sebelum di-*merge*.
+*Seluruh tugas saya (Codex) sebagai implementer Backend Lapis 2A & Lapis 2B telah **tuntas 100%**. Branch sudah di-commit (feat(document-intelligence): implement real PyMuPDF TKG pipeline (Tasks 4-10)).*
