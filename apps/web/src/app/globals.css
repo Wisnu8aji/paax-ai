@@ -36,7 +36,7 @@
   body {
     background-color: var(--color-paax-bg);
     color: var(--color-paax-text);
-    font-family: var(--font-hanken), 'Hanken Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
   }
@@ -352,6 +352,8 @@
   --glass-bg:rgba(255,255,255,0.55); --glass-bd:rgba(255,255,255,0.65);
   --shadow-card:0 1px 3px rgba(20,20,18,0.05); --shadow-hover:0 6px 18px rgba(20,20,18,0.09);
   --shadow-modal:0 24px 60px rgba(20,20,18,0.28);
+  --font-sans:var(--font-inter), 'Inter', system-ui, sans-serif;
+  --font-display:var(--font-outfit), 'Outfit', var(--font-sans);
   --font-mono:var(--font-jetbrains), 'JetBrains Mono', ui-monospace, monospace;
 }
 [data-theme="dark"] {
@@ -389,6 +391,19 @@
 
 /* Workspace shell helpers (redesign only) */
 .pax-mono { font-family: var(--font-mono); }
+.pax-display { font-family: var(--font-display); letter-spacing: -0.01em; }
+.pax-scope h1, .pax-scope h2, .pax-scope h3 { font-family: var(--font-display); }
+.pax-scope :is(button, a, input, select, textarea, [role="switch"], [role="tab"]):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--text) 55%, transparent);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pax-scope *, .pax-scope *::before, .pax-scope *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 .pax-scope ::-webkit-scrollbar { width:9px; height:9px; }
 .pax-scope ::-webkit-scrollbar-thumb { background:color-mix(in srgb,var(--text) 18%,transparent); border-radius:6px; border:2px solid transparent; background-clip:padding-box; }
 .pax-scope ::-webkit-scrollbar-track { background:transparent; }
@@ -420,6 +435,37 @@
 }
 .pax-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb,var(--text) 8%,transparent); }
 .pax-input::placeholder { color: var(--text3); }
+
+/* Settings dialog (2 kolom → menyusun vertikal di layar sempit) */
+.pax-settings-panel { display: flex; }
+.pax-settings-nav {
+  width: 212px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-soft);
+}
+.pax-settings-nav-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 10px 14px;
+  overflow-y: auto;
+}
+@media (max-width: 720px) {
+  .pax-settings-panel { flex-direction: column; }
+  .pax-settings-nav {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .pax-settings-nav-title { display: none; }
+  .pax-settings-nav-items {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 10px;
+  }
+}
 
 /* Redesign responsive grids */
 @media (max-width: 1100px) {

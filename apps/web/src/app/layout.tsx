@@ -1,11 +1,18 @@
 import type { Metadata } from 'next';
-import { Hanken_Grotesk, JetBrains_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono, Outfit } from 'next/font/google';
 import './globals.css';
 
-const hanken = Hanken_Grotesk({
+const inter = Inter({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-hanken',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const outfit = Outfit({
+  subsets: ['latin'],
+  weight: ['500', '600', '700', '800'],
+  variable: '--font-outfit',
   display: 'swap',
 });
 
@@ -28,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className={`${hanken.variable} ${jetbrainsMono.variable}`}>
+    <html lang="id" className={`${inter.variable} ${outfit.variable} ${jetbrainsMono.variable}`}>
       <body className="bg-paax-bg text-paax-text antialiased">
         {children}
       </body>
