@@ -54,8 +54,20 @@ dikerjakan sekarang karena murni deterministik & tidak menyentuh CV/vision.
   F-D08 BBS (marks + kebutuhan stok + waste nyata per diameter; batang > stok
   dipecah; elemen review tidak menyumbang potongan) + mirror Zod
   (`BbsResultSchema`, param baru) — 8 test anchor manual baru (pytest 134).
-  Berikutnya: D4 parameter registry §Z penuh → D5 tanah F-F; UI tabel BBS di
-  TkgWorkspace menyusul. Detail: `docs/BRAIN_ALIGNMENT.md` §4.
+  D4+E+F+G ✅ **take-off arsitektur/tanah (2026-07-02)**: paket baru
+  `app/takeoff/` (params §Z: TanahParams/DindingParams/ArsitekturParams;
+  models; **§F tanah** F-F01/02/03/04/05/07 galian footplat+menerus, urugan
+  kembali, urugan pasir/sirtu, buangan+ritase — disiplin bank/gembur/padat
+  tak dicampur; **§E finishing** F-E01/02/03/05/07 pasangan+deduksi bukaan
+  (all|threshold), plester s_sisi, acian, cat n_lapis, screed; **§G subset**
+  F-G01/03/05 pondasi batu belah, penutup lantai+plin, atap miring A/cosθ).
+  3 endpoint `/takeoff/tanah|dinding|arsitektur` + mirror Zod + requests.http —
+  13 test anchor manual baru (**pytest 147**). Data kurang → needs_review
+  (bukan tebakan); faktor tanah default tercatat sebagai assumption.
+  Berikutnya: D5 §Z penuh (sisa param confidence/QA), F-F06 pemadatan +
+  angkut per kelas jarak, F-G04/G06-G14 (keramik dinding/baja/atap detail/
+  MEP), F-C07-C10; UI tabel BBS + form takeoff manual di TkgWorkspace.
+  Detail: `docs/BRAIN_ALIGNMENT.md` §4.
 - **DITUNDA (jangan dibangun)**: v1.0 Gambar→BoQ→RAB (CV) + Site Agent penuh.
   Brain v4.1 menguatkan ini via gerbang F0 (data grounding wajib sebelum
   F2/TKG) — bukan alasan untuk mulai lebih awal.
