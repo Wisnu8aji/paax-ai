@@ -351,3 +351,58 @@ Content-Type: application/json
   },
   "params": {"tinggi_per_lantai_m": 3.5}
 }
+
+### Take-off Tanah — galian footplat + urugan kembali + buangan (brain §F)
+# Anchor: FP1 gali 15.36 m3 (bank), urugan kembali 13.36, buangan 2.4 (gembur), ritase 1
+POST http://localhost:8081/takeoff/tanah
+Content-Type: application/json
+
+{
+  "footplats": [
+    {"kode": "FP1", "b_ft": 1.0, "l_ft": 1.0, "d_gali": 1.5, "n": 4,
+     "v_struktur_tertanam_per_lubang": 0.5}
+  ],
+  "galian_menerus": [
+    {"kode": "GM1", "l_parit": 20, "b_bawah": 0.6, "b_atas": 0.8, "d_gali": 1.0}
+  ],
+  "urugan": [
+    {"kode": "UP1", "jenis": "pasir", "a": 12, "t_lapis": 0.05}
+  ],
+  "params": {"w_kerja": 0.3, "f_gembur": 1.2, "f_susut": 1.1, "kap_truk": 4.0}
+}
+
+### Take-off Dinding — pasangan + plester + acian + cat (brain §E)
+# Anchor: pasangan 7.95 m2 (deduksi all), plester 15.9, acian 15.9, cat 15.9
+POST http://localhost:8081/takeoff/dinding
+Content-Type: application/json
+
+{
+  "dinding": [
+    {"kode": "D1", "l_dinding": 4.0, "h_dinding": 3.0,
+     "bukaan": [
+       {"nama": "pintu", "lebar": 0.9, "tinggi": 2.1},
+       {"nama": "jendela", "lebar": 1.5, "tinggi": 1.2},
+       {"nama": "lubang", "lebar": 0.6, "tinggi": 0.6}
+     ],
+     "plester_sisi": 2, "acian": true, "cat": true}
+  ],
+  "screed": [{"kode": "S1", "a": 20, "t": 0.03}],
+  "params": {"deduct_mode": "all"}
+}
+
+### Take-off Arsitektur — pondasi batu + lantai/plin + atap miring (brain §G)
+# Anchor: pondasi 6.3 m3, lantai 20 m2, plin 16.2 m, atap miring 115.4701 m2
+POST http://localhost:8081/takeoff/arsitektur
+Content-Type: application/json
+
+{
+  "pondasi_batu": [
+    {"kode": "PB1", "a_atas": 0.3, "a_bawah": 0.6, "h_pond": 0.7, "l": 20}
+  ],
+  "lantai": [
+    {"kode": "LT1", "panjang": 4, "lebar": 5, "lebar_pintu_total": 1.8}
+  ],
+  "atap": [
+    {"kode": "AT1", "a_proyeksi": 100, "theta_deg": 30}
+  ]
+}
