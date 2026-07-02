@@ -2,7 +2,7 @@
 
 /**
  * PAAX Workspace theme provider (redesign).
- * Themes: 'light' (default) | 'dark' | 'grey'. Persisted in localStorage.
+ * Themes: 'dark' (default) | 'light' | 'grey'. Persisted in localStorage.
  * The chosen theme is applied as `data-theme` on the workspace shell wrapper
  * (see ThemeScope), so it only affects redesigned screens — the legacy
  * /rab-tester page (outside the shell) is untouched.
@@ -30,7 +30,8 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   // SSR renders the default; the stored theme is applied on mount to avoid mismatch.
-  const [theme, setThemeState] = useState<PaaxTheme>('light');
+  // Default 'dark' = tampilan premium gelap; pilihan user di localStorage tetap dihormati.
+  const [theme, setThemeState] = useState<PaaxTheme>('dark');
 
   useEffect(() => {
     try {

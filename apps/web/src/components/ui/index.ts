@@ -6,4 +6,5 @@ export { ProgressBar } from './progress-bar';
 export { EmptyState } from './empty-state';
 export { Drawer } from './drawer';
 export { Modal } from './modal';
+export { Switch } from './switch';
 export { PageHeader } from './page-header';

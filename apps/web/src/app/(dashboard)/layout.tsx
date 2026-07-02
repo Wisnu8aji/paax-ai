@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { ThemeProvider, useTheme } from '@/components/theme/theme-provider';
-import { ShellContext, type OverlayName } from '@/components/app-shell/shell-context';
+import { ShellContext, type OverlayName, type SettingsTab } from '@/components/app-shell/shell-context';
 import { IconRail } from '@/components/app-shell/icon-rail';
 import { NavPanel } from '@/components/app-shell/nav-panel';
 import Topbar from '@/components/app-shell/topbar';
@@ -13,14 +13,21 @@ import { ProjectsProvider } from '@/lib/projects/projects-context';
 function Shell({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
   const [current, setCurrent] = useState<OverlayName | null>(null);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>('umum');
   const [navCollapsed, setNavCollapsed] = useState(false);
 
   const openOverlay = useCallback((name: OverlayName) => setCurrent(name), []);
   const closeOverlay = useCallback(() => setCurrent(null), []);
+  const openSettings = useCallback((tab: SettingsTab) => {
+    setSettingsTab(tab);
+    setCurrent('settings');
+  }, []);
   const toggleNav = useCallback(() => setNavCollapsed((c) => !c), []);
 
   return (
-    <ShellContext.Provider value={{ current, openOverlay, closeOverlay, navCollapsed, toggleNav }}>
+    <ShellContext.Provider
+      value={{ current, openOverlay, closeOverlay, settingsTab, openSettings, navCollapsed, toggleNav }}
+    >
       <div
         data-theme={theme}
         className="pax-scope"
@@ -31,7 +38,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           minHeight: '100vh',
           background: 'var(--bg)',
           color: 'var(--text)',
-          fontFamily: "var(--font-hanken), 'Hanken Grotesk', system-ui, sans-serif",
+          fontFamily: 'var(--font-sans)',
         }}
       >
         <IconRail />
