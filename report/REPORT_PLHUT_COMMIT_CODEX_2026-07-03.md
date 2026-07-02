@@ -10,3 +10,9 @@
 - Branch: `task/brain-v4.1-tkg-implementation`
 - All requested commits have been created matching the strict staging rules.
 - Draft PR has been successfully opened via `gh pr create`: https://github.com/Wisnu8aji/paax-ai/pull/25
+
+## Golden Anchor (Lanjutan)
+- **pytest**: 198 passed (2.99s)
+- **Golden Anchor**: Ditambahkan dari GAMBAR KERJA PLHUT ASLI (grid nyata, hitungan kolom nyata dari denah, tabel kolom nyata; footplat tanpa tebal).
+- **Catatan Penting untuk Owner**:
+  Commit `790b2ee` (sesi batch sebelumnya) terlanjur men-track `.claude/skills/` (35 file skill pihak ketiga) + `skills-lock.json` + `.claude/launch.json` — melanggar aturan "jangan commit `.claude/`". JANGAN perbaiki sendiri tanpa persetujuan owner (butuh `git rm -r --cached` + entri `.gitignore`); tunggu keputusan di review PR #25.
