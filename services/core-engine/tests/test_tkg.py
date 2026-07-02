@@ -13,6 +13,25 @@ Anchor dihitung MANUAL + diverifikasi independen langsung dari rumus
      pokok 4x6.5xw12=23.083166; sengkang n=floor(6.5/0.2)+1=33,
      L1=2x(0.07+0.12)+0.096=0.476, kg=33x0.476xw8=6.198126;
      total = 29.281292 kg. Beton 0.15x0.2x6.5=0.195 m3. Bekisting 2x0.2x6.5=2.6 m2.
+
+Anchor D3 (kait/lewatan/pinggang/BBS — dihitung manual 2026-07-02):
+  A. Kait pokok (K2 tinggi 3.5, n=1, 8D16, k_hook_utama=12):
+     kait/ujung = 12x16/1000 = 0.192; L_bat = 3.5 + 2x0.192 = 3.884 m
+     W = 8 x 3.884 x w16 = 31.072 x 1.5783361 = 49.042060 kg
+  B. Lewatan (B1 panjang 14 m, 4D16, n_ld=40, l_stock=12):
+     n_lap = ceil(14/12)-1 = 1 ; lap = 40x16/1000 = 0.64 ; L_bat = 14.64 m
+     W = 4 x 14.64 x w16 = 58.56 x 1.5783361 = 92.427365 kg
+  D. Pinggang F-D04 (B2 panjang 6 m, 2D12, n_ld=40):
+     L_p = 6 + 2x40x12/1000 = 6.96 ; W = 2 x 6.96 x w12
+       = 13.92 x 0.8878141 = 12.358372 kg
+  E. BBS (K2 8D16 x 3.5 m, l_stock=12): berat = 28 x w16 = 44.193412 kg;
+     n_per_stok = floor(12/3.5) = 3 ; kebutuhan = ceil(8/3) = 3 batang;
+     waste = (3x12 - 28) x w16 = 8 x 1.5783361 = 12.626689 kg
+  G. BBS + lewatan (B1, L_bat 14.64 dipecah 12 + 2.64):
+     potongan (16,12): 4 buah -> butuh 4 stok, waste 0;
+     potongan (16,2.64): 4 buah, n_per_stok = floor(12/2.64) = 4 -> 1 stok,
+     waste = (12 - 4x2.64) x w16 = 1.44 x 1.5783361 = 2.272804 kg;
+     total stok d16 = 5, total waste = 2.272804 kg
 """
 import pytest
 
@@ -242,3 +261,118 @@ def test_takeoff_waste_besi_param():
     b1 = _items(dengan, "SL1", "besi")[0].quantity
     # hasil dibulatkan 4 desimal (_r4) -> toleransi absolut sebesar 1e-3
     assert b1 == pytest.approx(b0 * 1.05, abs=1e-3)
+
+
+# ─── D3: kait + lewatan + pinggang (F-D02/F-D04) + BBS (F-D08) ────────────────
+
+def _doc_satu_elemen(kode: str, dimensi: dict, tulangan: list,
+                     panjang_m: float | None = None) -> TkgDocument:
+    """Dokumen minimal: satu elemen + satu record (untuk anchor besi terisolasi)."""
+    denah = TkgSheet(
+        sheet_id="S01", jenis="denah", meta=SheetMeta(judul="DENAH UJI"),
+        elements=[ElementInstance(kode=kode, alamat="as A/1", n=1, panjang_m=panjang_m)],
+    )
+    tabel = TkgSheet(
+        sheet_id="S02", jenis="tabel", meta=SheetMeta(judul="TABEL UJI"),
+        tables=[TkgTable(judul="TABEL", records=[
+            TypeRecord(kode=kode, dimensi=dimensi, satuan_dimensi="mm",
+                       mutu_beton="fc' 25", tulangan=tulangan),
+        ])],
+    )
+    return TkgDocument(prj_id="PRJ-D3", rev_id="R0", sheets=[denah, tabel])
+
+
+def test_fd02_kait_pokok_dihitung_bila_param_disetor():
+    # Anchor A: 8 x 3.884 x w16 = 49.042060 kg
+    doc = _doc_satu_elemen("K2", {"b": 300, "h": 400},
+                           [RebarSpec(posisi="tul_utama", raw="8D16")])
+    r = takeoff_tkg(doc, TakeoffParams(tinggi_per_lantai_m=3.5, k_hook_utama=12))
+    besi = _items(r, "K2", "besi")
+    assert besi[0].quantity == pytest.approx(49.0421, abs=0.001)
+    assert "kait 2 x 12d" in besi[0].detail
+    assert any(p.nama == "k_hook_utama" for p in r.params_used)
+    # lewatan tetap TIDAK dihitung (l_stock tidak disetor) -> asumsi tercatat
+    assert any("sambungan lewatan" in a for a in r.assumptions)
+
+
+def test_fd02_lewatan_dihitung_dari_stok():
+    # Anchor B: 4 x 14.64 x w16 = 92.427365 kg (1 lap 40d)
+    doc = _doc_satu_elemen("B1", {"b": 200, "h": 300},
+                           [RebarSpec(posisi="tul_utama", raw="4D16")], panjang_m=14.0)
+    r = takeoff_tkg(doc, TakeoffParams(n_ld=40, l_stock_m=12))
+    besi = _items(r, "B1", "besi")
+    assert besi[0].quantity == pytest.approx(92.4274, abs=0.001)
+    assert "1 lap x 40d" in besi[0].detail
+    nama = {p.nama for p in r.params_used}
+    assert "n_ld" in nama and "l_stock_m" in nama
+
+
+def test_fd02_lewatan_dibutuhkan_tanpa_n_ld_jadi_review():
+    # Anchor C: batang 14 m > stok 12 m tapi n_ld tidak disetor -> DILARANG
+    # diam-diam mengabaikan lewatan; item harus needs_review tanpa angka.
+    doc = _doc_satu_elemen("B1", {"b": 200, "h": 300},
+                           [RebarSpec(posisi="tul_utama", raw="4D16")], panjang_m=14.0)
+    r = takeoff_tkg(doc, TakeoffParams(l_stock_m=12))
+    besi = _items(r, "B1", "besi")
+    assert besi[0].needs_review is True and besi[0].quantity is None
+    assert "n_ld" in (besi[0].review_reason or "")
+
+
+def test_fd04_tulangan_pinggang():
+    # Anchor D: 2 x 6.96 x w12 = 12.358372 kg
+    doc = _doc_satu_elemen("B2", {"b": 300, "h": 600},
+                           [RebarSpec(posisi="tul_pinggang", raw="2D12")], panjang_m=6.0)
+    r = takeoff_tkg(doc, TakeoffParams(n_ld=40))
+    besi = _items(r, "B2", "besi")
+    assert besi[0].quantity == pytest.approx(12.3584, abs=0.001)
+    assert "F-D04" in besi[0].detail
+
+
+def test_fd08_bbs_waste_nyata():
+    # Anchor E: berat 44.193412 kg (f_waste=1), 3 stok, waste 12.626689 kg
+    doc = _doc_satu_elemen("K2", {"b": 300, "h": 400},
+                           [RebarSpec(posisi="tul_utama", raw="8D16")])
+    r = takeoff_tkg(doc, TakeoffParams(tinggi_per_lantai_m=3.5,
+                                       waste_mode="bbs", l_stock_m=12))
+    besi = _items(r, "K2", "besi")
+    assert besi[0].quantity == pytest.approx(44.1934, abs=0.001)  # tanpa f_waste (AP-16)
+    assert r.bbs is not None
+    assert len(r.bbs.marks) == 1
+    m = r.bbs.marks[0]
+    assert m.d_mm == 16 and m.jumlah == 8 and m.panjang_m == pytest.approx(3.5)
+    d16 = r.bbs.per_diameter[0]
+    assert d16.kebutuhan_stok_batang == 3
+    assert d16.waste_kg == pytest.approx(12.6267, abs=0.001)
+    assert r.bbs.total_waste_kg == pytest.approx(12.6267, abs=0.001)
+
+
+def test_fd08_bbs_batang_panjang_dipecah_dan_lap_terhitung():
+    # Anchor G: L_bat 14.64 -> potongan 12 m (4x, waste 0) + 2.64 m (4x, 1 stok,
+    # waste 1.44 m x w16 = 2.272804 kg); total stok d16 = 5.
+    doc = _doc_satu_elemen("B1", {"b": 200, "h": 300},
+                           [RebarSpec(posisi="tul_utama", raw="4D16")], panjang_m=14.0)
+    r = takeoff_tkg(doc, TakeoffParams(n_ld=40, l_stock_m=12, waste_mode="bbs"))
+    assert r.bbs is not None
+    panjang_marks = sorted(m.panjang_m for m in r.bbs.marks)
+    assert panjang_marks == pytest.approx([2.64, 12.0])
+    d16 = r.bbs.per_diameter[0]
+    assert d16.n_potong == 8
+    assert d16.kebutuhan_stok_batang == 5
+    assert d16.waste_kg == pytest.approx(2.2728, abs=0.001)
+
+
+def test_ap16_waste_ganda_ditolak():
+    # AP-16: waste param + waste BBS tidak boleh bersamaan
+    with pytest.raises(Exception):
+        TakeoffParams(waste_mode="bbs", waste_besi=0.05, l_stock_m=12)
+    with pytest.raises(Exception):
+        TakeoffParams(waste_mode="bbs")  # bbs tanpa l_stock_m juga ditolak
+
+
+def test_bbs_elemen_review_tidak_menyumbang_potongan():
+    # Elemen yang gagal (butuh lewatan tanpa n_ld) TIDAK boleh menyumbang mark BBS
+    doc = _doc_satu_elemen("B1", {"b": 200, "h": 300},
+                           [RebarSpec(posisi="tul_utama", raw="4D16")], panjang_m=14.0)
+    r = takeoff_tkg(doc, TakeoffParams(l_stock_m=12, waste_mode="bbs"))
+    assert _items(r, "B1", "besi")[0].needs_review is True
+    assert r.bbs is not None and r.bbs.marks == []

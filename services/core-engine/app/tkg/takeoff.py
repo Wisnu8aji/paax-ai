@@ -9,8 +9,12 @@ Rumus yang dipakai (id mengacu docs/specs/brain-v4.1/..._02_RUMUS...txt):
   Beton    : F-B01..B07 (via app.geometry — satu sumber rumus volume)
   Bekisting: F-C01 (kolom), F-C03 (sloof), F-C04 (balok), F-C05 (pelat),
              F-C06 (telapak)
-  Besi     : F-D01 w(d)=0.006165*d^2 ; F-D02 memanjang ; F-D03 sengkang
-             (zona tumpuan/lapangan) ; F-D05 sebar pelat ; F-D06 waste
+  Besi     : F-D01 w(d)=0.006165*d^2 ; F-D02 memanjang + kait (k_hook_utama x d
+             per ujung) + lewatan (n_lap = ceil(L_bat/l_stock)-1, lap = n_ld x d);
+             F-D03 sengkang (zona tumpuan/lapangan) ; F-D04 pinggang
+             (Lb + 2 x n_ld x d) ; F-D05 sebar pelat ; F-D06 waste
+             (mode "param" ATAU "bbs", tidak keduanya — AP-16) ;
+             F-D07 total per instance ; F-D08 BBS & waste nyata dari stok
 
 ATURAN EMAS + "tanpa angka palsu": data yang tidak ada TIDAK ditebak —
 item keluar dengan quantity=None + needs_review + alasan. Setiap parameter
@@ -47,6 +51,33 @@ class TakeoffItem(BaseModel):
     rule_id: str                          # jejak rumus, mis. "F-B01", "F-C03"
 
 
+class BbsMark(BaseModel):
+    """F-D08: satu baris Bar Bending Schedule — potongan seragam per elemen/posisi."""
+    mark: str
+    kode: str
+    posisi: str
+    d_mm: float
+    panjang_m: float          # L_potong (selalu <= l_stock_m; batang panjang dipecah)
+    jumlah: int
+    berat_kg: float
+
+
+class BbsDiameterSummary(BaseModel):
+    """F-D08 rekap per diameter: kebutuhan stok & waste nyata."""
+    d_mm: float
+    n_potong: int
+    total_panjang_m: float
+    kebutuhan_stok_batang: int
+    waste_kg: float
+
+
+class BbsResult(BaseModel):
+    l_stock_m: float
+    marks: List[BbsMark]
+    per_diameter: List[BbsDiameterSummary]
+    total_waste_kg: float
+
+
 class TakeoffResult(BaseModel):
     prj_id: str
     rev_id: str
@@ -55,6 +86,7 @@ class TakeoffResult(BaseModel):
     warnings: List[str] = Field(default_factory=list)
     params_used: List[ParamUsed] = Field(default_factory=list)
     n_needs_review: int = 0
+    bbs: Optional[BbsResult] = None       # terisi hanya bila waste_mode="bbs" (F-D08)
 
 
 # ─── Grammar tulangan (§2.2) ──────────────────────────────────────────────────
@@ -123,10 +155,28 @@ class _Ctx:
         self.assumptions: List[str] = []
         self.warnings: List[str] = []
         self.params_used: Dict[str, ParamUsed] = {}
+        # F-D08: potongan terkumpul (kode, posisi, d_mm, L_potong_m, jumlah)
+        self.cuts: List[Tuple[str, str, float, float, int]] = []
 
     def pakai_param(self, nama: str, nilai, catatan: str) -> None:
         if nama not in self.params_used:
             self.params_used[nama] = ParamUsed(nama=nama, nilai=nilai, catatan=catatan)
+
+    def tambah_potong(self, kode: str, posisi: str, d_mm: float,
+                      panjang_m: float, jumlah: int) -> None:
+        """Daftarkan potongan utk BBS. Batang > l_stock dipecah: n penuh + sisa."""
+        if self.params.waste_mode != "bbs" or jumlah <= 0 or panjang_m <= 0:
+            return
+        stok = self.params.l_stock_m
+        assert stok is not None  # dijamin validator TakeoffParams
+        if panjang_m <= stok + 1e-9:
+            self.cuts.append((kode, posisi, d_mm, panjang_m, jumlah))
+            return
+        n_penuh = math.floor(panjang_m / stok + 1e-9)
+        sisa = panjang_m - n_penuh * stok
+        self.cuts.append((kode, posisi, d_mm, stok, n_penuh * jumlah))
+        if sisa > 1e-6:
+            self.cuts.append((kode, posisi, d_mm, sisa, jumlah))
 
 
 def _cari_record(doc: TkgDocument, kode: str, lantai: Optional[str]) -> Optional[TypeRecord]:
@@ -411,6 +461,17 @@ def _bekisting(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
 
 # ─── Besi (F-D) ───────────────────────────────────────────────────────────────
 
+def _f_waste(ctx: _Ctx) -> float:
+    """F-D06: mode 'param' -> 1 + waste_besi ; mode 'bbs' -> 1 (waste nyata F-D08)."""
+    if ctx.params.waste_mode == "bbs":
+        ctx.pakai_param("waste_mode", "bbs",
+                        "waste nyata dihitung dari potongan stok (F-D08); f_waste=1 (AP-16)")
+        return 1.0
+    if ctx.params.waste_besi > 0:
+        ctx.pakai_param("waste_besi", ctx.params.waste_besi, "waste besi mode param (F-D06)")
+    return 1 + ctx.params.waste_besi
+
+
 def _besi(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
           panjang_efektif: Optional[float]) -> None:
     if not rec.tulangan:
@@ -438,10 +499,18 @@ def _besi(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
     rincian: List[str] = []
     ada_pokok = False
     ada_sengkang = False
+    # Bufer potongan BBS: baru dialirkan ke ctx bila item SUKSES (bukan review),
+    # supaya elemen yang gagal tidak menyumbang potongan hantu ke BBS.
+    potong_lokal: List[Tuple[str, float, float, int]] = []
 
-    # F-D02 tulangan memanjang (tanpa kait/lap kecuali param disetor — dicatat)
+    def _potong(posisi: str, d: float, panjang: float, jumlah: int) -> None:
+        potong_lokal.append((posisi, d, panjang, jumlah))
+
+    # F-D02 tulangan memanjang: L_bat = L + Σ kait_ujung + Σ sambungan lewatan.
+    # Kait & lewatan HANYA dihitung bila parameternya disetor (tercatat); bila
+    # lewatan DIBUTUHKAN (L_bat > l_stock) tapi n_ld tidak ada -> needs_review.
     for spec in rec.tulangan:
-        if spec.posisi in ("tul_atas", "tul_bawah", "tul_utama", "tul_pinggang"):
+        if spec.posisi in ("tul_atas", "tul_bawah", "tul_utama"):
             parsed = parse_rebar_raw(spec.raw) if (spec.jumlah is None or spec.diameter_mm is None) else \
                 {"jumlah": float(spec.jumlah), "d": float(spec.diameter_mm)}
             if not parsed or "jumlah" not in parsed:
@@ -450,10 +519,68 @@ def _besi(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
                 return
             n_bat, d = parsed["jumlah"], parsed["d"]
             w = berat_per_meter(d)
-            kg = n_bat * L * w
+            l_bat = L
+            ket_ujung: List[str] = []
+
+            if ctx.params.k_hook_utama is not None:
+                kait = ctx.params.k_hook_utama * d / 1000.0
+                l_bat += 2 * kait
+                ctx.pakai_param("k_hook_utama", ctx.params.k_hook_utama,
+                                "kait tulangan pokok per ujung = k_hook_utama x d (SNI 2847)")
+                ket_ujung.append(f"kait 2 x {ctx.params.k_hook_utama:g}d = {2 * kait:.3f} m")
+
+            if ctx.params.l_stock_m is not None:
+                n_lap = max(math.ceil(l_bat / ctx.params.l_stock_m - 1e-9) - 1, 0)
+                if n_lap > 0:
+                    if ctx.params.n_ld is None:
+                        _tambah_review(
+                            ctx, el, rec, kategori, "besi", "kg",
+                            f"batang {spec.raw} butuh {n_lap} sambungan lewatan "
+                            f"(L={l_bat:.3f} m > stok {ctx.params.l_stock_m:g} m) "
+                            f"tapi n_ld tidak disetor — dilarang mengabaikan diam-diam (F-D02)",
+                            "F-D02")
+                        return
+                    lap = ctx.params.n_ld * d / 1000.0
+                    l_bat += n_lap * lap
+                    ctx.pakai_param("n_ld", ctx.params.n_ld,
+                                    "panjang lewatan = n_ld x d (SNI 2847)")
+                    ctx.pakai_param("l_stock_m", ctx.params.l_stock_m,
+                                    "panjang stok batang; jumlah lap = ceil(L_bat/l_stock)-1 (F-D02)")
+                    ket_ujung.append(f"{n_lap} lap x {ctx.params.n_ld:g}d = {n_lap * lap:.3f} m")
+
+            kg = n_bat * l_bat * w
             total_kg += kg
             ada_pokok = True
-            rincian.append(f"{spec.posisi} {spec.raw}: {n_bat:g} x {L:g} m x {w:.4f} kg/m = {kg:.2f} kg")
+            tambahan = f" ({'; '.join(ket_ujung)})" if ket_ujung else ""
+            rincian.append(
+                f"{spec.posisi} {spec.raw}: {n_bat:g} x {l_bat:g} m{tambahan} x {w:.4f} kg/m = {kg:.2f} kg")
+            _potong(spec.posisi, d, l_bat, int(n_bat) * el.n)
+
+        elif spec.posisi == "tul_pinggang":
+            # F-D04: W_p = n_p x (Lb + 2 x n_ld x d) x w(d) — side bars memakai
+            # penyaluran n_ld di kedua ujung, bukan kait.
+            parsed = parse_rebar_raw(spec.raw) if (spec.jumlah is None or spec.diameter_mm is None) else \
+                {"jumlah": float(spec.jumlah), "d": float(spec.diameter_mm)}
+            if not parsed or "jumlah" not in parsed:
+                _tambah_review(ctx, el, rec, kategori, "besi", "kg",
+                               f"notasi tulangan pinggang '{spec.raw}' gagal grammar §2.2", "F-D04")
+                return
+            n_p, d_p = parsed["jumlah"], parsed["d"]
+            w_p = berat_per_meter(d_p)
+            l_p = L
+            if ctx.params.n_ld is not None:
+                l_p = L + 2 * ctx.params.n_ld * d_p / 1000.0
+                ctx.pakai_param("n_ld", ctx.params.n_ld, "panjang lewatan = n_ld x d (SNI 2847)")
+            else:
+                ctx.assumptions.append(
+                    f"{el.kode}: tulangan pinggang dihitung TANPA penyaluran ujung "
+                    f"(n_ld tidak disetor — F-D04)")
+            kg_p = n_p * l_p * w_p
+            total_kg += kg_p
+            ada_pokok = True
+            rincian.append(
+                f"tul_pinggang {spec.raw}: {n_p:g} x {l_p:g} m x {w_p:.4f} kg/m = {kg_p:.2f} kg (F-D04)")
+            _potong(spec.posisi, d_p, l_p, int(n_p) * el.n)
 
     # F-D03 sengkang (zona tumpuan/lapangan atau seragam)
     seragam = next((s for s in rec.tulangan if s.posisi == "sengkang"), None)
@@ -461,7 +588,8 @@ def _besi(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
     lapangan = next((s for s in rec.tulangan if s.posisi == "sengkang_lapangan"), None)
 
     def _sengkang_kg(spec_raw: str, d_mm: Optional[float], s_mm: Optional[float],
-                     zona: List[Tuple[float, float]]) -> Optional[Tuple[float, str]]:
+                     zona: List[Tuple[float, float]],
+                     posisi: str) -> Optional[Tuple[float, str]]:
         parsed = parse_rebar_raw(spec_raw) if (d_mm is None or s_mm is None) else {"d": d_mm, "s": s_mm}
         if not parsed or "s" not in parsed:
             return None
@@ -472,12 +600,13 @@ def _besi(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
         l_1s = 2 * ((b - 2 * c) + (h - 2 * c)) + 2 * hook
         w = berat_per_meter(d)
         kg = n_s * l_1s * w
+        _potong(posisi, d, l_1s, n_s * el.n)
         return kg, (f"sengkang {spec_raw}: n={n_s}, L1={l_1s:.4f} m "
                     f"(b-2c={b - 2 * c:g}, h-2c={h - 2 * c:g}, kait 2x{ctx.params.k_hook_sengkang:g}d), "
                     f"w={w:.4f} kg/m -> {kg:.2f} kg")
 
     if seragam is not None:
-        hasil = _sengkang_kg(seragam.raw, seragam.diameter_mm, seragam.jarak_mm, [(L, 0.0)])
+        hasil = _sengkang_kg(seragam.raw, seragam.diameter_mm, seragam.jarak_mm, [(L, 0.0)], "sengkang")
         if hasil is None:
             _tambah_review(ctx, el, rec, kategori, "besi", "kg",
                            f"notasi sengkang '{seragam.raw}' gagal grammar §2.2", "F-D03")
@@ -491,8 +620,8 @@ def _besi(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
         f = ctx.params.zona_tumpuan_fraksi
         zona_t = [(L * f, 0.0), (L * f, 0.0)]
         zona_l = [(L * (1 - 2 * f), 0.0)]
-        hasil_t = _sengkang_kg(tumpuan.raw, tumpuan.diameter_mm, tumpuan.jarak_mm, zona_t)
-        hasil_l = _sengkang_kg(lapangan.raw, lapangan.diameter_mm, lapangan.jarak_mm, zona_l)
+        hasil_t = _sengkang_kg(tumpuan.raw, tumpuan.diameter_mm, tumpuan.jarak_mm, zona_t, "sengkang_tumpuan")
+        hasil_l = _sengkang_kg(lapangan.raw, lapangan.diameter_mm, lapangan.jarak_mm, zona_l, "sengkang_lapangan")
         if hasil_t is None or hasil_l is None:
             _tambah_review(ctx, el, rec, kategori, "besi", "kg",
                            "notasi sengkang tumpuan/lapangan gagal grammar §2.2", "F-D03")
@@ -512,18 +641,24 @@ def _besi(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
     if not ada_pokok and not ada_sengkang:
         return
 
-    # F-D06 waste + kelipatan instance
-    f_waste = 1 + ctx.params.waste_besi
-    if ctx.params.waste_besi > 0:
-        ctx.pakai_param("waste_besi", ctx.params.waste_besi, "waste besi mode param (F-D06)")
+    # F-D06 waste (mode "param" ATAU "bbs" — AP-16) + F-D07 kelipatan instance
+    f_waste = _f_waste(ctx)
     total = total_kg * f_waste * el.n
-    ctx.assumptions.append(
-        f"{el.kode}: besi dihitung TANPA kait tulangan pokok & sambungan lewatan "
-        f"(setor k_hook/n_Ld/L_stock bila ingin dihitung — F-D02)")
+    if ada_pokok:
+        if ctx.params.k_hook_utama is None:
+            ctx.assumptions.append(
+                f"{el.kode}: besi dihitung TANPA kait tulangan pokok "
+                f"(setor k_hook_utama bila ingin dihitung — F-D02)")
+        if ctx.params.l_stock_m is None:
+            ctx.assumptions.append(
+                f"{el.kode}: besi dihitung TANPA sambungan lewatan "
+                f"(setor l_stock_m + n_ld bila ingin dihitung — F-D02)")
+    for posisi, d_c, l_c, n_c in potong_lokal:
+        ctx.tambah_potong(el.kode, posisi, d_c, l_c, n_c)
     ctx.items.append(TakeoffItem(
         kode=el.kode, lantai=el.lantai, kategori=kategori, work_type="besi",
         quantity=_r4(total), unit="kg",
-        formula="Σ(n x L x w(d)) + Σ sengkang, x f_waste x jumlah (F-D01..D03, D06)",
+        formula="Σ(n x L_bat x w(d)) + Σ sengkang, x f_waste x jumlah (F-D01..D04, D06-D07)",
         detail="; ".join(rincian) + f"; f_waste={f_waste:g}; x{el.n} instance = {_r4(total):g} kg",
         alamat=el.alamat, rule_id="F-D02+F-D03",
     ))
@@ -537,6 +672,7 @@ def _besi_pelat(ctx: _Ctx, el: ElementInstance, rec: TypeRecord) -> None:
         return
     total = 0.0
     rincian: List[str] = []
+    potong_lokal: List[Tuple[str, float, float, int]] = []
     for spec in rec.tulangan:
         if spec.posisi not in ("tul_sebar_x", "tul_sebar_y"):
             continue
@@ -552,15 +688,19 @@ def _besi_pelat(ctx: _Ctx, el: ElementInstance, rec: TypeRecord) -> None:
             n_arah = math.floor(l / s) + 1
             kg = n_arah * p * berat_per_meter(d)
             rincian.append(f"sebar-X {spec.raw}: n={n_arah} x {p:g} m x {berat_per_meter(d):.4f} = {kg:.2f} kg")
+            potong_lokal.append((spec.posisi, d, p, n_arah * el.n))
         else:
             n_arah = math.floor(p / s) + 1
             kg = n_arah * l * berat_per_meter(d)
             rincian.append(f"sebar-Y {spec.raw}: n={n_arah} x {l:g} m x {berat_per_meter(d):.4f} = {kg:.2f} kg")
+            potong_lokal.append((spec.posisi, d, l, n_arah * el.n))
         total += kg
     if not rincian:
         return
-    f_waste = 1 + ctx.params.waste_besi
+    f_waste = _f_waste(ctx)
     total_akhir = total * f_waste * el.n
+    for posisi, d_c, l_c, n_c in potong_lokal:
+        ctx.tambah_potong(el.kode, posisi, d_c, l_c, n_c)
     ctx.items.append(TakeoffItem(
         kode=el.kode, lantai=el.lantai, kategori="plat", work_type="besi",
         quantity=_r4(total_akhir), unit="kg",
@@ -568,6 +708,68 @@ def _besi_pelat(ctx: _Ctx, el: ElementInstance, rec: TypeRecord) -> None:
         detail="; ".join(rincian) + f"; f_waste={f_waste:g}; x{el.n} = {_r4(total_akhir):g} kg",
         alamat=el.alamat, rule_id="F-D05",
     ))
+
+
+# ─── BBS (F-D08) ─────────────────────────────────────────────────────────────
+
+def _susun_bbs(ctx: _Ctx) -> Optional[BbsResult]:
+    """
+    F-D08: dari potongan terkumpul, susun mark BBS + kebutuhan stok + waste
+    nyata per (diameter, panjang potong):
+      n_per_stok     = floor(l_stock / L_potong)
+      kebutuhan_stok = ceil(n_potong / n_per_stok)
+      waste          = (kebutuhan_stok x l_stock - n_potong x L_potong) x w(d)
+    (Optimasi cutting lintas-panjang = util terpisah, bukan irisan ini.)
+    """
+    if ctx.params.waste_mode != "bbs":
+        return None
+    stok = ctx.params.l_stock_m
+    assert stok is not None  # dijamin validator TakeoffParams
+
+    # Gabungkan potongan identik (kode, posisi, d, L dibulatkan 4 desimal)
+    gabung: Dict[Tuple[str, str, float, float], int] = {}
+    for kode, posisi, d, panjang, jumlah in ctx.cuts:
+        kunci = (kode, posisi, d, _r4(panjang))
+        gabung[kunci] = gabung.get(kunci, 0) + jumlah
+
+    marks: List[BbsMark] = []
+    for i, ((kode, posisi, d, panjang), jumlah) in enumerate(sorted(gabung.items()), start=1):
+        marks.append(BbsMark(
+            mark=f"M{i:03d}", kode=kode, posisi=posisi, d_mm=d,
+            panjang_m=panjang, jumlah=jumlah,
+            berat_kg=_r4(jumlah * panjang * berat_per_meter(d)),
+        ))
+
+    # Stok & waste per (d, L_potong), lalu rekap per diameter
+    per_dl: Dict[Tuple[float, float], int] = {}
+    for m in marks:
+        kunci = (m.d_mm, m.panjang_m)
+        per_dl[kunci] = per_dl.get(kunci, 0) + m.jumlah
+
+    agg: Dict[float, Dict[str, float]] = {}
+    for (d, panjang), n_potong in sorted(per_dl.items()):
+        n_per_stok = math.floor(stok / panjang + 1e-9)
+        if n_per_stok < 1:
+            n_per_stok = 1  # tidak terjadi: potongan > stok sudah dipecah di tambah_potong
+        kebutuhan = math.ceil(n_potong / n_per_stok - 1e-9)
+        waste_m = kebutuhan * stok - n_potong * panjang
+        a = agg.setdefault(d, {"n": 0, "len": 0.0, "stok": 0, "waste": 0.0})
+        a["n"] += n_potong
+        a["len"] += n_potong * panjang
+        a["stok"] += kebutuhan
+        a["waste"] += waste_m * berat_per_meter(d)
+
+    per_diameter = [
+        BbsDiameterSummary(
+            d_mm=d, n_potong=int(a["n"]), total_panjang_m=_r4(a["len"]),
+            kebutuhan_stok_batang=int(a["stok"]), waste_kg=_r4(a["waste"]),
+        )
+        for d, a in sorted(agg.items())
+    ]
+    return BbsResult(
+        l_stock_m=stok, marks=marks, per_diameter=per_diameter,
+        total_waste_kg=_r4(sum(s.waste_kg for s in per_diameter)),
+    )
 
 
 # ─── Entry point ──────────────────────────────────────────────────────────────
@@ -610,4 +812,5 @@ def takeoff_tkg(doc: TkgDocument, params: TakeoffParams | None = None) -> Takeof
         warnings=ctx.warnings,
         params_used=list(ctx.params_used.values()),
         n_needs_review=n_review,
+        bbs=_susun_bbs(ctx),
     )
