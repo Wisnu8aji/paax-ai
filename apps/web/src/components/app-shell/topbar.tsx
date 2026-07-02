@@ -6,7 +6,7 @@ import { useShell } from './shell-context';
 import { currentUser } from '@/lib/mock/workspace';
 
 export default function Topbar() {
-  const { toggleNav, openOverlay } = useShell();
+  const { toggleNav, openSettings } = useShell();
   const [query, setQuery] = useState('');
 
   return (
@@ -101,7 +101,7 @@ export default function Topbar() {
       </div>
 
       <button
-        onClick={() => openOverlay('notif')}
+        onClick={() => openSettings('notifikasi')}
         aria-label="Notifikasi"
         style={{
           position: 'relative',
@@ -141,7 +141,7 @@ export default function Topbar() {
       </button>
 
       <button
-        onClick={() => openOverlay('account')}
+        onClick={() => openSettings('akun')}
         aria-label="Akun Saya"
         style={{
           width: 38,
