@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Bell, LayoutGrid, CreditCard, AlignLeft, Sparkles } from 'lucide-react';
+import { Bell, LayoutGrid, CreditCard, Settings, Sparkles } from 'lucide-react';
 import { useShell } from './shell-context';
 import { currentUser } from '@/lib/mock/workspace';
 
@@ -21,7 +21,7 @@ const railBtn: React.CSSProperties = {
 
 export function IconRail() {
   const router = useRouter();
-  const { openOverlay } = useShell();
+  const { openSettings } = useShell();
 
   return (
     <div
@@ -63,13 +63,25 @@ export function IconRail() {
             marginBottom: 6,
           }}
         >
-          <Sparkles size={19} color="#fff" />
+          <Sparkles size={19} strokeWidth={1.5} color="#fff" />
         </button>
-        <button className="pax-rail-item" style={railBtn} title="Umum" aria-label="Umum" onClick={() => router.push('/dashboard')}>
-          <AlignLeft size={19} />
+        <button
+          className="pax-rail-item"
+          style={railBtn}
+          title="Pengaturan"
+          aria-label="Pengaturan"
+          onClick={() => openSettings('umum')}
+        >
+          <Settings size={19} strokeWidth={1.5} />
         </button>
-        <button className="pax-rail-item" style={{ ...railBtn, position: 'relative' }} title="Notifikasi" aria-label="Notifikasi" onClick={() => openOverlay('notif')}>
-          <Bell size={19} />
+        <button
+          className="pax-rail-item"
+          style={{ ...railBtn, position: 'relative' }}
+          title="Notifikasi"
+          aria-label="Notifikasi"
+          onClick={() => openSettings('notifikasi')}
+        >
+          <Bell size={19} strokeWidth={1.5} />
           <span
             style={{
               position: 'absolute',
@@ -83,11 +95,23 @@ export function IconRail() {
             }}
           />
         </button>
-        <button className="pax-rail-item" style={railBtn} title="Aplikasi Terhubung" aria-label="Aplikasi Terhubung" onClick={() => openOverlay('apps')}>
-          <LayoutGrid size={19} />
+        <button
+          className="pax-rail-item"
+          style={railBtn}
+          title="Aplikasi Terhubung"
+          aria-label="Aplikasi Terhubung"
+          onClick={() => openSettings('aplikasi')}
+        >
+          <LayoutGrid size={19} strokeWidth={1.5} />
         </button>
-        <button className="pax-rail-item" style={railBtn} title="Langganan & Tagihan" aria-label="Langganan & Tagihan" onClick={() => openOverlay('billing')}>
-          <CreditCard size={19} />
+        <button
+          className="pax-rail-item"
+          style={railBtn}
+          title="Langganan & Tagihan"
+          aria-label="Langganan & Tagihan"
+          onClick={() => openSettings('tagihan')}
+        >
+          <CreditCard size={19} strokeWidth={1.5} />
         </button>
         <div style={{ flex: 1 }} />
         <div
@@ -106,7 +130,7 @@ export function IconRail() {
         </div>
       </div>
       <button
-        onClick={() => openOverlay('account')}
+        onClick={() => openSettings('akun')}
         title="Akun Saya"
         aria-label="Akun Saya"
         style={{
