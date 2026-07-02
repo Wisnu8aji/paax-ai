@@ -61,6 +61,8 @@ from .takeoff.baja import takeoff_baja
 from .takeoff.atap import takeoff_atap
 from .takeoff.kusen import takeoff_kusen
 from .takeoff.mep import takeoff_mep
+from .takeoff.mep_advanced import MepAdvancedRequest, takeoff_mep_advanced
+from .takeoff.smkk import SmkkRequest, takeoff_smkk
 from .data_audit.coverage import audit_data_coverage
 from .data_audit.models import DataCoverageResult
 from .brain.confidence import score_confidence
@@ -374,6 +376,17 @@ def takeoff_kusen_ep(req: KusenRequest):
 @app.post("/takeoff/mep", response_model=ManualTakeoffResult)
 def takeoff_mep_ep(req: MepRequest):
     return takeoff_mep(req)
+
+
+# Konsisten dgn endpoint takeoff lain (tanpa prefix /v1 — satu konvensi API)
+@app.post("/takeoff/mep-advanced", response_model=ManualTakeoffResult)
+def takeoff_mep_advanced_ep(req: MepAdvancedRequest):
+    return takeoff_mep_advanced(req)
+
+
+@app.post("/takeoff/smkk", response_model=ManualTakeoffResult)
+def takeoff_smkk_ep(req: SmkkRequest):
+    return takeoff_smkk(req)
 
 
 # ----------------------------- Brain audit primitives -----------------------------

@@ -54,6 +54,12 @@ class TakeoffParams(BaseModel):
     t_pelat_default_m: Optional[float] = None
     # F-C04 (balok penopang pelat): butuh t pelat. Tak disetor -> pakai rumus
     # balok tanpa pelat (b + 2h) dan dicatat sebagai assumption.
+    reuse_form: Optional[int] = None
+    # §Z reuse_form: faktor pakai-ulang acuan bekisting (mis. 2 = dipakai 2x).
+    # KEPUTUSAN METODE (bukan data gambar — TKG tetap murni transkrip).
+    # TIDAK mengubah kuantitas m2 kontak (upah pasang/bongkar terjadi tiap
+    # pemakaian); dipakai untuk memilih varian/koefisien bahan AHSP dan
+    # estimasi kebutuhan material = A_kontak / reuse_form. Nilai < 1 ditolak.
     h_kategori_perancah_m: Optional[float] = None
     # F-C10: tinggi kategori perancah untuk memilih varian AHSP. Tidak membuat
     # volume; hanya dicatat bila perancah terpisah dihitung.
@@ -72,6 +78,8 @@ class TakeoffParams(BaseModel):
                     "waste_besi harus 0 (jangan dobel waste)")
             if self.l_stock_m is None:
                 raise ValueError("waste_mode='bbs' butuh l_stock_m (panjang stok batang)")
+        if self.reuse_form is not None and self.reuse_form < 1:
+            raise ValueError("reuse_form minimal 1 (faktor pakai-ulang bekisting)")
         return self
 
 
