@@ -1,0 +1,452 @@
+================================================================================
+PAAX BRAIN · TXT 00 — EKSTRAKSI GAMBAR KERJA (SCAN -> TKG)
+"Perception Specification: dari berkas gambar menjadi Transkrip Kanonik Gambar"
+================================================================================
+VERSI: v1.0 FINAL (Fable 5) · berkas ke-0 dari SET 4 BERKAS OTAK (00-01-02-03).
+SIFAT: MENGIKAT. Berkas ini WAJIB dibaca PERTAMA, sebelum TXT 1/2/3, oleh setiap
+AI agent dan manusia yang menyentuh modul pembacaan gambar.
+BAHASA: teknik sipil Indonesia standar (istilah asing dalam kurung bila perlu).
+ATURAN PENULISAN: tanpa angka dari proyek mana pun; contoh notasi memakai pola
+umum industri (mis. K1, 12D16, D10-150, 1:100) atau placeholder <nilai>.
+
+MENGAPA BERKAS INI ADA:
+TXT 1-3 mengatur PENALARAN dan PERHITUNGAN. Semuanya runtuh bila tahap MEMBACA
+salah: "D16-150" terbaca "D16-160", "K1A" terbaca "K1", angka grid terpotong,
+satuan cm dikira mm. Berkas ini mendefinisikan tahap SCAN secara rinci sehingga
+keluaran baca menjadi artefak formal yang bisa divalidasi, di-diff, di-audit,
+dan di-review manusia SEBELUM penalaran dimulai. Prinsipnya: kualitas RAB
+dibatasi oleh kualitas transkrip; maka transkrip harus nyaris tanpa cacat dan
+JUJUR menandai setiap keraguan.
+================================================================================
+
+
+================================================================================
+§0. ARTEFAK "TKG" — DEFINISI, POSISI, INVARIAN
+================================================================================
+TKG = TRANSKRIP KANONIK GAMBAR.
+  - TRANSKRIP : menyalin APA ADANYA seluruh informasi tertulis & tergambar —
+    setiap angka, kode tipe, jarak antar-as, level/peil, dimensi, catatan —
+    lengkap dengan lokasi asalnya (locator) dan cara bacanya (method).
+  - KANONIK   : satu format baku terskema, sama untuk semua proyek, sehingga
+    bisa divalidasi mesin, dibandingkan (diff), dan diuji dengan golden test.
+Dua wujud per DrawingSet (per revisi):
+  - {sheet}.tkg.json  + gabungan drawingset.tkg.json  -> untuk mesin (skema
+    TkgDocument; padanan Zod<->Pydantic; TXT 3 §4).
+  - drawingset.tkg.txt -> render teks deterministik untuk manusia: inilah
+    "skrip teks mendetail" yang menjadi jembatan gambar -> otak.
+
+POSISI DALAM PIPELINE (memperbaiki urutan lama):
+  BERKAS GAMBAR -> [BRAIN 00: SCAN] -> TKG -> [BRAIN 01: PENALARAN]
+  -> [ENGINE, rumus BRAIN 02] -> [REVIEW MANUSIA] ; dibangun sesuai BRAIN 03.
+Konsekuensi: rujukan "SCHEDULE / DENAH / GRID / LEVEL / DETAIL / NOTES" pada
+TXT 1-3 berarti BLOK TABLES / ELEMENTS / GRID / LEVELS / DETAILS / NOTES di
+dalam TKG — bukan berkas gambar mentah.
+
+INVARIAN TKG (tambahan atas INV TXT 1; sama mengikatnya):
+INV-TKG-01  Lapisan penalaran (L6 ke atas) HANYA membaca TKG. Dilarang membaca
+            berkas gambar langsung. TKG = satu-satunya pintu fakta gambar.
+INV-TKG-02  ZERO-LOSS: setiap potongan teks pada sheet WAJIB masuk TKG —
+            terklasifikasi ke blok yang tepat, atau masuk blok UNCLASSIFIED.
+            Tidak ada teks yang dibuang/diringkas. Cakupan teks dilaporkan.
+INV-TKG-03  NO-SILENT-FIX: nilai mentah (raw) SELALU disimpan apa adanya.
+            Normalisasi (locale, satuan, typo-kamus) ditulis BERDAMPINGAN
+            dengan raw + bendera koreksi. Tidak ada perbaikan diam-diam.
+INV-TKG-04  Satu TKG terikat pada SATU DrawingSet + SATU revisi + content-hash
+            berkas. Input sama -> TKG identik (deterministik, idempoten,
+            cache-able). Revisi baru -> TKG baru (jangan menimpa).
+INV-TKG-05  TKG BUKAN RAB: dilarang keras memuat interpretasi biaya, ekspansi
+            pekerjaan, pemetaan AHSP, atau harga. Itu wilayah BRAIN 01 (L6).
+INV-TKG-06  Pengukuran geometri pada tahap TKG hanya sah dari koordinat vektor,
+            angka tertulis, atau input manusia (selaras INV-06 TXT 1). Model
+            vision TIDAK membaca angka bila text-layer vektor tersedia.
+INV-TKG-07  Setiap entri TKG memenuhi kontrak Evidence TXT 1 §4.3 (kind,
+            method, source.locator, raw_reading, confidence). TKG = paket
+            Evidence tingkat persepsi.
+
+
+================================================================================
+§1. MODEL DOKUMEN & KOORDINAT (dasar teknis pembacaan)
+================================================================================
+RULE-EXT-01  DUA RUANG KOORDINAT:
+  (a) ruang halaman (satuan pt/piksel, asal PDF/gambar) — tempat locator hidup;
+  (b) ruang dunia (mm) — hasil kalibrasi skala per viewport.
+  Setiap objek TKG menyimpan locator ruang-halaman {page, bbox, rotasi} dan,
+  bila relevan, nilai ruang-dunia hasil konversi (dengan skala yang dipakai).
+
+RULE-EXT-02  EKSTRAKSI TEKS (vektor): ambil semua text-span beserta posisi,
+  ukuran font, dan ROTASI. Label pada gambar struktur sering VERTIKAL (rotasi
+  90°) — wajib dinormalkan arah bacanya tanpa kehilangan posisi.
+
+RULE-EXT-03  PENYATUAN FRAGMEN (merge-run): PDF sering memecah satu angka/label
+  menjadi beberapa span ("1","0","0","0","0" -> "10000"; kode elemen terpotong).
+  Gabungkan span yang: sebaris (baseline sama dalam toleransi), berdekatan
+  (celah < ambang proporsional tinggi huruf), dan searah rotasi — SEBELUM
+  parsing grammar. Simpan raw per-span DAN hasil gabungan. Penggabungan yang
+  meragukan diberi bendera W-FRG (jangan paksa).
+
+RULE-EXT-04  KLASIFIKASI GARIS/PATH (vektor) berdasarkan pola, bukan tebakan:
+  - GARIS AS/GRID : garis lurus panjang menembus area gambar, berujung/berlabel
+    lingkaran as (bubble) berisi huruf (A,B,...) atau angka (1,2,...).
+  - GARIS DIMENSI : sepasang garis bantu (extension line) + garis ukur sejajar
+    objek + penanda ujung (tick/panah) + TEKS ANGKA di dekat tengah garis.
+  - GARIS PENUNJUK (leader): garis/patah dari teks menuju objek yang dirujuk.
+  - RANGKA TABEL  : jaringan garis ortogonal rapat membentuk sel.
+  - TANDA POTONGAN/DETAIL: simbol lingkaran/panah berlabel rujukan silang.
+  - ARSIRAN (hatch): pola berulang penanda material (batu belah, urugan,
+    beton, tanah asli) — kelas arsiran dicatat, bukan ditafsir biayanya.
+  Ambiguitas kelas garis -> catat sebagai UNCLASSIFIED-GRAPHIC + W.
+
+RULE-EXT-05  VEKTOR-DULU: bila sheet memiliki text-layer vektor, DILARANG
+  memakai OCR/vision untuk membaca angka pada sheet itu (AP-E-08). Raster
+  murni mengikuti §8.
+
+
+================================================================================
+§2. LEKSIKON & GRAMMAR NOTASI GAMBAR STRUKTUR INDONESIA (kunci NO-MISTAKE)
+================================================================================
+Semua string yang lolos parsing WAJIB cocok dengan salah satu pola di bawah.
+Yang tidak cocok TIDAK ditebak: simpan raw + masuk UNCLASSIFIED/W-LEX.
+
+§2.1 KODE TIPE ELEMEN — pola: PREFIKS + indeks angka + sufiks huruf opsional.
+  Kamus prefiks standar (dapat diperluas via LEGENDA proyek):
+    P / PC / F  : pondasi telapak (footplat) / pile cap
+    SL          : sloof (balok pengikat di atas pondasi)
+    K           : kolom            | KP : kolom praktis
+    G           : balok induk      | B  : balok anak
+    RB          : ring balok / balok atap
+    CG / CB     : balok kantilever (console girder/beam)
+    BL / LT / LATEI / LINTEL : balok latei (di atas bukaan)
+    S           : pelat (slab)     | TG : tangga
+    KD          : kuda-kuda        | JR : jurai
+    GD / GORDING: gording          | IA : ikatan angin | TS : trekstang (sag rod)
+  ATURAN:
+  a) Sufiks huruf = VARIAN BERBEDA: K1A bukan K1. Dilarang menyamakan.
+  b) Prefiks di LUAR kamus (mis. singkatan lokal perencana): WAJIB dicari di
+     LEGENDA/KETERANGAN sheet. Tidak ada legenda -> simpan sebagai kode mentah
+     + W-LEX + needs_review. DILARANG menebak makna (AP-E-04).
+  c) Kode dgn titik/garis (mis. "X.Y" atau "1/2KD") disimpan utuh apa adanya.
+
+§2.2 NOTASI TULANGAN (SNI; D = ulir/BJTS, Ø = polos/BJTP):
+  - Tulangan pokok  : <n>D<d>  atau <n>Ø<d>   (mis. 12D16 = 12 batang D16)
+  - Tulangan sebar / sengkang / pelat : D<d>-<s> atau Ø<d>-<s>
+    (diameter d mm, jarak s mm; mis. D10-150)
+  - Konteks label pada tabel/detail: TUL. ATAS / TUL. BAWAH / TUL. PINGGANG
+    (tulangan samping badan balok) / SENGKANG (begel) dengan zona TUMPUAN /
+    LAPANGAN / TENGAH / JOINT.
+  - "d" dan "s" WAJIB angka bulat wajar (rentang PARAM.dims_range kelas besi);
+    di luar rentang -> W + needs_review (indikasi salah baca).
+
+§2.3 DIMENSI PENAMPANG & TEBAL:
+  - Penampang: <b>x<h> atau <b>/<h> (default mm untuk beton struktural).
+  - Pelat: t=<nilai> (mm).
+  - JERAT SATUAN: penampang kecil bergaya lama sering ditulis dalam CM
+    (praktik umum: latei/kolom praktis "15x10", "12x12" berarti cm).
+    Keputusan satuan lewat INFERENSI §2.7 — tidak pernah diasumsikan diam-diam.
+
+§2.4 MUTU & MATERIAL:
+  - Beton : fc' <nilai> (MPa) atau K-<nilai>. Titik/koma desimal mengikuti
+    deteksi locale §2.6. Simpan persis; padanan K<->fc' urusan BRAIN 02 F-B10.
+  - Baja tulangan : BJTS/BJTP <nilai>.
+  - Baja profil   : WF <h>x<b>x<tw>x<tf> ; kanal C / lip channel
+    <h>x<b>x<c>x<t> ; siku L <a>x<b>x<t> ; pipa Ø<d>x<t> ; pelat t=<..>.
+    Batang bulat polos: Ø<d> (mis. ikatan angin Ø<d>, trekstang Ø<d>).
+  - Campuran adukan: <a>PC : <b>PP (atau 1:<n>) — simpan apa adanya.
+
+§2.5 LEVEL, GRID, SKALA:
+  - Level/peil: SFL ±<x.xxx> ; EL ±<..> ; ±0.000 (satuan meter). Tanda +/-
+    wajib terbaca; "SFL." dengan titik tetap dikenali.
+  - Grid: label as huruf (A..) dan angka (1..) di dalam bubble; jarak antar-as
+    ditulis pada garis dimensi (mm); sering ada DIMENSI TOTAL bentang.
+  - Skala: 1:<n> atau NTS (not to scale). Satu sheet bisa memuat beberapa
+    viewport berskala beda — skala dicatat PER VIEWPORT (V-09).
+
+§2.6 ANGKA & LOCALE (per DOKUMEN, bukan asumsi tetap):
+  Gambar Indonesia memakai campuran gaya: koma-desimal ATAU titik-desimal;
+  ribuan kadang tanpa pemisah. ATURAN: deteksi locale per dokumen dari bukti
+  internal (pola angka grid tanpa pemisah, pola level ±x.xxx, konsistensi
+  antar kemunculan), default id-ID; keputusan dicatat sebagai Assumption
+  (selaras BRAIN 02 F-A00). Raw selalu disimpan. Angka yang gagal grammar ->
+  UNCLASSIFIED + W-NUM, bukan dikoreksi paksa.
+
+§2.7 INFERENSI SATUAN (mm / cm / m):
+  Pilih satuan yang membuat nilai jatuh pada RENTANG WAJAR kelas objek
+  (PARAM.dims_range, BRAIN 02 §Z; mis. penampang balok beton, tebal pelat,
+  jarak sengkang, bentang as). Prosedur:
+    (1) coba satuan default kelas; (2) bila di luar rentang, coba satuan
+    alternatif; (3) tepat satu satuan yang wajar -> pakai + catat Assumption;
+    (4) dua-duanya wajar ATAU tak ada yang wajar -> W-UNIT + needs_review.
+
+§2.8 KAMUS EJAAN/TYPO (lexicon domain): gambar asli bisa salah ketik
+  (mis. varian ejaan trekstang/trexstang, lisplank/listplank, bouwplank/
+  bowplank, aanstamping/anstamping). Normalisasi HANYA lewat kamus resmi ini,
+  hasil normal ditulis berdampingan dgn raw + bendera koreksi (INV-TKG-03).
+  Kata di luar kamus tidak diubah.
+
+
+================================================================================
+§3. SOP SCAN PER JENIS SHEET (prosedur bernomor = checklist test)
+================================================================================
+RULE-EXT-10 (UMUM, semua sheet):
+  1) Baca KOP GAMBAR (title block): judul gambar, skala, disiplin, nomor
+     lembar, tanggal, status/revisi, nama proyek. -> blok SHEET_META.
+  2) Tetapkan JENIS SHEET dari judul + isi (denah / tabel-schedule / detail /
+     potongan / tampak / denah atap / notes-legenda / campuran).
+  3) INVENTARIS ZONA: area gambar utama, area tabel, legenda, blok catatan,
+     kop. Setiap zona diberi locator.
+  4) Jalankan SOP sesuai jenis (§3.1–§3.5). Sheet campuran: jalankan per zona.
+  5) Tutup dengan SELF-CHECK sheet (§7) + METRICS.
+
+§3.1 SOP DENAH (denah pondasi/footplat, sloof, kolom, balok, latei, atap):
+  1) GRID:
+     a) kumpulkan semua bubble as + labelnya; ikat ke garis asnya;
+     b) baca DIMENSI antar-as pada garis dimensi (angka + pasangan as yang
+        diapit); baca DIMENSI TOTAL bila ada;
+     c) V-02: jumlah segmen antar as ujung = total (toleransi). PENTING:
+        dimensi TEPI/OFFSET di LUAR pasangan as ujung (mis. jarak as terluar
+        ke tepi teras/tritisan) TIDAK ikut penjumlahan total — kecualikan
+        agar tidak salah alarm; catat sebagai offset;
+     d) hasil: GRID {sumbu_x[], sumbu_y[], bentang[], total, offset_tepi[]}.
+  2) LEVEL: semua penanda SFL/EL/peil pada denah -> blok LEVELS.
+  3) ELEMEN (instansiasi):
+     a) deteksi SIMBOL berulang (blok grafis: mis. persegi bersilang untuk
+        footplat, persegi pejal untuk kolom) dan LABEL kode tipe;
+     b) IKAT label -> objek (aturan §5); tolak label mengambang;
+     c) ALAMAT posisi tiap instance dalam bahasa grid: "perpotongan as
+        <X>/<Y>" atau "antara as <X1>-<X2> pada as <Y>" + offset bila di luar
+        as; elemen memanjang (sloof/balok/latei) dicatat sebagai RUAS
+        dari-titik-ke-titik (alamat awal -> akhir);
+     d) HITUNG n per tipe dengan DUA metode independen: (i) hitung simbol,
+        (ii) hitung label; V-05: keduanya harus sama, beda -> needs_review;
+     e) elemen tanpa label / label tanpa elemen -> W-BIND (jangan dibuang).
+  4) DIMENSI LOKAL & ANOTASI pada denah (mis. t=<..> pelat, panjang ruas
+     latei, panjang miring member atap) -> blok DIMENSIONS/ANNOTATIONS,
+     terikat ke objek terdekat yang sah (leader/kedekatan).
+  5) TANDA POTONGAN/DETAIL -> blok SECTIONS_REF (rujukan silang antar sheet).
+
+§3.2 SOP TABEL/SCHEDULE (tabel kolom, tabel balok & sloof, tabel pelat, tabel
+     kusen, dst.):
+  1) REKONSTRUKSI SEL dari rangka garis (bukan dari kedekatan teks bebas):
+     tentukan baris & kolom; teks di-assign ke sel berdasarkan bbox.
+  2) BACA HEADER -> peta kolom ke field kanonik: TYPE/KODE, DIMENSI,
+     TUL. ATAS, TUL. BAWAH, TUL. PINGGANG, SENGKANG (per zona
+     TUMPUAN/LAPANGAN/JOINT), MUTU BETON, LOKASI/LANTAI, KETERANGAN.
+  3) SATU TIPE = SATU RECORD per konteks lantai (tabel kolom sering memuat
+     detail per lantai untuk kode yang sama — simpan per (kode, lantai),
+     JANGAN dirata-ratakan atau digabung).
+  4) PARSING nilai sel memakai grammar §2; sel gagal-grammar -> simpan raw
+     dalam record + W-CEL (jangan menebak).
+  5) V-04(t): setiap record minimal punya DIMENSI + satu field tulangan
+     (untuk elemen struktur); kurang -> W.
+  -> blok TABLES: {judul_tabel, records[], raw_cells}.
+
+§3.3 SOP DETAIL/POTONGAN (detail pondasi, potongan dinding, dsb.):
+  1) RANTAI DIMENSI VERTIKAL & HORIZONTAL: baca tiap segmen + total; V-02
+     berlaku (Σ segmen = total pada rentang yang sama).
+  2) TULANGAN pada detail: pola D<d>-<s> per arah/lapis; posisi (bawah
+     telapak, badan, dsb.) dicatat dari letak label.
+  3) LAPISAN MATERIAL dari arsiran + urutan vertikal (mis. tanah asli —
+     pasir urug — lantai kerja — telapak — kolom pedestal — sloof) ->
+     blok DETAILS.layers (nama lapis dari kelas arsiran/label; tebal dari
+     rantai dimensi).
+  4) GARIS MUKA TANAH ASLI / muka lantai + level yang menempel.
+  5) Nama detail (mis. tipe pondasi) diikat ke kode tipe -> menjadi sumber
+     definisi pada TYPE_INDEX lintas sheet.
+
+§3.4 SOP DENAH ATAP / RANGKA BAJA:
+  1) MEMBER: garis-garis rangka (kuda-kuda/rafter, setengah kuda-kuda,
+     jurai, gording, trekstang, ikatan angin) — tiap member = ruas dgn alamat
+     grid awal->akhir.
+  2) LABEL PROFIL via leader (WF/kanal C/Ø/…): ikat ke member; satu label
+     bisa mewakili kelompok member serupa (catat cakupannya).
+  3) PANJANG: HANYA dari angka tertulis pada gambar atau (nanti, L5) dari
+     geometri vektor terkalibrasi — TKG mencatat angka tertulis apa adanya
+     di DIMENSIONS; tidak menghitung panjang miring sendiri (itu tugas
+     engine, BRAIN 02 §G).
+  4) JARAK GORDING / pola trekstang / pola ikatan angin: baca bila tertulis;
+     tidak tertulis -> biarkan kosong (BRAIN 01 yang memutuskan needs_review).
+
+§3.5 SOP NOTES / LEGENDA / KETERANGAN:
+  1) Serap SEMUA teks catatan ke blok NOTES (per butir, apa adanya).
+  2) LEGENDA simbol/singkatan -> blok LEGEND (simbol -> makna) — inilah satu-
+     satunya jalan resmi memperluas kamus prefiks §2.1 untuk proyek tsb.
+  3) Spesifikasi material pada notes (mutu, merk-setara, campuran) tetap
+     ditranskrip apa adanya; penafsiran = wilayah BRAIN 01.
+
+
+================================================================================
+§4. (RINGKASAN TEKNIS) DETEKSI STRUKTUR GRAFIS
+================================================================================
+Implementasi mengikuti RULE-EXT-04 dengan keluaran terskema:
+  GRID_LINES, DIMENSION_OBJECTS {nilai, unit, anchor_pair, locator},
+  LEADERS {from_text, to_object}, TABLE_FRAMES {cells}, SYMBOL_BLOCKS
+  {kelas, instances[]}, HATCH_REGIONS {kelas_material, region},
+  SECTION_MARKS {label, arah, target?}.
+Setiap deteksi menyertakan confidence (F-J*, BRAIN 02 §J) dan locator.
+Ambigu = catat + W, bukan pilih diam-diam.
+
+
+================================================================================
+§5. PENGIKATAN (BINDING) LABEL <-> OBJEK <-> ALAMAT GRID
+================================================================================
+RULE-EXT-20  PRIORITAS BUKTI IKATAN: (1) garis penunjuk (leader) eksplisit >
+  (2) label DI DALAM/berimpit objek > (3) tetangga terdekat searah orientasi
+  objek (untuk label ruas memanjang: sejajar ruasnya). Jarak ikatan wajib di
+  bawah ambang proporsional; lebih dari itu = label mengambang (W-BIND).
+RULE-EXT-21  SATU label mengikat SATU objek (atau satu kelompok yang
+  ditunjuk leader bercabang). Konflik dua label pada satu objek -> W + kedua
+  label disimpan (resolusi = presedensi BRAIN 01 RULE-READ-02, bukan di sini).
+RULE-EXT-22  ALAMAT GRID: setiap instance dinyatakan dalam koordinat as
+  (perpotongan / rentang antar-as) + offset tepi bila di luar as; instance di
+  luar sistem grid (mis. area teras dengan as bantu) tetap dialamatkan relatif
+  ke as terdekat + offset — TIDAK dibuang.
+RULE-EXT-23  Keluaran: ELEMENTS[] {kode_raw, kode_norm?, alamat, bentuk
+  (titik/ruas/bidang), n, count_method{simbol,label}, locator[]}.
+
+
+================================================================================
+§6. FORMAT TKG (kontrak keluaran)
+================================================================================
+TkgDocument (skema penuh diimplementasikan di packages/schemas; TXT 3 §4):
+  doc: { prj_id, rev_id, file_hash, locale_terdeteksi, satuan_default,
+         generated_by, versi_brain00, waktu }
+  sheets[]: {
+    sheet_id, nomor_gambar?, judul, disiplin, jenis, skala[{viewport,nilai}],
+    SHEET_META {kop lengkap}
+    GRID {sumbu_x[{label,posisi}], sumbu_y[], bentang[{dari,ke,nilai,unit}],
+          total[], offset_tepi[], valid}
+    LEVELS [{label_raw, nilai_m, locator}]
+    TABLES [{judul, records[{kode, lantai?, fields{...}, raw_cells}], locator}]
+    ELEMENTS [ §5 RULE-EXT-23 ]
+    DIMENSIONS [{nilai, unit, anchor, locator}]
+    MEMBERS_BAJA [{ruas, label_profil?, locator}]
+    DETAILS [{nama, layers[], tulangan[], dimensi[], locator}]
+    NOTES[], LEGEND[], SECTIONS_REF[],
+    UNCLASSIFIED [{raw, locator, alasan}],
+    WARNINGS [W-*/E-*], METRICS {span_total, span_terklasifikasi, cakupan,
+      n_unclassified, n_warning, grammar_pass_rate}
+  }
+  crossheet: { grid_fingerprint (label+bentang kanonik), TYPE_INDEX
+    {kode -> sheet definisi (TABLES/DETAILS) & sheet instance (ELEMENTS)},
+    orphans {tipe_tanpa_definisi[], definisi_tanpa_instance[]},
+    level_index[], section_link[] }
+
+RENDER .tkg.txt (deterministik, diff-able, untuk manusia):
+  - blok per sheet, urutan tetap; SATU FAKTA PER BARIS, format:
+    [ID] JENIS | nilai | unit | alamat/anchor | raw="..." | (hal, bbox)
+  - contoh bentuk (placeholder): 
+    [S05-GRID-X02] BENTANG | <nilai> | mm | as B->C | raw="<..>" | (p.5, ...)
+    [S05-EL-013] ELEMEN | K1 | - | as C/2 | n=1 (simbol=label) | (p.5, ...)
+    [S09-TBL-K1-L1] RECORD | K1 lantai 1 | dim=<b>x<h> mm; tul=<n>D<d>;
+       sengkang tumpuan D<d>-<s> / lapangan D<d>-<s>; mutu fc'<..> | (p.9, ...)
+  - bagian akhir: WARNINGS, UNCLASSIFIED, METRICS, lalu ringkasan crossheet.
+
+
+================================================================================
+§7. VALIDASI INTERNAL & METRIK MUTU TKG (gerbang NO-MISTAKE)
+================================================================================
+Dijalankan otomatis sebelum TKG boleh diserahkan ke BRAIN 01:
+V-01  CAKUPAN TEKS 100%: span_terklasifikasi + span_unclassified = span_total;
+      tidak ada teks hilang (INV-TKG-02).
+V-02  KONSISTENSI DIMENSI GRID: Σ bentang antar as ujung = total (toleransi
+      PARAM.tol_tri); offset tepi dikecualikan (§3.1.1c). Gagal -> E-GRID.
+V-03  SIDIK JARI GRID SERAGAM: label as + bentang identik pada semua sheet
+      denah satu bangunan; beda -> E-GRID (kemungkinan salah baca/beda
+      revisi/beda bangunan).
+V-04  RUJUKAN TIPE LENGKAP (lintas sheet): setiap kode pada ELEMENTS punya
+      definisi di TABLES/DETAILS (jika tidak -> orphan W-TYP); setiap definisi
+      punya instance (jika tidak -> W-DEF). Orphan TIDAK menghentikan TKG,
+      tapi wajib tercatat.
+V-05  HITUNG GANDA-METODE: count simbol = count label per tipe per sheet;
+      beda -> needs_review (angka keduanya dilaporkan).
+V-06  GRAMMAR-PASS: proporsi string angka/kode yang lolos grammar §2 >=
+      PARAM.eval.tkg_grammar_min; di bawah ambang -> sheet ditandai untuk
+      review persepsi (indikasi kualitas sumber buruk).
+V-07  SATUAN KONSISTEN per kelas objek dalam satu sheet (hasil §2.7); campuran
+      tak wajar -> W-UNIT.
+V-08  LEVEL MASUK AKAL: nilai level terurut wajar antar lantai (naik), format
+      ±x.xxx; anomali -> W-LVL.
+V-09  SKALA per viewport tunggal & tercatat; teks skala vs (bila vektor)
+      rasio dimensi-tertulis/panjang-vektor konsisten (BRAIN 02 F-A07);
+      tidak konsisten -> W-SCL.
+V-10  KELENGKAPAN KOP: judul, skala, nomor/identitas revisi terbaca; kurang ->
+      W-META (mempengaruhi penanganan revisi BRAIN 01 §6.9).
+
+METRIK GERBANG (dipakai TXT 3 §7 Fase 2): cakupan V-01 = 100%; V-02/V-03 lulus
+semua sheet denah; V-05 selisih = 0 (atau seluruh selisih ber-needs_review);
+grammar-pass >= ambang; orphan = 0 ATAU seluruh orphan ber-warning tercatat.
+TKG yang belum lolos gerbang hanya boleh dipakai sebagai DRAFT berlabel jelas.
+
+
+================================================================================
+§8. SHEET RASTER (scan/foto) & BANTUAN MANUSIA
+================================================================================
+RULE-EXT-30  Deteksi raster per-sheet (bukan per-file). Render DPI tinggi;
+  OCR LOKAL per-ZONA hasil layout (bukan sekali jalan satu halaman penuh).
+RULE-EXT-31  Semua angka hasil OCR wajib lolos grammar §2 + inferensi satuan
+  §2.7; gagal -> UNCLASSIFIED + W-NUM. Confidence sumber OCR lebih rendah
+  daripada vektor (rank_method, BRAIN 02 F-J01).
+RULE-EXT-32  Skala raster hanya sah lewat kalibrasi manusia dua-titik
+  (BRAIN 02 F-A06) atau dimensi tertulis; pengukuran bidang/panjang pada
+  raster = alat bantu manual (SK-15), tidak pernah otomatis (INV-TKG-06).
+RULE-EXT-33  Zona yang OCR-nya meragukan ditampilkan ke manusia sebagai
+  POTONGAN GAMBAR (crop dari locator) berdampingan dgn hasil baca — koreksi
+  manusia masuk TKG dgn method=manual_input + tercatat sebagai Correction
+  (flywheel, TXT 1 RULE-HITL-02).
+
+
+================================================================================
+§9. ANTI-POLA EKSTRAKSI (DILARANG KERAS)
+================================================================================
+AP-E-01  Menafsirkan biaya/ekspansi/AHSP/harga di tahap TKG (INV-TKG-05).
+AP-E-02  Membuang, meringkas, atau "merapikan" teks sumber (INV-TKG-02).
+AP-E-03  Mengoreksi angka/ejaan tanpa kamus + bendera (INV-TKG-03).
+AP-E-04  Menebak makna kode/singkatan di luar kamus tanpa legenda (§2.1b).
+AP-E-05  Mengasumsikan satuan tanpa prosedur inferensi §2.7.
+AP-E-06  Mengukur dari piksel / membiarkan model vision membaca angka saat
+         text-layer vektor tersedia (INV-TKG-06, RULE-EXT-05).
+AP-E-07  Mencampur sheet lintas revisi/bangunan dalam satu TKG (INV-TKG-04).
+AP-E-08  Menjumlahkan dimensi total dgn menyertakan offset tepi di luar as
+         ujung (sumber alarm palsu — §3.1.1c).
+AP-E-09  Menyatukan record tabel per-lantai untuk kode yang sama (§3.2.3).
+AP-E-10  Menyerahkan TKG ke BRAIN 01 tanpa menjalankan V-01..V-10 (§7).
+
+
+================================================================================
+§10. KONTRAK KE BRAIN 01-03 & PEMETAAN REPO
+================================================================================
+KE BRAIN 01: L1–L5 pada TXT 1 §5 = implementasi berkas ini; keluaran = TKG;
+  L6 ke atas hanya membaca TKG (RULE-READ-06). TypeDict = turunan blok TABLES/
+  DETAILS; ElementInstance = turunan blok ELEMENTS + GRID + LEVELS.
+KE BRAIN 02: parsing angka (F-A00), skala (F-A06/07), sanity (F-A08), skor
+  confidence (F-J*) dipakai di dalam tahap TKG; TKG tidak menghitung kuantitas.
+KE BRAIN 03: SK-01..SK-15 secara kolektif MEMBANGUN TKG; SK-25 memberi skor;
+  cache per content-hash dgn unit TKG-per-sheet; eval T-08 = golden TKG.
+
+PEMETAAN REPO (usulan baku; audit dulu sebelum membuat baru):
+  services/document-intelligence/src/
+    ingest/   (split per sheet, hash, deteksi vektor-raster)
+    vector/   (text-span + path PyMuPDF, merge-run §1)
+    ocr/      (raster per-zona §8)
+    layout/   (zona: kop, tabel, denah, notes §3.0)
+    grid/     (§3.1.1)          tables/  (§3.2)
+    symbols/  (blok berulang)   assoc/   (binding §5)
+    details/  (§3.3)            steel/   (§3.4)
+    tkg/      (builder, validator V-01..V-10, renderer .tkg.txt)
+    qa/       (metrik, laporan gerbang)
+  packages/schemas/src/tkg.ts   (TkgDocument dkk., paritas Pydantic)
+  Keluaran runtime: extract/{prj}/{rev}/{sheet}.tkg.json ;
+  drawingset.tkg.json ; drawingset.tkg.txt ; crops/{evidence_id}.png
+  tests/golden-tkg/ (PDF sintetis kecil per pola + kunci TKG)
+
+================================================================================
+RINGKAS SATU KALIMAT:
+BRAIN 00 mengubah gambar kerja menjadi TKG — transkrip kanonik yang menyalin
+setiap angka, kode, jarak, level, dan catatan lengkap dengan lokasi & cara
+bacanya, dijaga leksikon-grammar notasi struktur Indonesia, SOP scan per jenis
+sheet, pengikatan label-objek beralamat grid, serta validasi V-01..V-10 —
+zero-loss, no-silent-fix, tanpa tafsir biaya — sehingga BRAIN 01-03 menalar dan
+menghitung di atas fakta gambar yang nyaris tanpa cacat dan selalu auditable.
+================================================================================
+(TXT 00 v1.0 FINAL — lanjut TXT 1 [Prinsip & Penalaran], TXT 2 [Rumus],
+TXT 3 [Skill/API/Pipeline/Data].)
+================================================================================

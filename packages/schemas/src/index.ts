@@ -564,6 +564,28 @@ export const ScheduleVersionSchema = z.object({
 
 // ─── AI: Warnings, Assumptions, Evidence ─────────────────────────────────────
 
+// method/reviewState selaras docs/specs/brain-v4.1/PAAX_BRAIN_01_PRINSIP_PENALARAN.txt
+// §4.3 (Evidence contract) & §5 (lifecycle). rank_method (F-J01) menentukan
+// urutan keandalan method saat menghitung confidence (F-J03) — lihat §Z TXT02.
+export const EvidenceMethodEnum = z.enum([
+  "GRID_TABLE_VECTOR", // grid/level/tabel/vektor — paling andal
+  "TEXT_VECTOR",        // teks tertulis dari vektor PDF
+  "OCR_LOCAL",
+  "VISION_LLM",
+  "MANUAL_INPUT",
+  "CALCULATION",
+  "REFERENCE_LOOKUP",
+]);
+
+export const ReviewStateEnum = z.enum([
+  "EXTRACTED",
+  "CORROBORATED",
+  "NEEDS_REVIEW",
+  "APPROVED",
+  "LOCKED",
+  "SUPERSEDED",
+]);
+
 export const EvidenceSchema = z.object({
   id: z.string().uuid(),
   type: z.enum(["DRAWING_REGION", "DOCUMENT_TEXT", "CALCULATION", "REFERENCE", "USER_INPUT"]),
@@ -580,6 +602,16 @@ export const EvidenceSchema = z.object({
   excerpt: z.string().optional(),
   url: z.string().url().optional(),
   description: z.string(),
+  // ── Diperkaya (brain TXT01 §4.3) — semua opsional/berdefault, tidak
+  // mengubah bentuk data lama yang sudah ada. Belum diisi oleh pipeline
+  // manapun sampai perception layer (v1.0) mulai dibangun.
+  method: EvidenceMethodEnum.optional(),
+  ruleId: z.string().optional(), // mis. "F-B01", "RULE-EXP-BETON"
+  confidence: z.number().min(0).max(1).optional(), // F-J03
+  corroboratedBy: z.array(z.string().uuid()).default([]),
+  conflictsWith: z.array(z.string().uuid()).default([]),
+  reviewState: ReviewStateEnum.default("EXTRACTED"),
+  supersededBy: z.string().uuid().optional(),
   createdAt: z.string().datetime(),
 });
 
@@ -636,6 +668,76 @@ export const AssumptionSchema = z.object({
   acceptedAt: z.string().datetime().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+});
+
+// ─── DRAFT (brain v4.1, BELUM DIPAKAI) — ElementType/Instance/WorkItem/Review ─
+//
+// Skeleton selaras docs/specs/brain-v4.1/PAAX_BRAIN_01_PRINSIP_PENALARAN.txt §4
+// (model entitas TKG/reasoning). Inert — tidak direferensikan endpoint atau
+// komponen manapun. Akan MENGGANTIKAN DrawingElementSchema/QuantityCandidateSchema
+// (blok "Drawing-to-Estimate Workflow" v0.5 di atas) saat pipeline TKG (v1.0)
+// mulai dibangun — JANGAN aktifkan/gunakan keduanya bersamaan (schema drift,
+// lihat docs/BRAIN_ALIGNMENT.md §2). Sinkron ke Pydantic hanya saat diaktifkan.
+
+export const ElementTypeSchema = z.object({
+  id: z.string().uuid(),
+  projectId: z.string().uuid(),
+  code: z.string(), // mis. "K1", "B1" — label tipe dari schedule/legenda
+  category: z.enum(["KOLOM", "BALOK", "PELAT", "DINDING", "PONDASI", "ATAP", "KUSEN", "MEP", "LAIN"]),
+  properties: z.record(z.unknown()).default({}), // dimensi & spesifikasi per schedule
+  sourceEvidenceIds: z.array(z.string().uuid()).default([]),
+  createdAt: z.string().datetime(),
+});
+
+export const ElementInstanceSchema = z.object({
+  id: z.string(), // format id deterministik: {PRJ}.{REV}.{DISC}.{LEVEL}.{TYPE}.{SEQ}
+  projectId: z.string().uuid(),
+  elementTypeId: z.string().uuid(),
+  level: z.string(), // mis. "LT1", "LT2"
+  gridPosition: z.string().optional(), // mis. "A-1"
+  count: z.number().int().positive().default(1),
+  sourceEvidenceIds: z.array(z.string().uuid()).default([]),
+  reviewState: ReviewStateEnum.default("EXTRACTED"),
+  createdAt: z.string().datetime(),
+});
+
+export const WorkItemDraftSchema = z.object({
+  id: z.string().uuid(),
+  projectId: z.string().uuid(),
+  elementInstanceId: z.string().optional(), // kosong utk implied work (RULE-IMP)
+  ruleId: z.string(), // mis. "RULE-EXP-BETON", "RULE-IMP-SMKK"
+  workType: z.string(), // mis. "beton", "besi", "bekisting"
+  quantity: z.number().nonnegative().optional(), // diisi ENGINE, bukan LLM (INV-01)
+  unit: UnitEnum.optional(),
+  ahspCode: z.string().optional(),
+  sourceEvidenceIds: z.array(z.string().uuid()).default([]),
+  reviewState: ReviewStateEnum.default("EXTRACTED"),
+  createdAt: z.string().datetime(),
+});
+
+export const ReviewTaskSchema = z.object({
+  id: z.string().uuid(),
+  projectId: z.string().uuid(),
+  targetType: z.enum(["ELEMENT_INSTANCE", "WORK_ITEM", "EVIDENCE"]),
+  targetId: z.string(),
+  reason: z.string(), // mis. "confidence rendah", "konflik presedensi" (RULE-TRI-01)
+  priority: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
+  status: z.enum(["OPEN", "IN_PROGRESS", "RESOLVED", "DISMISSED"]).default("OPEN"),
+  assignedToId: z.string().uuid().optional(),
+  createdAt: z.string().datetime(),
+  resolvedAt: z.string().datetime().optional(),
+});
+
+export const CorrectionSchema = z.object({
+  id: z.string().uuid(),
+  projectId: z.string().uuid(),
+  reviewTaskId: z.string().uuid().optional(),
+  targetType: z.enum(["ELEMENT_INSTANCE", "WORK_ITEM", "EVIDENCE"]),
+  targetId: z.string(),
+  previousValue: z.record(z.unknown()).optional(),
+  correctedValue: z.record(z.unknown()),
+  correctedById: z.string().uuid(),
+  createdAt: z.string().datetime(),
 });
 
 // ─── Export ──────────────────────────────────────────────────────────────────
