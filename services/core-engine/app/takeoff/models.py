@@ -34,7 +34,7 @@ class TakeoffLine(BaseModel):
 
 
 class ManualTakeoffResult(BaseModel):
-    domain: Literal["tanah", "dinding", "arsitektur", "baja", "atap", "kusen", "mep"]
+    domain: Literal["tanah", "dinding", "arsitektur", "baja", "atap", "kusen", "mep", "smkk"]
     items: List[TakeoffLine] = Field(default_factory=list)
     assumptions: List[str] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)

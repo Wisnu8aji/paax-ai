@@ -1447,6 +1447,7 @@ export const TakeoffParamsSchema = z.object({
   waste_besi: z.number().default(0.0),
   t_pelat_default_m: z.number().nullish(),
   h_kategori_perancah_m: z.number().nullish(),
+  reuse_form: z.number().int().min(1).nullish(), // §Z: faktor pakai-ulang bekisting (metode)
   tol_grid: z.number().default(0.005),
 });
 export type TakeoffParams = z.infer<typeof TakeoffParamsSchema>;
@@ -1471,6 +1472,7 @@ export const TakeoffItemSchema = z.object({
   mutu_beton: z.string().nullish(),
   alamat: z.string().nullish(),
   rule_id: z.string(),
+  usage_factor: z.number().int().default(1), // §Z reuse_form — anotasi pakai-ulang bekisting
 });
 export type TakeoffItem = z.infer<typeof TakeoffItemSchema>;
 
@@ -1572,7 +1574,7 @@ export const TakeoffLineSchema = z.object({
 export type TakeoffLine = z.infer<typeof TakeoffLineSchema>;
 
 export const ManualTakeoffResultSchema = z.object({
-  domain: z.enum(["tanah", "dinding", "arsitektur", "baja", "atap", "kusen", "mep"]),
+  domain: z.enum(["tanah", "dinding", "arsitektur", "baja", "atap", "kusen", "mep", "smkk"]),
   items: z.array(TakeoffLineSchema).default([]),
   assumptions: z.array(z.string()).default([]),
   warnings: z.array(z.string()).default([]),

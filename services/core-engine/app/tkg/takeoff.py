@@ -49,6 +49,7 @@ class TakeoffItem(BaseModel):
     mutu_beton: Optional[str] = None
     alamat: Optional[str] = None
     rule_id: str                          # jejak rumus, mis. "F-B01", "F-C03"
+    usage_factor: int = 1                 # faktor pemakaian (khusus bekisting, mis. 2 untuk 2x pakai)
 
 
 class BbsMark(BaseModel):
@@ -431,9 +432,40 @@ def _r4(x: float) -> float:
     return round(x + 1e-9, 4)
 
 
+def _faktor_pakai_ulang(ctx: _Ctx, el: ElementInstance, rec: TypeRecord) -> int:
+    """
+    §Z reuse_form — faktor pakai-ulang bekisting (keputusan METODE, bukan data
+    gambar). Kuantitas m2 TIDAK dibagi: luas kontak penuh adalah dasar upah
+    pasang/bongkar yang terjadi tiap pemakaian; pakai-ulang memengaruhi
+    koefisien bahan / pemilihan varian AHSP dan estimasi kebutuhan material
+    (≈ A / reuse_form). Sumber sah = params.reuse_form; kunci 'usage_factor'
+    di rec.dimensi ditoleransi demi kompatibilitas tapi diperingatkan karena
+    TKG harus murni transkrip gambar (INV-TKG-05).
+    """
+    u: Optional[int] = ctx.params.reuse_form
+    if u is None and "usage_factor" in rec.dimensi:
+        u = int(rec.dimensi["usage_factor"])
+        ctx.warnings.append(
+            f"{el.kode}: 'usage_factor' dibaca dari dimensi TKG — pindahkan ke "
+            f"params.reuse_form (pakai-ulang = metode, bukan data gambar; INV-TKG-05)")
+    if u is None:
+        return 1
+    if u < 1:
+        ctx.warnings.append(f"{el.kode}: reuse_form {u} < 1 tidak valid — dipakai 1")
+        return 1
+    if u > 1:
+        ctx.pakai_param("reuse_form", u,
+                        "faktor pakai-ulang bekisting (pilih varian/koefisien bahan AHSP)")
+        ctx.assumptions.append(
+            f"{el.kode}: bekisting dipakai ulang {u}x — kuantitas tetap luas kontak "
+            f"penuh (upah per pemasangan); kebutuhan material ≈ A/{u} (§Z reuse_form)")
+    return int(u)
+
+
 def _bekisting(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
                panjang_efektif: Optional[float]) -> None:
     b, h = _dim_m(rec, "b"), _dim_m(rec, "h")
+    u_factor = _faktor_pakai_ulang(ctx, el, rec)
 
     if kategori == "kolom":
         if b is None or h is None or panjang_efektif is None:
@@ -459,9 +491,9 @@ def _bekisting(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
         ctx.items.append(TakeoffItem(
             kode=el.kode, lantai=el.lantai, kategori=kategori, work_type="bekisting",
             quantity=_r4(a), unit="m2",
-            formula=formula,
+            formula=formula + (" (dipakai %dx)" % u_factor if u_factor > 1 else ""),
             detail=detail,
-            alamat=el.alamat, rule_id=rule,
+            alamat=el.alamat, rule_id=rule, usage_factor=u_factor
         ))
         return
 
@@ -480,9 +512,9 @@ def _bekisting(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
         ctx.items.append(TakeoffItem(
             kode=el.kode, lantai=el.lantai, kategori=kategori, work_type="bekisting",
             quantity=_r4(a), unit="m2",
-            formula="2 x h x L_jalur x jumlah",
+            formula="2 x h x L_jalur x jumlah" + (" (dipakai %dx)" % u_factor if u_factor > 1 else ""),
             detail=f"2 x {h:g} x {panjang_efektif:g} x {el.n} = {_r4(a):g} m2",
-            alamat=el.alamat, rule_id="F-C03",
+            alamat=el.alamat, rule_id="F-C03", usage_factor=u_factor
         ))
         return
 
@@ -507,8 +539,8 @@ def _bekisting(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
         a = lebar_kontak * panjang_efektif * el.n
         ctx.items.append(TakeoffItem(
             kode=el.kode, lantai=el.lantai, kategori=kategori, work_type="bekisting",
-            quantity=_r4(a), unit="m2", formula=formula,
-            detail=f"{detail} = {_r4(a):g} m2", alamat=el.alamat, rule_id="F-C04",
+            quantity=_r4(a), unit="m2", formula=formula + (" (dipakai %dx)" % u_factor if u_factor > 1 else ""),
+            detail=f"{detail} = {_r4(a):g} m2", alamat=el.alamat, rule_id="F-C04", usage_factor=u_factor
         ))
         return
 
@@ -525,9 +557,9 @@ def _bekisting(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
         ctx.items.append(TakeoffItem(
             kode=el.kode, lantai=el.lantai, kategori=kategori, work_type="bekisting",
             quantity=_r4(a), unit="m2",
-            formula="A_neto x jumlah",
+            formula="A_neto x jumlah" + (" (dipakai %dx)" % u_factor if u_factor > 1 else ""),
             detail=f"({p:g} x {l:g} - {luas_bukaan:g}) x {el.n} = {_r4(a):g} m2",
-            alamat=el.alamat, rule_id="F-C05",
+            alamat=el.alamat, rule_id="F-C05", usage_factor=u_factor
         ))
         return
 
@@ -547,9 +579,9 @@ def _bekisting(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
         ctx.items.append(TakeoffItem(
             kode=el.kode, lantai=el.lantai, kategori=kategori, work_type="bekisting",
             quantity=_r4(a), unit="m2",
-            formula="2 x (H_w x L_w) - 2 x sum A_bukaan, x jumlah",
+            formula="2 x (H_w x L_w) - 2 x sum A_bukaan, x jumlah" + (" (dipakai %dx)" % u_factor if u_factor > 1 else ""),
             detail=f"(2 x ({tinggi:g} x {p:g}) - 2 x {bukaan:g}) x {el.n} = {_r4(a):g} m2",
-            alamat=el.alamat, rule_id="F-C07",
+            alamat=el.alamat, rule_id="F-C07", usage_factor=u_factor
         ))
         return
 
@@ -570,10 +602,10 @@ def _bekisting(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
         ctx.items.append(TakeoffItem(
             kode=el.kode, lantai=el.lantai, kategori=kategori, work_type="bekisting",
             quantity=_r4(a), unit="m2",
-            formula="b_tga x P_miring + 2 x (t_plat x P_miring) + optrede x b_tga x n_anak + A_bordes_bawah",
+            formula="b_tga x P_miring + 2 x (t_plat x P_miring) + optrede x b_tga x n_anak + A_bordes_bawah" + (" (dipakai %dx)" % u_factor if u_factor > 1 else ""),
             detail=(f"({lebar:g} x {p_miring:g}) + 2 x ({t_pelat:g} x {p_miring:g}) + "
                     f"{optrede:g} x {lebar:g} x {n_anak} + {bordes:g}, x {el.n} = {_r4(a):g} m2"),
-            alamat=el.alamat, rule_id="F-C09",
+            alamat=el.alamat, rule_id="F-C09", usage_factor=u_factor
         ))
         return
 
@@ -589,9 +621,9 @@ def _bekisting(ctx: _Ctx, el: ElementInstance, rec: TypeRecord, kategori: str,
         ctx.items.append(TakeoffItem(
             kode=el.kode, lantai=el.lantai, kategori=kategori, work_type="bekisting",
             quantity=_r4(a), unit="m2",
-            formula="K_keliling x t x jumlah = 2 x (p + l) x t x jumlah",
+            formula="K_keliling x t x jumlah = 2 x (p + l) x t x jumlah" + (" (dipakai %dx)" % u_factor if u_factor > 1 else ""),
             detail=f"2 x ({p:g} + {l:g}) x {t:g} x {el.n} = {_r4(a):g} m2",
-            alamat=el.alamat, rule_id="F-C06",
+            alamat=el.alamat, rule_id="F-C06", usage_factor=u_factor
         ))
         return
 
