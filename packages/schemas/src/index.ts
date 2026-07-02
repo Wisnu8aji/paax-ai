@@ -1260,6 +1260,224 @@ export const VolumeResult = z.object({
 });
 export type VolumeResult = z.infer<typeof VolumeResult>;
 
+// ─── TKG — Transkrip Kanonik Gambar (selaras app/tkg/models.py) ──────────────
+//
+// Skema per docs/specs/brain-v4.1/PAAX_BRAIN_00_EKSTRAKSI_GAMBAR_KERJA.txt §6.
+// INV-TKG-05: TKG BUKAN RAB — tidak memuat harga/AHSP/ekspansi.
+// INV-TKG-03: nilai raw disimpan berdampingan dengan nilai normal.
+
+export const TkgUnitEnum = z.enum(["mm", "cm", "m"]);
+
+export const GridAxisSchema = z.object({
+  label: z.string(),
+  posisi_mm: z.number().nullish(),
+});
+
+export const GridSpanSchema = z.object({
+  dari: z.string(),
+  ke: z.string(),
+  nilai: z.number(),
+  unit: TkgUnitEnum.default("mm"),
+  raw: z.string().nullish(),
+});
+
+export const GridTotalSchema = z.object({
+  dari: z.string(),
+  ke: z.string(),
+  nilai: z.number(),
+  unit: TkgUnitEnum.default("mm"),
+  raw: z.string().nullish(),
+});
+
+export const TkgGridSchema = z.object({
+  sumbu_x: z.array(GridAxisSchema).default([]),
+  sumbu_y: z.array(GridAxisSchema).default([]),
+  bentang_x: z.array(GridSpanSchema).default([]),
+  bentang_y: z.array(GridSpanSchema).default([]),
+  total_x: GridTotalSchema.nullish(),
+  total_y: GridTotalSchema.nullish(),
+  offset_tepi: z.array(GridSpanSchema).default([]),
+});
+
+export const TkgLevelSchema = z.object({
+  label_raw: z.string(),
+  nilai_m: z.number(),
+  lantai: z.string().nullish(),
+});
+
+export const RebarPosisiEnum = z.enum([
+  "tul_atas", "tul_bawah", "tul_pinggang", "tul_utama", "tul_sebar_x",
+  "tul_sebar_y", "sengkang", "sengkang_tumpuan", "sengkang_lapangan",
+]);
+
+export const RebarSpecSchema = z.object({
+  posisi: RebarPosisiEnum,
+  raw: z.string(),
+  jumlah: z.number().int().nullish(),
+  diameter_mm: z.number().nullish(),
+  jarak_mm: z.number().nullish(),
+  jenis: z.enum(["D", "O"]).default("D"),
+});
+
+export const TypeKategoriEnum = z.enum([
+  "pondasi_telapak", "pondasi_menerus", "sloof", "kolom", "kolom_praktis",
+  "balok", "ring_balok", "latei", "plat", "tangga", "kuda_kuda", "gording",
+  "ikatan_angin", "trekstang", "lain",
+]);
+
+export const TypeRecordSchema = z.object({
+  kode: z.string(),
+  lantai: z.string().nullish(),
+  kategori: TypeKategoriEnum.nullish(),
+  dimensi: z.record(z.number()).default({}),
+  satuan_dimensi: TkgUnitEnum.default("mm"),
+  tulangan: z.array(RebarSpecSchema).default([]),
+  mutu_beton: z.string().nullish(),
+  keterangan: z.string().nullish(),
+  raw_cells: z.record(z.string()).nullish(),
+});
+
+export const TkgTableSchema = z.object({
+  judul: z.string(),
+  records: z.array(TypeRecordSchema).default([]),
+});
+
+export const RuasGridSchema = z.object({
+  sumbu: z.enum(["x", "y"]),
+  dari: z.string(),
+  ke: z.string(),
+  pada: z.string().nullish(),
+});
+
+export const TkgElementInstanceSchema = z.object({
+  kode: z.string(),
+  alamat: z.string(),
+  bentuk: z.enum(["titik", "ruas", "bidang"]).default("titik"),
+  n: z.number().int().default(1),
+  count_simbol: z.number().int().nullish(),
+  count_label: z.number().int().nullish(),
+  lantai: z.string().nullish(),
+  ruas: RuasGridSchema.nullish(),
+  panjang_m: z.number().nullish(),
+});
+
+export const TkgDimensionSchema = z.object({
+  nilai: z.number(),
+  unit: TkgUnitEnum.default("mm"),
+  anchor: z.string(),
+  raw: z.string().nullish(),
+  target_kode: z.string().nullish(),
+});
+
+export const SheetJenisEnum = z.enum([
+  "denah", "tabel", "detail", "potongan", "tampak", "denah_atap",
+  "notes", "campuran",
+]);
+
+export const SheetMetaSchema = z.object({
+  judul: z.string(),
+  nomor: z.string().nullish(),
+  skala: z.string().nullish(),
+  disiplin: z.string().nullish(),
+});
+
+export const TkgUnclassifiedSchema = z.object({
+  raw: z.string(),
+  alasan: z.string(),
+});
+
+export const TkgSheetSchema = z.object({
+  sheet_id: z.string(),
+  jenis: SheetJenisEnum,
+  meta: SheetMetaSchema,
+  grid: TkgGridSchema.nullish(),
+  levels: z.array(TkgLevelSchema).default([]),
+  tables: z.array(TkgTableSchema).default([]),
+  elements: z.array(TkgElementInstanceSchema).default([]),
+  dimensions: z.array(TkgDimensionSchema).default([]),
+  notes: z.array(z.string()).default([]),
+  unclassified: z.array(TkgUnclassifiedSchema).default([]),
+});
+
+export const TkgDocumentSchema = z.object({
+  prj_id: z.string(),
+  rev_id: z.string().default("R0"),
+  file_hash: z.string().nullish(),
+  locale: z.string().default("id-ID"),
+  satuan_default: TkgUnitEnum.default("mm"),
+  generated_by: z.string().default("manual"),
+  sheets: z.array(TkgSheetSchema).default([]),
+});
+export type TkgDocument = z.infer<typeof TkgDocumentSchema>;
+
+export const TkgIssueSchema = z.object({
+  code: z.string(),
+  severity: z.enum(["error", "warning"]),
+  sheet_id: z.string().nullish(),
+  message: z.string(),
+  subject: z.string().nullish(),
+});
+
+export const TkgValidationResultSchema = z.object({
+  ok: z.boolean(),
+  gate_passed: z.boolean(),
+  n_errors: z.number().int(),
+  n_warnings: z.number().int(),
+  issues: z.array(TkgIssueSchema),
+  type_index: z.record(z.record(z.array(z.string()))),
+  orphans_tanpa_definisi: z.array(z.string()),
+  orphans_tanpa_instance: z.array(z.string()),
+});
+export type TkgValidationResult = z.infer<typeof TkgValidationResultSchema>;
+
+// ─── Takeoff dari TKG (selaras app/tkg/takeoff.py + params.py) ───────────────
+
+export const TakeoffParamsSchema = z.object({
+  tinggi_per_lantai_m: z.number().nullish(),
+  beam_len_mode: z.string().default("as_as"),
+  selimut_beton_m: z.number().default(0.04),
+  k_hook_sengkang: z.number().default(6.0),
+  zona_tumpuan_fraksi: z.number().default(0.25),
+  waste_besi: z.number().default(0.0),
+  t_pelat_default_m: z.number().nullish(),
+  tol_grid: z.number().default(0.005),
+});
+export type TakeoffParams = z.infer<typeof TakeoffParamsSchema>;
+
+export const ParamUsedSchema = z.object({
+  nama: z.string(),
+  nilai: z.union([z.number(), z.string()]),
+  catatan: z.string(),
+});
+
+export const TakeoffItemSchema = z.object({
+  kode: z.string(),
+  lantai: z.string().nullish(),
+  kategori: z.string(),
+  work_type: z.enum(["beton", "bekisting", "besi"]),
+  quantity: z.number().nullish(),   // null = needs_review, TIDAK ditebak
+  unit: z.string(),
+  formula: z.string(),
+  detail: z.string(),
+  needs_review: z.boolean().default(false),
+  review_reason: z.string().nullish(),
+  mutu_beton: z.string().nullish(),
+  alamat: z.string().nullish(),
+  rule_id: z.string(),
+});
+export type TakeoffItem = z.infer<typeof TakeoffItemSchema>;
+
+export const TakeoffResultSchema = z.object({
+  prj_id: z.string(),
+  rev_id: z.string(),
+  items: z.array(TakeoffItemSchema),
+  assumptions: z.array(z.string()).default([]),
+  warnings: z.array(z.string()).default([]),
+  params_used: z.array(ParamUsedSchema).default([]),
+  n_needs_review: z.number().int().default(0),
+});
+export type TakeoffResult = z.infer<typeof TakeoffResultSchema>;
+
 // ─── RAB tersektor / WBS (selaras app/rab/sections.py) ───────────────────────
 
 export const RABSection = z.object({
