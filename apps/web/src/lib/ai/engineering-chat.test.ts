@@ -49,6 +49,20 @@ describe("engineering chat helpers", () => {
     expect(prompt).toContain("<<<KONTEKS_PROYEK_SELESAI>>>");
   });
 
+  it("keeps chat grounded and read-only when project context is supplied", () => {
+    const prompt = buildEngineeringChatPrompt({
+      message: "berapa volume yang perlu saya pakai?",
+      engine: onlineEngine,
+      projectId: "p-1",
+      projectContext: "BOE: asumsi=2; REVIEW: volume K1 perlu cek",
+    });
+
+    expect(prompt).toContain("jawab hanya dari konteks proyek atau data Core Engine");
+    expect(prompt).toContain("Jika data tidak ada");
+    expect(prompt).toContain("jangan melakukan aritmetika baru");
+    expect(prompt).not.toContain("silakan hitung sendiri");
+  });
+
   it("omits project context delimiters when no project context is supplied", () => {
     const prompt = buildEngineeringChatPrompt({
       message: "halo",

@@ -406,3 +406,119 @@ Content-Type: application/json
     {"kode": "AT1", "a_proyeksi": 100, "theta_deg": 30}
   ]
 }
+
+### TKG advanced C07-C10 + B11 - anchors manual
+# Expected: DW1 F-C07 = 56 m2; K3 F-C08 = 6 m2; TG1 F-B11 = 2.4 m3; TG1 F-C09 = 11.06 m2; S3 F-C10 = 62 m2
+POST http://localhost:8081/tkg/takeoff
+Content-Type: application/json
+
+{
+  "doc": {
+    "prj_id": "PRJ-TKG-ADV",
+    "rev_id": "R0",
+    "sheets": [
+      {
+        "sheet_id": "S01",
+        "jenis": "denah",
+        "meta": {"judul": "DENAH TKG ADVANCED"},
+        "elements": [
+          {"kode": "DW1", "alamat": "as A/1", "n": 1},
+          {"kode": "K3", "alamat": "as B/1", "n": 2},
+          {"kode": "TG1", "alamat": "tangga utama", "n": 1},
+          {"kode": "S3", "alamat": "pelat lantai 2", "n": 1}
+        ]
+      },
+      {
+        "sheet_id": "S02",
+        "jenis": "tabel",
+        "meta": {"judul": "TABEL ADVANCED"},
+        "tables": [{
+          "judul": "TABEL ADVANCED",
+          "records": [
+            {"kode": "DW1", "kategori": "dinding_beton", "satuan_dimensi": "m", "dimensi": {"panjang_m": 10, "tinggi_m": 3, "t_m": 0.2, "bukaan_m2": 2}},
+            {"kode": "K3", "kategori": "kolom", "satuan_dimensi": "mm", "dimensi": {"b": 300, "h": 400, "tinggi": 3000, "sisi_tempel_m": 0.4}},
+            {"kode": "TG1", "kategori": "tangga", "satuan_dimensi": "m", "dimensi": {"volume_beton_m3": 2.4, "lebar_m": 1.2, "p_miring_m": 5, "t_pelat_m": 0.12, "optrede_m": 0.17, "n_anak": 15, "a_bordes_bawah_m2": 0.8}},
+            {"kode": "S3", "kategori": "plat", "satuan_dimensi": "mm", "dimensi": {"panjang": 5000, "lebar": 10000, "t": 120, "a_pelat_didukung_m2": 50, "a_dasar_balok_m2": 12}}
+          ]
+        }]
+      }
+    ]
+  }
+}
+
+### Review triage - anchors pareto + low confidence; priority 0.45
+POST http://localhost:8081/review/triage
+Content-Type: application/json
+
+{
+  "project_id": "PRJ-REV",
+  "ambang_conf": 0.7,
+  "candidates": [
+    {
+      "target_ref": "WI-STR-K1",
+      "target_type": "work_item",
+      "impact_score": 0.9,
+      "uncertainty_score": 0.5,
+      "confidence": 0.55,
+      "cost_rank_pct": 0.85,
+      "p_pareto": 0.8
+    }
+  ]
+}
+
+### Correction log - deterministic id for identical body
+POST http://localhost:8081/review/corrections
+Content-Type: application/json
+
+{
+  "project_id": "PRJ-REV",
+  "target_ref": "WI-STR-K1.volume",
+  "field": "volume",
+  "old": 100.0,
+  "new": 102.5,
+  "reason": "manual ukur ulang",
+  "user": "wisnu",
+  "timestamp": "2026-07-02T10:00:00+07:00"
+}
+
+### Eval run - one pass, one fail
+POST http://localhost:8081/eval/run
+Content-Type: application/json
+
+{
+  "cases": [
+    {"id": "pass", "actual": 100.02, "expected": 100.0, "tolerance": 0.05},
+    {"id": "fail", "actual": 100.2, "expected": 100.0, "tolerance": 0.05}
+  ]
+}
+
+### Export BOE JSON - preserves assumptions/missing/warnings
+POST http://localhost:8081/export/boe
+Content-Type: application/json
+
+{
+  "project_context": {"prj_id": "PRJ-BOE", "mode": "estimate", "tipe_bangunan": "rumah", "wilayah": "jateng"},
+  "assumptions": [
+    {"id": "A1", "kategori": "metode", "deskripsi": "tinggi lantai dari user"},
+    {"id": "A2", "kategori": "data", "deskripsi": "harga belum lengkap"}
+  ],
+  "missing": ["HSD besi D16"],
+  "warnings": [{"kode": "W1", "pesan": "coverage rendah"}],
+  "param_snapshot": {"values": {"waste_besi": 0}, "sources": {"waste_besi": "user"}},
+  "data_coverage_summary": {}
+}
+
+### Export BBS JSON - preserves marks/per_diameter/total_waste
+POST http://localhost:8081/export/bbs
+Content-Type: application/json
+
+{
+  "l_stock_m": 12,
+  "marks": [
+    {"mark": "M001", "kode": "K1", "posisi": "tul_utama", "d_mm": 16, "panjang_m": 3.5, "jumlah": 8, "berat_kg": 44.1934}
+  ],
+  "per_diameter": [
+    {"d_mm": 16, "n_potong": 8, "total_panjang_m": 28, "kebutuhan_stok_batang": 3, "waste_kg": 12.6267}
+  ],
+  "total_waste_kg": 12.6267
+}

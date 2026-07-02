@@ -18,6 +18,8 @@ import { Card, Button, StatusPill } from '@/components/ui';
 import { renderTkg, takeoffTkg, validateTkg } from '@/lib/engine';
 import { tkgRepository, emptyTkgRecord, type ProjectTkgRecord } from '@/lib/projects/tkg-repository';
 import { rabRepository, emptyRabLine } from '@/lib/projects/rab-repository';
+import { ReviewTaskPanel, type ReviewTaskView } from '@/components/review/review-task-panel';
+import { formatTkgBbsNumber, hasTkgBbs } from './tkg-bbs-format';
 
 type Tab = 'sumber' | 'transkrip' | 'skrip' | 'takeoff';
 
@@ -168,6 +170,19 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     { id: 'skrip', label: '3 · Skrip .tkg.txt' },
     { id: 'takeoff', label: '4 · Takeoff' },
   ];
+
+  const reviewTasks: ReviewTaskView[] = useMemo(() => {
+    if (!takeoff) return [];
+    return takeoff.items
+      .filter((it) => it.needs_review)
+      .map((it, i) => ({
+        id: `tkg-${i}-${it.kode}-${it.rule_id}`,
+        target_ref: `${it.kode}.${it.work_type}.${it.rule_id}`,
+        reasons: [it.review_reason ?? 'perlu review'],
+        priority: null,
+        status: 'open',
+      }));
+  }, [takeoff]);
 
   return (
     <Card padding={18}>
@@ -375,6 +390,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
 
           {takeoff && (
             <>
+              <ReviewTaskPanel tasks={reviewTasks} />
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr>
                   <th style={S.th}>Kode</th><th style={S.th}>Pekerjaan</th><th style={S.th}>Kuantitas</th>
@@ -408,6 +424,55 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
                   <div style={{ marginTop: 4 }}>
                     Parameter terpakai: {takeoff.params_used.map((p) => `${p.nama}=${p.nilai}`).join(' · ')}
                   </div>
+                )}
+              </div>
+              <div style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 10, background: 'var(--surface)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+                  <div style={S.label}>Bar Bending Schedule (BBS)</div>
+                  {takeoff.bbs && (
+                    <span style={{ fontSize: 11.5, color: 'var(--text3)' }}>
+                      Waste total {formatTkgBbsNumber(takeoff.bbs.total_waste_kg)} kg
+                    </span>
+                  )}
+                </div>
+                {hasTkgBbs(takeoff.bbs) ? (
+                  <div style={{ display: 'grid', gap: 10 }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead><tr>
+                        <th style={S.th}>Mark</th><th style={S.th}>Diameter</th><th style={S.th}>Panjang</th>
+                        <th style={S.th}>Qty</th><th style={S.th}>Berat total</th>
+                      </tr></thead>
+                      <tbody>
+                        {takeoff.bbs?.marks.map((m) => (
+                          <tr key={`${m.mark}-${m.kode}-${m.posisi}`}>
+                            <td style={{ ...S.td, fontWeight: 700 }} className="pax-mono">{m.mark}</td>
+                            <td style={S.td} className="pax-mono">D{formatTkgBbsNumber(m.d_mm)}</td>
+                            <td style={S.td} className="pax-mono">{formatTkgBbsNumber(m.panjang_m)} m</td>
+                            <td style={S.td} className="pax-mono">{m.jumlah}</td>
+                            <td style={S.td} className="pax-mono">{formatTkgBbsNumber(m.berat_kg)} kg</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead><tr>
+                        <th style={S.th}>Diameter</th><th style={S.th}>Total panjang potong</th>
+                        <th style={S.th}>Stok batang</th><th style={S.th}>Waste</th>
+                      </tr></thead>
+                      <tbody>
+                        {takeoff.bbs?.per_diameter.map((d) => (
+                          <tr key={d.d_mm}>
+                            <td style={{ ...S.td, fontWeight: 700 }} className="pax-mono">D{formatTkgBbsNumber(d.d_mm)}</td>
+                            <td style={S.td} className="pax-mono">{formatTkgBbsNumber(d.total_panjang_m)} m</td>
+                            <td style={S.td} className="pax-mono">{d.kebutuhan_stok_batang}</td>
+                            <td style={S.td} className="pax-mono">{formatTkgBbsNumber(d.waste_kg)} kg</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: 'var(--text3)' }}>Belum ada BBS dari engine.</div>
                 )}
               </div>
             </>

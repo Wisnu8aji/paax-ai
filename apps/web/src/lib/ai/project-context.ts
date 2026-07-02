@@ -15,12 +15,40 @@ import { rabRepository } from '@/lib/projects/rab-repository';
 
 const MAX_PACK_CHARS = 6000;
 
+export interface ProjectAuditContextPack {
+  boe?: unknown;
+  warnings?: unknown[];
+  reviewTasks?: unknown[];
+}
+
+function jsonData(value: unknown): string {
+  return JSON.stringify(value);
+}
+
+export function buildAuditContextSections(audit?: ProjectAuditContextPack | null): string[] {
+  if (!audit) return [];
+  const sections: string[] = [];
+  if (audit.boe != null) {
+    sections.push(`== BOE ==\n${jsonData(audit.boe)}`);
+  }
+  if (audit.warnings?.length) {
+    sections.push(`== WARNINGS ==\n${jsonData(audit.warnings)}`);
+  }
+  if (audit.reviewTasks?.length) {
+    sections.push(`== REVIEW TASKS ==\n${jsonData(audit.reviewTasks)}`);
+  }
+  return sections;
+}
+
 function potong(text: string, max: number): string {
   if (text.length <= max) return text;
   return text.slice(0, max) + "\n…(dipotong — budget konteks)";
 }
 
-export async function buildProjectContextPack(projectId: string): Promise<string | null> {
+export async function buildProjectContextPack(
+  projectId: string,
+  auditContext?: ProjectAuditContextPack | null,
+): Promise<string | null> {
   const bagian: string[] = [];
 
   try {
@@ -62,6 +90,8 @@ export async function buildProjectContextPack(projectId: string): Promise<string
       bagian.push(`== DRAFT RAB (wilayah ${draft.regionCode}, PPN ${(draft.ppnRate * 100).toFixed(0)}%) ==\n${isi}\n${total}`);
     }
   } catch { /* draft RAB belum ada */ }
+
+  bagian.push(...buildAuditContextSections(auditContext));
 
   if (!bagian.length) return null;
   return potong(bagian.join('\n\n'), MAX_PACK_CHARS);

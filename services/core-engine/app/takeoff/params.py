@@ -32,6 +32,9 @@ class TanahParams(BaseModel):
     kap_truk: float = 4.0
     # F-F07: kapasitas bak truk (m3 gembur) untuk hitung ritase. Default 4 m3
     # (dump truck kecil). Override sesuai alat.
+    jarak_dekat_max_km: float = 5.0
+    jarak_sedang_max_km: float = 15.0
+    # F-F06/F-F07: boundary kelas jarak angkut untuk memilih varian AHSP.
 
 
 class DindingParams(BaseModel):
@@ -45,11 +48,31 @@ class DindingParams(BaseModel):
     n_lapis_cat: int = 1
     # F-E05: jumlah lapis cat BILA AHSP dihitung per-lapis. Default 1
     # (AHSP per-m2 sudah termasuk seluruh lapis -> jangan dikali lagi).
+    L_maks_praktis: float = 4.0
+    A_maks_praktis: float = 12.0
+    # F-E06: trigger review kolom/ring praktis; jumlah/detail tetap butuh keputusan.
 
 
 class ArsitekturParams(BaseModel):
     """§G subset — pondasi batu belah, penutup lantai/plin, atap miring."""
-    # Tidak ada default global yang memengaruhi volume di subset ini; sudut
-    # atap (theta) & dimensi trapesium pondasi datang dari gambar (per-item),
-    # bukan parameter global (AP-E-04: jangan menebak dari default).
+    h_pasang_keramik: float = 1.5
+    # F-G04: default tinggi pasang area basah; catat assumption bila dipakai.
+    h_upstand: float = 0.2
+    # F-G10: default upstand waterproofing; catat assumption bila dipakai.
     model_config = {"extra": "forbid"}
+
+
+class BajaParams(BaseModel):
+    """§G06/G14 — baja profil dan pengecatan baja."""
+    W_baja_waste: float = 0.05
+    gamma_s: float = 7850.0
+
+
+class AtapParams(BaseModel):
+    """§G07/G08 — atap detail dan drainase hujan."""
+    A_per_downpipe: float = 50.0
+
+
+class MepParams(BaseModel):
+    """§G13 — fallback pipa MEP berbasis fixture."""
+    L_pipa_per_fixture: float | None = None

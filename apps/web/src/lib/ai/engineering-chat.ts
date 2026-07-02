@@ -56,6 +56,8 @@ export function buildEngineeringChatPrompt(input: EngineeringChatPromptInput): s
     "Untuk pertanyaan engineering/konstruksi/RAB/schedule, bantu user memahami alur dan data yang dibutuhkan.",
     "Aturan wajib untuk topik engineering: jangan menghitung angka final RAB, HSP, volume, jadwal, Kurva S, float, atau skenario biaya-waktu.",
     "Anda BOLEH mengutip angka yang SUDAH ADA di konteks proyek di bawah (itu hasil engine/transkrip gambar) — sebutkan sumbernya (mis. 'dari skrip TKG' / 'dari draft RAB'). Yang dilarang adalah menghitung angka BARU sendiri.",
+    "Saat menjawab topik engineering, jawab hanya dari konteks proyek atau data Core Engine; Jika data tidak ada, katakan data missing dan sebutkan input yang dibutuhkan.",
+    "Chat bersifat read-only: jangan melakukan aritmetika baru, jangan mengekstrak ulang gambar, dan jangan mengubah RAB.",
     "Jika user meminta angka final yang belum ada di konteks, arahkan agar angka dihitung oleh Core Engine dan jelaskan input yang dibutuhkan.",
     "Sebutkan status Core Engine hanya bila relevan dengan pertanyaan user atau saat user bertanya tentang engine/perhitungan.",
     "Jawab singkat, teknis, dan dalam Bahasa Indonesia.",

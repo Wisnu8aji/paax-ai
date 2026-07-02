@@ -128,6 +128,34 @@ def takeoff_dinding(req: DindingRequest) -> ManualTakeoffResult:
             detail=f"{s.a:g} x {s.t:g} = {_r4(v):g} m3", rule_id="F-E07",
         ))
 
+    # F-E04 sponningan / tali air
+    for sp in req.sponningan:
+        panjang = sp.panjang_m * sp.jumlah
+        ctx.items.append(TakeoffLine(
+            kode=sp.kode, work="sponningan_tali_air", quantity=_r4(panjang), unit="m",
+            formula="Σ panjang sudut/pertemuan sesuai spek",
+            detail=f"{sp.panjang_m:g} x {sp.jumlah} = {_r4(panjang):g} m",
+            rule_id="F-E04",
+        ))
+
+    # F-E06 trigger kolom/ring praktis: keluarkan review task, jangan tebak jumlah.
+    for pn in req.praktis:
+        luas = pn.luas_panel_m2 if pn.luas_panel_m2 is not None else pn.panjang_segmen_m * pn.tinggi_m
+        triggered = pn.panjang_segmen_m > p.L_maks_praktis or luas > p.A_maks_praktis
+        if not triggered:
+            continue
+        ctx.pakai("L_maks_praktis", p.L_maks_praktis, "ambang panjang segmen praktis")
+        ctx.pakai("A_maks_praktis", p.A_maks_praktis, "ambang luas panel praktis")
+        ctx.items.append(TakeoffLine(
+            kode=pn.kode, work="kolom_ring_praktis_review", unit="review",
+            formula="L > L_maks_praktis OR A > A_maks_praktis",
+            detail=f"L={pn.panjang_segmen_m:g} m, A={_r4(luas):g} m2; "
+                   f"ambang L={p.L_maks_praktis:g}, A={p.A_maks_praktis:g}",
+            needs_review=True,
+            review_reason="Panel melewati ambang praktis; jumlah/posisi kolom atau ring praktis perlu dikonfirmasi.",
+            rule_id="F-E06",
+        ))
+
     n_review = sum(1 for i in ctx.items if i.needs_review)
     return ManualTakeoffResult(
         domain="dinding", items=ctx.items,

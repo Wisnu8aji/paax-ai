@@ -1321,8 +1321,8 @@ export const RebarSpecSchema = z.object({
 
 export const TypeKategoriEnum = z.enum([
   "pondasi_telapak", "pondasi_menerus", "sloof", "kolom", "kolom_praktis",
-  "balok", "ring_balok", "latei", "plat", "tangga", "kuda_kuda", "gording",
-  "ikatan_angin", "trekstang", "lain",
+  "balok", "ring_balok", "latei", "plat", "dinding_beton", "tangga",
+  "kuda_kuda", "gording", "ikatan_angin", "trekstang", "lain",
 ]);
 
 export const TypeRecordSchema = z.object({
@@ -1446,6 +1446,7 @@ export const TakeoffParamsSchema = z.object({
   waste_mode: z.enum(["param", "bbs"]).default("param"),
   waste_besi: z.number().default(0.0),
   t_pelat_default_m: z.number().nullish(),
+  h_kategori_perancah_m: z.number().nullish(),
   tol_grid: z.number().default(0.005),
 });
 export type TakeoffParams = z.infer<typeof TakeoffParamsSchema>;
@@ -1521,6 +1522,8 @@ export const TanahParamsSchema = z.object({
   f_gembur: z.number().default(1.2),
   f_susut: z.number().default(1.1),
   kap_truk: z.number().default(4.0),
+  jarak_dekat_max_km: z.number().default(5.0),
+  jarak_sedang_max_km: z.number().default(15.0),
 });
 export type TanahParams = z.infer<typeof TanahParamsSchema>;
 
@@ -1528,11 +1531,32 @@ export const DindingParamsSchema = z.object({
   deduct_mode: z.enum(["all", "threshold"]).default("all"),
   deduct_threshold: z.number().default(0.0),
   n_lapis_cat: z.number().int().default(1),
+  L_maks_praktis: z.number().default(4.0),
+  A_maks_praktis: z.number().default(12.0),
 });
 export type DindingParams = z.infer<typeof DindingParamsSchema>;
 
-export const ArsitekturParamsSchema = z.object({}).strict();
+export const ArsitekturParamsSchema = z.object({
+  h_pasang_keramik: z.number().default(1.5),
+  h_upstand: z.number().default(0.2),
+}).strict();
 export type ArsitekturParams = z.infer<typeof ArsitekturParamsSchema>;
+
+export const BajaParamsSchema = z.object({
+  W_baja_waste: z.number().default(0.05),
+  gamma_s: z.number().default(7850.0),
+});
+export type BajaParams = z.infer<typeof BajaParamsSchema>;
+
+export const AtapParamsSchema = z.object({
+  A_per_downpipe: z.number().default(50.0),
+});
+export type AtapParams = z.infer<typeof AtapParamsSchema>;
+
+export const MepParamsSchema = z.object({
+  L_pipa_per_fixture: z.number().nullish(),
+});
+export type MepParams = z.infer<typeof MepParamsSchema>;
 
 export const TakeoffLineSchema = z.object({
   kode: z.string(),
@@ -1548,7 +1572,7 @@ export const TakeoffLineSchema = z.object({
 export type TakeoffLine = z.infer<typeof TakeoffLineSchema>;
 
 export const ManualTakeoffResultSchema = z.object({
-  domain: z.enum(["tanah", "dinding", "arsitektur"]),
+  domain: z.enum(["tanah", "dinding", "arsitektur", "baja", "atap", "kusen", "mep"]),
   items: z.array(TakeoffLineSchema).default([]),
   assumptions: z.array(z.string()).default([]),
   warnings: z.array(z.string()).default([]),
@@ -1580,10 +1604,19 @@ export const UruganLapisSchema = z.object({
   t_lapis: z.number(),
   material_sudah_padat: z.boolean().default(false),
 });
+export const PemadatanSchema = z.object({
+  kode: z.string(),
+  quantity_basis: z.enum(["area", "volume"]),
+  area_m2: z.number().nullish(),
+  volume_padat_m3: z.number().nullish(),
+  jarak_angkut_km: z.number().nullish(),
+  kelas_jarak_angkut: z.enum(["dekat", "sedang", "jauh"]).nullish(),
+});
 export const TanahRequestSchema = z.object({
   footplats: z.array(GalianFootplatSchema).default([]),
   galian_menerus: z.array(GalianMenerusSchema).default([]),
   urugan: z.array(UruganLapisSchema).default([]),
+  pemadatan: z.array(PemadatanSchema).default([]),
   params: TanahParamsSchema.default({}),
 });
 export type TanahRequest = z.infer<typeof TanahRequestSchema>;
@@ -1609,9 +1642,22 @@ export const ScreedBidangSchema = z.object({
   a: z.number(),
   t: z.number(),
 });
+export const SponninganLineSchema = z.object({
+  kode: z.string(),
+  panjang_m: z.number(),
+  jumlah: z.number().int().default(1),
+});
+export const PraktisPanelSchema = z.object({
+  kode: z.string(),
+  panjang_segmen_m: z.number(),
+  tinggi_m: z.number(),
+  luas_panel_m2: z.number().nullish(),
+});
 export const DindingRequestSchema = z.object({
   dinding: z.array(DindingBidangSchema).default([]),
   screed: z.array(ScreedBidangSchema).default([]),
+  sponningan: z.array(SponninganLineSchema).default([]),
+  praktis: z.array(PraktisPanelSchema).default([]),
   params: DindingParamsSchema.default({}),
 });
 export type DindingRequest = z.infer<typeof DindingRequestSchema>;
@@ -1636,15 +1682,496 @@ export const AtapMiringSchema = z.object({
   a_proyeksi: z.number(),
   theta_deg: z.number(),
 });
+export const AanstampingSchema = z.object({
+  kode: z.string(),
+  a_bawah_m: z.number(),
+  t_aanstamping_m: z.number(),
+  panjang_m: z.number(),
+});
+export const KeramikDindingBasahSchema = z.object({
+  kode: z.string(),
+  keliling_basah_m: z.number(),
+  h_pasang_m: z.number().nullish(),
+  bukaan_m2: z.number().default(0.0),
+});
+export const PlafonBidangSchema = z.object({
+  kode: z.string(),
+  a_neto_m2: z.number(),
+  keliling_tepi_m: z.number().default(0.0),
+});
+export const WaterproofingBidangSchema = z.object({
+  kode: z.string(),
+  a_bidang_m2: z.number(),
+  keliling_upstand_m: z.number().default(0.0),
+  h_upstand_m: z.number().nullish(),
+});
 export const ArsitekturRequestSchema = z.object({
   pondasi_batu: z.array(PondasiBatuSchema).default([]),
   lantai: z.array(PenutupLantaiSchema).default([]),
   atap: z.array(AtapMiringSchema).default([]),
+  aanstamping: z.array(AanstampingSchema).default([]),
+  keramik_dinding: z.array(KeramikDindingBasahSchema).default([]),
+  plafon: z.array(PlafonBidangSchema).default([]),
+  waterproofing: z.array(WaterproofingBidangSchema).default([]),
   params: ArsitekturParamsSchema.default({}),
 });
 export type ArsitekturRequest = z.infer<typeof ArsitekturRequestSchema>;
 
+export const ProfileDataSchema = z.object({
+  kg_per_m: z.number(),
+  perimeter_m: z.number().nullish(),
+});
+export const BajaMemberSchema = z.object({
+  kode: z.string(),
+  designation: z.string(),
+  length_m: z.number(),
+  qty: z.number().int().default(1),
+});
+export const BuiltUpPlateSchema = z.object({
+  kode: z.string(),
+  t_m: z.number(),
+  width_m: z.number(),
+  length_m: z.number(),
+  qty: z.number().int().default(1),
+});
+export const BajaRequestSchema = z.object({
+  profile_table: z.record(ProfileDataSchema).default({}),
+  members: z.array(BajaMemberSchema).default([]),
+  builtup_plates: z.array(BuiltUpPlateSchema).default([]),
+  paint_members: z.array(BajaMemberSchema).default([]),
+  params: BajaParamsSchema.default({}),
+});
+export type BajaRequest = z.infer<typeof BajaRequestSchema>;
+
+export const RoofLineSchema = z.object({
+  kode: z.string(),
+  work: z.enum(["nok", "lisplank", "talang"]),
+  length_m: z.number(),
+  qty: z.number().int().default(1),
+});
+export const GordingInputSchema = z.object({
+  kode: z.string(),
+  l_miring_sisi_m: z.number(),
+  s_gording_m: z.number(),
+  l_arah_gording_m: z.number(),
+  n_sisi_atap: z.number().int().default(1),
+});
+export const TrekstangInputSchema = z.object({
+  kode: z.string(),
+  panjang_per_batang_m: z.number(),
+  jumlah: z.number().int(),
+});
+export const IkatanAnginSchema = z.object({
+  kode: z.string(),
+  a_m: z.number(),
+  b_m: z.number(),
+  qty: z.number().int().default(1),
+});
+export const DownpipeAreaSchema = z.object({
+  kode: z.string(),
+  a_atap_m2: z.number(),
+  count: z.number().int().nullish(),
+});
+export const AtapDetailRequestSchema = z.object({
+  garis: z.array(RoofLineSchema).default([]),
+  gording: z.array(GordingInputSchema).default([]),
+  trekstang: z.array(TrekstangInputSchema).default([]),
+  ikatan_angin: z.array(IkatanAnginSchema).default([]),
+  downpipes: z.array(DownpipeAreaSchema).default([]),
+  params: AtapParamsSchema.default({}),
+});
+export type AtapDetailRequest = z.infer<typeof AtapDetailRequestSchema>;
+
+export const AccessoryInputSchema = z.object({
+  nama: z.string(),
+  per_unit: z.number(),
+  unit: z.string().default("bh"),
+});
+export const KusenScheduleItemSchema = z.object({
+  kode: z.string(),
+  tipe: z.string(),
+  width_m: z.number(),
+  height_m: z.number(),
+  qty: z.number().int(),
+  qty_counted: z.number().int().nullish(),
+  hitung_kusen_perimeter: z.boolean().default(true),
+  hitung_daun_area: z.boolean().default(false),
+  hitung_kaca_area: z.boolean().default(false),
+  accessories: z.array(AccessoryInputSchema).default([]),
+});
+export const KusenRequestSchema = z.object({
+  items: z.array(KusenScheduleItemSchema).default([]),
+});
+export type KusenRequest = z.infer<typeof KusenRequestSchema>;
+
+export const RailingLineSchema = z.object({
+  kode: z.string(),
+  length_m: z.number(),
+  qty: z.number().int().default(1),
+});
+export const MepPointSchema = z.object({
+  kode: z.string(),
+  jenis: z.string(),
+  count: z.number().int(),
+});
+export const PipeRouteSchema = z.object({
+  kode: z.string(),
+  length_m: z.number(),
+  qty: z.number().int().default(1),
+});
+export const MepFixtureFallbackSchema = z.object({
+  kode: z.string(),
+  fixture_count: z.number().int(),
+});
+export const MepRequestSchema = z.object({
+  railing: z.array(RailingLineSchema).default([]),
+  points: z.array(MepPointSchema).default([]),
+  pipe_routes: z.array(PipeRouteSchema).default([]),
+  fixture_fallbacks: z.array(MepFixtureFallbackSchema).default([]),
+  params: MepParamsSchema.default({}),
+});
+export type MepRequest = z.infer<typeof MepRequestSchema>;
+
 // ─── RAB tersektor / WBS (selaras app/rab/sections.py) ───────────────────────
+
+// Brain F0 data grounding coverage
+export const ResourceCoverageLineSchema = z.object({
+  resource_code: z.string(),
+  resource_name: z.string().default(""),
+  unit: z.string().default(""),
+  used_by_ahsp: z.array(z.string()),
+  has_price: z.boolean(),
+  region_code: z.string(),
+  source: z.string().default(""),
+});
+export const AhspCoverageLineSchema = z.object({
+  ahsp_code: z.string(),
+  description: z.string(),
+  unit: z.string(),
+  component_count: z.number().int(),
+  priced_component_count: z.number().int(),
+  missing_resource_codes: z.array(z.string()),
+});
+export const DataCoverageResultSchema = z.object({
+  region_code: z.string(),
+  ahsp_total: z.number().int(),
+  ahsp_fully_priced: z.number().int(),
+  resource_used_total: z.number().int(),
+  resource_priced_total: z.number().int(),
+  coverage_ratio: z.number(),
+  missing_resources: z.array(ResourceCoverageLineSchema),
+  ahsp: z.array(AhspCoverageLineSchema),
+  warnings: z.array(z.string()).default([]),
+});
+export type DataCoverageResult = z.infer<typeof DataCoverageResultSchema>;
+
+export const WbsDivisionSchema = z.object({
+  code: z.string(),
+  title: z.string(),
+});
+export const WorkItemSchema = z.object({
+  work_id: z.string(),
+  divisi: z.string(),
+  work_type: z.string(),
+  uraian_kanonik: z.string(),
+  satuan: z.string(),
+  asal: z.enum(["expanded", "implied", "derived"]).default("expanded"),
+  rule_id: z.string(),
+  rationale: z.string(),
+  element_refs: z.array(z.string()).default([]),
+  needs_review: z.boolean().default(false),
+});
+export const WorkItemsResultSchema = z.object({
+  workitems: z.array(WorkItemSchema),
+  warnings: z.array(z.string()).default([]),
+});
+export const ElementSeedSchema = z.object({
+  element_id: z.string(),
+  kind: z.enum(["beton", "dinding", "lantai", "atap"]),
+  code: z.string(),
+  length_m: z.number().nullish(),
+  height_m: z.number().nullish(),
+  wet_area: z.boolean().default(false),
+});
+export const WbsCompletenessRequestSchema = z.object({
+  existing_divisions: z.array(z.string()).default([]),
+  not_applicable: z.array(z.string()).default([]),
+});
+export const WbsCompletenessResultSchema = z.object({
+  present_divisions: z.array(z.string()),
+  missing_relevant: z.array(z.string()),
+  not_applicable: z.array(z.string()),
+  warnings: z.array(z.string()).default([]),
+});
+export const ImpliedRequestSchema = z.object({
+  prj_id: z.string(),
+  government_project: z.boolean().default(false),
+  concrete_pour_volume_m3: z.number().nullish(),
+  V_pompa_min: z.number().default(30.0),
+});
+export type WbsDivision = z.infer<typeof WbsDivisionSchema>;
+export type WorkItem = z.infer<typeof WorkItemSchema>;
+export type WorkItemsResult = z.infer<typeof WorkItemsResultSchema>;
+export type ElementSeed = z.infer<typeof ElementSeedSchema>;
+export type WbsCompletenessRequest = z.infer<typeof WbsCompletenessRequestSchema>;
+export type WbsCompletenessResult = z.infer<typeof WbsCompletenessResultSchema>;
+export type ImpliedRequest = z.infer<typeof ImpliedRequestSchema>;
+
+export const AhspSearchRequestSchema = z.object({
+  query: z.string(),
+  unit: z.string().nullish(),
+  top_k: z.number().int().default(5),
+});
+export const AhspCandidateSchema = z.object({
+  ahsp_code: z.string(),
+  name: z.string(),
+  unit: z.string(),
+  score: z.number(),
+  unit_ok: z.boolean(),
+  reason: z.string(),
+});
+export const AhspSearchResultSchema = z.object({
+  candidates: z.array(AhspCandidateSchema),
+});
+export const WorkItemForMappingSchema = z.object({
+  work_id: z.string(),
+  uraian: z.string(),
+  unit: z.string(),
+  work_type: z.string().default(""),
+});
+export const AhspMapRequestSchema = z.object({
+  workitem: WorkItemForMappingSchema,
+  sibling_work_types: z.array(z.string()).default([]),
+  top_k: z.number().int().default(5),
+});
+export const AhspMapResultSchema = z.object({
+  work_id: z.string(),
+  candidates: z.array(AhspCandidateSchema),
+  warnings: z.array(z.string()).default([]),
+});
+export const PriceBindRequestSchema = z.object({
+  ahsp_code: z.string(),
+  region_code: z.string(),
+});
+export const PriceBindingLineSchema = z.object({
+  resource_code: z.string(),
+  coefficient: z.number(),
+  has_price: z.boolean(),
+  unit_price: z.number().nullish(),
+});
+export const PriceBindingResultSchema = z.object({
+  ahsp_code: z.string(),
+  region_code: z.string(),
+  lines: z.array(PriceBindingLineSchema),
+  missing_resources: z.array(z.string()),
+  coverage_ratio: z.number(),
+});
+export type AhspSearchRequest = z.infer<typeof AhspSearchRequestSchema>;
+export type AhspSearchResult = z.infer<typeof AhspSearchResultSchema>;
+export type WorkItemForMapping = z.infer<typeof WorkItemForMappingSchema>;
+export type AhspMapRequest = z.infer<typeof AhspMapRequestSchema>;
+export type AhspMapResult = z.infer<typeof AhspMapResultSchema>;
+export type PriceBindRequest = z.infer<typeof PriceBindRequestSchema>;
+export type PriceBindingResult = z.infer<typeof PriceBindingResultSchema>;
+
+// Brain audit primitives: ProjectContext, confidence, QA, BOE
+export const ProjectContextSchema = z.object({
+  prj_id: z.string(),
+  mode: z.string(),
+  tipe_bangunan: z.string().default(""),
+  wilayah: z.string().default(""),
+  periode_harga: z.string().default(""),
+  ahsp_edisi: z.string().default(""),
+  precedence_order: z.array(z.string()).default([]),
+  param_snapshot: z.record(z.string(), z.unknown()).default({}),
+  disclaimer_flags: z.array(z.string()).default([]),
+});
+export type ProjectContext = z.infer<typeof ProjectContextSchema>;
+
+export const BrainParamSnapshotSchema = z.object({
+  values: z.record(z.string(), z.unknown()).default({}),
+  sources: z.record(z.string(), z.string()).default({}),
+});
+export const BrainAssumptionSchema = z.object({
+  id: z.string(),
+  kategori: z.string(),
+  deskripsi: z.string(),
+  param_ref: z.string().nullish(),
+  sumber: z.string().default(""),
+  dampak: z.string().default(""),
+  objek_ref: z.string().nullish(),
+});
+export const BrainWarningSchema = z.object({
+  kode: z.string(),
+  pesan: z.string(),
+  objek_ref: z.string().nullish(),
+  severity: z.string().default("warning"),
+});
+export const BrainReviewTaskSchema = z.object({
+  id: z.string(),
+  target_ref: z.string(),
+  alasan: z.array(z.string()),
+  prioritas: z.number(),
+  status: z.string().default("open"),
+});
+export const ConfidenceResultSchema = z.object({
+  method: z.string(),
+  s_source: z.number(),
+  s_corrob: z.number(),
+  s_quality: z.number(),
+  confidence: z.number(),
+  needs_review: z.boolean(),
+  reasons: z.array(z.string()).default([]),
+});
+export const ConfidenceRequestSchema = z.object({
+  method: z.string(),
+  quality_score: z.number(),
+  corroborations: z.number().int().default(0),
+  conflicts: z.number().int().default(0),
+  critical: z.boolean().default(false),
+  weights: z.record(z.string(), z.number()).nullish(),
+  ambang_conf: z.number().default(0.7),
+});
+export type ConfidenceRequest = z.infer<typeof ConfidenceRequestSchema>;
+export type ConfidenceResult = z.infer<typeof ConfidenceResultSchema>;
+
+export const QaIssueSchema = z.object({
+  code: z.string(),
+  message: z.string(),
+  severity: z.string().default("error"),
+  objek_ref: z.string().nullish(),
+});
+export const QaRequestSchema = z.object({
+  weights_pct: z.array(z.number()).default([]),
+  tol_bobot: z.number().default(0.1),
+  price_coverage_ratio: z.number().nullish(),
+  work_ids: z.array(z.string()).default([]),
+  unit_pairs: z.array(z.record(z.string(), z.string())).default([]),
+  revision_ids: z.array(z.string()).default([]),
+  sanity_checks: z.array(z.record(z.string(), z.unknown())).default([]),
+  boe_exists: z.boolean().default(true),
+});
+export const QaResultSchema = z.object({
+  passed: z.boolean(),
+  issues: z.array(QaIssueSchema).default([]),
+});
+export type QaRequest = z.infer<typeof QaRequestSchema>;
+export type QaResult = z.infer<typeof QaResultSchema>;
+
+export const BrainBoeRequestSchema = z.object({
+  project_context: ProjectContextSchema,
+  param_snapshot: BrainParamSnapshotSchema.default({ values: {}, sources: {} }),
+  assumptions: z.array(BrainAssumptionSchema).default([]),
+  missing: z.array(z.string()).default([]),
+  warnings: z.array(BrainWarningSchema).default([]),
+  data_coverage_summary: z.record(z.string(), z.unknown()).default({}),
+});
+export const BrainBoeSchema = z.object({
+  project_context: ProjectContextSchema,
+  assumptions: z.array(BrainAssumptionSchema),
+  missing: z.array(z.string()),
+  warnings: z.array(BrainWarningSchema),
+  param_snapshot: BrainParamSnapshotSchema,
+  data_coverage_summary: z.record(z.string(), z.unknown()).default({}),
+});
+export type BrainBoeRequest = z.infer<typeof BrainBoeRequestSchema>;
+export type BrainBoe = z.infer<typeof BrainBoeSchema>;
+
+export const ReviewTargetTypeEnum = z.enum(["work_item", "element", "evidence", "boe", "tkg", "rab"]);
+export const ReviewCandidateSchema = z.object({
+  target_ref: z.string(),
+  target_type: ReviewTargetTypeEnum.default("work_item"),
+  impact_score: z.number().min(0).max(1),
+  uncertainty_score: z.number().min(0).max(1),
+  confidence: z.number().min(0).max(1).nullish(),
+  cost_rank_pct: z.number().min(0).max(1).nullish(),
+  p_pareto: z.number().min(0).max(1).nullish(),
+  corroborations: z.number().int().default(0),
+  implied_high_impact: z.boolean().default(false),
+  precedence_conflict: z.boolean().default(false),
+});
+export const ReviewTaskAuditSchema = z.object({
+  id: z.string(),
+  project_id: z.string(),
+  target_ref: z.string(),
+  target_type: ReviewTargetTypeEnum,
+  reasons: z.array(z.string()),
+  priority: z.number(),
+  impact_score: z.number(),
+  uncertainty_score: z.number(),
+  status: z.enum(["open", "in_progress", "resolved", "dismissed"]).default("open"),
+});
+export const ReviewTriageRequestSchema = z.object({
+  project_id: z.string(),
+  ambang_conf: z.number().min(0).max(1).default(0.7),
+  candidates: z.array(ReviewCandidateSchema).default([]),
+});
+export const ReviewTriageResultSchema = z.object({
+  project_id: z.string(),
+  tasks: z.array(ReviewTaskAuditSchema),
+});
+export const CorrectionLogRequestSchema = z.object({
+  project_id: z.string(),
+  target_ref: z.string(),
+  field: z.string(),
+  old: z.unknown().nullish(),
+  new: z.unknown().nullish(),
+  reason: z.string(),
+  user: z.string(),
+  timestamp: z.string().nullish(),
+});
+export const CorrectionRecordSchema = CorrectionLogRequestSchema.extend({
+  id: z.string(),
+  timestamp: z.string(),
+});
+export type ReviewCandidate = z.infer<typeof ReviewCandidateSchema>;
+export type ReviewTaskAudit = z.infer<typeof ReviewTaskAuditSchema>;
+export type ReviewTriageRequest = z.input<typeof ReviewTriageRequestSchema>;
+export type ReviewTriageResult = z.infer<typeof ReviewTriageResultSchema>;
+export type CorrectionLogRequest = z.input<typeof CorrectionLogRequestSchema>;
+export type CorrectionRecord = z.infer<typeof CorrectionRecordSchema>;
+
+export const EvalCaseSchema = z.object({
+  id: z.string(),
+  actual: z.number().nullish(),
+  expected: z.number().nullish(),
+  tolerance: z.number().min(0).default(0),
+  actual_json: z.unknown().nullish(),
+  expected_json: z.unknown().nullish(),
+});
+export const EvalRunRequestSchema = z.object({
+  cases: z.array(EvalCaseSchema).default([]),
+});
+export const EvalCaseResultSchema = z.object({
+  id: z.string(),
+  passed: z.boolean(),
+  delta: z.number().nullish(),
+  reason: z.string(),
+});
+export const EvalRunResultSchema = z.object({
+  results: z.array(EvalCaseResultSchema),
+  summary: z.object({
+    total: z.number().int(),
+    passed: z.number().int(),
+    failed: z.number().int(),
+  }),
+});
+export type EvalCase = z.infer<typeof EvalCaseSchema>;
+export type EvalRunRequest = z.input<typeof EvalRunRequestSchema>;
+export type EvalRunResult = z.infer<typeof EvalRunResultSchema>;
+
+export const BoeExportPayloadSchema = z.object({
+  format: z.literal("json"),
+  kind: z.literal("boe"),
+  boe: BrainBoeSchema,
+});
+export const BbsExportPayloadSchema = z.object({
+  format: z.literal("json"),
+  kind: z.literal("bbs"),
+  bbs: BbsResultSchema,
+});
+export type BoeExportPayload = z.infer<typeof BoeExportPayloadSchema>;
+export type BbsExportPayload = z.infer<typeof BbsExportPayloadSchema>;
 
 export const RABSection = z.object({
   code: z.string(),
