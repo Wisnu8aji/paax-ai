@@ -2,18 +2,23 @@
 
 import { createContext, useContext } from 'react';
 
-export type OverlayName =
-  | 'notif'
-  | 'apps'
-  | 'billing'
-  | 'account'
-  | 'newProject'
-  | 'upload';
+export type OverlayName = 'newProject' | 'upload' | 'settings';
+
+export type SettingsTab =
+  | 'umum'
+  | 'notifikasi'
+  | 'personalisasi'
+  | 'aplikasi'
+  | 'tagihan'
+  | 'penyimpanan'
+  | 'akun';
 
 interface ShellContextValue {
   openOverlay: (name: OverlayName) => void;
   closeOverlay: () => void;
   current: OverlayName | null;
+  settingsTab: SettingsTab;
+  openSettings: (tab: SettingsTab) => void;
   navCollapsed: boolean;
   toggleNav: () => void;
 }

@@ -1,6 +1,6 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-06-29**. File ini SATU-SATUNYA tempat status berjalan.
+> Update terakhir: **2026-07-02**. File ini SATU-SATUNYA tempat status berjalan.
 > Selesai satu fase → perbarui di sini (jangan sebar ke banyak file).
 
 ## Versi
@@ -53,13 +53,24 @@ dikerjakan sekarang karena murni deterministik & tidak menyentuh CV/vision.
   Brain v4.1 menguatkan ini via gerbang F0 (data grounding wajib sebelum
   F2/TKG) — bukan alasan untuk mulai lebih awal.
 
+## 🎨 UI Overhaul (2026-07-02) — terverifikasi, menunggu commit Codex
+Font workspace Hanken→**Inter** (body) + **Outfit** (display); tema default
+**dark**; **SettingsDialog** terpusat 2 kolom (7 tab: Umum/Notifikasi/
+Personalisasi/Aplikasi/Tagihan/Penyimpanan/Akun, 6 toggle notifikasi, prefs
+lokal) menggantikan drawer notif/apps/billing/account; komponen `ui/switch.tsx`
+baru; rail ikon tipis + gear. Verifikasi: tsc OK · vitest 25 · build sukses ·
+uji visual browser. Murni presentasi — tidak ada angka dihitung di frontend.
+Prompt commit: `docs/prompts/PAAX_CODEX_PROMPT_UI_OVERHAUL.md` (branch
+`feat/ui-workspace-premium`, draft PR base `docs/brain-v4.1-alignment`).
+
 ## Pembagian peran (2026-06-29)
 - **Claude** = planning + semua spek/prompt + **UI frontend** + review.
 - **Codex** = penyambungan teknis (lib/engine, fetch, state, route AI, backend, engine).
 
 ## Git
-- Branch utama: `main`. Open PR: **(tidak ada)** per update ini.
-- PR terakhir merged: #17 (engineering chat → Gemini).
+- Branch utama: `main`. Open PR: **#20 (draft — sistem TKG, branch
+  `docs/brain-v4.1-alignment`)**; menyusul PR UI overhaul (stacked di atas #20).
+- PR terakhir merged: #19 (dashboard navigation performance).
 
 ## Rencana detail (di luar repo)
 - Master plan + prompt Codex (A1, B1): file `PAAX_MASTER_PLAN_*` & `PAAX_CODEX_PROMPT_*`
