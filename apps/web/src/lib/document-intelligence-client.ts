@@ -1,4 +1,5 @@
 import { DocumentIntelligenceHealth, DrawingAnalysisResult } from "@paax/types";
+import type { TkgDocument, TkgValidationResult } from "@paax/schemas";
 
 const BASE_URL = process.env.NEXT_PUBLIC_DOCUMENT_INTELLIGENCE_URL || "http://127.0.0.1:8083";
 
@@ -14,6 +15,41 @@ export interface VerifyCandidatePayload {
   status: "APPROVED" | "REJECTED" | "EDITED";
   verified_value?: number;
   notes?: string;
+}
+
+export interface TkgPerceptionLocator {
+  page?: number;
+  bbox?: number[];
+}
+
+export interface TkgPerceptionWarning extends TkgPerceptionLocator {
+  code: string;
+  message: string;
+}
+
+export interface TkgPerceptionUnclassified extends TkgPerceptionLocator {
+  raw: string;
+  alasan: string;
+}
+
+export interface TkgPerceptionResult {
+  tkg: TkgDocument;
+  validation: TkgValidationResult;
+  metrics: {
+    span_total: number;
+    span_terklasifikasi: number;
+    cakupan: number;
+    grammar_pass_rate: number;
+    n_unclassified: number;
+    n_warning: number;
+  };
+  gerbang: {
+    status: "draft" | "lolos";
+    checks: Array<{ code: string; label: string; passed: boolean }>;
+  };
+  warnings?: TkgPerceptionWarning[];
+  unclassified?: TkgPerceptionUnclassified[];
+  tkg_txt: string;
 }
 
 export class DocumentIntelligenceClient {
@@ -98,5 +134,24 @@ export class DocumentIntelligenceClient {
       method: "POST",
       body: JSON.stringify({ verified_quantities: verifiedQuantities }),
     });
+  }
+
+  static async perceiveTkg(file: File, projectId: string): Promise<TkgPerceptionResult> {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("project_id", projectId);
+
+    // TODO: sambung P4 saat endpoint kontrak final sudah merge.
+    const response = await fetch(`${BASE_URL}/drawings/tkg/perceive`, {
+      method: "POST",
+      body: form,
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { detail?: string; error?: string } | null;
+      throw new Error(err?.detail ?? err?.error ?? `API Error: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json() as Promise<TkgPerceptionResult>;
   }
 }

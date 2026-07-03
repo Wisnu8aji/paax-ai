@@ -45,6 +45,12 @@ function potong(text: string, max: number): string {
   return text.slice(0, max) + "\n…(dipotong — budget konteks)";
 }
 
+function tkgSourceLabel(source: string): string {
+  if (source === 'pipeline') return 'pipeline persepsi';
+  if (source === 'ai_proposal') return 'usulan AI';
+  return 'manual';
+}
+
 export async function buildProjectContextPack(
   projectId: string,
   auditContext?: ProjectAuditContextPack | null,
@@ -54,7 +60,7 @@ export async function buildProjectContextPack(
   try {
     const tkgRec = await tkgRepository.get(projectId);
     if (tkgRec.tkg) {
-      const status = `${tkgRec.source === 'ai_proposal' ? 'usulan AI' : 'manual'}, ` +
+      const status = `${tkgSourceLabel(tkgRec.source)}, ` +
         `${tkgRec.reviewed ? 'sudah' : 'BELUM'} direview`;
       if (tkgRec.lastRenderedText) {
         bagian.push(`== SKRIP GAMBAR (TKG, ${status}) ==\n` + potong(tkgRec.lastRenderedText, 4000));
