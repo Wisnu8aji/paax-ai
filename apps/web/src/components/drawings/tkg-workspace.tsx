@@ -8,7 +8,7 @@
  * Frontend tidak menghitung kuantitas/harga.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Send, Sparkles, UploadCloud } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Send, Sparkles, UploadCloud, X } from 'lucide-react';
 
 import type { TakeoffResult, TkgDocument, TkgValidationResult } from '@paax/schemas';
 import { Card, Button, StatusPill } from '@/components/ui';
@@ -16,7 +16,7 @@ import { renderTkg, takeoffTkg, validateTkg } from '@/lib/engine';
 import { emptyTkgRecord, tkgRepository, type ProjectTkgRecord } from '@/lib/projects/tkg-repository';
 import { emptyRabLine, rabRepository } from '@/lib/projects/rab-repository';
 import { TriagePanel, type TriageItemView } from '@/components/review/triage-panel';
-import { analyzeDrawingFile, DocumentIntelligenceError } from '@/lib/ai/document-intelligence-tkg';
+import { analyzeDrawingFile, DocumentIntelligenceError, type DrawingIntakeResult } from '@/lib/ai/document-intelligence-tkg';
 
 const statusBox = {
   display: 'flex',
@@ -28,8 +28,119 @@ const statusBox = {
   marginBottom: 10,
 };
 
+type PerceptionWarning = {
+  code: string;
+  message: string;
+};
+
+type PerceptionReview = {
+  result: DrawingIntakeResult;
+  warnings: PerceptionWarning[];
+  warningGroups: Array<{ code: string; items: PerceptionWarning[] }>;
+  unclassified: Array<{ raw: string; alasan: string; sheetId: string }>;
+  metrics: {
+    sheets: number;
+    tables: number;
+    elements: number;
+    unclassified: number;
+    warnings: number;
+    coverage: number;
+  };
+  checks: Array<{ code: string; label: string; passed: boolean; detail: string }>;
+  status: 'ready' | 'draft';
+};
+
+function formatPercent(value: number): string {
+  return `${Math.round(value * 100)}%`;
+}
+
+function parseWarning(raw: string): PerceptionWarning {
+  const match = raw.match(/^\[([A-Z0-9_-]+)\]\s*(.+)$/i);
+  return {
+    code: match?.[1]?.toUpperCase() ?? 'WARNING',
+    message: match?.[2] ?? raw,
+  };
+}
+
+function groupWarnings(warnings: PerceptionWarning[]): Array<{ code: string; items: PerceptionWarning[] }> {
+  const groups = new Map<string, PerceptionWarning[]>();
+  for (const warning of warnings) {
+    const list = groups.get(warning.code) ?? [];
+    list.push(warning);
+    groups.set(warning.code, list);
+  }
+  return Array.from(groups, ([code, items]) => ({ code, items }));
+}
+
+function buildPerceptionReview(result: DrawingIntakeResult): PerceptionReview {
+  const sheets = result.tkg.sheets;
+  const tables = sheets.reduce((sum, sheet) => sum + sheet.tables.length, 0);
+  const tableRecords = sheets.reduce((sum, sheet) => sum + sheet.tables.reduce((inner, table) => inner + table.records.length, 0), 0);
+  const elements = sheets.reduce((sum, sheet) => sum + sheet.elements.length, 0);
+  const dimensions = sheets.reduce((sum, sheet) => sum + sheet.dimensions.length, 0);
+  const notes = sheets.reduce((sum, sheet) => sum + sheet.notes.length, 0);
+  const unclassified = sheets.flatMap((sheet) => sheet.unclassified.map((item) => ({
+    raw: item.raw,
+    alasan: item.alasan,
+    sheetId: sheet.sheet_id,
+  })));
+  const warnings = result.warnings.map(parseWarning);
+  const classified = tableRecords + elements + dimensions + notes;
+  const total = classified + unclassified.length;
+  const coverage = total > 0 ? classified / total : sheets.length > 0 ? 1 : 0;
+
+  const checks = [
+    {
+      code: 'V-TKG',
+      label: 'TKG terbentuk',
+      passed: sheets.length > 0,
+      detail: `${sheets.length} sheet terbaca`,
+    },
+    {
+      code: 'V-COV',
+      label: 'Cakupan span',
+      passed: coverage >= 0.8,
+      detail: `${formatPercent(coverage)} cakupan terklasifikasi`,
+    },
+    {
+      code: 'V-WARN',
+      label: 'Warning terkendali',
+      passed: warnings.length === 0,
+      detail: `${warnings.length} warning`,
+    },
+    {
+      code: 'V-CLS',
+      label: 'Klasifikasi yakin',
+      passed: result.classificationConfidence == null || result.classificationConfidence >= 0.75,
+      detail: result.classificationConfidence == null
+        ? result.classification
+        : `${result.classification} ${formatPercent(result.classificationConfidence)}`,
+    },
+  ];
+
+  return {
+    result,
+    warnings,
+    warningGroups: groupWarnings(warnings),
+    unclassified,
+    metrics: {
+      sheets: sheets.length,
+      tables,
+      elements,
+      unclassified: unclassified.length,
+      warnings: warnings.length,
+      coverage,
+    },
+    checks,
+    status: checks.every((check) => check.passed) ? 'ready' : 'draft',
+  };
+}
+
 export function TkgWorkspace({ projectId }: { projectId: string }) {
   const [record, setRecord] = useState<ProjectTkgRecord>(() => emptyTkgRecord(projectId));
+  const [selectedPdf, setSelectedPdf] = useState<File | null>(null);
+  const [perceptionReview, setPerceptionReview] = useState<PerceptionReview | null>(null);
+  const [openWarningGroups, setOpenWarningGroups] = useState<Record<string, boolean>>({});
   const [sourceText, setSourceText] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -112,33 +223,58 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const runFileUpload = useCallback(async (file: File) => {
-    setBusy('upload');
+  const runPerception = useCallback(async () => {
+    if (!selectedPdf) {
+      setError('Pilih PDF gambar kerja dulu.');
+      return;
+    }
+    setBusy('perception');
     setError(null);
     setInfo(null);
     try {
-      const result = await analyzeDrawingFile(file, projectId);
-      const next = await tkgRepository.save({
-        ...record,
-        projectId,
-        tkg: result.tkg,
-        source: 'ai_proposal',
-        reviewed: false,
-        lastRenderedText: null,
-        lastTakeoff: null,
-      });
-      setRecord(next);
-      const classifierNote = result.classificationConfidence != null
-        ? `Klasifikasi: ${result.classification} (${Math.round(result.classificationConfidence * 100)}% yakin).`
-        : `Klasifikasi: ${result.classification}.`;
-      setInfo([classifierNote, ...result.warnings].join(' '));
-      await runPipeline(next);
+      const result = await analyzeDrawingFile(selectedPdf, projectId);
+      setPerceptionReview(buildPerceptionReview(result));
+      setOpenWarningGroups({});
+      setInfo('Hasil persepsi siap direview. Periksa cakupan, gerbang, warning, dan unclassified sebelum dipakai sebagai transkrip.');
     } catch (err) {
       setError(err instanceof DocumentIntelligenceError ? err.message : (err instanceof Error ? err.message : 'Upload gambar gagal.'));
     } finally {
       setBusy(null);
     }
-  }, [projectId, record, runPipeline]);
+  }, [projectId, selectedPdf]);
+
+  const usePerceptionAsTranscript = useCallback(async () => {
+    if (!perceptionReview) return;
+    setBusy('save-perception');
+    setError(null);
+    try {
+      const next = await tkgRepository.save({
+        ...record,
+        projectId,
+        tkg: perceptionReview.result.tkg,
+        source: 'pipeline',
+        reviewed: false,
+        lastRenderedText: perceptionReview.result.tkgText ?? null,
+        lastTakeoff: null,
+      });
+      setRecord(next);
+      setValidation(null);
+      setTakeoff(null);
+      setInfo('TKG dari pipeline persepsi tersimpan sebagai transkrip. Jalankan proses ulang setelah review manusia selesai.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Simpan hasil persepsi gagal.');
+    } finally {
+      setBusy(null);
+    }
+  }, [perceptionReview, projectId, record]);
+
+  const discardPerception = useCallback(() => {
+    setSelectedPdf(null);
+    setPerceptionReview(null);
+    setOpenWarningGroups({});
+    setError(null);
+    setInfo('Hasil persepsi dibuang. Pilih PDF lain atau gunakan teks deskripsi.');
+  }, []);
 
   const rerunPipeline = useCallback(async () => {
     if (!record.tkg) return;
@@ -204,7 +340,9 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
   }, [takeoff]);
 
   const readyItems = takeoff?.items.filter((item) => !item.needs_review && item.quantity != null).length ?? 0;
-  const statusText = takeoff
+  const statusText = perceptionReview
+    ? `Draft persepsi PDF siap direview: cakupan ${formatPercent(perceptionReview.metrics.coverage)}, ${perceptionReview.metrics.warnings} warning, ${perceptionReview.metrics.unclassified} unclassified. Belum masuk transkrip sampai Anda menekan tombol pakai TKG.`
+    : takeoff
     ? `AI menemukan ${counts.elements} elemen dari ${counts.tables} tabel pada ${counts.sheets} sheet. ${readyItems} volume siap dikirim, ${takeoff.n_needs_review} item perlu review.`
     : tkg
       ? `AI menemukan ${counts.elements} elemen dari ${counts.tables} tabel pada ${counts.sheets} sheet. Proses engine siap dijalankan ulang.`
@@ -241,12 +379,18 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
           <input
             ref={fileInputRef}
             type="file"
+            aria-label="Unggah PDF gambar kerja"
             accept="application/pdf"
             style={{ display: 'none' }}
             onChange={(event) => {
               const file = event.target.files?.[0];
               event.target.value = '';
-              if (file) void runFileUpload(file);
+              if (!file) return;
+              setSelectedPdf(file);
+              setPerceptionReview(null);
+              setOpenWarningGroups({});
+              setError(null);
+              setInfo(`${file.name} siap dipersepsi. Jalankan persepsi untuk melihat review sebelum menjadi transkrip.`);
             }}
           />
           <div
@@ -256,9 +400,125 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
           >
             <UploadCloud size={22} />
             <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text2)' }}>
-              {busy === 'upload' ? 'Mengunggah & menganalisis…' : 'Klik untuk pilih PDF gambar kerja'}
+              {selectedPdf ? selectedPdf.name : 'Klik untuk pilih PDF gambar kerja'}
             </div>
             <div style={{ fontSize: 11 }}>PDF vektor (mis. ekspor dari AutoCAD) — foto/scan belum didukung jalur ini.</div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+            <Button onClick={runPerception} disabled={!selectedPdf || busy !== null}>
+              <UploadCloud size={14} /> {busy === 'perception' ? 'Memproses persepsi...' : 'Jalankan persepsi'}
+            </Button>
+            {(selectedPdf || perceptionReview) && (
+              <Button variant="ghost" onClick={discardPerception} disabled={busy !== null}>
+                <X size={14} /> Bersihkan
+              </Button>
+            )}
+          </div>
+
+          <div style={{ marginTop: 12, border: '1px solid var(--border)', borderRadius: 12, background: 'var(--surface)', padding: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4 }}>Review persepsi PDF</div>
+              {perceptionReview && (
+                <StatusPill tone={perceptionReview.status === 'ready' ? 'ok' : 'warn'}>
+                  {perceptionReview.status === 'ready' ? 'SIAP REVIEW' : 'DRAFT PERSEPSI'}
+                </StatusPill>
+              )}
+            </div>
+
+            {!perceptionReview ? (
+              <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.5 }}>
+                Belum ada hasil persepsi. Pilih PDF lalu jalankan persepsi untuk melihat metrik, gate, warning, dan unclassified sebelum TKG disimpan.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }} className="pax-grid-2">
+                  {[
+                    ['Cakupan', formatPercent(perceptionReview.metrics.coverage)],
+                    ['Sheet', String(perceptionReview.metrics.sheets)],
+                    ['Elemen', String(perceptionReview.metrics.elements)],
+                    ['Unclassified', String(perceptionReview.metrics.unclassified)],
+                  ].map(([label, value]) => (
+                    <div key={label} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 10, background: 'var(--elev)' }}>
+                      <div style={{ fontSize: 10.5, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4 }}>{label}</div>
+                      <div style={{ marginTop: 3, fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6 }}>Gerbang</div>
+                  <div style={{ display: 'grid', gap: 6 }}>
+                    {perceptionReview.checks.map((check) => (
+                      <div key={check.code} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12, color: 'var(--text2)' }}>
+                        <StatusPill tone={check.passed ? 'ok' : 'warn'} mono>{check.code}</StatusPill>
+                        <div>
+                          <div style={{ color: 'var(--text)', fontWeight: 700 }}>{check.label}</div>
+                          <div style={{ color: 'var(--text3)' }}>{check.detail}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6 }}>Warning</div>
+                  {perceptionReview.warningGroups.length === 0 ? (
+                    <div style={{ fontSize: 12, color: 'var(--text3)' }}>Tidak ada warning dari pipeline.</div>
+                  ) : (
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      {perceptionReview.warningGroups.map((group) => {
+                        const open = Boolean(openWarningGroups[group.code]);
+                        return (
+                          <div key={group.code} style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                            <button
+                              type="button"
+                              onClick={() => setOpenWarningGroups((prev) => ({ ...prev, [group.code]: !prev[group.code] }))}
+                              style={{ width: '100%', border: 0, background: 'var(--elev)', color: 'var(--text)', padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 700, fontSize: 12, textAlign: 'left' }}
+                            >
+                              {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                              [{group.code}] {group.items.length} warning
+                            </button>
+                            {open && (
+                              <div style={{ display: 'grid', gap: 6, padding: 10, background: 'var(--surface)' }}>
+                                {group.items.map((warning, index) => (
+                                  <div key={`${warning.code}-${index}`} style={{ fontSize: 12, color: 'var(--text2)' }}>{warning.message}</div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6 }}>Unclassified</div>
+                  {perceptionReview.unclassified.length === 0 ? (
+                    <div style={{ fontSize: 12, color: 'var(--text3)' }}>Tidak ada unclassified.</div>
+                  ) : (
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      {perceptionReview.unclassified.slice(0, 10).map((item, index) => (
+                        <div key={`${item.sheetId}-${index}`} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 8, background: 'var(--elev)' }}>
+                          <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 700 }}>{item.raw}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{item.sheetId} - {item.alasan}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <Button onClick={usePerceptionAsTranscript} disabled={busy !== null}>
+                    <CheckCircle2 size={14} /> Pakai TKG sebagai transkrip
+                  </Button>
+                  <Button variant="secondary" onClick={discardPerception} disabled={busy !== null}>
+                    Buang hasil
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '12px 0', color: 'var(--text3)', fontSize: 11 }}>
