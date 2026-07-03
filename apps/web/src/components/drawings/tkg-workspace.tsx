@@ -7,8 +7,8 @@
  * menjadi TKG, lalu core-engine menjalankan validasi, render, dan takeoff.
  * Frontend tidak menghitung kuantitas/harga.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Send, Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AlertTriangle, CheckCircle2, Send, Sparkles, UploadCloud } from 'lucide-react';
 
 import type { TakeoffResult, TkgDocument, TkgValidationResult } from '@paax/schemas';
 import { Card, Button, StatusPill } from '@/components/ui';
@@ -16,6 +16,7 @@ import { renderTkg, takeoffTkg, validateTkg } from '@/lib/engine';
 import { emptyTkgRecord, tkgRepository, type ProjectTkgRecord } from '@/lib/projects/tkg-repository';
 import { emptyRabLine, rabRepository } from '@/lib/projects/rab-repository';
 import { TriagePanel, type TriageItemView } from '@/components/review/triage-panel';
+import { analyzeDrawingFile, DocumentIntelligenceError } from '@/lib/ai/document-intelligence-tkg';
 
 const statusBox = {
   display: 'flex',
@@ -109,6 +110,36 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     }
   }, [projectId, record, runPipeline, sourceText]);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const runFileUpload = useCallback(async (file: File) => {
+    setBusy('upload');
+    setError(null);
+    setInfo(null);
+    try {
+      const result = await analyzeDrawingFile(file, projectId);
+      const next = await tkgRepository.save({
+        ...record,
+        projectId,
+        tkg: result.tkg,
+        source: 'ai_proposal',
+        reviewed: false,
+        lastRenderedText: null,
+        lastTakeoff: null,
+      });
+      setRecord(next);
+      const classifierNote = result.classificationConfidence != null
+        ? `Klasifikasi: ${result.classification} (${Math.round(result.classificationConfidence * 100)}% yakin).`
+        : `Klasifikasi: ${result.classification}.`;
+      setInfo([classifierNote, ...result.warnings].join(' '));
+      await runPipeline(next);
+    } catch (err) {
+      setError(err instanceof DocumentIntelligenceError ? err.message : (err instanceof Error ? err.message : 'Upload gambar gagal.'));
+    } finally {
+      setBusy(null);
+    }
+  }, [projectId, record, runPipeline]);
+
   const rerunPipeline = useCallback(async () => {
     if (!record.tkg) return;
     setError(null);
@@ -160,8 +191,11 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     if (!takeoff) return [];
     return takeoff.items
       .filter((item) => item.needs_review)
-      .map((item) => ({
-        key: `${item.kode}.${item.work_type}.${item.rule_id}`,
+      .map((item, index) => ({
+        // alamat disertakan supaya kode yang sama (mis. beberapa instance K1)
+        // tidak bertabrakan key-nya; index sbg fallback terakhir bila alamat
+        // juga sama persis (kasus langka, tetap butuh key unik untuk React).
+        key: `${item.kode}.${item.work_type}.${item.rule_id}.${item.alamat ?? 'no-alamat'}.${index}`,
         kode: item.kode,
         work: `${item.work_type} · ${item.kategori}`,
         rule_id: item.rule_id,
@@ -174,7 +208,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     ? `AI menemukan ${counts.elements} elemen dari ${counts.tables} tabel pada ${counts.sheets} sheet. ${readyItems} volume siap dikirim, ${takeoff.n_needs_review} item perlu review.`
     : tkg
       ? `AI menemukan ${counts.elements} elemen dari ${counts.tables} tabel pada ${counts.sheets} sheet. Proses engine siap dijalankan ulang.`
-      : 'Tempel deskripsi gambar kerja untuk memulai analisis.';
+      : 'Unggah PDF gambar kerja, atau tempel teks deskripsi, untuk memulai analisis.';
 
   return (
     <Card padding={18}>
@@ -202,8 +236,37 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(260px, .9fr)', gap: 14 }} className="pax-grid-2">
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4 }}>
-            Teks / deskripsi gambar kerja
+            Unggah PDF gambar kerja
           </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            style={{ display: 'none' }}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = '';
+              if (file) void runFileUpload(file);
+            }}
+          />
+          <div
+            onClick={() => busy === null && fileInputRef.current?.click()}
+            className="pax-card-hover"
+            style={{ marginTop: 6, cursor: busy !== null ? 'wait' : 'pointer', border: '1.5px dashed var(--border)', borderRadius: 10, padding: '18px 14px', textAlign: 'center', color: 'var(--text3)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}
+          >
+            <UploadCloud size={22} />
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text2)' }}>
+              {busy === 'upload' ? 'Mengunggah & menganalisis…' : 'Klik untuk pilih PDF gambar kerja'}
+            </div>
+            <div style={{ fontSize: 11 }}>PDF vektor (mis. ekspor dari AutoCAD) — foto/scan belum didukung jalur ini.</div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '12px 0', color: 'var(--text3)', fontSize: 11 }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            atau tempel teks deskripsi
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          </div>
+
           <textarea
             value={sourceText}
             onChange={(event) => setSourceText(event.target.value)}

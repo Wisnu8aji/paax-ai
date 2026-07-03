@@ -1,9 +1,15 @@
 import uuid
+import tempfile
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import os
 from datetime import datetime
+
+# Direktori unggahan lintas-platform (default lama "/tmp/paax_uploads" tidak
+# valid di Windows). Override via env UPLOAD_DIR bila perlu, samakan dengan
+# upload_routes.py.
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", os.path.join(tempfile.gettempdir(), "paax_uploads"))
 
 router = APIRouter(prefix="/drawings", tags=["Drawing Intelligence"])
 
@@ -41,6 +47,7 @@ class DrawingWarning(BaseModel):
 class DrawingAnalysisResponse(BaseModel):
     file_id: str
     classification: str
+    classification_confidence: Optional[float] = None
     rooms: List[str]
     doors: List[str]
     windows: List[str]
@@ -75,19 +82,10 @@ def generate_demo_extraction(file_name: str) -> DrawingAnalysisResponse:
         ]
     )
 
-import os
-import uuid
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from datetime import datetime
-
 from app.processors.pdf_renderer import PdfRenderer
 from app.processors.drawing_classifier import DrawingClassifier
 from app.processors.ocr_extractor import OcrExtractor
-from app.processors.table_extractor import TableExtractor
-from app.processors.grid_extractor import GridExtractor
-from app.tkg.builder import build_tkg_from_text
+from app.tkg.builder import build_tkg_from_text, classification_to_jenis
 
 # --- Endpoints ---
 
@@ -95,71 +93,76 @@ from app.tkg.builder import build_tkg_from_text
 async def analyze_drawing(req: DrawingAnalyzeRequest):
     # Pipeline Asli TKG (Brain v4.1)
     file_name = req.file_metadata.file_name
-    
-    # Path mockup utk simulasi atau file sesungguhnya
-    base_path = os.getenv("UPLOAD_DIR", "/tmp/paax_uploads")
-    file_path = os.path.join(base_path, file_name)
-    
+
+    file_path = os.path.join(UPLOAD_DIR, file_name)
+
     raw_text = ""
     classification = "Unclassified"
+    classification_confidence: Optional[float] = None
     tkg_doc = None
     tkg_text = None
-    
+
     warnings = [
         DrawingWarning(
-            id=str(uuid.uuid4()), 
-            message="Sistem menggunakan TKG Pipeline V1.0 (Real PyMuPDF Extraction).", 
-            level="INFO", 
+            id=str(uuid.uuid4()),
+            message="Sistem menggunakan TKG Pipeline V1.0 (Real PyMuPDF Extraction).",
+            level="INFO",
             related_elements=[]
         )
     ]
-    
+
     if os.path.exists(file_path) and file_name.endswith('.pdf'):
         # 1. Triase & Split (SK-01)
         pdf_processor = PdfRenderer()
         pdf_res = pdf_processor.process(file_path)
-        
+
         if pdf_res["status"] == "success" and pdf_res["sheets"]:
             sheet = pdf_res["sheets"][0]
             raw_text = sheet.get("raw_text", "")
-            
+
             # 2. OCR Normalization (SK-10)
             ocr = OcrExtractor()
             ocr_res = ocr.process(raw_text)
             normalized_text = ocr_res["normalized_text"]
-            
+
             # 3. Klasifikasi (SK-02)
             classifier = DrawingClassifier()
             class_res = classifier.process(normalized_text)
             classification = class_res["classification"]
-            
-            # 4. Tabel & Grid (SK-04, SK-05)
-            tables = TableExtractor().process(normalized_text)
-            grids = GridExtractor().process(normalized_text)
-            
-            # 5. Build TKG (SK-07)
+            classification_confidence = class_res["confidence"]
+
+            # 4. Build TKG (SK-04/05/07 — tabel & grid diparsing di dalam builder,
+            #    lihat app/tkg/builder.py; jenis sheet dipetakan dari klasifikasi
+            #    di atas, bukan ditebak ulang di sini)
             builder_res = build_tkg_from_text(
                 project_id=req.file_metadata.project_id or "prj-123",
                 revision_id="rev-1",
                 sheet_id=sheet["sheet_id"],
                 title=file_name,
-                raw_text=normalized_text
+                raw_text=normalized_text,
+                jenis=classification_to_jenis(classification),
             )
-            
+
             tkg_doc = builder_res.tkg_json
             tkg_text = builder_res.tkg_txt
-            
-            # Tambah hasil tabel dan grid ke TKG (Mutate)
-            if tkg_doc and "sheets" in tkg_doc and len(tkg_doc["sheets"]) > 0:
-                tkg_doc["sheets"][0]["tables"].extend(tables["tables"])
-                tkg_doc["sheets"][0]["grid"]["bentang"].extend(grids["grid"]["bentang"])
-                tkg_doc["sheets"][0]["levels"].extend(grids["levels"])
-                
+
+            if builder_res.metrics.get("unclassified", 0) > 0:
+                warnings.append(DrawingWarning(
+                    id=str(uuid.uuid4()),
+                    message=(
+                        f"{builder_res.metrics['unclassified']} baris teks tidak cocok grammar SK-07 (MVP) — "
+                        "masuk blok UNCLASSIFIED di TKG, tidak dibuang. Ekstraksi otomatis dari gambar kerja "
+                        "nyata masih terbatas pada notasi terstruktur sederhana."
+                    ),
+                    level="MEDIUM",
+                    related_elements=[],
+                ))
+
             if class_res["needs_vision_fallback"]:
                 warnings.append(DrawingWarning(
-                    id=str(uuid.uuid4()), 
-                    message="Confidence klasifikasi rendah, butuh fallback vision LLM.", 
-                    level="MEDIUM", 
+                    id=str(uuid.uuid4()),
+                    message="Confidence klasifikasi rendah, butuh fallback vision LLM.",
+                    level="MEDIUM",
                     related_elements=[]
                 ))
     else:
@@ -173,6 +176,7 @@ async def analyze_drawing(req: DrawingAnalyzeRequest):
     return DrawingAnalysisResponse(
         file_id=str(uuid.uuid4()),
         classification=classification,
+        classification_confidence=classification_confidence,
         rooms=[],
         doors=[],
         windows=[],
