@@ -63,6 +63,19 @@ describe("engineering chat helpers", () => {
     expect(prompt).not.toContain("silakan hitung sendiri");
   });
 
+  it("adds attachment guidance without allowing new engineering calculations", () => {
+    const prompt = buildEngineeringChatPrompt({
+      message: "apa isi lampiran ini?",
+      engine: onlineEngine,
+      projectId: "p-1",
+      attachmentCount: 2,
+    });
+
+    expect(prompt).toContain("User melampirkan 2 file");
+    expect(prompt).toContain("jelaskan/rangkum isinya bila relevan");
+    expect(prompt).toContain("jangan menghitung angka final");
+  });
+
   it("omits project context delimiters when no project context is supplied", () => {
     const prompt = buildEngineeringChatPrompt({
       message: "halo",

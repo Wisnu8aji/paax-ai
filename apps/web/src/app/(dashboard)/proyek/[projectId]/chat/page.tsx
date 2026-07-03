@@ -61,6 +61,10 @@ interface PendingAttachment {
   id: string;
   name: string;
   sizeLabel: string;
+  mimeType: string;
+  base64: string | null;
+  supported: boolean;
+  error?: string;
 }
 
 type FilterMode = 'all' | 'pinned' | 'archived';
@@ -71,6 +75,10 @@ const filterLabels: Record<FilterMode, string> = {
   archived: 'Diarsipkan',
 };
 
+const SUPPORTED_ATTACHMENT_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'application/pdf']);
+const MAX_ATTACHMENTS_PER_MESSAGE = 4;
+const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+
 function nowLabel(): string {
   return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 }
@@ -79,6 +87,28 @@ function formatSize(bytes: number): string {
   if (bytes >= 1e6) return `${(bytes / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 })} MB`;
   if (bytes >= 1e3) return `${Math.round(bytes / 1e3)} KB`;
   return `${bytes} B`;
+}
+
+function inferMimeType(file: File): string {
+  if (file.type) return file.type;
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.pdf')) return 'application/pdf';
+  if (name.endsWith('.png')) return 'image/png';
+  if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+  if (name.endsWith('.webp')) return 'image/webp';
+  return 'application/octet-stream';
+}
+
+function readFileBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      resolve(result.includes(',') ? result.split(',')[1] : result);
+    };
+    reader.onerror = () => reject(new Error(`Gagal membaca ${file.name}`));
+    reader.readAsDataURL(file);
+  });
 }
 
 /** Status berpikir bertingkat, kedip perlahan ala Claude. */
@@ -223,13 +253,57 @@ export default function ProjectChatPage() {
     setNewFolderOpen(false);
   }
 
-  function onPickFiles(files: FileList | null) {
+  async function onPickFiles(files: FileList | null) {
     if (!files) return;
-    const picked: PendingAttachment[] = Array.from(files).map((f) => ({
-      id: `att-${Date.now()}-${f.name}`,
-      name: f.name,
-      sizeLabel: formatSize(f.size),
-    }));
+    const remaining = MAX_ATTACHMENTS_PER_MESSAGE - attachments.length;
+    if (remaining <= 0) {
+      showConnectorNote(`Maksimal ${MAX_ATTACHMENTS_PER_MESSAGE} lampiran per pesan.`);
+      setPlusOpen(false);
+      return;
+    }
+    const selected = Array.from(files).slice(0, remaining);
+    if (files.length > remaining) {
+      showConnectorNote(`Hanya ${remaining} lampiran yang ditambahkan. Maksimal ${MAX_ATTACHMENTS_PER_MESSAGE} lampiran per pesan.`);
+    }
+
+    const picked: PendingAttachment[] = [];
+    for (const file of selected) {
+      const mimeType = inferMimeType(file);
+      const base = {
+        id: `att-${Date.now()}-${file.name}-${Math.random().toString(16).slice(2)}`,
+        name: file.name,
+        sizeLabel: formatSize(file.size),
+        mimeType,
+      };
+      if (!SUPPORTED_ATTACHMENT_MIME_TYPES.has(mimeType)) {
+        picked.push({
+          ...base,
+          base64: null,
+          supported: false,
+          error: 'Format ini belum bisa dibaca langsung AI - untuk RAB/BoQ pakai Smart Import, untuk gambar pakai halaman Gambar Kerja AI.',
+        });
+        continue;
+      }
+      if (file.size > MAX_ATTACHMENT_BYTES) {
+        picked.push({
+          ...base,
+          base64: null,
+          supported: false,
+          error: `File terlalu besar untuk chat AI. Batas per file ${formatSize(MAX_ATTACHMENT_BYTES)}.`,
+        });
+        continue;
+      }
+      try {
+        picked.push({ ...base, base64: await readFileBase64(file), supported: true });
+      } catch (err) {
+        picked.push({
+          ...base,
+          base64: null,
+          supported: false,
+          error: err instanceof Error ? err.message : 'File gagal dibaca.',
+        });
+      }
+    }
     setAttachments((prev) => [...prev, ...picked]);
     setPlusOpen(false);
   }
@@ -258,13 +332,21 @@ export default function ProjectChatPage() {
     refresh(next.id);
 
     try {
+      const supportedAttachments = attachments
+        .filter((attachment) => attachment.supported && attachment.base64)
+        .map((attachment) => ({ mimeType: attachment.mimeType, data: attachment.base64 as string }));
       // Grounding: kirim skrip TKG + draft RAB proyek supaya AI membaca data
       // terstruktur — tidak perlu ekstrak ulang gambar/RAB (INV-TKG-01).
       const context = await buildProjectContextPack(projectId).catch(() => null);
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, projectId, ...(context ? { context } : {}) }),
+        body: JSON.stringify({
+          message,
+          projectId,
+          ...(context ? { context } : {}),
+          ...(supportedAttachments.length > 0 ? { attachments: supportedAttachments } : {}),
+        }),
       });
       const data = await readEngineeringChatResponse(response);
       setStatus({
@@ -294,6 +376,7 @@ export default function ProjectChatPage() {
     } finally {
       saveConversation(next);
       setBusy(false);
+      setAttachments([]);
       refresh(next.id);
     }
   }
@@ -574,10 +657,13 @@ export default function ProjectChatPage() {
         {attachments.length > 0 && (
           <div style={{ padding: '10px 14px 0', display: 'flex', gap: 7, flexWrap: 'wrap', borderTop: '1px solid var(--border-soft)' }}>
             {attachments.map((a) => (
-              <span key={a.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 9px', borderRadius: 9, background: 'var(--surface)', border: '1px solid var(--border)', fontSize: 11, color: 'var(--text)' }}>
+              <span key={a.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 9px', borderRadius: 9, background: 'var(--surface)', border: a.supported ? '1px solid var(--border)' : '1px solid color-mix(in srgb, orange 35%, var(--border))', fontSize: 11, color: 'var(--text)' }}>
                 <Paperclip size={11} color="var(--text3)" />
                 <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
                 <span className="pax-mono" style={{ color: 'var(--text3)', fontSize: 10 }}>{a.sizeLabel}</span>
+                <span style={{ color: a.supported ? 'var(--ok-dot)' : 'var(--warn-fg)', fontSize: 10.5, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {a.supported ? 'dikirim ke AI' : a.error}
+                </span>
                 <button
                   onClick={() => setAttachments((prev) => prev.filter((x) => x.id !== a.id))}
                   aria-label={`Hapus lampiran ${a.name}`}
@@ -588,7 +674,7 @@ export default function ProjectChatPage() {
               </span>
             ))}
             <span style={{ fontSize: 10.5, color: 'var(--text3)', alignSelf: 'center' }}>
-              Lampiran belum dikirim ke AI — hadir bersama konektor. Fallback: unggah lewat File & Dokumen.
+              Gambar/PDF dibaca AI saat pesan dikirim. Format lain diarahkan ke workflow yang sesuai.
             </span>
           </div>
         )}
@@ -653,7 +739,7 @@ export default function ProjectChatPage() {
               multiple
               accept="image/*,.pdf,.xlsx,.xls,.docx,.dwg"
               onChange={(e) => {
-                onPickFiles(e.target.files);
+                void onPickFiles(e.target.files);
                 e.target.value = '';
               }}
               aria-label="Tambah file atau foto"
