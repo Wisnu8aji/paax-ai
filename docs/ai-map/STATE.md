@@ -82,6 +82,58 @@ uji visual browser. Murni presentasi — tidak ada angka dihitung di frontend.
 Prompt commit: `docs/prompts/PAAX_CODEX_PROMPT_UI_OVERHAUL.md` (branch
 `feat/ui-workspace-premium`, draft PR base `docs/brain-v4.1-alignment`).
 
+## ✅ FASE 0 (0a penuh + 0b-parsial harga) SELESAI & TERVERIFIKASI (2026-07-03), prompt Codex siap
+Milestone besar terverifikasi ujung-ke-ujung lewat engine ASLI (bukan replika),
+**238 passed** (198 lama + 40 baru), tak ada regresi:
+- **0a-1 HSP**: `compute_hsp()` reproduksi **32/32 HSP profesional** dari `ALFA.xlsx`
+  sheet AHS via `(A+B+C)×(1+OP)`.
+- **0a-2 RAB total**: `compute_rab()` reproduksi **grand_total Rp 1.860.078.607**
+  deviasi **+0,0009%** (224 baris DKH; 79 ber-AHS dari koefisien, 145 direct).
+- **0b-parsial (harga Surakarta NYATA)**: owner authorized (2026-07-03) pakai
+  harga di ALFA.xlsx (HARGA BAHAN/DKH/HSP) sbg HSD Surakarta sistem. Dibangun
+  `data/harga-satuan/surakarta.json` (112 resource, price book UMUM regional —
+  sah per §0.1, bukan fixture). Engine + price book ini mereproduksi RAB PLHUT
+  **Rp 1.885.558.837 vs Rp 1.860.078.608 = +1,37%** (dalam ±10%); deviasi
+  seluruhnya dari **5 inkonsistensi harga internal ALFA sendiri** (tercatat di
+  `alfa_price_conflicts`, auditable RULE-HRG-02). Coverage 100% resource PLHUT.
+Fixture + 3 generator + README + 3 test dibuat Claude di `services/core-engine/
+tests/{fixtures/plhut/, test_plhut_hsp_golden.py, test_plhut_rab_golden.py,
+test_plhut_surakarta_pricebook.py}` + `data/harga-satuan/surakarta.json`.
+**Temuan penting**: (a) kode resource ALFA TIDAK andal (M.504 = 2 material beda)
+→ fixture PLHUT kunci resource lokal per-analisa; (b) ada file Surakarta SERUPA
+di luar repo (`G:\paax-data`, 109 resource, sesi sebelumnya) dgn penomoran kode
+BEDA — tak aktif bug (loader pilih satu via env `PAAX_DATA_DIR`) tapi belum
+direkonsiliasi, dicatat di gap doc. Prinsip §0.1 dipatuhi penuh. Prompt commit:
+`docs/prompts/PAAX_CODEX_PROMPT_FASE0A_HSP_GOLDEN.md` (branch
+`feat/fase0-plhut-golden-anchor` dari main; Codex commit, belum di-commit).
+
+## ⚠️ Sisa GERBANG-0b penuh: pemetaan ke katalog AHSP RESMI (2.542 item) — butuh owner
+Harga BUKAN lagi penghalang untuk lingkup PLHUT/Surakarta. Sisa: mengikat 112
+resource Surakarta + 224 item DKH ke KODE RESMI katalog (`G:\paax-data`, sudah
+format engine). Cek nama-persis: baru 21/112 match (kategori upah masuk akal —
+kode resmi memang generik per-profesi; kategori bahan perlu pencocokan semantik
+SK-19). Brain RULE-AHSP-01 mewajibkan konfirmasi manusia utk kasus ambigu — TIDAK
+diotomatisasi diam-diam. Detail + rekomendasi: `docs/plans/PAAX_FASE0B_GAP_HARGA_2026-07-03.md`.
+Tidak memblokir Fase 1 (workspace) / Fase 2 (persepsi) — bisa paralel.
+
+## 🗺️ Roadmap "Gambar → RAB benar" (2026-07-03) — analisis mendalam brain, keputusan owner: Fase 0 dulu
+Owner minta rencana lengkap sampai gambar nyata → RAB benar sesuai brain.
+Claude baca 4 berkas brain penuh + audit repo. Hasil: `docs/plans/PAAX_ROADMAP_GAMBAR_KE_RAB_2026-07-03.md`.
+**Temuan inti**: 3 "setengah" sistem beda kematangan — Engine hitung ~70%
+(jalan KALAU TKG benar), Data grounding ~40% (AHSP asli 2.542 item ada di
+`G:\paax-data` tapi belum tersambung; harga ~4%), Persepsi baca gambar ~20%
+(PyMuPDF jalan tapi grammar belum kenal notasi gambar nyata → PDF asli jadi
+`unclassified`). Golden anchor `test_plhut_golden.py` = TKG PLHUT **transkrip
+TANGAN** (manusia persepsi, engine hitung benar) — membuktikan separuh keras
+sudah benar. **Urutan brain (data dulu, baru mata, TXT03 §7/AP-09)**:
+FASE 0 tutup GERBANG-0 di PLHUT (data+engine, manusia transkrip → RAB penuh
+berharga vs `ALFA.xlsx` manual owner) → FASE 2 tutup GERBANG-2 (persepsi
+otomatis = golden transkrip-tangan) → FASE 3-4 tutup GERBANG-4 (gambar nyata →
+RAB auditable). Owner PUNYA materi anchor lengkap: PLHUT PDF + RAB manual
+`ALFA.xlsx`+`MC 00.xlsx`. **Butuh keputusan owner** (4 hal, lihat §5 dokumen):
+setuju urutan Fase 0 dulu? ambang deviasi (usul ±10%)? bantu baca ALFA.xlsx?
+konfirm PLHUT proyek golden? Baru lalu Claude pecah Fase 0 jadi prompt Codex 0A–0D.
+
 ## Pembagian peran (2026-06-29)
 - **Claude** = planning + semua spek/prompt + **UI frontend** + review.
 - **Codex** = penyambungan teknis (lib/engine, fetch, state, route AI, backend, engine).
