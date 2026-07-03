@@ -103,7 +103,7 @@ export interface QuickAction {
 
 export const quickActions: QuickAction[] = [
   { key: 'rab', label: 'Buat RAB Baru', href: '/proyek' },
-  { key: 'gambar', label: 'Analisis Gambar', href: '/gambar-kerja-ai' },
+  { key: 'gambar', label: 'Analisis Gambar', href: '/proyek' },
   { key: 'jadwal', label: 'Susun Schedule', href: '/proyek' },
   { key: 'laporan', label: 'Export Laporan', href: '/laporan' },
 ];

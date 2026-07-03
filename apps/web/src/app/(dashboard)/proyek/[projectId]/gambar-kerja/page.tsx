@@ -1,30 +1,56 @@
 'use client';
 
-import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { FileImage, UploadCloud, ArrowRight } from 'lucide-react';
-import { Card, StatCard, StatusPill, Button, type PillTone } from '@/components/ui';
+import { FileImage, UploadCloud } from 'lucide-react';
+import { Card, StatCard, StatusPill, Button } from '@/components/ui';
 import { useShell } from '@/components/app-shell/shell-context';
 import { TkgWorkspace } from '@/components/drawings/tkg-workspace';
-import { drawingSummary, drawings } from '@/lib/mock/workspace';
+import { drawingsRepository, type ProjectDrawingFile } from '@/lib/projects/drawings-repository';
 
-const statusMap: Record<string, { tone: PillTone; label: string }> = {
-  analyzed: { tone: 'ok', label: 'DIANALISIS' },
-  pending: { tone: 'warn', label: 'MENUNGGU' },
-  failed: { tone: 'dng', label: 'GAGAL' },
-};
+function formatSize(bytes: number): string {
+  if (bytes >= 1e6) return `${(bytes / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 })} MB`;
+  if (bytes >= 1e3) return `${Math.round(bytes / 1e3).toLocaleString('id-ID')} KB`;
+  return `${bytes} B`;
+}
+
+function formatDate(value: string): string {
+  return new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+}
 
 export default function ProjectGambarKerjaPage() {
   const { openOverlay } = useShell();
   const params = useParams<{ projectId: string }>();
   const projectId = params.projectId;
+  const [files, setFiles] = useState<ProjectDrawingFile[]>([]);
+
+  const refreshFiles = useCallback(() => {
+    void drawingsRepository.list(projectId).then(setFiles);
+  }, [projectId]);
+
+  useEffect(() => {
+    refreshFiles();
+    const onUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<{ projectId?: string }>).detail;
+      if (!detail?.projectId || detail.projectId === projectId) refreshFiles();
+    };
+    window.addEventListener('paax-drawings-updated', onUpdated);
+    return () => window.removeEventListener('paax-drawings-updated', onUpdated);
+  }, [projectId, refreshFiles]);
+
+  const summary = [
+    { label: 'Gambar Diunggah', value: files.length.toLocaleString('id-ID'), sub: 'file proyek tersimpan' },
+    { label: 'Metadata Tersimpan', value: files.filter((file) => !file.dataUrl).length.toLocaleString('id-ID'), sub: 'file besar / non-preview' },
+    { label: 'Preview Lokal', value: files.filter((file) => file.dataUrl).length.toLocaleString('id-ID'), sub: 'file kecil tersimpan lokal' },
+    { label: 'Status AI', value: 'Ditunda', sub: 'OCR/CV menunggu prompt terpisah' },
+  ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <TkgWorkspace projectId={projectId} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }} className="pax-grid-4">
-        {drawingSummary.map((s) => (
+        {summary.map((s) => (
           <StatCard key={s.label} label={s.label} value={s.value} sub={s.sub} />
         ))}
       </div>
@@ -37,33 +63,31 @@ export default function ProjectGambarKerjaPage() {
           </Button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {drawings.map((d) => {
-            const st = statusMap[d.status];
-            return (
-              <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 12, background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                <span style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text2)' }}>
-                  <FileImage size={18} />
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{d.name}</div>
-                  <div className="pax-mono" style={{ fontSize: 11, color: 'var(--text3)' }}>{d.sheet} · {d.type}</div>
+          {files.map((file) => (
+            <div key={file.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 12, background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <span style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text2)' }}>
+                <FileImage size={18} />
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</div>
+                <div className="pax-mono" style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  {formatSize(file.sizeBytes)} · {file.mimeType} · {formatDate(file.uploadedAt)}
                 </div>
-                <StatusPill tone={st.tone}>{st.label}</StatusPill>
               </div>
-            );
-          })}
+              <StatusPill tone="warn">MENUNGGU REVIEW</StatusPill>
+            </div>
+          ))}
+          {files.length === 0 && (
+            <div style={{ padding: 16, borderRadius: 12, background: 'var(--surface)', border: '1px dashed var(--border)', color: 'var(--text3)', fontSize: 12.5 }}>
+              Belum ada gambar proyek. Klik Unggah untuk menyimpan file ke proyek ini.
+            </div>
+          )}
         </div>
       </Card>
 
-      <Link href="/gambar-kerja-ai" style={{ textDecoration: 'none' }}>
-        <Card padding={16} hover>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 12.5, color: 'var(--text2)' }}>Buka workspace analisis gambar AI lengkap</div>
-            <ArrowRight size={16} color="var(--text2)" />
-          </div>
-        </Card>
-      </Link>
-      <p style={{ fontSize: 11, color: 'var(--text3)' }}>Data contoh — analisis gambar berjalan dalam mode demo fallback.</p>
+      <p style={{ fontSize: 11, color: 'var(--text3)' }}>
+        Upload menyimpan file/metadata. AI vision/OCR untuk membaca isi gambar dikerjakan di prompt terpisah.
+      </p>
     </div>
   );
 }

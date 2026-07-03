@@ -7,7 +7,6 @@ const STATIC_DASHBOARD_ROUTES = [
   '/proyek',
   '/files',
   '/database-ahsp',
-  '/gambar-kerja-ai',
   '/kolaborasi',
   '/laporan',
 ];
