@@ -37,7 +37,7 @@ const workspaceItems: NavLeaf[] = [
 ];
 
 const projectModules = [
-  { label: 'Gambar Kerja AI', seg: '/gambar-kerja', icon: FileImage, gateway: '/gambar-kerja-ai', badge: 'AI' },
+  { label: 'Gambar Kerja AI', seg: '/gambar-kerja', icon: FileImage, gateway: '/proyek', badge: 'AI' },
   { label: 'RAB & BOQ', seg: '/rab', icon: Calculator, gateway: '/proyek' },
   { label: 'Schedule & Skenario', seg: '/schedule', icon: CalendarClock, gateway: '/proyek' },
   { label: 'Engineering Chat', seg: '/chat', icon: MessageSquare, gateway: '/proyek' },

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { UploadCloud } from 'lucide-react';
 import { Drawer } from '@/components/ui/drawer';
@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { useShell } from './shell-context';
 import { SettingsDialog } from './settings-dialog';
 import { useProjects } from '@/lib/projects/projects-context';
+import { LocalStorage } from '@/lib/local-storage';
+import { drawingsRepository } from '@/lib/projects/drawings-repository';
 
 export function WorkspaceOverlays() {
   const router = useRouter();
@@ -17,6 +19,8 @@ export function WorkspaceOverlays() {
   const [form, setForm] = useState({ name: '', location: '', client: '', type: 'Gedung', description: '' });
   const [savingProject, setSavingProject] = useState(false);
   const [projectError, setProjectError] = useState<string | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function handleCreateProject() {
     if (!form.name.trim()) {
@@ -38,6 +42,24 @@ export function WorkspaceOverlays() {
     }
   }
 
+  async function handleUploadFiles(files: FileList | File[] | null) {
+    const picked = Array.from(files ?? []);
+    if (picked.length === 0) return;
+    const projectId = LocalStorage.getActiveProjectId();
+    if (!projectId) {
+      setUploadStatus('Pilih atau buka proyek dulu sebelum mengunggah gambar.');
+      return;
+    }
+    setUploadStatus('Menyimpan metadata file...');
+    try {
+      await drawingsRepository.addFiles(projectId, picked);
+      setUploadStatus(`${picked.length} file tersimpan di Gambar Proyek.`);
+      window.dispatchEvent(new CustomEvent('paax-drawings-updated', { detail: { projectId } }));
+    } catch (error) {
+      setUploadStatus(error instanceof Error ? error.message : 'Gagal menyimpan file.');
+    }
+  }
+
   return (
     <>
       {/* Notifikasi/Aplikasi/Tagihan/Akun kini hidup di dialog pengaturan terpusat */}
@@ -45,6 +67,11 @@ export function WorkspaceOverlays() {
 
       <Drawer open={current === 'upload'} onClose={closeOverlay} title="Unggah File">
         <div
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault();
+            void handleUploadFiles(event.dataTransfer.files);
+          }}
           style={{
             border: '1.5px dashed var(--border)',
             borderRadius: 14,
@@ -60,9 +87,24 @@ export function WorkspaceOverlays() {
           <UploadCloud size={28} />
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)' }}>Tarik file ke sini</div>
           <div style={{ fontSize: 12 }}>PDF, DWG, gambar, atau spreadsheet - maks 50 MB</div>
-          <Button variant="secondary" style={{ marginTop: 8 }}>Pilih File</Button>
+          <Button variant="secondary" onClick={() => fileInputRef.current?.click()} style={{ marginTop: 8 }}>Pilih File</Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="application/pdf,.dwg,image/*,.xlsx,.xls"
+            onChange={(event) => {
+              void handleUploadFiles(event.target.files);
+              event.target.value = '';
+            }}
+            aria-label="Pilih file gambar proyek"
+            style={{ display: 'none' }}
+          />
         </div>
-        <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>Tampilan contoh - unggahan belum tersambung ke backend.</p>
+        <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>
+          File kecil disimpan sebagai data lokal; file besar disimpan sebagai metadata untuk tahap integrasi storage berikutnya.
+        </p>
+        {uploadStatus && <p style={{ fontSize: 11, color: 'var(--text2)', marginTop: 8 }}>{uploadStatus}</p>}
       </Drawer>
 
       <Modal

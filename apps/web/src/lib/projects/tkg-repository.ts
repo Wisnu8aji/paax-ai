@@ -1,7 +1,7 @@
 'use client';
 
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import type { TkgDocument } from '@paax/schemas';
+import type { TakeoffResult, TkgDocument } from '@paax/schemas';
 import { LocalStorage, projectStorageKey } from '@/lib/local-storage';
 import { getDb, getProjectBackend } from './project-repository';
 
@@ -25,6 +25,8 @@ export interface ProjectTkgRecord {
   reviewed: boolean;
   /** Cache render .tkg.txt terakhir dari engine (tampilan; bukan hasil hitung FE). */
   lastRenderedText: string | null;
+  /** Cache hasil takeoff terakhir dari engine; frontend hanya menyimpan/menampilkan. */
+  lastTakeoff: TakeoffResult | null;
   updatedAt: string;
 }
 
@@ -38,6 +40,7 @@ export function emptyTkgRecord(projectId: string): ProjectTkgRecord {
     source: 'manual',
     reviewed: false,
     lastRenderedText: null,
+    lastTakeoff: null,
     updatedAt: new Date().toISOString(),
   };
 }
@@ -50,6 +53,7 @@ function normalize(projectId: string, raw: Partial<ProjectTkgRecord> | null): Pr
     source: raw.source ?? 'manual',
     reviewed: Boolean(raw.reviewed),
     lastRenderedText: raw.lastRenderedText ?? null,
+    lastTakeoff: raw.lastTakeoff ?? null,
     updatedAt: raw.updatedAt ?? new Date().toISOString(),
   };
 }

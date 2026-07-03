@@ -102,6 +102,33 @@ halaman gambar-kerja render TKG workspace + tabel kandidat).
 Prompt commit: `docs/prompts/PAAX_CODEX_PROMPT_UI_PREMIUM_REDESIGN.md`
 (branch `feat/ui-premium-redesign` dari `main`, draft PR base `main`).
 
+## 🐞 Perbaikan pasca-redesign (2026-07-03) — prompt siap, MENUNGGU Codex
+Owner uji PR #26 di browser, catat 14 temuan di `Downloads/perbaikan.txt`.
+Claude investigasi root cause tiap poin (bukan tebakan) + tanya-jawab
+keputusan arsitektural, hasilnya 2 prompt siap jalan:
+- `docs/prompts/PAAX_CODEX_PROMPT_PERBAIKAN_UI_BATCH_2026-07-03.md` — **siap
+  dijalankan sekarang** di branch `feat/ui-premium-redesign` (PR #26, masih
+  draft): (1) fix hydration mismatch dashboard — root cause: `ProjectsProvider`
+  baca `localStorage` sinkron di `useState` initializer
+  (`lib/projects/projects-context.tsx:23`); (2) hapus navigasi ganda —
+  tab horizontal `proyek/[projectId]/layout.tsx:92-119` duplikat sidebar kiri;
+  (3) chat: label "Lainnya"→"Chat" + filter Pinned/Archived (belum ada,
+  field baru di `chat-history.ts`) + diagnosis riwayat "hilang" (hipotesis:
+  port dev server geser, localStorage per-origin — BUKAN bug kode
+  terkonfirmasi); (4) Gambar Kerja AI: gabung 2 halaman jadi 1, TkgWorkspace
+  disederhanakan (transkrip/skrip/takeoff mentah **dihapus dari UI** sesuai
+  keputusan owner — user hanya lihat status ringkas + Triage + kirim ke RAB),
+  upload file dibuat nyata (metadata tersimpan, BELUM dibaca AI).
+- `docs/prompts/PAAX_CODEX_PROMPT_AI_MULTIMODAL_LAMPIRAN_2026-07-03.md` —
+  **JANGAN jalankan dulu**, menunggu owner isi kotak persetujuan di dalam
+  file. Bagian A (lampiran Engineering Chat beneran dibaca Gemini vision —
+  aman, tak menyentuh gerbang F0) + Bagian B (opsional: vision MVP utk
+  upload Gambar Kerja AI langsung jadi draft TKG — **menyentuh gerbang F0**,
+  `BRAIN_ALIGNMENT.md` sudah menggerbang "TKG builder sungguhan" sbg DITUNDA
+  menunggu data-grounding + Wizard-of-Oz; owner sudah dikonfirmasi paham
+  tensi ini, prompt berisi kotak checklist eksplisit sebelum Codex boleh
+  kerjakan Bagian B).
+
 ## Pembagian peran (2026-06-29)
 - **Claude** = planning + semua spek/prompt + **UI frontend** + review.
 - **Codex** = penyambungan teknis (lib/engine, fetch, state, route AI, backend, engine).
