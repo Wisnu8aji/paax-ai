@@ -50,7 +50,7 @@ export function Modal({
         inset: 0,
         zIndex: 70,
         background: 'rgba(20,20,18,0.42)',
-        backdropFilter: 'blur(3px)',
+        backdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -64,13 +64,12 @@ export function Modal({
         aria-label={title}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
+        className="pax-glass pax-glass-edge"
         style={{
           width,
           maxWidth: '94vw',
           maxHeight: '90vh',
           overflowY: 'auto',
-          background: 'var(--elev)',
-          border: '1px solid var(--border)',
           borderRadius: 18,
           boxShadow: 'var(--shadow-modal)',
           animation: 'paxfade .2s ease',

@@ -25,6 +25,20 @@ export function formatRupiah(amount: number | string | null | undefined): string
   }
 }
 
+/**
+ * Format ringkas untuk kartu KPI: "Rp 32,48 M" (miliar) / "Rp 1,2 T" / "Rp 850 jt".
+ * Murni format TAMPILAN atas nilai yang sudah tersimpan — bukan perhitungan.
+ */
+export function formatRupiahCompact(amount: number | string | null | undefined): string {
+  const num = parseNumber(amount);
+  if (num === null) return '-';
+  const abs = Math.abs(num);
+  if (abs >= 1e12) return `Rp ${formatNumber(num / 1e12, 2)} T`;
+  if (abs >= 1e9) return `Rp ${formatNumber(num / 1e9, 2)} M`;
+  if (abs >= 1e6) return `Rp ${formatNumber(num / 1e6, 1)} jt`;
+  return formatRupiah(num);
+}
+
 export function formatDate(date: string | Date | null | undefined): string {
   if (!date) return '-';
   try {

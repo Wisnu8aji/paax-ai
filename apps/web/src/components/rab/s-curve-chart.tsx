@@ -45,8 +45,8 @@ export function SCurveChart({
       >
         <defs>
           <linearGradient id="paaxScurveFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.32" />
-            <stop offset="100%" stopColor="#6366f1" stopOpacity="0.02" />
+            <stop offset="0%" style={{ stopColor: 'var(--chart-1)' }} stopOpacity="0.32" />
+            <stop offset="100%" style={{ stopColor: 'var(--chart-1)' }} stopOpacity="0.02" />
           </linearGradient>
         </defs>
 
@@ -60,11 +60,11 @@ export function SCurveChart({
         ))}
 
         {areaPath && <path d={areaPath} fill="url(#paaxScurveFill)" />}
-        {linePath && <path d={linePath} fill="none" stroke="#6366f1" strokeWidth={2.5} />}
+        {linePath && <path d={linePath} fill="none" strokeWidth={2.5} style={{ stroke: 'var(--chart-1)' }} />}
 
         {points.map((p, i) => (
           <g key={p.period}>
-            <circle cx={x(i)} cy={y(p.cumulative_pct)} r={4} fill="#818cf8" stroke="var(--bg)" strokeWidth={1.5}>
+            <circle cx={x(i)} cy={y(p.cumulative_pct)} r={4} strokeWidth={1.5} style={{ fill: 'var(--chart-4)', stroke: 'var(--bg)' }}>
               <title>
                 Minggu {p.period} (hari {p.day_start}-{p.day_end}){'\n'}
                 Bobot periode: {p.planned_pct}%{'\n'}
