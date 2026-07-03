@@ -15,6 +15,11 @@ sudah diselesaikan dan dipush ke branch `feat/ui-premium-redesign`.
 
 ## Task Selesai
 
+0. Cleanup folder report
+   - Status: selesai
+   - Commit: `73f587a`
+   - Perubahan: folder laporan lama dibersihkan; hanya `report/` yang dipertahankan sebagai folder laporan tunggal.
+
 1. Batch 1 - Fix hydration mismatch Dashboard
    - Status: selesai
    - Commit: `6147f8a`
@@ -39,12 +44,23 @@ sudah diselesaikan dan dipush ke branch `feat/ui-premium-redesign`.
    - Konfirmasi: `rg "gambar-kerja-ai" apps/web/src -n` tidak menemukan referensi tersisa.
    - Build route list tidak lagi memuat `/gambar-kerja-ai`.
 
+5. AI Multimodal Lampiran Chat - Bagian A
+   - Status: selesai
+   - Commit: `28d086c`
+   - Perubahan: Engineering Chat membaca lampiran gambar/PDF yang didukung Gemini inline (`image/png`, `image/jpeg`, `image/webp`, `application/pdf`), membatasi 4 lampiran per pesan dan 8 MB per file di client, serta mengirim payload `inlineData` ke Gemini melalui `/api/ai/chat`.
+   - Format tidak didukung (`.xlsx`, `.docx`, `.dwg`, dan sejenisnya) tidak dikirim diam-diam; UI menampilkan pesan bahwa format itu belum bisa dibaca langsung AI dan mengarahkan ke workflow yang sesuai.
+   - Test baru/diubah: `apps/web/src/lib/ai/orchestrator.test.ts` dan `apps/web/src/lib/ai/engineering-chat.test.ts`.
+
+6. AI Multimodal Lampiran Chat - Bagian B Vision MVP Gambar Kerja
+   - Status: ditunda
+   - Alasan: kotak persetujuan Bagian B di `docs/prompts/PAAX_CODEX_PROMPT_AI_MULTIMODAL_LAMPIRAN_2026-07-03.md` belum dicentang owner. Sesuai prompt, Codex hanya mengerjakan Bagian A.
+
 ## Guardrail Terakhir
 
 Semua guardrail terakhir dijalankan dari `apps/web`:
 
 - `pnpm exec tsc --noEmit -p tsconfig.json`: passed
-- `pnpm test`: 11 files, 32 tests passed
+- `pnpm test`: 11 files, 34 tests passed
 - `pnpm build`: passed
 
 ## Catatan Scope
