@@ -129,6 +129,54 @@ keputusan arsitektural, hasilnya 2 prompt siap jalan:
   tensi ini, prompt berisi kotak checklist eksplisit sebelum Codex boleh
   kerjakan Bagian B).
 
+## 🔧 Gambar Kerja AI — upload PDF nyata ke TKG (2026-07-03, sesi lanjutan) — dikerjakan Claude, BELUM di-commit
+Owner minta perbaikan langsung (bukan sekadar prompt) untuk "upload gambar kerja
+langsung, AI yang membaca" (lihat `Downloads/perbaikan.txt` poin 1-2). Investigasi
+menemukan `services/document-intelligence` (commit `ed6f511`, 2026-07-03 pagi,
+**tidak tercatat di STATE.md/BRAIN_ALIGNMENT.md sebelumnya** — dokumen itu stale)
+SUDAH punya pipeline PyMuPDF nyata (baca teks vektor PDF asli, bukan vision-LLM,
+selaras brain-00 RULE-EXT-05 vektor-dulu) tapi **2 bug menghalangi**: (1) endpoint
+upload tidak menyimpan file sama sekali, (2) `build_tkg_from_text` menghasilkan
+JSON yang TIDAK selaras `TkgDocumentSchema` (Zod) — field `jenis`/`meta` hilang,
+`grid` tidak dipecah `bentang_x`/`bentang_y`, dll. Diperbaiki:
+- `upload_routes.py` beneran simpan file (dir lintas-platform via `tempfile.gettempdir()`).
+- `tkg/builder.py` ditulis ulang selaras skema Zod persis (+ dukungan "GRID Y:",
+  + pemetaan klasifikasi→`jenis`) — 4 test baru (pytest **9** total di service ini).
+- `drawing_routes.py`: `UPLOAD_DIR` lintas-platform, kirim `classification_confidence` asli.
+- Web: `lib/ai/document-intelligence-tkg.ts` (klien baru, validasi Zod sebelum dipakai)
+  + `TkgWorkspace` dapat opsi "Unggah PDF gambar kerja" (alternatif, bukan pengganti,
+  jalur teks tetap ada) → hasil TKG masuk pipeline validate/render/takeoff yang SAMA
+  (tidak ada logika baru di core-engine).
+- Bug lain ketemu & diperbaiki sekalian (di file yang sama): key React bentrok di
+  daftar Triage saat >1 elemen berbagi kode+work_type+rule_id (mis. beberapa kolom
+  K1) — ditambah `alamat`+index ke key.
+**Diverifikasi ujung-ke-ujung** (bukan cuma tsc/vitest hijau): PDF sintetis dari
+golden fixture → upload nyata → `/drawings/analyze` → `TkgDocumentSchema.safeParse`
+sukses → `/tkg/validate` (gate_passed) → `/tkg/takeoff` (6 item, semua needs_review
+dgn alasan jujur "tinggi kolom tidak ada") → UI browser menampilkan status+Triage
+benar, 0 error konsol setelah fix key.
+**JUJUR — batas nyata**: diuji juga dengan PDF gambar kerja ASLI milik owner
+(`GAMBAR KERJA PLHUT SURAKARTA.pdf`) — teks hasil PyMuPDF berupa fragmen tersebar
+("DENAH FOOTPLAT", "5000", "A", "PC1"...), TIDAK cocok grammar SK-07 (MVP) yang ada
+sekarang (baru kenal notasi terstruktur sederhana, bukan grammar brain-00 §2-§5
+penuh: leksikon prefiks, merge-run, rekonstruksi grid/tabel dari geometri). Jadi:
+pipeline SEKARANG genuinely bekerja & teruji, tapi PDF proyek nyata masih akan
+menghasilkan TKG hampir kosong (semua masuk `unclassified`) sampai grammar penuh
+dibangun (pekerjaan terpisah, besar — bukan sesi ini).
+**Belum di-commit** — sesuai instruksi owner, Claude tidak commit; Codex yang akan
+commit (branch `feat/ui-premium-redesign`, sama seperti batch perbaikan sebelumnya).
+File berubah: `apps/web/.env.example`, `apps/web/src/components/drawings/tkg-workspace.tsx`,
+`apps/web/src/lib/ai/document-intelligence-tkg.ts` (baru),
+`services/document-intelligence/app/api/{drawing_routes,upload_routes}.py`,
+`services/document-intelligence/app/tkg/builder.py`,
+`services/document-intelligence/tests/{test_tkg_builder.py,fixtures/golden_tkg_text_sheet.txt}`.
+**Catatan untuk `PAAX_CODEX_PROMPT_AI_MULTIMODAL_LAMPIRAN_2026-07-03.md` Bagian B**:
+sebagian premisnya sudah berubah — untuk PDF vektor, jalur deterministik (non
+vision-LLM) di atas sudah jalan & TIDAK menyentuh gerbang F0 sama sekali (murni
+baca teks PDF, bukan tebakan model). Vision-LLM (Bagian B asli) sekarang relevan
+HANYA untuk sheet raster murni (foto/scan tanpa teks vektor) — kasus yang lebih
+sempit dari yang dikira sebelumnya.
+
 ## Pembagian peran (2026-06-29)
 - **Claude** = planning + semua spek/prompt + **UI frontend** + review.
 - **Codex** = penyambungan teknis (lib/engine, fetch, state, route AI, backend, engine).

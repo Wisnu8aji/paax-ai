@@ -1,5 +1,13 @@
 # PROMPT CODEX — AI Multimodal: Lampiran Chat + (opsional) Vision Gambar Kerja (2026-07-03)
 
+> **UPDATE (sesi lanjutan 2026-07-03, lihat `docs/ai-map/STATE.md`):** untuk PDF
+> gambar kerja BERBASIS VEKTOR, sudah ada jalur deterministik (PyMuPDF, BUKAN
+> vision-LLM) yang berfungsi & tidak menyentuh gerbang F0 sama sekali — lihat
+> `apps/web/src/lib/ai/document-intelligence-tkg.ts` + `services/document-intelligence`.
+> Bagian B di bawah ini sekarang HANYA relevan untuk sheet RASTER murni (foto/scan
+> tanpa teks vektor sama sekali) — kasus yang jauh lebih sempit dari premis awal
+> prompt ini. Baca ulang sebelum menjalankan Bagian B.
+
 > ⚠️ **JANGAN JALANKAN sebelum owner mengisi kotak persetujuan Bagian B di
 > bawah.** Ini prompt TERPISAH dari `PAAX_CODEX_PROMPT_PERBAIKAN_UI_BATCH_2026-07-03.md`
 > (owner sengaja minta dipisah — "task terpisah tapi tetap pikirkan, saya
