@@ -5,6 +5,8 @@ import {
   ChevronDown,
   ChevronRight,
   Cloud,
+  Archive,
+  Filter,
   Folder,
   FolderPlus,
   ImagePlus,
@@ -12,6 +14,7 @@ import {
   Mail,
   MessageSquare,
   Paperclip,
+  Pin,
   Plus,
   Send,
   Sparkles,
@@ -31,6 +34,8 @@ import {
   listFolders,
   saveConversation,
   titleFromMessage,
+  toggleArchived,
+  togglePinned,
   type ChatConversation,
   type ChatFolder,
   type StoredChatMessage,
@@ -57,6 +62,14 @@ interface PendingAttachment {
   name: string;
   sizeLabel: string;
 }
+
+type FilterMode = 'all' | 'pinned' | 'archived';
+
+const filterLabels: Record<FilterMode, string> = {
+  all: 'Semua',
+  pinned: 'Pinned',
+  archived: 'Diarsipkan',
+};
 
 function nowLabel(): string {
   return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
@@ -110,6 +123,8 @@ export default function ProjectChatPage() {
   const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({});
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
+  const [filterMode, setFilterMode] = useState<FilterMode>('all');
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -122,6 +137,7 @@ export default function ProjectChatPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const plusRef = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   const active = useMemo(
     () => conversations.find((c) => c.id === activeId) ?? null,
@@ -172,6 +188,15 @@ export default function ProjectChatPage() {
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [plusOpen]);
+
+  useEffect(() => {
+    if (!filterOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [filterOpen]);
 
   function showConnectorNote(text: string) {
     setConnectorNote(text);
@@ -274,7 +299,13 @@ export default function ProjectChatPage() {
   }
 
   const engineOnline = status?.engine.online;
-  const looseConversations = conversations.filter((c) => !c.folderId || !folders.some((f) => f.id === c.folderId));
+  const filteredConversations = conversations.filter((c) => {
+    if (filterMode === 'archived') return c.archived;
+    if (c.archived) return false;
+    if (filterMode === 'pinned') return c.pinned;
+    return true;
+  });
+  const looseConversations = filteredConversations.filter((c) => !c.folderId || !folders.some((f) => f.id === c.folderId));
 
   const conversationRow = (c: ChatConversation, indent = false) => (
     <div
@@ -302,6 +333,30 @@ export default function ProjectChatPage() {
       <button
         onClick={(e) => {
           e.stopPropagation();
+          togglePinned(c.id);
+          refresh(activeId);
+        }}
+        aria-label={`${c.pinned ? 'Lepas pin' : 'Pin'} percakapan ${c.title}`}
+        title={c.pinned ? 'Lepas pin' : 'Pin percakapan'}
+        style={{ border: 'none', background: 'transparent', color: c.pinned ? 'var(--gold)' : 'var(--text3)', cursor: 'pointer', padding: 2, display: 'flex' }}
+      >
+        <Pin size={12} />
+      </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleArchived(c.id);
+          refresh(activeId);
+        }}
+        aria-label={`${c.archived ? 'Keluarkan dari arsip' : 'Arsipkan'} percakapan ${c.title}`}
+        title={c.archived ? 'Keluarkan dari arsip' : 'Arsipkan percakapan'}
+        style={{ border: 'none', background: 'transparent', color: c.archived ? 'var(--gold)' : 'var(--text3)', cursor: 'pointer', padding: 2, display: 'flex' }}
+      >
+        <Archive size={12} />
+      </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
           removeConversation(c.id);
         }}
         aria-label={`Hapus percakapan ${c.title}`}
@@ -324,6 +379,42 @@ export default function ProjectChatPage() {
           <span className="pax-display" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', flex: 1 }}>
             Percakapan
           </span>
+          <div ref={filterRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setFilterOpen((v) => !v)}
+              title="Filter percakapan"
+              aria-label="Filter percakapan"
+              aria-expanded={filterOpen}
+              className="pax-btn-ghost"
+              style={{ minWidth: 82, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', fontSize: 11.5, fontWeight: 700 }}
+            >
+              <Filter size={13} />
+              {filterLabels[filterMode]}
+            </button>
+            {filterOpen && (
+              <div
+                className="pax-glass pax-glass-edge pax-fade"
+                role="menu"
+                style={{ position: 'absolute', top: 34, right: 0, width: 132, borderRadius: 12, boxShadow: 'var(--shadow-modal)', padding: 5, zIndex: 20 }}
+              >
+                {(['all', 'pinned', 'archived'] as FilterMode[]).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setFilterMode(mode);
+                      setFilterOpen(false);
+                    }}
+                    className="pax-row-hover"
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', padding: '7px 9px', borderRadius: 8, border: 'none', background: mode === filterMode ? 'var(--side-active-bg)' : 'transparent', color: mode === filterMode ? 'var(--side-active-ink)' : 'var(--text)', fontSize: 12, fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
+                  >
+                    {filterLabels[mode]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setNewFolderOpen((v) => !v)}
             title="Buat Project Percakapan"
@@ -367,7 +458,7 @@ export default function ProjectChatPage() {
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '2px 8px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
           {folders.map((f) => {
-            const inFolder = conversations.filter((c) => c.folderId === f.id);
+            const inFolder = filteredConversations.filter((c) => c.folderId === f.id);
             const collapsed = collapsedFolders[f.id];
             return (
               <div key={f.id}>
@@ -416,14 +507,16 @@ export default function ProjectChatPage() {
 
           {looseConversations.length > 0 && folders.length > 0 && (
             <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text3)', padding: '10px 8px 4px' }}>
-              Lainnya
+              Chat
             </div>
           )}
           {looseConversations.map((c) => conversationRow(c))}
 
-          {conversations.length === 0 && (
+          {filteredConversations.length === 0 && (
             <div style={{ padding: '18px 10px', fontSize: 11.5, color: 'var(--text3)', lineHeight: 1.5 }}>
-              Belum ada riwayat. Mulai percakapan pertama — riwayat tersimpan otomatis di peramban Anda.
+              {conversations.length === 0
+                ? 'Belum ada riwayat. Mulai percakapan pertama - riwayat tersimpan otomatis di peramban Anda.'
+                : `Tidak ada percakapan untuk filter ${filterLabels[filterMode].toLowerCase()}.`}
             </div>
           )}
         </div>

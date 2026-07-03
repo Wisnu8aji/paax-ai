@@ -21,6 +21,8 @@ export interface ChatConversation {
   folderId: string | null;
   title: string;
   messages: StoredChatMessage[];
+  pinned: boolean;
+  archived: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -40,6 +42,22 @@ interface ChatHistoryState {
 const STORAGE_KEY = 'paax-chat-history-v1';
 const EMPTY: ChatHistoryState = { conversations: [], folders: [] };
 
+function normalizeConversation(raw: Partial<ChatConversation>): ChatConversation | null {
+  if (!raw.id || !raw.projectId) return null;
+  const now = new Date().toISOString();
+  return {
+    id: raw.id,
+    projectId: raw.projectId,
+    folderId: raw.folderId ?? null,
+    title: raw.title ?? 'Percakapan baru',
+    messages: Array.isArray(raw.messages) ? raw.messages : [],
+    pinned: raw.pinned ?? false,
+    archived: raw.archived ?? false,
+    createdAt: raw.createdAt ?? now,
+    updatedAt: raw.updatedAt ?? raw.createdAt ?? now,
+  };
+}
+
 function load(): ChatHistoryState {
   if (typeof window === 'undefined') return EMPTY;
   try {
@@ -47,7 +65,9 @@ function load(): ChatHistoryState {
     if (!raw) return EMPTY;
     const parsed = JSON.parse(raw) as Partial<ChatHistoryState>;
     return {
-      conversations: Array.isArray(parsed.conversations) ? parsed.conversations : [],
+      conversations: Array.isArray(parsed.conversations)
+        ? parsed.conversations.map((c) => normalizeConversation(c)).filter((c): c is ChatConversation => Boolean(c))
+        : [],
       folders: Array.isArray(parsed.folders) ? parsed.folders : [],
     };
   } catch {
@@ -88,6 +108,8 @@ export function createConversation(projectId: string, folderId: string | null = 
     folderId,
     title: 'Percakapan baru',
     messages: [],
+    pinned: false,
+    archived: false,
     createdAt: now,
     updatedAt: now,
   };
@@ -117,6 +139,24 @@ export function moveConversation(id: string, folderId: string | null): void {
   const conv = state.conversations.find((c) => c.id === id);
   if (!conv) return;
   conv.folderId = folderId;
+  conv.updatedAt = new Date().toISOString();
+  save(state);
+}
+
+export function togglePinned(id: string): void {
+  const state = load();
+  const conv = state.conversations.find((c) => c.id === id);
+  if (!conv) return;
+  conv.pinned = !conv.pinned;
+  conv.updatedAt = new Date().toISOString();
+  save(state);
+}
+
+export function toggleArchived(id: string): void {
+  const state = load();
+  const conv = state.conversations.find((c) => c.id === id);
+  if (!conv) return;
+  conv.archived = !conv.archived;
   conv.updatedAt = new Date().toISOString();
   save(state);
 }
