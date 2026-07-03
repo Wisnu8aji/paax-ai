@@ -17,11 +17,13 @@ import { getDb, getProjectBackend } from './project-repository';
  * Kuantitas/harga TIDAK disimpan di sini — dihitung engine via /tkg/takeoff.
  */
 
+export type TkgRecordSource = 'manual' | 'ai_proposal' | 'pipeline';
+
 export interface ProjectTkgRecord {
   projectId: string;
   tkg: TkgDocument | null;
-  /** "manual" | "ai_proposal" — usulan AI wajib direview sebelum dipakai. */
-  source: string;
+  /** "manual" | "ai_proposal" | "pipeline" — semua usulan mesin wajib direview. */
+  source: TkgRecordSource;
   reviewed: boolean;
   /** Cache render .tkg.txt terakhir dari engine (tampilan; bukan hasil hitung FE). */
   lastRenderedText: string | null;
@@ -47,10 +49,14 @@ export function emptyTkgRecord(projectId: string): ProjectTkgRecord {
 
 function normalize(projectId: string, raw: Partial<ProjectTkgRecord> | null): ProjectTkgRecord {
   if (!raw) return emptyTkgRecord(projectId);
+  const source: TkgRecordSource =
+    raw.source === 'ai_proposal' || raw.source === 'pipeline' || raw.source === 'manual'
+      ? raw.source
+      : 'manual';
   return {
     projectId,
     tkg: raw.tkg ?? null,
-    source: raw.source ?? 'manual',
+    source,
     reviewed: Boolean(raw.reviewed),
     lastRenderedText: raw.lastRenderedText ?? null,
     lastTakeoff: raw.lastTakeoff ?? null,
