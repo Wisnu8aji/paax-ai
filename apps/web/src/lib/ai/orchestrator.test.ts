@@ -5,6 +5,7 @@ import {
   ExtractedElementList,
   fallbackElements,
   geminiJson,
+  geminiMultimodal,
   geminiText,
   getExtractorProviderStatus,
 } from "./orchestrator";
@@ -84,5 +85,32 @@ describe("AI orchestrator", () => {
     await expect(geminiText("halo", "AQ.valid", fetchImpl as typeof fetch)).resolves.toBe(
       "Tentu, saya bisa ngobrol normal.",
     );
+  });
+
+  it("sends inlineData parts for multimodal Gemini chat", async () => {
+    let sentBody: unknown = null;
+    const fetchImpl = async (_url: string | URL | Request, init?: RequestInit) => {
+      sentBody = JSON.parse(String(init?.body));
+      return new Response(JSON.stringify({
+        candidates: [{ content: { parts: [{ text: "Gambar berisi denah struktur." }] } }],
+      }), { status: 200 });
+    };
+
+    await expect(geminiMultimodal(
+      "jelaskan lampiran",
+      [{ mimeType: "image/png", data: "BASE64" }],
+      "AQ.valid",
+      fetchImpl as typeof fetch,
+    )).resolves.toBe("Gambar berisi denah struktur.");
+
+    expect(sentBody).toEqual({
+      contents: [{
+        role: "user",
+        parts: [
+          { text: "jelaskan lampiran" },
+          { inlineData: { mimeType: "image/png", data: "BASE64" } },
+        ],
+      }],
+    });
   });
 });

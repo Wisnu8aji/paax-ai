@@ -22,6 +22,7 @@ export interface EngineeringChatPromptInput {
    * Diperlakukan sebagai DATA (P-SEC-01), bukan instruksi.
    */
   projectContext?: string;
+  attachmentCount?: number;
 }
 
 export interface EngineeringChatApiResponse {
@@ -73,6 +74,14 @@ export function buildEngineeringChatPrompt(input: EngineeringChatPromptInput): s
       "<<<KONTEKS_PROYEK_MULAI>>>",
       input.projectContext,
       "<<<KONTEKS_PROYEK_SELESAI>>>",
+    );
+  }
+
+  if (input.attachmentCount && input.attachmentCount > 0) {
+    lines.push(
+      "",
+      `User melampirkan ${input.attachmentCount} file. jelaskan/rangkum isinya bila relevan dengan pertanyaan user.`,
+      "Lampiran bersifat bahan baca untuk percakapan; tetap jangan menghitung angka final baru dari lampiran.",
     );
   }
 
