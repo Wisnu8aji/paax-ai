@@ -10,8 +10,6 @@ const STATIC_DASHBOARD_ROUTES = [
   '/gambar-kerja-ai',
   '/kolaborasi',
   '/laporan',
-  '/pengaturan',
-  '/rab-tester',
 ];
 
 const PROJECT_MODULE_SEGMENTS = ['', '/gambar-kerja', '/rab', '/schedule', '/chat', '/site-agent'];

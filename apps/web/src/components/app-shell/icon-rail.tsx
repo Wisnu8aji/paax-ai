@@ -1,9 +1,22 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { Bell, LayoutGrid, CreditCard, Settings, Sparkles } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Database, FileSpreadsheet, Files, Settings, Users } from 'lucide-react';
 import { useShell } from './shell-context';
+import { PaaxMark, PaaxWordmark } from '@/components/brand/paax-logo';
 import { currentUser } from '@/lib/mock/workspace';
+
+/**
+ * Rail hitam — SATU-SATUNYA rumah untuk tool global workspace + gerbang
+ * Pengaturan (gear) + Akun (avatar). Item nav berlabel hidup di NavPanel;
+ * tidak ada menu yang muncul dua kali (konsolidasi 2026-07-03).
+ */
+const GLOBAL_TOOLS = [
+  { href: '/files', label: 'File & Dokumen', icon: Files },
+  { href: '/database-ahsp', label: 'Database AHSP', icon: Database },
+  { href: '/laporan', label: 'Laporan & Export', icon: FileSpreadsheet },
+  { href: '/kolaborasi', label: 'Kolaborasi', icon: Users },
+];
 
 const railBtn: React.CSSProperties = {
   width: 40,
@@ -14,13 +27,14 @@ const railBtn: React.CSSProperties = {
   justifyContent: 'center',
   cursor: 'pointer',
   transition: 'all .15s',
-  color: 'rgba(255,255,255,0.85)',
+  color: 'rgba(255,255,255,0.82)',
   background: 'transparent',
   border: 'none',
 };
 
 export function IconRail() {
   const router = useRouter();
+  const pathname = usePathname();
   const { openSettings } = useShell();
 
   return (
@@ -42,7 +56,7 @@ export function IconRail() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 10,
+          gap: 8,
           padding: '12px 8px',
           background: 'var(--rail-bg)',
           borderRadius: 22,
@@ -54,17 +68,62 @@ export function IconRail() {
         <button
           onClick={() => router.push('/dashboard')}
           title="PAAX — Dashboard"
-          aria-label="Dashboard"
+          aria-label="PAAX — ke Dashboard"
           style={{
             ...railBtn,
             width: 38,
             height: 38,
-            background: 'rgba(255,255,255,0.08)',
-            marginBottom: 6,
+            background: 'rgba(255,255,255,0.10)',
+            color: '#fff',
+            marginBottom: 4,
           }}
         >
-          <Sparkles size={19} strokeWidth={1.5} color="#fff" />
+          <PaaxMark size={17} />
         </button>
+
+        <span
+          aria-hidden="true"
+          style={{ width: 26, height: 1, background: 'rgba(255,255,255,0.14)', margin: '2px 0 4px' }}
+        />
+
+        {GLOBAL_TOOLS.map((tool) => {
+          const Icon = tool.icon;
+          const active = pathname === tool.href || pathname.startsWith(tool.href + '/');
+          return (
+            <button
+              key={tool.href}
+              className="pax-rail-item"
+              onClick={() => router.push(tool.href)}
+              title={tool.label}
+              aria-label={tool.label}
+              aria-current={active ? 'page' : undefined}
+              style={{
+                ...railBtn,
+                background: active ? 'rgba(255,255,255,0.14)' : 'transparent',
+                color: active ? '#fff' : 'rgba(255,255,255,0.72)',
+              }}
+            >
+              <Icon size={19} strokeWidth={1.5} />
+            </button>
+          );
+        })}
+
+        <div style={{ flex: 1 }} />
+
+        <span
+          aria-hidden="true"
+          style={{
+            writingMode: 'vertical-rl',
+            transform: 'rotate(180deg)',
+            color: 'rgba(255,255,255,0.30)',
+            padding: '4px 0 6px',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <PaaxWordmark height={11} />
+        </span>
+
         <button
           className="pax-rail-item"
           style={railBtn}
@@ -74,61 +133,8 @@ export function IconRail() {
         >
           <Settings size={19} strokeWidth={1.5} />
         </button>
-        <button
-          className="pax-rail-item"
-          style={{ ...railBtn, position: 'relative' }}
-          title="Notifikasi"
-          aria-label="Notifikasi"
-          onClick={() => openSettings('notifikasi')}
-        >
-          <Bell size={19} strokeWidth={1.5} />
-          <span
-            style={{
-              position: 'absolute',
-              top: 7,
-              right: 9,
-              width: 7,
-              height: 7,
-              borderRadius: '50%',
-              background: '#fff',
-              border: '1.5px solid var(--rail-bg)',
-            }}
-          />
-        </button>
-        <button
-          className="pax-rail-item"
-          style={railBtn}
-          title="Aplikasi Terhubung"
-          aria-label="Aplikasi Terhubung"
-          onClick={() => openSettings('aplikasi')}
-        >
-          <LayoutGrid size={19} strokeWidth={1.5} />
-        </button>
-        <button
-          className="pax-rail-item"
-          style={railBtn}
-          title="Langganan & Tagihan"
-          aria-label="Langganan & Tagihan"
-          onClick={() => openSettings('tagihan')}
-        >
-          <CreditCard size={19} strokeWidth={1.5} />
-        </button>
-        <div style={{ flex: 1 }} />
-        <div
-          style={{
-            writingMode: 'vertical-rl',
-            transform: 'rotate(180deg)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 8.5,
-            letterSpacing: '0.22em',
-            color: 'rgba(255,255,255,0.32)',
-            textTransform: 'uppercase',
-            padding: '6px 0',
-          }}
-        >
-          PAAX · WORKSPACE
-        </div>
       </div>
+
       <button
         onClick={() => openSettings('akun')}
         title="Akun Saya"

@@ -331,11 +331,12 @@
 .animate-fade-in-delay-6 { animation-delay: 0.3s; opacity: 0; }
 
 /* ============================================================================
-   PAAX Workspace Redesign — design tokens (ported from PAAX Workspace.dc.html)
+   PAAX Workspace Redesign — design tokens (brand sheet PAAX: warm grey + bronze)
    These are a SEPARATE token namespace (--bg/--surface/--text/--emboss/...) from
    the legacy --color-paax-* tokens above. The legacy tokens + component classes
-   are kept intact so the protected /rab-tester page keeps working unchanged.
-   Theme is selected via data-theme on the workspace shell wrapper (default light).
+   are kept intact because drawing-intelligence-workspace.tsx still uses them.
+   Theme is selected via data-theme on the workspace shell wrapper (default grey).
+   --gold* = aksen premium bronze dari brand sheet; --chart-N = palet seri chart.
    ========================================================================== */
 :root {
   --bg:#ECEBE6; --side-bg:#FFFFFF; --side-border:#EFEDE7; --side-card:#F6F5F1;
@@ -343,13 +344,15 @@
   --brand-box:#1A1A18; --brand-ink:#FFFFFF; --elev:#FFFFFF; --surface:#FBFAF7; --surface2:#F4F3EF;
   --border:#E4E2DB; --border-soft:#EFEDE7; --border-card:#EAE8E1;
   --text:#1A1A18; --text2:#8A877E; --text3:#A8A59C; --accent:#1A1A18; --accent-ink:#FFFFFF; --accent-hover:#2C2B27;
+  --gold:#8A6D3F; --gold-soft:color-mix(in srgb,#8A6D3F 14%,transparent); --gold-bd:color-mix(in srgb,#8A6D3F 30%,transparent);
+  --chart-1:#8A6D3F; --chart-2:#1A1A18; --chart-3:#B9B2A6; --chart-4:#C9A66B; --chart-5:#6F6B62;
   --ok-fg:var(--text); --ok-bg:color-mix(in srgb,var(--text) 6%,transparent); --ok-bd:color-mix(in srgb,var(--text) 13%,transparent); --ok-dot:#6F6B62;
   --warn-fg:#8A6D3F; --warn-bg:color-mix(in srgb,#8A6D3F 10%,transparent); --warn-bd:color-mix(in srgb,#8A6D3F 24%,transparent);
   --dng-fg:var(--text); --dng-bg:color-mix(in srgb,var(--text) 7%,transparent); --dng-bd:color-mix(in srgb,var(--text) 15%,transparent); --dng-dot:var(--text);
   --emboss:-5px -5px 13px rgba(255,255,255,0.9), 6px 6px 16px rgba(20,20,18,0.10);
   --emboss-sm:-3px -3px 8px rgba(255,255,255,0.8), 4px 4px 10px rgba(20,20,18,0.08);
   --rail-bg:#1A1A18; --rail-ink:#FFFFFF;
-  --glass-bg:rgba(255,255,255,0.55); --glass-bd:rgba(255,255,255,0.65);
+  --glass-bg:rgba(255,255,255,0.62); --glass-bd:rgba(255,255,255,0.72);
   --shadow-card:0 1px 3px rgba(20,20,18,0.05); --shadow-hover:0 6px 18px rgba(20,20,18,0.09);
   --shadow-modal:0 24px 60px rgba(20,20,18,0.28);
   --font-sans:var(--font-inter), 'Inter', system-ui, sans-serif;
@@ -362,37 +365,77 @@
   --brand-box:#0E0E12; --brand-ink:#FFFFFF; --elev:#26262C; --surface:#1F1F25; --surface2:#2A2A31;
   --border:#34343B; --border-soft:#2C2C33; --border-card:#33333A;
   --text:#F0F0F2; --text2:#A6A6B0; --text3:#76767F; --accent:#F0F0F2; --accent-ink:#1A1A18; --accent-hover:#E2E2E6;
+  --gold:#C9A66B; --gold-soft:rgba(201,166,107,0.16); --gold-bd:rgba(201,166,107,0.34);
+  --chart-1:#C9A66B; --chart-2:#F0F0F2; --chart-3:#5A5A64; --chart-4:#8C7A64; --chart-5:#A6A6B0;
   --ok-fg:var(--text); --ok-bg:rgba(255,255,255,0.06); --ok-bd:rgba(255,255,255,0.12); --ok-dot:#B8B4AC;
   --warn-fg:#C9A66B; --warn-bg:rgba(201,166,107,0.14); --warn-bd:rgba(201,166,107,0.28);
   --dng-fg:var(--text); --dng-bg:rgba(255,255,255,0.07); --dng-bd:rgba(255,255,255,0.14); --dng-dot:#E6E4E0;
   --emboss:-5px -5px 13px rgba(255,255,255,0.03), 6px 6px 18px rgba(0,0,0,0.55);
   --emboss-sm:-3px -3px 8px rgba(255,255,255,0.025), 4px 4px 12px rgba(0,0,0,0.5);
   --rail-bg:#0E0E12; --rail-ink:#FFFFFF;
-  --glass-bg:rgba(38,38,44,0.6); --glass-bd:rgba(255,255,255,0.08);
+  --glass-bg:rgba(32,32,38,0.66); --glass-bd:rgba(255,255,255,0.10);
   --shadow-card:0 1px 3px rgba(0,0,0,0.4); --shadow-hover:0 6px 18px rgba(0,0,0,0.5);
   --shadow-modal:0 24px 60px rgba(0,0,0,0.6);
 }
+/* Medium grey — tema utama workspace, meniru referensi glassmorphism:
+   latar abu medium, panel kaca putih translusen, rail hitam pekat. */
 [data-theme="grey"] {
-  --bg:#5C5C5E; --side-bg:#2A2A2E; --side-border:#3A3A40; --side-card:#34343A;
-  --side-text:#E4E4E2; --side-muted:#A0A0A4; --side-active-bg:#3C3C44; --side-active-ink:#FFFFFF;
-  --brand-box:#1A1A18; --brand-ink:#FFFFFF; --elev:#ECECEA; --surface:#E3E3E0; --surface2:#D8D8D4;
-  --border:#CFCFCD; --border-soft:#D8D8D4; --border-card:#D2D2CF;
-  --text:#1F1F20; --text2:#5C5C5E; --text3:#86868A; --accent:#1A1A18; --accent-ink:#FFFFFF; --accent-hover:#2C2C2A;
+  --bg:#A6A6AA; --side-bg:rgba(255,255,255,0.55); --side-border:rgba(255,255,255,0.55); --side-card:rgba(255,255,255,0.5);
+  --side-text:#3C3B38; --side-muted:#807D76; --side-active-bg:rgba(255,255,255,0.85); --side-active-ink:#1A1A18;
+  --brand-box:#1A1A18; --brand-ink:#FFFFFF; --elev:#F4F3F0; --surface:#ECEBE7; --surface2:#E2E1DC;
+  --border:#D4D3CE; --border-soft:#DFDED9; --border-card:#D8D7D2;
+  --text:#1C1C1A; --text2:#5F5E5A; --text3:#8B8984; --accent:#1A1A18; --accent-ink:#FFFFFF; --accent-hover:#2C2C2A;
+  --gold:#7A6238; --gold-soft:color-mix(in srgb,#7A6238 14%,transparent); --gold-bd:color-mix(in srgb,#7A6238 30%,transparent);
+  --chart-1:#7A6238; --chart-2:#1A1A18; --chart-3:#8F8D86; --chart-4:#B08F58; --chart-5:#5F5E5A;
   --ok-fg:var(--text); --ok-bg:color-mix(in srgb,var(--text) 7%,transparent); --ok-bd:color-mix(in srgb,var(--text) 14%,transparent); --ok-dot:#5C5C5A;
   --warn-fg:#7A6238; --warn-bg:color-mix(in srgb,#7A6238 12%,transparent); --warn-bd:color-mix(in srgb,#7A6238 26%,transparent);
   --dng-fg:var(--text); --dng-bg:color-mix(in srgb,var(--text) 8%,transparent); --dng-bd:color-mix(in srgb,var(--text) 15%,transparent); --dng-dot:var(--text);
-  --emboss:-5px -5px 13px rgba(255,255,255,0.5), 6px 6px 16px rgba(20,20,18,0.18);
-  --emboss-sm:-3px -3px 8px rgba(255,255,255,0.45), 4px 4px 10px rgba(20,20,18,0.16);
-  --rail-bg:#1A1A18; --rail-ink:#FFFFFF;
-  --glass-bg:rgba(236,236,234,0.6); --glass-bd:rgba(255,255,255,0.5);
-  --shadow-card:0 1px 3px rgba(20,20,18,0.12); --shadow-hover:0 6px 18px rgba(20,20,18,0.22);
-  --shadow-modal:0 24px 60px rgba(20,20,18,0.4);
+  --emboss:-5px -5px 13px rgba(255,255,255,0.45), 6px 6px 16px rgba(20,20,18,0.20);
+  --emboss-sm:-3px -3px 8px rgba(255,255,255,0.4), 4px 4px 10px rgba(20,20,18,0.18);
+  --rail-bg:#1E1E20; --rail-ink:#FFFFFF;
+  --glass-bg:rgba(255,255,255,0.55); --glass-bd:rgba(255,255,255,0.62);
+  --shadow-card:0 1px 3px rgba(20,20,18,0.10); --shadow-hover:0 8px 22px rgba(20,20,18,0.20);
+  --shadow-modal:0 24px 60px rgba(20,20,18,0.42);
 }
 
 /* Workspace shell helpers (redesign only) */
-.pax-mono { font-family: var(--font-mono); }
+.pax-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .pax-display { font-family: var(--font-display); letter-spacing: -0.01em; }
 .pax-scope h1, .pax-scope h2, .pax-scope h3 { font-family: var(--font-display); }
+.pax-scope table, .pax-scope input[type="number"] { font-variant-numeric: tabular-nums; }
+
+/* Glassmorphism (Liquid Glass) — panel/kartu kaca di atas latar medium grey.
+   pax-glass-edge menambah border gradasi tipis (kilau kaca + serat bronze). */
+.pax-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--glass-bd);
+}
+.pax-glass-edge { position: relative; }
+.pax-glass-edge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0.08) 40%,
+    transparent 60%,
+    color-mix(in srgb, var(--gold) 30%, transparent)
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+/* Status "Thinking..." Engineering Chat — kedip perlahan ala Claude */
+.pax-thinking {
+  animation: paxpulse 1.8s ease-in-out infinite;
+}
 .pax-scope :is(button, a, input, select, textarea, [role="switch"], [role="tab"]):focus-visible {
   outline: 2px solid color-mix(in srgb, var(--text) 55%, transparent);
   outline-offset: 2px;

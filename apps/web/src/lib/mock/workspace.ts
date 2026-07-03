@@ -2,8 +2,8 @@
  * PAAX Workspace — presentational mock data for the redesigned UI.
  *
  * IMPORTANT: This is placeholder ("data contoh") content for the visual redesign
- * only. None of these numbers are computed by the deterministic engine. The real,
- * auditable RAB/HSP/Kurva-S path remains at /rab-tester (services/core-engine).
+ * only. None of these numbers are computed by the deterministic engine — the
+ * real, auditable RAB/HSP/Kurva-S path is services/core-engine (Lapis 2B).
  * Do not treat any value here as an engine result.
  */
 

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { PanelLeft, Search, Bell } from 'lucide-react';
 import { useShell } from './shell-context';
-import { currentUser } from '@/lib/mock/workspace';
 
 export default function Topbar() {
   const { toggleNav, openSettings } = useShell();
@@ -11,12 +10,11 @@ export default function Topbar() {
 
   return (
     <header
+      className="pax-glass pax-glass-edge"
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: 12,
-        background: 'var(--elev)',
-        border: '1px solid var(--border)',
         borderRadius: 16,
         padding: '11px 16px',
         boxShadow: 'var(--shadow-card)',
@@ -138,28 +136,6 @@ export default function Topbar() {
         >
           5
         </span>
-      </button>
-
-      <button
-        onClick={() => openSettings('akun')}
-        aria-label="Akun Saya"
-        style={{
-          width: 38,
-          height: 38,
-          borderRadius: 11,
-          background: 'var(--brand-box)',
-          color: 'var(--brand-ink)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontWeight: 800,
-          fontSize: 13,
-          boxShadow: 'var(--emboss-sm)',
-          cursor: 'pointer',
-          border: 'none',
-        }}
-      >
-        {currentUser.initials}
       </button>
     </header>
   );

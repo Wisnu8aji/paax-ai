@@ -1,6 +1,6 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-02**. File ini SATU-SATUNYA tempat status berjalan.
+> Update terakhir: **2026-07-03**. File ini SATU-SATUNYA tempat status berjalan.
 > Selesai satu fase → perbarui di sini (jangan sebar ke banyak file).
 
 ## Versi
@@ -72,15 +72,35 @@ dikerjakan sekarang karena murni deterministik & tidak menyentuh CV/vision.
   Brain v4.1 menguatkan ini via gerbang F0 (data grounding wajib sebelum
   F2/TKG) — bukan alasan untuk mulai lebih awal.
 
-## 🎨 UI Overhaul (2026-07-02) — terverifikasi, menunggu commit Codex
-Font workspace Hanken→**Inter** (body) + **Outfit** (display); tema default
-**dark**; **SettingsDialog** terpusat 2 kolom (7 tab: Umum/Notifikasi/
-Personalisasi/Aplikasi/Tagihan/Penyimpanan/Akun, 6 toggle notifikasi, prefs
-lokal) menggantikan drawer notif/apps/billing/account; komponen `ui/switch.tsx`
-baru; rail ikon tipis + gear. Verifikasi: tsc OK · vitest 25 · build sukses ·
-uji visual browser. Murni presentasi — tidak ada angka dihitung di frontend.
-Prompt commit: `docs/prompts/PAAX_CODEX_PROMPT_UI_OVERHAUL.md` (branch
-`feat/ui-workspace-premium`, draft PR base `docs/brain-v4.1-alignment`).
+## 🎨 UI Premium Redesign — Medium Grey Glass (2026-07-03) — terverifikasi, menunggu commit Codex
+Rombak besar sesuai spek owner (`G:\Design\prompt\PAAX_PLAN_SESI_DESAIN_PREMIUM_2026-07-03.txt`):
+- **Tema default Medium Grey** (#A6A6AA) + token **gold/bronze** & palet
+  `--chart-1..5` dari brand sheet; light/dark tetap ada, ganti via
+  Pengaturan → Personalisasi (swatch "Medium Grey").
+- **Glassmorphism** (`.pax-glass` + border gradasi `.pax-glass-edge`):
+  nav panel, topbar, modal, drawer, settings dialog, KPI card, dropdown chat.
+- **Logo/wordmark PAAX SVG** (`components/brand/paax-logo.tsx`) — rail & panel.
+- **Konsolidasi nav (nol menu ganda)**: rail hitam = File/AHSP/Laporan/
+  Kolaborasi + gear + akun; panel kaca = Workspace + Modul Proyek + credits.
+  `sidebar.tsx` legacy (dead code) DIHAPUS; **Uji RAB dihapus** (halaman +
+  menu); `/pengaturan` → redirect + buka dialog terpusat.
+- **Dashboard bisnis**: 4 KPI glass + donut status + bar progres + kolom nilai
+  RAB + ring health + warning (`components/charts/dashboard-charts.tsx`,
+  display-only, komentar Aturan Emas). `formatRupiahCompact` di lib/format.
+- **Engineering Chat premium**: riwayat + "Project Percakapan"
+  (`lib/chat/chat-history.ts`, localStorage), tombol **+** (GDrive/Gmail
+  "segera" + Tambah file/foto), chip lampiran (belum dikirim ke AI — jujur),
+  Thinking…/Thinking more…/Thinking almost done… berkedip (`.pax-thinking`).
+- Tipografi: tabular-nums untuk semua angka; kurva S recolor token bronze.
+- **Restyle drawing-intelligence-workspace.tsx**: 43 titik kelas legacy
+  (glass-card/btn-*/badge-*/text-paax-*/input-field/tabel) di-port ke
+  Card/Button/StatusPill + token gold; halaman /gambar-kerja-ai &
+  /proyek/:id/gambar-kerja diverifikasi nol kelas legacy.
+Verifikasi: tsc OK · vitest **30** · build sukses (route /rab-tester hilang) ·
+uji interaktif browser (tema, dialog, chat kirim+riwayat, menu +, redirect,
+halaman gambar-kerja render TKG workspace + tabel kandidat).
+Prompt commit: `docs/prompts/PAAX_CODEX_PROMPT_UI_PREMIUM_REDESIGN.md`
+(branch `feat/ui-premium-redesign` dari `main`, draft PR base `main`).
 
 ## Pembagian peran (2026-06-29)
 - **Claude** = planning + semua spek/prompt + **UI frontend** + review.
