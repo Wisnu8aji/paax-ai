@@ -11,17 +11,18 @@
  * render, kuantitas) datang dari core-engine. AI hanya menyalin ke struktur.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FileText, Sparkles, CheckCircle2, AlertTriangle, Calculator, Send, RefreshCw } from 'lucide-react';
+import { FileText, Sparkles, CheckCircle2, AlertTriangle, Calculator, Send, RefreshCw, Upload, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
 
 import { TkgDocumentSchema, type TkgDocument, type TkgValidationResult, type TakeoffResult, type TakeoffParams } from '@paax/schemas';
 import { Card, Button, StatusPill } from '@/components/ui';
+import { DocumentIntelligenceClient, type TkgPerceptionResult, type TkgPerceptionUnclassified, type TkgPerceptionWarning } from '@/lib/document-intelligence-client';
 import { renderTkg, takeoffTkg, validateTkg } from '@/lib/engine';
-import { tkgRepository, emptyTkgRecord, type ProjectTkgRecord } from '@/lib/projects/tkg-repository';
+import { tkgRepository, emptyTkgRecord, type ProjectTkgRecord, type TkgRecordSource } from '@/lib/projects/tkg-repository';
 import { rabRepository, emptyRabLine } from '@/lib/projects/rab-repository';
 import { TriagePanel, type TriageItemView } from '@/components/review/triage-panel';
 import { formatTkgBbsNumber, hasTkgBbs } from './tkg-bbs-format';
 
-type Tab = 'sumber' | 'transkrip' | 'skrip' | 'takeoff';
+type Tab = 'persepsi' | 'sumber' | 'transkrip' | 'skrip' | 'takeoff';
 
 const S = {
   label: { fontSize: 11, fontWeight: 700 as const, color: 'var(--text3)', textTransform: 'uppercase' as const, letterSpacing: 0.4 },
@@ -30,9 +31,42 @@ const S = {
   td: { padding: '6px 8px', fontSize: 12, color: 'var(--text)', borderBottom: '1px solid var(--border)' },
 };
 
+function sourceLabel(source: TkgRecordSource): string {
+  if (source === 'pipeline') return 'PIPELINE';
+  if (source === 'ai_proposal') return 'USULAN AI';
+  return 'MANUAL';
+}
+
+function formatPercent(value: number): string {
+  return `${Math.round(value * 100)}%`;
+}
+
+function formatBBoxValue(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+function formatLocator(item: { page?: number; bbox?: number[] }): string | null {
+  if (!item.page || !item.bbox?.length) return null;
+  return `(hal. ${item.page}, bbox ${item.bbox.map(formatBBoxValue).join(', ')})`;
+}
+
+function groupWarnings(warnings: TkgPerceptionWarning[]): Array<{ code: string; items: TkgPerceptionWarning[] }> {
+  const groups = new Map<string, TkgPerceptionWarning[]>();
+  for (const warning of warnings) {
+    const list = groups.get(warning.code) ?? [];
+    list.push(warning);
+    groups.set(warning.code, list);
+  }
+  return Array.from(groups, ([code, items]) => ({ code, items }));
+}
+
 export function TkgWorkspace({ projectId }: { projectId: string }) {
   const [record, setRecord] = useState<ProjectTkgRecord>(() => emptyTkgRecord(projectId));
-  const [tab, setTab] = useState<Tab>('sumber');
+  const [tab, setTab] = useState<Tab>('persepsi');
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [perception, setPerception] = useState<TkgPerceptionResult | null>(null);
+  const [warningGroupOpen, setWarningGroupOpen] = useState<Record<string, boolean>>({});
+  const [unclassifiedOpen, setUnclassifiedOpen] = useState(false);
   const [sourceText, setSourceText] = useState('');
   const [manualJson, setManualJson] = useState('');
   const [tinggiLantai, setTinggiLantai] = useState<string>('');
@@ -71,7 +105,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     return Object.keys(p).length ? p : undefined;
   }, [tinggiLantai, nLd, lStock, reuseForm]);
 
-  const saveTkg = useCallback(async (tkg: TkgDocument, source: string) => {
+  const saveTkg = useCallback(async (tkg: TkgDocument, source: TkgRecordSource) => {
     const next = await tkgRepository.save({ ...record, projectId, tkg, source, reviewed: false });
     setRecord(next);
     setValidation(null);
@@ -79,6 +113,39 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     setTakeoff(null);
     setTab('transkrip');
   }, [projectId, record]);
+
+  const runPerceive = useCallback(async () => {
+    if (!pdfFile) {
+      setError('Pilih PDF gambar kerja dulu.');
+      return;
+    }
+    setBusy('perceive'); setError(null); setInfo(null);
+    try {
+      const result = await DocumentIntelligenceClient.perceiveTkg(pdfFile, projectId);
+      setPerception(result);
+      setWarningGroupOpen({});
+      setUnclassifiedOpen(false);
+      setInfo('Hasil persepsi siap direview. Periksa gerbang, warning, dan unclassified sebelum dipakai sebagai transkrip.');
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : 'Persepsi PDF gagal.';
+      setError(`${detail} Gunakan tab Sumber untuk jalur AI-teks atau fallback JSON manual.`);
+    } finally { setBusy(null); }
+  }, [pdfFile, projectId]);
+
+  const usePerceivedTkg = useCallback(async () => {
+    if (!perception) return;
+    await saveTkg(perception.tkg, 'pipeline');
+    setInfo('TKG dari pipeline persepsi tersimpan sebagai transkrip. Tetap tandai review setelah diverifikasi manusia.');
+  }, [perception, saveTkg]);
+
+  const discardPerception = useCallback(() => {
+    setPdfFile(null);
+    setPerception(null);
+    setWarningGroupOpen({});
+    setUnclassifiedOpen(false);
+    setError(null);
+    setInfo('Hasil persepsi dibuang. Unggah PDF lagi atau lanjut lewat tab Sumber.');
+  }, []);
 
   const runAiExtract = useCallback(async () => {
     if (!sourceText.trim()) { setError('Isi dulu teks/deskripsi gambar.'); return; }
@@ -175,8 +242,30 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     setRecord(next);
   }, [record]);
 
+  const perceptionWarnings = useMemo<TkgPerceptionWarning[]>(() => {
+    if (!perception) return [];
+    if (perception.warnings?.length) return perception.warnings;
+    return perception.validation.issues
+      .filter((issue) => issue.severity === 'warning')
+      .map((issue) => ({ code: issue.code, message: issue.message }));
+  }, [perception]);
+
+  const perceptionUnclassified = useMemo<TkgPerceptionUnclassified[]>(() => {
+    if (!perception) return [];
+    if (perception.unclassified?.length) return perception.unclassified;
+    return perception.tkg.sheets.flatMap((sheet) => sheet.unclassified.map((item) => ({
+      raw: item.raw,
+      alasan: item.alasan,
+    })));
+  }, [perception]);
+
+  const warningGroups = useMemo(() => groupWarnings(perceptionWarnings), [perceptionWarnings]);
+  const visibleUnclassified = unclassifiedOpen ? perceptionUnclassified : perceptionUnclassified.slice(0, 10);
+  const failedGateChecks = perception?.gerbang.checks.filter((check) => !check.passed).length ?? 0;
+
   const tkg = record.tkg;
   const tabs: Array<{ id: Tab; label: string }> = [
+    { id: 'persepsi', label: '0 · Persepsi (PDF)' },
     { id: 'sumber', label: '1 · Sumber' },
     { id: 'transkrip', label: '2 · Transkrip (TKG)' },
     { id: 'skrip', label: '3 · Skrip .tkg.txt' },
@@ -204,7 +293,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
           <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Transkrip Kanonik Gambar (TKG)</span>
           {tkg && (
             <StatusPill tone={record.reviewed ? 'ok' : 'warn'}>
-              {record.source === 'ai_proposal' ? 'USULAN AI' : 'MANUAL'}{record.reviewed ? ' · DIREVIEW' : ' · BELUM DIREVIEW'}
+              {sourceLabel(record.source)}{record.reviewed ? ' · DIREVIEW' : ' · BELUM DIREVIEW'}
             </StatusPill>
           )}
         </div>
@@ -222,8 +311,8 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
       </div>
 
       {error && (
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: 10, borderRadius: 10, background: 'color-mix(in srgb, crimson 8%, transparent)', border: '1px solid color-mix(in srgb, crimson 30%, transparent)', marginBottom: 10 }}>
-          <AlertTriangle size={14} color="crimson" style={{ marginTop: 1 }} />
+        <div role="alert" style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: 10, borderRadius: 10, background: 'color-mix(in srgb, var(--dng-fg) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--dng-fg) 30%, transparent)', marginBottom: 10 }}>
+          <AlertTriangle size={14} color="var(--dng-fg)" style={{ marginTop: 1 }} />
           <span style={{ fontSize: 12, color: 'var(--text)' }}>{error}</span>
         </div>
       )}
@@ -231,6 +320,162 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: 10, borderRadius: 10, background: 'var(--surface2)', border: '1px solid var(--border)', marginBottom: 10 }}>
           <CheckCircle2 size={14} color="var(--text2)" style={{ marginTop: 1 }} />
           <span style={{ fontSize: 12, color: 'var(--text2)' }}>{info}</span>
+        </div>
+      )}
+
+      {tab === 'persepsi' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 10, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)' }}>
+            <div>
+              <label htmlFor="tkg-perception-pdf" style={S.label}>Unggah PDF gambar kerja</label>
+              <input
+                id="tkg-perception-pdf"
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
+                style={{ ...S.mono, display: 'block', width: '100%', marginTop: 6, padding: 10, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)' }}
+              />
+            </div>
+            {!perception && (
+              <p style={{ margin: 0, fontSize: 12.5, color: 'var(--text3)' }}>
+                Belum ada hasil persepsi — unggah PDF gambar kerja.
+              </p>
+            )}
+            {pdfFile && (
+              <div className="pax-mono" style={{ fontSize: 11.5, color: 'var(--text2)' }}>
+                File dipilih: {pdfFile.name}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <Button onClick={runPerceive} disabled={busy !== null || !pdfFile}>
+                {busy === 'perceive' ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                {busy === 'perceive' ? 'Memproses persepsi…' : 'Jalankan persepsi'}
+              </Button>
+              <Button variant="secondary" onClick={() => setTab('sumber')} disabled={busy !== null}>
+                Pakai tab Sumber
+              </Button>
+            </div>
+          </div>
+
+          {perception && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: 10, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)' }}>
+                <StatusPill tone={perception.gerbang.status === 'lolos' ? 'ok' : 'warn'}>
+                  {perception.gerbang.status === 'lolos' ? 'GERBANG-2 LOLOS' : 'DRAFT'}
+                </StatusPill>
+                <span style={{ fontSize: 12.5, color: 'var(--text2)' }}>
+                  {perception.gerbang.status === 'lolos'
+                    ? 'Semua pemeriksaan gerbang lolos.'
+                    : `DRAFT — ${failedGateChecks} pemeriksaan belum lolos.`}
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
+                {[
+                  ['Cakupan', formatPercent(perception.metrics.cakupan)],
+                  ['Grammar-pass', formatPercent(perception.metrics.grammar_pass_rate)],
+                  ['Unclassified', String(perception.metrics.n_unclassified)],
+                  ['Warning', String(perception.metrics.n_warning)],
+                ].map(([label, value]) => (
+                  <div key={label} style={{ padding: 10, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)' }}>
+                    <div className="pax-mono" style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>{value}</div>
+                    <div style={{ ...S.label, marginTop: 2 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ padding: 10, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)' }}>
+                <div style={{ ...S.label, marginBottom: 6 }}>Pemeriksaan gerbang</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {perception.gerbang.checks.map((check) => (
+                    <div key={check.code} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'var(--text2)' }}>
+                      {check.passed ? <CheckCircle2 size={14} color="var(--ok-fg)" /> : <AlertTriangle size={14} color="var(--warn-fg)" />}
+                      <span><span className="pax-mono">[{check.code}]</span> {check.label} — {check.passed ? 'lolos' : 'belum lolos'}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ padding: 10, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)' }}>
+                <div style={{ ...S.label, marginBottom: 6 }}>Warnings grouped by code</div>
+                {warningGroups.length === 0 ? (
+                  <div style={{ fontSize: 12, color: 'var(--text3)' }}>Tidak ada warning dari pipeline.</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {warningGroups.map((group) => {
+                      const open = Boolean(warningGroupOpen[group.code]);
+                      return (
+                        <div key={group.code} style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                          <button
+                            type="button"
+                            onClick={() => setWarningGroupOpen((prev) => ({ ...prev, [group.code]: !open }))}
+                            aria-expanded={open}
+                            style={{ width: '100%', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px', background: 'var(--surface2)', color: 'var(--text)', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                          >
+                            <span style={{ fontSize: 12, fontWeight: 700 }}><span className="pax-mono">[{group.code}]</span> ({group.items.length})</span>
+                            {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                          </button>
+                          {open && (
+                            <div style={{ overflowX: 'auto' }}>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 520 }}>
+                                <thead><tr><th style={S.th}>Pesan</th><th style={S.th}>Locator</th></tr></thead>
+                                <tbody>
+                                  {group.items.map((item, idx) => (
+                                    <tr key={`${group.code}-${idx}`}>
+                                      <td style={S.td}>{item.message}</td>
+                                      <td style={{ ...S.td, color: 'var(--text3)' }} className="pax-mono">{formatLocator(item) ?? '—'}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ padding: 10, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)' }}>
+                <div style={{ ...S.label, marginBottom: 6 }}>Unclassified</div>
+                {perceptionUnclassified.length === 0 ? (
+                  <div style={{ fontSize: 12, color: 'var(--text3)' }}>Tidak ada unclassified.</div>
+                ) : (
+                  <>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
+                        <thead><tr><th style={S.th}>Raw</th><th style={S.th}>Alasan</th><th style={S.th}>Locator</th></tr></thead>
+                        <tbody>
+                          {visibleUnclassified.map((item, idx) => (
+                            <tr key={`${item.raw}-${idx}`}>
+                              <td style={S.td} className="pax-mono">{item.raw}</td>
+                              <td style={S.td}>{item.alasan}</td>
+                              <td style={{ ...S.td, color: 'var(--text3)' }} className="pax-mono">{formatLocator(item) ?? '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {perceptionUnclassified.length > 10 && (
+                      <Button variant="ghost" onClick={() => setUnclassifiedOpen((v) => !v)} style={{ marginTop: 8 }}>
+                        {unclassifiedOpen ? 'Ringkas unclassified' : `Tampilkan semua (${perceptionUnclassified.length})`}
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <Button onClick={usePerceivedTkg} disabled={busy !== null}>
+                  <CheckCircle2 size={14} /> Pakai TKG ini sebagai transkrip
+                </Button>
+                <Button variant="secondary" onClick={discardPerception} disabled={busy !== null}>
+                  Buang, coba lagi
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
