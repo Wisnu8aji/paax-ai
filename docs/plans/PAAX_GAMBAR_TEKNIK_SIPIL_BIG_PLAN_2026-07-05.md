@@ -87,6 +87,8 @@ sini supaya sesi depan tahu status tanpa baca file di luar repo)
 | M | Perbaikan V-03 subset grid multi-sheet | 🟢 selesai sebagai fix pertama — V-03 hanya membandingkan label as yang overlap, tetapi koreksi lanjutan M-2 dibutuhkan karena posisi absolut per sheet tidak global |
 | M-2 | Koreksi V-03 posisi relatif antar sheet | 🟢 selesai — V-03 membandingkan jarak relatif terhadap anchor shared; subset dengan anchor independen per halaman lolos, konflik nyata tetap `E-GRID` |
 | N | Impor katalog AHSP CK 2026 resmi | 🟡 selesai sebagai impor data — 2.542 item masuk, 10 batch diaudit; coverage harga regional masih rendah karena HSD resmi belum tersedia |
+| O | Tutup gap satuan AHSP CK 2026 | 🟢 selesai sebagai laporan usulan — 188/188 unit kosong ditemukan di PDF resmi; belum diterapkan ke JSON produksi |
+| P | Lanjutkan harga Semarang batch2 | 🟡 selesai sebagai laporan usulan — dari 68 unmatched: 2 matched diusulkan, 4 ambigu, 62 tidak ketemu aman; belum diterapkan ke price book produksi |
 
 Legenda: 🟢 selesai · 🟡 sebagian/ditunda jujur · ⚪ belum mulai.
 
