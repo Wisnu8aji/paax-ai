@@ -798,7 +798,7 @@
     {
       "code": "1.1.3.10",
       "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 30 cm s.d. 50 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang) (Lihat Permen PUPR Nomor 8 Tahun 2023 Lampiran",
-      "unit": "",
+      "unit": "tunggul",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -821,7 +821,7 @@
     {
       "code": "1.1.3.11",
       "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 50 cm s.d. 75 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang) (Lihat Permen PUPR Nomor 8 Tahun 2023 Lampiran",
-      "unit": "",
+      "unit": "tunggul",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -844,7 +844,7 @@
     {
       "code": "1.1.3.12",
       "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 75 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang) (Lihat Permen PUPR Nomor 8 Tahun 2023 Lampiran B U.3.2.e (a))",
-      "unit": "",
+      "unit": "tunggul",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -867,7 +867,7 @@
     {
       "code": "1.1.3.13",
       "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 5 s.d. 15 cm (termasuk pembuangan sisa tunggul dengan menutup kembali bekas lubang) (Lihat Permen PUPR Nomor 8 Tahun 2023 Lampiran",
-      "unit": "",
+      "unit": "tunggul",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -890,7 +890,7 @@
     {
       "code": "1.1.3.14",
       "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 15 cm s.d. 30 cm (termasuk pembuangan sisa tunggul dengan menutup kembali bekas lubang) (Lihat Permen PUPR Nomor 8 Tahun 2023 Lampiran",
-      "unit": "",
+      "unit": "tunggul",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -913,7 +913,7 @@
     {
       "code": "1.1.3.15",
       "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 30 cm s.d. 50 cm (termasuk pembuangan sisa tunggul dengan menutup kembali bekas lubang) (Lihat Permen PUPR Nomor 8 Tahun 2023 Lampiran",
-      "unit": "",
+      "unit": "tunggul",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -936,7 +936,7 @@
     {
       "code": "1.1.3.16",
       "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 50 cm s.d. 75 cm (termasuk pembuangan sisa tunggul dengan menutup kembali bekas lubang) (Lihat Permen PUPR Nomor 8 Tahun 2023 Lampiran",
-      "unit": "",
+      "unit": "tunggul",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -959,7 +959,7 @@
     {
       "code": "1.1.3.17",
       "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 75 cm (termasuk pembuangan sisa tunggul dengan menutup kembali bekas lubang) (Lihat Permen PUPR Nomor 8 Tahun 2023 Lampiran",
-      "unit": "",
+      "unit": "tunggul",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -1110,7 +1110,7 @@
     {
       "code": "1.1.3.8",
       "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 5 s.d. 15 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang) (Lihat Permen PUPR Nomor 8 Tahun 2023 Lampiran B U.3.2.a (a))",
-      "unit": "",
+      "unit": "tunggul",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -1133,7 +1133,7 @@
     {
       "code": "1.1.3.9",
       "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 15 cm s.d. 30 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang) (Lihat Permen PUPR Nomor 8 Tahun 2023 Lampiran",
-      "unit": "",
+      "unit": "tunggul",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -1156,7 +1156,7 @@
     {
       "code": "1.1.4.1",
       "name": "Pengukuran Ulang Topografi Seluas 1 Ha",
-      "unit": "",
+      "unit": "Ha",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -1343,7 +1343,7 @@
     {
       "code": "1.1.4.5",
       "name": "Patok Tetap Bantu (PTB) (Lihat Permen PUPR Nomor 8 Tahun 2023 Lampiran B U.1.2.1.e.3 (a))",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -1386,7 +1386,7 @@
     {
       "code": "1.1.4.6",
       "name": "Patok Tetap Utama (PTU) (Lihat Permen PUPR Nomor 8 Tahun 2023 Lampiran B U.1.2.1.e.4 (a))",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -5120,7 +5120,7 @@
     {
       "code": "10.3.1",
       "name": "Pekerjaan Perakitan Panel dan Alat Sambung Modul T36 RISHA",
-      "unit": "",
+      "unit": "set",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -5198,7 +5198,7 @@
     {
       "code": "10.3.2",
       "name": "Pekerjaan Perakitan Panel Modul T36 RISHA",
-      "unit": "",
+      "unit": "set",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -5327,7 +5327,7 @@
     {
       "code": "2.1.1.3",
       "name": "Pemasangan 1 m Kaso Baja Ringan C75 tebal 0,75 mm",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -5365,7 +5365,7 @@
     {
       "code": "2.1.1.4",
       "name": "Pemasangan 1 m Reng Baja Ringan R.32 tebal 0,45 mm",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -18456,7 +18456,7 @@
     {
       "code": "3.16.1.1",
       "name": "Pemasangan Logo PU Pelat Baja Finish Cat ukuran 80 cm x 80 cm dengan scaffolding",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -18499,7 +18499,7 @@
     {
       "code": "3.16.1.2",
       "name": "Pemasangan Logo PU Pelat Baja Finish Cat ukuran 80 cm x 80 cm dengan gondola",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -18542,7 +18542,7 @@
     {
       "code": "3.16.2",
       "name": "Pemasangan Signage Pelat Baja Menggunakan Tiang",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -18575,7 +18575,7 @@
     {
       "code": "3.16.2.1",
       "name": "Pemasangan Signage Pelat Baja pada Dinding",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -18608,7 +18608,7 @@
     {
       "code": "3.16.3",
       "name": "Pemasangan Signage Acrylic",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -27946,7 +27946,7 @@
     {
       "code": "4.1.1.19",
       "name": "Pengadaan dan Pengangkutan Palem Rumpun Kecil di Polybag 11 L",
-      "unit": "",
+      "unit": "Buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -27974,7 +27974,7 @@
     {
       "code": "4.1.1.21",
       "name": "Pengadaan dan Pengangkutan Palem Rumpun Kecil di Polybag 20 L",
-      "unit": "",
+      "unit": "Buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -28002,7 +28002,7 @@
     {
       "code": "4.1.1.23",
       "name": "Pengadaan dan Pengangkutan Palem Rumpun Besar di Polybag 50 L",
-      "unit": "",
+      "unit": "Buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -28030,7 +28030,7 @@
     {
       "code": "4.1.1.25",
       "name": "Pengadaan dan Pengangkutan Palem Tunggal Kecil di Polybag 11 L",
-      "unit": "",
+      "unit": "Buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -28058,7 +28058,7 @@
     {
       "code": "4.1.1.27",
       "name": "Pengadaan dan Pengangkutan Palem Tunggal Kecil di Polybag 20 L",
-      "unit": "",
+      "unit": "Buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -28086,7 +28086,7 @@
     {
       "code": "4.1.1.29",
       "name": "Pengadaan dan Pengangkutan Palem Tunggal Kecil di Polybag 25 L",
-      "unit": "",
+      "unit": "Buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -28142,7 +28142,7 @@
     {
       "code": "4.1.1.31",
       "name": "Pengadaan dan Pengangkutan Palem Tunggal Kecil di Polybag 50 L",
-      "unit": "",
+      "unit": "Buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -28170,7 +28170,7 @@
     {
       "code": "4.1.1.33",
       "name": "Pengadaan dan Pengangkutan Palem Tunggal Besar di Polybag 100 L",
-      "unit": "",
+      "unit": "Buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -28203,7 +28203,7 @@
     {
       "code": "4.1.1.35",
       "name": "Pengadaan dan Pengangkutan Palem Tunggal Besar di Polybag 150 L",
-      "unit": "",
+      "unit": "Buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -28320,7 +28320,7 @@
     {
       "code": "4.1.1.43",
       "name": "Pengadaan dan Pengangkutan Penutup Tanah",
-      "unit": "",
+      "unit": "m2",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -28348,7 +28348,7 @@
     {
       "code": "4.1.1.45",
       "name": "Pengadaan dan Pengangkutan Rumput",
-      "unit": "",
+      "unit": "m2",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55217,7 +55217,7 @@
     {
       "code": "5.5.4.1",
       "name": "Pemasangan 1 m Pipa Tembaga B280 Dia. 6,4 mm (1/4\")",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55260,7 +55260,7 @@
     {
       "code": "5.5.4.10",
       "name": "Pemasangan 1 m Pipa Tembaga B280 Dia. 41,3 mm (1-5/8\")",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55303,7 +55303,7 @@
     {
       "code": "5.5.4.11",
       "name": "Pemasangan 1 m Pipa PVC AW ; DN. 1/2\" (15 mm) + Isolasi",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55341,7 +55341,7 @@
     {
       "code": "5.5.4.12",
       "name": "Pemasangan 1 m Pipa PVC AW ; DN. 3/4\" (20 mm) + Isolasi",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55379,7 +55379,7 @@
     {
       "code": "5.5.4.13",
       "name": "Pemasangan 1 m Pipa PVC AW ; DN. 1\" (25 mm) + Isolasi",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55417,7 +55417,7 @@
     {
       "code": "5.5.4.14",
       "name": "Pemasangan 1 m Pipa PVC AW ; DN. 1-1/4\" (32 mm) + Isolasi",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55455,7 +55455,7 @@
     {
       "code": "5.5.4.15",
       "name": "Pemasangan 1 m Pipa PVC AW ; DN. 1-1/2\" (40 mm) + Isolasi",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55493,7 +55493,7 @@
     {
       "code": "5.5.4.16",
       "name": "Pemasangan 1 m Pipa PVC AW ; DN. 2\" (50 mm) + Isolasi",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55531,7 +55531,7 @@
     {
       "code": "5.5.4.17",
       "name": "Pemasangan 1 m Pipa PVC AW ; DN. 2-1/2\" (65 mm) + Isolasi",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55569,7 +55569,7 @@
     {
       "code": "5.5.4.18",
       "name": "Pemasangan 1 m Pipa PVC AW ; DN. 3\" (80 mm) + Isolasi",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55607,7 +55607,7 @@
     {
       "code": "5.5.4.19",
       "name": "Pemasangan 1 m Pipa PVC AW ; DN. 4\" (100 mm) + Isolasi",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55645,7 +55645,7 @@
     {
       "code": "5.5.4.2",
       "name": "Pemasangan 1 m Pipa Tembaga B280 Dia. 9,5 mm (3/8\")",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55688,7 +55688,7 @@
     {
       "code": "5.5.4.20",
       "name": "Pemasangan 1 m Pipa Tembaga B280 Dia. 1/4\" + 3/8\"",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55726,7 +55726,7 @@
     {
       "code": "5.5.4.21",
       "name": "Pemasangan 1 m Pipa Tembaga B280 Dia. 1/4\" + 1/2\"",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55764,7 +55764,7 @@
     {
       "code": "5.5.4.22",
       "name": "Pemasangan 1 m Pipa Tembaga B280 Dia. 1/4\" + 5/8\"",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55802,7 +55802,7 @@
     {
       "code": "5.5.4.3",
       "name": "Pemasangan 1 m Pipa Tembaga B280 Dia. 12,7 mm (1/2\")",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55845,7 +55845,7 @@
     {
       "code": "5.5.4.4",
       "name": "Pemasangan 1 m Pipa Tembaga B280 Dia. 15,9 mm (5/8\")",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55888,7 +55888,7 @@
     {
       "code": "5.5.4.5",
       "name": "Pemasangan 1 m Pipa Tembaga B280 Dia. 19,1 mm (3/4\")",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55931,7 +55931,7 @@
     {
       "code": "5.5.4.6",
       "name": "Pemasangan 1 m Pipa Tembaga B280 Dia. 22,2 mm (7/8\")",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -55974,7 +55974,7 @@
     {
       "code": "5.5.4.7",
       "name": "Pemasangan 1 m Pipa Tembaga B280 Dia. 25,4 mm (1\")",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -56017,7 +56017,7 @@
     {
       "code": "5.5.4.8",
       "name": "Pemasangan 1 m Pipa Tembaga B280 Dia. 28,6 mm (1-1/8\")",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -56060,7 +56060,7 @@
     {
       "code": "5.5.4.9",
       "name": "Pemasangan 1 m Pipa Tembaga B280 Dia. 34,9 mm (1-3/8\")",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -77541,7 +77541,7 @@
     {
       "code": "9.1.1.1",
       "name": "Pemasangan 1 m Pipa PVC, DN. 2-1/2\" (65 mm) Jumlah",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -77569,7 +77569,7 @@
     {
       "code": "9.1.1.10",
       "name": "Pemasangan 1 m Pipa PVC, DN. 20\" (500 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -77602,7 +77602,7 @@
     {
       "code": "9.1.1.11",
       "name": "Pemasangan 1 m Pipa PVC, DN. 24\" (600 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -77635,7 +77635,7 @@
     {
       "code": "9.1.1.12",
       "name": "Pemasangan 1 m Pipa PVC, DN. 32\" (800 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -77668,7 +77668,7 @@
     {
       "code": "9.1.1.13",
       "name": "Pemasangan 1 m Pipa PVC, DN. 36\" (900 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -77701,7 +77701,7 @@
     {
       "code": "9.1.1.14",
       "name": "Pemasangan 1 m Pipa PVC, DN. 40\" (1000 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -77734,7 +77734,7 @@
     {
       "code": "9.1.1.15",
       "name": "Pemasangan 1 m Pipa PVC, DN. 44\" (1100 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -77767,7 +77767,7 @@
     {
       "code": "9.1.1.16",
       "name": "Pemasangan 1 m Pipa PVC, DN. 48\" (1200 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -77800,7 +77800,7 @@
     {
       "code": "9.1.1.17",
       "name": "Pemasangan 1 m Pipa PVC, DN. 1/2\" (15 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -77828,7 +77828,7 @@
     {
       "code": "9.1.1.18",
       "name": "Pemasangan 1 m Pipa PVC, DN. 3/4\" (20 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -77856,7 +77856,7 @@
     {
       "code": "9.1.1.19",
       "name": "Pemasangan 1 m Pipa PVC, DN. 1\" (25 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -77884,7 +77884,7 @@
     {
       "code": "9.1.1.2",
       "name": "Pemasangan 1 m Pipa PVC, DN. 3\" (80 mm) Jumlah",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -77912,7 +77912,7 @@
     {
       "code": "9.1.1.20",
       "name": "Pemasangan 1 m Pipa PVC, DN. 1-1/4\" (32 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -77940,7 +77940,7 @@
     {
       "code": "9.1.1.21",
       "name": "Pemasangan 1 m Pipa PVC, DN. 1-1/2\" (40 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -77968,7 +77968,7 @@
     {
       "code": "9.1.1.22",
       "name": "Pemasangan 1 m Pipa PVC, DN. 2\" (50 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -77996,7 +77996,7 @@
     {
       "code": "9.1.1.3",
       "name": "Pemasangan 1 m Pipa PVC, DN. 4\" (100 mm) Jumlah",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78024,7 +78024,7 @@
     {
       "code": "9.1.1.4",
       "name": "Pemasangan 1 m Pipa PVC, DN. 6\" (150 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78052,7 +78052,7 @@
     {
       "code": "9.1.1.5",
       "name": "Pemasangan 1 m Pipa PVC, DN. 8\" (200 mm) Jumlah",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78080,7 +78080,7 @@
     {
       "code": "9.1.1.6",
       "name": "Pemasangan 1 m Pipa PVC, DN. 10\" (250 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78113,7 +78113,7 @@
     {
       "code": "9.1.1.7",
       "name": "Pemasangan 1 m Pipa PVC, DN. 12\" (300 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78146,7 +78146,7 @@
     {
       "code": "9.1.1.8",
       "name": "Pemasangan 1 m Pipa PVC, DN. 16\" (400 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78179,7 +78179,7 @@
     {
       "code": "9.1.1.9",
       "name": "Pemasangan 1 m Pipa PVC, DN. 18\" (450 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78660,7 +78660,7 @@
     {
       "code": "9.2.1.1",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 2-1/2\" (65 mm) Jumlah",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78693,7 +78693,7 @@
     {
       "code": "9.2.1.10",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 20\" (500 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78726,7 +78726,7 @@
     {
       "code": "9.2.1.11",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 24\" (600 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78759,7 +78759,7 @@
     {
       "code": "9.2.1.12",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 32\" (800 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78792,7 +78792,7 @@
     {
       "code": "9.2.1.13",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 36\" (900 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78825,7 +78825,7 @@
     {
       "code": "9.2.1.14",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 40\" (1000 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78858,7 +78858,7 @@
     {
       "code": "9.2.1.15",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 44\" (1100 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78891,7 +78891,7 @@
     {
       "code": "9.2.1.16",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 48\" (1200 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78924,7 +78924,7 @@
     {
       "code": "9.2.1.17",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 1/2\" (15 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78952,7 +78952,7 @@
     {
       "code": "9.2.1.18",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 3/4\" (20 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -78980,7 +78980,7 @@
     {
       "code": "9.2.1.19",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 1\" (25 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79008,7 +79008,7 @@
     {
       "code": "9.2.1.2",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 4\" (100 mm) Jumlah",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79041,7 +79041,7 @@
     {
       "code": "9.2.1.20",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 1-1/4\" (32 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79069,7 +79069,7 @@
     {
       "code": "9.2.1.21",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 1-1/2\" (40 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79097,7 +79097,7 @@
     {
       "code": "9.2.1.22",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 2\" (50 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79125,7 +79125,7 @@
     {
       "code": "9.2.1.23",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 25” (650 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79158,7 +79158,7 @@
     {
       "code": "9.2.1.24",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 30” (800 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79191,7 +79191,7 @@
     {
       "code": "9.2.1.25",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 40” (1050 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79224,7 +79224,7 @@
     {
       "code": "9.2.1.26",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 45” (1150 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79257,7 +79257,7 @@
     {
       "code": "9.2.1.3",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 5\" (125 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79290,7 +79290,7 @@
     {
       "code": "9.2.1.4",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 6\" (150 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79323,7 +79323,7 @@
     {
       "code": "9.2.1.5",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 8\" (200 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79356,7 +79356,7 @@
     {
       "code": "9.2.1.6",
       "name": "Pemasangan 1 m Pipa Galvanis, DN.10\" (250 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79389,7 +79389,7 @@
     {
       "code": "9.2.1.7",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 12\" (300 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79422,7 +79422,7 @@
     {
       "code": "9.2.1.8",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 16\" (400 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79455,7 +79455,7 @@
     {
       "code": "9.2.1.9",
       "name": "Pemasangan 1 m Pipa Galvanis, DN. 18\" (450 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79936,7 +79936,7 @@
     {
       "code": "9.3.1.1",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 2-1/2\" (65 mm) Jumlah",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -79969,7 +79969,7 @@
     {
       "code": "9.3.1.10",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 20\" (500 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80002,7 +80002,7 @@
     {
       "code": "9.3.1.11",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 24\" (600 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80035,7 +80035,7 @@
     {
       "code": "9.3.1.12",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 32\" (800 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80068,7 +80068,7 @@
     {
       "code": "9.3.1.13",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 36\" (900 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80101,7 +80101,7 @@
     {
       "code": "9.3.1.14",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 40\" (1000 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80134,7 +80134,7 @@
     {
       "code": "9.3.1.15",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 44\" (1100 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80167,7 +80167,7 @@
     {
       "code": "9.3.1.16",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 48\" (1200 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80200,7 +80200,7 @@
     {
       "code": "9.3.1.17",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 1/2\" (15 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80228,7 +80228,7 @@
     {
       "code": "9.3.1.18",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 3/4\" (20 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80256,7 +80256,7 @@
     {
       "code": "9.3.1.19",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 1\" (25 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80284,7 +80284,7 @@
     {
       "code": "9.3.1.2",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 4\" (100 mm) Jumlah",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80317,7 +80317,7 @@
     {
       "code": "9.3.1.20",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 1-1/4\" (32 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80345,7 +80345,7 @@
     {
       "code": "9.3.1.21",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 1-1/2\" (40 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80373,7 +80373,7 @@
     {
       "code": "9.3.1.22",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 2\" (50 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80401,7 +80401,7 @@
     {
       "code": "9.3.1.23",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 3” (75 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80434,7 +80434,7 @@
     {
       "code": "9.3.1.24",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 3,5” (90 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80467,7 +80467,7 @@
     {
       "code": "9.3.1.25",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 7” (180 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80500,7 +80500,7 @@
     {
       "code": "9.3.1.26",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 9” (225 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80533,7 +80533,7 @@
     {
       "code": "9.3.1.27",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 14” (355 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80566,7 +80566,7 @@
     {
       "code": "9.3.1.28",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 22” (560 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80599,7 +80599,7 @@
     {
       "code": "9.3.1.29",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 28” (710 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80632,7 +80632,7 @@
     {
       "code": "9.3.1.3",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 5\" (125 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80665,7 +80665,7 @@
     {
       "code": "9.3.1.4",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 6\" (150 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80698,7 +80698,7 @@
     {
       "code": "9.3.1.5",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 8\" (200 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80731,7 +80731,7 @@
     {
       "code": "9.3.1.6",
       "name": "Pemasangan 1 m Pipa HDPE, DN.10\" (250 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80764,7 +80764,7 @@
     {
       "code": "9.3.1.7",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 12\" (300 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80797,7 +80797,7 @@
     {
       "code": "9.3.1.8",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 16\" (400 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -80830,7 +80830,7 @@
     {
       "code": "9.3.1.9",
       "name": "Pemasangan 1 m Pipa HDPE, DN. 18\" (450 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -81311,7 +81311,7 @@
     {
       "code": "9.3.3.1",
       "name": "Pengelasan 1 m Pipa HDPE, DN. 2.5” (65 mm)",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -81339,7 +81339,7 @@
     {
       "code": "9.3.3.10",
       "name": "Pengelasan 1 m Pipa HDPE, DN. 24” (600 mm)",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -81367,7 +81367,7 @@
     {
       "code": "9.3.3.11",
       "name": "Pengelasan 1 m Pipa HDPE, DN. 28” (700 mm)",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -81395,7 +81395,7 @@
     {
       "code": "9.3.3.12",
       "name": "Pengelasan 1 m Pipa HDPE, DN. 32” (800 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -81423,7 +81423,7 @@
     {
       "code": "9.3.3.13",
       "name": "Pengelasan 1 m Pipa HDPE, DN. 36” (900 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -81451,7 +81451,7 @@
     {
       "code": "9.3.3.14",
       "name": "Pengelasan 1 m Pipa HDPE, DN. 40” (1000 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -81479,7 +81479,7 @@
     {
       "code": "9.3.3.15",
       "name": "Pengelasan 1 m Pipa HDPE, DN. 44” (1100 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -81507,7 +81507,7 @@
     {
       "code": "9.3.3.16",
       "name": "Pengelasan 1 m Pipa HDPE, DN. 48” (1200 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -81535,7 +81535,7 @@
     {
       "code": "9.3.3.2",
       "name": "Pengelasan 1 m Pipa HDPE, DN. 3,5” (90 mm)",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -81563,7 +81563,7 @@
     {
       "code": "9.3.3.3",
       "name": "Pengelasan 1 m Pipa HDPE, DN. 4” (100 mm)",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -81591,7 +81591,7 @@
     {
       "code": "9.3.3.4",
       "name": "Pengelasan 1 m Pipa HDPE, DN. 6” (150 mm)",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -81619,7 +81619,7 @@
     {
       "code": "9.3.3.5",
       "name": "Pengelasan 1 m Pipa HDPE, DN. 8” (200 mm)",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -81647,7 +81647,7 @@
     {
       "code": "9.3.3.6",
       "name": "Pengelasan 1 m Pipa HDPE, DN. 10” (250 mm)",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -81675,7 +81675,7 @@
     {
       "code": "9.3.3.7",
       "name": "Pengelasan 1 m Pipa HDPE, DN. 12” (300 mm)",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -81703,7 +81703,7 @@
     {
       "code": "9.3.3.8",
       "name": "Pengelasan 1 m Pipa HDPE, DN. 16” (400 mm)",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -81731,7 +81731,7 @@
     {
       "code": "9.3.3.9",
       "name": "Pengelasan 1 m Pipa HDPE, DN. 20” (500 mm)",
-      "unit": "",
+      "unit": "buah",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -82141,7 +82141,7 @@
     {
       "code": "9.4.1.1",
       "name": "Pemasangan 1 m Pipa DCI, DN. 4\" (100 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -82174,7 +82174,7 @@
     {
       "code": "9.4.1.10",
       "name": "Pemasangan 1 m Pipa DCI, DN. 24\" (600 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -82212,7 +82212,7 @@
     {
       "code": "9.4.1.11",
       "name": "Pemasangan 1 m Pipa DCI, DN. 32\" (800 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -82250,7 +82250,7 @@
     {
       "code": "9.4.1.12",
       "name": "Pemasangan 1 m Pipa DCI, DN. 36\" (900 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -82288,7 +82288,7 @@
     {
       "code": "9.4.1.13",
       "name": "Pemasangan 1 m Pipa DCI, DN. 40\" (1000 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -82326,7 +82326,7 @@
     {
       "code": "9.4.1.14",
       "name": "Pemasangan 1 m Pipa DCI, DN. 44\" (1100 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -82364,7 +82364,7 @@
     {
       "code": "9.4.1.15",
       "name": "Pemasangan 1 m Pipa DCI, DN. 48\" (1200 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -82402,7 +82402,7 @@
     {
       "code": "9.4.1.2",
       "name": "Pemasangan 1 m Pipa DCI, DN. 5\" (125 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -82435,7 +82435,7 @@
     {
       "code": "9.4.1.3",
       "name": "Pemasangan 1 m Pipa DCI, DN. 6\" (150 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -82468,7 +82468,7 @@
     {
       "code": "9.4.1.4",
       "name": "Pemasangan 1 m Pipa DCI, DN. 8\" (200 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -82501,7 +82501,7 @@
     {
       "code": "9.4.1.5",
       "name": "Pemasangan 1 m Pipa DCI, DN. 10\" (250 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -82534,7 +82534,7 @@
     {
       "code": "9.4.1.6",
       "name": "Pemasangan 1 m Pipa DCI, DN. 12\" (300 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -82567,7 +82567,7 @@
     {
       "code": "9.4.1.7",
       "name": "Pemasangan 1 m Pipa DCI, DN. 16\" (400 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -82605,7 +82605,7 @@
     {
       "code": "9.4.1.8",
       "name": "Pemasangan 1 m Pipa DCI, DN. 18\" (450 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -82643,7 +82643,7 @@
     {
       "code": "9.4.1.9",
       "name": "Pemasangan 1 m Pipa DCI, DN. 20\" (500 mm)",
-      "unit": "",
+      "unit": "m",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -83101,7 +83101,7 @@
     {
       "code": "9.5.1.1",
       "name": "Pemasangan 1 m Pipa Baja Karbon, DN. 2-1/2\" (65 mm) Jumlah",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -83134,7 +83134,7 @@
     {
       "code": "9.5.1.10",
       "name": "Pemasangan 1 m Pipa Baja Karbon, DN. 20\" (500 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -83172,7 +83172,7 @@
     {
       "code": "9.5.1.11",
       "name": "Pemasangan 1 m Pipa Baja Karbon, DN. 24\" (600 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -83210,7 +83210,7 @@
     {
       "code": "9.5.1.12",
       "name": "Pemasangan 1 m Pipa Baja Karbon, DN. 32\" (800 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -83248,7 +83248,7 @@
     {
       "code": "9.5.1.13",
       "name": "Pemasangan 1 m Pipa Baja Karbon, DN. 36\" (900 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -83286,7 +83286,7 @@
     {
       "code": "9.5.1.14",
       "name": "Pemasangan 1 m Pipa Baja Karbon, DN. 40\" (1000 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -83324,7 +83324,7 @@
     {
       "code": "9.5.1.15",
       "name": "Pemasangan 1 m Pipa Baja Karbon, DN. 44\" (1100 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -83362,7 +83362,7 @@
     {
       "code": "9.5.1.16",
       "name": "Pemasangan 1 m Pipa Baja Karbon, DN. 48\" (1200 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -83400,7 +83400,7 @@
     {
       "code": "9.5.1.2",
       "name": "Pemasangan 1 m Pipa Baja Karbon, DN. 4\" (100 mm) Jumlah",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -83433,7 +83433,7 @@
     {
       "code": "9.5.1.3",
       "name": "Pemasangan 1 m Pipa Baja Karbon, DN. 5\" (125 mm) Jumlah",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -83466,7 +83466,7 @@
     {
       "code": "9.5.1.4",
       "name": "Pemasangan 1 m Pipa Baja Karbon, DN. 6\" (150 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -83499,7 +83499,7 @@
     {
       "code": "9.5.1.5",
       "name": "Pemasangan 1 m Pipa Baja Karbon, DN. 8\" (200 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -83532,7 +83532,7 @@
     {
       "code": "9.5.1.6",
       "name": "Pemasangan 1 m Pipa Baja Karbon, DN. 10\" (250 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -83565,7 +83565,7 @@
     {
       "code": "9.5.1.7",
       "name": "Pemasangan 1 m Pipa Baja Karbon, DN. 12\" (300 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -83598,7 +83598,7 @@
     {
       "code": "9.5.1.8",
       "name": "Pemasangan 1 m Pipa Baja Karbon, DN. 16\" (400 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -83636,7 +83636,7 @@
     {
       "code": "9.5.1.9",
       "name": "Pemasangan 1 m Pipa Baja Karbon, DN. 18\" (450 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -84122,7 +84122,7 @@
     {
       "code": "9.6.1.1",
       "name": "Pemasangan 1 m Pipa Beton, DN. 8\" (200 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -84170,7 +84170,7 @@
     {
       "code": "9.6.1.2",
       "name": "Pemasangan 1 m Pipa Beton, DN. 12\" (300 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -84218,7 +84218,7 @@
     {
       "code": "9.6.1.3",
       "name": "Pemasangan 1 m Pipa Beton, DN. 16\" (400 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -84266,7 +84266,7 @@
     {
       "code": "9.6.1.4",
       "name": "Pemasangan 1 m Pipa Beton, DN. 20\" (500 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -84314,7 +84314,7 @@
     {
       "code": "9.6.1.5",
       "name": "Pemasangan 1 m Pipa Beton, DN. 24\" (600 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -84362,7 +84362,7 @@
     {
       "code": "9.6.1.6",
       "name": "Pemasangan 1 m Pipa Beton, DN. 28\" (700 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -84410,7 +84410,7 @@
     {
       "code": "9.6.1.7",
       "name": "Pemasangan 1 m Pipa Beton, DN. 32\" (800 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -84458,7 +84458,7 @@
     {
       "code": "9.6.1.8",
       "name": "Pemasangan 1 m Pipa Beton, DN. 40\" (1000 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
@@ -84506,7 +84506,7 @@
     {
       "code": "9.6.1.9",
       "name": "Pemasangan 1 m Pipa Beton, DN. 48\" (1200 mm)",
-      "unit": "",
+      "unit": "m'",
       "overhead_profit": 0.1,
       "components": [
         {
