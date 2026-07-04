@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildAuditContextSections } from "./project-context";
+import { buildAuditContextSections, describeTkgSource } from "./project-context";
 
 describe("project audit context sections", () => {
   it("serializes BOE, warnings, and review tasks as read-only data sections", () => {
@@ -17,5 +17,13 @@ describe("project audit context sections", () => {
     expect(text).toContain("coverage rendah");
     expect(text).toContain("== REVIEW TASKS ==");
     expect(text).toContain("\"priority\":0.45");
+  });
+});
+
+describe("TKG source labels", () => {
+  it("labels perception pipeline transcripts distinctly from manual and AI proposals", () => {
+    expect(describeTkgSource("pipeline")).toBe("pipeline persepsi");
+    expect(describeTkgSource("ai_proposal")).toBe("usulan AI");
+    expect(describeTkgSource("manual")).toBe("manual");
   });
 });

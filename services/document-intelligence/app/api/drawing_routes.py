@@ -1,9 +1,15 @@
 import uuid
+import tempfile
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import os
 from datetime import datetime
+
+# Direktori unggahan lintas-platform (default lama "/tmp/paax_uploads" tidak
+# valid di Windows). Override via env UPLOAD_DIR bila perlu, samakan dengan
+# upload_routes.py.
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", os.path.join(tempfile.gettempdir(), "paax_uploads"))
 
 router = APIRouter(prefix="/drawings", tags=["Drawing Intelligence"])
 
@@ -41,6 +47,7 @@ class DrawingWarning(BaseModel):
 class DrawingAnalysisResponse(BaseModel):
     file_id: str
     classification: str
+    classification_confidence: Optional[float] = None
     rooms: List[str]
     doors: List[str]
     windows: List[str]
@@ -49,6 +56,10 @@ class DrawingAnalysisResponse(BaseModel):
     # TKG Pipeline V1.0 (Real Data)
     tkg_document: Optional[dict] = None
     tkg_text: Optional[str] = None
+    # Fase 2 P4: metrik & gerbang NYATA dari pipeline persepsi (bukan
+    # dihitung ulang di frontend — lihat docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md).
+    metrics: Optional[dict] = None
+    gerbang: Optional[dict] = None
 
 class VerifyCandidateRequest(BaseModel):
     candidate_id: str
@@ -75,111 +86,133 @@ def generate_demo_extraction(file_name: str) -> DrawingAnalysisResponse:
         ]
     )
 
-import os
-import uuid
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from datetime import datetime
-
-from app.processors.pdf_renderer import PdfRenderer
-from app.processors.drawing_classifier import DrawingClassifier
-from app.processors.ocr_extractor import OcrExtractor
-from app.processors.table_extractor import TableExtractor
-from app.processors.grid_extractor import GridExtractor
-from app.tkg.builder import build_tkg_from_text
+from app.perception.assemble import assemble_document_from_pdf_bytes
+from app.perception.render import render_tkg_txt
+from app.perception.validate import aggregate_metrics, build_gerbang
 
 # --- Endpoints ---
 
 @router.post("/analyze", response_model=DrawingAnalysisResponse)
 async def analyze_drawing(req: DrawingAnalyzeRequest):
-    # Pipeline Asli TKG (Brain v4.1)
+    """
+    Fase 2 (P1-P4): pipeline persepsi vektor NYATA — span PyMuPDF + merge-run
+    (RULE-EXT-03) + grammar notasi struktur (brain-00 §2) + rekonstruksi tabel
+    via `page.find_tables()` + metrik/gerbang. Menggantikan SK-07 MVP regex
+    naif sebelumnya (`app/tkg/builder.py`, masih dipakai jalur teks-manual
+    `/drawings/tkg/build`, TIDAK dihapus).
+
+    CAKUPAN JUJUR: rekonstruksi grid dari geometri bubble+garis-dimensi (§3.1.1
+    penuh) BELUM diimplementasikan — grid hanya terbaca dari notasi gabungan
+    eksplisit "<as>-<as>=<nilai>". Lihat docstring `app/perception/assemble.py`.
+    """
     file_name = req.file_metadata.file_name
-    
-    # Path mockup utk simulasi atau file sesungguhnya
-    base_path = os.getenv("UPLOAD_DIR", "/tmp/paax_uploads")
-    file_path = os.path.join(base_path, file_name)
-    
-    raw_text = ""
+    file_path = os.path.join(UPLOAD_DIR, file_name)
+
     classification = "Unclassified"
-    tkg_doc = None
-    tkg_text = None
-    
+    classification_confidence: Optional[float] = None
+    tkg_doc: Optional[dict] = None
+    tkg_text: Optional[str] = None
+    metrics_out: Optional[dict] = None
+    gerbang_out: Optional[dict] = None
+
     warnings = [
         DrawingWarning(
-            id=str(uuid.uuid4()), 
-            message="Sistem menggunakan TKG Pipeline V1.0 (Real PyMuPDF Extraction).", 
-            level="INFO", 
-            related_elements=[]
+            id=str(uuid.uuid4()),
+            message="Sistem menggunakan pipeline persepsi Fase 2 (span vektor + merge-run + grammar + tabel bergaris nyata).",
+            level="INFO",
+            related_elements=[],
         )
     ]
-    
-    if os.path.exists(file_path) and file_name.endswith('.pdf'):
-        # 1. Triase & Split (SK-01)
-        pdf_processor = PdfRenderer()
-        pdf_res = pdf_processor.process(file_path)
-        
-        if pdf_res["status"] == "success" and pdf_res["sheets"]:
-            sheet = pdf_res["sheets"][0]
-            raw_text = sheet.get("raw_text", "")
-            
-            # 2. OCR Normalization (SK-10)
-            ocr = OcrExtractor()
-            ocr_res = ocr.process(raw_text)
-            normalized_text = ocr_res["normalized_text"]
-            
-            # 3. Klasifikasi (SK-02)
-            classifier = DrawingClassifier()
-            class_res = classifier.process(normalized_text)
-            classification = class_res["classification"]
-            
-            # 4. Tabel & Grid (SK-04, SK-05)
-            tables = TableExtractor().process(normalized_text)
-            grids = GridExtractor().process(normalized_text)
-            
-            # 5. Build TKG (SK-07)
-            builder_res = build_tkg_from_text(
-                project_id=req.file_metadata.project_id or "prj-123",
-                revision_id="rev-1",
-                sheet_id=sheet["sheet_id"],
-                title=file_name,
-                raw_text=normalized_text
+
+    if os.path.exists(file_path) and file_name.lower().endswith(".pdf"):
+        with open(file_path, "rb") as f:
+            pdf_bytes = f.read()
+        try:
+            tkg_document, per_sheet_metrics = assemble_document_from_pdf_bytes(
+                pdf_bytes, prj_id=req.file_metadata.project_id or "prj-123",
             )
-            
-            tkg_doc = builder_res.tkg_json
-            tkg_text = builder_res.tkg_txt
-            
-            # Tambah hasil tabel dan grid ke TKG (Mutate)
-            if tkg_doc and "sheets" in tkg_doc and len(tkg_doc["sheets"]) > 0:
-                tkg_doc["sheets"][0]["tables"].extend(tables["tables"])
-                tkg_doc["sheets"][0]["grid"]["bentang"].extend(grids["grid"]["bentang"])
-                tkg_doc["sheets"][0]["levels"].extend(grids["levels"])
-                
-            if class_res["needs_vision_fallback"]:
+        except Exception as e:
+            warnings.append(DrawingWarning(
+                id=str(uuid.uuid4()),
+                message=f"Pipeline persepsi gagal memproses PDF ({e}). Gunakan jalur teks deskripsi manual.",
+                level="CRITICAL",
+                related_elements=[],
+            ))
+        else:
+            tkg_doc = tkg_document.model_dump()
+            tkg_text = render_tkg_txt(tkg_document)
+
+            if per_sheet_metrics:
+                first = per_sheet_metrics[0]
+                classification = first["classification"]
+                classification_confidence = first["classification_confidence"]
+                if first["needs_vision_fallback"]:
+                    warnings.append(DrawingWarning(
+                        id=str(uuid.uuid4()),
+                        message="Confidence klasifikasi rendah, butuh fallback vision LLM.",
+                        level="MEDIUM",
+                        related_elements=[],
+                    ))
+
+            raster_sheets = [m for m in per_sheet_metrics if m.get("is_raster")]
+            if raster_sheets:
+                unavailable = [m for m in raster_sheets if m.get("ocr_message")]
+                if unavailable:
+                    warnings.append(DrawingWarning(
+                        id=str(uuid.uuid4()),
+                        message=(
+                            f"{len(unavailable)} sheet terdeteksi raster (scan/foto) tapi OCR tidak tersedia "
+                            f"di server — {unavailable[0]['ocr_message']}"
+                        ),
+                        level="MEDIUM",
+                        related_elements=[],
+                    ))
+                else:
+                    warnings.append(DrawingWarning(
+                        id=str(uuid.uuid4()),
+                        message=(
+                            f"{len(raster_sheets)} sheet dibaca via OCR (raster) — confidence lebih rendah "
+                            "dari pembacaan vektor, WAJIB direview manusia sebelum dipakai (RULE-EXT-33)."
+                        ),
+                        level="MEDIUM",
+                        related_elements=[],
+                    ))
+
+            aggregated = aggregate_metrics(per_sheet_metrics)
+            metrics_out = aggregated
+            gerbang_out = build_gerbang(aggregated, n_sheets=len(tkg_document.sheets))
+
+            if aggregated["n_unclassified"] > 0:
                 warnings.append(DrawingWarning(
-                    id=str(uuid.uuid4()), 
-                    message="Confidence klasifikasi rendah, butuh fallback vision LLM.", 
-                    level="MEDIUM", 
-                    related_elements=[]
+                    id=str(uuid.uuid4()),
+                    message=(
+                        f"{aggregated['n_unclassified']}/{aggregated['span_total']} teks tidak cocok grammar §2 "
+                        f"— masuk UNCLASSIFIED (tidak dibuang, INV-TKG-02). Cakupan {aggregated['cakupan']:.1%}."
+                    ),
+                    level="MEDIUM",
+                    related_elements=[],
                 ))
     else:
         warnings.append(DrawingWarning(
-            id=str(uuid.uuid4()), 
-            message=f"File {file_name} tidak ditemukan di server. Ekstraksi kosong.", 
-            level="CRITICAL", 
-            related_elements=[]
+            id=str(uuid.uuid4()),
+            message=f"File {file_name} tidak ditemukan di server. Ekstraksi kosong.",
+            level="CRITICAL",
+            related_elements=[],
         ))
 
     return DrawingAnalysisResponse(
         file_id=str(uuid.uuid4()),
         classification=classification,
+        classification_confidence=classification_confidence,
         rooms=[],
         doors=[],
         windows=[],
-        quantity_candidates=[], # Sengaja dikosongkan untuk menghindari halusinasi (AP-01)
+        quantity_candidates=[],  # Sengaja dikosongkan untuk menghindari halusinasi (AP-01)
         warnings=warnings,
         tkg_document=tkg_doc,
-        tkg_text=tkg_text
+        tkg_text=tkg_text,
+        metrics=metrics_out,
+        gerbang=gerbang_out,
     )
 
 @router.post("/classify")

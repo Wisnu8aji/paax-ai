@@ -26,7 +26,8 @@ import { useShell, type SettingsTab } from './shell-context';
 import { useTheme, type PaaxTheme } from '@/components/theme/theme-provider';
 import { notifications, connectedApps, currentUser, aiCredits } from '@/lib/mock/workspace';
 
-const themeLabels: Record<PaaxTheme, string> = { light: 'Terang', dark: 'Gelap', grey: 'Abu' };
+const themeLabels: Record<PaaxTheme, string> = { light: 'Terang', dark: 'Gelap', grey: 'Medium Grey' };
+const themeSwatch: Record<PaaxTheme, string> = { light: '#ECEBE6', dark: '#1D1D22', grey: '#A6A6AA' };
 
 const TABS: { key: SettingsTab; label: string; icon: typeof Bell }[] = [
   { key: 'umum', label: 'Umum', icon: SlidersHorizontal },
@@ -126,8 +127,8 @@ export function SettingsDialog() {
         position: 'fixed',
         inset: 0,
         zIndex: 70,
-        background: 'rgba(10,10,12,0.5)',
-        backdropFilter: 'blur(4px)',
+        background: 'rgba(10,10,12,0.45)',
+        backdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -141,13 +142,11 @@ export function SettingsDialog() {
         aria-label={`Pengaturan — ${activeLabel}`}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="pax-settings-panel"
+        className="pax-settings-panel pax-glass pax-glass-edge"
         style={{
           width: 820,
           maxWidth: '94vw',
           height: 'min(600px, 88vh)',
-          background: 'var(--elev)',
-          border: '1px solid var(--border)',
           borderRadius: 20,
           boxShadow: 'var(--shadow-modal)',
           overflow: 'hidden',
@@ -344,29 +343,47 @@ export function SettingsDialog() {
 
             {settingsTab === 'personalisasi' && (
               <Stack>
-                <SectionLabel>Tema</SectionLabel>
+                <SectionLabel>Tema Tampilan</SectionLabel>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  {themes.map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTheme(t)}
-                      aria-pressed={theme === t}
-                      style={{
-                        flex: 1,
-                        padding: '10px 0',
-                        borderRadius: 10,
-                        fontSize: 12.5,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        color: theme === t ? 'var(--accent-ink)' : 'var(--text2)',
-                        background: theme === t ? 'var(--accent)' : 'var(--surface)',
-                        border: '1px solid var(--border)',
-                        transition: 'background .15s, color .15s',
-                      }}
-                    >
-                      {themeLabels[t]}
-                    </button>
-                  ))}
+                  {themes.map((t) => {
+                    const active = theme === t;
+                    return (
+                      <button
+                        key={t}
+                        onClick={() => setTheme(t)}
+                        aria-pressed={active}
+                        style={{
+                          flex: 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 9,
+                          padding: '11px 0',
+                          borderRadius: 11,
+                          fontSize: 12.5,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          color: active ? 'var(--text)' : 'var(--text2)',
+                          background: active ? 'var(--surface2)' : 'var(--surface)',
+                          border: `1.5px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
+                          transition: 'background .15s, color .15s, border-color .15s',
+                        }}
+                      >
+                        <span
+                          aria-hidden="true"
+                          style={{
+                            width: 20,
+                            height: 20,
+                            borderRadius: 7,
+                            background: themeSwatch[t],
+                            border: '1px solid var(--border)',
+                            flexShrink: 0,
+                          }}
+                        />
+                        {themeLabels[t]}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <SectionLabel>Kepadatan tampilan</SectionLabel>

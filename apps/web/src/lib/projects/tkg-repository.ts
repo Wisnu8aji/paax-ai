@@ -1,7 +1,7 @@
 'use client';
 
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import type { TkgDocument } from '@paax/schemas';
+import type { TakeoffResult, TkgDocument } from '@paax/schemas';
 import { LocalStorage, projectStorageKey } from '@/lib/local-storage';
 import { getDb, getProjectBackend } from './project-repository';
 
@@ -17,14 +17,18 @@ import { getDb, getProjectBackend } from './project-repository';
  * Kuantitas/harga TIDAK disimpan di sini — dihitung engine via /tkg/takeoff.
  */
 
+export type TkgRecordSource = 'manual' | 'ai_proposal' | 'pipeline';
+
 export interface ProjectTkgRecord {
   projectId: string;
   tkg: TkgDocument | null;
-  /** "manual" | "ai_proposal" — usulan AI wajib direview sebelum dipakai. */
-  source: string;
+  /** "manual" | "ai_proposal" | "pipeline" — semua usulan mesin wajib direview. */
+  source: TkgRecordSource;
   reviewed: boolean;
   /** Cache render .tkg.txt terakhir dari engine (tampilan; bukan hasil hitung FE). */
   lastRenderedText: string | null;
+  /** Cache hasil takeoff terakhir dari engine; frontend hanya menyimpan/menampilkan. */
+  lastTakeoff: TakeoffResult | null;
   updatedAt: string;
 }
 
@@ -38,18 +42,24 @@ export function emptyTkgRecord(projectId: string): ProjectTkgRecord {
     source: 'manual',
     reviewed: false,
     lastRenderedText: null,
+    lastTakeoff: null,
     updatedAt: new Date().toISOString(),
   };
 }
 
 function normalize(projectId: string, raw: Partial<ProjectTkgRecord> | null): ProjectTkgRecord {
   if (!raw) return emptyTkgRecord(projectId);
+  const source: TkgRecordSource =
+    raw.source === 'ai_proposal' || raw.source === 'pipeline' || raw.source === 'manual'
+      ? raw.source
+      : 'manual';
   return {
     projectId,
     tkg: raw.tkg ?? null,
-    source: raw.source ?? 'manual',
+    source,
     reviewed: Boolean(raw.reviewed),
     lastRenderedText: raw.lastRenderedText ?? null,
+    lastTakeoff: raw.lastTakeoff ?? null,
     updatedAt: raw.updatedAt ?? new Date().toISOString(),
   };
 }
