@@ -1,7 +1,36 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-08** (eksekusi prompt Fase M/N: V-03 fix + impor AHSP CK 2026). File ini SATU-SATUNYA tempat status berjalan.
+> Update terakhir: **2026-07-09** (eksekusi prompt Fase M-2: koreksi V-03 ke posisi relatif). File ini SATU-SATUNYA tempat status berjalan.
 > Selesai satu fase → perbarui di sini (jangan sebar ke banyak file).
+
+## ✅ FASE M-2 — V-03 RELATIVE POSITION FIX (prompt 2026-07-09)
+Branch kerja: `fix/v03-relative-position-check`.
+PR: https://github.com/Wisnu8aji/paax-ai/pull/32
+Base yang dipakai: `origin/feat/v03-fix-ahsp-catalog-import` karena PR #29,
+#30, dan #31 masih open saat pekerjaan dimulai. PR M-2 tetap dibuka ke `main`
+sesuai prompt dan belum di-merge.
+
+- **Masalah yang diperbaiki**: V-03 hasil PR #31 masih membandingkan posisi
+  absolut `posisi_mm` antar sheet. Ini salah untuk data pipeline nyata karena
+  `grid_geometry.py` merekonstruksi grid per halaman dan memberi axis pertama
+  di halaman itu `posisi_mm=0.0`.
+- **Perbaikan inti**: `_cek_v03` sekarang membandingkan jarak relatif antar
+  label as yang sama-sama muncul. Untuk `shared >= 2`, validator memilih
+  anchor deterministik `sorted(shared)[0]`, lalu membandingkan
+  `pos[label] - pos[anchor]` antar sheet. Toleransi tetap memakai
+  `params.tol_grid` plus absolute floor `0.001 m`.
+- **Batas jujur**: jika dua sheet hanya berbagi satu label, V-03 tidak membuat
+  `E-GRID` karena belum ada jarak relatif yang bisa diuji. Ini dicatat sebagai
+  keterbatasan matematis, bukan asumsi bahwa grid pasti benar.
+- **Anchor test baru**: kasus sheet 1 `A=0,B=3000,C=6500` dan sheet 2
+  `B=0,C=3500` sekarang `gate_passed=True` dan tanpa `E-GRID`. Kasus konflik
+  nyata tetap tertangkap hanya pada subject `x:B`, tidak dobel ke `x:C`.
+- **Verifikasi**: reproduksi manual `ok=True gate_passed=True []`;
+  core-engine **251 passed**, web Vitest **46 passed**, `pnpm tsc --noEmit`
+  exit 0, document-intelligence **126 passed + 5 skipped**.
+- **Fase N/AHSP tidak disentuh**: tidak ada perubahan pada `data/ahsp` maupun
+  test AHSP.
+- Report: `report/REPORT_FASE_M2_V03_RELATIVE_FIX_CODEX_2026-07-09.md`.
 
 ## ✅ FASE M/N — V-03 FIX + IMPOR AHSP CK 2026 (prompt 2026-07-08)
 Branch kerja: `feat/v03-fix-ahsp-catalog-import`.
