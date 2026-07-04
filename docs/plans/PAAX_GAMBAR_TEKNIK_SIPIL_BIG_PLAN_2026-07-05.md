@@ -61,8 +61,9 @@ memprosesnya di latar belakang per halaman → setiap halaman diklasifikasi
 → seluruh halaman dikonsolidasi jadi satu pandangan bangunan (registry elemen
 lintas-zona + grid tunggal + daftar asumsi/perlu-review) → user melihat
 **"Review Gambar"** yang enak dibaca (bahasa teknik sipil, bukan kode
-validator) → tombol **"Generate RAB"** siap diklik (pengkabelan ke RAB nyata
-adalah tahap SETELAH ini, bukan bagian rencana ini).
+validator) → user menyimpan hasil → engine menjalankan validasi/render/takeoff
+→ volume siap dikirim ke Draft RAB. Kode AHSP tetap dipilih user di halaman
+RAB sampai mapping AHSP deterministik siap.
 
 ## 3. Peta fase (detail teknis lengkap ada di plan-file sesi eksekusi,
 `C:\Users\Nothing\.claude\plans\ancient-plotting-biscuit.md` — ringkasan di
@@ -79,6 +80,8 @@ sini supaya sesi depan tahu status tanpa baca file di luar repo)
 | G | PaddleOCR sungguhan (bukan mock) | 🟡 terpasang & termuat, inferensi gagal native (oneDNN) di mesin ini — degradasi anggun diverifikasi |
 | H | UI/UX overhaul (drag-drop, animasi thinking, Review Gambar ramah pengguna) | 🟢 selesai — diverifikasi live browser |
 | I | Verifikasi akhir + update STATE.md + prompt commit Codex | 🟢 selesai |
+| J | Wiring Review Gambar → validate/render/takeoff → Draft RAB | 🟢 selesai — placeholder disabled dihapus, volume siap masuk Draft RAB |
+| K | Coverage validator untuk `zone`/`alamat_list`/`alamat_needs_review`/offset | 🟢 selesai — test membuktikan tidak false-positive/false-negative |
 
 Legenda: 🟢 selesai · 🟡 sebagian/ditunda jujur · ⚪ belum mulai.
 
@@ -104,8 +107,9 @@ Detail lengkap per fase: `docs/ai-map/STATE.md`.
 
 ## 5. Setelah rencana ini (di luar cakupan sesi ini, dicatat sbg arah)
 
-- Menyambungkan hasil `ConsolidatedExtraction` ke alur "Generate RAB" nyata
-  (pemetaan elemen→kode AHSP, lalu core-engine menghitung — tetap Aturan Emas).
+- Mapping AHSP otomatis/deterministik untuk item takeoff (`/ahsp/search` dan
+  `/ahsp/map`) masih tahap berikutnya. Saat ini volume sudah bisa masuk Draft
+  RAB, tetapi `ahsp_code` sengaja kosong agar user memilih item AHSP manual.
 - Visi-LLM sebagai fallback KHUSUS sheet raster tanpa teks vektor (setelah
   OCR jadi lapis pertama, bukan pengganti) — sudah dicatat sbg arah di
   `docs/ai-map/STATE.md` sebelumnya, tidak berubah.

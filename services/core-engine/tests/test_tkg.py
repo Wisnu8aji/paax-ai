@@ -178,6 +178,40 @@ def test_v05_dual_count_gerbang():
 
 # ─── Renderer ────────────────────────────────────────────────────────────────
 
+def test_validator_menerima_zone_alamat_list_dan_notasi_offset_pipeline_baru():
+    doc = buat_tkg()
+    doc.sheets[0].meta.zone = "struktur_lantai_1"
+    doc.sheets[0].grid.offset_tepi = [
+        GridSpan(dari="B", ke="B-offset_sebelum_1", nilai=750, unit="mm", raw="750"),
+    ]
+    doc.sheets[0].elements[0].alamat = "B-offset_sebelum_1"
+    doc.sheets[0].elements[0].alamat_list = ["B-offset_sebelum_1"]
+    doc.sheets[0].elements[0].alamat_needs_review = True
+
+    r = validate_tkg(doc)
+
+    assert r.ok is True
+    assert r.gate_passed is True
+    assert r.n_errors == 0
+    assert r.n_warnings == 0
+    assert r.type_index["K1"]["definisi"] == ["S09"]
+    assert r.type_index["K1"]["instance"] == ["S05"]
+
+
+def test_validator_tetap_menangkap_count_mismatch_pada_alamat_offset():
+    doc = buat_tkg(count_label_k1=3)
+    doc.sheets[0].meta.zone = "struktur_lantai_1"
+    doc.sheets[0].elements[0].alamat = "B-offset_sebelum_1"
+    doc.sheets[0].elements[0].alamat_list = ["B-offset_sebelum_1"]
+    doc.sheets[0].elements[0].alamat_needs_review = True
+
+    r = validate_tkg(doc)
+
+    assert any(i.code == "W-CNT" and i.subject == "K1" for i in r.issues)
+    assert r.ok is True
+    assert r.gate_passed is False
+
+
 def test_render_deterministik_dan_lengkap():
     doc = buat_tkg()
     v = validate_tkg(doc)
