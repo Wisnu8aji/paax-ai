@@ -112,6 +112,21 @@ const intakeResult = {
   classification: "STRUCTURAL_DRAWING",
   classificationConfidence: 0.83,
   warnings: ["[W-FRG] Fragmen angka perlu review", "Satuan dimensi perlu konfirmasi"],
+  metrics: {
+    span_total: 10,
+    span_terklasifikasi: 9,
+    cakupan: 0.9,
+    grammar_pass_rate: 0.9,
+    n_unclassified: 1,
+    n_warning: 2,
+  },
+  gerbang: {
+    status: "draft" as const,
+    checks: [
+      { code: "V-01", label: "Cakupan teks (zero-loss)", passed: true, detail: "9/10 run terklasifikasi" },
+      { code: "V-06", label: "Grammar-pass rate >= 85%", passed: true, detail: "90.0% run cocok grammar" },
+    ],
+  },
 };
 
 function renderWorkspace() {
@@ -163,6 +178,10 @@ describe("TkgWorkspace premium perception review", () => {
     expect(screen.getAllByText("Unclassified").length).toBeGreaterThan(0);
     expect(screen.getByText("teks bebas")).toBeTruthy();
     expect(screen.getByRole("button", { name: /\[W-FRG\].*1/i })).toBeTruthy();
+    // Gerbang ditampilkan APA ADANYA dari backend (kode resmi V-01/V-06), bukan
+    // dihitung ulang/difabrikasi di frontend (koreksi Fase 2 P5-FIX).
+    expect(screen.getByText(/V-01/)).toBeTruthy();
+    expect(screen.getByText(/V-06/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /pakai tkg sebagai transkrip/i }));
 
@@ -179,5 +198,14 @@ describe("TkgWorkspace premium perception review", () => {
     const source = readFileSync(resolve(__dirname, "tkg-workspace.tsx"), "utf8");
 
     expect(source).not.toContain("PLHUT");
+  });
+
+  it("never fabricates gerbang codes that collide with brain's official V-01..V-10 validators", () => {
+    const source = readFileSync(resolve(__dirname, "tkg-workspace.tsx"), "utf8");
+
+    expect(source).not.toContain("V-TKG");
+    expect(source).not.toContain("V-COV");
+    expect(source).not.toContain("V-WARN");
+    expect(source).not.toContain("V-CLS");
   });
 });

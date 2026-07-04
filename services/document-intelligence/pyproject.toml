@@ -12,6 +12,15 @@ uvicorn = "*"
 pydantic = "*"
 python-multipart = "*"
 pymupdf = "^1.23.0"
+paddleocr = { version = "*", optional = true }
+
+[tool.poetry.extras]
+# Fase 2 P6: OCR utk sheet RASTER (scan/foto) saja — TIDAK wajib utk pipeline
+# vektor (P1-P4). Berat (native, model diunduh saat pertama pakai). Install:
+#   pip install "paddleocr"   (atau: poetry install -E ocr)
+# Lazy-imported di app/perception/ocr/paddle_ocr_extractor.py — service
+# tetap boot & seluruh test lain tetap hijau tanpa paket ini terpasang.
+ocr = ["paddleocr"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
