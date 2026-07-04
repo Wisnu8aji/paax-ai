@@ -5,6 +5,7 @@
 
 ## ✅ RENCANA BESAR GAMBAR KERJA — FASE J-2/K-2/L LANJUTAN (prompt 2026-07-07)
 Branch kerja: `feat/rab-nav-validator-audit-ahsp-suggest`.
+PR: https://github.com/Wisnu8aji/paax-ai/pull/30
 Base yang dipakai: `origin/feat/gambar-generate-rab-wiring` karena PR #29
 belum merged saat eksekusi.
 

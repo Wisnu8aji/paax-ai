@@ -4,7 +4,7 @@ Prompt: `docs/prompts/PAAX_CODEX_PROMPT_FASE_J2_K2_L_LANJUTAN_2026-07-07.md`
 Branch: `feat/rab-nav-validator-audit-ahsp-suggest`
 Base branch: `origin/feat/gambar-generate-rab-wiring`
 Alasan base: PR #29 (`feat/gambar-generate-rab-wiring`) masih open/belum merged saat pekerjaan ini dimulai.
-PR: `(diisi setelah PR dibuat)`
+PR: https://github.com/Wisnu8aji/paax-ai/pull/30
 
 ## Ringkasan
 
