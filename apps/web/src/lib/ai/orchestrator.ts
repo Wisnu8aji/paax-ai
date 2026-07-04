@@ -25,6 +25,12 @@ export type ExtractorProviderStatus =
 
 interface GeminiPart {
   text?: string;
+  inlineData?: GeminiInlineAttachment;
+}
+
+export interface GeminiInlineAttachment {
+  mimeType: string;
+  data: string;
 }
 
 interface GeminiResponse {
@@ -208,6 +214,33 @@ export async function geminiText(
     apiKey,
     {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
+    },
+    fetchImpl,
+  );
+
+  if (!response.ok) throw await geminiError(response);
+  const data = (await response.json()) as GeminiResponse;
+  const answer = data.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("\n").trim();
+  if (!answer) throw new Error("Gemini tidak mengembalikan teks.");
+  return answer;
+}
+
+export async function geminiMultimodal(
+  prompt: string,
+  attachments: GeminiInlineAttachment[],
+  apiKey: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<string> {
+  const response = await geminiGenerateContent(
+    apiKey,
+    {
+      contents: [{
+        role: "user",
+        parts: [
+          { text: prompt },
+          ...attachments.map((attachment) => ({ inlineData: attachment })),
+        ],
+      }],
     },
     fetchImpl,
   );

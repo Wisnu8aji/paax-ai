@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { GEMINI_MODEL, geminiText } from "@/lib/ai/orchestrator";
+import { GEMINI_MODEL, geminiMultimodal, geminiText } from "@/lib/ai/orchestrator";
 import {
   buildEngineeringChatPrompt,
   fallbackEngineeringAnswer,
@@ -13,6 +13,7 @@ export const runtime = "nodejs";
 
 const CORE_ENGINE_URL = process.env.NEXT_PUBLIC_CORE_ENGINE_URL || "http://localhost:8081";
 const CHAT_TIMEOUT_MS = 5000;
+const SUPPORTED_ATTACHMENT_MIME_TYPES = ["image/png", "image/jpeg", "image/webp", "application/pdf"] as const;
 
 const ChatBodySchema = z.object({
   message: z.string().min(1),
@@ -20,6 +21,10 @@ const ChatBodySchema = z.object({
   // Context pack (skrip TKG + draft RAB) dari client — DATA, bukan instruksi
   // (P-SEC-01). Dibatasi panjangnya sebagai budget guard (P-OPS-02).
   context: z.string().max(8000).optional(),
+  attachments: z.array(z.object({
+    mimeType: z.enum(SUPPORTED_ATTACHMENT_MIME_TYPES),
+    data: z.string().min(1).max(12_000_000),
+  })).max(4).optional(),
 });
 
 async function fetchEngineStatus(): Promise<EngineeringChatEngineStatus> {
@@ -65,6 +70,7 @@ export async function POST(req: NextRequest) {
     message: parsed.data.message,
     projectId: parsed.data.projectId,
     projectContext: parsed.data.context,
+    attachmentCount: parsed.data.attachments?.length ?? 0,
     engine,
   });
 
@@ -84,7 +90,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const answer = await geminiText(prompt, key);
+    const attachments = parsed.data.attachments ?? [];
+    const answer = attachments.length > 0
+      ? await geminiMultimodal(prompt, attachments, key)
+      : await geminiText(prompt, key);
     return NextResponse.json({
       provider: GEMINI_MODEL,
       fallback: false,

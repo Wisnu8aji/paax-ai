@@ -61,12 +61,12 @@ export function Drawer({
         aria-label={title}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
+        className="pax-glass"
         style={{
           width,
           maxWidth: '92vw',
           height: '100%',
-          background: 'var(--side-bg)',
-          borderLeft: '1px solid var(--side-border)',
+          borderLeft: '1px solid var(--glass-bd)',
           boxShadow: 'var(--shadow-modal)',
           display: 'flex',
           flexDirection: 'column',
