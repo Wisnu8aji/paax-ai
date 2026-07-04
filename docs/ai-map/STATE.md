@@ -1,7 +1,79 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-04**. File ini SATU-SATUNYA tempat status berjalan.
+> Update terakhir: **2026-07-05**. File ini SATU-SATUNYA tempat status berjalan.
 > Selesai satu fase → perbarui di sini (jangan sebar ke banyak file).
+
+## ✅ RENCANA BESAR GAMBAR KERJA — FASE 0-H SELESAI (2026-07-05 malam)
+Owner minta ekstraksi gambar kerja dinaikkan setara referensi nyata (2 dokumen
+di `Downloads/paax_plhut_extraction_*`, HANYA bahan belajar §0.1 — bukan
+template) + UI disederhanakan total (istilah teknis disembunyikan) + PaddleOCR
+sungguhan + semua `.md` diselaraskan ulang. Detail lengkap tiap fase:
+**`docs/plans/PAAX_GAMBAR_TEKNIK_SIPIL_BIG_PLAN_2026-07-05.md`**. Dikerjakan
+LANGSUNG oleh Claude (bukan prompt Codex), berurutan tanpa berhenti minta izin
+tiap fase (arahan eksplisit owner). **Semua fase 0-H selesai; Fase I (dokumen
+ini) sedang berjalan.** Ringkasan hasil NYATA:
+
+- **Fase B (zone classifier)**: `app/perception/zone_classifier.py` — judul
+  sheet + skala diekstrak dari teks sungguhan (bukan placeholder generik "Sheet
+  N"), zona paket-pekerjaan (substruktur/struktur_lantai_N/struktur_atap/
+  detail_tabel) diklasifikasi rule-based dari judul. **Ke-15 sheet PLHUT
+  cocok PERSIS** ke judul+skala asli PDF (zona: 13/15 cocok penuh intuisi
+  manusia, 2/15 sengaja `detail_tabel` krn judul-nya tak punya kualifier
+  lantai/atap eksplisit — kejujuran by-design, bukan bug).
+- **Fase C (label→grid binding, §5)**: `app/perception/binding.py` — tiap
+  instance elemen diikat ke alamat grid NYATA ("A1") atau notasi offset
+  ("B-offset_sebelum_1") dari posisi bbox vs posisi_mm grid. **PC1/PC2/PC3
+  PLHUT cocok PERSIS** ke tabel referensi owner. Bug nyata ditemukan+
+  diperbaiki: label elemen digeser ~30-35pt dari simbol aslinya (toleransi
+  awal 25% jarak-antar-as terlalu ketat, dinaikkan ke 40%).
+- **Fase D (deteksi simbol)**: diinvestigasi, DITUNDA JUJUR — bentuk simbol
+  footplat PLHUT (kotak+silang+kotak-kecil) terlalu spesifik ke satu konvensi
+  drafter untuk digeneralisasi dengan aman dalam sisa waktu sesi ini.
+- **Fase E (konsolidasi)**: `app/perception/consolidate.py` +
+  `consolidated_models.py` — skema `ConsolidatedExtraction` TETAP (field
+  selalu ada) merangkum grid kanonik (dipilih dari sheet terlengkap, konflik
+  antar-sheet DITANDAI bukan ditimpa), element registry lintas-zona+tabel,
+  assumption ledger, dimensi bangunan. PLHUT: grid 20m×10m benar, 32 kode
+  elemen unik, 1078 assumption (mayoritas unclassified — jujur mencerminkan
+  cakupan ~36%, bukan bug).
+- **Fase F (async job)**: `POST /drawings/analyze/start` + `GET /drawings/
+  analyze/status/{job_id}` (FastAPI BackgroundTasks + in-memory, batas: state
+  hilang kalau restart — dicatat, cukup utk kematangan app saat ini).
+- **Fase G (PaddleOCR nyata)**: `paddleocr` 3.7.0 + `paddlepaddle` 3.3.1
+  BERHASIL terpasang & termuat di Python 3.13/Windows. **Temuan jujur**:
+  inferensi `.predict()` gagal `NotImplementedError` native (oneDNN) di
+  kombinasi OS/CPU mesin ini — adapter diperbaiki utk degradasi anggun
+  (fallback manual tetap jalan, tidak meruntuhkan endpoint).
+- **Fase H (UI overhaul)**: `tkg-workspace.tsx` dirombak —
+  drag-drop+chip lampiran (reuse pola Engineering Chat), tombol "Jalankan
+  Persepsi"→**"Analisa Gambar Kerja"**, animasi progres nyata (reuse
+  `.pax-thinking`, teks dari `job.progress_message` backend bukan simulasi),
+  panel teknis (cakupan%/grammar-pass/kode V-xx) **DIHAPUS dari tampilan
+  utama**, diganti **"Review Gambar"**: kartu per-halaman (judul+zona+skala),
+  grid&elemen per-zona bahasa manusia ("A1: PC1"), dimensi bangunan dalam
+  meter, daftar "Perlu dicek" progresif (preview 12 + expand). Tombol
+  **"Generate RAB"** placeholder (disabled, "segera hadir") — SENGAJA belum
+  disambungkan, sesuai instruksi eksplisit owner (ekstraksi dulu, RAB nanti).
+  **Diverifikasi end-to-end di browser nyata** (bukan cuma vitest): upload
+  PDF sintetis via drag-drop asli → job async → Review Gambar tampil dgn
+  dimensi bangunan benar (6,3m×7,2m cocok fixture) → simpan hasil → konfirmasi
+  tersimpan. Nol error console.
+
+**Angka final (2026-07-05 malam)**: core-engine **238**, document-intelligence
+**131**, web **43** — total **412 test hijau**, tidak ada regresi.
+**Cakupan real PDF PLHUT (15 sheet): 33,75% → 36,11%** (naik lagi setelah
+Fase B/C — bug ditemukan: judul/skala yg sudah "dipakai jadi metadata" masih
+salah dihitung unclassified, diperbaiki). **GERBANG-2 MASIH BELUM TUTUP** —
+sisa gap: deteksi simbol grafis, beberapa sheet tanpa bubble-grid, V-02..08
+core-engine belum diuji ulang dgn pipeline baru.
+
+Investigasi branch (dari sesi sebelumnya): `feat/fase0-plhut-golden-anchor`
+(Fase 0 RAB) dan `feat/ui-premium-redesign` (Fase 2 UI+persepsi) **SUDAH
+DI-MERGE ke `main`** oleh Codex sebelum sesi ini dimulai (lihat `git log`
+commit `d17a67d`/`97161a4`/`38ac2ef`) — working tree SEKARANG langsung di
+`main`, bukan lagi branch terpisah. Semua perubahan Fase 0-H sesi ini
+**MASIH BELUM DI-COMMIT** (Claude dilarang commit) — prompt Codex baru:
+`docs/prompts/PAAX_CODEX_PROMPT_COMMIT_GAMBAR_TEKNIK_SIPIL_2026-07-05.md`.
 
 ## ⚠️ DIVERGENSI BRANCH — SUDAH DIINVESTIGASI (2026-07-04 malam), TERNYATA KECIL
 `feat/ui-premium-redesign` (branch aktif, UI premium + SEMUA implementasi Fase
@@ -168,9 +240,14 @@ dikerjakan sekarang karena murni deterministik & tidak menyentuh CV/vision.
   angkut per kelas jarak, F-G04/G06-G14 (keramik dinding/baja/atap detail/
   MEP), F-C07-C10; UI tabel BBS + form takeoff manual di TkgWorkspace.
   Detail: `docs/BRAIN_ALIGNMENT.md` §4.
-- **DITUNDA (jangan dibangun)**: v1.0 Gambar→BoQ→RAB (CV) + Site Agent penuh.
-  Brain v4.1 menguatkan ini via gerbang F0 (data grounding wajib sebelum
-  F2/TKG) — bukan alasan untuk mulai lebih awal.
+- **DIREVISI 2026-07-04/05 (sebelumnya "DITUNDA")**: jalur PERSEPSI VEKTOR
+  (baca teks/geometri PDF asli — BUKAN vision-LLM piksel) untuk Gambar→BoQ→RAB
+  ternyata TIDAK menyentuh gerbang F0 sama sekali (murni deterministik, tidak
+  ada tebakan model) — owner memutuskan mengerjakannya langsung (lihat
+  `docs/plans/PAAX_GAMBAR_TEKNIK_SIPIL_BIG_PLAN_2026-07-05.md`), hasil real:
+  cakupan PLHUT 0%→33,75%. Yang TETAP ditunda: vision-LLM piksel (foto/scan
+  tanpa teks vektor) sbg jalur UTAMA — itu hanya fallback OCR-gagal. Site
+  Agent penuh (v2.0) tetap ditunda, tidak tersentuh oleh keputusan ini.
 
 ## 🎨 UI Premium Redesign — Medium Grey Glass (2026-07-03) — terverifikasi, menunggu commit Codex
 Rombak besar sesuai spek owner (`G:\Design\prompt\PAAX_PLAN_SESI_DESAIN_PREMIUM_2026-07-03.txt`):
