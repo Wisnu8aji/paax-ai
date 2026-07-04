@@ -3,7 +3,7 @@
 Tanggal eksekusi: 2026-07-11  
 Branch: `feat/ahsp-unit-apply-semarang-import-kejaksaan`  
 Base kerja: `origin/feat/ahsp-unit-gap-semarang-price-batch2` karena PR #29-#33 masih open dan fase ini bergantung pada hasil Fase O/P.  
-PR: TBD
+PR: https://github.com/Wisnu8aji/paax-ai/pull/34
 
 ## Ringkasan
 
