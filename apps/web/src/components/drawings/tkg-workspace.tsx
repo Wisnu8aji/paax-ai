@@ -17,6 +17,7 @@
  * dibutuhkan mode developer/QA terpisah).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -122,6 +123,7 @@ function AnalyzingIndicator({ progressMessage }: { progressMessage: string | nul
 }
 
 export function TkgWorkspace({ projectId }: { projectId: string }) {
+  const router = useRouter();
   const [record, setRecord] = useState<ProjectTkgRecord>(() => emptyTkgRecord(projectId));
   const [selectedPdf, setSelectedPdf] = useState<File | null>(null);
   const [perceptionReview, setPerceptionReview] = useState<PerceptionReview | null>(null);
@@ -134,6 +136,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
   const [info, setInfo] = useState<string | null>(null);
   const [validation, setValidation] = useState<TkgValidationResult | null>(null);
   const [takeoff, setTakeoff] = useState<TakeoffResult | null>(null);
+  const [rabDraftPath, setRabDraftPath] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -150,6 +153,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
   const runPipeline = useCallback(async (baseRecord: ProjectTkgRecord) => {
     const tkg = baseRecord.tkg;
     if (!tkg) return;
+    setRabDraftPath(null);
     setValidation(null);
     setTakeoff(null);
 
@@ -178,6 +182,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     setBusy('ai');
     setError(null);
     setInfo(null);
+    setRabDraftPath(null);
     try {
       const res = await fetch('/api/ai/tkg', {
         method: 'POST',
@@ -214,6 +219,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     setSelectedPdf(file);
     setPerceptionReview(null);
     setAssumptionsExpanded(false);
+    setRabDraftPath(null);
     setError(null);
     setInfo(`${file.name} siap dianalisis. Klik "Analisa Gambar Kerja" untuk melihat hasilnya.`);
   }, []);
@@ -226,6 +232,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     setBusy('perception');
     setError(null);
     setInfo(null);
+    setRabDraftPath(null);
     setProgressMessage('Mengunggah gambar...');
     try {
       const result = await analyzeDrawingFileInBackground(selectedPdf, projectId, setProgressMessage);
@@ -244,6 +251,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     if (!perceptionReview) return;
     setBusy('save-perception');
     setError(null);
+    setRabDraftPath(null);
     try {
       const next = await tkgRepository.save({
         ...record,
@@ -270,6 +278,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     setSelectedPdf(null);
     setPerceptionReview(null);
     setAssumptionsExpanded(false);
+    setRabDraftPath(null);
     setError(null);
     setInfo('Hasil analisis dibuang. Pilih PDF lain atau gunakan teks deskripsi.');
   }, []);
@@ -303,6 +312,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
       }));
       const kept = draft.lines.filter((line) => line.ahsp_code || line.volume != null);
       await rabRepository.save({ ...draft, lines: [...kept, ...newLines] });
+      setRabDraftPath(`/proyek/${projectId}/rab`);
       setInfo(`${newLines.length} baris volume terkirim ke Draft RAB. ${takeoff.items.length - okItems.length} item review tidak ikut dikirim.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kirim ke RAB gagal.');
@@ -310,6 +320,11 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
       setBusy(null);
     }
   }, [projectId, takeoff]);
+
+  const openRabDraft = useCallback(() => {
+    if (!rabDraftPath) return;
+    router.push(rabDraftPath);
+  }, [rabDraftPath, router]);
 
   const tkg = record.tkg;
   const counts = useMemo(() => {
@@ -653,9 +668,16 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <TriagePanel projectId={projectId} items={triageItems} onRecompute={rerunPipeline} busy={busy === 'takeoff'} />
           {readyItems > 0 && (
-            <Button variant="secondary" onClick={sendToRab} disabled={busy !== null} style={{ alignSelf: 'flex-start' }}>
-              <Send size={14} /> Kirim Volume ke Draft RAB
-            </Button>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <Button variant="secondary" onClick={sendToRab} disabled={busy !== null} style={{ alignSelf: 'flex-start' }}>
+                <Send size={14} /> Kirim Volume ke Draft RAB
+              </Button>
+              {rabDraftPath && (
+                <Button variant="secondary" onClick={openRabDraft} disabled={busy !== null} style={{ alignSelf: 'flex-start' }}>
+                  <FileText size={14} /> Lihat Draft RAB
+                </Button>
+              )}
+            </div>
           )}
         </div>
       )}

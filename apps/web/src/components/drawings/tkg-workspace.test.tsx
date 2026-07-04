@@ -12,9 +12,10 @@ import { renderTkg, takeoffTkg, validateTkg } from "@/lib/engine";
 import { emptyRabLine, rabRepository, type ProjectRabDraft } from "@/lib/projects/rab-repository";
 import { TkgWorkspace } from "./tkg-workspace";
 
-const { analyzeDrawingFileInBackgroundMock, saveMock } = vi.hoisted(() => ({
+const { analyzeDrawingFileInBackgroundMock, saveMock, routerPushMock } = vi.hoisted(() => ({
   analyzeDrawingFileInBackgroundMock: vi.fn(),
   saveMock: vi.fn(),
+  routerPushMock: vi.fn(),
 }));
 
 vi.mock("@/lib/ai/document-intelligence-tkg", () => ({
@@ -63,6 +64,10 @@ vi.mock("@/lib/projects/rab-repository", () => ({
     get: vi.fn(),
     save: vi.fn(),
   },
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: routerPushMock }),
 }));
 
 vi.mock("@/components/review/triage-panel", () => ({
@@ -302,6 +307,24 @@ describe("TkgWorkspace Review Gambar (rencana besar 2026-07-05)", () => {
         }),
       ],
     }));
+  });
+
+  it("shows a Draft RAB navigation action after sending ready volume", async () => {
+    renderWorkspace();
+    fireEvent.change(await screen.findByLabelText(/unggah pdf gambar kerja/i), {
+      target: { files: [makePdfFile()] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /analisa gambar kerja/i }));
+
+    fireEvent.click(await screen.findByRole("button", { name: /simpan hasil analisis/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /kirim volume ke draft rab/i }));
+
+    const openDraftButton = await screen.findByRole("button", { name: /lihat draft rab/i });
+    expect(routerPushMock).not.toHaveBeenCalled();
+
+    fireEvent.click(openDraftButton);
+
+    expect(routerPushMock).toHaveBeenCalledWith("/proyek/project-1/rab");
   });
 
   it("keeps the text description AI flow wired through validation, render, and takeoff", async () => {

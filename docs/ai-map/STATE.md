@@ -1,7 +1,36 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-04** (eksekusi prompt Fase J/K/L bertanggal 2026-07-06). File ini SATU-SATUNYA tempat status berjalan.
+> Update terakhir: **2026-07-04** (eksekusi prompt lanjutan Fase J-2/K-2/L bertanggal 2026-07-07). File ini SATU-SATUNYA tempat status berjalan.
 > Selesai satu fase → perbarui di sini (jangan sebar ke banyak file).
+
+## ✅ RENCANA BESAR GAMBAR KERJA — FASE J-2/K-2/L LANJUTAN (prompt 2026-07-07)
+Branch kerja: `feat/rab-nav-validator-audit-ahsp-suggest`.
+Base yang dipakai: `origin/feat/gambar-generate-rab-wiring` karena PR #29
+belum merged saat eksekusi.
+
+- **Fase J-2 selesai**: setelah `sendToRab` menyimpan volume ke Draft RAB,
+  UI tidak auto-redirect. Tombol baru **"Lihat Draft RAB"** muncul dan kliknya
+  memanggil `router.push('/proyek/[projectId]/rab')`. Ini menjaga konteks user:
+  pesan sukses tetap terbaca, lalu user sendiri membuka draft.
+- **Fase K-2 selesai sebagai audit validator**: test baru di
+  `services/core-engine/tests/test_tkg.py` membuktikan V-02 tetap menangkap
+  total grid salah walau data memakai `zone`, `offset_tepi`, `alamat_list`,
+  dan `alamat_needs_review`; V-04 tetap hanya warning untuk orphan type/def.
+- **Temuan V-03 eksplisit**: kasus denah multi-sheet dengan grid subset sah
+  (mis. sheet atap hanya B-C sementara sheet lantai penuh A-C) saat ini masih
+  menjadi `E-GRID` karena validator membandingkan fingerprint grid penuh antar
+  semua sheet `denah`. Test ditandai `xfail(strict=True)` agar temuan terlihat
+  tanpa mengubah gate logic sepihak. Perlu keputusan Claude/owner sebelum V-03
+  diubah dari error keras menjadi aturan yang lebih sesuai realita multi-sheet.
+- **Fase L di-skip sengaja**: masih opsional, katalog AHSP repo hanya sample 4
+  item. Auto-suggest berisiko memberi kesan mapping AHSP sudah matang. Jalur
+  saat ini tetap jujur: volume masuk Draft RAB, `ahsp_code` kosong, user pilih
+  manual di halaman RAB.
+- **Verifikasi**: web Vitest **46/46**, `pnpm tsc --noEmit` hijau,
+  core-engine **242 passed + 1 xfailed**, document-intelligence **126 passed +
+  5 skipped**. Browser Playwright memverifikasi upload PDF → analisa → simpan
+  → kirim volume → tombol "Lihat Draft RAB" → URL `/proyek/project-1/rab` dan
+  row volume `1.25` tersimpan dengan `ahsp_code: ""`.
 
 ## ✅ RENCANA BESAR GAMBAR KERJA — FASE J/K SELESAI (prompt 2026-07-06)
 Branch kerja: `feat/gambar-generate-rab-wiring`.

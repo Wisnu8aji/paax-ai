@@ -156,6 +156,65 @@ def test_v02_lolos_dan_gagal():
     assert gagal.issues[0].code == "E-GRID"
 
 
+def test_v02_tetap_menandai_total_grid_salah_dengan_field_pipeline_baru():
+    doc = buat_tkg(total_x_mm=6600)
+    doc.generated_by = "pipeline"
+    doc.sheets[0].meta.zone = "struktur_lantai_1"
+    doc.sheets[0].grid.offset_tepi = [
+        GridSpan(dari="B", ke="B-offset_sebelum_1", nilai=750, unit="mm", raw="750"),
+    ]
+    doc.sheets[0].elements[0].alamat = "B-offset_sebelum_1"
+    doc.sheets[0].elements[0].alamat_list = ["B-offset_sebelum_1"]
+    doc.sheets[0].elements[0].alamat_needs_review = True
+
+    r = validate_tkg(doc)
+
+    assert any(i.code == "E-GRID" and i.sheet_id == "S05" for i in r.issues)
+    assert r.ok is False
+    assert r.gate_passed is False
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="V-03 saat ini menyamakan semua fingerprint denah; subset grid multi-sheet realistis masih kena E-GRID.",
+)
+def test_v03_denah_subset_grid_pipeline_sah_tidak_menjadi_e_grid():
+    doc = buat_tkg()
+    doc.generated_by = "pipeline"
+    doc.sheets[0].meta.zone = "struktur_lantai_1"
+    doc.sheets.append(
+        TkgSheet(
+            sheet_id="S06",
+            jenis="denah",
+            meta=SheetMeta(judul="DENAH ATAP SUBSET", nomor="S-06", skala="1:100", zone="struktur_atap"),
+            grid=Grid(
+                sumbu_x=[GridAxis(label="B", posisi_mm=3000), GridAxis(label="C", posisi_mm=6500)],
+                sumbu_y=[GridAxis(label="1", posisi_mm=0), GridAxis(label="2", posisi_mm=4000)],
+                bentang_x=[GridSpan(dari="B", ke="C", nilai=3500, unit="mm", raw="3500")],
+                bentang_y=[GridSpan(dari="1", ke="2", nilai=4000, unit="mm", raw="4000")],
+                total_x=GridTotal(dari="B", ke="C", nilai=3500, unit="mm"),
+                total_y=GridTotal(dari="1", ke="2", nilai=4000, unit="mm"),
+            ),
+            elements=[
+                ElementInstance(
+                    kode="SL1",
+                    alamat="antara as B-C pada as 1",
+                    alamat_list=["B1", "C1"],
+                    bentuk="ruas",
+                    n=1,
+                    ruas=RuasGrid(sumbu="x", dari="B", ke="C", pada="1"),
+                )
+            ],
+        )
+    )
+
+    r = validate_tkg(doc)
+
+    assert not any(i.code == "E-GRID" for i in r.issues)
+    assert r.ok is True
+    assert r.gate_passed is True
+
+
 def test_v04_orphans():
     doc = buat_tkg()
     doc.sheets[0].elements.append(
@@ -167,6 +226,36 @@ def test_v04_orphans():
     assert "Z9" in r.orphans_tanpa_instance
     codes = {i.code for i in r.issues}
     assert "W-TYP" in codes and "W-DEF" in codes
+
+
+def test_v04_orphan_tetap_warning_pada_pipeline_zone_offset():
+    doc = buat_tkg()
+    doc.generated_by = "pipeline"
+    doc.sheets[0].meta.zone = "struktur_lantai_1"
+    doc.sheets[0].grid.offset_tepi = [
+        GridSpan(dari="B", ke="B-offset_sebelum_1", nilai=750, unit="mm", raw="750"),
+    ]
+    doc.sheets[0].elements.append(
+        ElementInstance(
+            kode="X9",
+            alamat="B-offset_sebelum_1",
+            alamat_list=["B-offset_sebelum_1"],
+            alamat_needs_review=True,
+            n=1,
+        )
+    )
+    doc.sheets[1].tables[0].records.append(
+        TypeRecord(kode="Z9", dimensi={"b": 100, "h": 100}),
+    )
+
+    r = validate_tkg(doc)
+
+    assert "X9" in r.orphans_tanpa_definisi
+    assert "Z9" in r.orphans_tanpa_instance
+    assert any(i.code == "W-TYP" and i.subject == "X9" for i in r.issues)
+    assert any(i.code == "W-DEF" and i.subject == "Z9" for i in r.issues)
+    assert r.ok is True
+    assert r.gate_passed is True
 
 
 def test_v05_dual_count_gerbang():

@@ -81,7 +81,9 @@ sini supaya sesi depan tahu status tanpa baca file di luar repo)
 | H | UI/UX overhaul (drag-drop, animasi thinking, Review Gambar ramah pengguna) | 🟢 selesai — diverifikasi live browser |
 | I | Verifikasi akhir + update STATE.md + prompt commit Codex | 🟢 selesai |
 | J | Wiring Review Gambar → validate/render/takeoff → Draft RAB | 🟢 selesai — placeholder disabled dihapus, volume siap masuk Draft RAB |
-| K | Coverage validator untuk `zone`/`alamat_list`/`alamat_needs_review`/offset | 🟢 selesai — test membuktikan tidak false-positive/false-negative |
+| J-2 | Navigasi setelah kirim volume ke Draft RAB | 🟢 selesai — setelah kirim sukses muncul tombol "Lihat Draft RAB" ke `/proyek/[projectId]/rab` |
+| K | Coverage validator untuk `zone`/`alamat_list`/`alamat_needs_review`/offset | 🟢 selesai — test membuktikan field pipeline baru tidak mengganggu validator lama |
+| K-2 | Audit validator multi-sheet realistis (V-02/V-03/V-04) | 🟡 selesai sebagai audit — V-02/V-04 aman; V-03 punya false-positive untuk subset grid sah dan perlu keputusan sebelum logic diubah |
 
 Legenda: 🟢 selesai · 🟡 sebagian/ditunda jujur · ⚪ belum mulai.
 
@@ -110,8 +112,13 @@ Detail lengkap per fase: `docs/ai-map/STATE.md`.
 - Mapping AHSP otomatis/deterministik untuk item takeoff (`/ahsp/search` dan
   `/ahsp/map`) masih tahap berikutnya. Saat ini volume sudah bisa masuk Draft
   RAB, tetapi `ahsp_code` sengaja kosong agar user memilih item AHSP manual.
+  Fase L tetap di-skip pada prompt lanjutan karena katalog sample repo hanya
+  4 item; auto-suggest berisiko terlihat final padahal data belum matang.
 - Visi-LLM sebagai fallback KHUSUS sheet raster tanpa teks vektor (setelah
   OCR jadi lapis pertama, bukan pengganti) — sudah dicatat sbg arah di
   `docs/ai-map/STATE.md` sebelumnya, tidak berubah.
-- Validator V-02/03/04/05/08 penuh (saat ini sebagian di core-engine belum
-  diuji ulang dengan TKG hasil pipeline baru).
+- Validator V-03 perlu spek lanjutan: `validate_tkg` sekarang membandingkan
+  fingerprint grid penuh antar semua sheet `denah`, sehingga denah dengan
+  grid subset sah (mis. atap hanya B-C sementara lantai penuh A-C) menjadi
+  `E-GRID`. `document-intelligence` sendiri memperlakukan perbedaan grid
+  antar-sheet sebagai assumption, bukan error keras.
