@@ -5,7 +5,7 @@
 
 ## ✅ FASE O/P — AHSP UNIT GAP + HARGA SEMARANG BATCH2 (prompt 2026-07-10)
 Branch kerja: `feat/ahsp-unit-gap-semarang-price-batch2`.
-PR: TBD
+PR: https://github.com/Wisnu8aji/paax-ai/pull/33
 Base yang dipakai: `origin/fix/v03-relative-position-check` karena PR #29,
 #30, #31, dan #32 masih open. Prompt ini membutuhkan data/report dari Fase N
 dan M-2, sehingga tidak bisa dikerjakan langsung dari `main`.
