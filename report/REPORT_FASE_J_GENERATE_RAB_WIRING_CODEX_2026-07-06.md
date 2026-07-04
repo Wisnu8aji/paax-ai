@@ -4,7 +4,7 @@ Prompt: `docs/prompts/PAAX_CODEX_PROMPT_FASE_J_GENERATE_RAB_WIRING_2026-07-06.md
 
 Branch: `feat/gambar-generate-rab-wiring`
 
-PR: `akan diisi setelah branch dipush dan PR dibuat`
+PR: https://github.com/Wisnu8aji/paax-ai/pull/29
 
 ## Ringkasan
 
