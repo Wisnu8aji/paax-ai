@@ -51,13 +51,64 @@ def grid_distance_m(grid: Grid, sumbu: str, dari: str, ke: str) -> float:
     return total
 
 
-def _grid_fingerprint(grid: Grid) -> str:
-    """V-03: label as + bentang kanonik (dibulatkan mm) sebagai sidik jari."""
-    fx = ";".join(f"{s.dari}-{s.ke}:{round(ke_meter(s.nilai, s.unit) * 1000)}" for s in grid.bentang_x)
-    fy = ";".join(f"{s.dari}-{s.ke}:{round(ke_meter(s.nilai, s.unit) * 1000)}" for s in grid.bentang_y)
-    lx = ",".join(a.label for a in grid.sumbu_x)
-    ly = ",".join(a.label for a in grid.sumbu_y)
-    return f"X[{lx}]({fx})|Y[{ly}]({fy})"
+def _axis_positions_m(grid: Grid, sumbu: str) -> Dict[str, float]:
+    """
+    V-03: posisi label as untuk satu keluarga sumbu.
+
+    Jika semua axis punya posisi kumulatif, pakai posisi itu. Jika tidak,
+    turunkan posisi relatif dari rantai bentang dengan axis pertama sebagai 0.
+    """
+    axes = grid.sumbu_x if sumbu == "x" else grid.sumbu_y
+    if not axes:
+        return {}
+    if all(axis.posisi_mm is not None for axis in axes):
+        return {axis.label: ke_meter(axis.posisi_mm or 0.0, "mm") for axis in axes}
+
+    anchor = axes[0].label
+    positions = {anchor: 0.0}
+    for axis in axes[1:]:
+        try:
+            positions[axis.label] = grid_distance_m(grid, sumbu, anchor, axis.label)
+        except KeyError:
+            continue
+    return positions
+
+
+def _cek_v03(
+    grids: List[tuple[str, Grid]],
+    tol: float,
+    issues: List[TkgIssue],
+) -> None:
+    """
+    V-03 lintas denah: bandingkan hanya label as yang sama-sama muncul.
+
+    Sheet denah boleh menampilkan subset grid yang sah. Yang menjadi error
+    hanya label yang overlap tetapi posisinya berbeda melewati toleransi.
+    """
+    axis_maps = [
+        (sheet_id, _axis_positions_m(grid, "x"), _axis_positions_m(grid, "y"))
+        for sheet_id, grid in grids
+    ]
+    abs_tol_m = 0.001
+    eps = 1e-9
+    for i, (sid_a, x_a, y_a) in enumerate(axis_maps):
+        for sid_b, x_b, y_b in axis_maps[i + 1:]:
+            for sumbu, pos_a, pos_b in (("x", x_a, x_b), ("y", y_a, y_b)):
+                for label in sorted(set(pos_a) & set(pos_b)):
+                    a = pos_a[label]
+                    b = pos_b[label]
+                    diff = abs(a - b)
+                    if diff <= abs_tol_m:
+                        continue
+                    rel = diff / max(abs(a), abs(b), eps)
+                    if rel > tol:
+                        issues.append(TkgIssue(
+                            code="E-GRID", severity="error", subject=f"{sumbu}:{label}",
+                            message=(
+                                f"V-03 gagal sumbu {sumbu} as '{label}': posisi {sid_a} = {a:g} m "
+                                f"berbeda dari {sid_b} = {b:g} m (tol {tol:.1%})."
+                            ),
+                        ))
 
 
 def _cek_v02(grid: Grid, sheet_id: str, tol: float, issues: List[TkgIssue]) -> None:
@@ -87,19 +138,13 @@ def validate_tkg(doc: TkgDocument, params: TakeoffParams | None = None) -> TkgVa
     issues: List[TkgIssue] = []
 
     # V-02 per sheet + V-03 lintas sheet denah
-    fingerprints: Dict[str, str] = {}
+    denah_grids: List[tuple[str, Grid]] = []
     for sheet in doc.sheets:
         if sheet.grid is not None:
             _cek_v02(sheet.grid, sheet.sheet_id, params.tol_grid, issues)
             if sheet.jenis == "denah" and (sheet.grid.bentang_x or sheet.grid.bentang_y):
-                fingerprints[sheet.sheet_id] = _grid_fingerprint(sheet.grid)
-    if len(set(fingerprints.values())) > 1:
-        detail = "; ".join(f"{sid}" for sid in fingerprints)
-        issues.append(TkgIssue(
-            code="E-GRID", severity="error",
-            message=f"V-03 gagal: sidik jari grid BEDA antar sheet denah ({detail}). "
-                    f"Kemungkinan salah baca / beda revisi / beda bangunan.",
-        ))
+                denah_grids.append((sheet.sheet_id, sheet.grid))
+    _cek_v03(denah_grids, params.tol_grid, issues)
 
     # V-04: TYPE_INDEX lintas sheet
     type_index: Dict[str, Dict[str, List[str]]] = {}
