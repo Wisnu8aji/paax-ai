@@ -1,7 +1,38 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-04** (eksekusi prompt lanjutan Fase J-2/K-2/L bertanggal 2026-07-07). File ini SATU-SATUNYA tempat status berjalan.
+> Update terakhir: **2026-07-08** (eksekusi prompt Fase M/N: V-03 fix + impor AHSP CK 2026). File ini SATU-SATUNYA tempat status berjalan.
 > Selesai satu fase → perbarui di sini (jangan sebar ke banyak file).
+
+## ✅ FASE M/N — V-03 FIX + IMPOR AHSP CK 2026 (prompt 2026-07-08)
+Branch kerja: `feat/v03-fix-ahsp-catalog-import`.
+Base yang dipakai: `origin/feat/rab-nav-validator-audit-ahsp-suggest` karena
+PR #29 dan #30 masih open saat pekerjaan dimulai.
+
+- **Fase M selesai**: V-03 core-engine tidak lagi membandingkan fingerprint
+  penuh antar sheet denah. Validator sekarang membandingkan hanya label as
+  yang muncul di kedua sheet; subset grid sah (mis. atap hanya B-C, lantai A-C)
+  lolos, tetapi konflik posisi nyata tetap menjadi `E-GRID` dengan subject
+  actionable seperti `x:B`. Marker `xfail` V-03 sudah dihapus.
+- **Fase N selesai sebagai impor mekanis + audit batch**: katalog resmi
+  `G:\paax-data\ahsp\cipta-karya-2026.json` berisi **2.542 item** disalin ke
+  `data/ahsp/cipta-karya-2026.json`. File sample lama
+  `data/ahsp/cipta-karya.sample.json` tetap ada dan tidak diubah.
+- **Temuan data 10 batch**: semua 2.542 item parse sebagai `AHSPItem`; tidak
+  ada `resource_code` asing terhadap master resource; ada **197 anomali
+  mekanis** (unit kosong dan/atau resource sama dengan koefisien sama berulang
+  dalam item) yang dicatat, bukan diperbaiki sepihak. Detail:
+  `report/AHSP_IMPORT_BATCH_FINDINGS_2026-07-08.md`.
+- **Coverage harga jujur**: sebelum impor, `jateng` coverage ratio 1.0 untuk
+  4 item sample/12 resource. Setelah impor, loader memuat **2.546 AHSP** (2.542
+  resmi + 4 sample); `jateng` coverage ratio menjadi **0.0049** (12 dari 2.441
+  resource AHSP punya harga). Ini benar dan diharapkan karena HSD regional resmi
+  untuk katalog 2026 belum diimpor.
+- **Belum dikerjakan di prompt ini**: AHSP auto-suggest Fase L, impor price book
+  dari `_resources_catalog.json` (dilarang karena semua price=0), deteksi simbol
+  grafis, dan vision-LLM fallback.
+- **Verifikasi**: core-engine **249 passed** (tanpa xfail), web Vitest
+  **46 passed**, `pnpm tsc --noEmit` exit 0, document-intelligence
+  **126 passed + 5 skipped**.
 
 ## ✅ RENCANA BESAR GAMBAR KERJA — FASE J-2/K-2/L LANJUTAN (prompt 2026-07-07)
 Branch kerja: `feat/rab-nav-validator-audit-ahsp-suggest`.
