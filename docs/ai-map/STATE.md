@@ -1,7 +1,38 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-09** (eksekusi prompt Fase M-2: koreksi V-03 ke posisi relatif). File ini SATU-SATUNYA tempat status berjalan.
+> Update terakhir: **2026-07-10** (eksekusi prompt Fase O/P: usulan unit AHSP + harga Semarang batch2). File ini SATU-SATUNYA tempat status berjalan.
 > Selesai satu fase → perbarui di sini (jangan sebar ke banyak file).
+
+## ✅ FASE O/P — AHSP UNIT GAP + HARGA SEMARANG BATCH2 (prompt 2026-07-10)
+Branch kerja: `feat/ahsp-unit-gap-semarang-price-batch2`.
+PR: TBD
+Base yang dipakai: `origin/fix/v03-relative-position-check` karena PR #29,
+#30, #31, dan #32 masih open. Prompt ini membutuhkan data/report dari Fase N
+dan M-2, sehingga tidak bisa dikerjakan langsung dari `main`.
+
+- **Fase O selesai sebagai laporan usulan, bukan penerapan data**: 188 item
+  AHSP CK 2026 yang `unit`-nya kosong dicari di 16 PDF resmi
+  `G:\AHSP\Lampiran-VI-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Cipta-Karya-{1..16}.pdf`.
+  Semua **188/188** ditemukan langsung di PDF resmi. Hasil kelompok: PDF resmi
+  **188**, infer pola nama **0**, tidak terselesaikan **0**.
+- **Duplikasi resource diverifikasi bukan bug**: test baru membuktikan
+  `compute_hsp` menjumlahkan baris duplikat pada item nyata `1.1.1.1`
+  (`L.02` muncul 2x koefisien 0.2) sebagai dua subtotal terpisah.
+- **Fase P selesai sebagai laporan usulan Semarang batch2**: acuan harga
+  existing adalah `G:\paax-data\harga-satuan\semarang.json` (23 resource
+  unik hasil fase lama). Dari 68 baris unmatched: **2 matched diusulkan**
+  (`Besi profil` -> `M.GEN.0085`, `Seal tape` -> `M.GEN.0456`),
+  **4 ambigu**, **62 tidak ketemu aman**. Dua ambiguous lama (`Paku`,
+  `Paku sekrup`) tetap dicatat sebagai review lama, tidak dihitung dalam 68.
+- **File produksi tidak disentuh**: tidak ada perubahan pada
+  `data/ahsp/cipta-karya-2026.json`, `data/harga-satuan/semarang.json`, atau
+  `G:\paax-data\harga-satuan\semarang.json`.
+- **Verifikasi**: core-engine **258 passed**, web Vitest **46 passed**,
+  `pnpm tsc --noEmit` exit 0, document-intelligence **126 passed + 5 skipped**.
+- Report detail:
+  `report/AHSP_UNIT_GAP_RESOLUTION_2026-07-10.md`,
+  `report/HARGA_SEMARANG_BATCH2_FINDINGS_2026-07-10.md`,
+  `report/REPORT_FASE_O_P_AHSP_UNIT_GAP_SEMARANG_PRICE_CODEX_2026-07-10.md`.
 
 ## ✅ FASE M-2 — V-03 RELATIVE POSITION FIX (prompt 2026-07-09)
 Branch kerja: `fix/v03-relative-position-check`.
