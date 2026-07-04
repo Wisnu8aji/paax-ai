@@ -36,7 +36,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id" className={`${inter.variable} ${outfit.variable} ${jetbrainsMono.variable}`}>
-      <body className="bg-paax-bg text-paax-text antialiased">
+      <body className="antialiased">
         {children}
       </body>
     </html>
