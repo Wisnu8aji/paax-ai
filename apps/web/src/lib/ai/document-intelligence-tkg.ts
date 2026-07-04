@@ -2,18 +2,21 @@
  * PAAX — Klien Document Intelligence (Lapis 2A) untuk upload gambar kerja
  * PDF nyata -> TKG draft, MENGGANTIKAN kebutuhan mengetik ulang teks deskripsi.
  *
- * ATURAN EMAS: modul ini TIDAK menghitung apa pun. Service ini hanya membaca
- * teks vektor PDF (PyMuPDF, deterministik, INV-TKG-06/RULE-EXT-05 brain-00 —
- * bukan vision-LLM menebak angka) dan menyusunnya jadi TkgDocument usulan;
- * kuantitas tetap dihitung core-engine lewat validateTkg/renderTkg/takeoffTkg
- * (lib/engine.ts) seperti jalur teks-manual yang sudah ada.
+ * ATURAN EMAS: modul ini TIDAK menghitung apa pun. Service membaca teks
+ * vektor PDF (PyMuPDF, deterministik, INV-TKG-06/RULE-EXT-05 brain-00 —
+ * bukan vision-LLM menebak angka), merangkai fragmen (merge-run), memparsing
+ * grammar notasi struktur (brain-00 §2), dan merekonstruksi tabel via
+ * `page.find_tables()` (Fase 2 P1-P4, lihat services/document-intelligence
+ * app/perception/) menjadi TkgDocument usulan + metrik/gerbang NYATA (bukan
+ * dihitung ulang di sini). Kuantitas tetap dihitung core-engine lewat
+ * validateTkg/renderTkg/takeoffTkg (lib/engine.ts) spt jalur teks-manual.
  *
- * CATATAN JUJUR: grammar parsing saat ini (services/document-intelligence
- * app/tkg/builder.py) baru mengenali notasi terstruktur sederhana, BUKAN
- * grammar notasi gambar struktur Indonesia lengkap (brain-00 §2-§5). Pada PDF
- * gambar kerja nyata yang teksnya berupa fragmen tersebar (bukan kalimat
- * terstruktur), hasilnya akan didominasi blok "unclassified" — itu bukan bug
- * di jalur ini, tapi keterbatasan grammar yang memang belum dibangun.
+ * CATATAN JUJUR (cakupan Fase 2 iterasi ini — bukan brain-00 §3 penuh):
+ * rekonstruksi GRID hanya dari notasi gabungan eksplisit "<as>-<as>=<nilai>",
+ * BUKAN dari geometri bubble+garis-dimensi terpisah (butuh ekstraksi PATH
+ * vektor di luar text-span, belum diimplementasikan). Tabel BERGARIS
+ * terekstrak penuh; tabel tanpa garis belum. Lihat docstring
+ * `services/document-intelligence/app/perception/assemble.py` untuk detail.
  */
 import { TkgDocumentSchema, type TkgDocument } from '@paax/schemas';
 
@@ -27,12 +30,35 @@ export class DocumentIntelligenceError extends Error {
   }
 }
 
+export interface PerceptionMetrics {
+  span_total: number;
+  span_terklasifikasi: number;
+  cakupan: number;
+  grammar_pass_rate: number;
+  n_unclassified: number;
+  n_warning: number;
+}
+
+export interface PerceptionGerbangCheck {
+  code: string;
+  label: string;
+  passed: boolean;
+  detail: string;
+}
+
+export interface PerceptionGerbang {
+  status: 'draft' | 'lolos';
+  checks: PerceptionGerbangCheck[];
+}
+
 export interface DrawingIntakeResult {
   tkg: TkgDocument;
   tkgText: string | null;
   classification: string;
   classificationConfidence: number | null;
   warnings: string[];
+  metrics: PerceptionMetrics | null;
+  gerbang: PerceptionGerbang | null;
 }
 
 interface DrawingAnalyzeResponse {
@@ -41,6 +67,8 @@ interface DrawingAnalyzeResponse {
   warnings: Array<{ message: string; level: string }>;
   tkg_document: unknown | null;
   tkg_text: string | null;
+  metrics: PerceptionMetrics | null;
+  gerbang: PerceptionGerbang | null;
 }
 
 /**
@@ -111,5 +139,7 @@ export async function analyzeDrawingFile(file: File, projectId: string): Promise
     classification: data.classification,
     classificationConfidence: data.classification_confidence,
     warnings: data.warnings.map((w) => w.message),
+    metrics: data.metrics ?? null,
+    gerbang: data.gerbang ?? null,
   };
 }

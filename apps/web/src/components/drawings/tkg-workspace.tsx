@@ -38,16 +38,6 @@ type PerceptionReview = {
   warnings: PerceptionWarning[];
   warningGroups: Array<{ code: string; items: PerceptionWarning[] }>;
   unclassified: Array<{ raw: string; alasan: string; sheetId: string }>;
-  metrics: {
-    sheets: number;
-    tables: number;
-    elements: number;
-    unclassified: number;
-    warnings: number;
-    coverage: number;
-  };
-  checks: Array<{ code: string; label: string; passed: boolean; detail: string }>;
-  status: 'ready' | 'draft';
 };
 
 function formatPercent(value: number): string {
@@ -72,67 +62,27 @@ function groupWarnings(warnings: PerceptionWarning[]): Array<{ code: string; ite
   return Array.from(groups, ([code, items]) => ({ code, items }));
 }
 
+/**
+ * `result.metrics`/`result.gerbang` datang APA ADANYA dari backend (Fase 2
+ * P4 — `services/document-intelligence/app/perception/validate.py`). UI ini
+ * TIDAK menghitung ulang cakupan/gerbang sendiri (koreksi dari versi
+ * sebelumnya yang sempat memfabrikasi kode gerbang ad-hoc yang bentrok nama
+ * dengan validator resmi brain V-01 sampai V-10).
+ */
 function buildPerceptionReview(result: DrawingIntakeResult): PerceptionReview {
   const sheets = result.tkg.sheets;
-  const tables = sheets.reduce((sum, sheet) => sum + sheet.tables.length, 0);
-  const tableRecords = sheets.reduce((sum, sheet) => sum + sheet.tables.reduce((inner, table) => inner + table.records.length, 0), 0);
-  const elements = sheets.reduce((sum, sheet) => sum + sheet.elements.length, 0);
-  const dimensions = sheets.reduce((sum, sheet) => sum + sheet.dimensions.length, 0);
-  const notes = sheets.reduce((sum, sheet) => sum + sheet.notes.length, 0);
   const unclassified = sheets.flatMap((sheet) => sheet.unclassified.map((item) => ({
     raw: item.raw,
     alasan: item.alasan,
     sheetId: sheet.sheet_id,
   })));
   const warnings = result.warnings.map(parseWarning);
-  const classified = tableRecords + elements + dimensions + notes;
-  const total = classified + unclassified.length;
-  const coverage = total > 0 ? classified / total : sheets.length > 0 ? 1 : 0;
-
-  const checks = [
-    {
-      code: 'V-TKG',
-      label: 'TKG terbentuk',
-      passed: sheets.length > 0,
-      detail: `${sheets.length} sheet terbaca`,
-    },
-    {
-      code: 'V-COV',
-      label: 'Cakupan span',
-      passed: coverage >= 0.8,
-      detail: `${formatPercent(coverage)} cakupan terklasifikasi`,
-    },
-    {
-      code: 'V-WARN',
-      label: 'Warning terkendali',
-      passed: warnings.length === 0,
-      detail: `${warnings.length} warning`,
-    },
-    {
-      code: 'V-CLS',
-      label: 'Klasifikasi yakin',
-      passed: result.classificationConfidence == null || result.classificationConfidence >= 0.75,
-      detail: result.classificationConfidence == null
-        ? result.classification
-        : `${result.classification} ${formatPercent(result.classificationConfidence)}`,
-    },
-  ];
 
   return {
     result,
     warnings,
     warningGroups: groupWarnings(warnings),
     unclassified,
-    metrics: {
-      sheets: sheets.length,
-      tables,
-      elements,
-      unclassified: unclassified.length,
-      warnings: warnings.length,
-      coverage,
-    },
-    checks,
-    status: checks.every((check) => check.passed) ? 'ready' : 'draft',
   };
 }
 
@@ -341,7 +291,9 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
 
   const readyItems = takeoff?.items.filter((item) => !item.needs_review && item.quantity != null).length ?? 0;
   const statusText = perceptionReview
-    ? `Draft persepsi PDF siap direview: cakupan ${formatPercent(perceptionReview.metrics.coverage)}, ${perceptionReview.metrics.warnings} warning, ${perceptionReview.metrics.unclassified} unclassified. Belum masuk transkrip sampai Anda menekan tombol pakai TKG.`
+    ? perceptionReview.result.metrics
+      ? `Draft persepsi PDF siap direview: cakupan ${formatPercent(perceptionReview.result.metrics.cakupan)}, ${perceptionReview.warnings.length} warning, ${perceptionReview.result.metrics.n_unclassified} unclassified. Belum masuk transkrip sampai Anda menekan tombol pakai TKG.`
+      : 'Draft persepsi PDF siap direview (backend tidak mengembalikan metrik). Belum masuk transkrip sampai Anda menekan tombol pakai TKG.'
     : takeoff
     ? `AI menemukan ${counts.elements} elemen dari ${counts.tables} tabel pada ${counts.sheets} sheet. ${readyItems} volume siap dikirim, ${takeoff.n_needs_review} item perlu review.`
     : tkg
@@ -419,9 +371,9 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
           <div style={{ marginTop: 12, border: '1px solid var(--border)', borderRadius: 12, background: 'var(--surface)', padding: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4 }}>Review persepsi PDF</div>
-              {perceptionReview && (
-                <StatusPill tone={perceptionReview.status === 'ready' ? 'ok' : 'warn'}>
-                  {perceptionReview.status === 'ready' ? 'SIAP REVIEW' : 'DRAFT PERSEPSI'}
+              {perceptionReview?.result.gerbang && (
+                <StatusPill tone={perceptionReview.result.gerbang.status === 'lolos' ? 'ok' : 'warn'}>
+                  {perceptionReview.result.gerbang.status === 'lolos' ? 'GERBANG-2 LOLOS' : 'DRAFT PERSEPSI'}
                 </StatusPill>
               )}
             </div>
@@ -432,33 +384,39 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }} className="pax-grid-2">
-                  {[
-                    ['Cakupan', formatPercent(perceptionReview.metrics.coverage)],
-                    ['Sheet', String(perceptionReview.metrics.sheets)],
-                    ['Elemen', String(perceptionReview.metrics.elements)],
-                    ['Unclassified', String(perceptionReview.metrics.unclassified)],
-                  ].map(([label, value]) => (
-                    <div key={label} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 10, background: 'var(--elev)' }}>
-                      <div style={{ fontSize: 10.5, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4 }}>{label}</div>
-                      <div style={{ marginTop: 3, fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>{value}</div>
-                    </div>
-                  ))}
-                </div>
-
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6 }}>Gerbang</div>
-                  <div style={{ display: 'grid', gap: 6 }}>
-                    {perceptionReview.checks.map((check) => (
-                      <div key={check.code} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12, color: 'var(--text2)' }}>
-                        <StatusPill tone={check.passed ? 'ok' : 'warn'} mono>{check.code}</StatusPill>
-                        <div>
-                          <div style={{ color: 'var(--text)', fontWeight: 700 }}>{check.label}</div>
-                          <div style={{ color: 'var(--text3)' }}>{check.detail}</div>
-                        </div>
+                {perceptionReview.result.metrics && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }} className="pax-grid-2">
+                    {[
+                      ['Cakupan', formatPercent(perceptionReview.result.metrics.cakupan)],
+                      ['Grammar-pass', formatPercent(perceptionReview.result.metrics.grammar_pass_rate)],
+                      ['Unclassified', String(perceptionReview.result.metrics.n_unclassified)],
+                      ['Warning', String(perceptionReview.result.metrics.n_warning)],
+                    ].map(([label, value]) => (
+                      <div key={label} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 10, background: 'var(--elev)' }}>
+                        <div style={{ fontSize: 10.5, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4 }}>{label}</div>
+                        <div style={{ marginTop: 3, fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>{value}</div>
                       </div>
                     ))}
                   </div>
+                )}
+
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6 }}>Gerbang</div>
+                  {!perceptionReview.result.gerbang ? (
+                    <div style={{ fontSize: 12, color: 'var(--text3)' }}>Backend tidak mengembalikan gerbang untuk hasil ini.</div>
+                  ) : (
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      {perceptionReview.result.gerbang.checks.map((check) => (
+                        <div key={check.code} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12, color: 'var(--text2)' }}>
+                          <StatusPill tone={check.passed ? 'ok' : 'warn'} mono>{check.code}</StatusPill>
+                          <div>
+                            <div style={{ color: 'var(--text)', fontWeight: 700 }}>{check.label}</div>
+                            <div style={{ color: 'var(--text3)' }}>{check.detail}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
