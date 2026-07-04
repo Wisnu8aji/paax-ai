@@ -1,0 +1,1932 @@
+﻿=== G:\paax-ai-main\docs\BRAIN_ALIGNMENT.md ===
+# Brain Alignment â€” perbandingan G:\brain (v4.1) vs paax-ai-main
+
+> Dibuat 2026-07-02. Sumber: `docs/specs/brain-v4.1/` (disalin verbatim dari
+> `G:\brain`). Dokumen ini adalah hasil analisis gap â€” **bukan** spek itu
+> sendiri. Untuk detail rumus/aturan asli, baca file di `docs/specs/brain-v4.1/`
+> langsung dan kutip id-nya (F-B01, INV-01, RULE-EXP-BETON, SK-19, dst.).
+>
+> Kenapa dokumen ini ada: `G:\brain` jauh lebih rinci daripada
+> `docs/MASTER_PLAN.md` (92 rumus takeoff vs ~8, model entitas beraudit,
+> spek TKG, katalog 31 skill, roadmap bergerbang F0â€“F5). Supaya sesi
+> Claude/Codex berikutnya tidak perlu re-analisis dari nol, temuannya
+> dipermanenkan di sini.
+
+## Cara baca
+
+- **BERTAHAN** = sudah selaras, tidak perlu diubah, brain hanya menguatkan.
+- **DISESUAIKAN** = konsepnya sudah ada di paax-ai-main tapi versi brain jauh
+  lebih matang â†’ jadi target ekspansi bertahap.
+- **BARU** = tidak ada padanan sama sekali di paax-ai-main hari ini.
+- Status implementasi tiap baris di tabel "Disesuaikan" di-update seiring
+  fase dikerjakan â€” cek juga `docs/ai-map/STATE.md` untuk status terkini.
+
+---
+
+## 1) BERTAHAN (selaras, tidak perlu diubah)
+
+| Area | paax-ai-main | brain | Verdict |
+|---|---|---|---|
+| Aturan Emas | `CLAUDE.md` Â§1: AI tak pernah hitung, engine Python yang hitung | INV-01/02 (TXT01 Â§1): identik, diperluas jadi 13 invariant | Brain **memformalkan**, bukan mengubah |
+| Arsitektur 4-lapis | `CLAUDE.md` Â§3: Presentasi/Orkestrasi/Persepsi/Engine/Site Agent/Data | brain L0â€“L3 (TXT03): Web/Orchestrator/document-intelligence(L2A)/core-engine(L2B)/Data(L3) | Peta 1:1, tidak ada tabrakan |
+
+=== G:\paax-ai-main\docs\BUILD_v0.6.md ===
+# PAAX v0.6 â€” Rencana Build & Prompt Claude Code
+### "Deterministic Foundation Release"
+
+Dokumen ini adalah panduan eksekusi untuk meng-upgrade PAAX dari v0.5 ke **v0.6** menggunakan Claude Code. Acuan konsep penuh ada di `docs/PAAX_AI_Blueprint*.docx`.
+
+---
+
+## 1. Tujuan & Lingkup v0.6
+
+**Tujuan:** membangun fondasi perhitungan yang benar dan auditable SEBELUM menyentuh ekstraksi gambar. Ini mewujudkan "aturan emas": engine yang menghitung, AI yang menjelaskan.
+
+**Termasuk (DO):**
+1. Rapikan struktur monorepo + sinkron versi â†’ `0.6.0`.
+2. Skema bersama (`packages/schemas`, Zod) selaras dengan Pydantic engine.
+3. Seed database AHSP (bidang Cipta Karya) + harga satuan regional di `data/`.
+4. **Core Engine** (FastAPI): HSP, RAB (+ bobot), Kurva S + endpoint + test.
+5. Halaman web untuk **uji RAB manual** (pilih item AHSP + volume â†’ lihat RAB & Kurva S).
+6. Hapus ketergantungan output template; semua angka dari engine.
+
+**TIDAK termasuk (DON'T â€” fase berikutnya):**
+- Ekstraksi gambar â†’ BoQ (Document Intelligence)
+- AI Orchestrator, RAG, AI Engineering Chat
+- Simulasi skenario lanjutan, Monitoring multi-proyek
+- Upload RAB existing, RBAC
+
+> Kenapa sempit? Agar v0.6 benar-benar **selesai & bisa didemokan**, dan fondasi angka teruji sebelum kompleksitas AI ditambahkan.
+
+---
+
+## 2. Cara Pakai Starter Kit Ini
+
+=== G:\paax-ai-main\docs\MASTER_PLAN.md ===
+# PAAX AI â€” Civil Engineering AI Workspace
+
+**Blueprint Besar v2.0** â€” Sistem, Arsitektur Teknis, Produk AI, Model Bisnis & Roadmap
+
+> Dari fondasi deterministik (v0.6) menuju workspace AI utuh (v2.0)
+> Disusun untuk Wisnu Setyo Aji Â· Repo: `github.com/Wisnu8aji/paax-ai`
+> Status: Draft strategis & teknis untuk direview
+> Companion strategi: `docs/strategy/PAAX_Analisis_Strategis_Companion.md`
+> untuk pressure-test bisnis, biaya AI, margin, pricing, vendor model, dan
+> prioritas roadmap.
+
+> **Inti dokumen ini.** Dokumen ini memperluas Cetak Biru PAAX sebelumnya menjadi rancangan menyeluruh: pipeline gambarâ†’RAB, BoQ, penjadwalan, simulasi skenario, Engineering Chat ter-grounding, AI proaktif (laporan pagi, prediksi material, peringatan keterlambatan), AI Agent otonom, model paket & harga lengkap dengan estimasi biaya, riset kompetitor, serta roadmap rilis bertahap dengan rincian tugas pembangunan. Konsep inti dipertahankan sepenuhnya. **Aturan emas tetap sakral: engine yang menghitung, AI yang menjelaskan.** Setiap saran tambahan diletakkan di Bagian 19 sebagai peningkatan efisiensi tanpa mengubah konsep.
+
+---
+
+## Daftar Isi
+
+1. [Ringkasan Eksekutif](#1-ringkasan-eksekutif)
+2. [Prinsip Eksekusi & Aturan Emas](#2-prinsip-eksekusi--aturan-emas)
+3. [Visi Produk & Positioning](#3-visi-produk--positioning)
+4. [Riset Kompetitor Mendalam](#4-riset-kompetitor-mendalam)
+5. [Arsitektur Sistem](#5-arsitektur-sistem)
+6. [Pipeline Inti â€” Gambar menjadi Pemecahan Data, RAB, BoQ & Jadwal](#6-pipeline-inti--gambar-menjadi-pemecahan-data-rab-boq--jadwal)
+7. [Modul Produk Lengkap](#7-modul-produk-lengkap)
+8. [AI Engineering Chat (Ter-grounding)](#8-ai-engineering-chat-ter-grounding)
+9. [AI Proaktif & Tugas Terjadwal](#9-ai-proaktif--tugas-terjadwal)
+10. [AI Agent Otonom (Autopilot) â€” Add-on](#10-ai-agent-otonom-autopilot--add-on)
+11. [Model Perhitungan Deterministik (Engine)](#11-model-perhitungan-deterministik-engine)
+12. [Strategi Multi-Model & Estimasi Biaya AI](#12-strategi-multi-model--estimasi-biaya-ai)
+13. [Rancangan Paket & Harga Langganan](#13-rancangan-paket--harga-langganan)
+
+=== G:\paax-ai-main\docs\adr\0001-monorepo.md ===
+# ADR 0001: Monorepo Architecture for PAAX AI
+
+## Status
+Accepted
+
+## Context
+PAAX AI v0.3 consists of multiple services: a Next.js frontend, a FastAPI core engine, an AI Orchestrator, and Document Intelligence services. Historically (v0.2), the frontend and backend were somewhat loosely coupled but as the complexity grows with shared schemas (e.g., RAB structures, API responses) and shared tools, we need a better way to manage code across the stack.
+
+The two main options are:
+1. **Multi-repo (Polyrepo)**: Each service has its own repository.
+2. **Monorepo**: All services and shared packages live in a single repository.
+
+With multi-repo, managing schema synchronization across Next.js (TypeScript) and FastAPI (Python) would require separate schema publishing pipelines or copying files. Given a small, agile team building PAAX AI, the overhead of managing multiple repositories, PRs across repos for a single feature, and versioning shared libraries is prohibitive.
+
+## Decision
+We will use a **Monorepo** structure for PAAX AI v0.3 using `pnpm` workspaces for the TypeScript ecosystem and standard Python package structures for the backend.
+
+The repository will be structured as follows:
+- `apps/frontend/`: Next.js workspace dashboard
+- `apps/core-engine/`: FastAPI deterministic calculation engine
+- `apps/ai-orchestrator/`: Genkit-based AI routing
+- `apps/document-intelligence/`: Python/Node services for PDF and image processing
+- `packages/shared-schemas/`: Shared TypeScript/Python Pydantic schemas
+- `packages/ui/`: Shared React components (if needed)
+
+## Consequences
+
+### Positive
+- **Atomic Commits**: A single pull request can contain both the frontend UI changes and the corresponding backend API changes.
+- **Shared Code**: Schemas and utilities can be easily imported across different services.
+
+=== G:\paax-ai-main\docs\adr\0002-deterministic-rab-engine.md ===
+# ADR 0002: Deterministic RAB Calculation Engine
+
+## Status
+Accepted
+
+## Context
+The core value proposition of PAAX AI is accelerating the creation of Bill of Quantities (Rencana Anggaran Biaya / RAB). Given the recent advancements in Large Language Models (LLMs), there is a temptation to let the LLM generate the final RAB outputs or do the math directly.
+
+However, in civil engineering and construction, RAB calculations are legal and financial documents. They require:
+- **Absolute precision**: $1.00 + $2.00 must always equal $3.00.
+- **Auditability**: Every rate must be traceable to a specific AHSP (Analisa Harga Satuan Pekerjaan) standard.
+- **Repeatability**: Given the same inputs, the system must produce the exact same outputs.
+
+LLMs are probabilistic. They frequently hallucinate numbers, struggle with complex arithmetic over large datasets, and cannot easily provide auditable traces of standard rates without massive context bloat.
+
+## Decision
+We will enforce a strict separation between **understanding** and **calculation**.
+
+1. **AI (Probabilistic)**: Used exclusively for unstructured data extraction (parsing PDFs, understanding drawings, natural language engineering chat) and classification (mapping a drawing element to an AHSP code).
+2. **Core Engine (Deterministic)**: A Python/FastAPI engine that handles all actual math, database lookups for AHSP rates, and schedule scenario calculations.
+
+The AI Orchestrator will extract "Quantity Candidates" and "Task Descriptions", but the Core Engine will multiply those quantities by the verified AHSP rates.
+
+## Consequences
+
+### Positive
+- **Trust**: Users can trust the math 100%.
+- **Auditability**: We can provide exact Excel formulas in our exports because the engine knows the exact operands.
+- **Performance**: Standard arithmetic in Python is orders of magnitude faster and cheaper than running math through LLM tokens.
+- **Safety**: Prevents "hallucinated" costs that could bankrupt a project if relied upon.
+
+=== G:\paax-ai-main\docs\adr\0003-google-first-cloud.md ===
+# ADR 0003: Google-First Cloud Architecture
+
+## Status
+Accepted
+
+## Context
+PAAX AI requires robust cloud infrastructure for hosting, database, authentication, and particularly, AI inference. We evaluated AWS, Azure, and Google Cloud Platform (GCP).
+
+Given the project's heavy reliance on Gemini models (especially Gemini 1.5 Pro for its massive context window capable of handling large construction PDFs) and the need for rapid iteration, a unified ecosystem is highly desirable.
+
+## Decision
+We will adopt a **Google-First Cloud Architecture**.
+
+Specifically:
+- **AI Models**: Gemini 1.5 Pro / Flash via Vertex AI.
+- **AI Framework**: Firebase Genkit for orchestrating AI flows, natively designed for the GCP ecosystem.
+- **Database**: Firestore (NoSQL, real-time sync for the dashboard).
+- **Storage**: Cloud Storage for Firebase (for Drawings, PDFs, Exports).
+- **Compute**: Cloud Run for hosting Next.js and FastAPI services.
+- **Authentication**: Firebase Authentication.
+
+We will **not** host local models (e.g., Llama 3) to minimize DevOps overhead. The AI will be purely API-driven.
+
+## Consequences
+
+### Positive
+- **Deep Integration**: Genkit, Firestore, and Vertex AI work seamlessly together.
+- **Massive Context**: Vertex AI provides access to Gemini 1.5 Pro's 2M token context, essential for Document Intelligence on 100+ page specification PDFs.
+- **Speed to Market**: Firebase provides out-of-the-box auth, real-time DB, and storage without configuring VPCs or complex IAM roles initially.
+- **Serverless Scaling**: Cloud Run scales to zero, saving costs during early development and scaling instantly for traffic spikes.
+
+=== G:\paax-ai-main\docs\adr\0004-template-first-excel-export.md ===
+# ADR 0004: Template-First Excel Export
+
+## Status
+Accepted
+
+## Context
+A critical feature of PAAX AI is exporting the generated RAB and Schedule into Excel format. Civil engineers expect highly formatted, standardized Excel files with specific branding, formulas, cell styles, and multiple sheets (Summary, Details, AHSP, Schedule).
+
+Initially, we considered using AI to generate the layout or write Python code dynamically to format the Excel file.
+
+## Decision
+We will use a **Template-First** approach for Excel generation using `openpyxl` or similar deterministic libraries. 
+
+We will maintain physical `.xlsx` template files in the repository (e.g., `templates/rab_standard.xlsx`). The Core Engine will load these templates, find named ranges or specific anchor cells, and strictly inject the deterministic data and formulas. 
+
+We will **not** use LLMs to generate Excel layouts or styling.
+
+## Consequences
+
+### Positive
+- **Professional Appearance**: Outputs look identical to standard corporate formats.
+- **Reliable Formulas**: Excel formulas (e.g., `=SUM(B2:B10)`) are injected deterministically, so the resulting spreadsheet is fully functional and interactive for the end user.
+- **Easy Updates**: If a user wants to change the corporate logo or column colors, we just update the `.xlsx` template file without touching code.
+- **No Hallucinations**: Zero risk of AI breaking the spreadsheet structure or XML syntax.
+
+### Negative
+- **Inflexibility**: The system cannot spontaneously create a "new type of report" that isn't pre-templated without a developer adding a new template.
+- **Maintenance**: Changes to the Core Engine's output schema require manual synchronization with the Excel templates.
+
+=== G:\paax-ai-main\docs\ai-map\GLOSSARY.md ===
+# ðŸ“– PAAX â€” GLOSSARY (istilah domain, 1 baris)
+
+> Supaya AI tidak salah tafsir istilah teknik sipil / RAB Indonesia.
+> Rumus kanonik lengkap: `CLAUDE.md` Â§5.
+
+- **AHSP** â€” Analisa Harga Satuan Pekerjaan; sumber **koefisien** (Permen PUPR 8/2023). Bukan template output.
+- **HSP** â€” Harga Satuan Pekerjaan = (A bahan + B upah + C alat) Ã— (1 + BUK).
+- **RAB** â€” Rencana Anggaran Biaya = Î£(Volume Ã— HSP) + PPN.
+- **BoQ** â€” Bill of Quantity; daftar volume pekerjaan.
+- **BUK** â€” Biaya Umum & Keuntungan (overhead + profit); maks. 15% per Permen.
+- **PPN** â€” Pajak Pertambahan Nilai (mis. 11%).
+- **OH** â€” Orang-Hari (man-day); satuan koefisien tenaga kerja.
+- **Volume** â€” kuantitas pekerjaan (mÂ², mÂ³, kg, ls, â€¦).
+- **Bobot item** â€” (Harga item / RAB total) Ã— 100%.
+- **Kurva S** â€” kumulatif progres rencana per periode (mingguan, dst).
+- **CPM** â€” Critical Path Method: ES/EF (earliest), LS/LF (latest), float, jalur kritis.
+- **Float (total)** â€” kelonggaran waktu tugas = LS âˆ’ ES (0 = kritis).
+- **Mandays** â€” Volume Ã— Î£ koef upah (OH); durasi = mandays Ã· pekerja efektif.
+- **Skenario what-if** â€” frontier waktuâ€“biaya, deterministik dari engine (bukan tebakan AI).
+- **WBS** â€” Work Breakdown Structure; seksi pekerjaan (I..VII) untuk `/rab/build`.
+- **HSPK** â€” Harga Satuan Pokok Kegiatan (varian harga regional).
+
+=== G:\paax-ai-main\docs\ai-map\MAP.md ===
+# ðŸ—ºï¸ PAAX â€” MAP (di mana letak apa)
+
+> Pakai ini untuk menemukan lokasi TANPA grep buta. Prinsip arsitektur lengkap:
+> `CLAUDE.md` Â§3â€“Â§5. Monorepo: pnpm workspaces + Turborepo.
+
+## Folder utama (tanggung jawab)
+| Path | Tanggung jawab | Tidak boleh |
+|---|---|---|
+| `apps/web` | Next.js 14 â€” semua UI | Menghitung angka RAB |
+| `services/core-engine` | FastAPI Python â€” **semua perhitungan deterministik** | Pakai LLM untuk aritmetika |
+| `packages/schemas` | Zod + Pydantic = 1 sumber kebenaran tipe (`src/index.ts`) | Beda antara Zod & Pydantic |
+| `data/` | AHSP + harga satuan (koefisien) | â€” |
+| `docs/` | Rencana, ADR, aturan halaman, strategi | â€” |
+
+## Engine â€” endpoint (`services/core-engine/app/main.py`)
+```
+/health  /ahsp  /ahsp/{code}  /regions
+/rab/hsp  /rab/calculate  /rab/validate  /rab/build  /rab/export/excel
+/schedule/s-curve  /schedule/cpm  /schedule/plan
+/scenario/simulate            (knob params 9B â†’ hasil .custom)
+/geometry/volume  /geometry/elements  /wbs/sections
+/tkg/validate  /tkg/render  /tkg/takeoff   (TKG brain v4.1 â†’ skrip + takeoff)
+```
+- Logika: `app/rab/` (rab, schedule, sections, validate), `app/scenario/`, `app/geometry/`, `app/export/`, `app/tkg/` (models, validate, render, takeoff, params).
+- Test: `services/core-engine/tests/` Â· jalankan `pytest -q`.
+
+## Web â€” file kunci (`apps/web/src/`)
+| File/Dir | Untuk |
+|---|---|
+| `lib/engine.ts` | Client typed ke engine (fetch) |
+
+=== G:\paax-ai-main\docs\ai-map\START_HERE.md ===
+# ðŸ§­ PAAX â€” START HERE (baca ini DULU, jangan crawl repo)
+
+> Tujuan file ini: orientasi cepat untuk AI mana pun (Claude / Gemini / Codex)
+> tanpa membaca semua file. **Baca file spesifik HANYA sesuai task** (lihat Router).
+> Ini bukan tempat menaruh detail â€” ini peta. Detail ada di file tujuan.
+
+## 2 aturan yang TAK BOLEH dilanggar (detail: `CLAUDE.md` Â§1 & Â§9)
+1. **ATURAN EMAS** â€” angka final (RAB/HSP/volume/durasi/tanggal/Kurva-S/skenario)
+   SELALU dari engine Python (`services/core-engine`). AI & TypeScript **tidak
+   pernah** menghitung; hanya menstruktur / menjelaskan / menampilkan.
+2. **GERBANG REVIEW** â€” kerja di branch baru â†’ PR â†’ tunggu owner + Claude.
+   **Tidak auto-merge, tidak push ke `main`.** "lanjut kerja" â‰  "izin merge".
+
+## Daftar isi (peta dokumen)
+| File | Isi |
+|---|---|
+| `CLAUDE.md` / `AGENTS.md` | Konstitusi/aturan (auto-load Claude/Codex) |
+| `docs/ai-map/MAP.md` | DI MANA letak kode, endpoint, komponen, test |
+| `docs/ai-map/STATE.md` | Status SEKARANG: versi, selesai, next, PR, peran |
+| `docs/ai-map/GLOSSARY.md` | Istilah domain (AHSP, HSP, OH, BUK, Kurva S, CPMâ€¦) |
+| `docs/MASTER_PLAN.md` | Blueprint besar (rujuk saat menyentuh roadmap) |
+| `docs/pages/` | Aturan per-halaman web (1 file per halaman) |
+| `docs/BRAIN_ALIGNMENT.md` | Gap-analysis spek "brain" v4.1 vs dokumen ini â€” apa sudah selaras, apa sedang diekspansi |
+| `docs/specs/brain-v4.1/` | Spek rinci (92 rumus takeoff, TKG, 31 skill) â€” dirujuk, belum semua diimplementasi |
+
+## Router â€” "Mau lakukan X â†’ baca Y" (jangan baca selain ini)
+| Kalau task-nyaâ€¦ | Baca |
+|---|---|
+| Tahu status & langkah berikutnya | `STATE.md` |
+| Cari file / endpoint / komponen | `MAP.md` |
+
+=== G:\paax-ai-main\docs\ai-map\STATE.md ===
+# ðŸ“ PAAX â€” STATE (status SEKARANG)
+
+> Update terakhir: **2026-07-04**. File ini SATU-SATUNYA tempat status berjalan.
+> Selesai satu fase â†’ perbarui di sini (jangan sebar ke banyak file).
+
+## âš ï¸ DIVERGENSI BRANCH â€” SUDAH DIINVESTIGASI (2026-07-04 malam), TERNYATA KECIL
+`feat/ui-premium-redesign` (branch aktif, UI premium + SEMUA implementasi Fase
+2 P1-P6+geometri grid) dan `feat/fase0-plhut-golden-anchor` (commit `1ee7665`,
+draft PR #27) adalah SIBLING dari titik cabang yang sama (merge-base `a0b06ca`),
+BUKAN satu garis keturunan â€” dokumen/fixture Fase 0 memang tidak ada di working
+tree ini, bukan hilang. **Temuan investigasi (bukan asumsi):**
+- Fase 0 HANYA menyentuh 14 file, SEMUA di `services/core-engine/tests/
+  fixtures/plhut/*`, `data/harga-satuan/surakarta.json`, dan beberapa docs â€”
+  **TIDAK ADA overlap kode** dengan Fase 2 (`document-intelligence`/`apps/web`).
+  **Satu-satunya file yang sama-sama disentuh kedua branch: `docs/ai-map/
+  STATE.md`** (konflik teks kecil, gampang diselesaikan manual).
+- `gh pr list`: ketiga PR draft (#26 `ui-premium-redesign`, #27 `fase0-plhut-
+  golden-anchor`, #28 `fase2-p5-ui-persepsi-review` lama/superseded) berstatus
+  `MERGEABLE` ke `main` **secara independen**.
+- **Rekomendasi (keputusan owner/Codex, BUKAN dieksekusi Claude â€” merge = commit):**
+  merge PR #27 ke `main` dulu (isinya murni core-engine, tidak menyentuh
+  UI/document-intelligence, resiko rendah), lalu commit+push pekerjaan sesi ini
+  ke PR #26 dan selesaikan SATU konflik `STATE.md` secara manual saat merge
+  PR #26 ke `main` setelahnya. Tidak perlu rebase besar-besaran.
+
+## â© TERBARU (2026-07-04, malam) â€” Fase 2 P1-P4+P6 DIIMPLEMENTASIKAN LANGSUNG OLEH CLAUDE
+- **FASE 0 DI-COMMIT**: commit `1ee7665`, draft PR #27 (belum merge), 238 test
+  hijau. Report: `report/REPORT_FASE0_PLHUT_GOLDEN_ANCHOR_CODEX_2026-07-04.md`.
+- **Audit pagi** menemukan Codex hanya menjalankan P5 (frontend) dan
+  memfabrikasi kode gerbang ad-hoc yang bentrok nama dgn validator resmi brain
+
+=== G:\paax-ai-main\docs\api\ai-orchestrator.md ===
+# PAAX AI â€” AI Orchestrator API Documentation
+
+> API reference untuk AI Orchestrator (Firebase Genkit / TypeScript).
+> Service ini mengelola semua interaksi AI: chat, advisory, dan document understanding.
+
+**Base URL**: `http://localhost:3400` (development) | `https://ai-orchestrator-xxxxx.run.app` (production)
+
+---
+
+## 1. Overview
+
+AI Orchestrator adalah **pusat koordinasi AI** di PAAX AI. Dibangun dengan Firebase Genkit,
+service ini mengelola:
+
+- Flow routing (memilih flow yang tepat berdasarkan intent)
+- Tool calling (memanggil Core Engine untuk data/kalkulasi)
+- Context assembly (mengumpulkan konteks proyek untuk LLM)
+- Prompt management (template prompt yang terstruktur)
+- Streaming responses (SSE untuk real-time chat)
+
+```mermaid
+graph TB
+    subgraph Input["User Input"]
+        Chat["ðŸ’¬ Chat Message"]
+        Review["ðŸ“Š RAB Review Request"]
+        Drawing["ðŸ“„ Drawing Question"]
+        Schedule["ðŸ“… Schedule Query"]
+    end
+
+    subgraph Router["Intent Router"]
+
+=== G:\paax-ai-main\docs\api\core-engine.md ===
+# PAAX AI â€” Core Engine API Documentation
+
+> API reference untuk Core Engine (FastAPI / Python).
+> Service ini menangani semua kalkulasi deterministik: RAB, jadwal, validasi, dan export.
+
+**Base URL**: `http://localhost:8000` (development) | `https://core-engine-xxxxx.run.app` (production)
+
+---
+
+## 1. Overview
+
+Core Engine adalah service Python yang bertanggung jawab untuk:
+- Kalkulasi RAB (Rencana Anggaran Biaya) secara deterministik
+- AHSP (Analisa Harga Satuan Pekerjaan) lookup dan computation
+- Schedule generation menggunakan CPM (Critical Path Method)
+- Export ke Excel menggunakan template tetap
+- Validasi data input
+
+> **Prinsip Utama**: Semua kalkulasi di Core Engine bersifat **deterministik**.
+> Input yang sama SELALU menghasilkan output yang sama. Tidak ada LLM yang terlibat dalam perhitungan angka.
+
+---
+
+## 2. Authentication
+
+Semua endpoint memerlukan Firebase Auth JWT token:
+
+```http
+Authorization: Bearer <firebase-jwt-token>
+```
+
+=== G:\paax-ai-main\docs\api\document-intelligence.md ===
+# PAAX AI â€” Document Intelligence API Documentation
+
+> API reference untuk Document Intelligence service.
+> Bertanggung jawab memproses gambar teknik dan dokumen konstruksi.
+
+---
+
+## 1. Overview
+
+Document Intelligence adalah service yang memproses file yang di-upload user
+(gambar teknik, spesifikasi, dokumen kontrak) dan mengekstrak informasi yang berguna
+untuk RAB dan analisis proyek.
+
+### Processing Pipeline
+
+```mermaid
+flowchart LR
+    A["ðŸ“„ PDF Upload"] --> B["Page Splitter"]
+    B --> C["OCR Engine"]
+    C --> D["Page Classifier\n(Gemini Vision)"]
+    D --> E["Dimension Extractor\n(Gemini Vision)"]
+    E --> F["Quantity Calculator"]
+    F --> G["Verification Queue"]
+    G --> H["âœ… Verified Data\nâ†’ Ready for RAB"]
+
+    style A fill:#e3f2fd
+    style D fill:#fce4ec
+    style E fill:#fce4ec
+    style H fill:#e8f5e9
+```
+
+=== G:\paax-ai-main\docs\architecture\data-model.md ===
+# PAAX AI â€” Data Model Documentation
+
+> Dokumentasi lengkap Firestore data model untuk PAAX AI v0.3.
+> Semua koleksi, field definitions, relationships, dan indexing strategy.
+
+---
+
+## 1. Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    USERS ||--o{ ORGANIZATIONS : "belongs to"
+    ORGANIZATIONS ||--o{ PROJECTS : "contains"
+    PROJECTS ||--o{ PROJECT_FILES : "has"
+    PROJECTS ||--o{ RAB_VERSIONS : "has"
+    PROJECTS ||--o{ SCHEDULE_VERSIONS : "has"
+    PROJECTS ||--o{ CHAT_THREADS : "has"
+    PROJECTS ||--o{ SITE_LOGS : "has"
+    PROJECTS ||--o{ EXPORTS : "has"
+    USERS ||--o{ USAGE_LOGS : "generates"
+    RAB_VERSIONS ||--o{ RAB_ITEMS : "contains"
+    SCHEDULE_VERSIONS ||--o{ SCHEDULE_TASKS : "contains"
+    CHAT_THREADS ||--o{ CHAT_MESSAGES : "contains"
+
+    USERS {
+        string uid PK
+        string email
+        string displayName
+        string role
+        timestamp createdAt
+
+=== G:\paax-ai-main\docs\architecture\system-overview.md ===
+# PAAX AI â€” System Architecture Overview
+
+> Arsitektur sistem PAAX AI v0.3: layered architecture dengan pemisahan jelas
+> antara frontend, API layer, services, dan storage.
+
+---
+
+## 1. High-Level Architecture
+
+```mermaid
+graph TB
+    subgraph Client["Client Layer"]
+        Web["ðŸŒ Next.js Web App\n(apps/web)"]
+        Mobile["ðŸ“± Mobile App\n(Future - PWA)"]
+    end
+
+    subgraph API["API Gateway Layer"]
+        NextAPI["Next.js API Routes\n(/api/*)"]
+    end
+
+    subgraph Services["Service Layer"]
+        Core["ðŸ”§ Core Engine\n(FastAPI / Python)\nservices/core-engine"]
+        Orch["ðŸ¤– AI Orchestrator\n(Genkit / TypeScript)\nservices/ai-orchestrator"]
+        DocIntel["ðŸ“„ Document Intelligence\n(Cloud Functions)\nservices/document-intelligence"]
+        Site["ðŸ—ï¸ Site Agent\n(Cloud Functions)\nservices/site-agent"]
+    end
+
+    subgraph Storage["Storage Layer"]
+        Firestore["ðŸ”¥ Firestore\n(Database)"]
+        GCS["â˜ï¸ Cloud Storage\n(Files)"]
+
+=== G:\paax-ai-main\docs\pages\dashboard.md ===
+# Halaman Dashboard
+
+Routes: `/(dashboard)` (home) & `/dashboard`. Status: **[ada]** shell;
+monitoring portofolio penuh **[roadmap v2.0]**.
+
+> Baca [README.md](README.md) Â§1 (Aturan Emas) dulu.
+
+## Tujuan
+Ikhtisar lintas-proyek user: daftar proyek, KPI agregat, notifikasi & warning,
+pintasan aksi.
+
+## Data yang ditampilkan
+Total nilai portofolio, jumlah proyek, status jadwal, daftar notifikasi/warning.
+Semua **tampilan** dari agregasi engine/DB.
+
+## Sumber angka (ENGINE-ONLY)
+Agregat nilai RAB dari `/rab/build` per proyek; status jadwal dari
+`/schedule/s-curve`. âŒ Tidak ada penjumlahan biaya di frontend selain render.
+
+## Peran AI di halaman ini
+- **EXPLAIN** â€” ringkasan portofolio & sorotan ("2 proyek over-budget, 1
+  jadwal kritis") dari angka engine.
+- **READ** â€” sumber notifikasi/warning yang juga dibaca Engineering Chat.
+
+## Akses Engineering Chat
+Dashboard adalah salah satu sumber utama konteks lintas-proyek chat
+(notifikasi, warning, daftar proyek). Lihat [engineering-chat.md](engineering-chat.md).
+
+## Fallback manual
+Semua KPI & daftar tampil tanpa AI.
+
+=== G:\paax-ai-main\docs\pages\database-ahsp.md ===
+# Halaman Database AHSP & Harga
+
+Route: `/database-ahsp`. Status: **[ada/sebagian]** browser AHSP & harga.
+
+> Baca [README.md](README.md) Â§1 (Aturan Emas) dulu.
+
+## Tujuan
+Telusuri katalog AHSP (koefisien) & harga satuan regional; jadi sumber pilih
+kode AHSP untuk RAB (jalur manual & jembatan Smart RAB).
+
+## Data yang ditampilkan
+Daftar item AHSP (kode, nama, satuan, bidang), komponen + koefisien, harga
+satuan per wilayah. Dari engine: `GET /ahsp`, `GET /ahsp/{code}`, `GET /regions`.
+
+## Sumber angka (ENGINE-ONLY)
+HSP contoh dari `/rab/hsp`. AHSP = sumber **koefisien**, BUKAN template output.
+RAB dibangun dari `koef Ã— harga`, bukan menyalin contoh. Harga real ada di luar
+repo (`G:\paax-data`, moat) via `PAAX_DATA_DIR`.
+
+## Peran AI di halaman ini
+- **EXPLAIN** â€” bantu cari/jelaskan item AHSP yang relevan untuk suatu
+  pekerjaan; **READ** untuk mendukung pemetaan Smart RAB.
+- **NEVER** â€” AI tidak mengubah koefisien/harga; itu data, bukan keluaran AI.
+
+## Akses Engineering Chat
+`get_hsp(ahsp_code, region)` & pencarian AHSP mendukung jawaban chat.
+
+## Fallback manual
+Browser + pilih kode AHSP berjalan penuh tanpa AI.
+
+
+=== G:\paax-ai-main\docs\pages\engineering-chat.md ===
+# Engineering Chat â€” Asisten Lintas-Halaman
+
+Route: `/proyek/[projectId]/chat` (entri per-proyek) â€” **tetapi cakupannya
+lintas-proyek & lintas-halaman**. Status: **[roadmap]** (rancang sekarang,
+bangun setelah v0.8 Gemini wiring).
+
+> Baca [README.md](README.md) Â§1 dulu (kontrak bersama & Aturan Emas).
+
+---
+
+## 1. VISI (arahan owner, 2026-06-28)
+
+Engineering Chat BUKAN sekadar kotak tanya-jawab di satu proyek. Ia **asisten
+insinyur yang bisa membaca SELURUH data user** dan memberi *reasoning*:
+
+- Membaca **RAB & schedule semua proyek** milik user.
+- Membaca **notifikasi**, **warning**, dan **kebutuhan proyek**.
+- Menjawab pertanyaan teknis maupun acak yang butuh menalar di atas data itu.
+
+Contoh nyata yang harus didukung:
+1. *"Bagaimana cara saya meng-adjust RAB supaya lebih murah?"*
+   â†’ AI membaca RAB, menemukan item bobot terbesar, mengusulkan opsi
+   penghematan + **alasannya**, dan menampilkan angka baru **dari engine**.
+2. *"Hari ini hujan, langkah apa supaya schedule tetap sesuai tanpa
+   mengganggu progress?"*
+   â†’ AI menalar urutan pekerjaan (mis. geser pekerjaan dalam-ruangan maju),
+   lalu **memanggil engine** untuk menghitung ulang Kurva S / dampak durasi.
+
+---
+
+
+=== G:\paax-ai-main\docs\pages\files.md ===
+# Halaman Files
+
+Route: `/files`. Status: **[sebagian]**.
+
+> Baca [README.md](README.md) Â§1 (Aturan Emas) dulu.
+
+## Tujuan
+Penyimpanan & manajemen berkas user/proyek (gambar, PDF, RAB lama, dokumen).
+
+## Data yang ditampilkan
+Daftar file, metadata (nama, tipe, ukuran, proyek terkait, tanggal).
+
+## Sumber angka (ENGINE-ONLY)
+Tidak ada perhitungan RAB di sini. Bila file dipakai untuk ekstraksi (RAB lama
+/ gambar), angka tetap lewat engine (lihat [rab.md](rab.md), [gambar-kerja.md](gambar-kerja.md)).
+
+## Peran AI di halaman ini
+- **READ** â€” file jadi sumber bahan untuk Smart Import / ekstraksi.
+- **PROPOSE** â€” dari file terstruktur (Excel RAB lama) usul mapping kolom â†’
+  engine. AI tidak mengarang angka; deteksi anomali harga = usulan, bukan vonis.
+
+## Akses Engineering Chat
+READ daftar file & metadata sebagai konteks (mis. "RAB lama proyek X ada di
+file Y").
+
+## Fallback manual
+Upload/kelola file penuh tanpa AI.
+
+## Status
+Sebagian. Smart Import (Excel RAB â†’ mapping kolom AI): v0.8.
+
+=== G:\paax-ai-main\docs\pages\gambar-kerja.md ===
+# Halaman Gambar Kerja (+ Gambar Kerja AI)
+
+Routes: `/proyek/[projectId]/gambar-kerja` (per proyek) & `/gambar-kerja-ai`
+(global). Status: **[aktif]** Workspace TKG hidup (teksâ†’TKGâ†’skripâ†’takeoff);
+OCR/CV baca piksel gambar **[roadmap v1.0, DITUNDA]**.
+
+> Baca [README.md](README.md) Â§1 (Aturan Emas) dulu.
+> Spek rinci TKG: `docs/specs/brain-v4.1/PAAX_BRAIN_00_EKSTRAKSI_GAMBAR_KERJA.txt`.
+
+## Tujuan
+Mengubah informasi gambar kerja menjadi **TKG (Transkrip Kanonik Gambar)** â€”
+"skrip" terstruktur berisi grid+bentang, level/peil, tabel tipe (dimensi+
+tulangan+mutu), elemen terpasang beralamat as â€” lalu dari TKG: takeoff
+beton/bekisting/besi (engine) â†’ kirim volume ke RAB. TKG juga menjadi sumber
+fakta gambar untuk Engineering Chat (INV-TKG-01: sistem lain membaca TKG,
+bukan mengekstrak ulang gambar).
+
+## Alur di komponen `TkgWorkspace` (`components/drawings/tkg-workspace.tsx`)
+1. **Sumber** â€” tempel teks/deskripsi/tabel gambar â†’ "Transkrip dengan AI"
+   (`POST /api/ai/tkg`, Gemini menyalin ke JSON TkgDocument, divalidasi Zod)
+   ATAU tempel JSON TkgDocument manual (fallback wajib).
+2. **Transkrip** â€” lihat grid/elemen/tabel; `POST /tkg/validate` (V-02 Î£ bentang
+   = total, V-04 orphan tipe, V-05 dual-count, V-08 level). Usulan AI berstatus
+   `ai_proposal` + WAJIB ditandai "Sudah direview" oleh user.
+3. **Skrip** â€” `POST /tkg/render` â†’ `.tkg.txt` deterministik (satu fakta per
+   baris, diff-able) â€” inilah skrip yang dibaca manusia & chat.
+4. **Takeoff** â€” `POST /tkg/takeoff` â†’ item beton (mÂ³)/bekisting (mÂ²)/besi (kg)
+   per rumus F-B/F-C/F-D; data kurang â†’ `needs_review`, TIDAK ditebak.
+   â†’ "Kirim Volume ke Draft RAB" (kode AHSP dipilih user di halaman RAB â€”
+   dilarang dikarang).
+
+=== G:\paax-ai-main\docs\pages\kolaborasi.md ===
+# Halaman Kolaborasi
+
+Route: `/kolaborasi`. Status: **[roadmap/sebagian]**.
+
+> Baca [README.md](README.md) Â§1 (Aturan Emas) dulu.
+
+## Tujuan
+Kerja tim di proyek: peran (RBAC), komentar/diskusi, pembagian tugas, aktivitas.
+
+## Data yang ditampilkan
+Anggota & peran (estimator/PM/lapangan/owner), komentar, log aktivitas.
+
+## Sumber angka (ENGINE-ONLY)
+Tidak ada hitungan RAB. Bila diskusi merujuk angka, kutip dari engine.
+
+## Peran AI di halaman ini
+- **EXPLAIN/READ** â€” rangkum diskusi, jawab dengan konteks proyek.
+- **NEVER** â€” AI tidak memutuskan persetujuan/angka final menggantikan manusia.
+
+## Akses Engineering Chat & governance
+RBAC menentukan data apa yang boleh dibaca chat per peran. Chat hanya akses
+data sesuai izin user. Lihat `docs/security/data-governance.md` & Â§1.4 README.
+
+## Fallback manual
+Kolaborasi/komentar berjalan tanpa AI.
+
+## Status
+Sebagian/roadmap mengikuti fitur multi-user.
+
+=== G:\paax-ai-main\docs\pages\laporan.md ===
+# Halaman Laporan
+
+Route: `/laporan`. Status: **[roadmap]** (laporan pagi v1.5).
+
+> Baca [README.md](README.md) Â§1 (Aturan Emas) dulu.
+
+## Tujuan
+Laporan proyek/portofolio: RAB, progres, deviasi, laporan pagi, export PDF/Excel.
+
+## Data yang ditampilkan
+Ringkasan & tabel dari engine; narasi pendukung.
+
+## Sumber angka (ENGINE-ONLY)
+Semua angka laporan dari engine (`/rab/build`, `/schedule/s-curve`,
+`/scenario/simulate`). Export Excel via `/rab/export/excel` (rumus hidup).
+âŒ Tidak ada agregasi/penjumlahan baru di frontend.
+
+## Peran AI di halaman ini
+- **EXPLAIN** â€” narasi laporan (sorotan, risiko, rekomendasi) di atas angka
+  engine. Laporan pagi = ringkasan otomatis kondisi proyek.
+- **NEVER** â€” AI tidak menulis angka laporan; hanya menarasikan angka engine.
+
+## Akses Engineering Chat
+Chat bisa menghasilkan/menjelaskan isi laporan on-demand dengan tool engine.
+
+## Fallback manual
+Laporan tabel/export tetap jalan tanpa narasi AI.
+
+## Status
+Roadmap. Laporan pagi & narasi: v1.5 (metered, lihat companion strategi).
+
+=== G:\paax-ai-main\docs\pages\pengaturan.md ===
+# Halaman Pengaturan
+
+Route: `/pengaturan`. Status: **[sebagian]**.
+
+> Baca [README.md](README.md) Â§1 (Aturan Emas) dulu.
+
+## Tujuan
+Pengaturan akun, proyek, parameter default perhitungan, dan integrasi AI.
+
+## Data yang ditampilkan / dikontrol
+- Default parameter engine: `ppn_rate`, `overhead_override` (BUK%),
+  `rounding_mode` (`exact`/`rounddown_int`), wilayah harga aktif.
+- Profil, peran/RBAC, preferensi tampilan.
+- Status integrasi AI (provider model aktif).
+
+## Sumber angka (ENGINE-ONLY)
+Parameter di sini hanya **input** ke engine; perhitungan tetap di engine.
+Mengubah BUK%/PPN/rounding mengubah hasil engine, bukan dihitung frontend.
+
+## Peran AI & keamanan kunci (PENTING)
+- **API key model (Gemini, dll) TIDAK disimpan di repo.** Disimpan sebagai env
+  server-side (`apps/web/.env.local`, gitignored) / secret manager â€” JANGAN
+  `NEXT_PUBLIC`, jangan dikirim ke browser. Lihat CLAUDE.md Â§7.
+- Jika key bocor (mis. terkirim di chat) â†’ rotate/buat ulang.
+- Key Gemini AI Studio normalnya diawali `AIza...`. Verifikasi sumbernya
+  (https://aistudio.google.com/apikey).
+
+## Akses Engineering Chat
+Pengaturan default (BUK%/PPN/wilayah) memengaruhi hasil tool chat (recompute).
+
+
+=== G:\paax-ai-main\docs\pages\proyek-list.md ===
+# Halaman Daftar Proyek
+
+Route: `/proyek`. Status: **[ada/sebagian]** daftar + CRUD proyek.
+
+> Baca [README.md](README.md) Â§1 (Aturan Emas) dulu.
+
+## Tujuan
+Daftar semua proyek user; buat/buka/hapus proyek; cari & filter.
+
+## Data yang ditampilkan
+Nama proyek, lokasi, tahun, total RAB ringkas, status. Tampilan dari DB/engine.
+
+## Sumber angka (ENGINE-ONLY)
+Total RAB ringkas dari `/rab/build` (cache); frontend tidak menghitung.
+
+## Peran AI di halaman ini
+- **READ** â€” daftar proyek jadi konteks Engineering Chat lintas-proyek.
+- Tidak ada PROPOSE angka di sini.
+
+## Akses Engineering Chat
+`list_projects()` membaca daftar ini (hanya milik user, sesuai RBAC).
+
+## Fallback manual
+CRUD & daftar berjalan penuh tanpa AI.
+
+## Status
+Daftar + CRUD: ada/sebagian sesuai progres DB.
+
+=== G:\paax-ai-main\docs\pages\proyek-overview.md ===
+# Halaman Ringkasan Proyek
+
+Route: `/proyek/[projectId]`. Status: **[ada]** shell + navigasi tab.
+
+> Baca [README.md](README.md) Â§1 (Aturan Emas) dulu.
+
+## Tujuan
+Pintu masuk satu proyek: ringkasan (total RAB, progress, status jadwal,
+warning) + navigasi ke RAB, Schedule, Gambar Kerja, Chat, Site Agent.
+
+## Data yang ditampilkan
+KPI ringkas proyek (total RAB, bobot terpakai, % progress, jumlah warning).
+Semua **tampilan** hasil agregasi engine/DB, bukan hitungan frontend.
+
+## Sumber angka (ENGINE-ONLY)
+Total RAB & bobot dari `/rab/build`; status jadwal dari `/schedule/s-curve`.
+Frontend hanya menampilkan.
+
+## Peran AI di halaman ini
+- **EXPLAIN** â€” ringkasan naratif kondisi proyek ("struktur 60% biaya, jadwal
+  mundur 3 hari") dari angka engine.
+- **PROPOSE/READ** lebih lanjut dialihkan ke Engineering Chat.
+
+## Akses Engineering Chat
+Entry point chat per-proyek ada di sini; chat membaca semua tab proyek + data
+lintas-proyek. Lihat [engineering-chat.md](engineering-chat.md).
+
+## Fallback manual
+Semua KPI tetap tampil tanpa AI (langsung dari engine/DB).
+
+
+=== G:\paax-ai-main\docs\pages\rab-tester.md ===
+# Halaman RAB Tester (Dev)
+
+Route: `/rab-tester`. Status: **[ada]** â€” halaman uji internal, BUKAN untuk
+end-user.
+
+> Baca [README.md](README.md) Â§1 (Aturan Emas) dulu.
+
+## Tujuan
+Menguji engine secara langsung (HSP/RAB/Kurva S/skenario) tanpa alur produk â€”
+alat verifikasi developer & demo.
+
+## Data yang ditampilkan
+Form input mentah â†’ hasil mentah endpoint engine.
+
+## Sumber angka (ENGINE-ONLY)
+Langsung memanggil endpoint engine (`/rab/hsp`, `/rab/calculate`, `/rab/build`,
+`/schedule/s-curve`, `/scenario/simulate`, `/geometry/volume`). Tidak ada
+logika hitung di halaman.
+
+## Peran AI di halaman ini
+Tidak ada. Murni alat uji deterministik (justru berguna untuk memverifikasi
+Aturan Emas: angka selalu cocok dengan output engine).
+
+## Akses Engineering Chat
+Tidak relevan (halaman dev).
+
+## Fallback manual
+N/A (memang manual/dev).
+
+## Status
+
+=== G:\paax-ai-main\docs\pages\rab.md ===
+# Halaman RAB
+
+Route: `/proyek/[projectId]/rab`. Status: **[ada]** editor + Smart RAB Builder
+(rule-based) + export Excel backend.
+
+> Baca [README.md](README.md) Â§1 (Aturan Emas) dulu.
+
+## Tujuan
+Menyusun & mengedit RAB proyek: daftar item (kode AHSP + volume + seksi WBS),
+HSP per item, subtotal, PPN, total, bobot â€” lalu export Excel.
+
+## Data yang ditampilkan
+Baris RAB tersektor (WBS Iâ€“VII), HSP, amount, pajak/total per baris, bobot %,
+subtotal/PPN/total. Semua **tampilan**, bukan hitungan frontend.
+
+## Sumber angka (ENGINE-ONLY)
+- `POST /rab/build` (RAB tersektor) Â· `POST /rab/calculate` Â· `POST /rab/hsp`.
+- Parameter: `overhead_override`, `rounding_mode` (`exact`/`rounddown_int`),
+  `ppn_rate` (lihat Fase B).
+- Export: `POST /rab/export/excel` â†’ 4 sheet (HARGA BAHANâ†’AHSâ†’HSPâ†’DKH) dengan
+  **rumus hidup** (VLOOKUP/ROUNDDOWN/SUMPRODUCT) meniru template KEJAKSAAN.
+- âŒ Tidak ada perhitungan RAB/HSP/bobot di TypeScript. Frontend hanya render.
+
+## Peran AI di halaman ini
+- **PROPOSE** â€” "Susun dengan AI" (Smart RAB Builder): teks/tabel elemen â†’
+  usul item (tipe, kode AHSP, dimensi, seksi, confidence) â†’ engine hitung
+  volume (`/geometry/volume`) & RAB. Sekarang rule-based; **Gemini = v0.8**.
+- **EXPLAIN** â€” jelaskan kenapa suatu item mahal, bobot terbesar, dll (angka
+  dari engine).
+- **NEVER** â€” AI tidak menulis HSP/total. Hanya usul input; user setujui;
+
+=== G:\paax-ai-main\docs\pages\README.md ===
+# Aturan Per-Halaman PAAX AI
+
+> Dokumen ini mendefinisikan **aturan & batas tanggung jawab tiap halaman** di
+> `apps/web`, plus peran AI di tiap halaman. Sumber kebenaran utama tetap
+> `CLAUDE.md` (Aturan Emas) & `docs/MASTER_PLAN.md`. Kalau ada konflik,
+> CLAUDE.md menang.
+
+Dibuat: 2026-06-28. Status tiap fitur ditandai **[ada]** (sudah jalan),
+**[sebagian]** (kerangka ada), atau **[roadmap]** (belum dibangun).
+
+---
+
+## 1. KONTRAK BERSAMA (berlaku di SEMUA halaman)
+
+### 1.1 Aturan Emas (tidak bisa ditawar)
+**AI tidak pernah menghitung angka final.** Setiap angka (RAB, HSP, volume,
+bobot, durasi, Kurva S, biaya skenario) WAJIB datang dari engine deterministik
+(`services/core-engine`). Frontend hanya **menampilkan**; AI hanya
+**menstruktur** & **menjelaskan**.
+
+### 1.2 Empat peran AI (dipakai konsisten di seluruh dokumen ini)
+- **READ** â€” AI boleh membaca data halaman (untuk grounding chat/usulan).
+- **PROPOSE** â€” AI boleh mengusulkan perubahan **input terstruktur** (item,
+  volume, kode AHSP, urutan, durasi, seksi) lalu **memanggil ulang engine**.
+- **EXPLAIN** â€” AI boleh menarasikan/menjelaskan angka yang sudah dihitung engine.
+- **ENGINE-ONLY** â€” semua angka final; AI tidak boleh menulisnya.
+- **NEVER** â€” AI tidak menghitung, tidak mengarang angka, tidak menulis angka
+  final ke RAB/Excel/jadwal.
+
+### 1.3 Fallback manual wajib
+
+=== G:\paax-ai-main\docs\pages\schedule.md ===
+# Halaman Schedule / Kurva S
+
+Route: `/proyek/[projectId]/schedule`. Status: **[ada]** Kurva S + simulator
+skenario; Gantt/jalur kritis **[roadmap]** (v0.9).
+
+> Baca [README.md](README.md) Â§1 (Aturan Emas) dulu.
+
+## Tujuan
+Jadwal pekerjaan & Kurva S rencana dari RAB + durasi per item; simulasi what-if
+waktuâ€“biaya.
+
+## Data yang ditampilkan
+Kurva S (bobot kumulatif per periode), durasi, total hari, mode
+(sequential/parallel), frontier skenario. Semua tampilan dari engine.
+
+## Sumber angka (ENGINE-ONLY)
+- `POST /schedule/s-curve` (Kurva S dari RAB + `duration_days`).
+- `POST /scenario/simulate` (frontier waktuâ€“biaya deterministik).
+- Bobot Kurva S berasal dari bobot RAB engine â€” âŒ tidak dihitung di frontend.
+
+## Peran AI di halaman ini
+- **PROPOSE** â€” usul urutan kerja / durasi / paralelisasi, lalu **panggil
+  ulang** `/schedule/s-curve` atau `/scenario/simulate` untuk angka baru.
+- **EXPLAIN** â€” narasikan Kurva S, deviasi rencana, trade-off skenario.
+- **NEVER** â€” AI tidak mengarang durasi/tanggal; selalu lewat engine.
+
+## Akses Engineering Chat
+READ jadwal lintas-proyek + warning. Kasus "hujan, jaga schedule": AI menalar
+mitigasi â†’ engine hitung ulang Kurva S/durasi (lihat
+[engineering-chat.md](engineering-chat.md) Â§5.2). Angka tetap dari engine.
+
+=== G:\paax-ai-main\docs\pages\site-agent.md ===
+# Halaman Site Agent
+
+Route: `/proyek/[projectId]/site-agent`. Status: **[roadmap v2.0]**.
+
+> Baca [README.md](README.md) Â§1 (Aturan Emas) dulu.
+
+## Tujuan
+Pelaporan progres lapangan: foto, % progres, deviasi rencana vs realisasi.
+
+## Data yang ditampilkan
+Laporan progres, foto lapangan, deviasi terhadap Kurva S rencana.
+
+## Sumber angka (ENGINE-ONLY)
+Deviasi dihitung dengan membandingkan realisasi vs rencana engine
+(`/schedule/s-curve`). âŒ Frontend tidak menghitung deviasi sendiri.
+
+## Peran AI di halaman ini
+- **EXPLAIN / lapor** â€” analisa foto progres, deteksi deviasi, ringkasan
+  harian. AI **tidak menggantikan verifikasi manusia**.
+- **NEVER** â€” AI tidak menetapkan % progres final tanpa konfirmasi manusia;
+  tidak mengarang angka deviasi.
+
+## Akses Engineering Chat
+READ laporan & warning lapangan untuk reasoning lintas-data (mis. dampak
+keterlambatan ke jadwal/biaya â€” angka tetap dari engine).
+
+## Fallback manual
+PM input progres manual; engine hitung deviasi. Tanpa AI tetap jalan.
+
+## Status
+
+=== G:\paax-ai-main\docs\plans\PAAX_FASE0B_GAP_HARGA_2026-07-03.md ===
+# PAAX â€” GERBANG-0b: Harga Surakarta (2026-07-03)
+
+> Status: **sisi HARGA untuk lingkup PLHUT/Surakarta SUDAH diisi data NYATA**
+> (owner-authorized). Sisa pekerjaan 0b = pemetaan ke katalog AHSP RESMI penuh â€”
+> butuh keputusan/konfirmasi owner per item, bukan lagi soal "data belum ada".
+
+## âœ… Selesai & terverifikasi (2026-07-03)
+
+Owner menegaskan: harga di `ALFA.xlsx` (sheet **HARGA BAHAN**, **DKH**, **HSP**)
+adalah harga ASLI Surakarta 2024 â€” dipakai langsung sebagai HSD sistem.
+
+- **`data/harga-satuan/surakarta.json`** dibangun dari HARGA BAHAN (112 resource:
+  upah+bahan+alat) + 3 resource tambahan dari AHS yang belum ada di HARGA BAHAN.
+  Ini **price book UMUM regional** (dipakai proyek Surakarta mana pun) â€” sah
+  sebagai grounding sistem per prinsip Â§0.1 (harga = pengecualian regional yang
+  legal; yang dilarang jadi template = koefisien/answer-key PLHUT, itu tetap di
+  `tests/fixtures/`). Regenerator: `data/harga-satuan/_generate_surakarta_from_alfa.py`.
+- **Terverifikasi** (`test_plhut_surakarta_pricebook.py`, 3 test):
+  - Semua 44 resource yang dipakai 32 analisa PLHUT **ada harganya** (coverage 100%
+    untuk lingkup ini â€” bukan lagi 0,7%/3,2% seperti gap lama).
+  - Engine UMUM (`compute_hsp`/`compute_rab`), memakai price book Surakarta NYATA
+    (bukan harga inline fixture), mereproduksi RAB PLHUT: **Rp 1.885.558.837 vs
+    Rp 1.860.078.608 = +1,37%** â€” jauh di dalam toleransi Â±10%.
+  - **5 inkonsistensi harga internal ALFA** ditemukan & dicatat di
+    `alfa_price_conflicts` (mis. Portland cement ditulis Rp 1.100 di HARGA BAHAN
+    tapi dipakai Rp 1.300 di satu analisa) â€” **inilah sumber SELURUH deviasi
+    +1,37%**, bukan kesalahan engine. Auditable, sesuai RULE-HRG-02 (daftar harga
+    = otoritas saat sumber konflik).
+- Full suite core-engine: **238 passed** (235 + 3 baru), tanpa regresi.
+
+
+=== G:\paax-ai-main\docs\plans\PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md ===
+# PAAX â€” Rencana Fase 2: Persepsi Baca-Gambar (Gambar â†’ TKG benar)
+
+> Ditulis Claude, 2026-07-04 (revisi sore â€” lihat Â§0.2 "Insiden & koreksi"). Sumber
+> kebenaran: `docs/specs/brain-v4.1/PAAX_BRAIN_00_EKSTRAKSI_GAMBAR_KERJA.txt`
+> (grammar Â§2, SOP sheet Â§3, binding Â§5, validator V-01..V-10 Â§7, raster Â§8) +
+> roadmap `docs/plans/PAAX_ROADMAP_GAMBAR_KE_RAB_2026-07-03.md` + konsep integrasi
+> `Downloads/konsep_paddleocr_openai_vision_paax.txt` (dianalisis Â§P6).
+> **Prasyarat sudah lolos:** Fase 0 (golden anchor HSP+RAB PLHUT + harga Surakarta
+> nyata) SELESAI & ter-commit (commit `1ee7665`, draft PR #27, 238 test hijau).
+
+> ## âœ… UPDATE 2026-07-04 (malam) â€” P1, P2, P3, P4, P6, P5-FIX DIIMPLEMENTASIKAN
+> Owner memutuskan: Claude mengerjakan LANGSUNG seluruh paket di bawah (bukan
+> lewat prompt Codex â€” dokumen prompt di `docs/prompts/PAAX_CODEX_PROMPT_FASE2_
+> *.md` kini HISTORIS/SUPERSEDED, jangan dijalankan lagi). Hasil: `services/
+> document-intelligence/app/perception/` lengkap (span+merge-run+locale+kontrak
+> TKG, grammar Â§2, rakit grid/tabel/elemen via `page.find_tables()` NYATA,
+> validator+metrik+gerbang, adapter PaddleOCR raster lazy). Endpoint
+> `/drawings/analyze` diperluas dgn `metrics`/`gerbang` NYATA. Frontend
+> `tkg-workspace.tsx` dikoreksi baca data ASLI (fabrikasi kode gerbang lama
+> dihapus total). **document-intelligence 5â†’92 test hijau**, **web 41**,
+> **core-engine tetap 198** (tak disentuh). Diverifikasi end-to-end di browser
+> nyata (uploadâ†’analyzeâ†’review menampilkan angka asli). Smoke JUJUR ke PDF
+> PLHUT asli: 47 table record + 40 elemen NYATA (dulu ~0), tapi cakupan
+> rata-rata baru **16,24%** â€” kemajuan nyata, **BUKAN** GERBANG-2 selesai
+> (grid-dari-geometri Â§3.1.1, binding Â§5, deteksi simbol MASIH gap). Detail
+> lengkap tiap paket ditandai `[SELESAI]`/`[BELUM]` di Â§3 di bawah. Semua
+> perubahan **belum di-commit** (menunggu Codex, sesuai arahan owner).
+
+> ## âœ… SUSULAN (2026-07-04, lanjutan malam) â€” GRID DARI GEOMETRI (Â§3.1.1) SELESAI
+> Owner memilih lanjut (bukan berhenti): rekonstruksi grid dari bubble-as +
+
+=== G:\paax-ai-main\docs\plans\PAAX_ROADMAP_GAMBAR_KE_RAB_2026-07-03.md ===
+# PAAX â€” Roadmap "Gambar Kerja â†’ RAB Benar" (analisis mendalam brain, 2026-07-03)
+
+> Sumber kebenaran: `G:\brain` (4 berkas: TXT00 scanâ†’TKG Â· TXT01 aturan berpikir Â·
+> TXT02 rumus Â· TXT03 skill/pipeline/roadmap). Dokumen ini = pemetaan keadaan
+> NYATA repo hari ini ke gerbang brain (F0â€“F5) + rencana bertahap sampai satu
+> gambar kerja nyata benar-benar menghasilkan RAB yang BENAR (bukan sekadar
+> "menghasilkan sesuatu"). Ditulis Claude untuk review owner.
+
+> ## âœ… STATUS TERKINI (2026-07-03, sesi lanjutan) â€” GERBANG-0a TUTUP + harga Surakarta nyata
+> Owner setuju Fase 0 dulu, mengizinkan pakai harga ALFA.xlsx sbg HSD Surakarta
+> sistem. Sudah **dikerjakan & terverifikasi lewat engine asli** (238 test hijau):
+> engine `compute_hsp`/`compute_rab` reproduksi RAB manual PLHUT â€” HSP 32/32 eksak,
+> RAB total dev **+0,0009%** (harga fixture) dan **+1,37%** (harga
+> `data/harga-satuan/surakarta.json`, 112 resource NYATA, dev 100% dijelaskan oleh
+> inkonsistensi internal ALFA sendiri). Detail: `docs/plans/PAAX_FASE0B_GAP_HARGA_2026-07-03.md`,
+> prompt commit `docs/prompts/PAAX_CODEX_PROMPT_FASE0A_HSP_GOLDEN.md` (belum
+> di-commit â€” Codex yang commit). Tabel "Headline" Â§0 di bawah adalah snapshot
+> ANALISIS AWAL (sebelum kerja hari ini) â€” angka "Data grounding ~40%" & "GERBANG-0
+> BELUM lolos" sudah membaik untuk lingkup Surakarta/PLHUT (lihat status di atas);
+> sisa gap = pemetaan ke katalog AHSP RESMI penuh (2.542 item), bukan lagi harga kosong.
+
+---
+
+## 0. Headline jujur (baca ini saja kalau buru-buru)
+
+Tiga "setengah" sistem, tingkat kematangannya sangat berbeda:
+
+| Bagian | Peran brain | Status nyata | Nilai |
+|---|---|---|---|
+| **ENGINE hitung** (F3/F4 compute) | "ENGINE MENGHITUNG" | **~70% jadi & terverifikasi** â€” betonâ†’besiâ†’bekisting, tanah, finishing, atap, kusen, MEP, CPM, RAB, export. Semua jalan **kalau TKG-nya benar**. | tinggi |
+
+=== G:\paax-ai-main\docs\product\dashboard-blueprint.md ===
+# PAAX AI â€” Dashboard Blueprint
+
+> Dokumen ini menjelaskan struktur lengkap workspace dashboard PAAX AI v0.3,
+> termasuk 12 menu sidebar, AI agent yang terlibat, dan prioritas MVP.
+
+---
+
+## 1. Overview
+
+PAAX AI workspace adalah **project-centric dashboard** untuk insinyur sipil Indonesia.
+Setiap proyek konstruksi memiliki workspace sendiri dengan akses ke semua fitur:
+RAB (Rencana Anggaran Biaya), jadwal pelaksanaan, analisis gambar teknik,
+dan monitoring lapangan.
+
+```mermaid
+graph LR
+    A["Login / Auth"] --> B["Organization Selector"]
+    B --> C["Project List"]
+    C --> D["Project Workspace"]
+    D --> E["12 Sidebar Menus"]
+```
+
+---
+
+## 2. Sidebar Menu Structure
+
+| # | Menu Name | Icon | Route | Purpose | AI Agent | MVP Priority |
+|---|-----------|------|-------|---------|----------|--------------|
+| 1 | **Dashboard** | `LayoutDashboard` | `/project/:id` | Ringkasan proyek: progress RAB, jadwal, notifikasi | â€” | P0 |
+| 2 | **Dokumen Proyek** | `FileStack` | `/project/:id/documents` | Upload & kelola gambar teknik, spesifikasi, kontrak | Document Intelligence | P0 |
+
+=== G:\paax-ai-main\docs\product\workflow.md ===
+# PAAX AI â€” Workflow Documentation
+
+> Dokumen ini menjelaskan alur kerja lengkap pengguna PAAX AI,
+> dari pembuatan proyek hingga monitoring lapangan.
+
+---
+
+## 1. End-to-End Workflow Overview
+
+```mermaid
+flowchart TD
+    subgraph Phase1["Phase 1: Setup Proyek"]
+        A["ðŸ‘¤ User: Buat Proyek Baru"] --> B["Isi detail proyek:\n- Nama & lokasi\n- Tipe bangunan\n- Info kontrak"]
+        B --> C["Pilih standar:\n- SNI version\n- Wilayah harga\n- Mata uang"]
+    end
+
+    subgraph Phase2["Phase 2: Upload & Ekstraksi"]
+        C --> D["ðŸ“„ Upload Gambar Teknik\n(PDF, DWG, JPG)"]
+        D --> E["ðŸ¤– Document Intelligence\nProcessing Pipeline"]
+        E --> F["Page Split &\nOCR Processing"]
+        F --> G["Classification:\n- Denah / Floor Plan\n- Potongan / Section\n- Detail / Detail\n- Situasi / Site Plan"]
+        G --> H["Vision Analysis:\nDimensi, material, notasi"]
+        H --> I["Quantity Candidates\ngenerated"]
+    end
+
+    subgraph Phase3["Phase 3: Verifikasi & RAB"]
+        I --> J["ðŸ‘¤ User: Review &\nVerifikasi Quantity"]
+        J --> K{"Quantity\nAccurate?"}
+        K -->|"Koreksi"| L["Edit manual /\nChat AI untuk klarifikasi"]
+        L --> J
+
+=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_AI_MULTIMODAL_LAMPIRAN_2026-07-03.md ===
+# PROMPT CODEX â€” AI Multimodal: Lampiran Chat + (opsional) Vision Gambar Kerja (2026-07-03)
+
+> **UPDATE (sesi lanjutan 2026-07-03, lihat `docs/ai-map/STATE.md`):** untuk PDF
+> gambar kerja BERBASIS VEKTOR, sudah ada jalur deterministik (PyMuPDF, BUKAN
+> vision-LLM) yang berfungsi & tidak menyentuh gerbang F0 sama sekali â€” lihat
+> `apps/web/src/lib/ai/document-intelligence-tkg.ts` + `services/document-intelligence`.
+> Bagian B di bawah ini sekarang HANYA relevan untuk sheet RASTER murni (foto/scan
+> tanpa teks vektor sama sekali) â€” kasus yang jauh lebih sempit dari premis awal
+> prompt ini. Baca ulang sebelum menjalankan Bagian B.
+
+> âš ï¸ **JANGAN JALANKAN sebelum owner mengisi kotak persetujuan Bagian B di
+> bawah.** Ini prompt TERPISAH dari `PAAX_CODEX_PROMPT_PERBAIKAN_UI_BATCH_2026-07-03.md`
+> (owner sengaja minta dipisah â€” "task terpisah tapi tetap pikirkan, saya
+> akan tinggal running nanti"). Baca dulu catatan gerbang di bawah sebelum
+> mulai â€” ada satu keputusan roadmap yang harus dikonfirmasi owner secara
+> eksplisit (Bagian B), bukan diasumsikan oleh Codex.
+
+## Kenapa dipisah dari batch perbaikan UI
+
+`Downloads/perbaikan.txt` poin 10-11 minta: lampiran file/foto di
+Engineering Chat beneran dibaca AI (bukan cuma tempelan visual), dan upload
+gambar di halaman Gambar Kerja AI juga berfungsi. Ini kerja baru yang cukup
+besar (bukan sekadar rapikan UI) â€” perlu ubah skema API chat + panggilan
+Gemini jadi multimodal. Owner minta ini jadi prompt sendiri yang direview
+dulu sebelum dijalankan.
+
+---
+
+## Bagian A â€” Lampiran Engineering Chat (aman, TIDAK menyentuh gerbang F0)
+
+
+=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_BRAIN_BATCH_2026-07-02.md ===
+# PROMPT CODEX â€” Batch Brain v4.1: 10+ Irisan Engine (kerjakan semua, Claude review nanti)
+
+> Owner mengizinkan Codex mengerjakan SEMUA task di bawah tanpa spek rinci per
+> rumus â€” kamu baca sendiri rumus persisnya dari
+> `docs/specs/brain-v4.1/PAAX_BRAIN_02_RUMUS_LOGIKA_HITUNG.txt` (bagian Â§
+> yang disebutkan tiap task), ikuti konvensi kode yang SUDAH ADA di
+> `services/core-engine/app/takeoff/` (params.py + models.py + 1 file per
+> domain + test dengan anchor MANUAL dihitung tangan di docstring â€” lihat
+> `tanah.py`/`dinding.py`/`arsitektur.py`/`tests/test_takeoff.py` sbg pola)
+> dan `app/tkg/takeoff.py` untuk pola besi. Claude akan REVIEW & PERBAIKI
+> semua hasil nanti â€” jangan tunda karena ragu, ambil keputusan wajar &
+> catat sebagai assumption/needs_review sesuai pola Aturan Emas: TIDAK ADA
+> angka ditebak, data kurang -> needs_review.
+
+## Aturan wajib tiap task
+- Baca dulu section brain yang relevan + kode pola yang sudah ada.
+- Setiap fungsi hitung baru WAJIB test dengan anchor dihitung MANUAL (bukan
+  disalin dari kode yang diuji) di docstring, mirip test_takeoff.py.
+- Parameter baru masuk `params.py` terkait, bernama, tercatat di params_used.
+- Guardrail sebelum tiap commit: `pytest -q` (core-engine), `pnpm run
+  test:schemas`, `pnpm --filter "@paax/schemas" build`, `apps/web`: `tsc
+  --noEmit` + `pnpm test`. Merah -> perbaiki dulu, jangan commit rusak.
+- Branch baru per task atau per kelompok task terkait (nama bebas relevan),
+  cabang dari `feat/engine-takeoff-arsitektur` bila sudah ada di remote,
+  kalau belum ada cabang dari `feat/engine-rebar-bbs`. `git add` file
+  eksplisit (JANGAN `-A`/`.`), JANGAN stage `.claude/`/`skills-lock.json`.
+  PR **draft**, **JANGAN merge**, jangan push ke main/branch docs utama.
+- Tulis 1 report ringkas per task/kelompok di `report/`.
+
+## Task (kerjakan berurutan, boleh gabung yang berdekatan jadi 1 PR)
+
+=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_COMMIT_FASE2_LENGKAP_2026-07-04.md ===
+# PROMPT CODEX â€” COMMIT Fase 2 Persepsi Lengkap (P1â€“P6 + Grid Geometri Â§3.1.1)
+
+> Ditulis Claude, 2026-07-04 malam. **Tugas ini HANYA commit + push â€” TIDAK
+> ADA kode yang perlu ditulis ulang atau diperbaiki.** Semua implementasi
+> (backend `services/document-intelligence`, koreksi frontend
+> `apps/web`) sudah dikerjakan LANGSUNG oleh Claude sesuai arahan owner
+> ("Codex hanya bagian commit saja"), sudah diverifikasi lewat 339 test
+> otomatis + 1 uji langsung di browser. **JANGAN mengubah logika apa pun**
+> di file yang disebut di bawah â€” kalau ada godaan "memperbaiki" sesuatu,
+> STOP dan laporkan ke owner, jangan diam-diam diubah.
+
+---
+
+## 0. Konteks singkat
+
+Sesi ini (2026-07-04 malam, lanjutan) Claude membangun **seluruh pipeline
+persepsi baca-gambar** (Fase 2 paket P1â€“P6 + rekonstruksi grid dari
+geometri Â§3.1.1) langsung sebagai kode â€” bukan sebagai prompt Codex seperti
+biasanya. Semua sudah lolos test & terverifikasi. Working tree
+`feat/ui-premium-redesign` juga sudah **4 commit di depan `origin`**
+(`633ac68`, `c0fb447`, `a45b4c1`, `dec49f5` â€” lihat `git log --oneline -5`)
+yang belum pernah di-push. Tugas Anda: verifikasi test hijau, commit
+perubahan baru, lalu **push semuanya** (yang lama + yang baru) ke
+`origin/feat/ui-premium-redesign`.
+
+Laporan lengkap fungsi & hasil ada di
+`report/REPORT_FASE2_PERSEPSI_LENGKAP_CLAUDE_2026-07-04.txt` â€” baca itu
+untuk konteks, TIDAK perlu dibaca ulang di sini secara detail.
+
+---
+
+=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_ENGINE_D3.md ===
+# PROMPT CODEX â€” Commit & PR: Engine D3 Besi Lanjutan + BBS (2026-07-02)
+
+> Konteks: Claude selesai mengimplementasikan irisan D3 brain v4.1 di engine:
+> F-D02 penuh (kait + lewatan), F-D04 pinggang, F-D06 waste_mode, F-D08 BBS,
+> + mirror Zod + 8 test anchor manual. Verifikasi HIJAU: pytest 134, jest 11,
+> vitest 25, tsc OK, build OK. Tugasmu HANYA commit + push + draft PR.
+> **JANGAN mengubah kode/rumus/angka acuan (Aturan Emas Â§1 + Â§9 CLAUDE.md).**
+
+## âš ï¸ URUTAN â€” jalankan SETELAH `PAAX_CODEX_PROMPT_UI_OVERHAUL.md` selesai
+
+Prompt UI membuat branch `feat/ui-workspace-premium` dan meng-commit file UI.
+Perubahan engine D3 (daftar di bawah) sengaja TIDAK ikut di sana dan masih
+uncommitted. Setelah prompt UI selesai (sudah push + PR):
+
+```
+git checkout docs/brain-v4.1-alignment
+git checkout -b feat/engine-rebar-bbs
+```
+
+(File engine yang masih modified akan ikut pindah â€” itu memang yang mau
+di-commit di sini. Kalau checkout ditolak karena konflik, STOP dan lapor.)
+
+## Aturan keras
+
+1. **DILARANG** `git add .` / `git add -A` â€” tambah file satu per satu.
+2. **DILARANG** commit `.claude/`, `skills-lock.json`.
+3. PR = **draft**, **DILARANG merge**, dilarang push ke `main`/branch docs.
+4. Guardrail merah â†’ STOP + lapor, jangan commit.
+
+## Toolchain
+
+=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_ENGINE_TAKEOFF.md ===
+# PROMPT CODEX â€” Commit & PR: Engine Take-off Arsitektur/Tanah (2026-07-02)
+
+> Konteks: Claude selesai mengimplementasikan irisan brain **D4 + Â§E + Â§F + Â§G**
+> di engine â€” paket baru `app/takeoff/` (params Â§Z, tanah, dinding/finishing,
+> arsitektur) + 3 endpoint + mirror Zod + requests.http + 13 test anchor manual.
+> Verifikasi Claude HIJAU: pytest **147**, schemas jest **11** + build, web tsc
+> OK + vitest **25** + build. Tugasmu HANYA commit + push + draft PR.
+> **JANGAN mengubah kode/rumus/angka acuan (Aturan Emas Â§1 + Â§9 CLAUDE.md).**
+
+---
+
+## 0. Prasyarat & strategi branch
+
+Kamu sekarang di branch `feat/engine-rebar-bbs` (D3 sudah commit + PR #22).
+Pekerjaan take-off baru masih uncommitted DI ATAS branch itu. Buat branch anak
+supaya PR-nya stacked bersih di atas #22:
+
+```
+git checkout feat/engine-rebar-bbs
+git checkout -b feat/engine-takeoff-arsitektur
+```
+
+**Base PR = `feat/engine-rebar-bbs`** (BUKAN docs/brain-v4.1-alignment) â€” supaya
+diff PR hanya menampilkan pekerjaan take-off baru, bukan ikut D3.
+Kalau checkout ditolak karena konflik â†’ STOP dan lapor.
+
+## Aturan keras
+
+1. **DILARANG** `git add .` / `git add -A` â€” stage file satu per satu sesuai daftar.
+2. **DILARANG** men-stage: `.claude/`, `skills-lock.json`,
+
+=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_FASE0A_HSP_GOLDEN.md ===
+# PROMPT CODEX â€” Fase 0: Golden anchor RAB nyata PLHUT + price book Surakarta (2026-07-03)
+
+> Konteks: **GERBANG-0a TUTUP** + **harga Surakarta NYATA terpasang** (roadmap
+> `docs/plans/PAAX_ROADMAP_GAMBAR_KE_RAB_2026-07-03.md`, "data dulu, baru mata").
+> Claude sudah **membangun & memverifikasi** fixture + 3 test golden anchor dari
+> RAB manual NYATA `rab gedung plhut surakarta ALFA.xlsx`, dan membangun price
+> book regional Surakarta dari data harga asli di file yang sama (owner-authorized
+> 2026-07-03: "harga DKH/HSP/HARGA BAHAN itu harga asli Surakarta, pakai saja").
+> Tugasmu: **verifikasi hijau + commit + draft PR**. **JANGAN ubah kode/engine/
+> rumus/test/data.**
+>
+> Bukti terverifikasi Claude (jalankan ulang untuk pastikan):
+> - **0a-1 HSP**: engine UMUM `app.rab.rab.compute_hsp()` reproduksi **32/32** HSP
+>   profesional (baris F ALFA) via `(A+B+C)Ã—(1+OP)` (CLAUDE.md Â§5).
+> - **0a-2 RAB total**: engine UMUM `compute_rab()` reproduksi grand_total
+>   **Rp 1.860.078.607** dengan deviasi **+0,0009%** (224 baris; 79 ber-AHS pakai
+>   HSP dari koefisien, 145 direct/lump-sum pseudo-AHSP harga langsung).
+> - **0b-parsial (harga Surakarta nyata)**: `data/harga-satuan/surakarta.json`
+>   (112 resource, dari HARGA BAHAN + AHS asli) memuat via loader engine
+>   (region `surakarta`); dipakai ulang, engine mereproduksi RAB PLHUT
+>   **Rp 1.885.558.837 vs Rp 1.860.078.608 = +1,37%** (di dalam Â±10%); deviasi
+>   seluruhnya dari 5 inkonsistensi harga internal ALFA sendiri (tercatat, auditable).
+> - Full suite core-engine: **238 passed** (198 lama + 40 baru).
+
+## âš ï¸ PRINSIP WAJIB Â§0.1 (roadmap) â€” PLHUT = FIXTURE UJI, BUKAN TEMPLATE
+- Fixture PLHUT (koefisien/analisa/answer-key) hidup **HANYA** di
+  `services/core-engine/tests/fixtures/plhut/`. DILARANG menyalin ke `data/ahsp/`
+  sbg grounding sistem. DILARANG menambah logika di `app/` yang mengenali "ini PLHUT".
+- **Harga = pengecualian yang sah**: `data/harga-satuan/surakarta.json` BOLEH ada
+  di `data/` karena itu **harga regional Surakarta** (berlaku proyek Surakarta
+
+=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_FASE2_P1_FONDASI_PERSEPSI.md ===
+# PROMPT CODEX â€” FASE 2 Â· PAKET P1: Fondasi Persepsi Vektor (span + merge-run + locale + kontrak skema)
+
+> ## âš ï¸ STATUS: HISTORIS / SUPERSEDED (2026-07-04 malam)
+> Owner memutuskan Claude mengerjakan paket ini LANGSUNG (bukan via Codex).
+> **SUDAH DIIMPLEMENTASIKAN** di `services/document-intelligence/app/perception/
+> {models.py,ingest/span_extractor.py,vector/merge_run.py,locale.py,tkg/models.py}`,
+> 31 test hijau. **JANGAN jalankan prompt ini via Codex** â€” akan menulis ulang
+> kode yang sudah ada & sudah teruji. Lihat status nyata di
+> `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` Â§Paket F2-P1. Dipertahankan
+> di sini sbg spek historis/referensi, bukan instruksi aktif.
+
+> Ditulis Claude 2026-07-04 (rekonstruksi + revisi setelah insiden file hilang â€”
+> lihat `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` Â§0.2) untuk dijalankan
+> Codex. Rencana induk: `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md`. Spek
+> persepsi mengikat: `docs/specs/brain-v4.1/PAAX_BRAIN_00_EKSTRAKSI_GAMBAR_KERJA.txt`
+> (Â§1, Â§2.6, Â§6, Â§8, Â§10). **Ini paket fondasi.** Jangan bangun grammar/grid/tabel
+> di sini â€” itu paket P2/P3.
+
+**PENTING â€” cek dulu sebelum mulai:** jalankan
+`find services/document-intelligence/app -iname "*perception*"`. Kalau folder
+`app/perception/` SUDAH ADA berisi pekerjaan paket ini, JANGAN tulis ulang dari
+nol â€” lanjutkan/rebase dari situ. (Insiden sebelumnya: paket lain sempat
+ditulis ulang dari nol di branch berbeda alih-alih di-rebase, membuang
+implementasi yang sudah benar. Jangan ulangi pola ini.)
+
+---
+
+## 0. Aturan mengikat (baca dulu, langgar = PR ditolak)
+
+1. **Â§0.1 FIXTURE-BUKAN-TEMPLATE.** Semua kode di `app/perception/` harus UMUM
+
+=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_FASE2_P2_LEKSIKON_GRAMMAR.md ===
+# PROMPT CODEX â€” FASE 2 Â· PAKET P2: Leksikon & Grammar Notasi Struktur (brain-00 Â§2)
+
+> ## âš ï¸ STATUS: HISTORIS / SUPERSEDED (2026-07-04 malam)
+> Owner memutuskan Claude mengerjakan paket ini LANGSUNG (bukan via Codex).
+> **SUDAH DIIMPLEMENTASIKAN** di `services/document-intelligence/app/perception/
+> {lexicon/,grammar/,params.py}`, 37 test hijau, semua anchor tabel Â§4 lolos.
+> **JANGAN jalankan prompt ini via Codex.** Lihat status nyata di
+> `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` Â§Paket F2-P2. Dipertahankan
+> di sini sbg spek historis/referensi, bukan instruksi aktif.
+
+> Ditulis Claude 2026-07-04 (rekonstruksi setelah insiden file hilang â€” lihat
+> `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` Â§0.2). Rencana induk:
+> `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md`. Spek mengikat:
+> `docs/specs/brain-v4.1/PAAX_BRAIN_00_EKSTRAKSI_GAMBAR_KERJA.txt` Â§2 (Â§2.1â€“Â§2.8)
+> + Â§9 anti-pola. Boleh dikerjakan PARALEL dengan P1 (branch terpisah) â€”
+> fungsi murni, tak butuh runtime P1.
+
+**PENTING â€” cek dulu:** `find services/document-intelligence/app/perception -iname "*grammar*" -o -iname "*lexicon*"`.
+Kalau sudah ada pekerjaan paket ini, JANGAN tulis ulang dari nol â€” rebase/lanjutkan.
+
+---
+
+## 0. Aturan mengikat (langgar = PR ditolak)
+
+1. **AP-E-04 NO-GUESS.** String yang tak cocok grammar / kode di luar kamus
+   tanpa legenda â†’ kembalikan `None` (caller akan tandai UNCLASSIFIED + W-LEX).
+   DILARANG menebak makna. Ini inti "NO-MISTAKE".
+2. **INV-TKG-03 NO-SILENT-FIX.** Raw selalu ikut di hasil parse; normalisasi
+   (typo, satuan) ditandai bendera, bukan diam-diam.
+3. **Â§2.7 satuan lewat INFERENSI, bukan asumsi tetap.** Keputusan satuan
+
+=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_FASE2_P5_FIX_UI_PERSEPSI_REVIEW.md ===
+# PROMPT CODEX â€” FASE 2 Â· PAKET P5-FIX: Perbaikan Terarah Panel Review Persepsi
+
+> ## âš ï¸ STATUS: HISTORIS / SUPERSEDED (2026-07-04 malam)
+> Owner memutuskan Claude mengerjakan paket ini LANGSUNG. **SUDAH
+> DIIMPLEMENTASIKAN** â€” lebih tuntas dari rencana di bawah (fabrikasi kode
+> gerbang DIHAPUS TOTAL, bukan sekadar di-rename, karena `metrics`/`gerbang`
+> ASLI dari backend sudah tersedia). Diverifikasi end-to-end di browser
+> nyata. **JANGAN jalankan prompt ini via Codex.** Lihat status nyata di
+> `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` Â§Paket F2-P5-FIX.
+
+> Ditulis Claude 2026-07-04 setelah audit hasil kerja hari ini. Rencana induk:
+> `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` Â§0.2 & Â§Paket F2-P5-FIX.
+> **Ini BUKAN pembangunan baru.** Fitur "Analisis Gambar AI" / panel review
+> persepsi di `TkgWorkspace` SUDAH ADA dan SUDAH JALAN (commit `a45b4c1` di
+> branch `feat/ui-premium-redesign`, PR #26). Tugas paket ini HANYA memperbaiki
+> 3 hal spesifik di kode yang sudah ada â€” jangan menulis ulang komponen, jangan
+> mengubah alur yang sudah benar (upload â†’ jalankan persepsi â†’ review â†’
+> konfirmasi pakai sebagai transkrip tetap dipertahankan, itu sudah bagus).
+
+---
+
+## 0. Konteks â€” kenapa perbaikan ini perlu
+
+Audit Claude menemukan `buildPerceptionReview()` di
+`apps/web/src/components/drawings/tkg-workspace.tsx` menghitung sendiri (di
+TypeScript) sebuah blok "Gerbang" dengan kode `V-TKG`, `V-COV`, `V-WARN`,
+`V-CLS`. Ini BUKAN pelanggaran Aturan Emas secara harfiah (bukan angka
+RAB/HSP â€” cuma tally elemen/tabel/dimensi yang sudah ada di memori), TAPI ada
+2 masalah nyata:
+
+
+=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_FASE2_P6_PADDLEOCR_RASTER.md ===
+# PROMPT CODEX â€” FASE 2 Â· PAKET P6: Perception Raster via PaddleOCR (sheet scan/foto)
+
+> ## âš ï¸ STATUS: HISTORIS / SUPERSEDED (2026-07-04 malam)
+> Owner memutuskan Claude mengerjakan paket ini LANGSUNG. **KODE SUDAH
+> DIIMPLEMENTASIKAN** (`app/perception/{ingest/raster_detector.py,
+> ocr/paddle_ocr_extractor.py}`, 6 test hijau via mock). Dependency `paddleocr`
+> SENGAJA belum di-install (berat/opsional) â€” jalur nyata (non-mock) belum
+> diverifikasi, butuh owner `pip install paddleocr` dulu. **JANGAN jalankan
+> prompt ini via Codex** untuk membangun ulang; kalau ingin lanjut ke modul
+> table/layout PaddleOCR (di luar scope awal), tulis prompt baru mengacu ke
+> kode yang sudah ada. Lihat status nyata di
+> `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` Â§Paket F2-P6.
+
+> Ditulis Claude 2026-07-04. Rencana induk:
+> `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` Â§Paket F2-P6. Konsep
+> awal dari owner: `Downloads/konsep_paddleocr_openai_vision_paax.txt` â€” sudah
+> dianalisis kritis terhadap kode nyata & PaddleOCR 3.7.0 asli
+> (`G:\paax-data\PaddleOCR-main`), lihat Â§0 di bawah. Spek mengikat:
+> `docs/specs/brain-v4.1/PAAX_BRAIN_00_EKSTRAKSI_GAMBAR_KERJA.txt` Â§8
+> (RULE-EXT-30..33) + INV-TKG-06 + RULE-EXT-05 ("vektor-dulu").
+
+**PRASYARAT KERAS: Paket P1 (`docs/prompts/PAAX_CODEX_PROMPT_FASE2_P1_FONDASI_PERSEPSI.md`)
+HARUS SUDAH SELESAI & DI-REVIEW Claude sebelum paket ini dimulai** â€” P6
+memakai kontrak `TextSpan`/`Run` (dengan field `method`/`confidence`) yang
+didefinisikan P1. Cek dulu: `find services/document-intelligence/app/perception -iname "models.py"`
+harus ADA dan berisi `TextSpan` dengan field `method: Literal["vector","ocr"]`.
+Kalau belum ada, STOP â€” jalankan P1 dulu.
+
+---
+
+
+=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_PERBAIKAN_UI_BATCH_2026-07-03.md ===
+# PROMPT CODEX â€” Batch Perbaikan: Hydration, Navigasi Ganda, Chat, Gambar Kerja AI (2026-07-03)
+
+> Sumber: `Downloads/perbaikan.txt` (14 poin ditulis owner setelah mencoba build
+> hasil redesign UI premium, branch `feat/ui-premium-redesign`, PR **#26
+> draft, belum di-merge**) + investigasi Claude di sesi ini yang menemukan
+> root cause persis di kode untuk tiap poin (dikutip file:baris di bawah).
+> Owner sudah menjawab pertanyaan arsitektural (lihat Batch 4) â€” JANGAN
+> menebak ulang keputusan itu, ikuti seperti tertulis.
+>
+> **Semua batch di bawah HANYA presentasi/orkestrasi UI.** Tidak ada satupun
+> yang mengubah rumus/angka di `services/core-engine` atau kontrak
+> `@paax/schemas`. Aturan Emas (`CLAUDE.md` Â§1) tetap: engine yang hitung,
+> frontend hanya menampilkan/mengurutkan panggilan.
+>
+> Kerjakan di branch **`feat/ui-premium-redesign`** (SUDAH checked out, PR #26
+> sudah ada sebagai draft) â€” JANGAN buat branch baru untuk batch 1-4, ini
+> perbaikan atas kerja yang sama yang belum di-merge. Commit terpisah per
+> batch (4 commit kecil), push ke branch yang sama (PR #26 auto-update).
+> **JANGAN** ubah status draftâ†’ready, **JANGAN** merge.
+
+## Aturan keras
+
+1. **DILARANG** `git add .` / `git add -A`. Tambahkan file satu per satu.
+2. **DILARANG** commit `.claude/`, `skills-lock.json`, `excel_extracted.txt`, `pdf_extracted.txt` (lihat `git status` â€” ada file liar ini di working tree, JANGAN ikut ter-stage).
+3. **DILARANG** merge / mengubah PR #26 dari draft ke ready.
+4. **DILARANG** push ke `main`.
+5. **DILARANG** menyentuh rumus/angka di `services/core-engine`, atau mengubah signature fungsi di `apps/web/src/lib/engine.ts` (`validateTkg`/`renderTkg`/`takeoffTkg`) â€” batch ini murni presentasi.
+6. Jika guardrail merah â†’ STOP, tulis laporan, jangan commit.
+
+## Toolchain (PATH non-interaktif â€” mesin Windows ini)
+
+=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_PLHUT_GOLDEN.md ===
+# PROMPT CODEX â€” Commit: Golden Anchor TKG PLHUT (2026-07-03, lanjutan PR #25)
+
+> Claude menambahkan golden anchor dari GAMBAR KERJA PLHUT ASLI (grid nyata,
+> hitungan kolom nyata dari denah, tabel kolom nyata; footplat tanpa tebal =
+> bukti no-guess pada data nyata). pytest total **198 passed**. Tugasmu HANYA
+> commit + push ke branch `task/brain-v4.1-tkg-implementation` (PR #25 sudah
+> terbuka â€” commit ini otomatis masuk). **JANGAN ubah kode/angka.**
+
+## Langkah
+1. Guardrail: `cd services/core-engine ; $env:PYTHONUTF8=1 ; python -m pytest -q`
+   â†’ harus **198 passed**. Merah = STOP + lapor.
+2. Commit (stage HANYA file ini â€” dilarang `git add .`):
+   - `services/core-engine/tests/test_plhut_golden.py`
+   - `docs/prompts/PAAX_CODEX_PROMPT_PLHUT_GOLDEN.md`
+
+   Pesan (persis):
+   ```
+   test(engine): PLHUT golden anchors from real drawings (grid, kolom, no-guess footplat)
+   ```
+3. `git push` (branch sudah tracking origin). Jangan buka PR baru â€” sudah ada
+   PR #25. Update report `report/REPORT_PLHUT_COMMIT_CODEX_2026-07-03.md`
+   (tambah bagian "Golden Anchor") boleh digabung dalam commit yang sama.
+4. TETAP dilarang: commit `excel_extracted.txt` / `pdf_extracted.txt` /
+   `.claude/` / `skills-lock.json`.
+
+## Catatan penting untuk owner (tulis juga di report):
+Commit `790b2ee` (sesi batch sebelumnya) terlanjur men-track `.claude/skills/`
+(35 file skill pihak ketiga) + `skills-lock.json` + `.claude/launch.json` â€”
+melanggar aturan "jangan commit .claude/". JANGAN perbaiki sendiri tanpa
+persetujuan owner (butuh `git rm -r --cached` + entri `.gitignore`); tunggu
+
+=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_PLHUT_REVIEW.md ===
+# PROMPT CODEX â€” Commit & PR: Review PLHUT + Triage UI + Data Surakarta (2026-07-03)
+
+> Claude selesai me-review & MEMPERBAIKI hasil sesi PLHUT-mu (rincian:
+> `report/REVIEW_CLAUDE_PLHUT_2026-07-03.md`) + membangun Triage UI + data
+> harga Surakarta. Guardrail HIJAU: pytest 193, schemas 11+build, tsc,
+> vitest 30, build. Tugasmu HANYA commit + push + draft PR di branch aktif
+> `task/brain-v4.1-tkg-implementation`. **JANGAN ubah kode/angka acuan.**
+
+## Aturan keras
+1. DILARANG `git add .`/`-A`; stage eksplisit sesuai daftar.
+2. DILARANG stage: `.claude/`, `skills-lock.json`, `excel_extracted.txt`,
+   `pdf_extracted.txt` (data proyek mentah â€” jangan masuk repo).
+3. **HAPUS** `scratch_extract.py` (digantikan `services/core-engine/scripts/
+   extract_harga_surakarta.py`) â€” ikutkan penghapusan bila file terlanjur
+   ter-track; kalau untracked cukup hapus dari disk.
+4. PR **draft**, JANGAN merge, jangan push ke main.
+
+## Guardrail dulu (wajib hijau)
+```powershell
+$env:Path = "C:\Program Files\nodejs;$env:APPDATA\npm;$env:Path"
+cd services/core-engine ; $env:PYTHONUTF8=1 ; python -m pytest -q   # 193
+cd ../.. ; pnpm run test:schemas ; pnpm --filter "@paax/schemas" build
+cd apps/web ; pnpm exec tsc --noEmit -p tsconfig.json ; pnpm test    # 30
+```
+
+## Commit 1 â€” `fix(engine): harden PLHUT modules â€” SMKK rules, reuse_form, MEP validation`
+- `services/core-engine/app/tkg/params.py`
+- `services/core-engine/app/tkg/takeoff.py`
+- `services/core-engine/app/takeoff/smkk.py`
+- `services/core-engine/app/takeoff/mep_advanced.py`
+
+=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_TKG.md ===
+# PROMPT CODEX â€” Sesi TKG (brain v4.1), 2026-07-02
+
+> Salin-tempel per-tugas ke Codex. Konteks repo: baca `AGENTS.md` +
+> `docs/ai-map/START_HERE.md` dulu. Semua pekerjaan di bawah adalah
+> **tugas ringan/mekanis** â€” implementasi berat (rumus, model, UI) SUDAH
+> dikerjakan Claude dan ada di working tree branch `docs/brain-v4.1-alignment`.
+
+## GUARDRAIL (berlaku untuk SEMUA tugas di file ini)
+
+1. **JANGAN mengubah rumus/logika** di `services/core-engine/app/tkg/`,
+   `app/geometry/`, atau angka acuan test. Kalau test merah karena logika,
+   STOP dan lapor â€” jangan "perbaiki" angkanya (Aturan Emas, CLAUDE.md Â§1).
+2. **JANGAN push ke `main` dan JANGAN merge PR.** Branch â†’ PR â†’ tunggu review
+   owner + Claude (CLAUDE.md Â§9).
+3. Sebelum tiap commit, WAJIB hijau semua:
+   ```
+   cd services/core-engine && python -m pytest -q     # harus 126+ passed
+   pnpm run test:schemas                               # 11+ passed
+   pnpm --filter @paax/schemas build                   # dist rebuild
+   pnpm --dir apps/web test                            # vitest hijau
+   pnpm --dir apps/web build                           # build sukses
+   ```
+   (Path toolchain Windows owner: node di `C:\Program Files\nodejs`,
+   pnpm shim di `%APPDATA%\npm`.)
+
+---
+
+## TUGAS C1 â€” Commit & PR pekerjaan TKG (PRIORITAS PERTAMA)
+
+Working tree branch `docs/brain-v4.1-alignment` berisi pekerjaan belum
+
+=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_UI_OVERHAUL.md ===
+# PROMPT CODEX â€” Commit & PR: UI Overhaul Workspace Premium (2026-07-02)
+
+> Konteks: Claude sudah selesai mengimplementasikan & memverifikasi overhaul UI
+> dashboard (font Outfit/Inter, tema gelap default, settings dialog terpusat 2
+> kolom menggantikan 4 drawer). Semua verifikasi HIJAU: `tsc --noEmit` OK,
+> vitest 25 passed, `pnpm build` sukses, dialog diuji visual di browser.
+> Tugasmu HANYA commit + push + buka draft PR. **JANGAN mengubah kode.**
+
+## Aturan keras
+
+1. **DILARANG** `git add .` / `git add -A`. Tambahkan file satu per satu sesuai daftar di bawah.
+2. **DILARANG** commit `.claude/`, `skills-lock.json`, atau file lain di luar daftar.
+3. **DILARANG** merge. PR dibuka sebagai **draft**, menunggu review owner + Claude.
+4. **DILARANG** push ke `main` atau ke `docs/brain-v4.1-alignment` langsung.
+5. Jika guardrail (langkah 2) merah â†’ STOP, tulis laporan, jangan commit.
+
+## Toolchain (PATH non-interaktif)
+
+```powershell
+$env:Path = "C:\Program Files\nodejs;$env:APPDATA\npm;$env:Path"
+```
+
+## Langkah
+
+### 1. Branch baru dari branch aktif
+
+Working tree saat ini di `docs/brain-v4.1-alignment` dengan perubahan UI belum
+ter-commit. Buat branch (perubahan ikut pindah):
+
+```
+
+=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_UI_PREMIUM_REDESIGN.md ===
+# PROMPT CODEX â€” Commit & PR: UI Premium Redesign Medium Grey (2026-07-03)
+
+> Konteks: Claude sudah selesai mengimplementasikan & memverifikasi rombak
+> besar UI/UX workspace (spek owner: `G:\Design\prompt\PAAX_PLAN_SESI_DESAIN_PREMIUM_2026-07-03.txt`):
+> tema **Medium Grey** default + glassmorphism, logo/wordmark SVG dari brand
+> sheet PAAX, konsolidasi sidebar (rail = tool global + gear; panel = konteks
+> kerja; nol menu ganda), dashboard bisnis dengan chart SVG (KPI, donut status,
+> bar progres, kolom RAB, ring health), Engineering Chat premium (riwayat +
+> Project Percakapan lokal, tombol + konektor GDrive/Gmail "segera", lampiran,
+> Thinkingâ€¦/Thinking moreâ€¦/Thinking almost doneâ€¦ berkedip), hapus halaman
+> Uji RAB, `/pengaturan` jadi redirect ke dialog terpusat.
+> Verifikasi HIJAU: `tsc --noEmit` OK Â· vitest **30 passed (10 file)** Â·
+> `pnpm build` sukses (route `/rab-tester` hilang) Â· uji interaktif browser
+> (tema 3 arah, dialog kaca, chat kirim+riwayat, menu +, redirect pengaturan).
+> Aturan Emas aman: chart hanya MENAMPILKAN metadata/cache engine; komentar
+> penegasan ada di `dashboard-charts.tsx` & `dashboard/page.tsx`.
+> Tugasmu HANYA commit + push + buka draft PR. **JANGAN mengubah kode.**
+
+## Aturan keras
+
+1. **DILARANG** `git add .` / `git add -A`. Tambahkan file satu per satu sesuai daftar.
+2. **DILARANG** commit `.claude/`, `skills-lock.json`, `excel_extracted.txt`, `pdf_extracted.txt`.
+3. **DILARANG** merge. PR dibuka sebagai **draft**, menunggu review owner + Claude.
+4. **DILARANG** push ke `main`.
+5. Jika guardrail merah â†’ STOP, tulis laporan, jangan commit.
+
+## Toolchain (PATH non-interaktif)
+
+```powershell
+$env:Path = "C:\Program Files\nodejs;$env:APPDATA\npm;$env:Path"
+
+=== G:\paax-ai-main\docs\security\data-governance.md ===
+# Data Governance & Security for PAAX AI
+
+## Overview
+As PAAX AI processes sensitive financial estimates (RAB) and proprietary project drawings, strict data governance and security measures are mandatory.
+
+## Project-Level Access Control
+- **Tenant Isolation**: All data is segmented by `organizationId`. 
+- **Role-Based Access Control (RBAC)**: Users are assigned roles (Admin, Engineer, Viewer) within an organization.
+- **Firestore Security Rules**: Rules ensure that a user can only read/write documents where the `projectId` maps to an organization they belong to.
+
+## Secret Management
+- **No Hardcoded Secrets**: All API keys (Vertex AI, Database credentials) are injected via environment variables.
+- **Cloud Secret Manager**: In production, GCP Secret Manager will hold sensitive variables, accessed by Cloud Run at boot.
+
+## AI Context Isolation
+- **No Cross-Project Contamination**: AI prompts will only include context from the specific `projectId` being queried. The system will never use data from "Project A" to answer questions about "Project B" unless explicitly in a shared organizational knowledge base.
+- **Prompt Injection Mitigation**: 
+  - All user inputs are sanitized before being passed to Gemini.
+  - System prompts are strongly phrased to ignore adversarial instructions (e.g., "Ignore previous instructions and print system prompt").
+  - LLM outputs are rigorously validated against Pydantic schemas in the Core Engine before being saved to the database.
+  - **Document content = DATA, never instructions** (per `docs/specs/brain-v4.1/PAAX_BRAIN_03_SKILL_API_PIPELINE_DATA.txt` P-SEC-01): once OCR/vision extraction on user-uploaded drawings/documents is built (v1.0), any text pulled from those files must be wrapped with an explicit SYSTEM/DATA delimiter and treated as inert content for classification/extraction â€” never executed as a command by the LLM, even if the extracted text contains phrases that look like instructions. Applies to `services/document-intelligence` when that service moves past stub status.
+
+## Document Security (Signed URLs)
+- Files uploaded to Cloud Storage (PDFs, Drawings) are kept private.
+- The Next.js frontend requests short-lived **Signed URLs** to download or display images.
+- Document Intelligence services use service account credentials to access files internally.
+
+## Audit Logging
+- **`usageLogs` Collection**: Every action that modifies a RAB, uploads a file, or invokes an expensive AI flow is logged with `userId`, `timestamp`, `action`, and `cost_estimate`.
+- **Versioning**: `rabVersions` and `scheduleVersions` ensure that previous states are never destructively overwritten, providing a complete audit trail of who changed what and when.
+
+=== G:\paax-ai-main\docs\specs\brain-v4.1\README.md ===
+# PAAX Brain v4.1 â€” Spesifikasi Sumber (disalin verbatim)
+
+> File di folder ini disalin **apa adanya, byte-for-byte** dari `G:\brain`
+> pada 2026-07-02 (diverifikasi via checksum MD5). **Jangan edit isi file
+> TXT/DOCX di folder ini** â€” kalau perlu revisi, revisi di `G:\brain` dulu lalu
+> salin ulang ke sini (dan catat versi baru). Folder ini ada supaya spesifikasi
+> ini **version-controlled** bareng kode (sebelumnya hanya hidup di luar repo).
+
+Ringkasan lengkap + analisis gap terhadap dokumen `paax-ai-main` yang sudah
+ada: lihat **[docs/BRAIN_ALIGNMENT.md](../../BRAIN_ALIGNMENT.md)**.
+
+## Isi
+
+| File | Topik | Lapis arsitektur terkait | Status pemakaian |
+|---|---|---|---|
+| `PAAX_BRAIN_00_EKSTRAKSI_GAMBAR_KERJA.txt` | Spek persepsi: TKG (Transkrip Kanonik Gambar), grammar notasi gambar teknik ID, SOP baca per jenis sheet, 10 gerbang validasi (V-01â€“V-10) | Lapis 2A (`services/document-intelligence`) | **Referensi untuk v1.0** â€” belum diimplementasi. Jangan mulai bangun sebelum gerbang F0 (data grounding) selesai (lihat `docs/ai-map/STATE.md`). |
+| `PAAX_BRAIN_01_PRINSIP_PENALARAN.txt` | Konstitusi reasoning: 13 invariant (INV-01â€“13), model entitas (Evidence/Assumption/Warning/ReviewTask/Correction), aturan JOIN/precedence, expansion/implied-works, AHSP selection, dependency scheduling, anti-pattern (AP-01â€“16) | Lapis 1 (orchestrator) + Lapis 2A/2B | Invariant inti (AI tak pernah hitung) **sudah berlaku** via `CLAUDE.md` Â§1. Model entitas Evidence/Warning/Assumption **sudah ada sebagian** di `packages/schemas`; sisanya (ReviewTask, Correction, ElementInstance, WorkItem) masih draft/belum dipakai. |
+| `PAAX_BRAIN_02_RUMUS_LOGIKA_HITUNG.txt` | 92 rumus deterministik (F-A00â€“K08): geometri, take-off beton/bekisting/besi/tanah/arsitektur/atap/MEP, AHSPâ†’HSPâ†’RAB, bobot/durasi/S-Curve/CPM/EVM, confidence, QA. Plus registry ~62 parameter (Â§Z). | Lapis 2B (`services/core-engine`) | **Sebagian kecil sudah diimplementasi** (F-H*/F-I* â€” HSP/RAB/S-Curve/CPM/skenario). Mayoritas (take-off beton/besi/bekisting/tanah/finishing) **belum** â€” jadi target ekspansi bertahap `app/geometry/`. |
+| `PAAX_BRAIN_03_SKILL_API_PIPELINE_DATA.txt` | Katalog 31 skill (SK-01â€“31), arsitektur layer L0â€“L3, kebijakan keamanan/ops (P-SEC/P-OPS), testing/eval (T-01â€“T08), roadmap bergerbang F0â€“F5 | Semua lapis | Arsitektur L0â€“L3 **selaras** dengan `CLAUDE.md` Â§3. Roadmap F0â€“F5 **menguatkan** urutan yang sudah dikunci di `STATE.md` (ground data dulu, CV/vision ditunda). |
+| `PAAX_OTAK_v3_Penjelasan_Sistem_2026-07-01.docx` | Ringkasan sistem versi v3 (lebih lama dari TXT 00-03 yang v4.1) | â€” | Arsip/referensi sejarah â€” **superseded** oleh TXT 00-03 v4.1. Simpan untuk konteks, bukan sumber kebenaran aktif. |
+
+## Cara pakai
+
+- Kalau kamu (Claude/Codex) sedang mengerjakan task yang menyentuh rumus
+  take-off, model entitas Evidence/TKG, atau desain pipeline baca-gambar â€”
+  baca bagian relevan di sini **sebagai spek rinci**, tapi cek dulu
+  `docs/BRAIN_ALIGNMENT.md` untuk tahu bagian mana yang sudah/belum
+  diimplementasi supaya tidak duplikasi kerja atau bikin schema drift.
+- Nomor rumus (F-A00, dst.), invariant (INV-01, dst.), rule (RULE-EXP-*, dst.)
+  dan kode skill (SK-01, dst.) di file-file ini adalah id acuan â€” kalau
+
+=== G:\paax-ai-main\docs\strategy\PAAX_Analisis_Strategis_Companion.md ===
+# PAAX AI â€” Analisis Strategis, Biaya, Margin & Roadmap
+### Companion Dokumen untuk Blueprint Besar v2.0 Â· Disusun untuk Wisnu Setyo Aji
+
+> **Sifat dokumen ini:** ini bukan pengganti blueprint kamu â€” blueprint-nya sudah benar secara konsep dan arsitektur. Dokumen ini adalah *pressure test*: menguji angka, memilih vendor, mengurutkan prioritas dari kacamata bisnis, dan mengatakan dengan jujur bagian mana yang terlalu mahal/sulit untuk sekarang. Semua angka biaya adalah **indikatif** dan wajib dikalibrasi ulang dengan tarif model aktual (harga AI berubah cepat; basis pengetahuan saya berhenti awal 2026).
+
+---
+
+## 0. Vonis Utama (baca ini dulu)
+
+Tiga keputusan yang menentukan nasib PAAX, sebelum hal lain:
+
+**1. Produk MVP kamu BUKAN "gambar â†’ RAB". MVP kamu adalah workspace RAB deterministik + Smart Import + jadwal + skenario (v0.7â€“v0.9).** Ini sudah produk yang bisa dijual, murah dioperasikan (hampir tanpa biaya AI), dan margin-nya tinggi. Vision (v1.0) adalah riset, bukan fitur.
+
+**2. Jangan bangun Computer Vision sampai divalidasi lewat Wizard-of-Oz.** "Kirim gambar, terima RAB" kamu kerjakan **semi-manual dengan engine v0.6** dulu, dan kamu **tagih**. Kalau ada yang mau bayar untuk hasilnya, baru investasi CV (yang makan waktu 6â€“18 bulan R&D). Ini satu-satunya cara menurunkan risiko teknis terbesar di seluruh sistem sebelum membakar uang.
+
+**3. Ekstraksi gambar harus di-*meter* (kredit) sejak hari pertama â€” jangan di-bundle royal.** Ini pelindung margin nomor satu. Akan saya tunjukkan di Bagian 6 kenapa satu pengguna berat bisa menghapus margin.
+
+Target net profit 30â€“40% kamu **realistis dan tercapai dari ~100 pengguna berbayar ke atas** â€” bukan karena harga, tapi karena di fase deterministik biaya variabel AI sangat kecil. Di bawah ~40 pengguna kamu masih di mode investasi (net tipis/negatif), dan itu **normal**, bukan kegagalan.
+
+---
+
+## 1. Biaya AI per Operasi â€” Realita di Balik Angka Blueprint
+
+Angka di blueprint (Bagian 12.2) **masuk akal untuk operasi sekali-jalan**. Yang blueprint belum tunjukkan: apa yang terjadi saat angka itu **dikalikan kuota** dan **diulang setiap hari**. Di situ letak bahaya.
+
+| Operasi | Estimasi biaya/op (â‰ˆ, USD@Rp16.000) | Catatan jujur |
+| --- | --- | --- |
+| Ekstraksi 1 gambar (OCR+CV+vision-LLM) | Rp 3.500 (~$0.22) | Realistis, cenderung **konservatif rendah** untuk gambar padat multi-sheet. Gambar tender lengkap bisa Rp 5.000â€“8.000. **Biaya variabel dominan.** |
+| Klasifikasi â†’ AHSP (LLM+RAG) | Rp 1.800 | Wajar. Sekali per proyek. Kualitas model di sini = benar/salahnya RAB â†’ jangan pakai model termurah. |
+| Generate RAB (engine) | â‰ˆ Rp 5 | Benar, praktis gratis. |
+
+=== G:\paax-ai-main\docs\superpowers\plans\2026-06-25-paax-workspace-redesign.md ===
+# PAAX Workspace Redesign â€” Implementation Plan
+
+> Pure visual / mock-data redesign of `apps/web`. No commits during this pass (per user).
+> Spec: `docs/superpowers/specs/2026-06-25-paax-workspace-redesign-design.md`.
+
+**Goal:** Restyle all 12 workspace screens + app shell to the `PAAX Workspace.dc.html` design, using a CSS-token design system + shared React components, with mock data only.
+
+**Architecture:** CSS variables + `data-theme` (light/dark/grey) in `globals.css`; `next/font` for Hanken Grotesk + JetBrains Mono; a theme provider; rebuilt shell (icon-rail + nav-panel + topbar); shared `components/ui/*` primitives; all screen content from `lib/mock/workspace.ts`.
+
+**Tech Stack:** Next.js 15 (App Router), React 19, Tailwind v4, TypeScript strict.
+
+## Global Constraints (must hold every stage)
+- **NEVER touch:** `services/core-engine/**`, `data/**`, `packages/schemas/**`,
+  `apps/web/src/app/rab-tester/page.tsx`, `apps/web/src/lib/engine.ts`,
+  `apps/web/src/lib/core-engine-client.ts`, `apps/web/src/lib/document-intelligence-client.ts`,
+  API routes/connectivity, exports, `package.json` scripts, package structure, `.env*`,
+  `next.config.ts`, `postcss.config.mjs`, `turbo.json`, CI (`.github/**`), private data.
+- No new dependencies. No network/engine calls in redesigned screens.
+- Mocked RAB numbers carry a visible "data contoh / placeholder" note (golden rule #1).
+- Default theme = light.
+
+---
+
+### Stage 1 â€” Foundation: tokens, fonts, theme provider
+**Create:** `apps/web/src/components/theme/theme-provider.tsx`
+**Modify:** `apps/web/src/app/globals.css`, `apps/web/src/app/layout.tsx`
+**Must not touch:** any `paax-*` consumer logic beyond restyle; no config files.
+**Work:** port `:root` + `[data-theme="dark"]` + `[data-theme="grey"]` vars + keyframes; load fonts via `next/font`; provider sets `data-theme` from `localStorage["paax-theme"]` (default light); remove hardcoded `className="dark"` and the Inter `<link>`.
+**Risk:** Medium (global styles, hydration).
+**Validate:** `cd apps/web && pnpm exec tsc --noEmit`; app boots; toggling theme persists.
+
+=== G:\paax-ai-main\docs\superpowers\specs\2026-06-25-paax-workspace-redesign-design.md ===
+# PAAX Workspace Redesign â€” Design Spec
+
+**Date:** 2026-06-25
+**Status:** Approved for planning (implementation not started)
+**Scope owner:** apps/web (frontend only)
+**Source design:** Claude Design project "PAAX AI UI Redesign" (`e732735b-fa49-49b3-8f43-fc21d6512045`), file `PAAX Workspace.dc.html`
+
+## 1. Summary
+
+Implement the `PAAX Workspace.dc.html` redesign across the existing Next.js app (`apps/web`)
+as a **pure visual redesign**. All 12 workspace screens, the app shell (icon rail + nav panel +
+topbar), the overlays (drawers/modals), and a 3-theme token system are ported into the app.
+
+This is **front-end only**. The deterministic calculation engine and its data are **not touched**.
+All redesigned screens render from **mock/presentational data** in this phase (per explicit
+decision). The existing live deterministic path (`rab-tester`) is preserved unchanged.
+
+## 2. Decisions (locked)
+
+| # | Decision | Choice |
+|---|----------|--------|
+| 1 | Screen scope | **All 12 screens** in one pass |
+| 2 | Styling approach | **CSS tokens in `globals.css` + shared React components**; Tailwind utilities for layout |
+| 3 | Data wiring | **Mock everything** (including RAB) for this phase; no new backend/engine calls |
+| 4 | Project modules routing | RAB / Schedule / Chat / Site / Gambar stay **project-scoped** under `proyek/[projectId]/â€¦` (existing structure, unchanged) |
+| 5 | Theme default | **light**; `dark` and `grey` selectable and persisted |
+
+## 3. Golden-rule & protection constraints (must hold)
+
+These are hard constraints inherited from `CLAUDE.md` and prior agreement. Any change touching
+
+=== G:\paax-ai-main\docs\versions\v0.2-summary.md ===
+# PAAX AI v0.2 (Demo) - Summary
+
+## Overview
+Version 0.2 was the initial proof-of-concept and interactive demo of the PAAX AI platform. It successfully proved the core hypothesis: AI can assist civil engineers in navigating drawings and generating standard calculations, provided the math is handled deterministically.
+
+## Architecture
+- **Frontend**: React + Vite (Single Page Application).
+- **Backend**: Express.js (Node.js).
+- **AI**: Direct integration with the Gemini API via Google AI Studio keys.
+- **Data**: Mock AHSP (Analisa Harga Satuan Pekerjaan) data stored in static JSON files.
+
+## Key Features Demonstrated
+1. **RAB Tab**: Displayed a basic Bill of Quantities structure.
+2. **Assistant Tab**: A chat interface where users could ask engineering questions and the bot would respond using a pre-defined system prompt.
+3. **Drawing Tab**: Basic viewing of uploaded plans.
+4. **Schedule Tab**: Simple Gantt chart representation.
+5. **Rates Tab**: A lookup table for the mock AHSP data.
+
+## Limitations Addressed in v0.3
+- **Lack of Persistence**: v0.2 used local state or basic JSON files. It lacked a real database (Firestore) for multi-user, multi-project support.
+- **Fragile AI Integration**: Direct API calls to Gemini lacked robust orchestration, tool calling, and fallback mechanisms.
+- **Monolithic Frontend**: The Vite app became bloated.
+- **Backend Constraints**: Node.js/Express is less suited for heavy deterministic numerical computations and data science tasks compared to Python.
+
+## Legacy Code
+The code for v0.2 has been archived but is kept for reference in `legacy/vite-v0.2/`. The core concepts, especially the strict separation of AI and deterministic math, heavily influenced the architecture of v0.3.
+
+=== G:\paax-ai-main\docs\versions\v0.3-upgrade-plan.md ===
+# Upgrade Plan: v0.2 to v0.3
+
+## Objective
+Transform the PAAX AI platform from a Vite+Express demo (v0.2) into a production-ready, scalable, multi-tenant workspace architecture (v0.3).
+
+## What is Changing?
+
+### 1. Repository Structure
+- **Migration to Monorepo**: Adopting a monorepo structure (pnpm/Python) to manage frontend, backend, and AI services in one place, ensuring schema consistency.
+
+### 2. Frontend Modernization
+- **Next.js App Router**: Moving from Vite to Next.js for better routing, server-side rendering, and SEO/performance.
+- **Project-Centric Navigation**: The UI is shifting from flat tabs to a full dashboard (`/dashboard/[projectId]/...`) with 12 distinct sidebar modules.
+
+### 3. Backend Overhaul
+- **FastAPI Core Engine**: Replacing Express.js with Python/FastAPI. Python is chosen for its superior ecosystem for data processing, pandas, and deterministic calculations.
+- **Genkit AI Orchestrator**: Replacing raw Gemini API calls with Firebase Genkit for robust tool calling, routing, and observability.
+
+### 4. Database & Storage
+- **Firestore Integration**: Moving from static JSON to a live NoSQL database with proper collections (`users`, `projects`, `rabVersions`).
+- **Cloud Storage**: Implementing real file uploads instead of local dummy files.
+
+### 5. Document Intelligence
+- Introducing a dedicated Python pipeline for PDF splitting, OCR, and Vision analysis using Gemini 1.5 Pro.
+
+## What is Preserved?
+
+- **The Deterministic Philosophy**: The core ADR (ADR 0002) dictating that AI does NOT do math remains the foundational principle.
+- **Existing RAB Concepts**: The hierarchical structure of Divisions -> Items -> Resources established in v0.2 is preserved and formalized into shared schemas.
+- **Legacy Reference**: `legacy/vite-v0.2/` remains in the tree as a historical reference.
+
+=== G:\paax-ai-main\docs\versions\v0.4-plan.md ===
+# PAAX AI v0.4: Interactive Workspace & Core Engine Integration
+
+## Overview
+Version 0.4 focuses on making PAAX an interactive workspace rather than a static dashboard. It bridges the frontend UI (`apps/web`) with the deterministic calculation engine (`services/core-engine`) to simulate real production workflows using `localStorage` as a mock persistent state layer before a real database (Firebase/PostgreSQL) is introduced in later versions.
+
+## Key Goals
+1. **Interactive State Management**: 
+   - Projects, RAB data, Schedules, and Files are now saved across page reloads using browser `localStorage`.
+   - Users can create new projects, and the dashboard automatically reflects these updates.
+2. **Core Engine Integration**: 
+   - Standardized the API communication through `apps/web/src/lib/core-engine-client.ts`.
+   - Connected the frontend directly to the `services/core-engine` FastAPI endpoints running locally on `http://127.0.0.1:8081`.
+3. **Module Enhancements**:
+   - **Proyek (Project Workspace)**: Full CRUD mock utilizing `localStorage`.
+   - **RAB (Bill of Quantities)**: Connected to the core engine for calculation generation, recalculation based on modified margins, safety score analysis, and structural review algorithms.
+   - **Schedule**: Multi-scenario generation (Normal, Fast, Optimal) and Delay Recovery strategies linked directly to backend algorithms.
+   - **Laporan (Reporting)**: Core engine-powered Excel export functionality.
+   - **Chat / AI Assistant**: Interactive mock interface demonstrating context-aware actions.
+   - **Site Agent**: Mock field reporting and daily progress generation.
+   - **Database AHSP**: Dynamic search and filtering for standard construction material and labor rates.
+   - **Pengaturan (Settings)**: Real-time health check ping to the `core-engine`.
+
+## Technical Implementation Notes
+- **State Layer**: Avoided adding massive state management libraries (like Redux) for v0.4. Standard React `useState` coupled with a `LocalStorage` utility class provided enough persistence to make the prototype feel "real" to the user.
+- **Data Flow**: Calculations must originate from the `core-engine`. The frontend React application acts solely as a thin presentation client. 
+- **Error Handling**: Implemented robust error catching on all API calls, failing gracefully with alerts or fallback mock data when the backend is unreachable.
+
+## Future Path to v0.5
+- Replace `localStorage` with a real database (Firestore or PostgreSQL).
+- Implement proper user authentication and multi-tenant logic.
+
+=== G:\paax-ai-main\docs\versions\v0.5-drawing-to-estimate-workflow.md ===
+# PAAX AI v0.5: Drawing-to-Estimate AI Workflow Foundation
+
+## Overview
+Version 0.5 introduces the "Drawing-to-Estimate" workflow. This bridges the gap between unstructured drawings (PDFs/images) and the deterministic Core Engine. PAAX v0.5 provides the *foundation* for this workflow, emphasizing mandatory human verification.
+
+## Architecture & Data Flow
+1. **Drawing Intake**: Users provide drawing metadata (and optionally a mock file).
+2. **Drawing Analysis (Document Intelligence)**: The new `document-intelligence` service (port 8083) processes the drawing. If a Gemini API key is missing, it falls back to a realistic demo extraction.
+3. **Extraction Candidates**: The service returns structured data (rooms, doors, windows, dimensions, and quantity candidates).
+4. **Human Verification**: **MANDATORY STEP**. Users review, approve, reject, or edit quantity candidates in the `Gambar Kerja AI` workspace.
+5. **BOQ Draft Preview**: Generates a draft Bill of Quantities from verified data only.
+6. **RAB Handoff**: Verified drawing data is packaged into a `DrawingToRabContext` and passed to the `RAB & BOQ` module.
+7. **Schedule Readiness**: The schedule module becomes aware that drawing data exists.
+8. **Engineering Chat**: Chat assistant is aware of the drawing context and verification status.
+
+## Key Principles & Limitations
+- **No Automatic Final RAB**: The AI does *not* generate final RAB numbers directly. Final math remains the responsibility of the Core Engine.
+- **Mandatory Verification**: AI extraction results are labeled as "candidates". They must be human-verified before being used in calculations.
+- **Frontend Safe**: No API keys (like `GEMINI_API_KEY`) are exposed in the frontend. All AI interactions go through the backend services.
+- **Fallback Mode**: If the real AI provider is unavailable or unconfigured, the system gracefully falls back to a deterministic demo extraction to allow workflow testing.
+
+## New Services & Endpoints
+**Document Intelligence Service** (`http://127.0.0.1:8083`):
+- `GET /health`
+- `POST /drawings/analyze`
+- `POST /drawings/classify`
+- `POST /drawings/extract`
+- `POST /drawings/verify`
+- `POST /drawings/boq-preview`
+
+
