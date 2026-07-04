@@ -44,7 +44,9 @@ ke RAB. TKG juga menjadi sumber fakta gambar untuk Engineering Chat
    engine per rumus F-B/F-C/F-D; data kurang → `needs_review`, TIDAK ditebak.
    Tombol "Kirim Volume ke Draft RAB" muncul hanya kalau ada item siap pakai.
    Baris yang dikirim berisi volume, sementara kode AHSP sengaja kosong untuk
-   dipilih user di halaman RAB (dilarang dikarang).
+   dipilih user di halaman RAB (dilarang dikarang). Setelah kirim sukses,
+   tombol "Lihat Draft RAB" muncul agar user bisa berpindah sadar ke
+   `/proyek/[projectId]/rab` dan mengecek baris volume yang baru masuk.
 
 ## Fallback manual (tetap ada, tidak dihapus)
 Tempel teks/deskripsi gambar → "Transkrip dengan AI" (`POST /api/ai/tkg`,
@@ -99,4 +101,6 @@ di Smart RAB → engine hitung.
 Upload PDF → persepsi otomatis: aktif. Konsolidasi lintas-halaman + UI
 ramah-pengguna: aktif. Kirim-ke-RAB: aktif untuk item takeoff yang tidak
 `needs_review`; volume masuk Draft RAB, kode AHSP tetap kosong dan diisi
-manual di halaman RAB. CV piksel foto/scan (vision-LLM fallback): belum.
+manual di halaman RAB. Setelah pengiriman, user mendapat tombol "Lihat Draft
+RAB" untuk membuka draft proyek yang sama. CV piksel foto/scan
+(vision-LLM fallback): belum.
