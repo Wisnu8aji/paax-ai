@@ -1,7 +1,7 @@
 # Halaman Gambar Kerja (+ Gambar Kerja AI)
 
 Routes: `/proyek/[projectId]/gambar-kerja` (per proyek) & `/gambar-kerja-ai`
-(global). Status: **[aktif, sedang diperluas]** — pipeline PERSEPSI NYATA
+(global). Status: **[aktif]** — pipeline PERSEPSI NYATA
 (`services/document-intelligence`) sudah membaca PDF gambar kerja langsung
 (vektor+geometri, BUKAN lagi tempel-teks-manual seperti versi sebelumnya).
 Rencana besar & status detail per fase: `docs/plans/
@@ -15,33 +15,36 @@ Mengubah PDF gambar kerja (denah, tabel kolom/balok, dst.) menjadi **TKG
 (Transkrip Kanonik Gambar)** — struktur berisi grid+bentang (posisi mm nyata,
 dari bubble-as + garis-dimensi vektor), level/peil, tabel tipe (dimensi+
 tulangan+mutu), elemen terpasang beralamat grid ("A1", atau notasi offset
-"B-offset_below_1" untuk elemen di luar grid — sedang dibangun, lihat plan
-besar) — lalu dari TKG: takeoff beton/bekisting/besi (engine) → kirim volume
+"B-offset_sebelum_1" untuk elemen di luar grid) — lalu dari TKG:
+takeoff beton/bekisting/besi (engine) → kirim volume
 ke RAB. TKG juga menjadi sumber fakta gambar untuk Engineering Chat
 (INV-TKG-01: sistem lain membaca TKG, bukan mengekstrak ulang gambar).
 
 ## Alur upload PDF nyata (BARU — menggantikan alur tempel-teks lama)
 1. **Upload** — user unggah PDF gambar kerja langsung (drag-drop atau pilih
    file) di `TkgWorkspace` (`components/drawings/tkg-workspace.tsx`).
-2. **Analisa (backend)** — `POST /drawings/analyze` (`services/document-
-   intelligence`) memproses SETIAP halaman: baca span teks vektor+rotasi,
+2. **Analisa (backend)** — `POST /drawings/analyze/start` + polling
+   `GET /drawings/analyze/status/{job_id}` (`services/document-intelligence`)
+   memproses SETIAP halaman: baca span teks vektor+rotasi,
    gabung jadi Run, kenali grammar notasi (kode tipe/tulangan/dimensi/mutu),
    baca tabel bergaris nyata (`page.find_tables()`), rekonstruksi grid dari
    bubble-as+garis-dimensi vektor (§3.1.1). Sheet TANPA teks vektor (hasil
    scan/foto) → jalur OCR (PaddleOCR, opsional/lazy).
-3. **Konsolidasi lintas-halaman** — (sedang dibangun, lihat plan besar Fase E)
-   hasil semua halaman digabung jadi satu pandangan bangunan: registry elemen
+3. **Konsolidasi lintas-halaman** — hasil semua halaman digabung jadi satu
+   pandangan bangunan: registry elemen
    lintas-zona dgn alamat grid, grid tunggal terverifikasi konsisten, daftar
    asumsi/perlu-review terkumpul.
-4. **Review Gambar** — (sedang dibangun, Fase H) user melihat ringkasan
+4. **Review Gambar** — user melihat ringkasan
    ramah-pengguna: per-halaman (nama gambar/zona pekerjaan/skala), per-zona
    (elemen apa di tiap titik grid), dimensi total bangunan, daftar "perlu
    dicek" — BUKAN metrik teknis mentah (cakupan %/kode gerbang V-xx).
-5. **Takeoff → RAB** — `POST /tkg/takeoff` → item beton (m³)/bekisting (m²)/
-   besi (kg) per rumus F-B/F-C/F-D; data kurang → `needs_review`, TIDAK
-   ditebak. → "Kirim Volume ke Draft RAB" (kode AHSP dipilih user di halaman
-   RAB — dilarang dikarang). Tombol ini tampil di UI tapi WIRING-nya adalah
-   pekerjaan TERPISAH setelah kualitas ekstraksi selesai (lihat plan besar).
+5. **Takeoff → RAB** — `POST /tkg/validate`, `POST /tkg/render`, lalu
+   `POST /tkg/takeoff` berjalan otomatis setelah user menekan
+   "Simpan hasil analisis". Item beton (m³)/bekisting (m²)/besi (kg) dihitung
+   engine per rumus F-B/F-C/F-D; data kurang → `needs_review`, TIDAK ditebak.
+   Tombol "Kirim Volume ke Draft RAB" muncul hanya kalau ada item siap pakai.
+   Baris yang dikirim berisi volume, sementara kode AHSP sengaja kosong untuk
+   dipilih user di halaman RAB (dilarang dikarang).
 
 ## Fallback manual (tetap ada, tidak dihapus)
 Tempel teks/deskripsi gambar → "Transkrip dengan AI" (`POST /api/ai/tkg`,
@@ -71,7 +74,7 @@ gambar bukan format PDF yang didukung.
 
 ## Penyimpanan
 `lib/projects/tkg-repository.ts` — TKG per proyek (localStorage/Firestore),
-dengan flag `source` (manual/ai_proposal/drawing_analysis) + `reviewed`.
+dengan flag `source` (manual/ai_proposal/pipeline) + `reviewed`.
 
 ## Catatan strategi — DIPERBARUI (sebelumnya bilang CV "ditunda", sudah tidak)
 Sebelumnya dokumen ini bilang "membaca piksel gambar mentah tetap DITUNDA
@@ -93,7 +96,7 @@ Selalu ada: tempel JSON TkgDocument langsung; atau input item/dimensi manual
 di Smart RAB → engine hitung.
 
 ## Status
-Upload PDF → persepsi otomatis: aktif, cakupan real PLHUT 33,75% (naik terus
-seiring plan besar dikerjakan). Konsolidasi lintas-halaman + UI ramah
-pengguna: sedang dibangun. CV piksel foto/scan (vision-LLM fallback): belum.
-Kirim-ke-RAB: volume masuk draft, kode AHSP diisi manual.
+Upload PDF → persepsi otomatis: aktif. Konsolidasi lintas-halaman + UI
+ramah-pengguna: aktif. Kirim-ke-RAB: aktif untuk item takeoff yang tidak
+`needs_review`; volume masuk Draft RAB, kode AHSP tetap kosong dan diisi
+manual di halaman RAB. CV piksel foto/scan (vision-LLM fallback): belum.

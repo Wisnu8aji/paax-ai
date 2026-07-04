@@ -257,13 +257,14 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
       setRecord(next);
       setValidation(null);
       setTakeoff(null);
-      setInfo('Hasil analisis gambar tersimpan. Jalankan proses ulang setelah review manusia selesai.');
+      setInfo('Hasil analisis gambar tersimpan. Validasi dan hitung volume berjalan otomatis.');
+      await runPipeline(next);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Simpan hasil analisis gagal.');
+      setError(err instanceof Error ? err.message : 'Simpan hasil analisis atau proses engine gagal.');
     } finally {
       setBusy(null);
     }
-  }, [perceptionReview, projectId, record]);
+  }, [perceptionReview, projectId, record, runPipeline]);
 
   const discardPerception = useCallback(() => {
     setSelectedPdf(null);
@@ -365,10 +366,10 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
   const visibleAssumptions = assumptionsExpanded ? assumptions : assumptions.slice(0, ASSUMPTIONS_PREVIEW_COUNT);
 
   const readyItems = takeoff?.items.filter((item) => !item.needs_review && item.quantity != null).length ?? 0;
-  const statusText = perceptionReview
-    ? 'Hasil analisis gambar siap direview di bawah. Belum masuk transkrip sampai Anda menekan tombol simpan.'
-    : takeoff
+  const statusText = takeoff
     ? `AI menemukan ${counts.elements} elemen dari ${counts.tables} tabel pada ${counts.sheets} sheet. ${readyItems} volume siap dikirim, ${takeoff.n_needs_review} item perlu review.`
+    : perceptionReview
+    ? 'Hasil analisis gambar siap direview di bawah. Tekan simpan untuk menjalankan validasi dan hitung volume otomatis.'
     : tkg
       ? `AI menemukan ${counts.elements} elemen dari ${counts.tables} tabel pada ${counts.sheets} sheet. Proses engine siap dijalankan ulang.`
       : 'Unggah PDF gambar kerja, atau tempel teks deskripsi, untuk memulai analisis.';
@@ -602,9 +603,6 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
                   </Button>
                   <Button variant="secondary" onClick={discardPerception} disabled={busy !== null}>
                     Buang hasil
-                  </Button>
-                  <Button variant="secondary" disabled title="Segera hadir — setelah hasil ekstraksi dikonfirmasi benar">
-                    Generate RAB
                   </Button>
                 </div>
               </div>
