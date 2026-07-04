@@ -1,0 +1,99 @@
+====================================================================
+PROMPT UNTUK CODEX DAN CLAUDE (SYSTEM ALIGNMENT PROMPT)
+====================================================================
+Gunakan prompt ini sebagai instruksi awal atau "System Message" untuk sesi baru dengan Codex atau Claude guna memastikan pemahaman penuh terhadap PAAX AI.
+
+[BEGIN PROMPT]
+Anda adalah AI Assistant senior yang bekerja pada proyek PAAX AI (Workspace AI untuk Engineer Sipil/Kontraktor Indonesia).
+Sebelum memulai task apa pun, Anda WAJIB memahami visi, misi, dan aturan main PAAX:
+
+1. ATURAN EMAS (TIDAK BOLEH DILANGGAR): AI tidak pernah menghitung RAB, BoQ, atau Kurva S. Semua perhitungan mutlak dilakukan oleh Core Engine (Python/FastAPI) secara deterministik menggunakan data AHSP. AI (termasuk LLM/TypeScript frontend) hanya bertugas mengekstrak, menstrukturkan, mengklasifikasi, dan menjelaskan angka dari engine.
+2. PERAN:
+   - CODEX: Bertanggung jawab atas eksekusi kode mekanis, implementasi backend FastAPI yang sudah berspek jelas, wiring, endpoint, dan testing.
+   - CLAUDE: Bertanggung jawab atas "heavy thinking", arsitektur frontend (Next.js), UI/UX premium, kerja data (AHSP), pemetaan logika bisnis, dan keputusan domain.
+3. ALUR KERJA:
+   - Baca `docs/ai-map/START_HERE.md` dan `STATE.md` terlebih dahulu untuk orientasi.
+   - Jangan pernah menebak rumus atau angka. Jika ambigu, berhenti dan laporkan ke product owner (Wisnu).
+   - Selalu bekerja di branch baru, buat PR, dan tunggu review. Jangan langsung merge ke `main`.
+
+Tugas Anda sekarang: Evaluasi rencana kerja saat ini, pastikan tidak ada pelanggaran Aturan Emas, dan jalankan task dengan prinsip "Vertical Slices" (satu fitur end-to-end selesai dan teruji sebelum pindah ke fitur lain).
+[END PROMPT]
+
+
+====================================================================
+LAPORAN AUDIT PAAX AI (TEKNIS & NON-TEKNIS)
+====================================================================
+Disusun oleh: AI Assistant (Antigravity/Codex)
+Tanggal: 4 Juli 2026
+
+1. VISI DAN MISI PAAX AI
+--------------------------------------------------
+- Non-Teknis: PAAX bertujuan menjadi "Super-App" bagi praktisi konstruksi Indonesia. PAAX mengambil data tak terstruktur (PDF, gambar kerja, RAB lama) dan mengubahnya menjadi data terstruktur yang auditable (RAB, BoQ, Kurva S) dengan kepatuhan penuh pada regulasi AHSP (Permen PUPR). PAAX memberikan "Engineering Chat" yang bertindak sebagai asisten cerdas untuk menalar skenario proyek (misal: penyesuaian budget, mitigasi cuaca) berdasarkan data nyata.
+- Teknis: Memisahkan secara tegas antara lapis "Persepsi/Kecerdasan" (AI) dan lapis "Kalkulator" (Deterministic Engine). Hal ini menjamin bahwa output PAAX dapat dipercaya 100% untuk urusan hukum dan finansial proyek.
+
+2. STATUS PEKERJAAN SAAT INI (STATE)
+--------------------------------------------------
+- Kita sedang berada di titik akhir penyelesaian v0.6 (Deterministic Foundation) dan masuk ke Fase 2 (Document Intelligence & UI Premium Redesign).
+- Secara teknis, baru-baru ini terdapat divergensi (percabangan) antara pekerjaan Fase 0 (PLHUT Golden Anchor, murni backend testing dan data) dengan Fase 2 (Persepsi UI dan Frontend). 
+- Solusi yang sudah dipetakan: Melakukan merge PR #27 (Fase 0) ke `main` terlebih dahulu karena minim konflik, kemudian melanjutkan sinkronisasi PR #26 (UI Premium) dengan menyelesaikan sedikit konflik pada dokumen `STATE.md`.
+- Secara garis besar, engine core Python sudah matang untuk perhitungan, dan sekarang fokus bergeser ke arah pemolesan UI agar terasa "premium" serta pembangunan jembatan ekstraksi gambar (TKG - Transkrip Kanonik Gambar).
+
+3. PENJELASAN & TUJUAN SEMUA FILE MARKDOWN (.md) UTAMA
+--------------------------------------------------
+Seluruh file .md di PAAX sangat terstruktur dan difungsikan sebagai "otak" pengingat bagi AI agar tidak berhalusinasi.
+
+A. Root Docs:
+- `README.md`, `CLAUDE.md`, `AGENTS.md`: Konstitusi utama PAAX. Memuat Aturan Emas, struktur monorepo, dan instruksi wajib bagi AI sebelum mulai menulis kode.
+- `CHANGELOG.md`: Catatan rilis dan versi.
+
+B. Direktori `docs/ai-map/` (Peta Navigasi AI):
+- `START_HERE.md`: Titik awal wajib baca bagi AI. Menjelaskan secara singkat aturan main dan mengarahkan AI harus membaca file mana tergantung dari task yang diminta.
+- `STATE.md`: Dokumen paling "hidup". Berisi status pengerjaan saat ini, branch yang aktif, isu divergensi yang sedang dihadapi, dan instruksi next step.
+- `MAP.md`: Peta lokasi file, komponen, dan endpoint API agar AI tidak perlu melakukan "grep" atau mencari file secara membabi-buta.
+- `GLOSSARY.md`: Kamus domain konstruksi (AHSP, HSP, BoQ, Kurva S, BUK) agar AI memahami terminologi teknik sipil Indonesia.
+
+C. Direktori `docs/` (Strategi & Rencana):
+- `MASTER_PLAN.md`: Blueprint v2.0 yang komprehensif. Menjelaskan visi produk, arsitektur, pipeline gambar-ke-RAB, model bisnis (pricing), hingga strategi multi-model LLM.
+- `BRAIN_ALIGNMENT.md`: Hasil analisis kesenjangan (gap) antara spesifikasi ideal "Brain v4.1" dengan implementasi saat ini di repo.
+- `BUILD_v0.6.md`: Rencana taktis untuk merilis fondasi deterministik (versi 0.6).
+
+D. Direktori `docs/pages/` (Aturan Frontend per Halaman):
+Berisi aturan tata letak, fungsi, dan batasan AI untuk setiap halaman di Next.js:
+- `dashboard.md`: Halaman muka agregasi proyek.
+- `rab.md` & `rab-tester.md`: Halaman editor dan pengujian RAB.
+- `gambar-kerja.md`: Halaman ekstraksi gambar menjadi TKG (Transkrip Kanonik Gambar).
+- `engineering-chat.md`: Visi asisten AI lintas-proyek yang mampu membaca seluruh data user.
+- `files.md`, `database-ahsp.md`, `kolaborasi.md`, `laporan.md`, `pengaturan.md`, `proyek-*.md`, `schedule.md`: Mengatur halaman spesifik lainnya dengan penegasan bahwa semua angka harus ditarik dari engine.
+
+E. Direktori `docs/adr/` (Architecture Decision Records):
+Mencatat sejarah keputusan teknis fundamental, seperti:
+- `0001-monorepo.md`: Memilih pnpm workspace + turborepo agar sinkronisasi schema TS dan Python mudah.
+- `0002-deterministic-rab-engine.md`: Keputusan memisahkan AI dengan Engine (Aturan Emas).
+- `0003-google-first-cloud.md`: Menggunakan ekosistem GCP, Vertex AI, dan Firebase.
+- `0004-template-first-excel-export.md`: Menggunakan template Excel fisik untuk export RAB agar formatnya profesional.
+
+F. Direktori `docs/api/` & `docs/architecture/`:
+- Mendokumentasikan skema database (Firestore) dan kontrak endpoint API antara frontend, AI Orchestrator, dan Core Engine.
+
+4. ARAH PEMIKIRAN SAYA (ANTIGRAVITY / AI ASSISTANT)
+--------------------------------------------------
+- Integritas Data adalah Raja: Pemikiran saya sangat difokuskan pada penjagaan Aturan Emas. Secanggih apapun UI atau ekstraksi OCR dari gambar, jika angka akhirnya salah atau dihalusinasikan oleh LLM, produk ini akan gagal di pasar konstruksi.
+- Pengembangan Iteratif: Pendekatan "Vertical Slices" sangat tepat. Saya sepakat bahwa kita tidak boleh melompat ke fitur Vision/OCR sebelum pondasi matematika RAB (Core Engine) terbukti solid 100% dengan unit testing.
+- UI yang Memukau (Premium): Karena backend sangat berfokus pada data kering, frontend harus mengkompensasinya dengan desain yang sangat bersih, responsif, dan memberikan rasa "trust" (kepercayaan) layaknya software enterprise kelas atas.
+
+5. ARAH DASHBOARD KEDEPANNYA
+--------------------------------------------------
+- Saat Ini: Dashboard masih bersifat "shell" (kerangka) yang menampilkan daftar proyek.
+- Visi Kedepan (v1.5 - v2.0): 
+  1. Pusat Komando Portofolio: Dashboard akan menjadi layar monitoring multi-proyek. User bisa melihat secara instan proyek mana yang "over-budget" atau "delay" berdasarkan deviasi Kurva S.
+  2. Laporan Pagi Proaktif: Dashboard akan memunculkan insight otomatis yang digenerate oleh AI Orchestrator setiap hari (misal: "Proyek A hari ini harus mulai pengecoran, namun material belum lengkap di Site Logs").
+  3. Seamless Engineering Chat: Dari dashboard, user bisa langsung bertanya "Tolong simulasikan jika proyek B saya tambah 5 tukang, apakah bisa selesai sebelum lebaran?". Chat ini akan memanggil `/scenario/simulate` di engine dan menampilkan hasilnya di dashboard.
+  4. Deteksi Anomali: Menampilkan peringatan dini jika harga material di RAB melebihi ambang batas kewajaran harga regional.
+
+====================================================================
+INSTRUKSI UNTUK USER:
+1. Silakan baca laporan ini.
+2. Edit teks ini secara langsung jika ada arah, visi, atau pemahaman teknis/non-teknis yang kurang tepat atau ingin Anda ubah.
+3. Simpan perubahan Anda, lalu berikan feedback/konfirmasi di chat.
+4. Setelah Anda memberikan feedback, saya akan memperbarui seluruh dokumen `.md` di repository agar mencerminkan "Single Source of Truth" yang baru dan meluruskan arah PAAX AI sesuai visi Anda.
+====================================================================
