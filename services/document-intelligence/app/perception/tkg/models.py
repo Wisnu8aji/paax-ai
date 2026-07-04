@@ -103,6 +103,8 @@ class RuasGrid(BaseModel):
 class ElementInstance(BaseModel):
     kode: str
     alamat: str
+    alamat_list: List[str] = Field(default_factory=list)
+    alamat_needs_review: bool = False
     bentuk: Literal["titik", "ruas", "bidang"] = "titik"
     n: int = 1
     count_simbol: Optional[int] = None
@@ -131,6 +133,7 @@ class SheetMeta(BaseModel):
     nomor: Optional[str] = None
     skala: Optional[str] = None
     disiplin: Optional[str] = None
+    zone: Optional[str] = None
 
 
 class Unclassified(BaseModel):

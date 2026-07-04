@@ -1352,6 +1352,8 @@ export const RuasGridSchema = z.object({
 export const TkgElementInstanceSchema = z.object({
   kode: z.string(),
   alamat: z.string(),
+  alamat_list: z.array(z.string()).default([]),
+  alamat_needs_review: z.boolean().default(false),
   bentuk: z.enum(["titik", "ruas", "bidang"]).default("titik"),
   n: z.number().int().default(1),
   count_simbol: z.number().int().nullish(),
@@ -1379,6 +1381,7 @@ export const SheetMetaSchema = z.object({
   nomor: z.string().nullish(),
   skala: z.string().nullish(),
   disiplin: z.string().nullish(),
+  zone: z.string().nullish(),
 });
 
 export const TkgUnclassifiedSchema = z.object({

@@ -114,6 +114,8 @@ class RuasGrid(BaseModel):
 class ElementInstance(BaseModel):
     kode: str                          # harus cocok kode TypeRecord (V-04)
     alamat: str                        # bahasa grid: "as C/2", "antara as A-C pada as 2"
+    alamat_list: List[str] = Field(default_factory=list)  # alamat per-instance (mis. ["A1","B1",...])
+    alamat_needs_review: bool = False  # True bila ada instance yg tak terikat grid dgn yakin
     bentuk: Literal["titik", "ruas", "bidang"] = "titik"
     n: int = 1
     count_simbol: Optional[int] = None # dua metode hitung independen (V-05)
@@ -146,6 +148,7 @@ class SheetMeta(BaseModel):
     nomor: Optional[str] = None        # mis. "S-05"
     skala: Optional[str] = None        # mis. "1:100" / "NTS"
     disiplin: Optional[str] = None     # STR / ARS / MEP
+    zone: Optional[str] = None         # paket pekerjaan: substruktur/struktur_lantai_N/struktur_atap/detail_tabel
 
 
 class Unclassified(BaseModel):
