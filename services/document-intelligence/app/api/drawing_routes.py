@@ -1,7 +1,8 @@
 import uuid
 import tempfile
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException
+import threading
+from typing import Callable, List, Optional
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 import os
 from datetime import datetime
@@ -60,6 +61,11 @@ class DrawingAnalysisResponse(BaseModel):
     # dihitung ulang di frontend — lihat docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md).
     metrics: Optional[dict] = None
     gerbang: Optional[dict] = None
+    # Fase E (rencana besar 2026-07-05): pandangan bangunan terkonsolidasi
+    # lintas-halaman (`ConsolidatedExtraction`) — grid kanonik, registry
+    # elemen lintas-zona, assumption ledger, dimensi bangunan. Dipakai UI
+    # "Review Gambar" ramah-pengguna (Fase H), TIDAK menggantikan tkg_document.
+    consolidated: Optional[dict] = None
 
 class VerifyCandidateRequest(BaseModel):
     candidate_id: str
@@ -87,24 +93,19 @@ def generate_demo_extraction(file_name: str) -> DrawingAnalysisResponse:
     )
 
 from app.perception.assemble import assemble_document_from_pdf_bytes
+from app.perception.consolidate import consolidate_document
 from app.perception.render import render_tkg_txt
 from app.perception.validate import aggregate_metrics, build_gerbang
 
 # --- Endpoints ---
 
-@router.post("/analyze", response_model=DrawingAnalysisResponse)
-async def analyze_drawing(req: DrawingAnalyzeRequest):
-    """
-    Fase 2 (P1-P4): pipeline persepsi vektor NYATA — span PyMuPDF + merge-run
-    (RULE-EXT-03) + grammar notasi struktur (brain-00 §2) + rekonstruksi tabel
-    via `page.find_tables()` + metrik/gerbang. Menggantikan SK-07 MVP regex
-    naif sebelumnya (`app/tkg/builder.py`, masih dipakai jalur teks-manual
-    `/drawings/tkg/build`, TIDAK dihapus).
-
-    CAKUPAN JUJUR: rekonstruksi grid dari geometri bubble+garis-dimensi (§3.1.1
-    penuh) BELUM diimplementasikan — grid hanya terbaca dari notasi gabungan
-    eksplisit "<as>-<as>=<nilai>". Lihat docstring `app/perception/assemble.py`.
-    """
+def _perform_analysis(
+    req: DrawingAnalyzeRequest,
+    on_page_done: Optional[Callable[[int, int], None]] = None,
+) -> DrawingAnalysisResponse:
+    """Logika inti `/drawings/analyze` — diekstrak jadi fungsi sinkron murni
+    supaya bisa dipanggil LANGSUNG (endpoint lama, sinkron) MAUPUN dari job
+    latar belakang (Fase F, `on_page_done` opsional utk progres nyata)."""
     file_name = req.file_metadata.file_name
     file_path = os.path.join(UPLOAD_DIR, file_name)
 
@@ -114,6 +115,7 @@ async def analyze_drawing(req: DrawingAnalyzeRequest):
     tkg_text: Optional[str] = None
     metrics_out: Optional[dict] = None
     gerbang_out: Optional[dict] = None
+    consolidated_out: Optional[dict] = None
 
     warnings = [
         DrawingWarning(
@@ -130,6 +132,7 @@ async def analyze_drawing(req: DrawingAnalyzeRequest):
         try:
             tkg_document, per_sheet_metrics = assemble_document_from_pdf_bytes(
                 pdf_bytes, prj_id=req.file_metadata.project_id or "prj-123",
+                on_page_done=on_page_done,
             )
         except Exception as e:
             warnings.append(DrawingWarning(
@@ -141,6 +144,7 @@ async def analyze_drawing(req: DrawingAnalyzeRequest):
         else:
             tkg_doc = tkg_document.model_dump()
             tkg_text = render_tkg_txt(tkg_document)
+            consolidated_out = consolidate_document(tkg_document).model_dump()
 
             if per_sheet_metrics:
                 first = per_sheet_metrics[0]
@@ -213,7 +217,86 @@ async def analyze_drawing(req: DrawingAnalyzeRequest):
         tkg_text=tkg_text,
         metrics=metrics_out,
         gerbang=gerbang_out,
+        consolidated=consolidated_out,
     )
+
+
+@router.post("/analyze", response_model=DrawingAnalysisResponse)
+async def analyze_drawing(req: DrawingAnalyzeRequest):
+    """
+    Fase 2 (P1-P4) + Fase C/E (rencana besar 2026-07-05): pipeline persepsi
+    vektor NYATA — span PyMuPDF + merge-run (RULE-EXT-03) + grammar notasi
+    struktur (brain-00 §2) + rekonstruksi tabel via `page.find_tables()` +
+    grid-dari-geometri (§3.1.1) + label->grid binding (§5) + konsolidasi
+    lintas-halaman + metrik/gerbang. Endpoint SINKRON — untuk PDF banyak
+    halaman, pakai `/analyze/start` + `/analyze/status/{job_id}` (Fase F)
+    supaya klien tidak menunggu blocking.
+    """
+    return _perform_analysis(req)
+
+
+# --- Fase F: proses latar belakang (job async) ---
+# Belum ada job-queue di repo (dikonfirmasi riset rencana besar) — memakai
+# FastAPI BackgroundTasks + dict in-memory, selaras kematangan app saat ini
+# (belum ada DB proyek sungguhan). BATASAN JUJUR: status job hilang kalau
+# service di-restart — cukup utk tahap ini, dicatat bukan disembunyikan.
+class AnalyzeJobStatus(BaseModel):
+    job_id: str
+    status: str  # PENDING | PROCESSING | COMPLETED | FAILED
+    progress_message: Optional[str] = None
+    created_at: str
+    updated_at: str
+    result: Optional[DrawingAnalysisResponse] = None
+    error: Optional[str] = None
+
+
+_ANALYZE_JOBS: dict[str, AnalyzeJobStatus] = {}
+_ANALYZE_JOBS_LOCK = threading.Lock()
+
+
+def _run_analyze_job(job_id: str, req: DrawingAnalyzeRequest) -> None:
+    def _set(**kwargs):
+        with _ANALYZE_JOBS_LOCK:
+            job = _ANALYZE_JOBS[job_id]
+            for k, v in kwargs.items():
+                setattr(job, k, v)
+            job.updated_at = datetime.now().isoformat()
+
+    _set(status="PROCESSING", progress_message="Membaca gambar...")
+
+    def _on_page_done(done: int, total: int) -> None:
+        _set(progress_message=f"Membaca gambar... (halaman {done}/{total})")
+
+    try:
+        _set(progress_message="Menyusun grid & elemen...")
+        result = _perform_analysis(req, on_page_done=_on_page_done)
+        _set(progress_message="Menggabungkan hasil antar halaman...")
+        _set(status="COMPLETED", result=result, progress_message="Selesai")
+    except Exception as e:  # pragma: no cover - jalur gagal dicatat, bukan disembunyikan
+        _set(status="FAILED", error=str(e), progress_message=None)
+
+
+@router.post("/analyze/start")
+async def start_analyze_job(req: DrawingAnalyzeRequest, background_tasks: BackgroundTasks):
+    job_id = str(uuid.uuid4())
+    now = datetime.now().isoformat()
+    with _ANALYZE_JOBS_LOCK:
+        _ANALYZE_JOBS[job_id] = AnalyzeJobStatus(
+            job_id=job_id, status="PENDING", created_at=now, updated_at=now,
+            progress_message="Menunggu diproses...",
+        )
+    background_tasks.add_task(_run_analyze_job, job_id, req)
+    return {"job_id": job_id, "status": "PENDING"}
+
+
+@router.get("/analyze/status/{job_id}", response_model=AnalyzeJobStatus)
+async def get_analyze_job_status(job_id: str):
+    with _ANALYZE_JOBS_LOCK:
+        job = _ANALYZE_JOBS.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job tidak ditemukan (mungkin server sudah restart)")
+    return job
+
 
 @router.post("/classify")
 async def classify_drawing(req: DrawingAnalyzeRequest):

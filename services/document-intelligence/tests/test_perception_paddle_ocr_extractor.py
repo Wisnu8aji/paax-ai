@@ -1,8 +1,17 @@
 """Fase 2 P6 — anchor test adapter PaddleOCR (lazy/opsional, brain-00 §8)."""
 from __future__ import annotations
 
+import importlib.util
+
+import pytest
+
 import app.perception.ocr.paddle_ocr_extractor as paddle_ocr_extractor
 from app.perception.ocr.paddle_ocr_extractor import extract_spans_via_ocr
+
+_PADDLEOCR_AVAILABLE = (
+    importlib.util.find_spec("paddleocr") is not None
+    and importlib.util.find_spec("paddle") is not None
+)
 
 
 class _FakeResult:
@@ -39,12 +48,47 @@ def test_ocr_installed_produces_textspan_from_mocked_result(monkeypatch):
     assert span.bbox == (10.0, 10.0, 50.0, 30.0)
 
 
-def test_real_paddleocr_not_installed_in_this_environment():
+@pytest.mark.skipif(
+    not _PADDLEOCR_AVAILABLE,
+    reason="paddleocr/paddlepaddle tidak terpasang di environment ini (opsional, berat, lihat pyproject.toml)",
+)
+def test_real_paddleocr_loads_when_installed():
     """
-    Dokumentasi eksplisit (bukan asumsi diam-diam): `paddleocr` BELUM
-    terpasang di environment ini — jalur nyata (bukan mock) belum diverifikasi
-    end-to-end. Ini disengaja (dependency berat/opsional, §Paket F2-P6 P6.1) —
-    _load_paddle_ocr() HARUS mengembalikan None, bukan error, saat paket ini
-    tak ada.
+    Fase G (rencana besar 2026-07-05): `paddleocr`+`paddlepaddle` SUDAH
+    terpasang NYATA di environment sesi ini (bukan lagi cuma mock) —
+    `_load_paddle_ocr()` harus mengembalikan objek OCR sungguhan, bukan None.
+    Inferensi PENUH (unduh model + proses gambar nyata) SENGAJA tidak
+    dijadikan test rutin di sini (berat, butuh jaringan saat model pertama
+    diunduh, bikin `pytest -q` lambat tiap dijalankan) — diverifikasi manual
+    sekali terhadap halaman PLHUT ter-rasterisasi, hasilnya dicatat di
+    `docs/ai-map/STATE.md` (bukan diklaim tanpa bukti).
     """
-    assert paddle_ocr_extractor._load_paddle_ocr() is None
+    ocr = paddle_ocr_extractor._load_paddle_ocr()
+    assert ocr is not None
+
+
+def test_paddleocr_gracefully_absent_is_still_supported(monkeypatch):
+    """Jalur lazy-optional TETAP harus jalan kalau paket ini suatu saat
+    di-uninstall lagi di mesin lain (mis. deploy tanpa extra [ocr]) — dites
+    via monkeypatch supaya tidak bergantung pada environment sungguhan."""
+    monkeypatch.setattr(paddle_ocr_extractor, "_load_paddle_ocr", lambda: None)
+    result = extract_spans_via_ocr("dummy.png", page=0)
+    assert result.available is False
+    assert result.spans == []
+
+
+class _FakeOcrThatCrashesAtInference:
+    def predict(self, path: str):
+        raise NotImplementedError("simulasi kegagalan native paddlepaddle/oneDNN")
+
+
+def test_inference_failure_degrades_gracefully_not_crash(monkeypatch):
+    """Temuan NYATA sesi ini (Fase G): inferensi paddlepaddle 3.3.1 gagal
+    dgn NotImplementedError native (oneDNN) pada kombinasi OS/CPU mesin ini
+    walau model termuat sukses. Adapter HARUS degradasi anggun (bukan
+    meruntuhkan seluruh /drawings/analyze) — fallback manual tetap jalan."""
+    monkeypatch.setattr(paddle_ocr_extractor, "_load_paddle_ocr", lambda: _FakeOcrThatCrashesAtInference())
+    result = extract_spans_via_ocr("dummy.png", page=0)
+    assert result.available is False
+    assert result.spans == []
+    assert "gagal saat inferensi" in result.message.lower()

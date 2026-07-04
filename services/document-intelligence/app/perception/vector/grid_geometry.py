@@ -189,9 +189,10 @@ def _build_family(
     varies_in_x: bool,
     runs: list[Run],
     used_ids: set[str],
-) -> tuple[list[GridAxis], list[GridSpan], GridTotal | None, list[GridSpan], set[str]]:
+) -> tuple[list[GridAxis], list[GridSpan], GridTotal | None, list[GridSpan], set[str], dict[str, float]]:
     primary: Callable[[_Bubble], float] = (lambda b: b.cx) if varies_in_x else (lambda b: b.cy)
     ordered = sorted(cluster, key=primary)
+    axis_points: dict[str, float] = {b.label: primary(b) for b in ordered}
     consumed: set[str] = set()
     for b in ordered:
         consumed.update(b.run_ids)
@@ -288,17 +289,22 @@ def _build_family(
             chain_intact = False
             axes.append(GridAxis(label=ordered[i].label, posisi_mm=None))
 
-    return axes, spans, total, offsets, consumed
+    return axes, spans, total, offsets, consumed, axis_points
 
 
 def reconstruct_grid_from_geometry(
     page: "fitz.Page", runs: list[Run],
-) -> tuple[Grid | None, set[str]]:
-    """Kembalikan (Grid, used_run_ids) dari bubble+garis-dimensi, atau
-    (None, set()) bila tidak ada pola bubble-as yang sejajar (>=2 anggota)."""
+) -> tuple[Grid | None, set[str], dict[str, dict[str, float]]]:
+    """Kembalikan (Grid, used_run_ids, axis_points) dari bubble+garis-dimensi,
+    atau (None, set(), {}) bila tidak ada pola bubble-as yang sejajar (>=2
+    anggota). `axis_points` = {"x": {label: koordinat_titik_x}, "y": {label:
+    koordinat_titik_y}} -- posisi ASLI dlm satuan titik PDF (BUKAN mm), dipakai
+    Fase C (label->grid binding) supaya bbox elemen bisa dibandingkan di ruang
+    koordinat yang SAMA dgn bubble-as (posisi_mm di GridAxis sudah dikonversi
+    dari rantai bentang teks, tidak comparable langsung ke bbox titik PDF)."""
     bubbles = _detect_bubbles(page, runs)
     if len(bubbles) < 2:
-        return None, set()
+        return None, set(), {"x": {}, "y": {}}
 
     used_ids: set[str] = set()
     sumbu_x: list[GridAxis] = []
@@ -308,25 +314,29 @@ def reconstruct_grid_from_geometry(
     total_x: GridTotal | None = None
     total_y: GridTotal | None = None
     offset_tepi: list[GridSpan] = []
+    axis_points_x: dict[str, float] = {}
+    axis_points_y: dict[str, float] = {}
 
     for cluster in _cluster(bubbles, lambda b: b.cy):  # sejajar-y -> keluarga sumbu_x
-        axes, spans, total, offsets, consumed = _build_family(cluster, True, runs, used_ids)
+        axes, spans, total, offsets, consumed, points = _build_family(cluster, True, runs, used_ids)
         sumbu_x.extend(axes)
         bentang_x.extend(spans)
         offset_tepi.extend(offsets)
         total_x = total or total_x
         used_ids |= consumed
+        axis_points_x.update(points)
 
     for cluster in _cluster(bubbles, lambda b: b.cx):  # sejajar-x -> keluarga sumbu_y
-        axes, spans, total, offsets, consumed = _build_family(cluster, False, runs, used_ids)
+        axes, spans, total, offsets, consumed, points = _build_family(cluster, False, runs, used_ids)
         sumbu_y.extend(axes)
         bentang_y.extend(spans)
         offset_tepi.extend(offsets)
         total_y = total or total_y
         used_ids |= consumed
+        axis_points_y.update(points)
 
     if not sumbu_x and not sumbu_y:
-        return None, set()
+        return None, set(), {"x": {}, "y": {}}
 
     grid = Grid(
         sumbu_x=sumbu_x, sumbu_y=sumbu_y,
@@ -334,4 +344,4 @@ def reconstruct_grid_from_geometry(
         total_x=total_x, total_y=total_y,
         offset_tepi=offset_tepi,
     )
-    return grid, used_ids
+    return grid, used_ids, {"x": axis_points_x, "y": axis_points_y}

@@ -13,14 +13,25 @@ pydantic = "*"
 python-multipart = "*"
 pymupdf = "^1.23.0"
 paddleocr = { version = "*", optional = true }
+paddlepaddle = { version = "*", optional = true }
 
 [tool.poetry.extras]
-# Fase 2 P6: OCR utk sheet RASTER (scan/foto) saja — TIDAK wajib utk pipeline
-# vektor (P1-P4). Berat (native, model diunduh saat pertama pakai). Install:
-#   pip install "paddleocr"   (atau: poetry install -E ocr)
+# Fase 2 P6 + Fase G (rencana besar 2026-07-05): OCR utk sheet RASTER
+# (scan/foto) saja — TIDAK wajib utk pipeline vektor (P1-P4). Berat (native,
+# model diunduh saat pertama pakai ~beberapa ratus MB). Install:
+#   pip install paddleocr paddlepaddle   (atau: poetry install -E ocr)
+# `paddleocr` SENDIRI TIDAK menarik `paddlepaddle` (mesin inti) — keduanya
+# wajib diinstall terpisah, dikonfirmasi nyata sesi ini.
 # Lazy-imported di app/perception/ocr/paddle_ocr_extractor.py — service
 # tetap boot & seluruh test lain tetap hijau tanpa paket ini terpasang.
-ocr = ["paddleocr"]
+# STATUS NYATA (diverifikasi sesi ini, bukan diasumsikan): kedua paket
+# ter-install & termuat sukses di Python 3.13/Windows — TAPI inferensi
+# `.predict()` gagal dgn NotImplementedError native (oneDNN) pada kombinasi
+# OS/CPU mesin uji ini. Adapter sudah degradasi anggun (tidak meruntuhkan
+# `/drawings/analyze`, fallback manual tetap jalan) — lihat
+# `docs/ai-map/STATE.md` utk detail & `test_perception_paddle_ocr_
+# extractor.py::test_inference_failure_degrades_gracefully_not_crash`.
+ocr = ["paddleocr", "paddlepaddle"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

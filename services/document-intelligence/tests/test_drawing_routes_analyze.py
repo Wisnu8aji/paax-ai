@@ -1,6 +1,8 @@
 """Fase 2 P4 — uji integrasi endpoint /drawings/analyze memakai pipeline baru."""
 from __future__ import annotations
 
+import time
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -40,6 +42,11 @@ def test_analyze_returns_real_metrics_and_gerbang():
     assert data["tkg_text"]
     assert "RECORD" in data["tkg_text"]
 
+    # Fase E: field `consolidated` (ConsolidatedExtraction) ikut dikembalikan.
+    assert data["consolidated"] is not None
+    assert len(data["consolidated"]["sheets"]) == 1
+    assert data["consolidated"]["sheets"][0]["judul"]
+
 
 def test_analyze_missing_file_reports_warning_not_crash():
     analyze_res = client.post(
@@ -50,3 +57,43 @@ def test_analyze_missing_file_reports_warning_not_crash():
     data = analyze_res.json()
     assert data["tkg_document"] is None
     assert any(w["level"] == "CRITICAL" for w in data["warnings"])
+
+
+def test_analyze_start_and_poll_status_reaches_completed():
+    """Fase F: proses latar belakang — job_id segera, poll sampai COMPLETED
+    dgn hasil identik ke jalur sinkron /drawings/analyze."""
+    pdf_bytes = build_synthetic_table_pdf_bytes()
+    upload_res = client.post(
+        "/upload",
+        files={"file": ("p4_test_sheet_async.pdf", pdf_bytes, "application/pdf")},
+    )
+    assert upload_res.status_code == 200
+
+    start_res = client.post(
+        "/drawings/analyze/start",
+        json={"file_metadata": {"file_name": "p4_test_sheet_async.pdf", "file_type": "DRAWING_PDF", "project_id": "prj-async"}},
+    )
+    assert start_res.status_code == 200
+    job_id = start_res.json()["job_id"]
+    assert start_res.json()["status"] == "PENDING"
+
+    deadline = time.monotonic() + 10
+    status_data = None
+    while time.monotonic() < deadline:
+        status_res = client.get(f"/drawings/analyze/status/{job_id}")
+        assert status_res.status_code == 200
+        status_data = status_res.json()
+        if status_data["status"] in ("COMPLETED", "FAILED"):
+            break
+        time.sleep(0.05)
+
+    assert status_data is not None
+    assert status_data["status"] == "COMPLETED", status_data
+    assert status_data["result"]["tkg_document"]["prj_id"] == "prj-async"
+    assert status_data["result"]["consolidated"] is not None
+
+
+def test_analyze_status_unknown_job_returns_404():
+    res = client.get("/drawings/analyze/status/not-a-real-job-id")
+    assert res.status_code == 404
+

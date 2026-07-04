@@ -10,13 +10,13 @@ import type { TkgDocument } from "@paax/schemas";
 
 import { TkgWorkspace } from "./tkg-workspace";
 
-const { analyzeDrawingFileMock, saveMock } = vi.hoisted(() => ({
-  analyzeDrawingFileMock: vi.fn(),
+const { analyzeDrawingFileInBackgroundMock, saveMock } = vi.hoisted(() => ({
+  analyzeDrawingFileInBackgroundMock: vi.fn(),
   saveMock: vi.fn(),
 }));
 
 vi.mock("@/lib/ai/document-intelligence-tkg", () => ({
-  analyzeDrawingFile: analyzeDrawingFileMock,
+  analyzeDrawingFileInBackground: analyzeDrawingFileInBackgroundMock,
   DocumentIntelligenceError: class DocumentIntelligenceError extends Error {
     constructor(message: string) {
       super(message);
@@ -75,9 +75,9 @@ const mockTkg: TkgDocument = {
   generated_by: "perception",
   sheets: [
     {
-      sheet_id: "A100",
+      sheet_id: "S01",
       jenis: "denah",
-      meta: { judul: "Denah Struktur", nomor: "A100", skala: "1:100", disiplin: "struktur" },
+      meta: { judul: "DENAH KOLOM LT.1", nomor: null, skala: "1:100", disiplin: null, zone: "struktur_lantai_1" },
       grid: null,
       levels: [],
       tables: [
@@ -98,7 +98,10 @@ const mockTkg: TkgDocument = {
           ],
         },
       ],
-      elements: [{ kode: "K1", alamat: "A-1", bentuk: "titik", n: 1, count_simbol: null, count_label: null, lantai: "L1", ruas: null, panjang_m: null }],
+      elements: [{
+        kode: "K1", alamat: "A1", alamat_list: ["A1"], alamat_needs_review: false,
+        bentuk: "titik", n: 1, count_simbol: null, count_label: null, lantai: "L1", ruas: null, panjang_m: null,
+      }],
       dimensions: [],
       notes: [],
       unclassified: [{ raw: "teks bebas", alasan: "Tidak cocok grammar" }],
@@ -108,7 +111,7 @@ const mockTkg: TkgDocument = {
 
 const intakeResult = {
   tkg: mockTkg,
-  tkgText: "SHEET A100\nTYPE K1",
+  tkgText: "SHEET S01\nTYPE K1",
   classification: "STRUCTURAL_DRAWING",
   classificationConfidence: 0.83,
   warnings: ["[W-FRG] Fragmen angka perlu review", "Satuan dimensi perlu konfirmasi"],
@@ -127,6 +130,23 @@ const intakeResult = {
       { code: "V-06", label: "Grammar-pass rate >= 85%", passed: true, detail: "90.0% run cocok grammar" },
     ],
   },
+  consolidated: {
+    sheets: [{ page: 1, sheet_id: "S01", zone: "struktur_lantai_1", judul: "DENAH KOLOM LT.1", skala: "1:100" }],
+    grid: null,
+    element_registry: [
+      {
+        kode: "K1",
+        kategori: "kolom",
+        instances: [{ sheet_page: 1, alamat: "A1", catatan: null }],
+        definisi: { dimensi: { b: 300, h: 400 }, satuan_dimensi: "mm", tulangan: [], mutu_beton: "K-250", sumber_halaman: 1 },
+        status: "terbaca" as const,
+      },
+    ],
+    assumptions: [
+      { pernyataan: "Teks 'teks bebas' tidak dikenali di sheet 1", alasan: "Tidak cocok grammar apa pun", sheet_page: 1, dampak: "rendah" as const },
+    ],
+    building_dimensions: { total_x_mm: 20000, total_y_mm: 10000, sumber: "grid" as const },
+  },
 };
 
 function renderWorkspace() {
@@ -138,7 +158,7 @@ function makePdfFile() {
 }
 
 beforeEach(() => {
-  analyzeDrawingFileMock.mockResolvedValue(intakeResult);
+  analyzeDrawingFileInBackgroundMock.mockResolvedValue(intakeResult);
   saveMock.mockImplementation(async (record) => ({
     ...record,
     updatedAt: "2026-07-04T01:00:00.000Z",
@@ -150,40 +170,44 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("TkgWorkspace premium perception review", () => {
-  it("renders PDF perception controls without saving a transcript yet", async () => {
+describe("TkgWorkspace Review Gambar (rencana besar 2026-07-05)", () => {
+  it("renders upload controls without saving a transcript yet", async () => {
     renderWorkspace();
 
     const upload = await screen.findByLabelText(/unggah pdf gambar kerja/i);
-    const runButton = screen.getByRole("button", { name: /jalankan persepsi/i }) as HTMLButtonElement;
+    const runButton = screen.getByRole("button", { name: /analisa gambar kerja/i }) as HTMLButtonElement;
 
     expect(upload).toBeTruthy();
-    expect(screen.getByText(/belum ada hasil persepsi/i)).toBeTruthy();
+    expect(screen.getByText(/belum ada hasil analisis/i)).toBeTruthy();
     expect(runButton.disabled).toBe(true);
     expect(saveMock).not.toHaveBeenCalled();
   });
 
-  it("reviews PDF perception first, then saves it as a pipeline transcript after confirmation", async () => {
+  it("reviews the drawing with friendly labels first, then saves it as a pipeline transcript after confirmation", async () => {
     renderWorkspace();
 
     fireEvent.change(await screen.findByLabelText(/unggah pdf gambar kerja/i), {
       target: { files: [makePdfFile()] },
     });
-    fireEvent.click(screen.getByRole("button", { name: /jalankan persepsi/i }));
+    // chip lampiran menampilkan nama file (bukan lagi teks polos di dropzone)
+    expect(await screen.findByText("gambar.pdf")).toBeTruthy();
 
-    expect((await screen.findAllByText(/draft persepsi/i)).length).toBeGreaterThan(0);
-    expect(analyzeDrawingFileMock).toHaveBeenCalledWith(expect.any(File), "project-1");
-    expect(saveMock).not.toHaveBeenCalled();
-    expect(screen.getByText("Cakupan")).toBeTruthy();
-    expect(screen.getAllByText("Unclassified").length).toBeGreaterThan(0);
-    expect(screen.getByText("teks bebas")).toBeTruthy();
-    expect(screen.getByRole("button", { name: /\[W-FRG\].*1/i })).toBeTruthy();
-    // Gerbang ditampilkan APA ADANYA dari backend (kode resmi V-01/V-06), bukan
-    // dihitung ulang/difabrikasi di frontend (koreksi Fase 2 P5-FIX).
-    expect(screen.getByText(/V-01/)).toBeTruthy();
-    expect(screen.getByText(/V-06/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /analisa gambar kerja/i }));
 
-    fireEvent.click(screen.getByRole("button", { name: /pakai tkg sebagai transkrip/i }));
+    expect(analyzeDrawingFileInBackgroundMock).toHaveBeenCalledWith(expect.any(File), "project-1", expect.any(Function));
+    await waitFor(() => expect(saveMock).not.toHaveBeenCalled());
+
+    // Halaman & zona ditampilkan bahasa manusia, bukan kode teknis.
+    expect(await screen.findByText("DENAH KOLOM LT.1")).toBeTruthy();
+    expect(screen.getAllByText(/struktur lantai 1/i).length).toBeGreaterThan(0);
+    // Grid & elemen: alamat asli "A1" tampil, dikelompokkan per zona.
+    expect(screen.getByText("A1")).toBeTruthy();
+    // Dimensi bangunan dikonversi ke meter.
+    expect(screen.getByText(/20 m/)).toBeTruthy();
+    // "Perlu dicek" pakai bahasa manusia, bukan field 'alasan' mentah tampil sbg label teknis.
+    expect(screen.getByText(/teks bebas/i)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: /simpan hasil analisis/i }));
 
     await waitFor(() => expect(saveMock).toHaveBeenCalled());
     expect(saveMock.mock.calls.at(-1)?.[0]).toMatchObject({
@@ -194,18 +218,45 @@ describe("TkgWorkspace premium perception review", () => {
     });
   });
 
+  it("shows a disabled Generate RAB placeholder that is not wired to any logic yet", async () => {
+    renderWorkspace();
+    fireEvent.change(await screen.findByLabelText(/unggah pdf gambar kerja/i), {
+      target: { files: [makePdfFile()] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /analisa gambar kerja/i }));
+
+    const generateRabButton = await screen.findByRole("button", { name: /generate rab/i });
+    expect((generateRabButton as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("supports removing an attached file before analysis", async () => {
+    renderWorkspace();
+    fireEvent.change(await screen.findByLabelText(/unggah pdf gambar kerja/i), {
+      target: { files: [makePdfFile()] },
+    });
+    expect(await screen.findByText("gambar.pdf")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: /hapus file/i }));
+    expect(screen.queryByText("gambar.pdf")).toBeNull();
+    expect(screen.getByText(/seret pdf ke sini/i)).toBeTruthy();
+  });
+
   it("keeps project-specific fixture names out of the component implementation", () => {
     const source = readFileSync(resolve(__dirname, "tkg-workspace.tsx"), "utf8");
 
     expect(source).not.toContain("PLHUT");
   });
 
-  it("never fabricates gerbang codes that collide with brain's official V-01..V-10 validators", () => {
+  it("never surfaces raw technical gerbang/coverage jargon to the end user", () => {
     const source = readFileSync(resolve(__dirname, "tkg-workspace.tsx"), "utf8");
 
+    // Fabrikasi lama (sesi sebelumnya) - tetap dijaga tak pernah muncul lagi.
     expect(source).not.toContain("V-TKG");
     expect(source).not.toContain("V-COV");
     expect(source).not.toContain("V-WARN");
     expect(source).not.toContain("V-CLS");
+    // Rencana besar 2026-07-05: istilah teknis mentah disembunyikan dari UI utama.
+    expect(source).not.toContain("Grammar-pass");
+    expect(source).not.toContain("GERBANG-2 LOLOS");
   });
 });

@@ -54,9 +54,25 @@ def extract_spans_via_ocr(page_image_path: str, page: int) -> OcrExtractionResul
             ),
         )
 
+    try:
+        raw_results = list(ocr.predict(page_image_path))
+    except Exception as e:
+        # Inferensi native (paddlepaddle/oneDNN) bisa gagal di kombinasi
+        # OS/CPU tertentu walau model sudah termuat sukses (temuan nyata sesi
+        # ini) — degradasi anggun, JANGAN sampai meruntuhkan seluruh endpoint
+        # analyze (fallback manual tetap harus bisa dipakai, CLAUDE.md §2).
+        return OcrExtractionResult(
+            available=False,
+            spans=[],
+            message=(
+                f"OCR raster gagal saat inferensi ({type(e).__name__}: {e}). "
+                "Gunakan jalur teks deskripsi manual sementara."
+            ),
+        )
+
     spans: list[TextSpan] = []
     span_index = 0
-    for res in ocr.predict(page_image_path):
+    for res in raw_results:
         data = res.json if hasattr(res, "json") else res
         rec_texts = data.get("rec_texts", []) or []
         rec_scores = data.get("rec_scores", []) or []

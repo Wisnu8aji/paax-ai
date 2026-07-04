@@ -20,9 +20,18 @@ disembunyikan, selaras INV-TKG-02/AP-E-04):
   untuk skema kanonik); grid 3D/isometrik atau bubble non-lingkaran (mis.
   segi-enam) di luar cakupan.
 - ELEMEN: dihitung dari Run yang cocok `parse_type_code` di luar tabel/grid;
-  alamat grid (§5 binding) BELUM diikat — field `alamat` diisi placeholder
-  jujur, BUKAN dikarang. `count_simbol` tidak diukur (butuh deteksi simbol
-  grafis) -> None (V-05 core-engine otomatis skip bila salah satu None).
+  alamat grid (§5 binding, `app/perception/binding.py`) SUDAH diikat ke
+  posisi nyata (interseksi "A1" atau offset "B-offset_sebelum_1") sejak
+  rencana besar 2026-07-05 — diverifikasi cocok PERSIS ke posisi PC1/PC2/PC3
+  PLHUT nyata (`test_smoke_real_plhut_footplat_alamat_matches_reference_
+  positions`). `count_simbol` MASIH None (deteksi simbol grafis, brain V-05):
+  investigasi `page.get_drawings()` pada simbol footplat PLHUT nyata
+  menemukan bentuknya (kotak besar + garis silang diagonal + kotak kecil
+  di tengah) SANGAT spesifik ke konvensi drafter ybs — beda drafter/CAD bisa
+  memakai simbol sama sekali berbeda (X polos, lingkaran, dll). Membangun
+  detektor yang benar² generalisasi (bukan overfit satu konvensi PLHUT,
+  §0.1) butuh riset lebih dalam dari yang dibenarkan sesi ini — SENGAJA
+  ditunda jujur, bukan dipaksakan jadi fitur setengah-jadi yang rapuh.
 - Sisanya (Run yang tak cocok grid/tabel/kode/level) -> UNCLASSIFIED, sesuai
   INV-TKG-02 zero-loss (tidak dibuang).
 - RASTER (Fase 2 P6): sheet tanpa text-layer vektor (RULE-EXT-30) dibaca via
@@ -35,10 +44,12 @@ from __future__ import annotations
 
 import re
 import tempfile
+from typing import Callable, Optional
 from pathlib import Path
 
 import fitz
 
+from app.perception.binding import bind_alamat
 from app.perception.grammar.level import parse_level
 from app.perception.grammar.mutu import parse_mutu
 from app.perception.grammar.rebar import parse_rebar
@@ -66,6 +77,7 @@ from app.perception.tkg.models import (
 )
 from app.perception.vector.grid_geometry import reconstruct_grid_from_geometry
 from app.perception.vector.merge_run import merge_runs
+from app.perception.zone_classifier import classify_zone, extract_judul, extract_skala
 from app.processors.drawing_classifier import DrawingClassifier
 from app.tkg.builder import classification_to_jenis
 
@@ -208,15 +220,18 @@ def _extract_grid_from_notation(runs: list[Run]) -> tuple[Grid, set[str]]:
     return grid, used_ids
 
 
-def _extract_grid(page: "fitz.Page", runs: list[Run]) -> tuple[Grid, set[str]]:
+def _extract_grid(page: "fitz.Page", runs: list[Run]) -> tuple[Grid, set[str], dict[str, dict[str, float]]]:
     """Gabung geometri (bubble+garis-dimensi, §3.1.1) dengan notasi eksplisit
     teks sebagai pelengkap. Geometri jadi sumber utama `sumbu_x`/`sumbu_y`
     (notasi TIDAK PERNAH menghasilkan itu); bentang/total notasi ditambahkan
-    HANYA bila pasangan (dari,ke) belum tercakup geometri (tidak dobel)."""
+    HANYA bila pasangan (dari,ke) belum tercakup geometri (tidak dobel).
+    `axis_points` (posisi titik PDF asli per label as) diteruskan ke Fase C
+    (label->grid binding) -- kosong bila grid HANYA dari notasi (tak ada
+    posisi titik nyata utk dibandingkan ke bbox elemen)."""
     notation_grid, notation_used = _extract_grid_from_notation(runs)
-    geo_grid, geo_used = reconstruct_grid_from_geometry(page, runs)
+    geo_grid, geo_used, axis_points = reconstruct_grid_from_geometry(page, runs)
     if geo_grid is None:
-        return notation_grid, notation_used
+        return notation_grid, notation_used, {"x": {}, "y": {}}
 
     existing_x = {(s.dari, s.ke) for s in geo_grid.bentang_x}
     existing_y = {(s.dari, s.ke) for s in geo_grid.bentang_y}
@@ -230,7 +245,7 @@ def _extract_grid(page: "fitz.Page", runs: list[Run]) -> tuple[Grid, set[str]]:
         total_y=geo_grid.total_y or notation_grid.total_y,
         offset_tepi=geo_grid.offset_tepi,
     )
-    return grid, geo_used | notation_used
+    return grid, geo_used | notation_used, axis_points
 
 
 def _extract_levels(runs: list[Run]) -> tuple[list[Level], set[str]]:
@@ -255,10 +270,18 @@ def _run_inside_any_bbox(run: Run, bboxes: list[tuple[float, float, float, float
 def _extract_elements(
     runs: list[Run],
     used_ids: set[str],
+    grid: Grid,
+    axis_points: dict[str, dict[str, float]],
 ) -> tuple[list[ElementInstance], list[Unclassified]]:
     """`used_ids` sudah mencakup run grid/level/di-dalam-tabel (dihitung sekali
-    oleh caller, §4.2 P4) — di sini tinggal klasifikasi sisa run bebas."""
-    counts: dict[str, int] = {}
+    oleh caller, §4.2 P4) — di sini tinggal klasifikasi sisa run bebas.
+
+    Fase C (§5 binding): tiap instance kode diikat ke alamat grid NYATA via
+    `binding.bind_alamat` menggunakan posisi titik PDF asli (`axis_points`,
+    BUKAN posisi_mm — lihat docstring `_extract_grid`). Kalau sheet ini tidak
+    punya grid dari geometri (axis_points kosong), binding jujur tidak
+    dilakukan — bukan ditebak."""
+    kode_bboxes: dict[str, list[tuple[float, float, float, float]]] = {}
     unclassified: list[Unclassified] = []
 
     for run in runs:
@@ -269,21 +292,31 @@ def _extract_elements(
             continue
         code_result = parse_type_code(text)
         if code_result and not code_result.needs_review:
-            counts[code_result.kode_raw] = counts.get(code_result.kode_raw, 0) + 1
+            kode_bboxes.setdefault(code_result.kode_raw, []).append(run.bbox)
             continue
         unclassified.append(Unclassified(
             raw=text,
             alasan="tidak cocok grammar kode/level/grid (§2)",
         ))
 
-    elements = [
-        ElementInstance(
+    axis_x = axis_points.get("x", {})
+    axis_y = axis_points.get("y", {})
+    elements: list[ElementInstance] = []
+    for kode, bboxes in kode_bboxes.items():
+        alamat_list: list[str] = []
+        any_needs_review = False
+        for bbox in bboxes:
+            alamat, needs_review = bind_alamat(bbox, axis_x, axis_y)
+            alamat_list.append(alamat)
+            any_needs_review = any_needs_review or needs_review
+        n = len(bboxes)
+        elements.append(ElementInstance(
             kode=kode,
-            alamat="alamat grid belum diikat (binding §5 belum diimplementasi iterasi ini)",
+            alamat=", ".join(alamat_list),
+            alamat_list=alamat_list,
+            alamat_needs_review=any_needs_review,
             n=n, count_label=n, count_simbol=None,
-        )
-        for kode, n in counts.items()
-    ]
+        ))
     return elements, unclassified
 
 
@@ -315,18 +348,26 @@ def assemble_sheet_from_page(page: "fitz.Page", page_index: int, sheet_id: str, 
     runs = merge_runs(spans)
 
     tables, table_bboxes = _extract_tables(page) if not is_raster else ([], [])
-    grid, grid_run_ids = _extract_grid(page, runs)
+    grid, grid_run_ids, axis_points = _extract_grid(page, runs)
     levels, level_run_ids = _extract_levels(runs)
     table_covered_ids = {r.run_id for r in runs if _run_inside_any_bbox(r, table_bboxes)}
-    used_ids = grid_run_ids | level_run_ids | table_covered_ids
-    elements, unclassified = _extract_elements(runs, used_ids)
+    judul_extracted, judul_run_ids = extract_judul(runs)
+    skala, skala_run_ids = extract_skala(runs)
+    # judul/skala SUNGGUH dipakai (jadi zona+meta sheet) -> ikut terklasifikasi,
+    # bukan unclassified (Fase B, rencana besar 2026-07-05).
+    used_ids = grid_run_ids | level_run_ids | table_covered_ids | judul_run_ids | skala_run_ids
+    elements, unclassified = _extract_elements(runs, used_ids, grid, axis_points)
 
     joined_text = " ".join(r.text for r in runs)
     classifier_res = DrawingClassifier().process(joined_text)
     jenis = classification_to_jenis(classifier_res["classification"])
 
+    judul_asli = judul_extracted or judul
+    zone = classify_zone(judul_asli)
+
     sheet = TkgSheet(
-        sheet_id=sheet_id, jenis=jenis, meta=SheetMeta(judul=judul),
+        sheet_id=sheet_id, jenis=jenis,
+        meta=SheetMeta(judul=judul_asli, skala=skala, zone=zone),
         grid=grid, levels=levels, tables=tables, elements=elements,
         unclassified=unclassified,
     )
@@ -352,16 +393,24 @@ def assemble_sheet_from_page(page: "fitz.Page", page_index: int, sheet_id: str, 
 
 def assemble_document_from_pdf_bytes(
     pdf_bytes: bytes, prj_id: str, rev_id: str = "R0", title_prefix: str = "Sheet",
+    on_page_done: Optional[Callable[[int, int], None]] = None,
 ) -> tuple[TkgDocument, list[dict]]:
-    """Kembalikan (TkgDocument, metrics per-sheet) — dipakai P4 utk agregasi METRICS."""
+    """Kembalikan (TkgDocument, metrics per-sheet) — dipakai P4 utk agregasi METRICS.
+
+    `on_page_done(index_selesai, total_halaman)` opsional (Fase F, proses
+    latar belakang) — dipanggil setelah tiap halaman selesai supaya caller
+    bisa melaporkan progres nyata (bukan simulasi/animasi buta)."""
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     try:
         sheets: list[TkgSheet] = []
         per_sheet_metrics: list[dict] = []
-        for i in range(len(doc)):
+        total = len(doc)
+        for i in range(total):
             sheet, metrics = assemble_sheet_from_page(doc.load_page(i), i, f"S{i + 1:02d}", f"{title_prefix} {i + 1}")
             sheets.append(sheet)
             per_sheet_metrics.append(metrics)
+            if on_page_done is not None:
+                on_page_done(i + 1, total)
         return TkgDocument(prj_id=prj_id, rev_id=rev_id, generated_by="pipeline", sheets=sheets), per_sheet_metrics
     finally:
         doc.close()

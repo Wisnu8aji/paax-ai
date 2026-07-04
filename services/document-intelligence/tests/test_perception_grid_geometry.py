@@ -23,7 +23,8 @@ def _grid_from_bytes(pdf_bytes: bytes, page_index: int = 0):
     try:
         page = doc.load_page(page_index)
         runs = merge_runs(extract_spans_from_page(page, page_index))
-        return reconstruct_grid_from_geometry(page, runs)
+        grid, used_ids, _axis_points = reconstruct_grid_from_geometry(page, runs)
+        return grid, used_ids
     finally:
         doc.close()
 
@@ -76,9 +77,10 @@ def test_no_bubbles_returns_none():
     page = doc.new_page()
     page.insert_text((50, 50), "CATATAN TANPA GRID BUBBLE", fontsize=10)
     runs = merge_runs(extract_spans_from_page(page, 0))
-    grid, used_ids = reconstruct_grid_from_geometry(page, runs)
+    grid, used_ids, axis_points = reconstruct_grid_from_geometry(page, runs)
     assert grid is None
     assert used_ids == set()
+    assert axis_points == {"x": {}, "y": {}}
     doc.close()
 
 

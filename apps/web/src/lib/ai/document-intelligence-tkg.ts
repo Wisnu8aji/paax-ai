@@ -51,6 +51,62 @@ export interface PerceptionGerbang {
   checks: PerceptionGerbangCheck[];
 }
 
+// Fase E (rencana besar 2026-07-05): pandangan bangunan terkonsolidasi
+// lintas-halaman — mirror `app/perception/consolidated_models.py` (Python
+// tetap sumber kebenaran bentuk; ini plain TS interface, pola sama dengan
+// PerceptionMetrics/PerceptionGerbang di atas, BUKAN Zod — field ini murni
+// presentasi, bukan domain inti spt TkgDocument).
+export interface ConsolidatedSheetSummary {
+  page: number;
+  sheet_id: string;
+  zone: string | null;
+  judul: string;
+  skala: string | null;
+}
+
+export interface ConsolidatedElementInstanceRef {
+  sheet_page: number;
+  alamat: string;
+  catatan: string | null;
+}
+
+export interface ConsolidatedElementDefinisi {
+  dimensi: Record<string, number>;
+  satuan_dimensi: string;
+  tulangan: Array<{ posisi: string; raw: string; jumlah: number | null; diameter_mm: number | null; jarak_mm: number | null; jenis: string }>;
+  mutu_beton: string | null;
+  sumber_halaman: number | null;
+}
+
+export interface ConsolidatedElementRegistryEntry {
+  kode: string;
+  kategori: string | null;
+  instances: ConsolidatedElementInstanceRef[];
+  definisi: ConsolidatedElementDefinisi | null;
+  status: 'terbaca' | 'perlu_review';
+}
+
+export interface ConsolidatedAssumption {
+  pernyataan: string;
+  alasan: string;
+  sheet_page: number | null;
+  dampak: 'rendah' | 'sedang' | 'tinggi';
+}
+
+export interface ConsolidatedBuildingDimensions {
+  total_x_mm: number | null;
+  total_y_mm: number | null;
+  sumber: 'grid' | 'bounding_box_elemen' | 'tidak_tersedia';
+}
+
+export interface ConsolidatedExtraction {
+  sheets: ConsolidatedSheetSummary[];
+  grid: unknown | null;
+  element_registry: ConsolidatedElementRegistryEntry[];
+  assumptions: ConsolidatedAssumption[];
+  building_dimensions: ConsolidatedBuildingDimensions;
+}
+
 export interface DrawingIntakeResult {
   tkg: TkgDocument;
   tkgText: string | null;
@@ -59,6 +115,7 @@ export interface DrawingIntakeResult {
   warnings: string[];
   metrics: PerceptionMetrics | null;
   gerbang: PerceptionGerbang | null;
+  consolidated: ConsolidatedExtraction | null;
 }
 
 interface DrawingAnalyzeResponse {
@@ -69,24 +126,28 @@ interface DrawingAnalyzeResponse {
   tkg_text: string | null;
   metrics: PerceptionMetrics | null;
   gerbang: PerceptionGerbang | null;
+  consolidated: ConsolidatedExtraction | null;
 }
 
-/**
- * Upload file PDF gambar kerja lalu jalankan ekstraksi TKG (SK-01/02/07).
- * Melempar `DocumentIntelligenceError` dengan pesan siap-tampil bila service
- * tidak aktif, upload gagal, atau hasil tidak lolos skema TkgDocument
- * (dilaporkan, TIDAK dipaksakan dipakai — INV-TKG-03 no-silent-fix).
- */
-export async function analyzeDrawingFile(file: File, projectId: string): Promise<DrawingIntakeResult> {
+interface AnalyzeJobStatusResponse {
+  job_id: string;
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  progress_message: string | null;
+  result: DrawingAnalyzeResponse | null;
+  error: string | null;
+}
+
+function assertPdf(file: File): void {
   if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
     throw new DocumentIntelligenceError(
       'Saat ini hanya file PDF gambar kerja yang didukung jalur upload langsung. Untuk foto/scan, pakai jalur teks deskripsi di bawah.',
     );
   }
+}
 
+async function uploadDrawingFile(file: File): Promise<void> {
   const form = new FormData();
   form.append('file', file, file.name);
-
   let uploadRes: Response;
   try {
     uploadRes = await fetch(`${DOCUMENT_INTELLIGENCE_URL}/upload`, { method: 'POST', body: form });
@@ -100,25 +161,9 @@ export async function analyzeDrawingFile(file: File, projectId: string): Promise
     const detail = await uploadRes.json().catch(() => null) as { detail?: string } | null;
     throw new DocumentIntelligenceError(detail?.detail ?? `Upload gagal (${uploadRes.status}).`);
   }
+}
 
-  let analyzeRes: Response;
-  try {
-    analyzeRes = await fetch(`${DOCUMENT_INTELLIGENCE_URL}/drawings/analyze`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        file_metadata: { file_name: file.name, file_type: 'DRAWING_PDF', project_id: projectId },
-      }),
-    });
-  } catch {
-    throw new DocumentIntelligenceError('File terunggah, tapi analisis gagal terhubung ke service.');
-  }
-  if (!analyzeRes.ok) {
-    const detail = await analyzeRes.json().catch(() => null) as { detail?: string } | null;
-    throw new DocumentIntelligenceError(detail?.detail ?? `Analisis gagal (${analyzeRes.status}).`);
-  }
-
-  const data = (await analyzeRes.json()) as DrawingAnalyzeResponse;
+function toIntakeResult(data: DrawingAnalyzeResponse): DrawingIntakeResult {
   if (!data.tkg_document) {
     throw new DocumentIntelligenceError(
       'Service tidak mengembalikan TKG (kemungkinan file bukan PDF vektor, atau gagal dibaca di server).',
@@ -141,5 +186,99 @@ export async function analyzeDrawingFile(file: File, projectId: string): Promise
     warnings: data.warnings.map((w) => w.message),
     metrics: data.metrics ?? null,
     gerbang: data.gerbang ?? null,
+    consolidated: data.consolidated ?? null,
   };
+}
+
+/**
+ * Upload file PDF gambar kerja lalu jalankan ekstraksi TKG (SK-01/02/07),
+ * SINKRON (blocking sampai selesai). Untuk PDF banyak halaman lebih baik
+ * pakai `analyzeDrawingFileInBackground` (Fase F) supaya UI tidak macet.
+ * Melempar `DocumentIntelligenceError` dengan pesan siap-tampil bila service
+ * tidak aktif, upload gagal, atau hasil tidak lolos skema TkgDocument
+ * (dilaporkan, TIDAK dipaksakan dipakai — INV-TKG-03 no-silent-fix).
+ */
+export async function analyzeDrawingFile(file: File, projectId: string): Promise<DrawingIntakeResult> {
+  assertPdf(file);
+  await uploadDrawingFile(file);
+
+  let analyzeRes: Response;
+  try {
+    analyzeRes = await fetch(`${DOCUMENT_INTELLIGENCE_URL}/drawings/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        file_metadata: { file_name: file.name, file_type: 'DRAWING_PDF', project_id: projectId },
+      }),
+    });
+  } catch {
+    throw new DocumentIntelligenceError('File terunggah, tapi analisis gagal terhubung ke service.');
+  }
+  if (!analyzeRes.ok) {
+    const detail = await analyzeRes.json().catch(() => null) as { detail?: string } | null;
+    throw new DocumentIntelligenceError(detail?.detail ?? `Analisis gagal (${analyzeRes.status}).`);
+  }
+
+  return toIntakeResult((await analyzeRes.json()) as DrawingAnalyzeResponse);
+}
+
+const JOB_POLL_INTERVAL_MS = 700;
+
+/**
+ * Fase F (rencana besar 2026-07-05): upload + jalankan analisis di LATAR
+ * BELAKANG (job async) — cocok untuk PDF banyak halaman supaya UI tidak
+ * blocking. `onProgress` dipanggil tiap poll dengan pesan progres NYATA dari
+ * backend (bukan animasi buta) — mis. "Membaca gambar... (halaman 3/15)".
+ */
+export async function analyzeDrawingFileInBackground(
+  file: File,
+  projectId: string,
+  onProgress?: (message: string) => void,
+): Promise<DrawingIntakeResult> {
+  assertPdf(file);
+  await uploadDrawingFile(file);
+
+  let startRes: Response;
+  try {
+    startRes = await fetch(`${DOCUMENT_INTELLIGENCE_URL}/drawings/analyze/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        file_metadata: { file_name: file.name, file_type: 'DRAWING_PDF', project_id: projectId },
+      }),
+    });
+  } catch {
+    throw new DocumentIntelligenceError('File terunggah, tapi analisis gagal terhubung ke service.');
+  }
+  if (!startRes.ok) {
+    const detail = await startRes.json().catch(() => null) as { detail?: string } | null;
+    throw new DocumentIntelligenceError(detail?.detail ?? `Analisis gagal dimulai (${startRes.status}).`);
+  }
+  const { job_id: jobId } = (await startRes.json()) as { job_id: string };
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    await new Promise((resolve) => setTimeout(resolve, JOB_POLL_INTERVAL_MS));
+
+    let statusRes: Response;
+    try {
+      statusRes = await fetch(`${DOCUMENT_INTELLIGENCE_URL}/drawings/analyze/status/${jobId}`);
+    } catch {
+      throw new DocumentIntelligenceError('Koneksi ke service terputus saat memantau progres analisis.');
+    }
+    if (!statusRes.ok) {
+      throw new DocumentIntelligenceError(`Gagal memantau progres analisis (${statusRes.status}).`);
+    }
+    const job = (await statusRes.json()) as AnalyzeJobStatusResponse;
+
+    if (job.progress_message) {
+      onProgress?.(job.progress_message);
+    }
+    if (job.status === 'FAILED') {
+      throw new DocumentIntelligenceError(job.error ?? 'Analisis gagal diproses di server.');
+    }
+    if (job.status === 'COMPLETED' && job.result) {
+      return toIntakeResult(job.result);
+    }
+  }
 }
