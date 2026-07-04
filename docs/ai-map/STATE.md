@@ -5,6 +5,7 @@
 
 ## ✅ FASE M/N — V-03 FIX + IMPOR AHSP CK 2026 (prompt 2026-07-08)
 Branch kerja: `feat/v03-fix-ahsp-catalog-import`.
+PR: https://github.com/Wisnu8aji/paax-ai/pull/31
 Base yang dipakai: `origin/feat/rab-nav-validator-audit-ahsp-suggest` karena
 PR #29 dan #30 masih open saat pekerjaan dimulai.
 
