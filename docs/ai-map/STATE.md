@@ -5,7 +5,7 @@
 
 ## ✅ FASE Q/R — TERAPKAN HASIL O/P + HARGA KEJAKSAAN SEMARANG (prompt 2026-07-11)
 Branch kerja: `feat/ahsp-unit-apply-semarang-import-kejaksaan`.
-PR: TBD
+PR: https://github.com/Wisnu8aji/paax-ai/pull/34
 Base yang dipakai: `origin/feat/ahsp-unit-gap-semarang-price-batch2` karena
 PR #29-#33 masih open dan fase ini bergantung pada laporan/data Fase O/P.
 
