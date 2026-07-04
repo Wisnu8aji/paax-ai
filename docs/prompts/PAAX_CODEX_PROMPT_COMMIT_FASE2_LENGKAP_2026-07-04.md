@@ -1,5 +1,11 @@
 # PROMPT CODEX — COMMIT Fase 2 Persepsi Lengkap (P1–P6 + Grid Geometri §3.1.1)
 
+> ## ⚠️ STATUS: HISTORIS / SUPERSEDED (2026-07-05)
+> Isi prompt ini SUDAH DI-COMMIT & DI-MERGE ke `main` sebelum sesi 2026-07-05
+> dimulai (lihat `git log`: commit `5c58463`/`d17a67d`/`97161a4`/`38ac2ef`).
+> **JANGAN jalankan prompt ini lagi.** Pekerjaan baru (Fase B-H, lebih besar)
+> ada di `docs/prompts/PAAX_CODEX_PROMPT_COMMIT_GAMBAR_TEKNIK_SIPIL_2026-07-05.md`.
+
 > Ditulis Claude, 2026-07-04 malam. **Tugas ini HANYA commit + push — TIDAK
 > ADA kode yang perlu ditulis ulang atau diperbaiki.** Semua implementasi
 > (backend `services/document-intelligence`, koreksi frontend

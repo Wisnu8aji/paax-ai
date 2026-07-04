@@ -81,7 +81,8 @@ sesuai `docs/ai-map/STATE.md`.
 | Fase 3b | **Take-off arsitektur/tanah (2026-07-02)**: paket `app/takeoff/` — §F tanah (F-F01/02/03/04/05/07, disiplin bank/gembur/padat), §E finishing (F-E01/02/03/05/07, deduksi bukaan all\|threshold), §G subset (F-G01/03/05); params §Z (TanahParams/DindingParams/ArsitekturParams); 3 endpoint `/takeoff/*` + mirror Zod + requests.http + 13 anchor manual (pytest 147) | 🟢 selesai |
 | Fase 3+ | Sisa §Z (confidence/QA §J/§K), F-F06 pemadatan + angkut kelas jarak, F-G04/G06–G14 (keramik dinding/baja profil/atap detail/kusen/MEP/WP/railing), F-C07-C10 (dinding beton/tangga/perancah) | ⚪ roadmap, 1 sesi terpisah per irisan |
 | Kapan saja (independen) | Checklist WBS D0–D15 sbg fitur completeness-check di halaman RAB | ⚪ belum dijadwalkan |
-| Ditunda | `services/document-intelligence` (OCR/CV/vision), TKG builder sungguhan | ⚪ menunggu gerbang F0 + validasi Wizard-of-Oz |
+| Fase 2 (2026-07-04/05) | **`services/document-intelligence` persepsi vektor + TKG builder sungguhan — DIKERJAKAN** (owner memutuskan jalur vektor tidak menyentuh gerbang F0, lihat `docs/ai-map/STATE.md`): span+merge-run+grammar §2 (P1-P2), tabel+grid-dari-geometri §3.1.1 (P3), validator+gerbang (P4), PaddleOCR raster lazy (P6). Cakupan real PLHUT 33,75%. Rencana lanjutan (zone classifier, label→grid binding §5, konsolidasi lintas-halaman, deteksi simbol): `docs/plans/PAAX_GAMBAR_TEKNIK_SIPIL_BIG_PLAN_2026-07-05.md` | 🟡 sedang berjalan |
+| Tetap ditunda | Vision-LLM piksel (foto/scan tanpa teks vektor) sbg jalur UTAMA; Site Agent (v2.0) | ⚪ vision-LLM hanya fallback OCR-gagal; Site Agent menunggu v2.0 |
 
 Detail rumus per elemen: lihat `docs/specs/brain-v4.1/PAAX_BRAIN_02_RUMUS_LOGIKA_HITUNG.txt`
 bagian §B (F-B01–B11) untuk formula persis yang jadi acuan Fase 1.
