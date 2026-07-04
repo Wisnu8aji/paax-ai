@@ -80,10 +80,11 @@ def _cek_v03(
     issues: List[TkgIssue],
 ) -> None:
     """
-    V-03 lintas denah: bandingkan hanya label as yang sama-sama muncul.
+    V-03 lintas denah: bandingkan jarak relatif label as yang sama-sama muncul.
 
-    Sheet denah boleh menampilkan subset grid yang sah. Yang menjadi error
-    hanya label yang overlap tetapi posisinya berbeda melewati toleransi.
+    Sheet denah direkonstruksi per halaman, sehingga titik nol posisi absolut
+    bisa berbeda. Jika dua sheet hanya berbagi satu label, belum ada jarak
+    relatif yang bisa dibandingkan dan V-03 tidak punya dasar memberi error.
     """
     axis_maps = [
         (sheet_id, _axis_positions_m(grid, "x"), _axis_positions_m(grid, "y"))
@@ -94,19 +95,25 @@ def _cek_v03(
     for i, (sid_a, x_a, y_a) in enumerate(axis_maps):
         for sid_b, x_b, y_b in axis_maps[i + 1:]:
             for sumbu, pos_a, pos_b in (("x", x_a, x_b), ("y", y_a, y_b)):
-                for label in sorted(set(pos_a) & set(pos_b)):
-                    a = pos_a[label]
-                    b = pos_b[label]
-                    diff = abs(a - b)
+                shared = sorted(set(pos_a) & set(pos_b))
+                if len(shared) < 2:
+                    continue
+
+                ref = shared[0]
+                for label in shared[1:]:
+                    rel_a = pos_a[label] - pos_a[ref]
+                    rel_b = pos_b[label] - pos_b[ref]
+                    diff = abs(rel_a - rel_b)
                     if diff <= abs_tol_m:
                         continue
-                    rel = diff / max(abs(a), abs(b), eps)
+                    rel = diff / max(abs(rel_a), abs(rel_b), eps)
                     if rel > tol:
                         issues.append(TkgIssue(
                             code="E-GRID", severity="error", subject=f"{sumbu}:{label}",
                             message=(
-                                f"V-03 gagal sumbu {sumbu} as '{label}': posisi {sid_a} = {a:g} m "
-                                f"berbeda dari {sid_b} = {b:g} m (tol {tol:.1%})."
+                                f"V-03 gagal sumbu {sumbu} as '{label}': jarak relatif terhadap "
+                                f"as '{ref}' di {sid_a} = {rel_a:g} m berbeda dari "
+                                f"{sid_b} = {rel_b:g} m (tol {tol:.1%})."
                             ),
                         ))
 
