@@ -4,7 +4,7 @@ Prompt: `docs/prompts/PAAX_CODEX_PROMPT_FASE_M_N_V03_FIX_AHSP_IMPORT_2026-07-08.
 Branch: `feat/v03-fix-ahsp-catalog-import`
 Base branch: `origin/feat/rab-nav-validator-audit-ahsp-suggest`
 Alasan base: PR #29 dan PR #30 masih open/belum merged saat pekerjaan dimulai.
-PR: `(diisi setelah PR dibuat)`
+PR: https://github.com/Wisnu8aji/paax-ai/pull/31
 
 ## Ringkasan
 
