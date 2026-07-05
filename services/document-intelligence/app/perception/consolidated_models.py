@@ -113,6 +113,22 @@ class AiRoofFrameSuggestion(BaseModel):
     generated_at: str
 
 
+class AiKudaKudaSuggestion(BaseModel):
+    """Usulan AI-assist utk kuda_kuda (rangka utama atap, profil baja).
+    kg_per_m WAJIB dari teks eksplisit gambar -- TIDAK PERNAH dari
+    pengetahuan umum model (app/takeoff/baja.py: "berat profil adalah
+    DATA"). Lihat app/perception/ai_assist/kuda_kuda_assist.py."""
+    designation: str
+    kg_per_m: float
+    length_m: float
+    qty: int
+    confidence: float
+    reasoning: str
+    source_texts: List[str] = Field(default_factory=list)
+    model: str
+    generated_at: str
+
+
 class AiKusenSuggestion(BaseModel):
     """Usulan AI-assist (2026-07-05, lanjutan Fase X2) utk SATU baris jadwal
     kusen pintu/jendela. TIDAK PERNAH diikat ke kode asli di gambar --
@@ -156,6 +172,7 @@ class ElementRegistryEntry(BaseModel):
     ai_dimension_suggestion: Optional[AiDimensionSuggestion] = None
     ai_dinding_suggestion: Optional[AiDindingSuggestion] = None
     ai_roof_frame_suggestion: Optional[AiRoofFrameSuggestion] = None
+    ai_kuda_kuda_suggestion: Optional[AiKudaKudaSuggestion] = None
     ai_kusen_suggestion: Optional[AiKusenSuggestion] = None
     ai_mep_suggestion: Optional[AiMepSuggestion] = None
 

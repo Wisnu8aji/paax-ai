@@ -521,6 +521,71 @@ def test_ai_assist_roof_frame_not_invoked_when_rule_based_already_complete():
     assert fake.calls == []
 
 
+def test_ai_assist_kuda_kuda_profile_suggestion_attached_from_detail_texts():
+    """Kuda-kuda baja profil memakai data berbeda dari gording: designasi
+    dan kg/m wajib berasal dari teks detail, lalu entry tetap perlu_review
+    karena AI hanya memberi usulan, bukan angka final RAB."""
+    denah = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH RANGKA ATAP", zone="struktur_atap"),
+        elements=[ElementInstance(kode="KD9", alamat="A1")],
+    )
+    detail = TkgSheet(
+        sheet_id="S2", jenis="detail", meta=SheetMeta(judul="DETAIL KUDA-KUDA", zone="detail_tabel"),
+        unclassified=[
+            Unclassified(raw="KD 9", alasan="x"),
+            Unclassified(raw="PROFIL WF 200.100.5.5.8", alasan="x"),
+            Unclassified(raw="BERAT PROFIL 21.3 KG/M", alasan="x"),
+            Unclassified(raw="PANJANG BATANG 6.5 M", alasan="x"),
+            Unclassified(raw="JUMLAH 12 BATANG", alasan="x"),
+        ],
+    )
+    fake = _FakeAiAssistClient({
+        "designation": "WF 200.100.5.5.8",
+        "kg_per_m": 21.3,
+        "length_m": 6.5,
+        "qty": 12,
+        "confidence": 0.82,
+        "reasoning": "designasi, berat, panjang, dan jumlah disebut eksplisit.",
+        "source_texts": [
+            "PROFIL WF 200.100.5.5.8",
+            "BERAT PROFIL 21.3 KG/M",
+            "PANJANG BATANG 6.5 M",
+            "JUMLAH 12 BATANG",
+        ],
+    })
+
+    result = consolidate_document(_doc([denah, detail]), ai_client=fake)
+
+    entry = next(e for e in result.element_registry if e.kode == "KD9")
+    assert entry.kategori == "kuda_kuda"
+    assert entry.status == "perlu_review"
+    assert entry.ai_kuda_kuda_suggestion is not None
+    assert entry.ai_kuda_kuda_suggestion.designation == "WF 200.100.5.5.8"
+    assert entry.ai_kuda_kuda_suggestion.kg_per_m == 21.3
+    assert entry.ai_kuda_kuda_suggestion.length_m == 6.5
+    assert entry.ai_kuda_kuda_suggestion.qty == 12
+
+
+def test_ai_assist_kuda_kuda_not_invoked_without_client():
+    denah = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH RANGKA ATAP", zone="struktur_atap"),
+        elements=[ElementInstance(kode="KD9", alamat="A1")],
+    )
+    detail = TkgSheet(
+        sheet_id="S2", jenis="detail", meta=SheetMeta(judul="DETAIL KUDA-KUDA", zone="detail_tabel"),
+        unclassified=[
+            Unclassified(raw="KD 9", alasan="x"),
+            Unclassified(raw="PROFIL WF 200.100.5.5.8", alasan="x"),
+            Unclassified(raw="BERAT PROFIL 21.3 KG/M", alasan="x"),
+        ],
+    )
+
+    result = consolidate_document(_doc([denah, detail]))
+
+    entry = next(e for e in result.element_registry if e.kode == "KD9")
+    assert entry.ai_kuda_kuda_suggestion is None
+
+
 def test_ai_assist_kusen_creates_synthetic_entries_per_type_when_schedule_found():
     """Beda dari dinding (1 entry) -- jadwal kusen bisa hasilkan BEBERAPA
     entry sekaligus, satu per tipe pintu/jendela."""

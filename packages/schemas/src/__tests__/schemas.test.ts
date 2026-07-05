@@ -14,6 +14,7 @@ import {
   CPMResult,
   SchedulePlanRequest,
   SchedulePlanResult,
+  AiKudaKudaSuggestionSchema,
   DrawingWorkItemsResultSchema,
 } from "../index";
 
@@ -242,6 +243,31 @@ describe("DrawingWorkItemsResult schema", () => {
     expect(result.work_items[0].formula_status).toBe("dihitung");
     expect(result.work_items[1].formula_status).toBe("belum_didukung");
     expect(result.work_items[1].volume).toBeNull();
+  });
+});
+
+describe("AiKudaKudaSuggestionSchema", () => {
+  it("parses complete kuda-kuda profile suggestion", () => {
+    const result = AiKudaKudaSuggestionSchema.parse({
+      designation: "WF 200.100.5.5.8",
+      kg_per_m: 21.3,
+      length_m: 6.5,
+      qty: 12,
+      confidence: 0.82,
+      reasoning: "designasi, berat, panjang, dan jumlah disebut eksplisit",
+      source_texts: [
+        "PROFIL WF 200.100.5.5.8",
+        "BERAT PROFIL 21.3 KG/M",
+        "PANJANG BATANG 6.5 M",
+        "JUMLAH 12 BATANG",
+      ],
+      model: "gemini-2.5-flash",
+      generated_at: "2026-07-05T00:00:00+00:00",
+    });
+
+    expect(result.designation).toBe("WF 200.100.5.5.8");
+    expect(result.kg_per_m).toBe(21.3);
+    expect(result.qty).toBe(12);
   });
 });
 

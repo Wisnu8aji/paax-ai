@@ -1999,6 +1999,22 @@ export const AiRoofFrameSuggestionSchema = z.object({
 });
 export type AiRoofFrameSuggestion = z.infer<typeof AiRoofFrameSuggestionSchema>;
 
+// 2026-07-05 (Task 02) - mirror `AiKudaKudaSuggestion`: rangka utama atap
+// profil baja. `kg_per_m` wajib dari teks eksplisit gambar, bukan dari
+// pengetahuan umum model.
+export const AiKudaKudaSuggestionSchema = z.object({
+  designation: z.string(),
+  kg_per_m: z.number(),
+  length_m: z.number(),
+  qty: z.number().int(),
+  confidence: z.number(),
+  reasoning: z.string(),
+  source_texts: z.array(z.string()).default([]),
+  model: z.string(),
+  generated_at: z.string(),
+});
+export type AiKudaKudaSuggestion = z.infer<typeof AiKudaKudaSuggestionSchema>;
+
 // 2026-07-05 (lanjutan Fase X2) — mirror `AiKusenSuggestion`: SATU baris
 // jadwal pintu/jendela. TIDAK PERNAH diikat ke kode asli gambar (kode tipe
 // kusen spt "P1" sering bentrok dgn prefiks taksonomi lain seperti

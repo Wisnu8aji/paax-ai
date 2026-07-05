@@ -13,6 +13,7 @@ from app.perception.bridging_atap import (
     bridge_trekstang,
 )
 from app.perception.bridging_dinding import DindingTakeoffClient, bridge_dinding_pasangan
+from app.perception.bridging_kuda_kuda import BajaTakeoffClient, bridge_kuda_kuda
 from app.perception.bridging_kusen import KusenTakeoffClient, bridge_kusen_schedule
 from app.perception.bridging_mep import MepTakeoffClient, bridge_mep_point
 from app.perception.bridging_tanah import TanahTakeoffClient, bridge_galian_footplat
@@ -317,11 +318,40 @@ def _bridged_roof_frame_item(
     )
 
 
+def _bridged_kuda_kuda_item(
+    entry: ElementRegistryEntry,
+    baja_client: BajaTakeoffClient | None,
+) -> DrawingWorkItem:
+    bridge = bridge_kuda_kuda(entry, baja_client=baja_client)
+    section = section_for_category("kuda_kuda")
+    status: FormulaStatus = bridge.formula_status
+    return DrawingWorkItem(
+        work_id=f"{entry.kode}:rangka_kuda_kuda:1",
+        kode=entry.kode,
+        kode_asli=entry.kode_asli or [entry.kode],
+        kategori=_entry_category(entry),
+        work_type="rangka_kuda_kuda",
+        uraian=_item_label(entry.kode, "kuda kuda", "rangka"),
+        wbs_section=section.code,
+        wbs_title=section.title,
+        formula_status=status,
+        unit=bridge.unit if status == "dihitung" else None,
+        volume=bridge.quantity if status == "dihitung" else None,
+        formula=bridge.formula,
+        rule_id=bridge.rule_id,
+        source_pages=_source_pages(entry),
+        element_refs=_element_refs(entry),
+        needs_review=status != "dihitung",
+        review_reason=bridge.review_reason if status == "perlu_review" else None,
+    )
+
+
 def _fallback_item(
     entry: ElementRegistryEntry,
     tanah_client: TanahTakeoffClient | None = None,
     dinding_client: DindingTakeoffClient | None = None,
     atap_client: AtapTakeoffClient | None = None,
+    baja_client: BajaTakeoffClient | None = None,
     kusen_client: KusenTakeoffClient | None = None,
     mep_client: MepTakeoffClient | None = None,
 ) -> DrawingWorkItem:
@@ -333,6 +363,8 @@ def _fallback_item(
         return _bridged_dinding_item(entry, dinding_client)
     if normalized_category in _ROOF_FRAME_BRIDGE_FN:
         return _bridged_roof_frame_item(entry, normalized_category, atap_client)
+    if normalized_category == "kuda_kuda":
+        return _bridged_kuda_kuda_item(entry, baja_client)
     if normalized_category == "kusen":
         return _bridged_kusen_item(entry, kusen_client)
     if normalized_category == "mep":
@@ -369,6 +401,7 @@ def build_work_items(
     tanah_client: TanahTakeoffClient | None = None,
     dinding_client: DindingTakeoffClient | None = None,
     atap_client: AtapTakeoffClient | None = None,
+    baja_client: BajaTakeoffClient | None = None,
     kusen_client: KusenTakeoffClient | None = None,
     mep_client: MepTakeoffClient | None = None,
 ) -> DrawingWorkItemsResult:
@@ -382,7 +415,8 @@ def build_work_items(
         if not matches:
             work_items.append(_fallback_item(
                 entry, tanah_client=tanah_client, dinding_client=dinding_client,
-                atap_client=atap_client, kusen_client=kusen_client, mep_client=mep_client,
+                atap_client=atap_client, baja_client=baja_client,
+                kusen_client=kusen_client, mep_client=mep_client,
             ))
             continue
         for index, item in enumerate(matches, start=1):

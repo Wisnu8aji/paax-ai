@@ -39,6 +39,7 @@ import re
 
 from app.perception.ai_assist.client import AiAssistClient
 from app.perception.ai_assist.dimension_assist import suggest_footplat_dimensions
+from app.perception.ai_assist.kuda_kuda_assist import suggest_kuda_kuda_profile
 from app.perception.ai_assist.kusen_assist import suggest_kusen_schedule
 from app.perception.ai_assist.mep_assist import suggest_mep_points
 from app.perception.ai_assist.roof_frame_assist import suggest_roof_frame_dimensions
@@ -271,6 +272,29 @@ def _apply_roof_frame_ai_assist(
             entry.ai_roof_frame_suggestion = suggestion
 
 
+def _apply_kuda_kuda_ai_assist(
+    doc: TkgDocument,
+    registry: dict[str, ElementRegistryEntry],
+    ai_client: AiAssistClient,
+) -> None:
+    for entry in registry.values():
+        if (entry.kategori or "").strip().lower() != "kuda_kuda":
+            continue
+        required = ("designation", "kg_per_m", "length_m", "qty")
+        existing_dimensi = entry.definisi.dimensi if entry.definisi else {}
+        if all(name in existing_dimensi for name in required):
+            continue
+        detail_texts = _collect_detail_texts(doc, entry)
+        if not detail_texts:
+            continue
+        suggestion = suggest_kuda_kuda_profile(
+            entry.kode, entry.kode_asli, detail_texts, ai_client,
+        )
+        if suggestion is not None:
+            entry.ai_kuda_kuda_suggestion = suggestion
+            entry.status = "perlu_review"
+
+
 _KODE_SANITIZE_PATTERN = re.compile(r"[^A-Z0-9]+")
 
 
@@ -460,6 +484,7 @@ def consolidate_document(
     if ai_client is not None:
         _apply_dimension_ai_assist(doc, registry, ai_client)
         _apply_roof_frame_ai_assist(doc, registry, ai_client)
+        _apply_kuda_kuda_ai_assist(doc, registry, ai_client)
         _apply_dinding_ai_assist(doc, registry, ai_client)
         _apply_kusen_ai_assist(doc, registry, ai_client)
         _apply_mep_ai_assist(doc, registry, ai_client)
