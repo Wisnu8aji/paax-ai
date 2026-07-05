@@ -1,13 +1,48 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-05** (Task 1-3 Codex — commit X2 bridging
-> non-struktur, bridging kuda-kuda baja profil, tool `analyze_drawing`
-> ai-orchestrator — SEMUA diverifikasi Claude BERSIH, tidak ada temuan
-> masalah/pelanggaran. Task 4 baru ditulis: bridging arsitektur area
-> (keramik dinding basah/plafon/waterproofing). Detail: §TASK 1-3
-> TERVERIFIKASI & TASK 4 di bawah. Konteks approval ai-orchestrator &
+> Update terakhir: **2026-07-05** (Task 4 Codex — bridging arsitektur area
+> keramik dinding basah/plafon/waterproofing — diverifikasi Claude BERSIH,
+> tidak ada temuan masalah. Task 5 baru ditulis: bridging 4 sub-domain
+> `ArsitekturRequest` sisa (pondasi batu/lantai/atap miring/aanstamping),
+> melengkapi SEMUA 7 sub-domain arsitektur. Detail: §TASK 4 TERVERIFIKASI
+> & TASK 5 di bawah. Riwayat Task 1-3 (juga bersih): §TASK 1-3
+> TERVERIFIKASI lebih bawah. Konteks approval ai-orchestrator &
 > koreksi pola kerja: §KOREKSI POLA KERJA & AI-ORCHESTRATOR DISETUJUI
 > lebih bawah).
+
+## TASK 4 TERVERIFIKASI BERSIH & TASK 5 DITULIS (Claude, 2026-07-05)
+
+**Verifikasi independen Task 4** (git log, test dijalankan ulang langsung
+oleh Claude): branch/PR #40 tetap benar (base `feat/fase-x1b-packaging-
+binding-footplat`, mergeable). 2 commit, body kosong (tidak ada
+`Co-Authored-By`). `apps/web/**`, `app/takeoff/arsitektur.py`, dan
+`binding.py` dikonfirmasi NOL perubahan. Test dijalankan ulang Claude:
+document-intelligence **272 passed** (cocok klaim, naik dari 244).
+
+**Validasi anti-halusinasi dicek LANGSUNG di kode**
+(`arsitektur_area_assist.py`): field REQUIRED hilang → seluruh usulan
+kategori itu ditolak; field OPTIONAL boleh kosong TAPI kalau ADA nilainya
+tetap wajib lolos validasi angka+rentang (dibuktikan test
+`test_arsitektur_area_assist_rejects_hallucinated_optional_field` —
+`a_neto_m2` valid tapi `keliling_tepi_m` dikarang (999.0, tidak ada di
+teks) → SELURUH usulan ditolak, bukan cuma field itu yang dibuang).
+Isi `_ARCHITECTURE_CATEGORIES` dikonfirmasi PERSIS klaim laporan
+(`plafon` ada, `keramik_dinding`/`waterproofing` tidak ada → dialihkan ke
+`section_for_category("finishing")`). **Kesimpulan: TIDAK ADA temuan
+masalah, tidak ada feedback korektif yang perlu disisipkan.**
+
+**Task 5 baru ditulis** (BELUM dijalankan):
+`docs/prompts/PAAX_CODEX_TASK_05_BRIDGING_ARSITEKTUR_PONDASI_LANTAI_ATAP_MIRING_AANSTAMPING_2026-07-05.md`
+— melengkapi 4 sub-domain `ArsitekturRequest` SISA (`pondasi_batu`,
+`lantai`, `atap_miring` — beda dari kategori "atap" gording/kuda_kuda
+Task 1/2 yang RANGKA, ini PENUTUP atap —, `aanstamping`), SEMUA rumus
+sudah ada & teruji sejak Fase 3b (2026-07-02) tapi belum pernah
+di-bridging. Task ini SENGAJA **memperluas infrastruktur Task 4** (modul
+`arsitektur_area_assist.py`/`bridging_arsitektur_area.py` yang sudah ada,
+BUKAN modul baru) — instruksi eksplisit REUSE, hindari duplikasi. Setelah
+task ini, SELURUH 7 sub-domain `ArsitekturRequest` akan ter-bridging
+(3 dari Task 4 + 4 dari Task 5). Task TUNGGAL (bukan rantai baru) —
+lanjutan branch/PR #40 yang sama.
 
 ## TASK 1-3 TERVERIFIKASI BERSIH & TASK 4 DITULIS (Claude, 2026-07-05)
 
