@@ -311,3 +311,360 @@ def test_smoke_real_plhut_consolidation_sane():
     pc1 = next(e for e in result.element_registry if e.kode == "PC1")
     assert len(pc1.instances) == 12
     assert pc1.status == "terbaca"
+
+
+# --- Fase X2 (2026-07-05) — wiring AI-assist ke consolidate_document -------
+# Fixture SENGAJA pakai kode/angka BERBEDA dari PLHUT (§0.1 "PLHUT = fixture
+# bukan template") -- kode "P9" (bukan P1-P7/PC1-PC3/F1-F2 milik PLHUT) dan
+# angka 900/800/450 (bukan 1500/1300 milik PLHUT) untuk membuktikan modul ini
+# generalisasi, bukan menghafal kasus PLHUT.
+
+class _FakeAiAssistClient:
+    def __init__(self, response: dict | None):
+        self.response = response
+        self.calls: list[dict] = []
+
+    def generate_json(self, *, system_prompt, user_prompt, response_schema):
+        self.calls.append({"system_prompt": system_prompt, "user_prompt": user_prompt})
+        return self.response
+
+
+def test_ai_assist_dimension_suggestion_attached_when_rule_based_gap_and_client_active():
+    """Elemen pondasi_telapak (P9) TANPA dimensi dari rule-based (tidak ada
+    tabel kode-dimensi yang match), tapi ADA sheet detail_tabel yang memuat
+    kode+angka lepas -- pola PERSIS temuan X1/X1B (PLHUT halaman 49), dgn
+    kode/angka BERBEDA. AI-assist harus menempel usulan TANPA mengubah
+    status/dimensi asli entry (tetap kosong, bukan 'dihitung')."""
+    denah = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH PONDASI", zone="substruktur"),
+        elements=[ElementInstance(kode="P9", alamat="A1")],
+    )
+    detail = TkgSheet(
+        sheet_id="S2", jenis="detail", meta=SheetMeta(judul="DETAIL PONDASI", zone="detail_tabel"),
+        unclassified=[
+            Unclassified(raw="P 9", alasan="tidak cocok grammar tabel"),
+            Unclassified(raw="900", alasan="tidak cocok grammar tabel"),
+            Unclassified(raw="800", alasan="tidak cocok grammar tabel"),
+            Unclassified(raw="kedalaman 450", alasan="tidak cocok grammar tabel"),
+        ],
+    )
+    fake = _FakeAiAssistClient({
+        "b_mm": 900, "l_mm": 800, "d_gali_mm": 450,
+        "confidence": 0.8,
+        "reasoning": "900/800 dimensi dasar, 450 kedalaman galian P9.",
+        "source_texts": ["900", "800", "kedalaman 450"],
+    })
+
+    result = consolidate_document(_doc([denah, detail]), ai_client=fake)
+
+    entry = next(e for e in result.element_registry if e.kode == "P9")
+    assert entry.kategori == "pondasi_telapak"
+    # Rule-based TETAP gagal (Aturan Emas: AI tidak menulis angka final) --
+    # dimensi asli tetap kosong, hanya usulan yang ditempel.
+    assert not (entry.definisi.dimensi if entry.definisi else {})
+    assert entry.ai_dimension_suggestion is not None
+    assert entry.ai_dimension_suggestion.b_mm == 900
+    assert entry.ai_dimension_suggestion.l_mm == 800
+    assert entry.ai_dimension_suggestion.d_gali_mm == 450
+    assert len(fake.calls) >= 1
+
+
+def test_ai_assist_not_invoked_when_no_client_provided():
+    """Tanpa `ai_client` (default None), perilaku IDENTIK dgn sebelum Fase
+    X2 -- tidak ada `ai_dimension_suggestion` sama sekali."""
+    denah = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH PONDASI", zone="substruktur"),
+        elements=[ElementInstance(kode="P9", alamat="A1")],
+    )
+    detail = TkgSheet(
+        sheet_id="S2", jenis="detail", meta=SheetMeta(judul="DETAIL PONDASI", zone="detail_tabel"),
+        unclassified=[Unclassified(raw="P 9", alasan="x"), Unclassified(raw="900", alasan="x")],
+    )
+    result = consolidate_document(_doc([denah, detail]))
+    entry = next(e for e in result.element_registry if e.kode == "P9")
+    assert entry.ai_dimension_suggestion is None
+
+
+def test_ai_assist_not_invoked_when_rule_based_dimension_already_present():
+    """Fast-path rule-based tetap diutamakan: kalau tabel kode-dimensi SUDAH
+    mengisi `definisi.dimensi`, AI-assist tidak boleh dipanggil sama sekali
+    (tidak perlu, dan mencegah biaya panggilan LLM yang tidak berguna)."""
+    denah = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH PONDASI", zone="substruktur"),
+        elements=[ElementInstance(kode="P9", alamat="A1")],
+        tables=[TkgTable(judul="TABEL PONDASI", records=[
+            TypeRecord(kode="P9", kategori="pondasi_telapak", dimensi={"b": 900.0, "l": 800.0}),
+        ])],
+    )
+    detail = TkgSheet(
+        sheet_id="S2", jenis="detail", meta=SheetMeta(judul="DETAIL PONDASI", zone="detail_tabel"),
+        unclassified=[Unclassified(raw="P 9", alasan="x"), Unclassified(raw="900", alasan="x")],
+    )
+    fake = _FakeAiAssistClient({
+        "b_mm": 900, "l_mm": 800, "d_gali_mm": None,
+        "confidence": 0.9, "reasoning": "tidak seharusnya dipanggil",
+        "source_texts": ["900"],
+    })
+    result = consolidate_document(_doc([denah, detail]), ai_client=fake)
+    entry = next(e for e in result.element_registry if e.kode == "P9")
+    assert entry.ai_dimension_suggestion is None
+    assert fake.calls == []
+
+
+# --- Fase X2 lanjutan (2026-07-05) -- wiring AI-assist dinding pasangan bata
+# Beda dari footplat: dinding TIDAK PUNYA kode per-instance sama sekali,
+# jadi konteksnya DOKUMEN-LUAS (semua sheet), bukan per-entry.
+
+def test_ai_assist_dinding_creates_synthetic_entry_when_wall_note_found():
+    sheet = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH LANTAI 1", zone="struktur_lantai_1"),
+        unclassified=[
+            Unclassified(raw="PANJANG DINDING KELILING 45.6 M", alasan="tidak cocok grammar"),
+            Unclassified(raw="TINGGI DINDING 3.0 M", alasan="tidak cocok grammar"),
+            Unclassified(raw="PASANGAN BATA 1/2 BATU", alasan="tidak cocok grammar"),
+        ],
+    )
+    fake = _FakeAiAssistClient({
+        "l_dinding_m": 45.6, "h_dinding_m": 3.0, "bukaan_total_m2": None,
+        "plester_sisi": 2, "acian": True, "cat": True,
+        "confidence": 0.75,
+        "reasoning": "panjang & tinggi dinding disebut eksplisit",
+        "source_texts": ["PANJANG DINDING KELILING 45.6 M", "TINGGI DINDING 3.0 M"],
+    })
+    result = consolidate_document(_doc([sheet]), ai_client=fake)
+
+    entry = next((e for e in result.element_registry if e.kategori == "dinding"), None)
+    assert entry is not None
+    assert entry.ai_dinding_suggestion is not None
+    assert entry.ai_dinding_suggestion.l_dinding_m == 45.6
+    assert entry.ai_dinding_suggestion.h_dinding_m == 3.0
+    assert entry.status == "perlu_review"  # tetap perlu_review, bukan "terbaca" -- belum dihitung engine
+
+
+def test_ai_assist_dinding_not_invoked_when_no_wall_keyword_anywhere():
+    """Fast filter: dokumen sama sekali tidak menyebut kata kunci dinding
+    -> tidak ada entry sintetis dibuat, TIDAK ADA panggilan client."""
+    sheet = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH KOLOM LT.1"),
+        elements=[ElementInstance(kode="K1", alamat="A1")],
+    )
+    fake = _FakeAiAssistClient({
+        "l_dinding_m": 10.0, "h_dinding_m": 3.0, "confidence": 1.0,
+        "reasoning": "tidak seharusnya dipanggil", "source_texts": ["x"],
+    })
+    result = consolidate_document(_doc([sheet]), ai_client=fake)
+    assert not any(e.kategori == "dinding" for e in result.element_registry)
+
+
+def test_ai_assist_dinding_not_invoked_without_client():
+    sheet = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH LANTAI 1"),
+        unclassified=[Unclassified(raw="PANJANG DINDING 45.6 M", alasan="x")],
+    )
+    result = consolidate_document(_doc([sheet]))
+    assert not any(e.kategori == "dinding" for e in result.element_registry)
+
+
+def test_ai_assist_roof_frame_suggestion_attached_when_rule_based_gap_and_client_active():
+    """gording SUDAH dikenali taksonomi (kode GD1) & masuk registry via
+    jalur normal (pola sama kolom/balok) -- gap murni bridging, pola PERSIS
+    X1 footplat. Fixture kode "GD9" & angka BERBEDA dari contoh manapun di
+    codebase (§0.1)."""
+    denah = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH ATAP", zone="struktur_atap"),
+        elements=[ElementInstance(kode="GD9", alamat="A1")],
+    )
+    detail = TkgSheet(
+        sheet_id="S2", jenis="detail", meta=SheetMeta(judul="DETAIL GORDING", zone="detail_tabel"),
+        unclassified=[
+            Unclassified(raw="GD 9", alasan="x"),
+            Unclassified(raw="L MIRING SISI 7 M", alasan="x"),
+            Unclassified(raw="JARAK GORDING 1.5 M", alasan="x"),
+            Unclassified(raw="L ARAH GORDING 9 M", alasan="x"),
+            Unclassified(raw="2 SISI ATAP", alasan="x"),
+        ],
+    )
+    fake = _FakeAiAssistClient({
+        "l_miring_sisi_m": 7.0, "s_gording_m": 1.5, "l_arah_gording_m": 9.0, "n_sisi_atap": 2,
+        "confidence": 0.8, "reasoning": "semua dimensi disebut eksplisit",
+        "source_texts": ["L MIRING SISI 7 M", "JARAK GORDING 1.5 M", "L ARAH GORDING 9 M", "2 SISI ATAP"],
+    })
+    result = consolidate_document(_doc([denah, detail]), ai_client=fake)
+
+    entry = next(e for e in result.element_registry if e.kode == "GD9")
+    assert entry.kategori == "gording"
+    assert entry.ai_roof_frame_suggestion is not None
+    assert entry.ai_roof_frame_suggestion.fields["l_miring_sisi_m"] == 7.0
+
+
+def test_ai_assist_roof_frame_not_invoked_when_rule_based_already_complete():
+    denah = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH ATAP", zone="struktur_atap"),
+        elements=[ElementInstance(kode="TS9", alamat="A1")],
+        tables=[TkgTable(judul="TABEL TREKSTANG", records=[
+            TypeRecord(kode="TS9", kategori="trekstang", dimensi={
+                "panjang_per_batang_m": 3.0, "jumlah": 10.0,
+            }),
+        ])],
+    )
+    detail = TkgSheet(
+        sheet_id="S2", jenis="detail", meta=SheetMeta(judul="DETAIL TREKSTANG", zone="detail_tabel"),
+        unclassified=[Unclassified(raw="TS 9", alasan="x"), Unclassified(raw="PANJANG 3 M", alasan="x")],
+    )
+    fake = _FakeAiAssistClient({
+        "panjang_per_batang_m": 3.0, "jumlah": 10.0,
+        "confidence": 0.9, "reasoning": "tidak seharusnya dipanggil", "source_texts": ["PANJANG 3 M"],
+    })
+    result = consolidate_document(_doc([denah, detail]), ai_client=fake)
+    entry = next(e for e in result.element_registry if e.kode == "TS9")
+    assert entry.ai_roof_frame_suggestion is None
+    assert fake.calls == []
+
+
+def test_ai_assist_kusen_creates_synthetic_entries_per_type_when_schedule_found():
+    """Beda dari dinding (1 entry) -- jadwal kusen bisa hasilkan BEBERAPA
+    entry sekaligus, satu per tipe pintu/jendela."""
+    sheet = TkgSheet(
+        sheet_id="S1", jenis="tabel", meta=SheetMeta(judul="JADWAL PINTU JENDELA"),
+        unclassified=[
+            Unclassified(raw="JADWAL PINTU JENDELA", alasan="x"),
+            Unclassified(raw="P1 0.8X2.1 JUMLAH 6", alasan="x"),
+            Unclassified(raw="J1 0.6X1.2 JUMLAH 10", alasan="x"),
+        ],
+    )
+    fake = _FakeAiAssistClient({
+        "items": [
+            {"tipe": "P1", "width_m": 0.8, "height_m": 2.1, "qty": 6,
+             "source_texts": ["P1 0.8X2.1 JUMLAH 6"]},
+            {"tipe": "J1", "width_m": 0.6, "height_m": 1.2, "qty": 10,
+             "source_texts": ["J1 0.6X1.2 JUMLAH 10"]},
+        ],
+    })
+    result = consolidate_document(_doc([sheet]), ai_client=fake)
+
+    kusen_entries = [e for e in result.element_registry if e.kategori == "kusen"]
+    assert len(kusen_entries) == 2
+    kodes = {e.kode for e in kusen_entries}
+    assert kodes == {"KUSEN-AUTO-P1", "KUSEN-AUTO-J1"}
+    for e in kusen_entries:
+        assert e.status == "perlu_review"
+        assert e.ai_kusen_suggestion is not None
+
+
+def test_ai_assist_kusen_does_not_collide_with_pondasi_telapak_code_p1():
+    """Verifikasi eksplisit anti-tabrakan: elemen pondasi "P1" (nyata, dari
+    kode) dan tipe kusen "P1" (dari jadwal teks) HARUS jadi 2 entry
+    terpisah dgn kode berbeda -- tidak boleh tertukar/timpa."""
+    denah = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH PONDASI"),
+        elements=[ElementInstance(kode="P1", alamat="A1")],
+    )
+    jadwal = TkgSheet(
+        sheet_id="S2", jenis="tabel", meta=SheetMeta(judul="JADWAL PINTU"),
+        unclassified=[
+            Unclassified(raw="JADWAL PINTU", alasan="x"),
+            Unclassified(raw="P1 0.8X2.1 JUMLAH 6", alasan="x"),
+        ],
+    )
+    fake = _FakeAiAssistClient({
+        "items": [{"tipe": "P1", "width_m": 0.8, "height_m": 2.1, "qty": 6,
+                   "source_texts": ["P1 0.8X2.1 JUMLAH 6"]}],
+    })
+    result = consolidate_document(_doc([denah, jadwal]), ai_client=fake)
+
+    pondasi_entry = next(e for e in result.element_registry if e.kode == "P1")
+    kusen_entry = next(e for e in result.element_registry if e.kode == "KUSEN-AUTO-P1")
+    assert pondasi_entry.kategori == "pondasi_telapak"
+    assert kusen_entry.kategori == "kusen"
+    assert pondasi_entry is not kusen_entry
+
+
+def test_ai_assist_kusen_not_invoked_without_client():
+    sheet = TkgSheet(
+        sheet_id="S1", jenis="tabel", meta=SheetMeta(judul="JADWAL PINTU"),
+        unclassified=[
+            Unclassified(raw="JADWAL PINTU", alasan="x"),
+            Unclassified(raw="P1 0.8X2.1 JUMLAH 6", alasan="x"),
+        ],
+    )
+    result = consolidate_document(_doc([sheet]))
+    assert not any(e.kategori == "kusen" for e in result.element_registry)
+
+
+def test_ai_assist_mep_creates_synthetic_entries_per_jenis_when_count_note_found():
+    """Slice TERAKHIR rangkaian X2 lanjutan -- pola sama kusen (dokumen-luas,
+    beberapa entry sekaligus), tapi HANYA dari catatan jumlah eksplisit."""
+    sheet = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH TITIK LISTRIK"),
+        unclassified=[
+            Unclassified(raw="TOTAL TITIK LAMPU 12", alasan="x"),
+            Unclassified(raw="JUMLAH STOP KONTAK 8", alasan="x"),
+        ],
+    )
+    fake = _FakeAiAssistClient({
+        "items": [
+            {"jenis": "lampu", "count": 12, "source_texts": ["TOTAL TITIK LAMPU 12"]},
+            {"jenis": "stop_kontak", "count": 8, "source_texts": ["JUMLAH STOP KONTAK 8"]},
+        ],
+    })
+    result = consolidate_document(_doc([sheet]), ai_client=fake)
+
+    mep_entries = [e for e in result.element_registry if e.kategori == "mep"]
+    assert len(mep_entries) == 2
+    kodes = {e.kode for e in mep_entries}
+    assert kodes == {"MEP-AUTO-LAMPU", "MEP-AUTO-STOPKONTAK"}
+    for e in mep_entries:
+        assert e.status == "perlu_review"
+        assert e.ai_mep_suggestion is not None
+
+
+def test_ai_assist_mep_not_invoked_without_client():
+    sheet = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH TITIK LISTRIK"),
+        unclassified=[Unclassified(raw="TOTAL TITIK LAMPU 12", alasan="x")],
+    )
+    result = consolidate_document(_doc([sheet]))
+    assert not any(e.kategori == "mep" for e in result.element_registry)
+
+
+def test_ai_assist_zone_suggestion_attached_for_unclassified_sheet_only():
+    """Sheet dgn judul yang TIDAK match rule-based apa pun (`zone=None`)
+    dapat usulan AI, TANPA menimpa `zone` asli. Sheet lain yang SUDAH
+    terklasifikasi rule-based (`zone` terisi) tidak boleh dapat usulan sama
+    sekali (fast-path rule-based tetap diutamakan)."""
+    unclassified_sheet = TkgSheet(
+        sheet_id="S1", jenis="campuran", meta=SheetMeta(judul="JUDUL TIDAK DIKENAL"),
+        unclassified=[Unclassified(raw="Peta lokasi kawasan", alasan="tidak match keyword")],
+    )
+    classified_sheet = TkgSheet(
+        sheet_id="S2", jenis="denah", meta=SheetMeta(judul="DENAH PONDASI", zone="substruktur"),
+    )
+    fake = _FakeAiAssistClient({
+        "zone": "situasi", "confidence": 0.65,
+        "reasoning": "Judul + 'peta lokasi kawasan' mengindikasikan site plan.",
+    })
+    result = consolidate_document(_doc([unclassified_sheet, classified_sheet]), ai_client=fake)
+
+    summary_unclassified = next(s for s in result.sheets if s.sheet_id == "S1")
+    summary_classified = next(s for s in result.sheets if s.sheet_id == "S2")
+    assert summary_unclassified.zone is None  # TIDAK PERNAH ditimpa
+    assert summary_unclassified.zone_ai_suggestion is not None
+    assert summary_unclassified.zone_ai_suggestion.zone == "situasi"
+    assert summary_classified.zone_ai_suggestion is None  # sudah terklasifikasi, tidak perlu usulan
+    assert len(fake.calls) == 1  # HANYA dipanggil utk sheet yang unclassified
+
+
+def test_ai_assist_zone_suggestion_discarded_when_model_returns_foreign_enum():
+    """Validasi deterministik tetap berlaku lewat jalur wiring penuh: kalau
+    model mengembalikan nilai zona di luar enum tertutup, `consolidate_
+    document` tidak menempelkan apa pun (bukan menyimpan nilai asing)."""
+    unclassified_sheet = TkgSheet(
+        sheet_id="S1", jenis="campuran", meta=SheetMeta(judul="JUDUL ANEH"),
+    )
+    fake = _FakeAiAssistClient({
+        "zone": "kategori_karangan_model", "confidence": 0.99, "reasoning": "mengarang",
+    })
+    result = consolidate_document(_doc([unclassified_sheet]), ai_client=fake)
+    summary = result.sheets[0]
+    assert summary.zone is None
+    assert summary.zone_ai_suggestion is None
