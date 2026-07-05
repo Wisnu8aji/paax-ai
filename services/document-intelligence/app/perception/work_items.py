@@ -12,6 +12,12 @@ from app.perception.bridging_atap import (
     bridge_ikatan_angin,
     bridge_trekstang,
 )
+from app.perception.bridging_arsitektur_area import (
+    ArsitekturTakeoffClient,
+    bridge_keramik_dinding,
+    bridge_plafon,
+    bridge_waterproofing,
+)
 from app.perception.bridging_dinding import DindingTakeoffClient, bridge_dinding_pasangan
 from app.perception.bridging_kuda_kuda import BajaTakeoffClient, bridge_kuda_kuda
 from app.perception.bridging_kusen import KusenTakeoffClient, bridge_kusen_schedule
@@ -346,12 +352,60 @@ def _bridged_kuda_kuda_item(
     )
 
 
+_ARSITEKTUR_AREA_BRIDGE_FN = {
+    "keramik_dinding": bridge_keramik_dinding,
+    "plafon": bridge_plafon,
+    "waterproofing": bridge_waterproofing,
+}
+_ARSITEKTUR_AREA_WORK_TYPE = {
+    "keramik_dinding": "keramik_dinding",
+    "plafon": "plafon",
+    "waterproofing": "waterproofing",
+}
+_ARSITEKTUR_AREA_SECTION_CATEGORY = {
+    "keramik_dinding": "finishing",
+    "plafon": "plafon",
+    "waterproofing": "finishing",
+}
+
+
+def _bridged_arsitektur_area_item(
+    entry: ElementRegistryEntry,
+    kategori: str,
+    arsitektur_area_client: ArsitekturTakeoffClient | None,
+) -> DrawingWorkItem:
+    bridge = _ARSITEKTUR_AREA_BRIDGE_FN[kategori](entry, arsitektur_client=arsitektur_area_client)
+    work_type = _ARSITEKTUR_AREA_WORK_TYPE[kategori]
+    section = section_for_category(_ARSITEKTUR_AREA_SECTION_CATEGORY[kategori])
+    status: FormulaStatus = bridge.formula_status
+    return DrawingWorkItem(
+        work_id=f"{entry.kode}:{work_type}:1",
+        kode=entry.kode,
+        kode_asli=entry.kode_asli or [entry.kode],
+        kategori=_entry_category(entry),
+        work_type=work_type,
+        uraian=_item_label(entry.kode, kategori, None),
+        wbs_section=section.code,
+        wbs_title=section.title,
+        formula_status=status,
+        unit=bridge.unit if status == "dihitung" else None,
+        volume=bridge.quantity if status == "dihitung" else None,
+        formula=bridge.formula,
+        rule_id=bridge.rule_id,
+        source_pages=_source_pages(entry),
+        element_refs=_element_refs(entry),
+        needs_review=status != "dihitung",
+        review_reason=bridge.review_reason if status == "perlu_review" else None,
+    )
+
+
 def _fallback_item(
     entry: ElementRegistryEntry,
     tanah_client: TanahTakeoffClient | None = None,
     dinding_client: DindingTakeoffClient | None = None,
     atap_client: AtapTakeoffClient | None = None,
     baja_client: BajaTakeoffClient | None = None,
+    arsitektur_area_client: ArsitekturTakeoffClient | None = None,
     kusen_client: KusenTakeoffClient | None = None,
     mep_client: MepTakeoffClient | None = None,
 ) -> DrawingWorkItem:
@@ -365,6 +419,8 @@ def _fallback_item(
         return _bridged_roof_frame_item(entry, normalized_category, atap_client)
     if normalized_category == "kuda_kuda":
         return _bridged_kuda_kuda_item(entry, baja_client)
+    if normalized_category in _ARSITEKTUR_AREA_BRIDGE_FN:
+        return _bridged_arsitektur_area_item(entry, normalized_category, arsitektur_area_client)
     if normalized_category == "kusen":
         return _bridged_kusen_item(entry, kusen_client)
     if normalized_category == "mep":
@@ -402,6 +458,7 @@ def build_work_items(
     dinding_client: DindingTakeoffClient | None = None,
     atap_client: AtapTakeoffClient | None = None,
     baja_client: BajaTakeoffClient | None = None,
+    arsitektur_area_client: ArsitekturTakeoffClient | None = None,
     kusen_client: KusenTakeoffClient | None = None,
     mep_client: MepTakeoffClient | None = None,
 ) -> DrawingWorkItemsResult:
@@ -416,6 +473,7 @@ def build_work_items(
             work_items.append(_fallback_item(
                 entry, tanah_client=tanah_client, dinding_client=dinding_client,
                 atap_client=atap_client, baja_client=baja_client,
+                arsitektur_area_client=arsitektur_area_client,
                 kusen_client=kusen_client, mep_client=mep_client,
             ))
             continue

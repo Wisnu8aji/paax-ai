@@ -586,6 +586,53 @@ def test_ai_assist_kuda_kuda_not_invoked_without_client():
     assert entry.ai_kuda_kuda_suggestion is None
 
 
+def test_ai_assist_arsitektur_area_creates_plafon_synthetic_entry_when_note_found():
+    sheet = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH PLAFON", zone="arsitektur"),
+        unclassified=[
+            Unclassified(raw="PLAFON AREA NETO 45 M2", alasan="x"),
+            Unclassified(raw="KELILING TEPI 28 M", alasan="x"),
+        ],
+    )
+    fake = _FakeAiAssistClient({
+        "a_neto_m2": 45.0,
+        "keliling_tepi_m": 28.0,
+        "confidence": 0.8,
+        "reasoning": "area plafon dan keliling tepi disebut eksplisit",
+        "source_texts": ["PLAFON AREA NETO 45 M2", "KELILING TEPI 28 M"],
+    })
+
+    result = consolidate_document(_doc([sheet]), ai_client=fake)
+
+    entry = next(e for e in result.element_registry if e.kode == "PLAFON-AUTO-1")
+    assert entry.kategori == "plafon"
+    assert entry.status == "perlu_review"
+    assert entry.ai_arsitektur_area_suggestion is not None
+    assert entry.ai_arsitektur_area_suggestion.fields == {
+        "a_neto_m2": 45.0,
+        "keliling_tepi_m": 28.0,
+    }
+
+
+def test_ai_assist_arsitektur_area_not_invoked_without_keywords():
+    sheet = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH KOLOM", zone="struktur_lantai_1"),
+        elements=[ElementInstance(kode="K1", alamat="A1")],
+        unclassified=[Unclassified(raw="CATATAN UMUM STRUKTUR", alasan="x")],
+    )
+    fake = _FakeAiAssistClient({
+        "a_neto_m2": 45.0,
+        "confidence": 0.8,
+        "reasoning": "tidak seharusnya dipanggil",
+        "source_texts": ["CATATAN UMUM STRUKTUR"],
+    })
+
+    result = consolidate_document(_doc([sheet]), ai_client=fake)
+
+    assert not any(e.kategori in {"keramik_dinding", "plafon", "waterproofing"} for e in result.element_registry)
+    assert fake.calls == []
+
+
 def test_ai_assist_kusen_creates_synthetic_entries_per_type_when_schedule_found():
     """Beda dari dinding (1 entry) -- jadwal kusen bisa hasilkan BEBERAPA
     entry sekaligus, satu per tipe pintu/jendela."""

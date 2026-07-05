@@ -15,6 +15,7 @@ import {
   SchedulePlanRequest,
   SchedulePlanResult,
   AiKudaKudaSuggestionSchema,
+  AiArsitekturAreaSuggestionSchema,
   DrawingWorkItemsResultSchema,
 } from "../index";
 
@@ -268,6 +269,27 @@ describe("AiKudaKudaSuggestionSchema", () => {
     expect(result.designation).toBe("WF 200.100.5.5.8");
     expect(result.kg_per_m).toBe(21.3);
     expect(result.qty).toBe(12);
+  });
+});
+
+describe("AiArsitekturAreaSuggestionSchema", () => {
+  it("parses generic area-based architecture suggestion", () => {
+    const result = AiArsitekturAreaSuggestionSchema.parse({
+      kategori: "plafon",
+      fields: {
+        a_neto_m2: 45,
+        keliling_tepi_m: 28,
+      },
+      confidence: 0.8,
+      reasoning: "area plafon dan keliling tepi disebut eksplisit",
+      source_texts: ["PLAFON AREA NETO 45 M2", "KELILING TEPI 28 M"],
+      model: "gemini-2.5-flash",
+      generated_at: "2026-07-05T00:00:00+00:00",
+    });
+
+    expect(result.kategori).toBe("plafon");
+    expect(result.fields.a_neto_m2).toBe(45);
+    expect(result.fields.keliling_tepi_m).toBe(28);
   });
 });
 

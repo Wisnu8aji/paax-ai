@@ -129,6 +129,20 @@ class AiKudaKudaSuggestion(BaseModel):
     generated_at: str
 
 
+class AiArsitekturAreaSuggestion(BaseModel):
+    """Usulan AI-assist utk item arsitektur berbasis area/keliling yang tidak
+    punya kode per-instance: keramik_dinding, plafon, waterproofing. `fields`
+    berisi field numerik tervalidasi per kategori; tetap kandidat review,
+    bukan angka final RAB."""
+    kategori: str
+    fields: Dict[str, float] = Field(default_factory=dict)
+    confidence: float
+    reasoning: str
+    source_texts: List[str] = Field(default_factory=list)
+    model: str
+    generated_at: str
+
+
 class AiKusenSuggestion(BaseModel):
     """Usulan AI-assist (2026-07-05, lanjutan Fase X2) utk SATU baris jadwal
     kusen pintu/jendela. TIDAK PERNAH diikat ke kode asli di gambar --
@@ -173,6 +187,7 @@ class ElementRegistryEntry(BaseModel):
     ai_dinding_suggestion: Optional[AiDindingSuggestion] = None
     ai_roof_frame_suggestion: Optional[AiRoofFrameSuggestion] = None
     ai_kuda_kuda_suggestion: Optional[AiKudaKudaSuggestion] = None
+    ai_arsitektur_area_suggestion: Optional[AiArsitekturAreaSuggestion] = None
     ai_kusen_suggestion: Optional[AiKusenSuggestion] = None
     ai_mep_suggestion: Optional[AiMepSuggestion] = None
 

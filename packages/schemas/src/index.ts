@@ -2015,6 +2015,19 @@ export const AiKudaKudaSuggestionSchema = z.object({
 });
 export type AiKudaKudaSuggestion = z.infer<typeof AiKudaKudaSuggestionSchema>;
 
+// 2026-07-05 (Task 04) - mirror `AiArsitekturAreaSuggestion`: item
+// arsitektur berbasis area/keliling tanpa kode per-instance.
+export const AiArsitekturAreaSuggestionSchema = z.object({
+  kategori: z.string(),
+  fields: z.record(z.number()).default({}),
+  confidence: z.number(),
+  reasoning: z.string(),
+  source_texts: z.array(z.string()).default([]),
+  model: z.string(),
+  generated_at: z.string(),
+});
+export type AiArsitekturAreaSuggestion = z.infer<typeof AiArsitekturAreaSuggestionSchema>;
+
 // 2026-07-05 (lanjutan Fase X2) — mirror `AiKusenSuggestion`: SATU baris
 // jadwal pintu/jendela. TIDAK PERNAH diikat ke kode asli gambar (kode tipe
 // kusen spt "P1" sering bentrok dgn prefiks taksonomi lain seperti
