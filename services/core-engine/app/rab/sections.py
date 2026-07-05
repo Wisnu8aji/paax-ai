@@ -7,42 +7,23 @@ subtotal & bobot per seksi. AI (lapis orkestrasi) cukup memberi `section` per
 item hasil screening gambar; SEMUA angka tetap dihitung engine.
 """
 from __future__ import annotations
+import sys
+from pathlib import Path
 from typing import Dict, List, Optional
 from pydantic import BaseModel
 
 from .models import AHSPItem, ResourcePrice, RABLineInput, RABLine
 from .rab import compute_rab, money
 
+try:
+    from paax_schemas.wbs import WBS_SECTIONS, normalize_section, section_title
+except ModuleNotFoundError:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "packages" / "schemas" / "python"))
+    from paax_schemas.wbs import WBS_SECTIONS, normalize_section, section_title
 
-# Urutan & judul kanonik (sesuai template WBS yang dipakai estimator ID).
-WBS_SECTIONS: List[tuple[str, str]] = [
-    ("I", "Pekerjaan Persiapan"),
-    ("II", "Pekerjaan Tanah"),
-    ("III", "Pekerjaan Struktur"),
-    ("IV", "Pekerjaan Arsitektur / Finishing"),
-    ("V", "Pekerjaan MEP"),
-    ("VI", "Pekerjaan Luar"),
-    ("VII", "Pekerjaan Akhir"),
-]
 _TITLES: Dict[str, str] = {code: title for code, title in WBS_SECTIONS}
 _ORDER: Dict[str, int] = {code: i for i, (code, _) in enumerate(WBS_SECTIONS)}
 _OTHER = "LAINNYA"
-
-
-def normalize_section(raw: Optional[str]) -> str:
-    """Map input section ('iii', 'III', '3', 'Struktur') ke kode kanonik."""
-    if not raw:
-        return _OTHER
-    s = raw.strip().upper()
-    if s in _TITLES:
-        return s
-    roman = {"1": "I", "2": "II", "3": "III", "4": "IV", "5": "V", "6": "VI", "7": "VII"}
-    if s in roman:
-        return roman[s]
-    for code, title in WBS_SECTIONS:
-        if s == title.upper() or s in title.upper():
-            return code
-    return _OTHER
 
 
 class RABSection(BaseModel):
@@ -92,7 +73,7 @@ def build_sectioned_rab(
         weight = round(sum(ln.weight_pct for ln in members), 4)
         sections.append(RABSection(
             code=code,
-            title=_TITLES.get(code, "Lainnya"),
+            title=section_title(code),
             lines=members,
             subtotal=subtotal,
             weight_pct=weight,

@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.tkg.builder import TkgBuildResult, build_tkg_from_text
+from app.perception.bridging_tanah import HttpTanahTakeoffClient
 from app.perception.work_items import DrawingWorkItemsResult, WorkItemsRequest, build_work_items
 
 
@@ -31,4 +32,8 @@ async def build_tkg(req: TkgBuildRequest):
 
 @router.post("/work-items", response_model=DrawingWorkItemsResult)
 async def group_work_items(req: WorkItemsRequest):
-    return build_work_items(req.consolidated, req.takeoff_items)
+    return build_work_items(
+        req.consolidated,
+        req.takeoff_items,
+        tanah_client=HttpTanahTakeoffClient.from_env(),
+    )

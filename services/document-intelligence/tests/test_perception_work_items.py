@@ -1,16 +1,20 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi.testclient import TestClient
 
 from app.main import app
 from app.perception.consolidated_models import (
     ConsolidatedExtraction,
+    ElementDefinisi,
     ElementInstanceRef,
     ElementRegistryEntry,
 )
 from app.perception.work_items import (
     TakeoffItemForWorkItem,
     build_work_items,
+    known_tkg_categories,
     section_for_category,
 )
 
@@ -61,10 +65,64 @@ def test_work_items_grouping_marks_calculated_and_unsupported_without_fabricatin
 
 
 def test_structural_categories_map_to_wbs_section_iii_via_core_normalize_section():
-    for category in ["kolom", "balok", "sloof", "plat", "ring_balok"]:
+    for category in ["kolom", "balok", "sloof", "plat", "ring_balok", "gording", "kuda_kuda", "ikatan_angin", "trekstang"]:
         section = section_for_category(category)
         assert section.code == "III"
         assert section.title == "Pekerjaan Struktur"
+
+
+def test_all_known_tkg_categories_map_to_explicit_wbs_section_not_lainnya():
+    categories = known_tkg_categories()
+
+    assert {"gording", "kuda_kuda", "ikatan_angin", "trekstang"} <= categories
+    for category in categories:
+        assert section_for_category(category).code != "LAINNYA", category
+
+
+def test_work_items_does_not_import_core_engine_sections_by_filesystem_path():
+    source = Path("app/perception/work_items.py").read_text(encoding="utf-8")
+
+    assert "spec_from_file_location" not in source
+    assert "core-engine" not in source
+
+
+def test_work_items_pondasi_telapak_without_depth_is_review_not_unsupported():
+    consolidated = ConsolidatedExtraction(element_registry=[
+        ElementRegistryEntry(
+            kode="PC1",
+            kode_asli=["PC1"],
+            kategori="pondasi_telapak",
+            instances=[ElementInstanceRef(sheet_page=1, alamat="A1", kode_raw="PC1")],
+            definisi=ElementDefinisi(dimensi={"b": 1.0, "l": 1.0}, satuan_dimensi="m", sumber_halaman=5),
+        )
+    ])
+
+    result = build_work_items(consolidated, [])
+    item = result.work_items[0]
+
+    assert item.work_type == "galian_footplat"
+    assert item.formula_status == "perlu_review"
+    assert item.volume is None
+    assert item.wbs_section == "II"
+    assert item.review_reason == "kedalaman galian tidak tersedia dari gambar, perlu input manual"
+
+
+def test_work_items_derives_pondasi_telapak_category_from_code_when_missing():
+    consolidated = ConsolidatedExtraction(element_registry=[
+        ElementRegistryEntry(
+            kode="PC1",
+            kode_asli=["PC1"],
+            instances=[ElementInstanceRef(sheet_page=1, alamat="A1", kode_raw="PC1")],
+        )
+    ])
+
+    result = build_work_items(consolidated, [])
+    item = result.work_items[0]
+
+    assert item.kategori == "pondasi_telapak"
+    assert item.work_type == "galian_footplat"
+    assert item.formula_status == "perlu_review"
+    assert item.review_reason == "dimensi footplat tidak lengkap di gambar: b, l"
 
 
 def test_work_items_endpoint_returns_grouping_response():

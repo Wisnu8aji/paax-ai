@@ -23,6 +23,8 @@ default yang terpakai dicatat di `params_used`/`assumptions` (RULE-BOE).
 from __future__ import annotations
 import math
 import re
+import sys
+from pathlib import Path
 from typing import Dict, List, Literal, Optional, Tuple
 
 from pydantic import BaseModel, Field
@@ -31,6 +33,12 @@ from ..geometry.volume import compute_volume
 from .models import ElementInstance, TkgDocument, TypeRecord
 from .params import ParamUsed, TakeoffParams
 from .validate import grid_distance_m, ke_meter
+
+try:
+    from paax_schemas.tkg_taxonomy import PREFIKS as _PREFIKS, kategori_dari_kode
+except ModuleNotFoundError:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "packages" / "schemas" / "python"))
+    from paax_schemas.tkg_taxonomy import PREFIKS as _PREFIKS, kategori_dari_kode
 
 
 # ─── Hasil takeoff ────────────────────────────────────────────────────────────
@@ -116,29 +124,6 @@ def berat_per_meter(d_mm: float) -> float:
 
 
 # ─── Kamus prefiks kode -> kategori (§2.1) ────────────────────────────────────
-
-_PREFIKS: List[Tuple[str, str]] = [
-    # urut dari yang terpanjang supaya "SL1" tidak tertangkap "S"
-    ("LATEI", "latei"), ("LINTEL", "latei"), ("GORDING", "gording"),
-    ("DB", "dinding_beton"), ("DW", "dinding_beton"),
-    ("PC", "pondasi_telapak"), ("SL", "sloof"), ("KP", "kolom_praktis"),
-    ("RB", "ring_balok"), ("CG", "balok"), ("CB", "balok"), ("BL", "latei"),
-    ("LT", "latei"), ("TG", "tangga"), ("KD", "kuda_kuda"), ("JR", "kuda_kuda"),
-    ("GD", "gording"), ("IA", "ikatan_angin"), ("TS", "trekstang"),
-    ("P", "pondasi_telapak"), ("F", "pondasi_telapak"), ("K", "kolom"),
-    ("G", "balok"), ("B", "balok"), ("S", "plat"),
-]
-
-
-def kategori_dari_kode(kode: str) -> Optional[str]:
-    up = kode.strip().upper()
-    for prefiks, kategori in _PREFIKS:
-        if up.startswith(prefiks):
-            sisa = up[len(prefiks):]
-            if sisa == "" or sisa[0].isdigit():
-                return kategori
-    return None
-
 
 # ─── Mesin takeoff ────────────────────────────────────────────────────────────
 

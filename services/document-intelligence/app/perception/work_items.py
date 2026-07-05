@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import importlib.util
 import sys
-import types
 from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
@@ -10,16 +8,23 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
+from app.perception.bridging_tanah import TanahTakeoffClient, bridge_galian_footplat
 from app.perception.consolidated_models import ConsolidatedExtraction, ElementRegistryEntry
 from app.perception.consolidate import _normalize_kode
+
+try:
+    from paax_schemas.tkg_taxonomy import kategori_dari_kode
+    from paax_schemas.tkg_taxonomy import known_tkg_categories as _shared_known_tkg_categories
+    from paax_schemas.wbs import normalize_section, section_title
+except ModuleNotFoundError:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "packages" / "schemas" / "python"))
+    from paax_schemas.tkg_taxonomy import kategori_dari_kode
+    from paax_schemas.tkg_taxonomy import known_tkg_categories as _shared_known_tkg_categories
+    from paax_schemas.wbs import normalize_section, section_title
 
 
 FormulaStatus = Literal["dihitung", "belum_didukung", "perlu_review"]
 
-_STRUCTURAL_CATEGORIES = {
-    "kolom", "kolom_praktis", "sloof", "balok", "ring_balok", "latei",
-    "plat", "pondasi_telapak", "dinding_beton", "tangga",
-}
 _MEP_CATEGORIES = {"mep", "sanitasi", "drainase", "plumbing", "listrik"}
 _ARCHITECTURE_CATEGORIES = {"dinding", "lantai", "plafon", "atap", "finishing", "kusen"}
 _EARTHWORK_CATEGORIES = {"tanah", "galian", "urugan"}
@@ -79,47 +84,23 @@ class WorkItemsRequest(BaseModel):
 
 
 @lru_cache(maxsize=1)
-def _core_sections_module():
-    """Load langsung module core-engine agar WBS_SECTIONS/normalize_section
-    tetap satu sumber, tanpa membuat taksonomi WBS paralel di service ini."""
-    rab_dir = Path(__file__).resolve().parents[3] / "core-engine" / "app" / "rab"
-    package_name = "_paax_core_engine_rab_for_document_intelligence"
-    if package_name not in sys.modules:
-        package = types.ModuleType(package_name)
-        package.__path__ = [str(rab_dir)]  # type: ignore[attr-defined]
-        sys.modules[package_name] = package
-
-    module_name = f"{package_name}.sections"
-    if module_name in sys.modules:
-        return sys.modules[module_name]
-
-    spec = importlib.util.spec_from_file_location(module_name, rab_dir / "sections.py")
-    if spec is None or spec.loader is None:
-        raise RuntimeError("Tidak bisa memuat core-engine app/rab/sections.py")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-def _wbs_title(code: str) -> str:
-    sections = dict(_core_sections_module().WBS_SECTIONS)
-    return sections.get(code, "Lainnya")
+def known_tkg_categories() -> set[str]:
+    return _shared_known_tkg_categories()
 
 
 def section_for_category(category: str | None) -> WbsSectionRef:
     normalized = (category or "").strip().lower()
-    if normalized in _STRUCTURAL_CATEGORIES:
-        code = _core_sections_module().normalize_section("Struktur")
+    if normalized in known_tkg_categories():
+        code = normalize_section("Struktur")
     elif normalized in _MEP_CATEGORIES:
-        code = _core_sections_module().normalize_section("MEP")
+        code = normalize_section("MEP")
     elif normalized in _ARCHITECTURE_CATEGORIES:
-        code = _core_sections_module().normalize_section("Arsitektur / Finishing")
+        code = normalize_section("Arsitektur / Finishing")
     elif normalized in _EARTHWORK_CATEGORIES:
-        code = _core_sections_module().normalize_section("Tanah")
+        code = normalize_section("Tanah")
     else:
-        code = _core_sections_module().normalize_section(None)
-    return WbsSectionRef(code=code, title=_wbs_title(code))
+        code = normalize_section(None)
+    return WbsSectionRef(code=code, title=section_title(code))
 
 
 def _source_pages(entry: ElementRegistryEntry) -> list[int]:
@@ -138,12 +119,12 @@ def _element_refs(entry: ElementRegistryEntry) -> list[str]:
 
 
 def _entry_category(entry: ElementRegistryEntry, item: TakeoffItemForWorkItem | None = None) -> str:
-    return (entry.kategori or (item.kategori if item else "") or "lain").strip()
+    return (entry.kategori or (item.kategori if item else "") or kategori_dari_kode(entry.kode) or "lain").strip()
 
 
 def _has_supported_formula(category: str, work_type: str | None = None) -> bool:
     normalized = category.strip().lower()
-    if normalized not in _STRUCTURAL_CATEGORIES:
+    if normalized not in known_tkg_categories():
         return False
     return work_type is None or work_type in _SUPPORTED_TKG_WORK_TYPES
 
@@ -180,8 +161,42 @@ def _from_takeoff(entry: ElementRegistryEntry, item: TakeoffItemForWorkItem, ind
     )
 
 
-def _fallback_item(entry: ElementRegistryEntry) -> DrawingWorkItem:
+def _bridged_pondasi_telapak_item(
+    entry: ElementRegistryEntry,
+    tanah_client: TanahTakeoffClient | None,
+) -> DrawingWorkItem:
+    bridge = bridge_galian_footplat(entry, tanah_client=tanah_client)
+    section = section_for_category("galian")
+    status: FormulaStatus = bridge.formula_status
+    return DrawingWorkItem(
+        work_id=f"{entry.kode}:galian_footplat:1",
+        kode=entry.kode,
+        kode_asli=entry.kode_asli or [entry.kode],
+        kategori=_entry_category(entry),
+        work_type="galian_footplat",
+        uraian=_item_label(entry.kode, "galian footplat", "galian"),
+        wbs_section=section.code,
+        wbs_title=section.title,
+        formula_status=status,
+        unit=bridge.unit if status == "dihitung" else None,
+        volume=bridge.quantity if status == "dihitung" else None,
+        formula=bridge.formula,
+        rule_id=bridge.rule_id,
+        source_pages=_source_pages(entry),
+        element_refs=_element_refs(entry),
+        needs_review=status != "dihitung",
+        review_reason=bridge.review_reason if status == "perlu_review" else None,
+    )
+
+
+def _fallback_item(
+    entry: ElementRegistryEntry,
+    tanah_client: TanahTakeoffClient | None = None,
+) -> DrawingWorkItem:
     category = _entry_category(entry)
+    if category.strip().lower() == "pondasi_telapak":
+        return _bridged_pondasi_telapak_item(entry, tanah_client)
+
     section = section_for_category(category)
     formula_supported = _has_supported_formula(category)
     status: FormulaStatus = "perlu_review" if formula_supported else "belum_didukung"
@@ -210,6 +225,7 @@ def _fallback_item(entry: ElementRegistryEntry) -> DrawingWorkItem:
 def build_work_items(
     consolidated: ConsolidatedExtraction,
     takeoff_items: list[TakeoffItemForWorkItem],
+    tanah_client: TanahTakeoffClient | None = None,
 ) -> DrawingWorkItemsResult:
     takeoff_by_code: dict[str, list[TakeoffItemForWorkItem]] = defaultdict(list)
     for item in takeoff_items:
@@ -219,7 +235,7 @@ def build_work_items(
     for entry in consolidated.element_registry:
         matches = takeoff_by_code.get(_normalize_kode(entry.kode), [])
         if not matches:
-            work_items.append(_fallback_item(entry))
+            work_items.append(_fallback_item(entry, tanah_client=tanah_client))
             continue
         for index, item in enumerate(matches, start=1):
             work_items.append(_from_takeoff(entry, item, index))
