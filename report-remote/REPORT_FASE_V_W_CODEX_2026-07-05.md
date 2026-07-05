@@ -155,9 +155,9 @@ Kategori yang saat ini ditandai belum didukung tanpa volume:
 
 ## Commit dan PR Fase V/W
 
-Commit SHA Fase V/W: TBD  
-PR Fase V/W: TBD  
-Status PR: draft setelah dibuat.
+Commit SHA Fase V/W: `efe51d3`  
+PR Fase V/W: https://github.com/Wisnu8aji/paax-ai/pull/36  
+Status PR: draft.
 
 Langkah owner berikutnya:
 
