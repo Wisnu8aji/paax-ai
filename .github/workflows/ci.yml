@@ -34,9 +34,17 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
+      - name: Install shared Python schemas
+        run: pip install -e ./packages/schemas/python
       - name: Install Core Engine dependencies
         working-directory: ./services/core-engine
         run: pip install -e . pytest httpx
-      - name: Run Python Tests
+      - name: Run Core Engine Tests
         working-directory: ./services/core-engine
+        run: pytest
+      - name: Install Document Intelligence dependencies
+        working-directory: ./services/document-intelligence
+        run: pip install -e . pytest httpx
+      - name: Run Document Intelligence Tests
+        working-directory: ./services/document-intelligence
         run: pytest

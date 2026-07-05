@@ -101,11 +101,43 @@ proyek ini).
 | T | AHSP auto-suggest (spek sudah ada: `docs/prompts/PAAX_CODEX_PROMPT_FASE_T_AHSP_AUTO_SUGGEST_2026-07-12.md`) | 🟢 selesai — aktif utk sebagian bekisting (margin terverifikasi), beton/besi sengaja tidak (ambigu nyata, lihat `docs/ai-map/STATE.md` Fase T) |
 | V | Reasoning lintas-halaman lanjutan: linking elemen→detail yang lebih toleran (variasi penulisan kode), fallback klasifikasi halaman via LLM terbatas (opsional, hanya kalau rule-based gagal) | ⚪ belum mulai |
 | W | Lapisan "Item Pekerjaan" (BOQ grouping): ubah `TakeoffItem`+registry jadi baris pekerjaan berkategori (persiapan/tanah/pondasi/sloof/kolom/balok/pelat/dinding/lantai/plafon/atap/sanitasi/drainase/finishing) — bagian yg SUDAH ada rumus (beton/bekisting/besi) dipetakan langsung, bagian yg BELUM ada rumus ditandai jujur "perlu rumus baru" | ⚪ belum mulai |
-| X | **KOREKSI 2026-07-13 (lihat catatan di bawah §4)**: rumus tanah/dinding/ arsitektur/baja SUDAH ADA di `app/takeoff/*` (Fase 3b, `docs/BRAIN_ALIGNMENT.md`) — gap sebenarnya adalah BRIDGING dari TKG/konsolidasi ke input model-model itu, bukan menulis rumus dari nol. Sisa gap rumus murni jauh lebih kecil dari perkiraan awal (F-F06, F-G04/G06-G14, F-C07-C10) | ⚪ belum mulai, tapi jauh lebih kecil dari perkiraan awal |
-| Y | Alur 1-tombol: rename "Analisa Gambar Kerja" → "Analisa RAB dari Gambar Kerja", wiring penuh upload→perception→konsolidasi→BOQ→takeoff→AHSP-suggest→isi halaman RAB otomatis; panel data mentah (grid/elemen/OCR) dipindah ke "mode developer" (toggle, bukan dihapus dari kode); halaman RAB tetap bisa diedit manual | ⚪ belum mulai |
+| X | **KOREKSI 2026-07-13 (lihat catatan di bawah §4)**: rumus tanah/dinding/ arsitektur/baja SUDAH ADA di `app/takeoff/*` (Fase 3b, `docs/BRAIN_ALIGNMENT.md`) — gap sebenarnya adalah BRIDGING dari TKG/konsolidasi ke input model-model itu, bukan menulis rumus dari nol. Sisa gap rumus murni jauh lebih kecil dari perkiraan awal (F-F06, F-G04/G06-G14, F-C07-C10) | 🟢 X1 (bridging galian footplat) selesai — lihat §4a |
+| X1B | Perbaikan arsitektur packaging `paax_schemas` (installable, bukan fallback `sys.path.insert`) + investigasi kenapa dimensi footplat PLHUT tidak sampai ke `TypeRecord.dimensi` | 🟢 selesai (2026-07-05, PR #38) — lihat §4a |
+| X2 | Lapisan AI-assist klasifikasi/binding — LLM fallback paralel (bukan pengganti) utk `zone_classifier.py`/`consolidate.py` saat rule-based gagal, dipicu bukti nyata X1B (13/13 `pondasi_telapak` PLHUT `perlu_review` krn dimensi hanya di halaman detail/grafis). Detail penuh: §X2 di bawah. | 🟢 slice #1 (dimensi footplat) + slice #2 (zona sheet) SELESAI diimplementasikan langsung oleh Claude 2026-07-05 (owner mengubah rencana dari "tulis prompt Codex" jadi "kerjakan langsung"), **belum di-commit**. `binding.py` (label→grid) belum jadi slice terpisah. |
+| Y | Alur 1-tombol: rename "Analisa Gambar Kerja" → "Analisa RAB dari Gambar Kerja", wiring penuh upload→perception→konsolidasi→BOQ→takeoff→AHSP-suggest→isi halaman RAB otomatis; panel data mentah (grid/elemen/OCR) dipindah ke "mode developer" (toggle, bukan dihapus dari kode); halaman RAB tetap bisa diedit manual | ⚪ belum mulai — lihat catatan interaksi dgn X2 di §X2.4 |
 | Z | Verifikasi ulang PLHUT (1).pdf yg sama dgn screenshot bukti, ukur noise 4281→berapa, update STATE.md | ⚪ belum mulai |
 
 Legenda: 🟢 selesai · 🟡 sebagian · ⚪ belum mulai.
+
+### 1a. Fase X1/X1B — ringkasan (detail penuh: `docs/ai-map/STATE.md`)
+
+- **X1 (prompt 2026-07-15, eksekusi 2026-07-05, PR #37)**: WBS & taksonomi
+  kategori TKG dipindah ke `packages/schemas/python/paax_schemas` (shared,
+  bukan lagi di-load lewat filesystem/importlib lintas-service). Modul baru
+  `bridging_tanah.py` membentuk `GalianFootplat` dari `ElementRegistryEntry`
+  lalu memanggil `core-engine /takeoff/tanah` — TIDAK ada hitung volume
+  manual di document-intelligence. Smoke PLHUT 88 halaman: 13 elemen
+  `pondasi_telapak` dikenali, **0 dihitung, 13 perlu_review** — alasan
+  seragam: "dimensi footplat tidak lengkap di gambar: b, l".
+- **X1B (prompt 2026-07-16, eksekusi 2026-07-05, PR #38)**: (a) packaging
+  `paax_schemas` diperbaiki jadi pip package installable
+  (`packages/schemas/python/pyproject.toml`), fallback `sys.path.insert`/
+  `except ModuleNotFoundError` dihapus dari source core-engine &
+  document-intelligence, CI+README mengikuti. (b) Investigasi mendalam kenapa
+  X1 gagal 13/13: halaman 49 PLHUT memang punya kode (`PC 1`, `PC 2`, `PC 3`)
+  dan angka (`1500`, `1300`, dst.) tetapi dalam bentuk **detail/grafis**
+  (`page.find_tables()` hanya menangkap fragmen tak berstruktur), BUKAN tabel
+  kode-dimensi yang bisa diparse `page.find_tables()`. Kesimpulan jujur:
+  bukan bug alias field (`bridging_tanah.py` sudah cari `b/b_ft/lebar/
+  lebar_bawah` & `l/l_ft/panjang/panjang_bawah`), tapi gap ekstraksi
+  detail/grafis. Tidak ada perbaikan dipaksakan — status `perlu_review`
+  tetap jujur. **Diverifikasi ulang di sesi ini (Claude, 2026-07-05)**:
+  klaim packaging & investigasi cocok dgn kondisi kode nyata (`git show
+  6f355a7`, grep `sys.path.insert`/`except ModuleNotFoundError` di source
+  target = kosong, `bridging_tanah.py` baris 91-92 memang mencari alias yang
+  diklaim).
+
+---
 
 **KOREKSI PENTING (ditemukan saat mulai Fase T, 2026-07-13):** perkiraan
 awal saya soal Fase X SALAH — saya belum cek `services/core-engine/app/
@@ -244,6 +276,148 @@ berubah setelah lihat hasil Fase U)
   (`GAMBAR KERJA PLHUT SURAKARTA (1).pdf` di Downloads, 24.6MB) lewat
   pipeline yang sudah diperbaiki, laporkan angka noise sebelum/sesudah
   (4281 → ?) secara jujur, update `docs/ai-map/STATE.md`.
+
+---
+
+## X2. Fase X2 — Lapisan AI-Assist Klasifikasi & Binding (ditulis 2026-07-05)
+
+### X2.0 Kenapa fase ini ada
+
+Fase X1/X1B (di atas) membuktikan dgn DATA NYATA (bukan dugaan) bahwa
+rule-based murni punya batas keras: PDF PLHUT asli (88 halaman) menghasilkan
+**13/13 (100%)** elemen `pondasi_telapak` jatuh `perlu_review` karena
+dimensinya (`b`, `l`, `d_gali`) hanya ada di halaman detail/grafis (mis.
+halaman 49: kode `PC 1/2/3` + angka `1500/1300/...` berserakan sbg span teks
+lepas, BUKAN tabel kode-dimensi yang bisa diparse `page.find_tables()`).
+Angka ini jauh di atas ambang 30-40% yang dipakai sbg sinyal keputusan (lihat
+diskusi owner-Claude 2026-07-05): ini alasan kuat utk memprioritaskan
+lapisan AI-assist berbasis-teks INI lebih dulu, sebelum menaikkan investasi
+ke Vision-LLM piksel penuh (v1.0, masih ditunda) yang risikonya jauh lebih
+tinggi (akurasi ~60% baca dimensi dari piksel).
+
+### X2.1 Prinsip desain (WAJIB, mengunci Aturan Emas — lihat `CLAUDE.md` §1.1)
+
+1. **Regex/rule-based tetap fast-path utama** — cepat, gratis, deterministik,
+   sudah teruji (`zone_classifier.py`, `binding.py`, `consolidate.py`,
+   `bridging_tanah.py`). LLM TIDAK PERNAH menggantikan jalur ini.
+2. **LLM hanya dipanggil untuk kasus yang SUDAH gagal/ambigu di rule-based**
+   (hasilnya `perlu_review` atau `belum_didukung`). Ini murni fallback, bukan
+   jalur paralel yang selalu jalan.
+3. **LLM membaca DATA YANG SUDAH DIEKSTRAK** — span teks + koordinat/bbox
+   presisi dari PyMuPDF (sudah ada di pipeline P1-P3) — BUKAN piksel gambar
+   mentah. Ini beda mendasar dari Vision-LLM v1.0 yang masih ditunda:
+   akurasi vision-on-pixel utk dimensi gambar teknik ~60% (`MASTER_PLAN.md`
+   §6.1), sedangkan data vektor PDF yang sudah diekstrak sudah EKSAK — LLM
+   hanya diminta menyusun/menghubungkan, bukan membaca ulang gambar.
+4. **Validasi silang deterministik wajib** sebelum usulan LLM jadi kandidat:
+   - Setiap angka yang diusulkan HARUS benar-benar muncul di span yang
+     diekstrak pada halaman itu (cek string match ke data mentah) — kalau
+     LLM "mengarang" angka yang tak ada di span, usulan itu DIBUANG.
+   - Setiap kode/grid yang diusulkan HARUS ada di `element_registry` yang
+     sudah dikonsolidasi — tidak boleh kode baru yang tak pernah terdeteksi.
+   - Nilai harus masuk rentang wajar (mis. dimensi footplat mm, bukan angka
+     administratif seperti nomor halaman/tahun anggaran yang ikut ternocap
+     span).
+5. **Tidak ada auto-commit ke input engine.** Usulan yang lolos validasi
+   tetap berstatus `perlu_review` (pola yang SUDAH ada di `work_items.py`),
+   dilengkapi field baru `ai_suggestion` (nilai + `confidence` + `reason` +
+   model + timestamp). Hanya setelah manusia approve, nilai itu boleh dipakai
+   sbg input `GalianFootplat`/model takeoff lain di `core-engine`.
+6. **Audit trail wajib** — tiap keputusan berbasis-AI dicatat lengkap (model,
+   prompt version, input span yang dipakai, output, reasoning) karena LLM
+   bisa bervariasi antar run dan RAB harus tetap auditable. Pakai temperature
+   rendah utk minimalkan varian; TIDAK diklaim deterministik.
+7. **Biaya & latency dipikirkan dari awal** — panggilan LLM per
+   halaman/elemen tidak gratis di skala produksi. Cache hasil per
+   dokumen+halaman (jangan panggil ulang dokumen yang sama), dan ukur biaya
+   nyata sebelum memutuskan skala penuh (selaras `MASTER_PLAN.md` §12-14).
+
+### X2.2 Slice pertama (vertical slice sempit, BUKAN rewrite besar)
+
+Scope sengaja SEMPIT — hanya menutup satu kasus konkret yang sudah
+dibuktikan gagal, generalisasi ke `zone_classifier`/`binding`/`consolidate`
+lain menyusul di slice berikutnya setelah pola ini terbukti aman:
+
+- Target: elemen `pondasi_telapak` (atau kategori takeoff lain yang butuh
+  bridging serupa) yang keluar `perlu_review` dari `bridging_tanah.py` karena
+  `dimensi` kosong/tidak lengkap, DAN halaman sumbernya terklasifikasi
+  `detail_tabel` (sudah ada dari `zone_classifier.py`).
+- Modul baru yang diusulkan: `services/document-intelligence/app/
+  perception/ai_assist/` — client LLM (pola sama dgn
+  `apps/web/src/lib/ai/orchestrator.ts`: `GEMINI_API_KEY` yang SUDAH ada di
+  `.env.example`, structured JSON response schema, temperature rendah) +
+  fungsi validasi deterministik (poin X2.1.4) + logging keputusan.
+- **WAJIB fixture sintetis independen** (bukan PLHUT hardcoded, konsisten
+  §0.1/§0.2) dgn kode & angka BERBEDA dari PLHUT, utk membuktikan
+  generalisasi bukan hafalan.
+- **WAJIB stub/mock client di test** — test unit TIDAK memanggil API Gemini
+  sungguhan (deterministik, gratis, cepat). Integrasi nyata (opsional,
+  di belakang `GEMINI_API_KEY` ada/tidak) diverifikasi terpisah, pola sama
+  dgn PaddleOCR (`ocr` extra, degradasi anggun kalau dependency/key tak ada).
+- Detail teknis & kriteria terima lengkap: lihat prompt Codex
+  `docs/prompts/PAAX_CODEX_PROMPT_FASE_X2_AI_ASSIST_KLASIFIKASI_BINDING_2026-07-05.md`.
+
+### X2.3 Keputusan arsitektur yang perlu diperhatikan
+
+- **Kenapa Python (document-intelligence), bukan Node (ai-orchestrator)?**
+  `CLAUDE.md` §3 Lapis 2A (Persepsi) SUDAH mencantumkan "Vision-LLM" sbg
+  teknologi yang sah di lapis ini. Memanggil LLM langsung dari
+  document-intelligence (Python) lebih dekat ke data (span+koordinat sudah
+  ada di proses yang sama, tidak perlu round-trip HTTP tambahan ke Node).
+  Ini BEDA dari klasifikasi AHSP (Tahap 3 pipeline, `MASTER_PLAN.md` §6.2)
+  yang tetap di Lapis 1 (Orkestrasi/TS) krn itu domain RAG+tool-calling.
+- **Update hasil implementasi (2026-07-05)**: TIDAK ada dependency Python
+  baru ditambahkan. `ai_assist/client.py` pakai REST call manual via stdlib
+  `urllib.request` (pola sama `bridging_tanah.py::HttpTanahTakeoffClient`),
+  bukan SDK `google-genai` — pilihan ini menghindari dependency baru sama
+  sekali, konsisten `CLAUDE.md` §2.
+
+### X2.3a Perbandingan provider AI (Gemini vs alternatif) — 2026-07-05
+
+Ditambahkan sbg dokumentasi referensi (owner meminta pencatatan opsi,
+**BUKAN mengganti keputusan/implementasi** — `GeminiAiAssistClient` TETAP
+default aktif di `ai_assist/client.py`). Tabel ini relevan spesifik utk
+lapisan AI-assist X2 (yang HANYA butuh baca/reasoning TEKS, bukan
+vision/piksel — lihat `CLAUDE.md` §1.1), jadi kriteria "harus multimodal"
+tidak berlaku mutlak seperti pada Tahap 1-2 pipeline gambar (§6.1
+`MASTER_PLAN.md`, vision-LLM ~60% akurat dimensi, tetap dihindari).
+
+| Provider / Model | Tipe | Harga (indikatif, wajib dikalibrasi ulang) | Context window | Kekuatan | Kelemahan | Akses |
+|---|---|---|---|---|---|---|
+| **Gemini 2.5 Flash** (dipakai sekarang, default) | Cloud-only, tertutup (Google tidak rilis weight) | Gratis perpetual di AI Studio (1500 request/hari); tarif per-token berlaku di luar kuota gratis / lewat Vertex AI | 1M token | Multimodal/vision native (berguna kalau X2 diperluas ke halaman raster/scan nanti), konteks besar, kuota gratis tinggi, SUDAH terintegrasi (`GEMINI_API_KEY` yang sama dipakai `apps/web/src/lib/ai/orchestrator.ts`) | Tertutup — tidak bisa di-audit/self-host; biaya per-token naik signifikan di luar kuota gratis pada skala produksi | REST API resmi Google (`generativelanguage.googleapis.com`), sudah dipakai `GeminiAiAssistClient` |
+| **DeepSeek** (V4 Flash / R1) | Open-weight (MoE 284B, 13B aktif) — bisa self-host ATAU via API resmi | Kredit trial 5-10 juta token/30 hari; setelah itu harga per-token jauh lebih murah dari Gemini | 1M token | Reasoning teks & coding sangat kuat, murah setelah trial, open-weight (independensi vendor kalau suatu saat dibutuhkan) | TIDAK ADA vision/multimodal — TIDAK masalah utk X2 (hanya baca teks), TAPI membatasi kalau modul ini nanti diperluas ke input gambar langsung | API resmi DeepSeek (cloud) — self-host = jalur arsitektur BERBEDA, lihat catatan di bawah |
+| **OpenRouter** | Aggregator cloud (bukan model sendiri) — meng-host puluhan model open-weight gratis (DeepSeek R1, Llama 3.3 70B, Qwen3 Coder 480B, Llama 4 Scout, Gemma 3, dll) | Gratis dgn rate limit 20 RPM / 50 request/hari; naik ke 1000/hari setelah top-up $10 sekali | Bervariasi per model (Qwen3 Coder 480B 262K, Llama 4 Scout 10M, dll) | Satu API key utk banyak model open-weight sekaligus — murah utk eksperimen/bandingkan kualitas tanpa integrasi berulang | Rate limit ketat di tier gratis; bergantung uptime pihak ketiga (aggregator, bukan vendor model langsung) | REST API OpenRouter (cloud) |
+| **Groq** | Platform inferensi cloud (hardware LPU khusus) — bukan model sendiri | Gratis utk Llama 3.3 70B (30 RPM, 1000 request/hari) | Tergantung model yang di-host | Latency sangat rendah (LPU) — relevan kalau AI-assist X2 dipanggil sinkron dlm alur `/drawings/analyze` dan latency jadi keluhan pengguna | Pilihan model terbatas ke yang mereka host; kuota gratis lebih ketat dari Gemini | REST API Groq (cloud) |
+| **Qwen3 Coder 480B** (lewat OpenRouter, gratis) | Open-weight | Gratis (tunduk rate limit OpenRouter di atas) | 262K token | Dioptimalkan utk coding & output terstruktur/JSON — relevan langsung utk `response_schema` yang dipakai `dimension_assist.py`/`zone_assist.py` | Tidak ada vision; akses tidak langsung (lewat OpenRouter, bukan API resmi Alibaba) | Lewat OpenRouter (cloud) |
+
+**Catatan penting (jangan disalahpahami sbg rencana self-host):** SEMUA
+opsi di atas — termasuk DeepSeek/Llama/Qwen yang open-weight — di tabel ini
+dipakai sbg **CLOUD API** (dipanggil lewat HTTP dari Cloud Run, arsitektur
+identik dgn `GeminiAiAssistClient` sekarang: stdlib `urllib.request`, tanpa
+dependency SDK baru). **Self-host model open-weight di infrastruktur
+sendiri** (perlu GPU, model-serving, DevOps tambahan) **adalah jalur
+arsitektur BERBEDA yang TIDAK direncanakan saat ini** — konsisten ADR-0003
+("Google-First Cloud", `docs/adr/0003-google-first-cloud.md`: "We will
+**not** host local models... The AI will be purely API-driven"). Tabel ini
+murni referensi keputusan masa depan (mis. kalau kuota gratis Gemini AI
+Studio tidak lagi cukup di skala produksi, atau kalau owner ingin
+membandingkan kualitas reasoning provider lain utk validasi anti-
+halusinasi X2) — bukan perubahan implementasi sesi ini.
+
+### X2.4 Interaksi dengan Fase Y (tombol 1-klik)
+
+Fase Y (alur 1-tombol "Analisa RAB dari Gambar Kerja") **TIDAK terblokir**
+oleh X2 — Y bisa dikerjakan Claude (frontend) secara paralel dgn X2 dikerjakan
+Codex (backend), sesuai pembagian kerja `CLAUDE.md` §9. Tapi urutan yang
+disarankan: **selesaikan slice pertama X2 dulu (atau minimal jalankan
+paralel, verifikasi bareng) sebelum mengklaim demo Fase Y "selesai"** —
+alasannya: nilai demo 1-tombol Y sangat bergantung pada berapa banyak item
+yang benar-benar `dihitung` vs `perlu_review`. Tanpa X2, demo Y akan jujur
+menunjukkan PLHUT: 0/13 pondasi_telapak dihitung — itu boleh (kejujuran lebih
+penting dari kesan "sudah pintar"), tapi kalau X2 slice pertama sudah
+menaikkan angka itu, Y jadi demo yang lebih kuat. Rekomendasi konkret:
+kerjakan X2 slice pertama SEBELUM verifikasi akhir end-to-end Fase Y, tidak
+harus sebelum Y MULAI dikerjakan.
 
 ---
 

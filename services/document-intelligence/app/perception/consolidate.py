@@ -35,10 +35,17 @@ data (tetap ada di `sheet.unclassified` mentah), hanya tidak lagi jadi
 from __future__ import annotations
 
 from functools import lru_cache
-from pathlib import Path
 import re
-import sys
 
+from app.perception.ai_assist.client import AiAssistClient
+from app.perception.ai_assist.arsitektur_area_assist import suggest_arsitektur_area
+from app.perception.ai_assist.dimension_assist import suggest_footplat_dimensions
+from app.perception.ai_assist.kuda_kuda_assist import suggest_kuda_kuda_profile
+from app.perception.ai_assist.kusen_assist import suggest_kusen_schedule
+from app.perception.ai_assist.mep_assist import suggest_mep_points
+from app.perception.ai_assist.roof_frame_assist import suggest_roof_frame_dimensions
+from app.perception.ai_assist.wall_assist import suggest_dinding_pasangan
+from app.perception.ai_assist.zone_assist import suggest_zone
 from app.perception.consolidated_models import (
     Assumption,
     BuildingDimensions,
@@ -48,13 +55,8 @@ from app.perception.consolidated_models import (
     ElementRegistryEntry,
     SheetSummary,
 )
-from app.perception.tkg.models import Grid, TkgDocument
-
-try:
-    from paax_schemas.tkg_taxonomy import kategori_dari_kode, known_tkg_categories
-except ModuleNotFoundError:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "packages" / "schemas" / "python"))
-    from paax_schemas.tkg_taxonomy import kategori_dari_kode, known_tkg_categories
+from app.perception.tkg.models import Grid, TkgDocument, TkgSheet
+from paax_schemas.tkg_taxonomy import kategori_dari_kode, known_tkg_categories
 
 _POSISI_MM_TOLERANCE = 1.0
 
@@ -184,7 +186,253 @@ def _grid_conflicts(doc: TkgDocument, canonical_grid: Grid, canonical_idx: int) 
     return conflicts
 
 
-def consolidate_document(doc: TkgDocument) -> ConsolidatedExtraction:
+def _sheet_mentions_kode(sheet: TkgSheet, entry: ElementRegistryEntry) -> bool:
+    """Fase X2 -- cek apakah sheet detail memuat label kode elemen ini
+    (mis. teks lepas "PC 1" di halaman detail), TOLERAN ke variasi
+    penulisan (spasi/strip) via `_normalize_kode` yang sudah dipakai utk
+    registry lintas-halaman (Fase V)."""
+    target_codes = {entry.kode, *entry.kode_asli}
+    normalized_targets = {_normalize_kode(code) for code in target_codes}
+    return any(_normalize_kode(item.raw) in normalized_targets for item in sheet.unclassified)
+
+
+def _collect_detail_texts(doc: TkgDocument, entry: ElementRegistryEntry) -> list[str]:
+    """Fase X2 -- kumpulkan SEMUA teks `unclassified` (span yang sudah
+    diekstrak PyMuPDF, BUKAN piksel) dari sheet `detail_tabel` yang memuat
+    label kode elemen ini. Ini konteks yang dikirim ke AI-assist -- validasi
+    anti-halusinasi di `dimension_assist.py` memastikan usulan model hanya
+    boleh merujuk teks yang benar-benar ada di daftar ini."""
+    texts: list[str] = []
+    for sheet in doc.sheets:
+        if sheet.meta.zone != "detail_tabel":
+            continue
+        if not _sheet_mentions_kode(sheet, entry):
+            continue
+        texts.extend(item.raw for item in sheet.unclassified)
+    return texts
+
+
+def _apply_dimension_ai_assist(
+    doc: TkgDocument,
+    registry: dict[str, ElementRegistryEntry],
+    ai_client: AiAssistClient,
+) -> None:
+    """Fase X2 slice #1 -- fallback paralel utk kategori `pondasi_telapak`
+    yang dimensinya kosong dari rule-based (temuan X1/X1B). TIDAK PERNAH
+    dipanggil kalau rule-based SUDAH berhasil (dimensi terisi) -- rule-based
+    tetap fast-path, AI hanya mengisi kekosongan."""
+    for entry in registry.values():
+        if (entry.kategori or "").strip().lower() != "pondasi_telapak":
+            continue
+        existing_dimensi = entry.definisi.dimensi if entry.definisi else {}
+        if existing_dimensi:
+            continue
+        detail_texts = _collect_detail_texts(doc, entry)
+        if not detail_texts:
+            continue
+        suggestion = suggest_footplat_dimensions(
+            entry.kode, entry.kode_asli, detail_texts, ai_client,
+        )
+        if suggestion is not None:
+            entry.ai_dimension_suggestion = suggestion
+
+
+_ROOF_FRAME_CATEGORIES = ("gording", "trekstang", "ikatan_angin")
+
+
+def _apply_roof_frame_ai_assist(
+    doc: TkgDocument,
+    registry: dict[str, ElementRegistryEntry],
+    ai_client: AiAssistClient,
+) -> None:
+    """Fase X2 lanjutan (2026-07-05) -- slice #4: rangka atap non-beton.
+    Pola PERSIS `_apply_dimension_ai_assist` (X1/footplat): kategori SUDAH
+    dikenali & entry SUDAH ada di registry (kode GORDING/GD, TS, IA) --
+    gap murni bridging+kelengkapan dimensi, bukan gap deteksi (beda dari
+    dinding). `kuda_kuda` SENGAJA tidak dicakup (butuh designasi profil
+    baja, gap terpisah)."""
+    for entry in registry.values():
+        kategori = (entry.kategori or "").strip().lower()
+        if kategori not in _ROOF_FRAME_CATEGORIES:
+            continue
+        required = {
+            "gording": ("l_miring_sisi_m", "s_gording_m", "l_arah_gording_m", "n_sisi_atap"),
+            "trekstang": ("panjang_per_batang_m", "jumlah"),
+            "ikatan_angin": ("a_m", "b_m", "qty"),
+        }[kategori]
+        existing_dimensi = entry.definisi.dimensi if entry.definisi else {}
+        if all(name in existing_dimensi for name in required):
+            continue
+        detail_texts = _collect_detail_texts(doc, entry)
+        if not detail_texts:
+            continue
+        suggestion = suggest_roof_frame_dimensions(
+            kategori, entry.kode, entry.kode_asli, detail_texts, ai_client,
+        )
+        if suggestion is not None:
+            entry.ai_roof_frame_suggestion = suggestion
+
+
+def _apply_kuda_kuda_ai_assist(
+    doc: TkgDocument,
+    registry: dict[str, ElementRegistryEntry],
+    ai_client: AiAssistClient,
+) -> None:
+    for entry in registry.values():
+        if (entry.kategori or "").strip().lower() != "kuda_kuda":
+            continue
+        required = ("designation", "kg_per_m", "length_m", "qty")
+        existing_dimensi = entry.definisi.dimensi if entry.definisi else {}
+        if all(name in existing_dimensi for name in required):
+            continue
+        detail_texts = _collect_detail_texts(doc, entry)
+        if not detail_texts:
+            continue
+        suggestion = suggest_kuda_kuda_profile(
+            entry.kode, entry.kode_asli, detail_texts, ai_client,
+        )
+        if suggestion is not None:
+            entry.ai_kuda_kuda_suggestion = suggestion
+            entry.status = "perlu_review"
+
+
+_KODE_SANITIZE_PATTERN = re.compile(r"[^A-Z0-9]+")
+_ARSITEKTUR_AREA_CATEGORIES = ("keramik_dinding", "plafon", "waterproofing")
+
+
+def _apply_arsitektur_area_ai_assist(
+    doc: TkgDocument,
+    registry: dict[str, ElementRegistryEntry],
+    ai_client: AiAssistClient,
+) -> None:
+    all_texts: list[str] = []
+    for sheet in doc.sheets:
+        all_texts.extend(item.raw for item in sheet.unclassified)
+
+    for kategori in _ARSITEKTUR_AREA_CATEGORIES:
+        kode = f"{kategori.upper()}-AUTO-1"
+        if kode in registry:
+            continue
+        suggestion = suggest_arsitektur_area(kategori, all_texts, ai_client)
+        if suggestion is None:
+            continue
+        registry[kode] = ElementRegistryEntry(
+            kode=kode,
+            kategori=kategori,
+            status="perlu_review",
+            ai_arsitektur_area_suggestion=suggestion,
+        )
+
+
+def _apply_mep_ai_assist(
+    doc: TkgDocument,
+    registry: dict[str, ElementRegistryEntry],
+    ai_client: AiAssistClient,
+) -> None:
+    """Fase X2 lanjutan (2026-07-05) -- slice #6 (TERAKHIR): titik MEP.
+    Pola sama kusen (dokumen-luas, bisa banyak entry sekaligus) TAPI HANYA
+    dari catatan jumlah eksplisit -- deteksi simbol/ikon dari piksel TIDAK
+    dicoba (di luar cakupan lapisan AI-assist berbasis-teks)."""
+    all_texts: list[str] = []
+    for sheet in doc.sheets:
+        all_texts.extend(item.raw for item in sheet.unclassified)
+    suggestions = suggest_mep_points(all_texts, ai_client)
+    for suggestion in suggestions:
+        safe_jenis = _KODE_SANITIZE_PATTERN.sub("", suggestion.jenis.upper()) or "TITIK"
+        kode = f"MEP-AUTO-{safe_jenis}"
+        if kode in registry:
+            continue
+        registry[kode] = ElementRegistryEntry(
+            kode=kode,
+            kategori="mep",
+            status="perlu_review",
+            ai_mep_suggestion=suggestion,
+        )
+
+
+def _apply_kusen_ai_assist(
+    doc: TkgDocument,
+    registry: dict[str, ElementRegistryEntry],
+    ai_client: AiAssistClient,
+) -> None:
+    """Fase X2 lanjutan (2026-07-05) -- slice #5: jadwal kusen pintu/jendela.
+    Pola sama dinding (dokumen-luas, entry sintetis) TAPI bisa menghasilkan
+    BANYAK entry (satu per tipe pintu/jendela) -- beda dari dinding yang
+    cuma satu. Kode SINTETIS SENGAJA memakai prefiks aman `KUSEN-AUTO-`
+    (BUKAN kode asli dari gambar, mis. "P1") krn kode tipe kusen sering
+    bentrok dgn prefiks taksonomi lain (P1 = pondasi_telapak)."""
+    all_texts: list[str] = []
+    for sheet in doc.sheets:
+        all_texts.extend(item.raw for item in sheet.unclassified)
+    suggestions = suggest_kusen_schedule(all_texts, ai_client)
+    for suggestion in suggestions:
+        safe_tipe = _KODE_SANITIZE_PATTERN.sub("", suggestion.tipe.upper()) or "TIPE"
+        kode = f"KUSEN-AUTO-{safe_tipe}"
+        if kode in registry:
+            continue
+        registry[kode] = ElementRegistryEntry(
+            kode=kode,
+            kategori="kusen",
+            status="perlu_review",
+            ai_kusen_suggestion=suggestion,
+        )
+
+
+_DINDING_SYNTHETIC_KODE = "DINDING-AUTO-1"
+
+
+def _apply_dinding_ai_assist(
+    doc: TkgDocument,
+    registry: dict[str, ElementRegistryEntry],
+    ai_client: AiAssistClient,
+) -> None:
+    """Fase X2 lanjutan (2026-07-05) -- slice #3: dinding pasangan bata.
+    BEDA dari footplat/zona: dinding TIDAK PUNYA kode per-instance sama
+    sekali (audit B0), jadi tidak ada `ElementRegistryEntry` yang bisa
+    "dilengkapi" -- konteksnya dikumpulkan DOKUMEN-LUAS (semua sheet, semua
+    unclassified text), dan kalau AI-assist menemukan+memvalidasi usulan,
+    SATU entry SINTETIS baru (`DINDING-AUTO-1`) ditambahkan ke registry.
+    Fast filter keyword (`has_wall_keyword`, gratis) dulu sebelum panggil
+    LLM sama sekali -- kalau dokumen tidak pernah menyebut kata kunci
+    dinding, tidak ada panggilan API sama sekali."""
+    if _DINDING_SYNTHETIC_KODE in registry:
+        return
+    all_texts: list[str] = []
+    for sheet in doc.sheets:
+        all_texts.extend(item.raw for item in sheet.unclassified)
+    suggestion = suggest_dinding_pasangan(all_texts, ai_client)
+    if suggestion is None:
+        return
+    registry[_DINDING_SYNTHETIC_KODE] = ElementRegistryEntry(
+        kode=_DINDING_SYNTHETIC_KODE,
+        kategori="dinding",
+        status="perlu_review",
+        ai_dinding_suggestion=suggestion,
+    )
+
+
+def _apply_zone_ai_assist(
+    doc: TkgDocument,
+    sheets: list[SheetSummary],
+    ai_client: AiAssistClient,
+) -> None:
+    """Fase X2 slice #2 -- fallback paralel utk sheet yang gagal
+    diklasifikasi `zone_classifier.py` (`zone is None`). TIDAK PERNAH
+    menimpa `zone` asli -- hanya menempel usulan tambahan."""
+    for summary in sheets:
+        if summary.zone is not None:
+            continue
+        source_sheet = doc.sheets[summary.page - 1]
+        context_texts = [item.raw for item in source_sheet.unclassified]
+        suggestion = suggest_zone(source_sheet.meta.judul, context_texts, ai_client)
+        if suggestion is not None:
+            summary.zone_ai_suggestion = suggestion
+
+
+def consolidate_document(
+    doc: TkgDocument,
+    ai_client: AiAssistClient | None = None,
+) -> ConsolidatedExtraction:
     sheets = [
         SheetSummary(
             page=i + 1, sheet_id=sheet.sheet_id, zone=sheet.meta.zone,
@@ -254,6 +502,20 @@ def consolidate_document(doc: TkgDocument) -> ConsolidatedExtraction:
             building_dimensions.total_y_mm = canonical_grid.total_y.nilai
         if building_dimensions.total_x_mm is not None or building_dimensions.total_y_mm is not None:
             building_dimensions.sumber = "grid"
+
+    # Fase X2 (2026-07-05) -- lapisan AI-assist HANYA jalan kalau caller
+    # menyediakan client aktif (mis. `GeminiAiAssistClient.from_env()`).
+    # Tanpa client (default `None`), perilaku IDENTIK dgn sebelum X2 -- ini
+    # fallback paralel, bukan jalur wajib.
+    if ai_client is not None:
+        _apply_dimension_ai_assist(doc, registry, ai_client)
+        _apply_roof_frame_ai_assist(doc, registry, ai_client)
+        _apply_kuda_kuda_ai_assist(doc, registry, ai_client)
+        _apply_arsitektur_area_ai_assist(doc, registry, ai_client)
+        _apply_dinding_ai_assist(doc, registry, ai_client)
+        _apply_kusen_ai_assist(doc, registry, ai_client)
+        _apply_mep_ai_assist(doc, registry, ai_client)
+        _apply_zone_ai_assist(doc, sheets, ai_client)
 
     return ConsolidatedExtraction(
         sheets=sheets,
