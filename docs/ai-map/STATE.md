@@ -1,13 +1,64 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-05** (Owner MENYETUJUI EKSPLISIT pembangunan
-> `services/ai-orchestrator` — status berubah dari "pending keputusan"
-> jadi "disetujui, spek Codex ditulis, siap dieksekusi". **Owner SEKALIGUS
-> mengoreksi pola kerja**: mulai sekarang Claude HANYA merancang, Codex
-> yang implementasi kode nyata (dinding/atap/kusen/MEP SEBELUMNYA
-> dikerjakan langsung oleh Claude — itu PENGECUALIAN yang sudah terlanjur
-> terjadi SEBELUM koreksi ini, bukan pola yang diulang). Detail lengkap:
-> §KOREKSI POLA KERJA & AI-ORCHESTRATOR DISETUJUI di bawah).
+> Update terakhir: **2026-07-05** (Task 1-3 Codex — commit X2 bridging
+> non-struktur, bridging kuda-kuda baja profil, tool `analyze_drawing`
+> ai-orchestrator — SEMUA diverifikasi Claude BERSIH, tidak ada temuan
+> masalah/pelanggaran. Task 4 baru ditulis: bridging arsitektur area
+> (keramik dinding basah/plafon/waterproofing). Detail: §TASK 1-3
+> TERVERIFIKASI & TASK 4 di bawah. Konteks approval ai-orchestrator &
+> koreksi pola kerja: §KOREKSI POLA KERJA & AI-ORCHESTRATOR DISETUJUI
+> lebih bawah).
+
+## TASK 1-3 TERVERIFIKASI BERSIH & TASK 4 DITULIS (Claude, 2026-07-05)
+
+**Verifikasi independen** (git log, test dijalankan ulang langsung oleh
+Claude, bukan percaya laporan) — **HASIL: BERSIH, TIDAK ADA TEMUAN
+MASALAH SAMA SEKALI** di ketiga task:
+
+- **Task 1** (commit X2 bridging dinding/atap/kusen/mep + footplat/zona):
+  branch `feat/x2-bridging-non-struktur-dinding-atap-kusen-mep` dibuat
+  BENAR dari `feat/fase-x1b-packaging-binding-footplat` (bukan `main`).
+  PR #40 draft, base benar, mergeable. 2 commit, body kosong (tidak ada
+  `Co-Authored-By`). `apps/web/**` dikonfirmasi nol perubahan (diff vs
+  base X1B kosong). Test dijalankan ulang Claude: document-intelligence
+  **229 passed** (cocok klaim).
+- **Task 2** (bridging kuda-kuda/profil baja): branch/PR sama, commit
+  bersih. **Anti-halusinasi `kg_per_m` diverifikasi LANGSUNG di kode**
+  (`kuda_kuda_assist.py`) — angka HANYA diterima kalau match ke angka yang
+  benar-benar ada di `source_texts` yang sudah divalidasi ada di
+  `detail_texts`; test `test_kuda_kuda_assist_rejects_standard_weight_
+  when_not_sourced_from_text` MEMBUKTIKAN skenario spesifik yang diminta
+  (model mengaku berat 14.0 kg/m dari "pengetahuan tabel baja umum" tapi
+  angka itu tidak ada di teks manapun → DITOLAK). `app/takeoff/baja.py`
+  dikonfirmasi TIDAK diubah. Test Claude jalankan ulang: **244 passed**
+  (cocok klaim).
+- **Task 3** (tool `analyze_drawing` ai-orchestrator): branch/PR #39
+  (base `main`) tetap benar. Commit bersih. Test Claude jalankan ulang
+  di worktree: **30 passed** (8 file), `tsc --noEmit` exit 0 — cocok
+  klaim. `services/document-intelligence/**` dikonfirmasi HANYA dibaca
+  (tidak diubah).
+
+**Kesimpulan**: ketiga task TIDAK PERLU perbaikan apa pun — Task 4 murni
+pekerjaan baru, tidak ada feedback korektif yang perlu disisipkan.
+
+**Investigasi `binding.py`** (salah satu dari 3 modul target awal konsep
+X2: `zone_classifier.py` ✓, `consolidate.py` ✓, `binding.py` — belum):
+**KESIMPULAN — SENGAJA TIDAK dikerjakan.** `binding.py` murni algoritma
+geometris (bbox vs titik grid + toleransi jarak), TIDAK ADA celah teks
+yang bisa diisi AI-assist — kasus `needs_review=True` terjadi krn elemen
+di luar rentang grid manapun (geometri), bukan krn ada data teks yang
+terlewat. Memaksakan AI-assist di sini akan melanggar prinsip "AI-assist
+hanya isi kekosongan teks/data terstruktur yang hilang" — jadi
+ditinggalkan, bukan gap tertunda.
+
+**Task 4 baru ditulis** (BELUM dijalankan):
+`docs/prompts/PAAX_CODEX_TASK_04_BRIDGING_ARSITEKTUR_KERAMIK_PLAFON_WATERPROOFING_2026-07-05.md`
+— bridging 3 kategori arsitektur area-based (`keramik_dinding` F-G04,
+`plafon` F-G09, `waterproofing` F-G10 — SEMUA sudah punya rumus lengkap
+di `app/takeoff/arsitektur.py`, belum pernah di-bridging) via pola yang
+SAMA PERSIS dinding (dokumen-luas, entry sintetis, krn kategori ini juga
+tidak punya kode per-instance). Task TUNGGAL (bukan rantai baru) — branch
+lanjutan `feat/x2-bridging-non-struktur-dinding-atap-kusen-mep` (PR #40).
 
 ## RANGKAIAN BRIDGING NON-STRUKTUR — DINDING→ATAP→KUSEN→MEP SELESAI (Claude, 2026-07-05)
 
