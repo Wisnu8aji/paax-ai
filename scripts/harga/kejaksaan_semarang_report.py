@@ -146,8 +146,25 @@ def nearest_rejected_candidates(
         scored.append(((category_score, unit_score, overlap, similarity, numeric_related), resource))
 
     scored.sort(key=lambda item: item[0], reverse=True)
+    top = scored[:limit]
+
+    # Kandidat dengan kemiripan NAMA tertinggi harus selalu ikut tampil, walau unit/
+    # kategori tidak cocok -- unit di master catalog kadang berlabel generik/keliru
+    # (mis. "unit" padahal seharusnya "buah"), sehingga kandidat paling relevan bisa
+    # tersingkir dari top-N gabungan hanya gara-gara field unit yang salah, bukan
+    # karena namanya memang jauh (kasus nyata: "Kloset jongkok porselen" vs
+    # M.GEN.0450 "Kloset Jongkok").
+    best_by_name = max(scored, key=lambda item: (item[0][2], item[0][3]), default=None)
+    if best_by_name is not None:
+        top_codes = {resource.get("code") for _, resource in top}
+        if best_by_name[1].get("code") not in top_codes:
+            # Ganti kandidat PALING LEMAH (bukan menambah panjang daftar) supaya
+            # potongan tampilan laporan (batas karakter) tidak memangkas kandidat
+            # yang justru paling relevan namanya.
+            top = [*top[:-1], best_by_name] if top else [best_by_name]
+
     candidates: list[dict[str, Any]] = []
-    for _, resource in scored[:limit]:
+    for _, resource in top:
         candidates.append({
             **_resource_summary(resource),
             "reject_reason": _reject_reason(source, resource),
