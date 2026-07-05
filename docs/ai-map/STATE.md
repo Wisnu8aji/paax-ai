@@ -6,7 +6,7 @@
 
 ## FASE X1 - BRIDGING GALIAN FOOTPLAT + FIX ARSITEKTUR (prompt 2026-07-15, eksekusi Codex 2026-07-05)
 Branch kerja: `feat/fase-x1-bridging-galian-footplat`.
-PR: dibuat sebagai draft setelah commit fase ini.
+PR: https://github.com/Wisnu8aji/paax-ai/pull/37
 Report remote: `report-remote/REPORT_FASE_X1_BRIDGING_GALIAN_CODEX_2026-07-05.md`.
 
 - **Fix WBS**: `document-intelligence` tidak lagi memuat
