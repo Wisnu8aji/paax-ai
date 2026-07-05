@@ -10,14 +10,14 @@
 import {
   RABResult, HSPBreakdown, SCurveResult, ScenarioResult, ValidationResult,
   VolumeResult, SectionedRABResult, SchedulePlanResult,
-  TkgValidationResultSchema, TakeoffResultSchema,
+  TkgValidationResultSchema, TakeoffResultSchema, TakeoffAhspSuggestResultSchema,
   DataCoverageResultSchema, ConfidenceResultSchema, QaResultSchema, BrainBoeSchema,
   ReviewTriageResultSchema, CorrectionRecordSchema, EvalRunResultSchema,
   BoeExportPayloadSchema, BbsExportPayloadSchema,
 } from "@paax/schemas";
 import type {
   SchedulePlanRequest, ScenarioParams,
-  TkgDocument, TkgValidationResult, TakeoffParams, TakeoffResult,
+  TkgDocument, TkgValidationResult, TakeoffParams, TakeoffResult, TakeoffAhspSuggestResult,
   DataCoverageResult, ConfidenceRequest, ConfidenceResult, QaRequest, QaResult,
   BrainBoeRequest, BrainBoe, ReviewTriageRequest, ReviewTriageResult,
   CorrectionLogRequest, CorrectionRecord, EvalRunRequest, EvalRunResult,
@@ -260,6 +260,23 @@ export async function takeoffTkg(
     body: JSON.stringify({ doc, params: params ?? null }),
   });
   return TakeoffResultSchema.parse(data);
+}
+
+/**
+ * POST /tkg/takeoff-ahsp-suggest — takeoff + USULAN kode AHSP per item
+ * (Fase T, token-overlap deterministik). ATURAN EMAS: `ahsp_suggested`
+ * hanya penanda usulan, bukan keputusan final — user tetap bisa ganti di
+ * halaman RAB.
+ */
+export async function takeoffAhspSuggestTkg(
+  doc: TkgDocument,
+  params?: Partial<TakeoffParams>,
+): Promise<TakeoffAhspSuggestResult> {
+  const data = await engineFetch("/tkg/takeoff-ahsp-suggest", {
+    method: "POST",
+    body: JSON.stringify({ doc, params: params ?? null }),
+  });
+  return TakeoffAhspSuggestResultSchema.parse(data);
 }
 
 /** POST /rab/build — RAB tersektor (WBS) dari item + section. */
