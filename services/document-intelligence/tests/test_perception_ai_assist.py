@@ -30,6 +30,7 @@ from app.perception.ai_assist.client import (
     GeminiAiAssistClient,
     NullAiAssistClient,
 )
+from app.perception.ai_assist.arsitektur_area_assist import suggest_arsitektur_area
 from app.perception.ai_assist.dimension_assist import suggest_footplat_dimensions
 from app.perception.ai_assist.kuda_kuda_assist import suggest_kuda_kuda_profile
 from app.perception.ai_assist.kusen_assist import suggest_kusen_schedule
@@ -499,6 +500,172 @@ def test_kuda_kuda_assist_rejects_standard_weight_when_not_sourced_from_text():
 
     result = suggest_kuda_kuda_profile("KD9", [], texts, fake)
 
+    assert result is None
+
+
+# --- arsitektur_area_assist.suggest_arsitektur_area (Task 04) ---------------
+# Keramik dinding basah, plafon, dan waterproofing tidak punya kode per-
+# instance. Assist ini dokumen-luas seperti dinding, dengan field wajib dan
+# opsional. Opsional boleh kosong, tetapi kalau ada tetap wajib tervalidasi.
+
+@pytest.mark.parametrize(
+    ("kategori", "texts", "payload", "expected_fields"),
+    [
+        (
+            "keramik_dinding",
+            ["KERAMIK DINDING KM", "KELILING BASAH 18 M", "TINGGI PASANG 1.6 M", "BUKAAN 2.4 M2"],
+            {
+                "keliling_basah_m": 18.0,
+                "h_pasang_m": 1.6,
+                "bukaan_m2": 2.4,
+                "confidence": 0.82,
+                "reasoning": "semua field disebut eksplisit",
+                "source_texts": ["KELILING BASAH 18 M", "TINGGI PASANG 1.6 M", "BUKAAN 2.4 M2"],
+            },
+            {"keliling_basah_m": 18.0, "h_pasang_m": 1.6, "bukaan_m2": 2.4},
+        ),
+        (
+            "plafon",
+            ["PLAFON AREA NETO 45 M2", "KELILING TEPI 28 M"],
+            {
+                "a_neto_m2": 45.0,
+                "keliling_tepi_m": 28.0,
+                "confidence": 0.8,
+                "reasoning": "area dan keliling tepi disebut eksplisit",
+                "source_texts": ["PLAFON AREA NETO 45 M2", "KELILING TEPI 28 M"],
+            },
+            {"a_neto_m2": 45.0, "keliling_tepi_m": 28.0},
+        ),
+        (
+            "waterproofing",
+            ["WATERPROOFING AREA 32 M2", "KELILING UPSTAND 22 M", "TINGGI UPSTAND 0.25 M"],
+            {
+                "a_bidang_m2": 32.0,
+                "keliling_upstand_m": 22.0,
+                "h_upstand_m": 0.25,
+                "confidence": 0.78,
+                "reasoning": "area dan upstand disebut eksplisit",
+                "source_texts": ["WATERPROOFING AREA 32 M2", "KELILING UPSTAND 22 M", "TINGGI UPSTAND 0.25 M"],
+            },
+            {"a_bidang_m2": 32.0, "keliling_upstand_m": 22.0, "h_upstand_m": 0.25},
+        ),
+    ],
+)
+def test_arsitektur_area_assist_accepts_complete_valid_suggestions(kategori, texts, payload, expected_fields):
+    result = suggest_arsitektur_area(kategori, texts, FakeAiAssistClient(payload))
+
+    assert result is not None
+    assert result.kategori == kategori
+    assert result.fields == expected_fields
+    assert result.model == "gemini-2.5-flash"
+
+
+@pytest.mark.parametrize(
+    ("kategori", "texts", "payload", "expected_fields"),
+    [
+        (
+            "keramik_dinding",
+            ["KERAMIK WC", "KELILING BASAH 18 M"],
+            {
+                "keliling_basah_m": 18.0,
+                "h_pasang_m": None,
+                "bukaan_m2": None,
+                "confidence": 0.8,
+                "reasoning": "field wajib disebut",
+                "source_texts": ["KELILING BASAH 18 M"],
+            },
+            {"keliling_basah_m": 18.0},
+        ),
+        (
+            "plafon",
+            ["PLAFOND RUANG RAPAT", "AREA NETO 45 M2"],
+            {
+                "a_neto_m2": 45.0,
+                "keliling_tepi_m": None,
+                "confidence": 0.8,
+                "reasoning": "area wajib disebut",
+                "source_texts": ["AREA NETO 45 M2"],
+            },
+            {"a_neto_m2": 45.0},
+        ),
+        (
+            "waterproofing",
+            ["ANTI BOCOR DAK", "AREA 32 M2"],
+            {
+                "a_bidang_m2": 32.0,
+                "keliling_upstand_m": None,
+                "h_upstand_m": None,
+                "confidence": 0.8,
+                "reasoning": "area wajib disebut",
+                "source_texts": ["AREA 32 M2"],
+            },
+            {"a_bidang_m2": 32.0},
+        ),
+    ],
+)
+def test_arsitektur_area_assist_accepts_required_only_suggestions(kategori, texts, payload, expected_fields):
+    result = suggest_arsitektur_area(kategori, texts, FakeAiAssistClient(payload))
+
+    assert result is not None
+    assert result.fields == expected_fields
+
+
+@pytest.mark.parametrize(
+    ("kategori", "texts", "payload"),
+    [
+        ("keramik_dinding", ["KERAMIK DINDING KM", "TINGGI 1.5 M"], {
+            "keliling_basah_m": None, "h_pasang_m": 1.5, "confidence": 0.7,
+            "reasoning": "field wajib kosong", "source_texts": ["TINGGI 1.5 M"],
+        }),
+        ("plafon", ["PLAFON", "KELILING TEPI 28 M"], {
+            "a_neto_m2": None, "keliling_tepi_m": 28.0, "confidence": 0.7,
+            "reasoning": "field wajib kosong", "source_texts": ["KELILING TEPI 28 M"],
+        }),
+        ("waterproofing", ["WATERPROOFING", "KELILING UPSTAND 22 M"], {
+            "a_bidang_m2": None, "keliling_upstand_m": 22.0, "confidence": 0.7,
+            "reasoning": "field wajib kosong", "source_texts": ["KELILING UPSTAND 22 M"],
+        }),
+    ],
+)
+def test_arsitektur_area_assist_rejects_missing_required_field(kategori, texts, payload):
+    assert suggest_arsitektur_area(kategori, texts, FakeAiAssistClient(payload)) is None
+
+
+def test_arsitektur_area_assist_rejects_hallucinated_optional_field():
+    texts = ["PLAFON AREA NETO 45 M2"]
+    fake = FakeAiAssistClient({
+        "a_neto_m2": 45.0,
+        "keliling_tepi_m": 999.0,
+        "confidence": 0.8,
+        "reasoning": "keliling tepi dikarang",
+        "source_texts": ["PLAFON AREA NETO 45 M2"],
+    })
+
+    result = suggest_arsitektur_area("plafon", texts, fake)
+
+    assert result is None
+
+
+def test_arsitektur_area_assist_fast_filter_without_keyword_does_not_call_client():
+    fake = FakeAiAssistClient({"a_neto_m2": 45.0, "confidence": 1, "reasoning": "x", "source_texts": ["x"]})
+
+    result = suggest_arsitektur_area("plafon", ["KOLOM K1", "BALOK B1"], fake)
+
+    assert result is None
+    assert fake.calls == []
+
+
+def test_arsitektur_area_assist_rejects_unknown_category():
+    fake = FakeAiAssistClient({"confidence": 1, "reasoning": "x", "source_texts": ["x"]})
+
+    result = suggest_arsitektur_area("lantai", ["LANTAI AREA 45 M2"], fake)
+
+    assert result is None
+    assert fake.calls == []
+
+
+def test_arsitektur_area_assist_degrades_gracefully_when_client_returns_none():
+    result = suggest_arsitektur_area("waterproofing", ["WATERPROOFING AREA 32 M2"], FakeAiAssistClient(None))
     assert result is None
 
 

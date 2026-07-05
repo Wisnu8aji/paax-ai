@@ -38,6 +38,7 @@ from functools import lru_cache
 import re
 
 from app.perception.ai_assist.client import AiAssistClient
+from app.perception.ai_assist.arsitektur_area_assist import suggest_arsitektur_area
 from app.perception.ai_assist.dimension_assist import suggest_footplat_dimensions
 from app.perception.ai_assist.kuda_kuda_assist import suggest_kuda_kuda_profile
 from app.perception.ai_assist.kusen_assist import suggest_kusen_schedule
@@ -296,6 +297,31 @@ def _apply_kuda_kuda_ai_assist(
 
 
 _KODE_SANITIZE_PATTERN = re.compile(r"[^A-Z0-9]+")
+_ARSITEKTUR_AREA_CATEGORIES = ("keramik_dinding", "plafon", "waterproofing")
+
+
+def _apply_arsitektur_area_ai_assist(
+    doc: TkgDocument,
+    registry: dict[str, ElementRegistryEntry],
+    ai_client: AiAssistClient,
+) -> None:
+    all_texts: list[str] = []
+    for sheet in doc.sheets:
+        all_texts.extend(item.raw for item in sheet.unclassified)
+
+    for kategori in _ARSITEKTUR_AREA_CATEGORIES:
+        kode = f"{kategori.upper()}-AUTO-1"
+        if kode in registry:
+            continue
+        suggestion = suggest_arsitektur_area(kategori, all_texts, ai_client)
+        if suggestion is None:
+            continue
+        registry[kode] = ElementRegistryEntry(
+            kode=kode,
+            kategori=kategori,
+            status="perlu_review",
+            ai_arsitektur_area_suggestion=suggestion,
+        )
 
 
 def _apply_mep_ai_assist(
@@ -485,6 +511,7 @@ def consolidate_document(
         _apply_dimension_ai_assist(doc, registry, ai_client)
         _apply_roof_frame_ai_assist(doc, registry, ai_client)
         _apply_kuda_kuda_ai_assist(doc, registry, ai_client)
+        _apply_arsitektur_area_ai_assist(doc, registry, ai_client)
         _apply_dinding_ai_assist(doc, registry, ai_client)
         _apply_kusen_ai_assist(doc, registry, ai_client)
         _apply_mep_ai_assist(doc, registry, ai_client)
