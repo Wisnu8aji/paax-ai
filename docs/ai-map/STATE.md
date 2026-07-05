@@ -6,7 +6,7 @@
 
 ## FASE X1B - PACKAGING PAAX SCHEMAS + INVESTIGASI BINDING FOOTPLAT (prompt 2026-07-16, eksekusi Codex 2026-07-05)
 Branch kerja: `feat/fase-x1b-packaging-binding-footplat`.
-PR: dibuat sebagai draft setelah commit fase ini.
+PR: https://github.com/Wisnu8aji/paax-ai/pull/38
 Report remote: `report-remote/REPORT_FASE_X1B_PACKAGING_BINDING_CODEX_2026-07-05.md`.
 
 - **Packaging diperbaiki**: `packages/schemas/python` sekarang package
