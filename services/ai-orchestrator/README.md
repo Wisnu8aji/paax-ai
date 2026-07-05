@@ -15,6 +15,7 @@ Environment:
 PORT=8082
 GEMINI_API_KEY=<isi untuk mode Gemini>
 CORE_ENGINE_URL=http://localhost:8081
+DOCUMENT_INTELLIGENCE_URL=http://localhost:8083
 AI_ORCH_MAX_TOOL_TURNS=3
 ```
 
@@ -40,6 +41,7 @@ Contoh:
 
 - `lookup_ahsp`: mencari kandidat AHSP dari katalog core-engine secara deterministik.
 - `run_scenario`: menjalankan simulasi waktu-biaya via `POST /scenario/simulate`.
+- `analyze_drawing`: mengecek status dan ringkasan hasil analisa gambar dari `services/document-intelligence` berdasarkan `job_id`.
 - `query_rab`: membaca snapshot RAB yang dikirim caller di `context.rab_lines`.
 - `query_schedule`: membaca snapshot jadwal yang dikirim caller di `context.schedule`.
 - `query_progress`: stub jujur, monitoring progres lapangan belum tersedia.
@@ -50,5 +52,7 @@ Contoh:
 `query_rab` dan `query_schedule` tidak mengambil data dari database server-side. Saat ini draft RAB dan jadwal proyek berada di client, sehingga caller harus mengirim snapshot data ke `POST /chat` melalui field `context`.
 
 `query_progress` dan `query_materials` selalu mengembalikan `available: false` karena Site Agent dan prediksi material belum dibangun.
+
+`analyze_drawing` hanya membaca `GET /drawings/analyze/status/{job_id}` dari document-intelligence dan meringkas hasil `consolidated`. Job store document-intelligence masih in-memory, sehingga status job bisa hilang jika service restart; tool meneruskan kondisi itu secara jujur sebagai job tidak ditemukan, bukan mengarang hasil analisa.
 
 `apps/web` belum memanggil service ini. Wiring frontend ke `ai-orchestrator` adalah pekerjaan terpisah.

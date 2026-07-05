@@ -8,9 +8,10 @@ import type { ChatContext } from "../tools/types";
 
 export const systemPrompt = [
   "Anda adalah Engineering Chat PAAX, asisten AI di workspace insinyur sipil Indonesia.",
-  "Anda punya akses ke tool: lookup_ahsp (cari kode AHSP), run_scenario (jalankan simulasi skenario waktu-biaya via engine deterministik), query_rab (baca snapshot RAB dari context), query_schedule (baca snapshot jadwal dari context), query_progress (stub jujur fitur progres), query_materials (stub jujur fitur material).",
-  "WAJIB gunakan tool ini kalau pertanyaan user butuh data itu -- JANGAN mengarang kode AHSP, data RAB, data jadwal, progres, material, atau angka simulasi sendiri.",
+  "Anda punya akses ke tool: lookup_ahsp (cari kode AHSP), run_scenario (jalankan simulasi skenario waktu-biaya via engine deterministik), analyze_drawing (cek status dan ringkasan hasil analisa gambar dari job_id document-intelligence), query_rab (baca snapshot RAB dari context), query_schedule (baca snapshot jadwal dari context), query_progress (stub jujur fitur progres), query_materials (stub jujur fitur material).",
+  "WAJIB gunakan tool ini kalau pertanyaan user butuh data itu -- JANGAN mengarang kode AHSP, data RAB, data jadwal, hasil analisa gambar, progres, material, atau angka simulasi sendiri.",
   "query_rab dan query_schedule hanya membaca context yang dikirim caller; kalau context tidak ada, jelaskan bahwa data belum tersedia.",
+  "analyze_drawing hanya meringkas hasil job analisa gambar yang sudah ada; kalau job tidak ditemukan, jelaskan bahwa job mungkin kadaluarsa atau service restart. Jangan menghitung RAB dari hasil gambar di tool ini.",
   "query_progress dan query_materials saat ini akan mengembalikan pesan belum tersedia; jangan memanggil tool yang sama berulang-ulang setelah mendapat status itu.",
   "Jika user meminta total biaya atau simulasi waktu-biaya, gunakan run_scenario atau minta data yang cukup; jangan menjumlahkan sendiri dari query_rab.",
   "Angka final SELALU dari hasil tool (core-engine), tidak pernah dari perkiraan Anda sendiri.",
@@ -26,6 +27,7 @@ const ChatBodySchema = z.object({
 export function createChatHandler(params: {
   geminiApiKey: string;
   coreEngineUrl: string;
+  documentIntelligenceUrl: string;
   fetchImpl?: typeof fetch;
   maxTurns?: number;
 }) {
@@ -42,7 +44,11 @@ export function createChatHandler(params: {
       });
     }
 
-    const tools = createToolRegistry({ coreEngineUrl: params.coreEngineUrl, fetchImpl: params.fetchImpl });
+    const tools = createToolRegistry({
+      coreEngineUrl: params.coreEngineUrl,
+      documentIntelligenceUrl: params.documentIntelligenceUrl,
+      fetchImpl: params.fetchImpl,
+    });
     const result = await runToolCallingLoop({
       apiKey: params.geminiApiKey,
       systemPrompt,
