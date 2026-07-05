@@ -34,6 +34,9 @@ data (tetap ada di `sheet.unclassified` mentah), hanya tidak lagi jadi
 """
 from __future__ import annotations
 
+import ast
+from functools import lru_cache
+from pathlib import Path
 import re
 
 from app.perception.consolidated_models import (
@@ -62,6 +65,65 @@ _ADMIN_TEXT_PATTERN = re.compile(
 # Teks identik (setelah normalisasi spasi+kapital) yang muncul di >= N sheet
 # berbeda dianggap kop/footer berulang, bukan konten teknis per-halaman.
 _ADMIN_REPEAT_MIN_SHEETS = 3
+
+
+@lru_cache(maxsize=1)
+def _tkg_prefix_categories() -> tuple[str, ...]:
+    """Ambil kategori dari core-engine `_PREFIKS` agar kata generik yang
+    dibuang saat normalisasi kode tidak menjadi daftar paralel manual."""
+    takeoff_path = Path(__file__).resolve().parents[3] / "core-engine" / "app" / "tkg" / "takeoff.py"
+    try:
+        module = ast.parse(takeoff_path.read_text(encoding="utf-8"))
+    except OSError:
+        return ()
+    for node in module.body:
+        value_node: ast.AST | None = None
+        if isinstance(node, ast.Assign):
+            if any(isinstance(target, ast.Name) and target.id == "_PREFIKS" for target in node.targets):
+                value_node = node.value
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id == "_PREFIKS":
+            value_node = node.value
+        if value_node is None:
+            continue
+        try:
+            values = ast.literal_eval(value_node)
+        except (SyntaxError, ValueError):
+            return ()
+        return tuple(sorted({str(category).upper() for _prefix, category in values}))
+    return ()
+
+
+@lru_cache(maxsize=1)
+def _generic_element_tokens() -> set[str]:
+    tokens: set[str] = set()
+    for category in _tkg_prefix_categories():
+        tokens.update(part for part in category.replace("_", " ").split() if part)
+    return tokens
+
+
+def _remember_raw_code(entry: ElementRegistryEntry, raw: str) -> None:
+    value = raw.strip()
+    if value and value not in entry.kode_asli:
+        entry.kode_asli.append(value)
+
+
+def _normalize_kode(raw: str) -> str:
+    text = _normalize_text(raw)
+    text = text.replace('"', " ").replace("'", " ")
+    text = re.sub(r"[^A-Z0-9\-\s]+", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    if not text:
+        return raw.strip().upper()
+
+    tokens = text.split()
+    generic_tokens = _generic_element_tokens()
+    while len(tokens) > 1 and tokens[0] in generic_tokens:
+        tokens.pop(0)
+    text = " ".join(tokens)
+
+    text = re.sub(r"^([A-Z]+)[\s-]+(\d+[A-Z]*)$", r"\1\2", text)
+    text = re.sub(r"\s+", "", text)
+    return text or raw.strip().upper()
 
 
 def _normalize_text(raw: str) -> str:
@@ -161,10 +223,12 @@ def consolidate_document(doc: TkgDocument) -> ConsolidatedExtraction:
     registry: dict[str, ElementRegistryEntry] = {}
     for i, sheet in enumerate(doc.sheets):
         for element in sheet.elements:
-            entry = registry.setdefault(element.kode, ElementRegistryEntry(kode=element.kode))
+            kode = _normalize_kode(element.kode)
+            entry = registry.setdefault(kode, ElementRegistryEntry(kode=kode))
+            _remember_raw_code(entry, element.kode)
             addresses = element.alamat_list or ([element.alamat] if element.alamat else [])
             for alamat in addresses:
-                entry.instances.append(ElementInstanceRef(sheet_page=i + 1, alamat=alamat))
+                entry.instances.append(ElementInstanceRef(sheet_page=i + 1, alamat=alamat, kode_raw=element.kode))
             if element.alamat_needs_review:
                 entry.status = "perlu_review"
                 assumptions.append(Assumption(
@@ -175,7 +239,9 @@ def consolidate_document(doc: TkgDocument) -> ConsolidatedExtraction:
 
         for table in sheet.tables:
             for record in table.records:
-                entry = registry.setdefault(record.kode, ElementRegistryEntry(kode=record.kode))
+                kode = _normalize_kode(record.kode)
+                entry = registry.setdefault(kode, ElementRegistryEntry(kode=kode))
+                _remember_raw_code(entry, record.kode)
                 entry.kategori = entry.kategori or record.kategori
                 if entry.definisi is None and (record.dimensi or record.tulangan or record.mutu_beton):
                     entry.definisi = ElementDefinisi(

@@ -181,6 +181,59 @@ def test_element_registry_merges_instances_across_sheets():
     assert {(i.sheet_page, i.alamat) for i in entry.instances} == {(1, "A1"), (1, "B1"), (2, "A1")}
 
 
+def test_element_registry_normalizes_code_variants_but_keeps_raw_codes_for_audit():
+    sheets = [
+        TkgSheet(
+            sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH KOLOM LT.1"),
+            elements=[ElementInstance(kode="K1", alamat="A1", alamat_list=["A1"], n=1, count_label=1)],
+        ),
+        TkgSheet(
+            sheet_id="S2", jenis="denah", meta=SheetMeta(judul="DENAH KOLOM LT.2"),
+            elements=[ElementInstance(kode="K-1", alamat="B1", alamat_list=["B1"], n=1, count_label=1)],
+        ),
+        TkgSheet(
+            sheet_id="S3", jenis="denah", meta=SheetMeta(judul="DENAH KOLOM LT.3"),
+            elements=[ElementInstance(kode="K 1", alamat="C1", alamat_list=["C1"], n=1, count_label=1)],
+        ),
+        TkgSheet(
+            sheet_id="S4", jenis="tabel", meta=SheetMeta(judul="TABEL KOLOM"),
+            elements=[ElementInstance(kode="KOLOM K1", alamat="D1", alamat_list=["D1"], n=1, count_label=1)],
+            tables=[TkgTable(judul="tabel kolom", records=[
+                TypeRecord(kode="KOLOM K1", kategori="kolom", dimensi={"b": 300.0, "h": 400.0}),
+            ])],
+        ),
+    ]
+
+    result = consolidate_document(_doc(sheets))
+
+    assert [entry.kode for entry in result.element_registry] == ["K1"]
+    entry = result.element_registry[0]
+    assert entry.kode_asli == ["K1", "K-1", "K 1", "KOLOM K1"]
+    assert [(instance.sheet_page, instance.alamat, instance.kode_raw) for instance in entry.instances] == [
+        (1, "A1", "K1"),
+        (2, "B1", "K-1"),
+        (3, "C1", "K 1"),
+        (4, "D1", "KOLOM K1"),
+    ]
+    assert entry.definisi is not None
+    assert entry.definisi.dimensi == {"b": 300.0, "h": 400.0}
+
+
+def test_element_registry_normalization_does_not_collapse_distinct_codes():
+    sheet = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH KOLOM"),
+        elements=[
+            ElementInstance(kode="K1", alamat="A1", alamat_list=["A1"], n=1, count_label=1),
+            ElementInstance(kode="K11", alamat="A2", alamat_list=["A2"], n=1, count_label=1),
+            ElementInstance(kode="K1A", alamat="A3", alamat_list=["A3"], n=1, count_label=1),
+        ],
+    )
+
+    result = consolidate_document(_doc([sheet]))
+
+    assert [entry.kode for entry in result.element_registry] == ["K1", "K11", "K1A"]
+
+
 def test_element_registry_binds_table_definition():
     sheet = TkgSheet(
         sheet_id="S1", jenis="tabel", meta=SheetMeta(judul="TABEL KOLOM"),

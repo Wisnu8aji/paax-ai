@@ -31,6 +31,7 @@ class SheetSummary(BaseModel):
 class ElementInstanceRef(BaseModel):
     sheet_page: int
     alamat: str
+    kode_raw: Optional[str] = None
     catatan: Optional[str] = None
 
 
@@ -44,6 +45,7 @@ class ElementDefinisi(BaseModel):
 
 class ElementRegistryEntry(BaseModel):
     kode: str
+    kode_asli: List[str] = Field(default_factory=list)
     kategori: Optional[str] = None
     instances: List[ElementInstanceRef] = Field(default_factory=list)
     definisi: Optional[ElementDefinisi] = None

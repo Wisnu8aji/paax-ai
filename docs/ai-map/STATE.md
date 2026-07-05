@@ -1,9 +1,44 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-13** (Fase T: AHSP auto-suggest AKTIF,
-> dikerjakan LANGSUNG oleh Claude). File ini SATU-SATUNYA tempat status
-> berjalan.
+> Update terakhir: **2026-07-05** (Codex menjalankan prompt Fase V/W
+> bertanggal 2026-07-14: normalisasi kode lintas-halaman + work item
+> grouping). File ini SATU-SATUNYA tempat status berjalan.
 > Selesai satu fase → perbarui di sini (jangan sebar ke banyak file).
+
+## ✅ FASE V/W — NORMALISASI KODE + WORK ITEM GROUPING (prompt 2026-07-14, eksekusi Codex 2026-07-05)
+Branch kerja: `feat/gambar-rab-fase-v-w-normalisasi-work-items`.
+PR: TBD
+Report remote: `report-remote/REPORT_FASE_V_W_CODEX_2026-07-05.md`.
+
+- **Step 0 selesai lebih dulu**: backlog Fase S/T/U/U-2 diverifikasi cocok
+  dengan STATE lalu di-commit terpisah pada branch
+  `fix/semarang-candidate-ranking-claude-direct`; PR draft:
+  https://github.com/Wisnu8aji/paax-ai/pull/35.
+- **Fase V selesai**: `consolidate.py` sekarang memakai kode kanonik untuk
+  registry lintas-halaman. Variasi seperti `K1`, `K-1`, `K 1`, dan
+  `KOLOM K1` digabung menjadi `K1`, sementara kode mentah tetap disimpan
+  pada `ElementInstanceRef.kode_raw` dan `ElementRegistryEntry.kode_asli`.
+  Test negatif memastikan `K1`, `K11`, dan `K1A` tetap entry berbeda.
+- **Fase W selesai**: modul baru
+  `services/document-intelligence/app/perception/work_items.py` mengelompokkan
+  `ConsolidatedExtraction.element_registry` + `TakeoffItem` menjadi baris
+  work item dengan `formula_status`: `dihitung`, `perlu_review`, atau
+  `belum_didukung`. Modul ini hanya menyalin volume dari takeoff engine dan
+  tidak menghitung angka baru.
+- **Endpoint baru**: `POST /drawings/tkg/work-items` di document-intelligence.
+  Input: consolidated extraction + list takeoff item. Output: `work_items`
+  siap dipakai UI/RAB berikutnya.
+- **Zod mirror**: `DrawingWorkItemSchema` dan
+  `DrawingWorkItemsResultSchema` ditambahkan di `packages/schemas`.
+- **Kategori saat ini**: kategori struktural dari takeoff TKG
+  (`kolom`, `kolom_praktis`, `sloof`, `balok`, `ring_balok`, `latei`,
+  `plat`, `pondasi_telapak`, `dinding_beton`, `tangga`) diperlakukan sebagai
+  rumus tersedia bila ada takeoff item. `sanitasi`, `drainase`, `plumbing`,
+  `listrik`, dan kategori di luar cakupan rumus saat ini ditandai
+  `belum_didukung` tanpa volume.
+- **Verifikasi**: core-engine **279 passed**, document-intelligence
+  **141 passed + 5 skipped**, `packages/schemas` build OK + Jest
+  **12 passed**, web Vitest **47 passed**, `pnpm tsc --noEmit` exit 0.
 
 ## ✅ FASE T — AHSP AUTO-SUGGEST AKTIF (2026-07-13, dikerjakan langsung oleh Claude)
 Spek: `docs/prompts/PAAX_CODEX_PROMPT_FASE_T_AHSP_AUTO_SUGGEST_2026-07-12.md`.
