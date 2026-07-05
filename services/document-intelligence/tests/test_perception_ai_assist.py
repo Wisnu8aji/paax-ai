@@ -31,6 +31,7 @@ from app.perception.ai_assist.client import (
     NullAiAssistClient,
 )
 from app.perception.ai_assist.dimension_assist import suggest_footplat_dimensions
+from app.perception.ai_assist.kuda_kuda_assist import suggest_kuda_kuda_profile
 from app.perception.ai_assist.kusen_assist import suggest_kusen_schedule
 from app.perception.ai_assist.mep_assist import suggest_mep_points
 from app.perception.ai_assist.roof_frame_assist import suggest_roof_frame_dimensions
@@ -353,6 +354,151 @@ def test_roof_frame_assist_rejects_value_out_of_plausible_range():
 def test_roof_frame_assist_degrades_gracefully_when_client_returns_none():
     fake = FakeAiAssistClient(None)
     result = suggest_roof_frame_dimensions("trekstang", "TS1", [], ["x"], fake)
+    assert result is None
+
+
+# --- kuda_kuda_assist.suggest_kuda_kuda_profile (Task 02) ------------------
+# Kuda-kuda baja profil beda dari gording/trekstang: berat kg/m adalah DATA
+# dari teks gambar. Test ini memastikan nilai yang "benar secara umum" tetap
+# ditolak kalau tidak muncul di source_texts/detail_texts.
+
+def test_kuda_kuda_assist_accepts_complete_profile_from_matching_source_texts():
+    texts = [
+        "KD9",
+        "PROFIL WF 200.100.5.5.8",
+        "BERAT PROFIL 21.3 KG/M",
+        "PANJANG BATANG 6.5 M",
+        "JUMLAH 12 BATANG",
+    ]
+    fake = FakeAiAssistClient({
+        "designation": "WF 200.100.5.5.8",
+        "kg_per_m": 21.3,
+        "length_m": 6.5,
+        "qty": 12,
+        "confidence": 0.82,
+        "reasoning": "designasi, berat, panjang, dan jumlah disebut eksplisit.",
+        "source_texts": [
+            "PROFIL WF 200.100.5.5.8",
+            "BERAT PROFIL 21.3 KG/M",
+            "PANJANG BATANG 6.5 M",
+            "JUMLAH 12 BATANG",
+        ],
+    })
+
+    result = suggest_kuda_kuda_profile("KD9", ["KD 9"], texts, fake)
+
+    assert result is not None
+    assert result.designation == "WF 200.100.5.5.8"
+    assert result.kg_per_m == 21.3
+    assert result.length_m == 6.5
+    assert result.qty == 12
+    assert result.model == "gemini-2.5-flash"
+
+
+def test_kuda_kuda_assist_rejects_designation_not_present_in_source_texts():
+    texts = ["KD9", "PROFIL WF 200.100.5.5.8", "BERAT PROFIL 21.3 KG/M", "PANJANG 6.5 M", "JUMLAH 12"]
+    fake = FakeAiAssistClient({
+        "designation": "WF 250.125.6.9",
+        "kg_per_m": 21.3,
+        "length_m": 6.5,
+        "qty": 12,
+        "confidence": 0.8,
+        "reasoning": "designasi dikarang",
+        "source_texts": ["BERAT PROFIL 21.3 KG/M", "PANJANG 6.5 M", "JUMLAH 12"],
+    })
+
+    result = suggest_kuda_kuda_profile("KD9", [], texts, fake)
+
+    assert result is None
+
+
+def test_kuda_kuda_assist_rejects_hallucinated_kg_per_m_not_in_source_texts():
+    texts = ["KD9", "PROFIL WF 200.100.5.5.8", "PANJANG 6.5 M", "JUMLAH 12"]
+    fake = FakeAiAssistClient({
+        "designation": "WF 200.100.5.5.8",
+        "kg_per_m": 21.3,
+        "length_m": 6.5,
+        "qty": 12,
+        "confidence": 0.8,
+        "reasoning": "berat diisi dari pengetahuan umum, bukan teks",
+        "source_texts": ["PROFIL WF 200.100.5.5.8", "PANJANG 6.5 M", "JUMLAH 12"],
+    })
+
+    result = suggest_kuda_kuda_profile("KD9", [], texts, fake)
+
+    assert result is None
+
+
+def test_kuda_kuda_assist_rejects_missing_required_field_no_partial_allowed():
+    texts = ["KD9", "PROFIL WF 200.100.5.5.8", "BERAT PROFIL 21.3 KG/M", "PANJANG 6.5 M"]
+    fake = FakeAiAssistClient({
+        "designation": "WF 200.100.5.5.8",
+        "kg_per_m": 21.3,
+        "length_m": 6.5,
+        "qty": None,
+        "confidence": 0.8,
+        "reasoning": "jumlah tidak disebut",
+        "source_texts": ["PROFIL WF 200.100.5.5.8", "BERAT PROFIL 21.3 KG/M", "PANJANG 6.5 M"],
+    })
+
+    result = suggest_kuda_kuda_profile("KD9", [], texts, fake)
+
+    assert result is None
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("kg_per_m", 350.0),
+        ("length_m", 25.0),
+        ("qty", 750),
+    ],
+)
+def test_kuda_kuda_assist_rejects_values_out_of_plausible_range(field: str, value: float):
+    texts = [
+        "KD9",
+        "PROFIL WF 200.100.5.5.8",
+        f"BERAT PROFIL {value if field == 'kg_per_m' else 21.3} KG/M",
+        f"PANJANG {value if field == 'length_m' else 6.5} M",
+        f"JUMLAH {value if field == 'qty' else 12}",
+    ]
+    payload = {
+        "designation": "WF 200.100.5.5.8",
+        "kg_per_m": 21.3,
+        "length_m": 6.5,
+        "qty": 12,
+        "confidence": 0.8,
+        "reasoning": "angka dikutip tapi di luar rentang wajar",
+        "source_texts": texts[1:],
+    }
+    payload[field] = value
+
+    result = suggest_kuda_kuda_profile("KD9", [], texts, FakeAiAssistClient(payload))
+
+    assert result is None
+
+
+def test_kuda_kuda_assist_degrades_gracefully_when_client_returns_none():
+    result = suggest_kuda_kuda_profile("KD9", [], ["KD9"], FakeAiAssistClient(None))
+    assert result is None
+
+
+def test_kuda_kuda_assist_rejects_standard_weight_when_not_sourced_from_text():
+    """Nilai bisa saja benar menurut tabel baja umum, tapi kalau angka itu
+    tidak ada di teks gambar, tetap wajib ditolak."""
+    texts = ["KD9", "PROFIL WF 150.75.5.7", "PANJANG 5.5 M", "JUMLAH 8"]
+    fake = FakeAiAssistClient({
+        "designation": "WF 150.75.5.7",
+        "kg_per_m": 14.0,
+        "length_m": 5.5,
+        "qty": 8,
+        "confidence": 0.9,
+        "reasoning": "berat diambil dari tabel baja umum, bukan teks gambar",
+        "source_texts": ["PROFIL WF 150.75.5.7", "PANJANG 5.5 M", "JUMLAH 8"],
+    })
+
+    result = suggest_kuda_kuda_profile("KD9", [], texts, fake)
+
     assert result is None
 
 
