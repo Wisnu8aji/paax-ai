@@ -174,10 +174,6 @@ def test_v02_tetap_menandai_total_grid_salah_dengan_field_pipeline_baru():
     assert r.gate_passed is False
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="V-03 saat ini menyamakan semua fingerprint denah; subset grid multi-sheet realistis masih kena E-GRID.",
-)
 def test_v03_denah_subset_grid_pipeline_sah_tidak_menjadi_e_grid():
     doc = buat_tkg()
     doc.generated_by = "pipeline"
@@ -213,6 +209,46 @@ def test_v03_denah_subset_grid_pipeline_sah_tidak_menjadi_e_grid():
     assert not any(i.code == "E-GRID" for i in r.issues)
     assert r.ok is True
     assert r.gate_passed is True
+
+
+def test_v03_tetap_menangkap_konflik_posisi_grid_yang_sungguh_berbeda():
+    doc = buat_tkg()
+    doc.generated_by = "pipeline"
+    doc.sheets[0].meta.zone = "struktur_lantai_1"
+    doc.sheets.append(
+        TkgSheet(
+            sheet_id="S06",
+            jenis="denah",
+            meta=SheetMeta(judul="DENAH ATAP KONFLIK", nomor="S-06", skala="1:100", zone="struktur_atap"),
+            grid=Grid(
+                sumbu_x=[GridAxis(label="A", posisi_mm=0), GridAxis(label="B", posisi_mm=3500), GridAxis(label="C", posisi_mm=6500)],
+                sumbu_y=[GridAxis(label="1", posisi_mm=0), GridAxis(label="2", posisi_mm=4000)],
+                bentang_x=[
+                    GridSpan(dari="A", ke="B", nilai=3500, unit="mm", raw="3500"),
+                    GridSpan(dari="B", ke="C", nilai=3000, unit="mm", raw="3000"),
+                ],
+                bentang_y=[GridSpan(dari="1", ke="2", nilai=4000, unit="mm", raw="4000")],
+                total_x=GridTotal(dari="A", ke="C", nilai=6500, unit="mm"),
+                total_y=GridTotal(dari="1", ke="2", nilai=4000, unit="mm"),
+            ),
+            elements=[
+                ElementInstance(
+                    kode="SL1",
+                    alamat="antara as A-C pada as 1",
+                    alamat_list=["A1", "B1", "C1"],
+                    bentuk="ruas",
+                    n=1,
+                    ruas=RuasGrid(sumbu="x", dari="A", ke="C", pada="1"),
+                )
+            ],
+        )
+    )
+
+    r = validate_tkg(doc)
+
+    assert any(i.code == "E-GRID" and i.subject == "x:B" for i in r.issues)
+    assert r.ok is False
+    assert r.gate_passed is False
 
 
 def test_v04_orphans():

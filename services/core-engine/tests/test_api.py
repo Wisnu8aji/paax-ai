@@ -37,7 +37,7 @@ class TestAHSP:
         assert r.status_code == 200
         data = r.json()
         assert isinstance(data, list)
-        assert len(data) >= 4
+        assert len(data) >= 2546
 
     def test_list_ahsp_has_required_fields(self):
         r = client.get("/ahsp")
@@ -66,6 +66,19 @@ class TestAHSP:
         assert isinstance(data, list)
         codes = [item["code"] for item in data]
         assert "jateng" in codes
+
+
+class TestDataCoverage:
+    def test_data_coverage_jateng_jujur_setelah_import_ahsp_ck_2026(self):
+        r = client.get("/data/coverage", params={"region_code": "jateng"})
+        assert r.status_code == 200
+        data = r.json()
+
+        assert data["ahsp_total"] == 2546
+        assert data["coverage_ratio"] == 0.0049
+        assert data["resource_used_total"] == 2441
+        assert data["resource_priced_total"] == 12
+        assert len(data["missing_resources"]) == 2429
 
 
 class TestHSP:

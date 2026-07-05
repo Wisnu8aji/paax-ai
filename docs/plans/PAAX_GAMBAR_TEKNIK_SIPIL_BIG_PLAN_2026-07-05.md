@@ -84,6 +84,8 @@ sini supaya sesi depan tahu status tanpa baca file di luar repo)
 | J-2 | Navigasi setelah kirim volume ke Draft RAB | 🟢 selesai — setelah kirim sukses muncul tombol "Lihat Draft RAB" ke `/proyek/[projectId]/rab` |
 | K | Coverage validator untuk `zone`/`alamat_list`/`alamat_needs_review`/offset | 🟢 selesai — test membuktikan field pipeline baru tidak mengganggu validator lama |
 | K-2 | Audit validator multi-sheet realistis (V-02/V-03/V-04) | 🟡 selesai sebagai audit — V-02/V-04 aman; V-03 punya false-positive untuk subset grid sah dan perlu keputusan sebelum logic diubah |
+| M | Perbaikan V-03 subset grid multi-sheet | 🟢 selesai — V-03 hanya membandingkan label as yang overlap; subset sah lolos, konflik posisi nyata tetap `E-GRID` |
+| N | Impor katalog AHSP CK 2026 resmi | 🟡 selesai sebagai impor data — 2.542 item masuk, 10 batch diaudit; coverage harga regional masih rendah karena HSD resmi belum tersedia |
 
 Legenda: 🟢 selesai · 🟡 sebagian/ditunda jujur · ⚪ belum mulai.
 
@@ -112,13 +114,12 @@ Detail lengkap per fase: `docs/ai-map/STATE.md`.
 - Mapping AHSP otomatis/deterministik untuk item takeoff (`/ahsp/search` dan
   `/ahsp/map`) masih tahap berikutnya. Saat ini volume sudah bisa masuk Draft
   RAB, tetapi `ahsp_code` sengaja kosong agar user memilih item AHSP manual.
-  Fase L tetap di-skip pada prompt lanjutan karena katalog sample repo hanya
-  4 item; auto-suggest berisiko terlihat final padahal data belum matang.
+  Setelah Fase N, katalog AHSP resmi sudah jauh lebih lengkap (2.542 item),
+  tetapi auto-suggest tetap perlu prompt/test terpisah karena laporan batch
+  masih punya temuan mekanis dan coverage harga regional masih rendah.
 - Visi-LLM sebagai fallback KHUSUS sheet raster tanpa teks vektor (setelah
   OCR jadi lapis pertama, bukan pengganti) — sudah dicatat sbg arah di
   `docs/ai-map/STATE.md` sebelumnya, tidak berubah.
-- Validator V-03 perlu spek lanjutan: `validate_tkg` sekarang membandingkan
-  fingerprint grid penuh antar semua sheet `denah`, sehingga denah dengan
-  grid subset sah (mis. atap hanya B-C sementara lantai penuh A-C) menjadi
-  `E-GRID`. `document-intelligence` sendiri memperlakukan perbedaan grid
-  antar-sheet sebagai assumption, bukan error keras.
+- HSD regional untuk katalog AHSP CK 2026 belum tersedia. `_resources_catalog`
+  di `G:\paax-data` hanya master resource dengan `price=0`, sehingga sengaja
+  tidak diimpor sebagai price book agar tidak menghasilkan HSP palsu.
