@@ -1935,6 +1935,103 @@ export type DrawingFormulaStatus = z.infer<typeof DrawingFormulaStatusEnum>;
 export type DrawingWorkItem = z.infer<typeof DrawingWorkItemSchema>;
 export type DrawingWorkItemsResult = z.infer<typeof DrawingWorkItemsResultSchema>;
 
+// Fase X2 (2026-07-05) — mirror `document-intelligence`
+// `app.perception.consolidated_models.AiDimensionSuggestion` /
+// `AiZoneSuggestion`. Lapisan AI-assist klasifikasi/binding: LLM fallback
+// paralel HANYA saat rule-based gagal, usulan sudah lolos validasi
+// deterministik (anti-halusinasi + rentang wajar) di Python sebelum sampai
+// ke sini — field ini TIDAK PERNAH dipakai sbg angka RAB final, murni
+// kandidat menunggu review manusia. Detail: `CLAUDE.md` §1.1,
+// `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md` §X2.
+export const AiDimensionSuggestionSchema = z.object({
+  b_mm: z.number().nullish(),
+  l_mm: z.number().nullish(),
+  d_gali_mm: z.number().nullish(),
+  confidence: z.number(),
+  reasoning: z.string(),
+  source_texts: z.array(z.string()).default([]),
+  model: z.string(),
+  generated_at: z.string(),
+});
+export const AiZoneSuggestionSchema = z.object({
+  zone: z.string(),
+  confidence: z.number(),
+  reasoning: z.string(),
+  model: z.string(),
+  generated_at: z.string(),
+});
+export type AiDimensionSuggestion = z.infer<typeof AiDimensionSuggestionSchema>;
+export type AiZoneSuggestion = z.infer<typeof AiZoneSuggestionSchema>;
+
+// 2026-07-05 (lanjutan Fase X2) — mirror `AiDindingSuggestion`: dinding
+// pasangan bata TIDAK PUNYA kode per-instance sama sekali (audit B0),
+// usulan ini HANYA dari catatan teks eksplisit ttg panjang/tinggi dinding,
+// bukan deteksi geometri garis gambar (di luar cakupan slice ini).
+export const AiDindingSuggestionSchema = z.object({
+  l_dinding_m: z.number().nullish(),
+  h_dinding_m: z.number().nullish(),
+  bukaan_total_m2: z.number().nullish(),
+  plester_sisi: z.number().int().default(0),
+  acian: z.boolean().default(false),
+  cat: z.boolean().default(false),
+  confidence: z.number(),
+  reasoning: z.string(),
+  source_texts: z.array(z.string()).default([]),
+  model: z.string(),
+  generated_at: z.string(),
+});
+export type AiDindingSuggestion = z.infer<typeof AiDindingSuggestionSchema>;
+
+// 2026-07-05 (lanjutan Fase X2) — mirror `AiRoofFrameSuggestion`: rangka
+// atap non-beton (gording/trekstang/ikatan_angin) SUDAH dikenali taksonomi
+// tapi belum pernah dihitung (`app/tkg/takeoff.py` tidak punya cabang utk
+// kategori ini). `fields` generik (bukan per-kategori terpisah) krn tiap
+// kategori butuh set field numerik berbeda — lihat
+// `app/perception/ai_assist/roof_frame_assist.py` utk field per kategori.
+export const AiRoofFrameSuggestionSchema = z.object({
+  kategori: z.string(),
+  fields: z.record(z.number()).default({}),
+  confidence: z.number(),
+  reasoning: z.string(),
+  source_texts: z.array(z.string()).default([]),
+  model: z.string(),
+  generated_at: z.string(),
+});
+export type AiRoofFrameSuggestion = z.infer<typeof AiRoofFrameSuggestionSchema>;
+
+// 2026-07-05 (lanjutan Fase X2) — mirror `AiKusenSuggestion`: SATU baris
+// jadwal pintu/jendela. TIDAK PERNAH diikat ke kode asli gambar (kode tipe
+// kusen spt "P1" sering bentrok dgn prefiks taksonomi lain seperti
+// pondasi_telapak) — selalu entry sintetis berprefiks aman `KUSEN-AUTO-`.
+export const AiKusenSuggestionSchema = z.object({
+  tipe: z.string(),
+  width_m: z.number().nullish(),
+  height_m: z.number().nullish(),
+  qty: z.number().int().nullish(),
+  confidence: z.number(),
+  reasoning: z.string(),
+  source_texts: z.array(z.string()).default([]),
+  model: z.string(),
+  generated_at: z.string(),
+});
+export type AiKusenSuggestion = z.infer<typeof AiKusenSuggestionSchema>;
+
+// 2026-07-05 (lanjutan Fase X2, slice TERAKHIR rangkaian dinding→atap→
+// kusen→MEP) — mirror `AiMepSuggestion`: SATU jenis titik MEP (lampu/stop
+// kontak/saklar/dll), HANYA dari catatan jumlah eksplisit di teks —
+// deteksi simbol/ikon dari piksel TIDAK dicoba (vision-on-pixel tetap
+// dihindari, `CLAUDE.md` §1.1).
+export const AiMepSuggestionSchema = z.object({
+  jenis: z.string(),
+  count: z.number().int().nullish(),
+  confidence: z.number(),
+  reasoning: z.string(),
+  source_texts: z.array(z.string()).default([]),
+  model: z.string(),
+  generated_at: z.string(),
+});
+export type AiMepSuggestion = z.infer<typeof AiMepSuggestionSchema>;
+
 export const WbsDivisionSchema = z.object({
   code: z.string(),
   title: z.string(),
