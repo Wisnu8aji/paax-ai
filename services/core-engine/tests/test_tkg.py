@@ -211,6 +211,60 @@ def test_v03_denah_subset_grid_pipeline_sah_tidak_menjadi_e_grid():
     assert r.gate_passed is True
 
 
+def test_v03_subset_dengan_anchor_independen_per_halaman_tidak_e_grid():
+    sheet1 = TkgSheet(
+        sheet_id="S01",
+        jenis="denah",
+        meta=SheetMeta(judul="DENAH PONDASI", nomor="S-01"),
+        grid=Grid(
+            sumbu_x=[
+                GridAxis(label="A", posisi_mm=0.0),
+                GridAxis(label="B", posisi_mm=3000.0),
+                GridAxis(label="C", posisi_mm=6500.0),
+            ],
+            sumbu_y=[
+                GridAxis(label="1", posisi_mm=0.0),
+                GridAxis(label="2", posisi_mm=4000.0),
+            ],
+            bentang_x=[
+                GridSpan(dari="A", ke="B", nilai=3000, unit="mm"),
+                GridSpan(dari="B", ke="C", nilai=3500, unit="mm"),
+            ],
+            bentang_y=[GridSpan(dari="1", ke="2", nilai=4000, unit="mm")],
+            total_x=GridTotal(dari="A", ke="C", nilai=6500, unit="mm"),
+            total_y=GridTotal(dari="1", ke="2", nilai=4000, unit="mm"),
+        ),
+        elements=[ElementInstance(kode="PC1", alamat="A1", n=1)],
+    )
+    sheet2 = TkgSheet(
+        sheet_id="S02",
+        jenis="denah",
+        meta=SheetMeta(judul="DENAH ATAP", nomor="S-02"),
+        grid=Grid(
+            sumbu_x=[
+                GridAxis(label="B", posisi_mm=0.0),
+                GridAxis(label="C", posisi_mm=3500.0),
+            ],
+            sumbu_y=[
+                GridAxis(label="1", posisi_mm=0.0),
+                GridAxis(label="2", posisi_mm=4000.0),
+            ],
+            bentang_x=[GridSpan(dari="B", ke="C", nilai=3500, unit="mm")],
+            bentang_y=[GridSpan(dari="1", ke="2", nilai=4000, unit="mm")],
+            total_x=GridTotal(dari="B", ke="C", nilai=3500, unit="mm"),
+            total_y=GridTotal(dari="1", ke="2", nilai=4000, unit="mm"),
+        ),
+        elements=[ElementInstance(kode="KD1", alamat="B1", n=1)],
+    )
+    doc = TkgDocument(prj_id="P", rev_id="R0", sheets=[sheet1, sheet2])
+
+    r = validate_tkg(doc)
+
+    assert not any(i.code == "E-GRID" for i in r.issues)
+    assert r.ok is True
+    assert r.gate_passed is True
+
+
 def test_v03_tetap_menangkap_konflik_posisi_grid_yang_sungguh_berbeda():
     doc = buat_tkg()
     doc.generated_by = "pipeline"
@@ -247,8 +301,46 @@ def test_v03_tetap_menangkap_konflik_posisi_grid_yang_sungguh_berbeda():
     r = validate_tkg(doc)
 
     assert any(i.code == "E-GRID" and i.subject == "x:B" for i in r.issues)
+    assert [i.subject for i in r.issues if i.code == "E-GRID"] == ["x:B"]
     assert r.ok is False
     assert r.gate_passed is False
+
+
+def test_v03_satu_label_bersama_tidak_cukup_untuk_e_grid():
+    doc = buat_tkg()
+    doc.sheets.append(
+        TkgSheet(
+            sheet_id="S06",
+            jenis="denah",
+            meta=SheetMeta(judul="DENAH LANJUTAN SATU ANCHOR", nomor="S-06", skala="1:100"),
+            grid=Grid(
+                sumbu_x=[
+                    GridAxis(label="C", posisi_mm=0.0),
+                    GridAxis(label="D", posisi_mm=2500.0),
+                    GridAxis(label="E", posisi_mm=6000.0),
+                ],
+                sumbu_y=[
+                    GridAxis(label="3", posisi_mm=0.0),
+                    GridAxis(label="4", posisi_mm=4000.0),
+                ],
+                bentang_x=[
+                    GridSpan(dari="C", ke="D", nilai=2500, unit="mm", raw="2500"),
+                    GridSpan(dari="D", ke="E", nilai=3500, unit="mm", raw="3500"),
+                ],
+                bentang_y=[GridSpan(dari="3", ke="4", nilai=4000, unit="mm", raw="4000")],
+                total_x=GridTotal(dari="C", ke="E", nilai=6000, unit="mm"),
+                total_y=GridTotal(dari="3", ke="4", nilai=4000, unit="mm"),
+            ),
+            elements=[ElementInstance(kode="K1", alamat="as C/3", bentuk="titik", n=1)],
+        )
+    )
+
+    r = validate_tkg(doc)
+
+    # Satu label bersama hanya memberi titik nol, belum memberi jarak relatif yang bisa diuji.
+    assert not any(i.code == "E-GRID" for i in r.issues)
+    assert r.ok is True
+    assert r.gate_passed is True
 
 
 def test_v04_orphans():
