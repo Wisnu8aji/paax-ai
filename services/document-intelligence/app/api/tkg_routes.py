@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.tkg.builder import TkgBuildResult, build_tkg_from_text
+from app.perception.work_items import DrawingWorkItemsResult, WorkItemsRequest, build_work_items
 
 
 router = APIRouter(prefix="/drawings/tkg", tags=["TKG"])
@@ -26,3 +27,8 @@ async def build_tkg(req: TkgBuildRequest):
         title=req.title,
         raw_text=req.raw_text,
     )
+
+
+@router.post("/work-items", response_model=DrawingWorkItemsResult)
+async def group_work_items(req: WorkItemsRequest):
+    return build_work_items(req.consolidated, req.takeoff_items)
