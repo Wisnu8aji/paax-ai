@@ -7,7 +7,7 @@
 
 ## ✅ FASE V/W — NORMALISASI KODE + WORK ITEM GROUPING (prompt 2026-07-14, eksekusi Codex 2026-07-05)
 Branch kerja: `feat/gambar-rab-fase-v-w-normalisasi-work-items`.
-PR: TBD
+PR: https://github.com/Wisnu8aji/paax-ai/pull/36
 Report remote: `report-remote/REPORT_FASE_V_W_CODEX_2026-07-05.md`.
 
 - **Step 0 selesai lebih dulu**: backlog Fase S/T/U/U-2 diverifikasi cocok
