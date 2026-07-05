@@ -57,10 +57,13 @@ def load_data(base: Path | None = None) -> DataStore:
     if harga_dir.exists():
         for f in sorted(harga_dir.glob("*.json")):
             raw = json.loads(f.read_text(encoding="utf-8"))
+            resources = raw.get("resources")
+            if not isinstance(resources, list):
+                continue
             code = raw.get("region_code") or f.stem
             store.region_names[code] = raw.get("region", code)
             book: Dict[str, ResourcePrice] = {}
-            for r in raw.get("resources", []):
+            for r in resources:
                 rp = ResourcePrice(**r)
                 book[rp.code] = rp
             store.regions[code] = book

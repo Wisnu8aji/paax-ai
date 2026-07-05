@@ -1,7 +1,42 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-10** (eksekusi prompt Fase O/P: usulan unit AHSP + harga Semarang batch2). File ini SATU-SATUNYA tempat status berjalan.
+> Update terakhir: **2026-07-11** (eksekusi prompt Fase Q/R: terapkan hasil O/P + laporan harga KEJAKSAAN Semarang). File ini SATU-SATUNYA tempat status berjalan.
 > Selesai satu fase → perbarui di sini (jangan sebar ke banyak file).
+
+## ✅ FASE Q/R — TERAPKAN HASIL O/P + HARGA KEJAKSAAN SEMARANG (prompt 2026-07-11)
+Branch kerja: `feat/ahsp-unit-apply-semarang-import-kejaksaan`.
+PR: https://github.com/Wisnu8aji/paax-ai/pull/34
+Base yang dipakai: `origin/feat/ahsp-unit-gap-semarang-price-batch2` karena
+PR #29-#33 masih open dan fase ini bergantung pada laporan/data Fase O/P.
+
+- **Fase Q selesai sebagai penerapan data produksi**: 188 satuan AHSP CK 2026
+  diterapkan ke `data/ahsp/cipta-karya-2026.json` dari marker
+  `report/AHSP_UNIT_GAP_RESOLUTION_2026-07-10.md`. Hasil akhir: 2.542 item
+  AHSP, **0 unit kosong**, dan 188 kode cocok persis dengan laporan.
+- **Region Semarang masuk repo sebagai price book nyata**:
+  `data/harga-satuan/semarang.json` ditambahkan dari sumber lama
+  `G:\paax-data\harga-satuan\semarang.json` (23 resource), lalu ditambah 2
+  resource Fase P yang sudah diputuskan (`M.GEN.0085` Baja Profil 12000,
+  `M.GEN.0456` Sealtape 10000). Total sekarang **25 resource**.
+- **Loader diperketat**: `semarang_overrides.json` tidak lagi terbaca sebagai
+  price book kosong karena loader hanya memuat JSON harga yang punya
+  `resources` berupa list. File override historis tetap tidak diubah.
+- **Coverage harga Semarang jujur**: sebelum Q, Semarang punya 0 priced
+  resource. Sesudah Q: **25/2.441** resource AHSP punya harga,
+  `coverage_ratio=0.0102`; masih sangat kecil dan itu diharapkan.
+- **Fase R selesai sebagai laporan usulan, bukan penerapan harga**:
+  `G:\AHSP\KEJAKSAAN.xlsx` sheet `HARGA BAHAN` diekstrak **121 baris**.
+  Hasil: **24 matched aman**, **4 ambigu**, **93 tidak ketemu aman**. Baris
+  tidak ketemu sekarang menampilkan kandidat dekat beserta alasan penolakan
+  seperti unit/kategori/angka tidak cocok.
+- **Perbandingan sumber Semarang**: overlap KEJAKSAAN vs price book Semarang
+  sebanyak **24 kode**, selisih harga >15% **0**. Tidak ada averaging dan
+  tidak ada harga KEJAKSAAN yang diterapkan otomatis.
+- **Verifikasi**: core-engine **264 passed**, web Vitest **46 passed**,
+  `pnpm tsc --noEmit` exit 0, document-intelligence **126 passed + 5 skipped**.
+- Report detail:
+  `report/HARGA_KEJAKSAAN_SEMARANG_2026-07-11.md`,
+  `report/REPORT_FASE_Q_R_TERAPKAN_HASIL_KEJAKSAAN_SEMARANG_CODEX_2026-07-11.md`.
 
 ## ✅ FASE O/P — AHSP UNIT GAP + HARGA SEMARANG BATCH2 (prompt 2026-07-10)
 Branch kerja: `feat/ahsp-unit-gap-semarang-price-batch2`.
