@@ -1,7 +1,66 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-05**. File ini SATU-SATUNYA tempat status berjalan.
+> Update terakhir: **2026-07-04** (eksekusi prompt lanjutan Fase J-2/K-2/L bertanggal 2026-07-07). File ini SATU-SATUNYA tempat status berjalan.
 > Selesai satu fase → perbarui di sini (jangan sebar ke banyak file).
+
+## ✅ RENCANA BESAR GAMBAR KERJA — FASE J-2/K-2/L LANJUTAN (prompt 2026-07-07)
+Branch kerja: `feat/rab-nav-validator-audit-ahsp-suggest`.
+PR: https://github.com/Wisnu8aji/paax-ai/pull/30
+Base yang dipakai: `origin/feat/gambar-generate-rab-wiring` karena PR #29
+belum merged saat eksekusi.
+
+- **Fase J-2 selesai**: setelah `sendToRab` menyimpan volume ke Draft RAB,
+  UI tidak auto-redirect. Tombol baru **"Lihat Draft RAB"** muncul dan kliknya
+  memanggil `router.push('/proyek/[projectId]/rab')`. Ini menjaga konteks user:
+  pesan sukses tetap terbaca, lalu user sendiri membuka draft.
+- **Fase K-2 selesai sebagai audit validator**: test baru di
+  `services/core-engine/tests/test_tkg.py` membuktikan V-02 tetap menangkap
+  total grid salah walau data memakai `zone`, `offset_tepi`, `alamat_list`,
+  dan `alamat_needs_review`; V-04 tetap hanya warning untuk orphan type/def.
+- **Temuan V-03 eksplisit**: kasus denah multi-sheet dengan grid subset sah
+  (mis. sheet atap hanya B-C sementara sheet lantai penuh A-C) saat ini masih
+  menjadi `E-GRID` karena validator membandingkan fingerprint grid penuh antar
+  semua sheet `denah`. Test ditandai `xfail(strict=True)` agar temuan terlihat
+  tanpa mengubah gate logic sepihak. Perlu keputusan Claude/owner sebelum V-03
+  diubah dari error keras menjadi aturan yang lebih sesuai realita multi-sheet.
+- **Fase L di-skip sengaja**: masih opsional, katalog AHSP repo hanya sample 4
+  item. Auto-suggest berisiko memberi kesan mapping AHSP sudah matang. Jalur
+  saat ini tetap jujur: volume masuk Draft RAB, `ahsp_code` kosong, user pilih
+  manual di halaman RAB.
+- **Verifikasi**: web Vitest **46/46**, `pnpm tsc --noEmit` hijau,
+  core-engine **242 passed + 1 xfailed**, document-intelligence **126 passed +
+  5 skipped**. Browser Playwright memverifikasi upload PDF → analisa → simpan
+  → kirim volume → tombol "Lihat Draft RAB" → URL `/proyek/project-1/rab` dan
+  row volume `1.25` tersimpan dengan `ahsp_code: ""`.
+
+## ✅ RENCANA BESAR GAMBAR KERJA — FASE J/K SELESAI (prompt 2026-07-06)
+Branch kerja: `feat/gambar-generate-rab-wiring`.
+
+- **Fase J (wajib) selesai**: `apps/web/src/components/drawings/tkg-workspace.tsx`
+  sekarang menjalankan `validateTkg` → `renderTkg` → `takeoffTkg` otomatis
+  setelah user menekan **"Simpan hasil analisis"** pada Review Gambar. Tombol
+  placeholder disabled **"Generate RAB"** dan teks **"Segera hadir"** dihapus
+  dari UI. CTA yang sah adalah **"Kirim Volume ke Draft RAB"** setelah takeoff.
+- **Aturan RAB tetap dijaga**: `sendToRab`, `TriagePanel`, dan format
+  `RabDraftLine` tidak diubah. Item takeoff yang `needs_review` tidak dikirim.
+  Item siap pakai dikirim sebagai baris Draft RAB berisi `volume`, sementara
+  `ahsp_code` tetap string kosong agar user memilih AHSP di halaman RAB.
+- **Fase K selesai sebagai coverage validator**: `services/core-engine/tests/
+  test_tkg.py` menambah test untuk `SheetMeta.zone`, `alamat_list`,
+  `alamat_needs_review`, dan notasi offset seperti `"B-offset_sebelum_1"`.
+  Hasilnya: validator tidak membuat false-positive pada field pipeline baru,
+  dan tetap menangkap issue nyata `W-CNT` ketika count simbol/label mismatch.
+  Tidak perlu perubahan rumus/logic validator.
+- **Fase L (AHSP auto-suggest) di-skip sengaja**: optional pada prompt, dan
+  katalog AHSP lokal masih sample kecil. Mapping AHSP otomatis akan berisiko
+  terlihat lebih pintar dari data yang tersedia. Jalur saat ini tetap jujur:
+  volume masuk draft, AHSP dipilih manual.
+- **Verifikasi**: web Vitest 45/45, `pnpm tsc --noEmit` hijau, core-engine
+  240/240, document-intelligence 126/126 dengan 5 skipped. Browser headless
+  Chrome juga memverifikasi upload PDF sintetis → Review Gambar → simpan →
+  Triage Review + "Kirim Volume ke Draft RAB" muncul tanpa reload → Draft RAB
+  tersimpan dengan volume `1.25` dan `ahsp_code: ""` → halaman `/rab`
+  menampilkan row volume yang sama.
 
 ## ✅ RENCANA BESAR GAMBAR KERJA — FASE 0-H SELESAI (2026-07-05 malam)
 Owner minta ekstraksi gambar kerja dinaikkan setara referensi nyata (2 dokumen

@@ -6,13 +6,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import type { TkgDocument } from "@paax/schemas";
+import type { TakeoffResult, TkgDocument, TkgValidationResult } from "@paax/schemas";
 
+import { renderTkg, takeoffTkg, validateTkg } from "@/lib/engine";
+import { emptyRabLine, rabRepository, type ProjectRabDraft } from "@/lib/projects/rab-repository";
 import { TkgWorkspace } from "./tkg-workspace";
 
-const { analyzeDrawingFileInBackgroundMock, saveMock } = vi.hoisted(() => ({
+const { analyzeDrawingFileInBackgroundMock, saveMock, routerPushMock } = vi.hoisted(() => ({
   analyzeDrawingFileInBackgroundMock: vi.fn(),
   saveMock: vi.fn(),
+  routerPushMock: vi.fn(),
 }));
 
 vi.mock("@/lib/ai/document-intelligence-tkg", () => ({
@@ -61,6 +64,10 @@ vi.mock("@/lib/projects/rab-repository", () => ({
     get: vi.fn(),
     save: vi.fn(),
   },
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: routerPushMock }),
 }));
 
 vi.mock("@/components/review/triage-panel", () => ({
@@ -149,6 +156,56 @@ const intakeResult = {
   },
 };
 
+const validationResult: TkgValidationResult = {
+  ok: true,
+  gate_passed: true,
+  n_errors: 0,
+  n_warnings: 0,
+  issues: [],
+  type_index: {},
+  orphans_tanpa_definisi: [],
+  orphans_tanpa_instance: [],
+};
+
+const takeoffResult: TakeoffResult = {
+  prj_id: "project-1",
+  rev_id: "R0",
+  items: [
+    {
+      kode: "K1",
+      lantai: "L1",
+      kategori: "kolom",
+      work_type: "beton",
+      quantity: 1.25,
+      unit: "m3",
+      formula: "0.3 * 0.4 * tinggi * n",
+      detail: "Kolom K1 A1",
+      needs_review: false,
+      review_reason: null,
+      mutu_beton: "K-250",
+      alamat: "A1",
+      rule_id: "F-KOLOM-BETON",
+      usage_factor: 1,
+    },
+  ],
+  assumptions: [],
+  warnings: [],
+  params_used: [],
+  n_needs_review: 0,
+  bbs: null,
+};
+
+const emptyDraft: ProjectRabDraft = {
+  projectId: "project-1",
+  regionCode: "jateng",
+  ppnRate: 0.11,
+  mode: "sequential",
+  lines: [{ id: "empty-line", ahsp_code: "", volume: null, duration_days: null }],
+  lastTotal: null,
+  lastCalculatedAt: null,
+  updatedAt: "2026-07-04T00:00:00.000Z",
+};
+
 function renderWorkspace() {
   return render(React.createElement(TkgWorkspace, { projectId: "project-1" }));
 }
@@ -163,11 +220,18 @@ beforeEach(() => {
     ...record,
     updatedAt: "2026-07-04T01:00:00.000Z",
   }));
+  vi.mocked(validateTkg).mockResolvedValue(validationResult);
+  vi.mocked(renderTkg).mockResolvedValue("SHEET S01\nTYPE K1");
+  vi.mocked(takeoffTkg).mockResolvedValue(takeoffResult);
+  vi.mocked(emptyRabLine).mockReturnValue({ id: "generated-line", ahsp_code: "", volume: null, duration_days: null });
+  vi.mocked(rabRepository.get).mockResolvedValue({ ...emptyDraft, lines: [...emptyDraft.lines] });
+  vi.mocked(rabRepository.save).mockImplementation(async (draft) => draft);
 });
 
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("TkgWorkspace Review Gambar (rencana besar 2026-07-05)", () => {
@@ -209,7 +273,10 @@ describe("TkgWorkspace Review Gambar (rencana besar 2026-07-05)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /simpan hasil analisis/i }));
 
-    await waitFor(() => expect(saveMock).toHaveBeenCalled());
+    await waitFor(() => expect(validateTkg).toHaveBeenCalledWith(mockTkg));
+    expect(renderTkg).toHaveBeenCalledWith(mockTkg);
+    expect(takeoffTkg).toHaveBeenCalledWith(mockTkg);
+    expect(await screen.findByRole("button", { name: /kirim volume ke draft rab/i })).toBeTruthy();
     expect(saveMock.mock.calls.at(-1)?.[0]).toMatchObject({
       projectId: "project-1",
       tkg: mockTkg,
@@ -218,15 +285,78 @@ describe("TkgWorkspace Review Gambar (rencana besar 2026-07-05)", () => {
     });
   });
 
-  it("shows a disabled Generate RAB placeholder that is not wired to any logic yet", async () => {
+  it("sends ready takeoff volume to Draft RAB with AHSP intentionally empty", async () => {
     renderWorkspace();
     fireEvent.change(await screen.findByLabelText(/unggah pdf gambar kerja/i), {
       target: { files: [makePdfFile()] },
     });
     fireEvent.click(screen.getByRole("button", { name: /analisa gambar kerja/i }));
 
-    const generateRabButton = await screen.findByRole("button", { name: /generate rab/i });
-    expect((generateRabButton as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(await screen.findByRole("button", { name: /simpan hasil analisis/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /kirim volume ke draft rab/i }));
+
+    await waitFor(() => expect(rabRepository.save).toHaveBeenCalled());
+    expect(rabRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+      projectId: "project-1",
+      lines: [
+        expect.objectContaining({
+          id: "generated-line",
+          ahsp_code: "",
+          volume: 1.25,
+          duration_days: null,
+        }),
+      ],
+    }));
+  });
+
+  it("shows a Draft RAB navigation action after sending ready volume", async () => {
+    renderWorkspace();
+    fireEvent.change(await screen.findByLabelText(/unggah pdf gambar kerja/i), {
+      target: { files: [makePdfFile()] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /analisa gambar kerja/i }));
+
+    fireEvent.click(await screen.findByRole("button", { name: /simpan hasil analisis/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /kirim volume ke draft rab/i }));
+
+    const openDraftButton = await screen.findByRole("button", { name: /lihat draft rab/i });
+    expect(routerPushMock).not.toHaveBeenCalled();
+
+    fireEvent.click(openDraftButton);
+
+    expect(routerPushMock).toHaveBeenCalledWith("/proyek/project-1/rab");
+  });
+
+  it("keeps the text description AI flow wired through validation, render, and takeoff", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ tkg: mockTkg, provider: "uji" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderWorkspace();
+    fireEvent.change(screen.getByPlaceholderText(/contoh: denah/i), {
+      target: { value: "Denah kolom K1 di A1, dimensi 300x400, mutu K-250." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /proses dengan ai/i }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/ai/tkg", expect.objectContaining({ method: "POST" })));
+    await waitFor(() => expect(validateTkg).toHaveBeenCalledWith(mockTkg));
+    expect(renderTkg).toHaveBeenCalledWith(mockTkg);
+    expect(takeoffTkg).toHaveBeenCalledWith(mockTkg);
+    expect(await screen.findByRole("button", { name: /kirim volume ke draft rab/i })).toBeTruthy();
+  });
+
+  it("does not render the stale disabled Generate RAB placeholder", async () => {
+    renderWorkspace();
+    fireEvent.change(await screen.findByLabelText(/unggah pdf gambar kerja/i), {
+      target: { files: [makePdfFile()] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /analisa gambar kerja/i }));
+
+    expect(await screen.findByRole("button", { name: /simpan hasil analisis/i })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /generate rab/i })).toBeNull();
+    expect(screen.queryByText(/segera hadir/i)).toBeNull();
   });
 
   it("supports removing an attached file before analysis", async () => {
