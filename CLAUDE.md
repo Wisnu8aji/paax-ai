@@ -43,6 +43,54 @@ Implikasi konkret yang HARUS ditegakkan:
 > Jika sebuah task akan membuat LLM atau TypeScript menghitung angka final,
 > **STOP dan lapor ke pemilik repo.** Itu pelanggaran aturan emas.
 
+### 1.1 AI-Assist untuk Klasifikasi & Binding (Lapisan 2A, paralel — bukan pengganti rule-based)
+
+Sejak 2026-07-05 (dipicu temuan Fase X1/X1B: 13/13 elemen `pondasi_telapak`
+PLHUT jatuh `perlu_review` karena dimensi hanya ada di halaman detail/grafis,
+bukan tabel kode-dimensi yang bisa diparse regex), PAAX mengadopsi lapisan
+AI-assist sebagai **fallback paralel** untuk `zone_classifier.py`,
+`binding.py`, dan `consolidate.py` di `services/document-intelligence`
+(rencana lengkap: `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md`
+§X2, ringkasan gap: `docs/BRAIN_ALIGNMENT.md`). Aturan yang WAJIB ditegakkan
+agar ini tidak melanggar Aturan Emas secara halus:
+
+- **Rule-based tetap fast-path utama.** LLM HANYA dipanggil ketika ekstraksi
+  regex/heuristik gagal atau ambigu (hasilnya `perlu_review`/`belum_didukung`).
+  Tidak ada kasus di mana LLM menggantikan jalur deterministik yang sudah
+  bekerja.
+- **LLM membaca DATA YANG SUDAH DIEKSTRAK** (span teks + koordinat grid presisi
+  dari PyMuPDF) — **BUKAN piksel gambar mentah**. Vision-on-raw-image tetap
+  dihindari kecuali untuk halaman scan/raster tanpa layer teks (fallback
+  OCR yang sudah ada, §12.1 MASTER_PLAN), karena vision-LLM murni ~60% akurat
+  membaca dimensi gambar teknik vs data vektor PDF yang sudah eksak.
+- **Setiap usulan LLM WAJIB divalidasi deterministik** sebelum jadi kandidat:
+  angka yang diusulkan harus benar-benar muncul di span yang diekstrak
+  (tidak boleh halusinasi), grid/kode yang diusulkan harus ada di registry,
+  nilai harus masuk rentang wajar. Usulan yang gagal validasi ini dibuang,
+  bukan dipaksakan.
+- **Tidak ada auto-commit ke input engine.** Hasil lolos validasi tetap masuk
+  sebagai kandidat berstatus `perlu_review` dengan `confidence` + `reason` —
+  sama seperti alur `perlu_review` yang sudah ada — menunggu approval manusia
+  sebelum dipakai sebagai input `services/core-engine`.
+- **Audit trail wajib.** Setiap keputusan klasifikasi berbasis-AI dicatat
+  (model, prompt/versi, input, output, reasoning) karena keluaran LLM bisa
+  bervariasi antar run dan RAB harus tetap auditable. Pakai temperature
+  rendah untuk meminimalkan varian, tapi tidak diklaim deterministik.
+- **Biaya & latency dipertimbangkan di desain** — panggilan LLM per
+  halaman/elemen di skala produksi tidak gratis; cache hasil per dokumen,
+  jangan panggil ulang untuk dokumen yang sama (selaras §12–14 MASTER_PLAN).
+- Ini BUKAN Vision-LLM v1.0 yang masih ditunda (baca piksel penuh sebagai
+  jalur utama). Ini lapisan lebih sempit: LLM membaca teks+koordinat yang
+  sudah eksak dari PyMuPDF untuk mengisi kekosongan klasifikasi/binding saat
+  regex gagal — risiko jauh lebih rendah karena datanya sudah presisi.
+- **Provider default: Gemini 2.5 Flash** (`GeminiAiAssistClient`,
+  `services/document-intelligence/app/perception/ai_assist/client.py`) —
+  sama dgn provider yang sudah dipakai `apps/web/src/lib/ai/orchestrator.ts`.
+  Perbandingan alternatif (DeepSeek, OpenRouter, Groq, Qwen3 Coder) sudah
+  didokumentasikan sbg referensi keputusan masa depan (bukan perubahan
+  implementasi) di `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_
+  2026-07-13.md` §X2.3a.
+
 ---
 
 ## 2. PRINSIP BANGUN BERTAHAP (Vertical Slices)

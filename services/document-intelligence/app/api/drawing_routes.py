@@ -92,6 +92,7 @@ def generate_demo_extraction(file_name: str) -> DrawingAnalysisResponse:
         ]
     )
 
+from app.perception.ai_assist.client import GeminiAiAssistClient
 from app.perception.assemble import assemble_document_from_pdf_bytes
 from app.perception.consolidate import consolidate_document
 from app.perception.render import render_tkg_txt
@@ -144,7 +145,12 @@ def _perform_analysis(
         else:
             tkg_doc = tkg_document.model_dump()
             tkg_text = render_tkg_txt(tkg_document)
-            consolidated_out = consolidate_document(tkg_document).model_dump()
+            # Fase X2 (2026-07-05): AI-assist HANYA aktif kalau GEMINI_API_KEY
+            # tersedia di env (degradasi anggun, pola sama PaddleOCR) — tanpa
+            # itu, consolidate_document() berperilaku identik sebelum X2.
+            consolidated_out = consolidate_document(
+                tkg_document, ai_client=GeminiAiAssistClient.from_env(),
+            ).model_dump()
 
             if per_sheet_metrics:
                 first = per_sheet_metrics[0]
