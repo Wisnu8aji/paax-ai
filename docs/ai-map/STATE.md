@@ -1,8 +1,36 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-05** (Codex menjalankan prompt Fase V/W
-> bertanggal 2026-07-14: normalisasi kode lintas-halaman + work item
-> grouping). File ini SATU-SATUNYA tempat status berjalan.
+> Update terakhir: **2026-07-05** (Codex menjalankan prompt Fase X1
+> bertanggal 2026-07-15: shared WBS/taksonomi + bridge galian footplat).
+> File ini SATU-SATUNYA tempat status berjalan.
+
+## FASE X1 - BRIDGING GALIAN FOOTPLAT + FIX ARSITEKTUR (prompt 2026-07-15, eksekusi Codex 2026-07-05)
+Branch kerja: `feat/fase-x1-bridging-galian-footplat`.
+PR: dibuat sebagai draft setelah commit fase ini.
+Report remote: `report-remote/REPORT_FASE_X1_BRIDGING_GALIAN_CODEX_2026-07-05.md`.
+
+- **Fix WBS**: `document-intelligence` tidak lagi memuat
+  `core-engine/app/rab/sections.py` lewat filesystem/importlib. WBS pindah ke
+  shared Python package `packages/schemas/python/paax_schemas/wbs.py`, lalu
+  dipakai oleh core-engine dan document-intelligence.
+- **Fix kategori TKG**: prefiks/kategori kode TKG pindah ke
+  `packages/schemas/python/paax_schemas/tkg_taxonomy.py`. Kategori seperti
+  `gording`, `kuda_kuda`, `ikatan_angin`, dan `trekstang` sekarang dikenal
+  work-items dan map ke WBS `III - Pekerjaan Struktur`, bukan `LAINNYA`.
+- **Bridge X1**: modul baru
+  `services/document-intelligence/app/perception/bridging_tanah.py`
+  membentuk input `GalianFootplat` dari `ElementRegistryEntry` dan memanggil
+  `core-engine /takeoff/tanah` bila data lengkap. Tidak ada hitung volume
+  manual di document-intelligence.
+- **Status jujur**: `pondasi_telapak` tanpa dimensi `b/l` atau tanpa
+  `d_gali` keluar sebagai `perlu_review` dengan alasan spesifik dan volume
+  tetap kosong.
+- **Smoke PLHUT lengkap 88 halaman**: 13 item `pondasi_telapak` dikenali dan
+  masuk bridge `galian_footplat`; 0 `dihitung`, 13 `perlu_review`, alasan
+  sama: `dimensi footplat tidak lengkap di gambar: b, l`.
+- **Verifikasi**: document-intelligence **148 passed + 5 skipped**,
+  core-engine **279 passed**, packages/schemas build OK + Jest **12 passed**,
+  web Vitest **47 passed**, `pnpm tsc --noEmit` exit 0.
 > Selesai satu fase → perbarui di sini (jangan sebar ke banyak file).
 
 ## ✅ FASE V/W — NORMALISASI KODE + WORK ITEM GROUPING (prompt 2026-07-14, eksekusi Codex 2026-07-05)
