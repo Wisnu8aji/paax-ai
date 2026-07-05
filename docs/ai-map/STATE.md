@@ -1,8 +1,32 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-05** (Codex menjalankan prompt Fase X1
-> bertanggal 2026-07-15: shared WBS/taksonomi + bridge galian footplat).
+> Update terakhir: **2026-07-05** (Codex menjalankan prompt Fase X1B
+> bertanggal 2026-07-16: packaging paax_schemas + investigasi footplat).
 > File ini SATU-SATUNYA tempat status berjalan.
+
+## FASE X1B - PACKAGING PAAX SCHEMAS + INVESTIGASI BINDING FOOTPLAT (prompt 2026-07-16, eksekusi Codex 2026-07-05)
+Branch kerja: `feat/fase-x1b-packaging-binding-footplat`.
+PR: dibuat sebagai draft setelah commit fase ini.
+Report remote: `report-remote/REPORT_FASE_X1B_PACKAGING_BINDING_CODEX_2026-07-05.md`.
+
+- **Packaging diperbaiki**: `packages/schemas/python` sekarang package
+  Python installable (`paax-schemas` 0.1.0), bukan folder yang hanya
+  ditemukan lewat fallback path.
+- **Dependency service**: core-engine dan document-intelligence mencatat
+  dependency `paax-schemas`; CI dan README menginstal shared Python schemas
+  sebelum service Python.
+- **Fallback dihapus**: import `paax_schemas` sekarang langsung. Tidak ada
+  `sys.path.insert` / `except ModuleNotFoundError` untuk package ini di
+  source target.
+- **Tes packaging baru**: subprocess Python bersih dari folder masing-masing
+  service membuktikan `paax_schemas` bisa di-import tanpa `PYTHONPATH`.
+- **Investigasi PLHUT**: halaman 49 memuat angka/kode detail pondasi, tetapi
+  tidak menjadi `TypeRecord` dengan kolom `kode` + `dimensi`; masalahnya gap
+  ekstraksi detail/grafis, bukan alias field sempit di bridge. `d_gali` juga
+  tidak ditemukan sebagai sumber eksplisit.
+- **Verifikasi**: core-engine **280 passed**, document-intelligence
+  **149 passed + 5 skipped**, packages/schemas build OK + Jest **12 passed**,
+  web Vitest **47 passed**, `pnpm tsc --noEmit` exit 0.
 
 ## FASE X1 - BRIDGING GALIAN FOOTPLAT + FIX ARSITEKTUR (prompt 2026-07-15, eksekusi Codex 2026-07-05)
 Branch kerja: `feat/fase-x1-bridging-galian-footplat`.

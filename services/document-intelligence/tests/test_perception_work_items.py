@@ -81,9 +81,14 @@ def test_all_known_tkg_categories_map_to_explicit_wbs_section_not_lainnya():
 
 def test_work_items_does_not_import_core_engine_sections_by_filesystem_path():
     source = Path("app/perception/work_items.py").read_text(encoding="utf-8")
+    takeoff_source = Path("../core-engine/app/tkg/takeoff.py").read_text(encoding="utf-8")
 
     assert "spec_from_file_location" not in source
     assert "core-engine" not in source
+    assert "sys.path.insert" not in source
+    assert "except ModuleNotFoundError" not in source
+    assert "sys.path.insert" not in takeoff_source
+    assert "except ModuleNotFoundError" not in takeoff_source
 
 
 def test_work_items_pondasi_telapak_without_depth_is_review_not_unsupported():

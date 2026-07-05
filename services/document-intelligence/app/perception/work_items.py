@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import sys
 from collections import defaultdict
 from functools import lru_cache
-from pathlib import Path
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -11,16 +9,9 @@ from pydantic import BaseModel, Field
 from app.perception.bridging_tanah import TanahTakeoffClient, bridge_galian_footplat
 from app.perception.consolidated_models import ConsolidatedExtraction, ElementRegistryEntry
 from app.perception.consolidate import _normalize_kode
-
-try:
-    from paax_schemas.tkg_taxonomy import kategori_dari_kode
-    from paax_schemas.tkg_taxonomy import known_tkg_categories as _shared_known_tkg_categories
-    from paax_schemas.wbs import normalize_section, section_title
-except ModuleNotFoundError:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "packages" / "schemas" / "python"))
-    from paax_schemas.tkg_taxonomy import kategori_dari_kode
-    from paax_schemas.tkg_taxonomy import known_tkg_categories as _shared_known_tkg_categories
-    from paax_schemas.wbs import normalize_section, section_title
+from paax_schemas.tkg_taxonomy import kategori_dari_kode
+from paax_schemas.tkg_taxonomy import known_tkg_categories as _shared_known_tkg_categories
+from paax_schemas.wbs import normalize_section, section_title
 
 
 FormulaStatus = Literal["dihitung", "belum_didukung", "perlu_review"]
