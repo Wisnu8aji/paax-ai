@@ -5,16 +5,36 @@ besar 2026-07-05: `docs/plans/PAAX_GAMBAR_TEKNIK_SIPIL_BIG_PLAN_2026-07-05.md`).
 Menggabungkan hasil per-sheet (`TkgDocument.sheets`, masing-masing sudah
 diproses independen oleh `assemble.py`) jadi SATU pandangan bangunan:
 - Grid kanonik: pilih grid TERLENGKAP (paling banyak as) sbg acuan; grid
-  sheet lain yang berbagi label as tapi beda posisi_mm -> DITANDAI konflik
-  (Assumption dampak tinggi), TIDAK ditimpa diam-diam (cikal-bakal V-02/V-03).
+  sheet lain yang berbagi >=2 label as dgn JARAK RELATIF beda -> DITANDAI
+  konflik (Assumption dampak tinggi, satu ringkasan per axis, bukan per
+  pasangan sheet), TIDAK ditimpa diam-diam (cikal-bakal V-02/V-03).
 - Registry elemen lintas-zona: instance dari SEMUA sheet dikumpulkan per
   kode, definisi tabel (dimensi/tulangan/mutu) diikat ke kode yang sama.
-- Assumption ledger: unclassified + elemen yg alamat-nya perlu-review dari
+- Assumption ledger: unclassified (SETELAH difilter teks metadata
+  administratif berulang, Fase U) + elemen yg alamat-nya perlu-review dari
   SEMUA sheet, dgn rujukan halaman asal (tidak hilang per-sheet).
 - Dimensi bangunan: dari total_x/total_y grid kanonik (mm), sumber dicatat
   jujur (bukan ditebak kalau tidak tersedia).
+
+Fase U (2026-07-13, `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-
+07-13.md`): dua bug noise diperbaiki di sini setelah bukti nyata screenshot
+aplikasi (`G:\\gambar contoh`) menunjukkan "PERLU DICEK" meledak jadi ribuan
+item nyaris tak actionable — (1) `_grid_conflicts` sebelumnya membandingkan
+`posisi_mm` ABSOLUT antar sheet (bug identik V-03 core-engine yang sudah
+diperbaiki Fase M-2, versi ini luput saat itu krn beda service) sehingga
+axis yang sama menghasilkan satu Assumption PER PASANGAN sheet; sekarang
+memakai jarak RELATIF ke anchor label bersama, dan hasil konflik per axis
+diringkas jadi SATU Assumption yang menyebut semua sheet bermasalah. (2)
+teks unclassified sebelumnya 100% masuk assumptions tanpa filter, termasuk
+kop administratif ("KEMENTERIAN...", "TAHUN ANGGARAN...", dst) yang
+berulang di hampir tiap halaman; sekarang difilter oleh `_is_admin_metadata`
+(keyword generik + heuristik frekuensi lintas-sheet), TIDAK dibuang dari
+data (tetap ada di `sheet.unclassified` mentah), hanya tidak lagi jadi
+"perlu dicek" ke user.
 """
 from __future__ import annotations
+
+import re
 
 from app.perception.consolidated_models import (
     Assumption,
@@ -29,6 +49,33 @@ from app.perception.tkg.models import Grid, TkgDocument
 
 _POSISI_MM_TOLERANCE = 1.0
 
+# Fase U.3 — pola label kop/header administratif proyek yang generik
+# (BUKAN spesifik PLHUT, konsisten §0.1 fixture-bukan-template): field kop
+# gambar standar Indonesia + istilah instansi pemerintah umum.
+_ADMIN_TEXT_PATTERN = re.compile(
+    r"KEMENTERIAN|KEMENTRIAN|DIREKTORAT\s+JENDERAL|DIREKTORAT\b|DINAS\b|"
+    r"PEMERINTAH\b|KANTOR\s+WILAYAH|TAHUN\s+ANGGARAN|JUDUL\s+PROYEK|"
+    r"NO\.?\s*GBR|SKALA\s+GBR|KODE\s+GBR|^DIGAMBAR\b|^DIPERIKSA\b|"
+    r"^DISETUJUI\b|^PARAF\b|PEKERJAAN\s+JASA\s+KONSULTANSI|PENYELENGGARAAN\b",
+    re.IGNORECASE,
+)
+# Teks identik (setelah normalisasi spasi+kapital) yang muncul di >= N sheet
+# berbeda dianggap kop/footer berulang, bukan konten teknis per-halaman.
+_ADMIN_REPEAT_MIN_SHEETS = 3
+
+
+def _normalize_text(raw: str) -> str:
+    return re.sub(r"\s+", " ", raw.strip()).upper()
+
+
+def _is_admin_metadata(raw: str, sheet_occurrence_count: int) -> bool:
+    text = raw.strip()
+    if not text:
+        return False
+    if _ADMIN_TEXT_PATTERN.search(text):
+        return True
+    return sheet_occurrence_count >= _ADMIN_REPEAT_MIN_SHEETS
+
 
 def _pick_canonical_grid(doc: TkgDocument) -> tuple[Grid | None, int | None]:
     candidates = [
@@ -41,27 +88,51 @@ def _pick_canonical_grid(doc: TkgDocument) -> tuple[Grid | None, int | None]:
     return grid, idx
 
 
+def _axis_map_mm(grid: Grid, sumbu: str) -> dict[str, float]:
+    axes = grid.sumbu_x if sumbu == "x" else grid.sumbu_y
+    return {axis.label: axis.posisi_mm for axis in axes if axis.posisi_mm is not None}
+
+
 def _grid_conflicts(doc: TkgDocument, canonical_grid: Grid, canonical_idx: int) -> list[Assumption]:
-    canon_pos = {a.label: a.posisi_mm for a in list(canonical_grid.sumbu_x) + list(canonical_grid.sumbu_y)}
+    """V-02/V-03 ala consolidate: bandingkan jarak RELATIF antar label as yang
+    sama-sama muncul (bukan posisi_mm absolut -- tiap halaman punya origin
+    sendiri, pola identik `core-engine/app/tkg/validate.py::_cek_v03`).
+    Konflik per axis diringkas jadi SATU Assumption yang menyebut semua sheet
+    bermasalah, bukan satu per pasangan (mencegah ledakan noise nyata yang
+    ditemukan di `G:\\gambar contoh`: 9+ baris nyaris identik utk 1 axis)."""
     conflicts: list[Assumption] = []
-    for i, sheet in enumerate(doc.sheets):
-        if i == canonical_idx or sheet.grid is None:
+    for sumbu in ("x", "y"):
+        canon_pos = _axis_map_mm(canonical_grid, sumbu)
+        if len(canon_pos) < 2:
             continue
-        for axis in list(sheet.grid.sumbu_x) + list(sheet.grid.sumbu_y):
-            if axis.label not in canon_pos:
+        # label -> daftar (sheet_page, jarak_relatif_kanonik, jarak_relatif_sheet)
+        by_label: dict[str, list[tuple[int, float, float]]] = {}
+        for i, sheet in enumerate(doc.sheets):
+            if i == canonical_idx or sheet.grid is None:
                 continue
-            canon_val = canon_pos[axis.label]
-            if canon_val is None or axis.posisi_mm is None:
+            sheet_pos = _axis_map_mm(sheet.grid, sumbu)
+            shared = sorted(set(canon_pos) & set(sheet_pos))
+            if len(shared) < 2:
                 continue
-            if abs(axis.posisi_mm - canon_val) > _POSISI_MM_TOLERANCE:
-                conflicts.append(Assumption(
-                    pernyataan=(
-                        f"Grid as '{axis.label}' beda posisi antara sheet {canonical_idx + 1} "
-                        f"({canon_val:.0f}mm) dan sheet {i + 1} ({axis.posisi_mm:.0f}mm)"
-                    ),
-                    alasan="Grid seharusnya konsisten di seluruh sheet bangunan yang sama (brain V-02/V-03)",
-                    sheet_page=i + 1, dampak="tinggi",
-                ))
+            anchor = shared[0]
+            for label in shared[1:]:
+                rel_canon = canon_pos[label] - canon_pos[anchor]
+                rel_sheet = sheet_pos[label] - sheet_pos[anchor]
+                if abs(rel_canon - rel_sheet) <= _POSISI_MM_TOLERANCE:
+                    continue
+                by_label.setdefault(label, []).append((i + 1, rel_canon, rel_sheet))
+        for label, entries in sorted(by_label.items()):
+            pages = ", ".join(str(p) for p, _, _ in entries)
+            _, rel_canon, _ = entries[0]
+            conflicts.append(Assumption(
+                pernyataan=(
+                    f"Grid as '{label}' (sumbu {sumbu}) beda jarak relatif terhadap sheet "
+                    f"acuan {canonical_idx + 1} (rel {rel_canon:.0f}mm) di {len(entries)} "
+                    f"sheet: {pages}"
+                ),
+                alasan="Jarak relatif antar-as seharusnya konsisten di seluruh bangunan yang sama (brain V-02/V-03)",
+                sheet_page=entries[0][0], dampak="tinggi",
+            ))
     return conflicts
 
 
@@ -78,6 +149,14 @@ def consolidate_document(doc: TkgDocument) -> ConsolidatedExtraction:
     assumptions: list[Assumption] = []
     if canonical_grid is not None and canonical_idx is not None:
         assumptions.extend(_grid_conflicts(doc, canonical_grid, canonical_idx))
+
+    # Fase U.3 — hitung berapa sheet BERBEDA yang memuat teks unclassified
+    # persis sama (dinormalisasi), dipakai `_is_admin_metadata` utk deteksi
+    # kop/footer berulang sebelum tahu semua sheet (harus dihitung dulu).
+    text_sheet_counts: dict[str, set[int]] = {}
+    for i, sheet in enumerate(doc.sheets):
+        for unclassified in sheet.unclassified:
+            text_sheet_counts.setdefault(_normalize_text(unclassified.raw), set()).add(i)
 
     registry: dict[str, ElementRegistryEntry] = {}
     for i, sheet in enumerate(doc.sheets):
@@ -106,6 +185,9 @@ def consolidate_document(doc: TkgDocument) -> ConsolidatedExtraction:
                     )
 
         for unclassified in sheet.unclassified:
+            occurrence = len(text_sheet_counts.get(_normalize_text(unclassified.raw), ()))
+            if _is_admin_metadata(unclassified.raw, occurrence):
+                continue
             assumptions.append(Assumption(
                 pernyataan=f"Teks '{unclassified.raw}' tidak dikenali di sheet {i + 1}",
                 alasan=unclassified.alasan, sheet_page=i + 1, dampak="rendah",
