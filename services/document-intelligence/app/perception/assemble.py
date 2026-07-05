@@ -363,7 +363,14 @@ def assemble_sheet_from_page(page: "fitz.Page", page_index: int, sheet_id: str, 
     jenis = classification_to_jenis(classifier_res["classification"])
 
     judul_asli = judul_extracted or judul
-    zone = classify_zone(judul_asli)
+    # Fase U-2: klasifikasi zona pakai `judul_extracted` (None kalau memang
+    # tidak ada judul asli ditemukan), BUKAN `judul_asli` -- itu sudah
+    # jatuh ke placeholder "Sheet N" dari caller, yang selalu truthy
+    # sehingga fallback `cover` (butuh judul benar-benar None) tidak pernah
+    # kepanggil kalau dites terhadap judul_asli.
+    zone = classify_zone(
+        judul_extracted, page_index=page_index, has_grid=grid is not None, has_elements=bool(elements),
+    )
 
     sheet = TkgSheet(
         sheet_id=sheet_id, jenis=jenis,

@@ -67,6 +67,105 @@ def test_grid_conflict_flagged_not_overwritten():
     assert "2" in conflict_msgs[0].pernyataan
 
 
+def test_grid_conflict_uses_relative_offset_not_absolute_origin():
+    """Fase U (2026-07-13): reproduksi bug nyata screenshot `G:\\gambar
+    contoh` -- tiap halaman PDF merekonstruksi grid dgn origin sendiri
+    (pola sama V-03 core-engine Fase M-2), jadi axis subset yg SAH (anchor
+    per-halaman independen) TIDAK BOLEH ditandai konflik hanya krn posisi
+    absolut beda, selama jarak RELATIF antar as yg sama-sama muncul cocok."""
+    canonical = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH X"),
+        grid=Grid(sumbu_x=[
+            GridAxis(label="A", posisi_mm=0.0),
+            GridAxis(label="B", posisi_mm=3000.0),
+            GridAxis(label="C", posisi_mm=6500.0),
+        ]),
+    )
+    # Sheet detail hanya menggambar B-C, direkonstruksi dgn origin sendiri
+    # (B=0) -- jarak B->C tetap 3500mm, SAMA dgn canonical (6500-3000=3500).
+    subset_independent_origin = TkgSheet(
+        sheet_id="S2", jenis="denah", meta=SheetMeta(judul="DENAH Y"),
+        grid=Grid(sumbu_x=[
+            GridAxis(label="B", posisi_mm=0.0),
+            GridAxis(label="C", posisi_mm=3500.0),
+        ]),
+    )
+    result = consolidate_document(_doc([canonical, subset_independent_origin]))
+    conflict_msgs = [a for a in result.assumptions if a.dampak == "tinggi"]
+    assert conflict_msgs == []
+
+
+def test_grid_conflict_repeated_across_many_sheets_collapses_to_one_assumption():
+    """Fase U (2026-07-13): reproduksi persis pola screenshot -- axis '4'
+    konflik nyata di 9 sheet berbeda menghasilkan SATU Assumption ringkas
+    (menyebut semua sheet), BUKAN 9 baris nyaris identik."""
+    canonical = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH X"),
+        grid=Grid(sumbu_x=[
+            GridAxis(label="3", posisi_mm=0.0),
+            GridAxis(label="4", posisi_mm=3000.0),
+        ]),
+    )
+    conflicting_sheets = [
+        TkgSheet(
+            sheet_id=f"S{i}", jenis="denah", meta=SheetMeta(judul=f"DETAIL {i}"),
+            grid=Grid(sumbu_x=[
+                GridAxis(label="3", posisi_mm=0.0),
+                GridAxis(label="4", posisi_mm=13000.0),  # rel beda jauh dari 3000
+            ]),
+        )
+        for i in range(2, 11)  # 9 sheet konflik
+    ]
+    result = consolidate_document(_doc([canonical, *conflicting_sheets]))
+    conflict_msgs = [a for a in result.assumptions if a.dampak == "tinggi"]
+    assert len(conflict_msgs) == 1
+    assert "9 sheet" in conflict_msgs[0].pernyataan
+    for i in range(2, 11):
+        assert str(i) in conflict_msgs[0].pernyataan
+
+
+def test_unclassified_admin_keyword_text_filtered_from_assumptions():
+    """Fase U.3 (2026-07-13): teks kop administratif generik (bukan konten
+    teknis) tidak boleh jadi 'perlu dicek' -- bukti nyata screenshot:
+    'KEMENTRIAN AGAMA RI', 'DIREKTORAT JENDERAL', 'TAHUN ANGGARAN 2024'."""
+    sheet = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH X"),
+        unclassified=[
+            Unclassified(raw="KEMENTERIAN AGAMA RI", alasan="tidak cocok grammar"),
+            Unclassified(raw="DIREKTORAT JENDERAL", alasan="tidak cocok grammar"),
+            Unclassified(raw="TAHUN ANGGARAN 2024", alasan="tidak cocok grammar"),
+            Unclassified(raw="Catatan teknis unik halaman ini", alasan="tidak cocok grammar"),
+        ],
+    )
+    result = consolidate_document(_doc([sheet]))
+    pernyataan_all = " | ".join(a.pernyataan for a in result.assumptions)
+    assert "KEMENTERIAN AGAMA RI" not in pernyataan_all
+    assert "DIREKTORAT JENDERAL" not in pernyataan_all
+    assert "TAHUN ANGGARAN 2024" not in pernyataan_all
+    assert "Catatan teknis unik halaman ini" in pernyataan_all
+
+
+def test_unclassified_text_repeated_many_sheets_filtered_as_header_footer():
+    """Fase U.3: teks IDENTIK yang berulang di banyak sheet (kop/footer non-
+    keyword, mis. nama proyek generik) difilter via heuristik frekuensi,
+    walau tidak match keyword admin eksplisit."""
+    sheets = [
+        TkgSheet(
+            sheet_id=f"S{i}", jenis="denah", meta=SheetMeta(judul="DENAH X"),
+            unclassified=[
+                Unclassified(raw="Gedung Serbaguna Kabupaten Contoh", alasan="tidak cocok grammar"),
+                Unclassified(raw=f"Catatan unik sheet {i}", alasan="tidak cocok grammar"),
+            ],
+        )
+        for i in range(1, 5)  # 4 sheet -> >= _ADMIN_REPEAT_MIN_SHEETS (3)
+    ]
+    result = consolidate_document(_doc(sheets))
+    pernyataan_all = " | ".join(a.pernyataan for a in result.assumptions)
+    assert "Gedung Serbaguna Kabupaten Contoh" not in pernyataan_all
+    for i in range(1, 5):
+        assert f"Catatan unik sheet {i}" in pernyataan_all
+
+
 def test_element_registry_merges_instances_across_sheets():
     sheet1 = TkgSheet(
         sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH KOLOM LT.1"),

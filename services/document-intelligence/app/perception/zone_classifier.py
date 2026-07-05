@@ -25,16 +25,33 @@ from collections import Counter
 
 from app.perception.models import Run
 
-_TITLE_PREFIX = re.compile(r"^(DENAH|TABEL|DETAIL|POTONGAN|TAMPAK)\b", re.IGNORECASE)
+_TITLE_PREFIX = re.compile(
+    r"^(DENAH|TABEL|DETAIL|POTONGAN|TAMPAK|DAFTAR|SITUASI|SITE|LOKASI)\b",
+    re.IGNORECASE,
+)
 _SKALA_PATTERN = re.compile(r"\b\d+\s*:\s*\d+\b|\bNTS\b", re.IGNORECASE)
 
+# Fase U-2 (2026-07-13, `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_
+# 2026-07-13.md`): bukti nyata (screenshot `G:\gambar contoh`) menunjukkan
+# sheet non-struktur (daftar-gambar/situasi/tampak/potongan) selalu jatuh
+# "Belum diketahui" krn _ZONE_RULES lama HANYA kenal keyword struktur.
+# Kategori baru di bawah TETAP rule-based generik (bukan spesifik PLHUT).
 _ZONE_RULES: list[tuple[str, tuple[str, ...]]] = [
     ("substruktur", ("FOOTPLAT", "PONDASI")),
     ("struktur_atap", ("ATAP",)),
     ("struktur_lantai_2", ("LT.2", "LT 2", "LANTAI 2")),
     ("struktur_lantai_1", ("LT.1", "LT 1", "LANTAI 1", "SLOOF")),
+    ("daftar_gambar", ("DAFTAR", "INDEX GAMBAR")),
+    ("situasi", ("SITUASI", "SITE PLAN", "LOKASI")),
+    ("tampak", ("TAMPAK",)),
+    ("potongan", ("POTONGAN",)),
     ("detail_tabel", ("TABEL", "DETAIL")),
 ]
+
+# Halaman ke-berapa (0-based, INKLUSIF) yang masih dianggap kandidat wajar
+# utk sampul/kop dokumen (bukan gambar teknik) -- dipakai HANYA sbg fallback
+# terakhir saat tidak ada judul/grid/elemen sama sekali (`classify_zone`).
+_COVER_PAGE_INDEX_LIMIT = 2
 
 
 def extract_judul(runs: list[Run]) -> tuple[str | None, set[str]]:
@@ -75,11 +92,26 @@ def extract_skala(runs: list[Run]) -> tuple[str | None, set[str]]:
     return None, set()
 
 
-def classify_zone(judul: str | None) -> str | None:
-    if not judul:
+def classify_zone(
+    judul: str | None,
+    *,
+    page_index: int | None = None,
+    has_grid: bool = False,
+    has_elements: bool = False,
+) -> str | None:
+    """Klasifikasi zona dari judul. `page_index`/`has_grid`/`has_elements`
+    OPSIONAL (default aman utk caller lama/test lama yang cuma kirim judul)
+    -- kalau diisi, aktifkan fallback `cover` (Fase U-2) utk sheet TANPA
+    judul/grid/elemen sama sekali di antara `_COVER_PAGE_INDEX_LIMIT` halaman
+    pertama dokumen. Sengaja KONSERVATIF (§0.1): sheet yang tidak match rule
+    manapun DAN tidak lolos heuristik cover ini tetap jujur `None`, tidak
+    dipaksakan jadi kategori tertentu."""
+    if judul:
+        judul_upper = judul.upper()
+        for zone, keywords in _ZONE_RULES:
+            if any(kw in judul_upper for kw in keywords):
+                return zone
         return None
-    judul_upper = judul.upper()
-    for zone, keywords in _ZONE_RULES:
-        if any(kw in judul_upper for kw in keywords):
-            return zone
+    if page_index is not None and page_index < _COVER_PAGE_INDEX_LIMIT and not has_grid and not has_elements:
+        return "cover"
     return None
