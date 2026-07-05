@@ -1519,6 +1519,36 @@ export const TakeoffResultSchema = z.object({
 });
 export type TakeoffResult = z.infer<typeof TakeoffResultSchema>;
 
+// Fase T (2026-07-13, rencana besar AI Estimator) — usulan AHSP per
+// TakeoffItem. Mirror `app.mapping.takeoff_ahsp`. ATURAN EMAS: ini USULAN
+// (token-overlap deterministik), bukan keputusan final — `ahsp_suggested`
+// HARUS ditandai terpisah dari pilihan manual user, tidak pernah disamakan.
+export const TakeoffAhspCandidateSchema = z.object({
+  ahsp_code: z.string(),
+  name: z.string(),
+  unit: z.string(),
+  score: z.number(),
+});
+export type TakeoffAhspCandidate = z.infer<typeof TakeoffAhspCandidateSchema>;
+
+export const TakeoffAhspSuggestionSchema = z.object({
+  kode: z.string(),
+  lantai: z.string().nullish(),
+  kategori: z.string(),
+  work_type: z.string(),
+  ahsp_code: z.string().default(""),
+  ahsp_suggested: z.boolean().default(false),
+  ahsp_candidates: z.array(TakeoffAhspCandidateSchema).default([]),
+  reason: z.string().default(""),
+});
+export type TakeoffAhspSuggestion = z.infer<typeof TakeoffAhspSuggestionSchema>;
+
+export const TakeoffAhspSuggestResultSchema = z.object({
+  takeoff: TakeoffResultSchema,
+  suggestions: z.array(TakeoffAhspSuggestionSchema),
+});
+export type TakeoffAhspSuggestResult = z.infer<typeof TakeoffAhspSuggestResultSchema>;
+
 // ─── Manual Takeoff arsitektur/tanah (selaras app/takeoff/*) ─────────────────
 // Brain §E (dinding/finishing), §F (tanah), §G (pondasi batu/lantai/atap).
 

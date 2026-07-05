@@ -6,9 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import type { TakeoffResult, TkgDocument, TkgValidationResult } from "@paax/schemas";
+import type { TakeoffAhspSuggestion, TakeoffResult, TkgDocument, TkgValidationResult } from "@paax/schemas";
 
-import { renderTkg, takeoffTkg, validateTkg } from "@/lib/engine";
+import { renderTkg, takeoffAhspSuggestTkg, validateTkg } from "@/lib/engine";
 import { emptyRabLine, rabRepository, type ProjectRabDraft } from "@/lib/projects/rab-repository";
 import { TkgWorkspace } from "./tkg-workspace";
 
@@ -54,7 +54,7 @@ vi.mock("@/lib/projects/tkg-repository", () => ({
 
 vi.mock("@/lib/engine", () => ({
   renderTkg: vi.fn(),
-  takeoffTkg: vi.fn(),
+  takeoffAhspSuggestTkg: vi.fn(),
   validateTkg: vi.fn(),
 }));
 
@@ -222,7 +222,7 @@ beforeEach(() => {
   }));
   vi.mocked(validateTkg).mockResolvedValue(validationResult);
   vi.mocked(renderTkg).mockResolvedValue("SHEET S01\nTYPE K1");
-  vi.mocked(takeoffTkg).mockResolvedValue(takeoffResult);
+  vi.mocked(takeoffAhspSuggestTkg).mockResolvedValue({ takeoff: takeoffResult, suggestions: [] });
   vi.mocked(emptyRabLine).mockReturnValue({ id: "generated-line", ahsp_code: "", volume: null, duration_days: null });
   vi.mocked(rabRepository.get).mockResolvedValue({ ...emptyDraft, lines: [...emptyDraft.lines] });
   vi.mocked(rabRepository.save).mockImplementation(async (draft) => draft);
@@ -275,7 +275,7 @@ describe("TkgWorkspace Review Gambar (rencana besar 2026-07-05)", () => {
 
     await waitFor(() => expect(validateTkg).toHaveBeenCalledWith(mockTkg));
     expect(renderTkg).toHaveBeenCalledWith(mockTkg);
-    expect(takeoffTkg).toHaveBeenCalledWith(mockTkg);
+    expect(takeoffAhspSuggestTkg).toHaveBeenCalledWith(mockTkg);
     expect(await screen.findByRole("button", { name: /kirim volume ke draft rab/i })).toBeTruthy();
     expect(saveMock.mock.calls.at(-1)?.[0]).toMatchObject({
       projectId: "project-1",
@@ -304,6 +304,38 @@ describe("TkgWorkspace Review Gambar (rencana besar 2026-07-05)", () => {
           ahsp_code: "",
           volume: 1.25,
           duration_days: null,
+        }),
+      ],
+    }));
+  });
+
+  it("Fase T: fills ahsp_code only for items with a confident AI suggestion, marked ahsp_suggested", async () => {
+    const suggestions: TakeoffAhspSuggestion[] = [
+      {
+        kode: "K1", lantai: "L1", kategori: "kolom", work_type: "beton",
+        ahsp_code: "2.2.1.4.5", ahsp_suggested: true,
+        ahsp_candidates: [{ ahsp_code: "2.2.1.4.5", name: "Beton kolom", unit: "m3", score: 0.9 }],
+        reason: "skor 0.90, margin 0.30 thd kandidat #2 (>= ambang)",
+      },
+    ];
+    vi.mocked(takeoffAhspSuggestTkg).mockResolvedValue({ takeoff: takeoffResult, suggestions });
+
+    renderWorkspace();
+    fireEvent.change(await screen.findByLabelText(/unggah pdf gambar kerja/i), {
+      target: { files: [makePdfFile()] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /analisa gambar kerja/i }));
+
+    fireEvent.click(await screen.findByRole("button", { name: /simpan hasil analisis/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /kirim volume ke draft rab/i }));
+
+    await waitFor(() => expect(rabRepository.save).toHaveBeenCalled());
+    expect(rabRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+      lines: [
+        expect.objectContaining({
+          ahsp_code: "2.2.1.4.5",
+          ahsp_suggested: true,
+          volume: 1.25,
         }),
       ],
     }));
@@ -343,7 +375,7 @@ describe("TkgWorkspace Review Gambar (rencana besar 2026-07-05)", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/ai/tkg", expect.objectContaining({ method: "POST" })));
     await waitFor(() => expect(validateTkg).toHaveBeenCalledWith(mockTkg));
     expect(renderTkg).toHaveBeenCalledWith(mockTkg);
-    expect(takeoffTkg).toHaveBeenCalledWith(mockTkg);
+    expect(takeoffAhspSuggestTkg).toHaveBeenCalledWith(mockTkg);
     expect(await screen.findByRole("button", { name: /kirim volume ke draft rab/i })).toBeTruthy();
   });
 

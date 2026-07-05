@@ -359,17 +359,26 @@ export default function ProjectRabPage() {
             const selected = ahspList.find((a) => a.code === row.ahsp_code);
             return (
               <div key={row.id} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 120px auto', gap: 10, alignItems: 'center' }}>
-                <select
-                  className="pax-input"
-                  value={row.ahsp_code}
-                  disabled={bootLoading}
-                  onChange={(e) => { updateRow(row.id, { ahsp_code: e.target.value }); invalidateResults(); }}
-                >
-                  <option value="">{bootLoading ? 'Memuat AHSP...' : '— pilih item AHSP —'}</option>
-                  {ahspList.map((a) => (
-                    <option key={a.code} value={a.code}>{a.code} — {a.name} [{a.unit}]</option>
-                  ))}
-                </select>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <select
+                    className="pax-input"
+                    value={row.ahsp_code}
+                    disabled={bootLoading}
+                    onChange={(e) => {
+                      // Ganti manual -> bukan lagi usulan AI (Fase T).
+                      updateRow(row.id, { ahsp_code: e.target.value, ahsp_suggested: false });
+                      invalidateResults();
+                    }}
+                  >
+                    <option value="">{bootLoading ? 'Memuat AHSP...' : '— pilih item AHSP —'}</option>
+                    {ahspList.map((a) => (
+                      <option key={a.code} value={a.code}>{a.code} — {a.name} [{a.unit}]</option>
+                    ))}
+                  </select>
+                  {row.ahsp_suggested && (
+                    <StatusPill tone="warn">disarankan AI — cek &amp; ganti bila perlu</StatusPill>
+                  )}
+                </div>
                 <input
                   className="pax-input"
                   type="number"

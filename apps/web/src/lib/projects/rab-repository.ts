@@ -20,6 +20,11 @@ export interface RabDraftLine {
   ahsp_code: string;
   volume: number | null;
   duration_days: number | null;
+  /** Fase T: true bila `ahsp_code` berasal dari usulan AI (token-overlap),
+   * bukan pilihan manual user. Murni penanda tampilan (badge "disarankan") —
+   * TIDAK memengaruhi perhitungan RAB. Dibersihkan begitu user mengganti
+   * dropdown AHSP secara manual. */
+  ahsp_suggested?: boolean;
 }
 
 export interface ProjectRabDraft {
@@ -65,6 +70,7 @@ function normalizeDraft(projectId: string, raw: Partial<ProjectRabDraft> | null)
         ahsp_code: line?.ahsp_code ?? '',
         volume: typeof line?.volume === 'number' ? line.volume : null,
         duration_days: typeof line?.duration_days === 'number' ? line.duration_days : null,
+        ahsp_suggested: line?.ahsp_suggested === true,
       }))
     : [emptyRabLine()];
   return {
