@@ -12,6 +12,7 @@ app.get("/health", healthHandler);
 app.post("/chat", createChatHandler({
   geminiApiKey: config.geminiApiKey,
   coreEngineUrl: config.coreEngineUrl,
+  documentIntelligenceUrl: config.documentIntelligenceUrl,
   maxTurns: config.maxToolTurns,
 }));
 

@@ -4,6 +4,7 @@ export interface AppConfig {
   port: number;
   geminiApiKey: string;
   coreEngineUrl: string;
+  documentIntelligenceUrl: string;
   maxToolTurns: number;
 }
 
@@ -12,6 +13,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     port: Number(env.PORT || 8082),
     geminiApiKey: env.GEMINI_API_KEY?.trim() ?? "",
     coreEngineUrl: (env.CORE_ENGINE_URL || "http://localhost:8081").replace(/\/+$/, ""),
+    documentIntelligenceUrl: (env.DOCUMENT_INTELLIGENCE_URL || "http://localhost:8083").replace(/\/+$/, ""),
     maxToolTurns: Number(env.AI_ORCH_MAX_TOOL_TURNS || 3),
   };
 }
