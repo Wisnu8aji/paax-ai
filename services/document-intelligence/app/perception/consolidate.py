@@ -34,10 +34,10 @@ data (tetap ada di `sheet.unclassified` mentah), hanya tidak lagi jadi
 """
 from __future__ import annotations
 
-import ast
 from functools import lru_cache
 from pathlib import Path
 import re
+import sys
 
 from app.perception.consolidated_models import (
     Assumption,
@@ -49,6 +49,12 @@ from app.perception.consolidated_models import (
     SheetSummary,
 )
 from app.perception.tkg.models import Grid, TkgDocument
+
+try:
+    from paax_schemas.tkg_taxonomy import kategori_dari_kode, known_tkg_categories
+except ModuleNotFoundError:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "packages" / "schemas" / "python"))
+    from paax_schemas.tkg_taxonomy import kategori_dari_kode, known_tkg_categories
 
 _POSISI_MM_TOLERANCE = 1.0
 
@@ -69,28 +75,8 @@ _ADMIN_REPEAT_MIN_SHEETS = 3
 
 @lru_cache(maxsize=1)
 def _tkg_prefix_categories() -> tuple[str, ...]:
-    """Ambil kategori dari core-engine `_PREFIKS` agar kata generik yang
-    dibuang saat normalisasi kode tidak menjadi daftar paralel manual."""
-    takeoff_path = Path(__file__).resolve().parents[3] / "core-engine" / "app" / "tkg" / "takeoff.py"
-    try:
-        module = ast.parse(takeoff_path.read_text(encoding="utf-8"))
-    except OSError:
-        return ()
-    for node in module.body:
-        value_node: ast.AST | None = None
-        if isinstance(node, ast.Assign):
-            if any(isinstance(target, ast.Name) and target.id == "_PREFIKS" for target in node.targets):
-                value_node = node.value
-        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id == "_PREFIKS":
-            value_node = node.value
-        if value_node is None:
-            continue
-        try:
-            values = ast.literal_eval(value_node)
-        except (SyntaxError, ValueError):
-            return ()
-        return tuple(sorted({str(category).upper() for _prefix, category in values}))
-    return ()
+    """Kategori teknis dari taksonomi bersama, dipakai untuk normalisasi kode."""
+    return tuple(sorted(category.upper() for category in known_tkg_categories()))
 
 
 @lru_cache(maxsize=1)
@@ -225,6 +211,7 @@ def consolidate_document(doc: TkgDocument) -> ConsolidatedExtraction:
         for element in sheet.elements:
             kode = _normalize_kode(element.kode)
             entry = registry.setdefault(kode, ElementRegistryEntry(kode=kode))
+            entry.kategori = entry.kategori or kategori_dari_kode(kode)
             _remember_raw_code(entry, element.kode)
             addresses = element.alamat_list or ([element.alamat] if element.alamat else [])
             for alamat in addresses:
