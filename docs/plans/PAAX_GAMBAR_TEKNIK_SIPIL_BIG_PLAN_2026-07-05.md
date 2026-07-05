@@ -114,15 +114,23 @@ Detail lengkap per fase: `docs/ai-map/STATE.md`.
 
 ## 5. Setelah rencana ini (di luar cakupan sesi ini, dicatat sbg arah)
 
-- Mapping AHSP otomatis/deterministik untuk item takeoff (`/ahsp/search` dan
-  `/ahsp/map`) masih tahap berikutnya. Saat ini volume sudah bisa masuk Draft
-  RAB, tetapi `ahsp_code` sengaja kosong agar user memilih item AHSP manual.
-  Setelah Fase N, katalog AHSP resmi sudah jauh lebih lengkap (2.542 item),
-  tetapi auto-suggest tetap perlu prompt/test terpisah karena laporan batch
-  masih punya temuan mekanis dan coverage harga regional masih rendah.
+- **UPDATE 2026-07-12**: blocker lama utk mapping AHSP otomatis sudah hilang
+  — katalog AHSP CK 2026 sekarang **2.546 item, 0 unit kosong** (Fase N+Q).
+  Spek lengkap sudah disiapkan di `docs/prompts/PAAX_CODEX_PROMPT_FASE_T_
+  AHSP_AUTO_SUGGEST_2026-07-12.md`, tinggal dijalankan kapan owner mau
+  (belum dikerjakan per tanggal ini).
+- **Jalur harga Semarang DITUTUP** (Fase S, 2026-07-12): 2 sumber lokal yang
+  ada (`Daftar harga bahan dan upah.xlsx`, `KEJAKSAAN.xlsx`) sudah habis
+  ditambang — region semarang sekarang 25 resource nyata, tervalidasi
+  silang, tapi ekspansi lebih lanjut butuh sumber harga BARU, bukan
+  menambang ulang 2 file yang sama. 8 item ambigu tersisa butuh keputusan
+  proyek spesifik owner (lihat `docs/ai-map/STATE.md` Fase S utk daftarnya).
 - Visi-LLM sebagai fallback KHUSUS sheet raster tanpa teks vektor (setelah
   OCR jadi lapis pertama, bukan pengganti) — sudah dicatat sbg arah di
   `docs/ai-map/STATE.md` sebelumnya, tidak berubah.
-- HSD regional untuk katalog AHSP CK 2026 belum tersedia. `_resources_catalog`
-  di `G:\paax-data` hanya master resource dengan `price=0`, sehingga sengaja
-  tidak diimpor sebagai price book agar tidak menghasilkan HSP palsu.
+- HSD regional untuk katalog AHSP CK 2026 masih minim di semua region
+  (Surakarta 109, Semarang 25, dari ±2.441 kode unik terpakai) —
+  `_resources_catalog` di `G:\paax-data` hanya master resource dengan
+  `price=0`, sengaja tidak diimpor sebagai price book agar tidak
+  menghasilkan HSP palsu. Butuh sumber harga regional baru utk maju lebih
+  jauh.

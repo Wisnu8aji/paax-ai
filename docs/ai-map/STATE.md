@@ -1,7 +1,180 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-11** (eksekusi prompt Fase Q/R: terapkan hasil O/P + laporan harga KEJAKSAAN Semarang). File ini SATU-SATUNYA tempat status berjalan.
+> Update terakhir: **2026-07-13** (Fase T: AHSP auto-suggest AKTIF,
+> dikerjakan LANGSUNG oleh Claude). File ini SATU-SATUNYA tempat status
+> berjalan.
 > Selesai satu fase → perbarui di sini (jangan sebar ke banyak file).
+
+## ✅ FASE T — AHSP AUTO-SUGGEST AKTIF (2026-07-13, dikerjakan langsung oleh Claude)
+Spek: `docs/prompts/PAAX_CODEX_PROMPT_FASE_T_AHSP_AUTO_SUGGEST_2026-07-12.md`.
+Rencana besar terkait: `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md`.
+
+- **Modul baru** `services/core-engine/app/mapping/takeoff_ahsp.py`:
+  `suggest_ahsp_for_item`/`suggest_ahsp_for_takeoff` — memetakan tiap
+  `TakeoffItem` (beton/bekisting/besi) ke usulan kode AHSP via `search_ahsp`
+  yang SUDAH ADA (token-overlap deterministik, TIDAK diubah).
+- **Kamus kategori->query** dibangun dari pengecekan LANGSUNG ke
+  `data/ahsp/cipta-karya-2026.json` (bukan tebakan) — lihat komentar modul
+  utk detail per kategori.
+- **Kalibrasi ambang auto-suggest** (`_AUTO_SUGGEST_MIN_SCORE=0.5`,
+  `_AUTO_SUGGEST_MIN_MARGIN=0.12`) diverifikasi manual thd katalog nyata.
+  **Temuan jujur penting**: beton HAMPIR TIDAK PERNAH auto-suggest (selalu
+  ada kompetitor dekat "Ready Mixed" + utk fc=25 token "25" collide dgn
+  boilerplate "Slump (100 ± 25) mm" di SETIAP item beton keluarga itu,
+  menghasilkan tie 3 arah); besi juga tidak pernah auto-suggest (katalog
+  hanya beda by diameter <12mm/≥12mm & metode, tidak tersedia di
+  `TakeoffItem`). Auto-suggest AMAN & aktif utk sebagian bekisting
+  (pondasi_telapak/dinding_beton/plat/sloof/tangga — margin >=0.139),
+  bekisting kolom/balok TIDAK (kompetitor "...Beton Pracetak" persis).
+- **Bug ditemukan+diperbaiki saat verifikasi** (bukan cuma diklaim, diuji
+  manual dulu): (1) regex `_FC_PATTERN` awal gagal utk notasi nyata
+  `"fc' 25"` (apostrof setelah bukan antara f&c) — diperbaiki jadi toleran
+  ke variasi posisi apostrof. (2) fallback query generik utk beton
+  ("beton kolom") confidently salah pilih item "...Beton Pracetak" (precast,
+  margin 0.16 lolos ambang) — diperbaiki dgn exclude semua item "pracetak"
+  dari pencarian utk item takeoff (yang selalu cor-di-tempat, `_exclude_
+  pracetak`), FIX INI JUGA memperbaiki bekisting kolom/balok (margin naik
+  dari kompetitor pracetak yang hilang, walau tetap di bawah ambang final
+  krn kompetitor cor-di-tempat lain).
+- **Endpoint baru** `POST /tkg/takeoff-ahsp-suggest` (takeoff + suggestions
+  digabung 1 response, `TakeoffAhspSuggestResult`).
+- **Zod mirror** `TakeoffAhspCandidateSchema`/`TakeoffAhspSuggestionSchema`/
+  `TakeoffAhspSuggestResultSchema` di `packages/schemas` (paket dibuild
+  ulang, `pnpm build` di `packages/schemas`).
+- **Frontend**: `tkg-workspace.tsx` `runPipeline` pakai
+  `takeoffAhspSuggestTkg` (ganti `takeoffTkg`), `sendToRab` mengisi
+  `ahsp_code`+`ahsp_suggested:true` HANYA utk item confident (match by
+  kode+lantai+work_type); `RabDraftLine` dapat field opsional
+  `ahsp_suggested`; halaman `/rab` menampilkan `StatusPill` "disarankan AI —
+  cek & ganti bila perlu" di bawah dropdown, HILANG otomatis begitu user
+  ganti kode manual. Tidak ada redesign visual (reuse `StatusPill`).
+- **Verifikasi nyata (bukan cuma test)**: endpoint dipanggil langsung via
+  curl ke core-engine berjalan (port 8081) dgn payload SL1/sloof — hasil
+  cocok persis prediksi test (bekisting auto-suggest `2.2.1.3.2`, beton &
+  besi tidak). Badge diverifikasi di browser sungguhan (`preview_*` tools):
+  inject draft RAB dgn `ahsp_suggested:true` -> badge "disarankan AI"
+  tampil; ganti dropdown manual -> badge hilang. Console bersih.
+- **Test**: 13 test baru `test_takeoff_ahsp.py` (4 anchor katalog CK 2026
+  nyata + 2 end-to-end via `buat_tkg()`+`takeoff_tkg()` nyata + 7 fixture
+  sintetis independen §0.1) + 1 test baru `tkg-workspace.test.tsx`.
+  core-engine **279 passed** (266+13), web **47 passed** (46+1),
+  document-intelligence **136 passed + 5 skipped** (tidak disentuh),
+  `pnpm tsc --noEmit` bersih di root & `apps/web`.
+- **BELUM di-commit** — kerja di working tree yang sama (branch
+  `fix/semarang-candidate-ranking-claude-direct`).
+
+## ✅ FASE U/U-2 — PERBAIKAN NOISE KONSOLIDASI + GAP PAGE-TYPE (2026-07-13, dikerjakan langsung oleh Claude)
+
+## ✅ FASE U/U-2 — PERBAIKAN NOISE KONSOLIDASI + GAP PAGE-TYPE (2026-07-13, dikerjakan langsung oleh Claude)
+Rencana lengkap: `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md`
+(dokumen baru, melanjutkan `PAAX_GAMBAR_TEKNIK_SIPIL_BIG_PLAN_2026-07-05.md`
+yang Fase 0-S-nya sudah selesai). Dipicu kritik mendalam owner + BUKTI NYATA
+screenshot aplikasi berjalan (`G:\gambar contoh\*.png`, upload `GAMBAR KERJA
+PLHUT SURAKARTA (1).pdf` 88 halaman ke proyek uji "Gedung 3 lantai").
+
+- **Bug 1 ditemukan & diperbaiki**: `document-intelligence/app/perception/
+  consolidate.py::_grid_conflicts` membandingkan `posisi_mm` ABSOLUT antar
+  sheet — bug IDENTIK dgn V-03 core-engine yang sudah diperbaiki Fase M-2,
+  tapi versi document-intelligence ini luput (beda service). Karena tiap
+  halaman PDF merekonstruksi grid dgn origin sendiri, ini menghasilkan
+  BELASAN Assumption "tinggi" nyaris identik per axis (bukti screenshot:
+  9+ baris "Grid as '4' beda posisi antara sheet 6 dan sheet 39/40/.../47").
+  Diperbaiki: bandingkan jarak RELATIF ke anchor label bersama (pola sama
+  `_cek_v03`), DAN ringkas semua sheet konflik per axis jadi SATU Assumption
+  (bukan satu per pasangan sheet).
+- **Bug 2 ditemukan & diperbaiki**: teks unclassified 100% masuk assumptions
+  tanpa filter, termasuk kop administratif berulang ("KEMENTERIAN...",
+  "TAHUN ANGGARAN...", dst muncul di HAMPIR SETIAP halaman). Diperbaiki:
+  `_is_admin_metadata` (keyword generik kop gambar + heuristik frekuensi
+  lintas-sheet ≥3) — teks TETAP tersimpan di data mentah, hanya tidak lagi
+  masuk `assumptions` yang tampil ke user.
+- **Gap ditemukan & diperbaiki (U-2)**: `zone_classifier.py` hanya kenal
+  keyword struktur (FOOTPLAT/PONDASI/ATAP/LT.n/SLOOF) — sheet cover/daftar-
+  gambar/situasi/tampak/potongan selalu "Belum diketahui". Tambah kategori
+  `daftar_gambar` (keyword generik "DAFTAR"/"INDEX GAMBAR"), `situasi`,
+  `tampak`, `potongan`, dan fallback `cover` (KONSERVATIF: hanya jika
+  halaman di antara 2 pertama, TANPA judul/grid/elemen sama sekali — kalau
+  ragu, tetap jujur `None`, tidak dipaksakan). Bug tambahan ditemukan saat
+  verifikasi: `assemble.py` memanggil `classify_zone` dgn `judul_asli`
+  (placeholder "Sheet N" kalau judul tak ketemu, selalu truthy) bukan
+  `judul_extracted` — fallback `cover` jadi dead code sebelum diperbaiki.
+- **Verifikasi kuantitatif nyata** (PDF ASLI dari bukti screenshot owner,
+  88 halaman, BUKAN fixture): sebelum→sesudah tidak bisa dibandingkan
+  apple-to-apple persis dgn angka "4281" di screenshot (versi kode beda),
+  TAPI hasil SESUDAH fix diukur langsung: **1007 assumptions total, 0
+  (NOL) severity "tinggi"** (sebelumnya axis conflict tunggal saja bisa
+  hasilkan 9+ entri "tinggi" berulang — kelas bug ini sekarang collapse
+  jadi 0 krn perbandingan relatif + dedupe). Zona: 85/88 sheet
+  terklasifikasi (naik drastis dari sebelumnya banyak "Belum diketahui"
+  di sheet non-struktur); sisa 3 unclassified genuinely jujur (1 cover dgn
+  grid palsu terdeteksi shg heuristik conservative menolak menebak, 2 sheet
+  "DENAH PENANGKAL PETIR"/"DENAH SALURAN AIR HUJAN" — di luar taksonomi
+  zona saat ini, MEP/utilitas, dicatat sbg gap jujur bukan dipaksakan).
+- Test baru: 4 test `test_perception_consolidate.py` (relative-offset tidak
+  false-positive, konflik nyata di 9 sheet collapse jadi 1 assumption,
+  filter keyword admin, filter frekuensi berulang) + 6 test
+  `test_perception_zone_classifier.py` (daftar_gambar 2 varian, situasi,
+  tampak, potongan, cover fallback konservatif 5 kasus).
+- Verifikasi: document-intelligence **136 passed, 5 skipped** (naik dari
+  126). core-engine/web TIDAK disentuh sesi ini (tidak dijalankan ulang,
+  scope murni document-intelligence).
+- **BELUM di-commit** — bekerja di working tree yang sama dgn Fase S
+  (branch `fix/semarang-candidate-ranking-claude-direct`), 2 concern beda
+  domain (harga vs perception) tidak saling ganggu.
+- **Selanjutnya (lihat big-plan 2026-07-13)**: Fase T (AHSP auto-suggest,
+  spek sudah lengkap) → V (cross-page linking lebih toleran) → W (BOQ
+  work-item grouping) → X (ekspansi rumus takeoff ke trade baru, PALING
+  BESAR, multi-sesi) → Y (UI 1-tombol "Analisa RAB dari Gambar Kerja") →
+  Z (verifikasi ulang PDF yang sama, update angka noise final).
+
+## ✅ FASE S — PERBAIKAN RANKING KANDIDAT + TUTUP JALUR HARGA SEMARANG (2026-07-12, dikerjakan langsung oleh Claude)
+Branch kerja: `fix/semarang-candidate-ranking-claude-direct` (dari
+`origin/feat/ahsp-unit-apply-semarang-import-kejaksaan`, PR #34).
+Owner minta perbaikan ini dikerjakan langsung tanpa prompt Codex terpisah.
+
+- **Bug ditemukan saat verifikasi PR #34**: baris "Kloset jongkok porselen"
+  (KEJAKSAAN row 71) jatuh ke "tidak ketemu" padahal katalog master punya
+  `M.GEN.0450 "Kloset Jongkok"` dengan harga PERSIS sama (350000, sudah
+  dipakai sbg override manual Fase A-2). Akar masalah: field `unit`
+  resource itu di `_resources_catalog.json` tertulis **"unit"** (label
+  generik/keliru), bukan "buah" — jadi kandidat ini kalah ranking gabungan
+  dari 5 kandidat lain yang unit-nya cocok ("buah") tapi namanya jauh lebih
+  jauh (mis. "Dinding Porselen uk. 10x20cm").
+- **Perbaikan**: `scripts/harga/kejaksaan_semarang_report.py` fungsi
+  `nearest_rejected_candidates` sekarang SELALU menyertakan kandidat dengan
+  kemiripan NAMA tertinggi (mengganti kandidat paling lemah di top-N, bukan
+  menambah panjang daftar — supaya potongan tampilan laporan tidak
+  memangkasnya). **Tidak mengubah keputusan match final** (matched/
+  ambigu/tidak_ketemu) — murni memperkaya kandidat yang ditampilkan.
+- Diverifikasi: `python scripts/harga/kejaksaan_semarang_report.py`
+  dijalankan ulang, hasil `report/HARGA_KEJAKSAAN_SEMARANG_2026-07-11.md`
+  diregenerasi — jumlah matched/ambigu/tidak-ketemu **tidak berubah** (24/
+  4/93), hanya kolom kandidat-dekat di 18 baris yang lebih informatif
+  sekarang (mis. baris 71 sekarang menampilkan `M.GEN.0450`, baris 201
+  "Jack hammer" menampilkan `E.GEN.0016 Jack Hammer Drill`).
+- Test baru: `test_kandidat_nama_paling_mirip_tetap_tampil_walau_unit_
+  katalog_keliru` (reproduksi persis kasus Kloset di atas),
+  `test_nearest_rejected_candidates_kosong_bila_katalog_kosong`.
+- **Status resmi jalur harga Semarang: DITUTUP untuk sesi ini.** Dua sumber
+  lokal yang tersedia (`Daftar harga bahan dan upah.xlsx` dipakai Fase P,
+  `KEJAKSAAN.xlsx` dipakai Fase R) **sudah habis ditambang** — KEJAKSAAN
+  ternyata 0 kode baru (semua 24 match sudah ada di 25-resource yang sama),
+  nilainya murni validasi silang (0 selisih harga >15%). Ekspansi cakupan
+  lebih lanjut BUTUH sumber harga baru, bukan menambang ulang 2 file yang
+  sama.
+- **8 item ambigu masih terbuka** (perlu keputusan proyek spesifik dari
+  owner, BUKAN sesuatu yang bisa ditebak/diputuskan otomatis):
+  - Fase P: Wiremesh (M12 vs M6), Kran air (1/2" vs 3/4"), Keramik 30x60
+    (polished/unpolished), Keramik 30x30 (banyak varian).
+  - Fase R: Tukang Cat (3 entri near-duplikat di katalog master), Paku
+    (banyak ukuran), Portland cement (3 entri near-duplikat), Paku sekrup
+    (banyak ukuran).
+- Verifikasi test: core-engine **266 passed** (264 + 2 baru), web **46
+  passed**, `pnpm tsc --noEmit` exit 0, document-intelligence tidak
+  disentuh (tidak dijalankan ulang, tidak ada perubahan di service itu).
+- **BELUM di-commit** — working tree di branch
+  `fix/semarang-candidate-ranking-claude-direct`, menunggu keputusan owner
+  soal commit/PR (Claude tidak commit tanpa diminta eksplisit).
 
 ## ✅ FASE Q/R — TERAPKAN HASIL O/P + HARGA KEJAKSAAN SEMARANG (prompt 2026-07-11)
 Branch kerja: `feat/ahsp-unit-apply-semarang-import-kejaksaan`.

@@ -19,6 +19,7 @@ Endpoint deterministik (tidak ada LLM di sini):
     POST /tkg/validate              -> validasi TKG (V-02..V-08 subset, brain TXT00 §7)
     POST /tkg/render                -> render TKG -> skrip .tkg.txt (deterministik)
     POST /tkg/takeoff               -> TKG -> WorkItem beton/bekisting/besi (deterministik)
+    POST /tkg/takeoff-ahsp-suggest   -> takeoff + usulan AHSP per item (token-overlap, Fase T)
     POST /takeoff/tanah             -> galian/urugan/buangan (brain §F, deterministik)
     POST /takeoff/dinding           -> pasangan/plester/acian/cat/screed (brain §E)
     POST /takeoff/arsitektur        -> pondasi batu/lantai/atap miring (brain §G)
@@ -80,6 +81,7 @@ from .workitems.models import ElementSeed, ImpliedRequest, WbsCompletenessReques
 from .mapping.ahsp_search import map_workitem_to_ahsp, search_ahsp
 from .mapping.price_binding import bind_prices
 from .mapping.models import AhspMapRequest, AhspMapResult, AhspSearchRequest, AhspSearchResult, PriceBindRequest, PriceBindingResult
+from .mapping.takeoff_ahsp import TakeoffAhspSuggestion, suggest_ahsp_for_takeoff
 from .review.corrections import log_correction
 from .review.models import CorrectionLogRequest, CorrectionRecord, ReviewTriageRequest, ReviewTriageResult
 from .review.triage import triage_review_tasks
@@ -340,6 +342,21 @@ def tkg_render(req: TkgRequest):
 @app.post("/tkg/takeoff", response_model=TakeoffResult)
 def tkg_takeoff(req: TkgRequest):
     return takeoff_tkg(req.doc, req.params)
+
+
+class TakeoffAhspSuggestResult(BaseModel):
+    """Fase T (2026-07-13): takeoff + usulan AHSP per item, digabung supaya
+    frontend cukup 1 panggilan. `takeoff` PERSIS sama dgn `/tkg/takeoff` —
+    field baru murni tambahan, tidak mengubah kontrak lama."""
+    takeoff: TakeoffResult
+    suggestions: List[TakeoffAhspSuggestion]
+
+
+@app.post("/tkg/takeoff-ahsp-suggest", response_model=TakeoffAhspSuggestResult)
+def tkg_takeoff_ahsp_suggest(req: TkgRequest):
+    takeoff = takeoff_tkg(req.doc, req.params)
+    suggestions = suggest_ahsp_for_takeoff(takeoff.items, STORE.ahsp)
+    return TakeoffAhspSuggestResult(takeoff=takeoff, suggestions=suggestions)
 
 
 # ----------------- Take-off arsitektur/tanah (brain §E/§F/§G) ----------------
