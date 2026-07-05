@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.perception.consolidated_models import (
+    AiArsitekturAreaSuggestion,
     ConsolidatedExtraction,
     ElementDefinisi,
     ElementInstanceRef,
@@ -17,6 +18,29 @@ from app.perception.work_items import (
     known_tkg_categories,
     section_for_category,
 )
+
+
+class FakeArsitekturClient:
+    def takeoff_arsitektur(self, payload: dict) -> dict:
+        item = payload["plafon"][0]
+        return {
+            "domain": "arsitektur",
+            "items": [{
+                "kode": item["kode"],
+                "work": "plafon",
+                "quantity": item["a_neto_m2"],
+                "unit": "m2",
+                "formula": "a_neto_m2",
+                "detail": "plafon dari bridge arsitektur",
+                "needs_review": False,
+                "review_reason": None,
+                "rule_id": "F-G09",
+            }],
+            "assumptions": [],
+            "warnings": [],
+            "params_used": [],
+            "n_needs_review": 0,
+        }
 
 
 def test_work_items_grouping_marks_calculated_and_unsupported_without_fabricating_volume():
@@ -81,9 +105,14 @@ def test_all_known_tkg_categories_map_to_explicit_wbs_section_not_lainnya():
 
 def test_work_items_does_not_import_core_engine_sections_by_filesystem_path():
     source = Path("app/perception/work_items.py").read_text(encoding="utf-8")
+    takeoff_source = Path("../core-engine/app/tkg/takeoff.py").read_text(encoding="utf-8")
 
     assert "spec_from_file_location" not in source
     assert "core-engine" not in source
+    assert "sys.path.insert" not in source
+    assert "except ModuleNotFoundError" not in source
+    assert "sys.path.insert" not in takeoff_source
+    assert "except ModuleNotFoundError" not in takeoff_source
 
 
 def test_work_items_pondasi_telapak_without_depth_is_review_not_unsupported():
@@ -123,6 +152,37 @@ def test_work_items_derives_pondasi_telapak_category_from_code_when_missing():
     assert item.work_type == "galian_footplat"
     assert item.formula_status == "perlu_review"
     assert item.review_reason == "dimensi footplat tidak lengkap di gambar: b, l"
+
+
+def test_work_items_bridges_plafon_ai_suggestion_to_arsitektur_section():
+    consolidated = ConsolidatedExtraction(element_registry=[
+        ElementRegistryEntry(
+            kode="PLAFON-AUTO-1",
+            kategori="plafon",
+            status="perlu_review",
+            ai_arsitektur_area_suggestion=AiArsitekturAreaSuggestion(
+                kategori="plafon",
+                fields={"a_neto_m2": 45.0, "keliling_tepi_m": 28.0},
+                confidence=0.8,
+                reasoning="area plafon disebut eksplisit",
+                source_texts=["PLAFON AREA NETO 45 M2"],
+                model="gemini-2.5-flash",
+                generated_at="2026-07-05T00:00:00+00:00",
+            ),
+        )
+    ])
+
+    result = build_work_items(consolidated, [], arsitektur_area_client=FakeArsitekturClient())
+    item = result.work_items[0]
+
+    assert item.kode == "PLAFON-AUTO-1"
+    assert item.kategori == "plafon"
+    assert item.work_type == "plafon"
+    assert item.formula_status == "dihitung"
+    assert item.volume == 45.0
+    assert item.unit == "m2"
+    assert item.wbs_section == "IV"
+    assert item.rule_id == "F-G09"
 
 
 def test_work_items_endpoint_returns_grouping_response():

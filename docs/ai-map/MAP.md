@@ -8,9 +8,26 @@
 |---|---|---|
 | `apps/web` | Next.js 14 — semua UI | Menghitung angka RAB |
 | `services/core-engine` | FastAPI Python — **semua perhitungan deterministik** | Pakai LLM untuk aritmetika |
+| `services/document-intelligence` | FastAPI Python — persepsi gambar (span/grid/tabel/elemen), TKG, work-items, bridging ke core-engine | Menetapkan harga/biaya, menghitung volume sendiri |
 | `packages/schemas` | Zod + Pydantic = 1 sumber kebenaran tipe (`src/index.ts`) | Beda antara Zod & Pydantic |
 | `data/` | AHSP + harga satuan (koefisien) | — |
 | `docs/` | Rencana, ADR, aturan halaman, strategi | — |
+
+## Document Intelligence — endpoint (`services/document-intelligence/app/main.py`)
+```
+/health
+/upload  /pdf  /excel
+/drawings/analyze/start  /drawings/analyze/status/{job_id}
+/drawings/tkg/work-items
+```
+- Logika: `app/perception/` (span/merge-run, grammar, `zone_classifier.py`,
+  `binding.py` §5, `consolidate.py`, `work_items.py`, `bridging_tanah.py`),
+  `app/perception/vector/grid_geometry.py`, `app/perception/ocr/` (PaddleOCR
+  raster, opsional/lazy).
+- **Rencana (belum ada)**: `app/perception/ai_assist/` — lapisan LLM fallback
+  paralel untuk klasifikasi/binding saat rule-based gagal (`CLAUDE.md` §1.1,
+  `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md` §X2).
+- Test: `services/document-intelligence/tests/` · jalankan `pytest -q`.
 
 ## Engine — endpoint (`services/core-engine/app/main.py`)
 ```

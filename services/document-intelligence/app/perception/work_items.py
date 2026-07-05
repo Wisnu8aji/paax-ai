@@ -1,26 +1,33 @@
 from __future__ import annotations
 
-import sys
 from collections import defaultdict
 from functools import lru_cache
-from pathlib import Path
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
+from app.perception.bridging_atap import (
+    AtapTakeoffClient,
+    bridge_gording,
+    bridge_ikatan_angin,
+    bridge_trekstang,
+)
+from app.perception.bridging_arsitektur_area import (
+    ArsitekturTakeoffClient,
+    bridge_keramik_dinding,
+    bridge_plafon,
+    bridge_waterproofing,
+)
+from app.perception.bridging_dinding import DindingTakeoffClient, bridge_dinding_pasangan
+from app.perception.bridging_kuda_kuda import BajaTakeoffClient, bridge_kuda_kuda
+from app.perception.bridging_kusen import KusenTakeoffClient, bridge_kusen_schedule
+from app.perception.bridging_mep import MepTakeoffClient, bridge_mep_point
 from app.perception.bridging_tanah import TanahTakeoffClient, bridge_galian_footplat
 from app.perception.consolidated_models import ConsolidatedExtraction, ElementRegistryEntry
 from app.perception.consolidate import _normalize_kode
-
-try:
-    from paax_schemas.tkg_taxonomy import kategori_dari_kode
-    from paax_schemas.tkg_taxonomy import known_tkg_categories as _shared_known_tkg_categories
-    from paax_schemas.wbs import normalize_section, section_title
-except ModuleNotFoundError:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "packages" / "schemas" / "python"))
-    from paax_schemas.tkg_taxonomy import kategori_dari_kode
-    from paax_schemas.tkg_taxonomy import known_tkg_categories as _shared_known_tkg_categories
-    from paax_schemas.wbs import normalize_section, section_title
+from paax_schemas.tkg_taxonomy import kategori_dari_kode
+from paax_schemas.tkg_taxonomy import known_tkg_categories as _shared_known_tkg_categories
+from paax_schemas.wbs import normalize_section, section_title
 
 
 FormulaStatus = Literal["dihitung", "belum_didukung", "perlu_review"]
@@ -189,13 +196,235 @@ def _bridged_pondasi_telapak_item(
     )
 
 
+def _bridged_dinding_item(
+    entry: ElementRegistryEntry,
+    dinding_client: DindingTakeoffClient | None,
+) -> DrawingWorkItem:
+    bridge = bridge_dinding_pasangan(entry, dinding_client=dinding_client)
+    section = section_for_category("dinding")
+    status: FormulaStatus = bridge.formula_status
+    return DrawingWorkItem(
+        work_id=f"{entry.kode}:pasangan_dinding:1",
+        kode=entry.kode,
+        kode_asli=entry.kode_asli or [entry.kode],
+        kategori=_entry_category(entry),
+        work_type="pasangan_dinding",
+        uraian=_item_label(entry.kode, "pasangan dinding", "pasangan"),
+        wbs_section=section.code,
+        wbs_title=section.title,
+        formula_status=status,
+        unit=bridge.unit if status == "dihitung" else None,
+        volume=bridge.quantity if status == "dihitung" else None,
+        formula=bridge.formula,
+        rule_id=bridge.rule_id,
+        source_pages=_source_pages(entry),
+        element_refs=_element_refs(entry),
+        needs_review=status != "dihitung",
+        review_reason=bridge.review_reason if status == "perlu_review" else None,
+    )
+
+
+def _bridged_kusen_item(
+    entry: ElementRegistryEntry,
+    kusen_client: KusenTakeoffClient | None,
+) -> DrawingWorkItem:
+    bridge = bridge_kusen_schedule(entry, kusen_client=kusen_client)
+    section = section_for_category("kusen")
+    status: FormulaStatus = bridge.formula_status
+    tipe = entry.ai_kusen_suggestion.tipe if entry.ai_kusen_suggestion else entry.kode
+    return DrawingWorkItem(
+        work_id=f"{entry.kode}:kusen_schedule:1",
+        kode=entry.kode,
+        kode_asli=entry.kode_asli or [entry.kode],
+        kategori=_entry_category(entry),
+        work_type="kusen_schedule",
+        uraian=_item_label(entry.kode, f"kusen {tipe}", "kusen"),
+        wbs_section=section.code,
+        wbs_title=section.title,
+        formula_status=status,
+        unit=bridge.unit if status == "dihitung" else None,
+        volume=bridge.quantity if status == "dihitung" else None,
+        formula=bridge.formula,
+        rule_id=bridge.rule_id,
+        source_pages=_source_pages(entry),
+        element_refs=_element_refs(entry),
+        needs_review=status != "dihitung",
+        review_reason=bridge.review_reason if status == "perlu_review" else None,
+    )
+
+
+def _bridged_mep_item(
+    entry: ElementRegistryEntry,
+    mep_client: MepTakeoffClient | None,
+) -> DrawingWorkItem:
+    bridge = bridge_mep_point(entry, mep_client=mep_client)
+    section = section_for_category("mep")
+    status: FormulaStatus = bridge.formula_status
+    jenis = entry.ai_mep_suggestion.jenis if entry.ai_mep_suggestion else entry.kode
+    return DrawingWorkItem(
+        work_id=f"{entry.kode}:mep_point:1",
+        kode=entry.kode,
+        kode_asli=entry.kode_asli or [entry.kode],
+        kategori=_entry_category(entry),
+        work_type="mep_point",
+        uraian=_item_label(entry.kode, f"titik {jenis}", "mep"),
+        wbs_section=section.code,
+        wbs_title=section.title,
+        formula_status=status,
+        unit=bridge.unit if status == "dihitung" else None,
+        volume=bridge.quantity if status == "dihitung" else None,
+        formula=bridge.formula,
+        rule_id=bridge.rule_id,
+        source_pages=_source_pages(entry),
+        element_refs=_element_refs(entry),
+        needs_review=status != "dihitung",
+        review_reason=bridge.review_reason if status == "perlu_review" else None,
+    )
+
+
+_ROOF_FRAME_BRIDGE_FN = {
+    "gording": bridge_gording,
+    "trekstang": bridge_trekstang,
+    "ikatan_angin": bridge_ikatan_angin,
+}
+_ROOF_FRAME_WORK_TYPE = {
+    "gording": "rangka_gording",
+    "trekstang": "rangka_trekstang",
+    "ikatan_angin": "rangka_ikatan_angin",
+}
+
+
+def _bridged_roof_frame_item(
+    entry: ElementRegistryEntry,
+    kategori: str,
+    atap_client: AtapTakeoffClient | None,
+) -> DrawingWorkItem:
+    bridge = _ROOF_FRAME_BRIDGE_FN[kategori](entry, atap_client=atap_client)
+    work_type = _ROOF_FRAME_WORK_TYPE[kategori]
+    section = section_for_category(kategori)
+    status: FormulaStatus = bridge.formula_status
+    return DrawingWorkItem(
+        work_id=f"{entry.kode}:{work_type}:1",
+        kode=entry.kode,
+        kode_asli=entry.kode_asli or [entry.kode],
+        kategori=_entry_category(entry),
+        work_type=work_type,
+        uraian=_item_label(entry.kode, kategori, "rangka"),
+        wbs_section=section.code,
+        wbs_title=section.title,
+        formula_status=status,
+        unit=bridge.unit if status == "dihitung" else None,
+        volume=bridge.quantity if status == "dihitung" else None,
+        formula=bridge.formula,
+        rule_id=bridge.rule_id,
+        source_pages=_source_pages(entry),
+        element_refs=_element_refs(entry),
+        needs_review=status != "dihitung",
+        review_reason=bridge.review_reason if status == "perlu_review" else None,
+    )
+
+
+def _bridged_kuda_kuda_item(
+    entry: ElementRegistryEntry,
+    baja_client: BajaTakeoffClient | None,
+) -> DrawingWorkItem:
+    bridge = bridge_kuda_kuda(entry, baja_client=baja_client)
+    section = section_for_category("kuda_kuda")
+    status: FormulaStatus = bridge.formula_status
+    return DrawingWorkItem(
+        work_id=f"{entry.kode}:rangka_kuda_kuda:1",
+        kode=entry.kode,
+        kode_asli=entry.kode_asli or [entry.kode],
+        kategori=_entry_category(entry),
+        work_type="rangka_kuda_kuda",
+        uraian=_item_label(entry.kode, "kuda kuda", "rangka"),
+        wbs_section=section.code,
+        wbs_title=section.title,
+        formula_status=status,
+        unit=bridge.unit if status == "dihitung" else None,
+        volume=bridge.quantity if status == "dihitung" else None,
+        formula=bridge.formula,
+        rule_id=bridge.rule_id,
+        source_pages=_source_pages(entry),
+        element_refs=_element_refs(entry),
+        needs_review=status != "dihitung",
+        review_reason=bridge.review_reason if status == "perlu_review" else None,
+    )
+
+
+_ARSITEKTUR_AREA_BRIDGE_FN = {
+    "keramik_dinding": bridge_keramik_dinding,
+    "plafon": bridge_plafon,
+    "waterproofing": bridge_waterproofing,
+}
+_ARSITEKTUR_AREA_WORK_TYPE = {
+    "keramik_dinding": "keramik_dinding",
+    "plafon": "plafon",
+    "waterproofing": "waterproofing",
+}
+_ARSITEKTUR_AREA_SECTION_CATEGORY = {
+    "keramik_dinding": "finishing",
+    "plafon": "plafon",
+    "waterproofing": "finishing",
+}
+
+
+def _bridged_arsitektur_area_item(
+    entry: ElementRegistryEntry,
+    kategori: str,
+    arsitektur_area_client: ArsitekturTakeoffClient | None,
+) -> DrawingWorkItem:
+    bridge = _ARSITEKTUR_AREA_BRIDGE_FN[kategori](entry, arsitektur_client=arsitektur_area_client)
+    work_type = _ARSITEKTUR_AREA_WORK_TYPE[kategori]
+    section = section_for_category(_ARSITEKTUR_AREA_SECTION_CATEGORY[kategori])
+    status: FormulaStatus = bridge.formula_status
+    return DrawingWorkItem(
+        work_id=f"{entry.kode}:{work_type}:1",
+        kode=entry.kode,
+        kode_asli=entry.kode_asli or [entry.kode],
+        kategori=_entry_category(entry),
+        work_type=work_type,
+        uraian=_item_label(entry.kode, kategori, None),
+        wbs_section=section.code,
+        wbs_title=section.title,
+        formula_status=status,
+        unit=bridge.unit if status == "dihitung" else None,
+        volume=bridge.quantity if status == "dihitung" else None,
+        formula=bridge.formula,
+        rule_id=bridge.rule_id,
+        source_pages=_source_pages(entry),
+        element_refs=_element_refs(entry),
+        needs_review=status != "dihitung",
+        review_reason=bridge.review_reason if status == "perlu_review" else None,
+    )
+
+
 def _fallback_item(
     entry: ElementRegistryEntry,
     tanah_client: TanahTakeoffClient | None = None,
+    dinding_client: DindingTakeoffClient | None = None,
+    atap_client: AtapTakeoffClient | None = None,
+    baja_client: BajaTakeoffClient | None = None,
+    arsitektur_area_client: ArsitekturTakeoffClient | None = None,
+    kusen_client: KusenTakeoffClient | None = None,
+    mep_client: MepTakeoffClient | None = None,
 ) -> DrawingWorkItem:
     category = _entry_category(entry)
-    if category.strip().lower() == "pondasi_telapak":
+    normalized_category = category.strip().lower()
+    if normalized_category == "pondasi_telapak":
         return _bridged_pondasi_telapak_item(entry, tanah_client)
+    if normalized_category == "dinding":
+        return _bridged_dinding_item(entry, dinding_client)
+    if normalized_category in _ROOF_FRAME_BRIDGE_FN:
+        return _bridged_roof_frame_item(entry, normalized_category, atap_client)
+    if normalized_category == "kuda_kuda":
+        return _bridged_kuda_kuda_item(entry, baja_client)
+    if normalized_category in _ARSITEKTUR_AREA_BRIDGE_FN:
+        return _bridged_arsitektur_area_item(entry, normalized_category, arsitektur_area_client)
+    if normalized_category == "kusen":
+        return _bridged_kusen_item(entry, kusen_client)
+    if normalized_category == "mep":
+        return _bridged_mep_item(entry, mep_client)
 
     section = section_for_category(category)
     formula_supported = _has_supported_formula(category)
@@ -226,6 +455,12 @@ def build_work_items(
     consolidated: ConsolidatedExtraction,
     takeoff_items: list[TakeoffItemForWorkItem],
     tanah_client: TanahTakeoffClient | None = None,
+    dinding_client: DindingTakeoffClient | None = None,
+    atap_client: AtapTakeoffClient | None = None,
+    baja_client: BajaTakeoffClient | None = None,
+    arsitektur_area_client: ArsitekturTakeoffClient | None = None,
+    kusen_client: KusenTakeoffClient | None = None,
+    mep_client: MepTakeoffClient | None = None,
 ) -> DrawingWorkItemsResult:
     takeoff_by_code: dict[str, list[TakeoffItemForWorkItem]] = defaultdict(list)
     for item in takeoff_items:
@@ -235,7 +470,12 @@ def build_work_items(
     for entry in consolidated.element_registry:
         matches = takeoff_by_code.get(_normalize_kode(entry.kode), [])
         if not matches:
-            work_items.append(_fallback_item(entry, tanah_client=tanah_client))
+            work_items.append(_fallback_item(
+                entry, tanah_client=tanah_client, dinding_client=dinding_client,
+                atap_client=atap_client, baja_client=baja_client,
+                arsitektur_area_client=arsitektur_area_client,
+                kusen_client=kusen_client, mep_client=mep_client,
+            ))
             continue
         for index, item in enumerate(matches, start=1):
             work_items.append(_from_takeoff(entry, item, index))

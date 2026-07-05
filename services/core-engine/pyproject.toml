@@ -6,6 +6,7 @@ requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.110",
     "openpyxl>=3.1",
+    "paax-schemas @ file:../../packages/schemas/python",
     "uvicorn[standard]>=0.27",
     "pydantic>=2.6",
 ]
