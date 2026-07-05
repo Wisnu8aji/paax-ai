@@ -100,22 +100,33 @@ paax-ai/
 pnpm install
 ```
 
-### 2. Install Core Engine (Python)
+### 2. Install Shared Python Schemas
 ```bash
-cd services/core-engine
 python -m venv .venv
 # Windows:  .venv\Scripts\activate
 # macOS/Linux: source .venv/bin/activate
+pip install -e packages/schemas/python
+```
+
+### 3. Install Core Engine (Python)
+```bash
+cd services/core-engine
 pip install -e ".[dev]"
 ```
 
-### 3. Jalankan Engine (terminal 1)
+### 4. Install Document Intelligence (Python)
+```bash
+cd ../document-intelligence
+pip install -e .
+```
+
+### 5. Jalankan Engine (terminal 1)
 ```bash
 pnpm run dev:core
 # Engine: http://localhost:8081  •  API docs: http://localhost:8081/docs
 ```
 
-### 4. Jalankan Web (terminal 2)
+### 6. Jalankan Web (terminal 2)
 ```bash
 pnpm run dev:web
 # Web: http://localhost:3000

@@ -23,22 +23,16 @@ default yang terpakai dicatat di `params_used`/`assumptions` (RULE-BOE).
 from __future__ import annotations
 import math
 import re
-import sys
-from pathlib import Path
 from typing import Dict, List, Literal, Optional, Tuple
 
 from pydantic import BaseModel, Field
+
+from paax_schemas.tkg_taxonomy import PREFIKS as _PREFIKS, kategori_dari_kode
 
 from ..geometry.volume import compute_volume
 from .models import ElementInstance, TkgDocument, TypeRecord
 from .params import ParamUsed, TakeoffParams
 from .validate import grid_distance_m, ke_meter
-
-try:
-    from paax_schemas.tkg_taxonomy import PREFIKS as _PREFIKS, kategori_dari_kode
-except ModuleNotFoundError:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "packages" / "schemas" / "python"))
-    from paax_schemas.tkg_taxonomy import PREFIKS as _PREFIKS, kategori_dari_kode
 
 
 # ─── Hasil takeoff ────────────────────────────────────────────────────────────

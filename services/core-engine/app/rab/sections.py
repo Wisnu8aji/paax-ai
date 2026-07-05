@@ -7,19 +7,13 @@ subtotal & bobot per seksi. AI (lapis orkestrasi) cukup memberi `section` per
 item hasil screening gambar; SEMUA angka tetap dihitung engine.
 """
 from __future__ import annotations
-import sys
-from pathlib import Path
 from typing import Dict, List, Optional
 from pydantic import BaseModel
 
+from paax_schemas.wbs import WBS_SECTIONS, normalize_section, section_title
+
 from .models import AHSPItem, ResourcePrice, RABLineInput, RABLine
 from .rab import compute_rab, money
-
-try:
-    from paax_schemas.wbs import WBS_SECTIONS, normalize_section, section_title
-except ModuleNotFoundError:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "packages" / "schemas" / "python"))
-    from paax_schemas.wbs import WBS_SECTIONS, normalize_section, section_title
 
 _TITLES: Dict[str, str] = {code: title for code, title in WBS_SECTIONS}
 _ORDER: Dict[str, int] = {code: i for i, (code, _) in enumerate(WBS_SECTIONS)}

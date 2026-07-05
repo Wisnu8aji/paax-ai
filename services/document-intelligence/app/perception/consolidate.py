@@ -35,9 +35,7 @@ data (tetap ada di `sheet.unclassified` mentah), hanya tidak lagi jadi
 from __future__ import annotations
 
 from functools import lru_cache
-from pathlib import Path
 import re
-import sys
 
 from app.perception.consolidated_models import (
     Assumption,
@@ -49,12 +47,7 @@ from app.perception.consolidated_models import (
     SheetSummary,
 )
 from app.perception.tkg.models import Grid, TkgDocument
-
-try:
-    from paax_schemas.tkg_taxonomy import kategori_dari_kode, known_tkg_categories
-except ModuleNotFoundError:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "packages" / "schemas" / "python"))
-    from paax_schemas.tkg_taxonomy import kategori_dari_kode, known_tkg_categories
+from paax_schemas.tkg_taxonomy import kategori_dari_kode, known_tkg_categories
 
 _POSISI_MM_TOLERANCE = 1.0
 
