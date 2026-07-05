@@ -1900,6 +1900,41 @@ export const DataCoverageResultSchema = z.object({
 });
 export type DataCoverageResult = z.infer<typeof DataCoverageResultSchema>;
 
+// Fase W (2026-07-14) — hasil grouping `document-intelligence`
+// `app.perception.work_items`. Modul ini hanya menyalin volume dari
+// TakeoffItem core-engine dan memberi status formula; tidak menghitung angka.
+export const DrawingFormulaStatusEnum = z.enum([
+  "dihitung",
+  "belum_didukung",
+  "perlu_review",
+]);
+export const DrawingWorkItemSchema = z.object({
+  work_id: z.string(),
+  kode: z.string(),
+  kode_asli: z.array(z.string()).default([]),
+  kategori: z.string(),
+  work_type: z.string().nullish(),
+  uraian: z.string(),
+  wbs_section: z.string(),
+  wbs_title: z.string(),
+  formula_status: DrawingFormulaStatusEnum,
+  unit: z.string().nullish(),
+  volume: z.number().nullish(),
+  formula: z.string().nullish(),
+  rule_id: z.string().nullish(),
+  source_pages: z.array(z.number().int()).default([]),
+  element_refs: z.array(z.string()).default([]),
+  needs_review: z.boolean().default(false),
+  review_reason: z.string().nullish(),
+});
+export const DrawingWorkItemsResultSchema = z.object({
+  work_items: z.array(DrawingWorkItemSchema).default([]),
+  warnings: z.array(z.string()).default([]),
+});
+export type DrawingFormulaStatus = z.infer<typeof DrawingFormulaStatusEnum>;
+export type DrawingWorkItem = z.infer<typeof DrawingWorkItemSchema>;
+export type DrawingWorkItemsResult = z.infer<typeof DrawingWorkItemsResultSchema>;
+
 export const WbsDivisionSchema = z.object({
   code: z.string(),
   title: z.string(),

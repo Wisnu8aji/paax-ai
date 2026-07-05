@@ -14,6 +14,7 @@ import {
   CPMResult,
   SchedulePlanRequest,
   SchedulePlanResult,
+  DrawingWorkItemsResultSchema,
 } from "../index";
 
 // Contoh response aktual dari POST /rab/calculate engine
@@ -190,6 +191,57 @@ describe("SchedulePlan schemas", () => {
 
     expect(result.tasks[0].start_date).toBe("2026-06-01");
     expect(result.s_curve).toBeNull();
+  });
+});
+
+describe("DrawingWorkItemsResult schema", () => {
+  it("parses Fase W work item grouping response and keeps unsupported volume empty", () => {
+    const result = DrawingWorkItemsResultSchema.parse({
+      work_items: [
+        {
+          work_id: "K1:beton:1",
+          kode: "K1",
+          kode_asli: ["K1", "KOLOM K1"],
+          kategori: "kolom",
+          work_type: "beton",
+          uraian: "Beton kolom K1",
+          wbs_section: "III",
+          wbs_title: "Pekerjaan Struktur",
+          formula_status: "dihitung",
+          unit: "m3",
+          volume: 0.42,
+          formula: "F-B01",
+          rule_id: "F-B01",
+          source_pages: [1],
+          element_refs: ["A1"],
+          needs_review: false,
+        },
+        {
+          work_id: "SAN1:manual:1",
+          kode: "SAN1",
+          kode_asli: ["SAN1"],
+          kategori: "sanitasi",
+          work_type: null,
+          uraian: "Item sanitasi SAN1",
+          wbs_section: "V",
+          wbs_title: "Pekerjaan MEP",
+          formula_status: "belum_didukung",
+          unit: null,
+          volume: null,
+          formula: null,
+          rule_id: null,
+          source_pages: [7],
+          element_refs: ["Detail sanitasi"],
+          needs_review: true,
+          review_reason: "kategori belum memiliki rumus takeoff deterministik",
+        },
+      ],
+      warnings: [],
+    });
+
+    expect(result.work_items[0].formula_status).toBe("dihitung");
+    expect(result.work_items[1].formula_status).toBe("belum_didukung");
+    expect(result.work_items[1].volume).toBeNull();
   });
 });
 
