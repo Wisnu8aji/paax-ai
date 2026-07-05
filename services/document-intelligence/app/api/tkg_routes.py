@@ -4,6 +4,12 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.tkg.builder import TkgBuildResult, build_tkg_from_text
+from app.perception.bridging_atap import HttpAtapTakeoffClient
+from app.perception.bridging_arsitektur_area import HttpArsitekturTakeoffClient
+from app.perception.bridging_dinding import HttpDindingTakeoffClient
+from app.perception.bridging_kuda_kuda import HttpBajaTakeoffClient
+from app.perception.bridging_kusen import HttpKusenTakeoffClient
+from app.perception.bridging_mep import HttpMepTakeoffClient
 from app.perception.bridging_tanah import HttpTanahTakeoffClient
 from app.perception.work_items import DrawingWorkItemsResult, WorkItemsRequest, build_work_items
 
@@ -36,4 +42,10 @@ async def group_work_items(req: WorkItemsRequest):
         req.consolidated,
         req.takeoff_items,
         tanah_client=HttpTanahTakeoffClient.from_env(),
+        dinding_client=HttpDindingTakeoffClient.from_env(),
+        atap_client=HttpAtapTakeoffClient.from_env(),
+        baja_client=HttpBajaTakeoffClient.from_env(),
+        arsitektur_area_client=HttpArsitekturTakeoffClient.from_env(),
+        kusen_client=HttpKusenTakeoffClient.from_env(),
+        mep_client=HttpMepTakeoffClient.from_env(),
     )
