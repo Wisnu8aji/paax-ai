@@ -1,8 +1,361 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-05** (Codex menjalankan prompt Fase X1B
-> bertanggal 2026-07-16: packaging paax_schemas + investigasi footplat).
+> Update terakhir: **2026-07-05** (Owner MENYETUJUI EKSPLISIT pembangunan
+> `services/ai-orchestrator` — status berubah dari "pending keputusan"
+> jadi "disetujui, spek Codex ditulis, siap dieksekusi". **Owner SEKALIGUS
+> mengoreksi pola kerja**: mulai sekarang Claude HANYA merancang, Codex
+> yang implementasi kode nyata (dinding/atap/kusen/MEP SEBELUMNYA
+> dikerjakan langsung oleh Claude — itu PENGECUALIAN yang sudah terlanjur
+> terjadi SEBELUM koreksi ini, bukan pola yang diulang). Detail lengkap:
+> §KOREKSI POLA KERJA & AI-ORCHESTRATOR DISETUJUI di bawah).
+
+## RANGKAIAN BRIDGING NON-STRUKTUR — DINDING→ATAP→KUSEN→MEP SELESAI (Claude, 2026-07-05)
+
+Kelanjutan langsung dari audit B0 (di bawah). Owner memutuskan: frontend
+(Gantt UI, tombol 1-klik) ditunda; Engineering Chat/`services/ai-
+orchestrator` TETAP status **menunggu keputusan eksplisit owner** (BELUM
+dibangun, BUKAN disetujui diam-diam — keputusan arsitektur besar,
+migrasi `apps/web/src/lib/ai/*` ke service baru); fokus jalan SEKARANG:
+4 kategori non-struktur yang gap-nya sudah dipetakan audit B0.
+
+**Dikerjakan berurutan otomatis** (dinding → atap → kusen → MEP), TANPA
+interupsi manual antar kategori — **tidak ada blocker ditemukan di
+sepanjang rangkaian**, semua 4 selesai dalam satu sesi berkelanjutan.
+
+| Slice | Kategori | Pola gap | Report |
+|---|---|---|---|
+| #3 | Dinding pasangan bata | Deteksi elemen TIDAK ADA sama sekali (tanpa kode per-instance) — beda dari kolom/footplat | `report-remote/REPORT_X2_LANJUTAN_DINDING_CLAUDE_2026-07-05.md` |
+| #4 | Atap (gording/trekstang/ikatan_angin) | Kode SUDAH dikenal taksonomi, bridging belum ada — pola PERSIS X1 | `report-remote/REPORT_X2_LANJUTAN_ATAP_CLAUDE_2026-07-05.md` |
+| #5 | Kusen (jadwal pintu/jendela) | Butuh tabel jadwal yang belum dikenali parser; risiko tabrakan kode "P1" vs pondasi_telapak (diverifikasi & dihindari eksplisit) | `report-remote/REPORT_X2_LANJUTAN_KUSEN_CLAUDE_2026-07-05.md` |
+| #6 | MEP (titik lampu/stop kontak/dll) | Rumus paling sederhana (count), ikon/simbol di luar cakupan | `report-remote/REPORT_X2_LANJUTAN_MEP_CLAUDE_2026-07-05.md` |
+
+**Hasil gabungan**: 4 modul `ai_assist/` baru (`wall_assist.py`,
+`roof_frame_assist.py`, `kusen_assist.py`, `mep_assist.py`), 4 modul
+`bridging_*.py` baru (dinding/atap/kusen/mep), 4 schema Pydantic+Zod baru
+(`AiDindingSuggestion`/`AiRoofFrameSuggestion`/`AiKusenSuggestion`/
+`AiMepSuggestion`), wiring lengkap `consolidate.py`→`work_items.py`→
+`tkg_routes.py` utk tiap kategori. **document-intelligence: 149 → 229
+test passed** (+80 termasuk 24 dari Fase X2 slice #1-#2 sebelumnya +56 dari
+rangkaian ini), **core-engine tetap 280** (tidak disentuh), packages/schemas
+build OK + 12 test. Prinsip konsisten di semua slice: rule-based fast-path,
+AI-assist hanya fallback teks (bukan piksel), anti-halusinasi 2 lapis,
+tidak ada auto-commit ke input engine, audit trail wajib, dan kejujuran
+eksplisit soal apa yang TIDAK dicakup (lihat tiap report utk daftar gap
+detail per kategori).
+
+**BELUM di-commit** — sesuai instruksi owner, seluruh working tree tetap
+uncommitted menunggu review.
+
+## KOREKSI POLA KERJA & AI-ORCHESTRATOR DISETUJUI (2026-07-05)
+
+### Koreksi pola kerja (berlaku mulai sekarang, ke depan)
+
+Owner mengoreksi pola kerja rangkaian di atas: **Claude HANYA merancang**
+(logika deteksi/ekstraksi, skema data, validasi anti-halusinasi, kontrak
+API) — **implementasi kode nyata WAJIB diserahkan ke Codex lewat prompt
+file**, BUKAN ditulis langsung oleh Claude ke source. Slice dinding/atap/
+kusen/MEP (§di atas) **SUDAH TERLANJUR diimplementasikan langsung oleh
+Claude SEBELUM koreksi ini** — kerjanya TETAP DIPERTAHANKAN (semua sudah
+selesai 100%, teruji, tidak dibuang — lihat konfirmasi status di bawah),
+tapi ini PENGECUALIAN atas instruksi owner sesi itu, **BUKAN pola yang
+akan diulang** untuk pekerjaan berikutnya. Ke-4 report sudah ditambahi
+catatan koreksi ini secara eksplisit.
+
+**Konfirmasi status pasti tiap kategori** (dicek ulang via test run
+nyata sesi ini, BUKAN asumsi): **dinding, atap, kusen, MEP SEMUANYA
+SELESAI 100%** (bukan sebagian) — `document-intelligence` 229 test passed,
+5 skipped, dikonfirmasi via `pytest -q` dijalankan ulang. Tidak ada yang
+setengah jadi.
+
+### AI-Orchestrator — DISETUJUI EKSPLISIT owner, spek Codex sudah ditulis
+
+Owner MENYETUJUI EKSPLISIT ("semua saya setujui") pembangunan
+`services/ai-orchestrator` (Node/TypeScript, migrasi tool-calling nyata
+utk Engineering Chat — `query_rab`/`query_schedule`/`lookup_ahsp`/
+`query_progress`/`query_materials`/`run_scenario` dari §8.1
+`docs/MASTER_PLAN.md`). **Status berubah dari "pending keputusan" jadi
+"disetujui, mengikuti pola BARU (Claude desain, Codex implementasi)".**
+
+**Keputusan desain (Claude)**: REST manual + Express (BUKAN Genkit,
+walau `MASTER_PLAN.md` §15.2 menyebut Genkit) — ada scaffold LAMA
+`scripts/scaffolding/create_ai_orch.py` berbasis Genkit yang TIDAK PERNAH
+dijalankan & isinya cuma mock/placeholder rusak; dipilih REST manual krn
+pola ini SUDAH TERBUKTI jalan di `apps/web/src/lib/ai/orchestrator.ts`
+(REST langsung ke Gemini, tanpa SDK), menghindari risiko API Genkit yang
+berubah cepat. Ini deviasi SADAR & didokumentasikan dari `MASTER_PLAN`,
+bukan kesalahan — migrasi ke Genkit tetap opsi terbuka di masa depan.
+
+**2 prompt Codex berantai ditulis** (BELUM dijalankan):
+1. `docs/prompts/PAAX_CODEX_CHAIN_AIO_01_SCAFFOLD_TOOLCALLING_LOOP_2026-07-05.md`
+   — scaffold service, loop tool-calling multi-turn Gemini (function-
+   calling), 2 tool proxy sederhana (`lookup_ahsp`, `run_scenario`), test
+   lengkap dgn fake Gemini client.
+2. `docs/prompts/PAAX_CODEX_CHAIN_AIO_02_TOOLS_RAB_SCHEDULE_PROGRESS_MATERIALS_2026-07-05.md`
+   — 4 tool sisanya: `query_rab`/`query_schedule` (baca `context` yang
+   dikirim client dlm request, KARENA TIDAK ADA database proyek server-
+   side — draft RAB/jadwal tersimpan di localStorage browser, temuan
+   audit B0), `query_progress`/`query_materials` (stub jujur, Site Agent
+   v2.0 & prediksi material v1.5 belum dibangun). Task TERAKHIR rangkaian
+   ini — instruksi berhenti eksplisit di file itu.
+
+Kedua prompt PANJANG & DETAIL SENGAJA (instruksi eksplisit owner: minim
+iterasi bolak-balik) — skema data persis, contoh request/response,
+edge case, lokasi file, kriteria test semua dicantumkan lengkap.
+
+**PENTING — batas yang WAJIB dipahami sebelum eksekusi**: `query_rab`/
+`query_schedule` TIDAK BISA "mengambil sendiri" data proyek (tidak ada
+database server-side) — hanya bisa memfilter data yang client SUDAH
+kirim di request `/chat`. **Wiring `apps/web` → `ai-orchestrator`
+(mengirim context itu dari frontend) ADALAH TUGAS CLAUDE TERPISAH, BUKAN
+bagian prompt Codex ini** (Codex dilarang sentuh `apps/web/**`) — setelah
+kedua Codex chain ini selesai, sesi Claude berikutnya perlu wiring
+`apps/web/src/app/api/ai/chat/route.ts` (atau file baru) supaya BENAR-
+BENAR memanggil `services/ai-orchestrator` dan mengirim context RAB/
+jadwal — ini BELUM dikerjakan sesi ini.
+
+### Pending keputusan/eksekusi berikutnya
+
+1. Gantt/CPM UI (M3) — siap dikerjakan Claude kapan pun (backend sudah
+   lengkap), ditunda sesuai instruksi owner.
+2. **AI-Orchestrator**: 2 prompt Codex di atas menunggu dieksekusi
+   (Codex). Setelah selesai: wiring `apps/web` → `ai-orchestrator` (tugas
+   Claude terpisah, belum dijadwalkan).
+3. Generalisasi lebih lanjut per kategori non-struktur (kuda_kuda/profil
+   baja, deteksi geometri garis dinding, `qty_counted` kusen via simbol,
+   ikon MEP) — semua dicatat sbg gap jujur di report masing-masing,
+   kandidat slice lanjutan (mengikuti pola BARU: Claude desain → Codex
+   implementasi, bukan lagi diimplementasikan Claude langsung).
+4. Fase Y (tombol 1-klik) & Fase Z (verifikasi ulang PLHUT) — tetap
+   pending, dikerjakan Claude terpisah (frontend/verifikasi).
+
+## AUDIT B0 — STATUS NYATA v0.9/v1.0 SEBELUM RANTAI CODEX (Claude, 2026-07-05)
+
+Owner minta audit nyata (bukan percaya `STATE.md` lama yang bertanggal
+2026-07-01, sebelum kerja Fase Q-X2) sebelum menyusun rantai prompt Codex
+utk scope "v1.0 tuntas". Hasil per item, semua diverifikasi baca kode
+langsung (bukan tebakan):
+
+### 1. v0.9 Schedule & Scenario — status TERBELAH, bukan satu blok
+- ✅ **M4 Simulasi Skenario (what-if)**: SUDAH JADI, bukan "belum dibangun"
+  seperti klaim `STATE.md` lama. `apps/web/.../schedule/page.tsx` (373 baris)
+  = UI lengkap: panel parameter (crew factor/lembur), grafik Frontier
+  waktu-biaya (SVG), tabel kandidat, tabel durasi per item — semua dari
+  `POST /scenario/simulate` via `simulateScenario()`. Tidak ada hitung di
+  browser.
+- ❌ **M3 Penjadwalan Gantt + jalur kritis (CPM)**: BENAR belum dibangun.
+  `schedulePlan()` (client fetch ke `/schedule/plan`, CPM+tanggal
+  kalender+Kurva S dependency) ADA di `lib/engine.ts` tapi **TIDAK PERNAH
+  dipanggil di mana pun** — nol komponen Gantt, nol visualisasi jalur
+  kritis di seluruh `apps/web`. Engine (`/schedule/cpm`, `/schedule/plan`)
+  SUDAH lengkap & diuji — **gap 100% ada di UI**, nol pekerjaan backend
+  tersisa (`predecessors: List[str]` di `PlanTaskInput` sudah ada, tinggal
+  UI yang mengisi & menampilkan). Ini murni domain Claude/frontend.
+
+### 2. Engineering Chat tool-calling (§8.1 MASTER_PLAN) — KONFIRMASI belum ada
+`app/api/ai/chat/route.ts` = **satu panggilan Gemini one-shot**
+(`geminiText`/`geminiMultimodal`) dengan "context pack" (skrip TKG + draft
+RAB, dibangun CLIENT-SIDE dari localStorage lalu dikirim sbg string di body
+request) ditempel ke prompt sbg teks. **TIDAK ADA** tool-calling sungguhan —
+nol definisi tool `query_rab`/`query_schedule`/`lookup_ahsp`/`analyze_
+drawing`/`query_progress`/`run_scenario`/`query_materials` yang bisa
+dipanggil model. Klaim lama "masih tipis" bahkan kurang tepat — ini nol
+tool-calling, bukan "tipis".
+
+**Temuan arsitektur penting**: `services/ai-orchestrator/` (disebut
+`MASTER_PLAN.md` §15.2 "mulai v0.8") **TIDAK PERNAH DIBUAT** — seluruh
+logika AI (Gemini call, context pack, TKG extractor) hidup 100% di
+`apps/web/src/lib/ai/*.ts` + `apps/web/src/app/api/ai/*/route.ts`. Karena
+Codex DILARANG MUTLAK menyentuh `apps/web/**`, dan tool-calling nyata
+butuh mengubah persis file-file itu, **B2 TIDAK PUNYA slice backend yang
+aman diserahkan Codex hari ini** — kecuali owner memutuskan membuat service
+baru `services/ai-orchestrator` (keputusan arsitektur besar: bahasa, hosting,
+migrasi kode `lib/ai/*` yang sudah ada) — **STOP, ini butuh keputusan owner
+eksplisit dulu** (`CLAUDE.md` §8: ambiguitas arsitektural → tanya, jangan
+asumsi diam-diam).
+
+### 3. A2 (sisa rumus takeoff) — TEMUAN PALING BESAR: dokumentasi lama SALAH
+`docs/BRAIN_ALIGNMENT.md` §4 "Fase 3+" bilang F-F06/F-G04/F-G06-14/F-C07-10
+"⚪ roadmap, belum dikerjakan" — **INI STALE, TERBUKTI SALAH.** Grep
+langsung tiap `rule_id` ke `services/core-engine/app/`:
+- **F-F06, F-G04, F-G06, F-G07, F-G08, F-G09, F-G10, F-G11, F-G12, F-G13,
+  F-G14 SEMUA ADA** di `app/takeoff/{baja,atap,kusen,mep,mep_advanced}.py`
+  (file-file ini SUDAH ADA di repo, total 575 baris), expose via
+  `/takeoff/baja|atap|kusen|mep|mep-advanced|smkk`, **11 test lulus**
+  (`test_takeoff_baja_atap.py`, `test_takeoff_finishing_plus.py`,
+  `test_takeoff_kusen_mep.py`).
+- **F-C07 (dinding beton), F-C08 (kolom menempel), F-C09 (tangga
+  bekisting), F-C10 (perancah, anti-double-count via param
+  `ahsp_bekisting_includes_perancah`) SEMUA ADA** di `app/tkg/takeoff.py`.
+- Kesimpulan: **sisa rumus takeoff murni SELESAI 100%.** Tidak ada lagi
+  "tulis rumus baru" yang tersisa untuk trade-trade ini.
+- **TAPI gap nyata bergeser, bukan hilang**: `services/document-
+  intelligence` TIDAK PERNAH mengklasifikasi elemen ke kategori
+  `dinding`/`atap`/`kusen`/`mep`/`lantai`/`plafon`/`finishing` — kategori
+  ini TIDAK ADA di `paax_schemas.tkg_taxonomy.PREFIKS` (kode→kategori) atau
+  `TypeKategori` (Literal enum tabel), jadi `work_items.py::
+  _ARCHITECTURE_CATEGORIES`/`_MEP_CATEGORIES`/`_EARTHWORK_CATEGORIES`
+  **efektif dead code** (tidak pernah match `entry.kategori` apa pun).
+  Beda dari X1 (footplat sudah terdeteksi, tinggal bridging ke engine) —
+  di sini bahkan **deteksi elemennya sendiri belum ada**: dinding pasangan
+  bata/kusen/MEP biasa digambar sbg polygon ruangan/tabel jadwal
+  pintu-jendela/simbol titik — pola ekstraksi BEDA dari kolom/balok
+  (kode+grid). Ini butuh sesi desain Claude (bagaimana tiap tipe elemen
+  non-struktur diekstrak dari gambar) SEBELUM ada spek yang cukup jelas &
+  sempit utk diserahkan Codex — bukan tugas mekanis hari ini.
+
+### Kesimpulan rantai Codex utk scope "v1.0 tuntas" (A+B)
+**KOSONG — 0 file prompt dibuat sesi ini.** A2/B1/B2 semuanya berujung pada
+salah satu dari: (a) pekerjaan sisa 100% ada di `apps/web/**` (dilarang utk
+Codex), atau (b) blocked pada keputusan arsitektur/desain yang perlu Claude/
+owner putuskan dulu (spek deteksi non-struktur, spek `services/ai-
+orchestrator`). Memaksakan prompt Codex hari ini akan melanggar disiplin
+"spek jelas dulu, baru Codex" (`CLAUDE.md` §9) atau aturan larangan
+`apps/web/**`.
+
+**Rekomendasi langkah nyata berikutnya (menunggu keputusan owner):**
+1. Fase Y (tombol 1-klik) & Fase Z (verifikasi ulang PLHUT) — TETAP jalan,
+   dikerjakan Claude terpisah, TIDAK terblokir oleh temuan di atas.
+2. Gantt/CPM UI (M3) — 100% siap dikerjakan Claude kapan saja (engine sudah
+   lengkap), tidak perlu Codex sama sekali.
+3. Sebelum B2 bisa lanjut: owner putuskan — bangun `services/ai-
+   orchestrator` (migrasi dari `apps/web/src/lib/ai/*`) ATAU terima
+   tool-calling tetap jadi pekerjaan Claude/frontend selamanya (krn kodenya
+   TS di apps/web)?
+4. Sebelum bridging non-struktur (A2 lanjutan) bisa lanjut: Claude perlu
+   sesi desain terpisah per kategori (mulai dari yang paling bernilai,
+   kandidat: dinding pasangan bata) — BELUM dimulai sesi ini, butuh
+   keputusan/prioritas owner dulu kategori mana duluan.
 > File ini SATU-SATUNYA tempat status berjalan.
+
+## FASE X2 — AI-ASSIST KLASIFIKASI/BINDING, 2 SLICE (Claude langsung, 2026-07-05)
+
+Owner mengubah instruksi: bukan cuma menulis prompt Codex utk Fase X2, tapi
+Claude mengimplementasikan LANGSUNG (kode berjalan, bukan dokumen) di sesi
+yang sama, dan scope diperluas dari 1 slice (footplat) jadi 2 slice
+(footplat + klasifikasi zona) — keduanya pola AI-assist yang sama (`CLAUDE.md`
+§1.1): rule-based fast-path, LLM fallback paralel hanya saat rule-based
+gagal, validasi deterministik wajib sebelum jadi kandidat, tidak pernah
+auto-commit ke input engine.
+
+**Modul baru** `services/document-intelligence/app/perception/ai_assist/`:
+- `client.py` — `GeminiAiAssistClient` (REST langsung ke Gemini
+  `gemini-2.5-flash`, stdlib `urllib.request` SAJA — tidak ada dependency
+  baru, pola sama `HttpTanahTakeoffClient`/`orchestrator.ts`) +
+  `NullAiAssistClient` (degradasi anggun kalau `GEMINI_API_KEY` kosong).
+- `dimension_assist.py` (**slice #1**) — usulan `b_mm`/`l_mm`/`d_gali_mm`
+  footplat dari teks halaman `detail_tabel` (temuan X1/X1B: 13/13
+  `pondasi_telapak` PLHUT gagal krn dimensi hanya di halaman detail).
+  Validasi anti-halusinasi 2 lapis (source_texts harus persis ada di input,
+  angka harus match ke source_texts yang dikutip) + rentang wajar
+  100-5000mm.
+- `zone_assist.py` (**slice #2, BARU — perluasan scope dari rencana awal**)
+  — usulan kategori zona (enum tertutup, sesuai `_ZONE_RULES` +`cover`) utk
+  sheet yang gagal diklasifikasi `zone_classifier.py` (`zone is None`),
+  sesuai catatan `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md`
+  §0.1 poin 4 yang ditulis 2026-07-13 tapi baru dieksekusi sekarang.
+  Validasi: nilai HARUS persis salah satu dari 10 zona resmi (`tidak_yakin`
+  DITOLAK sbg kandidat, bukan diloloskan dgn confidence rendah).
+
+**Wiring**: `consolidate_document()` (`consolidate.py`) dapat parameter baru
+`ai_client: AiAssistClient | None = None` (default `None` — SEMUA caller
+lama tidak berubah perilakunya). `drawing_routes.py` (`/drawings/analyze`)
+memanggil `GeminiAiAssistClient.from_env()` — aktif hanya kalau
+`GEMINI_API_KEY` ada di env, degradasi anggun kalau tidak (pola sama
+PaddleOCR). **Kedua slice HANYA mengisi field usulan baru**
+(`ElementRegistryEntry.ai_dimension_suggestion`,
+`SheetSummary.zone_ai_suggestion`) — field asli (`definisi.dimensi`, `zone`)
+TIDAK PERNAH ditimpa; `bridge_galian_footplat`/`work_items.py` TIDAK
+disentuh sama sekali (tetap murni deterministik, tidak pernah melihat
+usulan AI).
+
+**Schema**: Pydantic `AiDimensionSuggestion`/`AiZoneSuggestion` baru di
+`consolidated_models.py` + mirror Zod `AiDimensionSuggestionSchema`/
+`AiZoneSuggestionSchema` di `packages/schemas` (field opsional, tidak
+mengubah shape lama).
+
+**Test**: 24 test baru (19 unit `test_perception_ai_assist.py` — stub
+client, TIDAK PERNAH memanggil API Gemini sungguhan, termasuk anti-
+halusinasi angka/teks & rentang wajar & enum tertutup; 5 wiring
+`test_perception_consolidate.py` — fixture sintetis kode "P9" BERBEDA dari
+PLHUT §0.1, termasuk bukti fast-path: AI tidak dipanggil kalau rule-based
+sudah berhasil, `dimensi`/`zone` asli tidak pernah ditimpa). document-
+intelligence **173 passed + 5 skipped** (naik dari 149). core-engine
+**280 passed** (tidak disentuh). `packages/schemas` build OK + Jest
+**12 passed**. web Vitest **47 passed** + `pnpm tsc --noEmit` bersih.
+
+**BELUM di-commit** — sesuai instruksi eksplisit owner (Claude dilarang
+commit sesi ini), working tree tetap uncommitted. Report lengkap:
+`report-remote/REPORT_FASE_X2_AI_ASSIST_BINDING_CLAUDE_2026-07-05.md`
+(ditandai jelas dikerjakan Claude, BUKAN Codex).
+
+**Pending utk slice berikutnya**: generalisasi ke kategori takeoff lain di
+luar `pondasi_telapak`, integrasi `GEMINI_API_KEY` sungguhan end-to-end
+(belum diuji dgn API key nyata, hanya stub), UI review/approval utk
+`ai_suggestion` (di luar cakupan backend — domain Claude/frontend
+terpisah), `binding.py` (label→grid) belum disentuh sbg slice AI-assist
+(disebut di konsep awal, belum diprioritaskan).
+
+## SESI PERENCANAAN — VERIFIKASI X1B + AI-ASSIST DIMASUKKAN KE ROADMAP (Claude, 2026-07-05)
+
+Owner meminta 2 hal: (1) verifikasi jujur laporan Codex Fase X1B (bukan
+percaya narasinya begitu saja), (2) integrasikan konsep baru — lapisan
+AI-assist (LLM) sbg fallback paralel klasifikasi/binding gambar saat
+rule-based gagal — ke seluruh dokumen perencanaan sbg arah resmi project.
+
+**Verifikasi X1B (hasil: klaim laporan AMAN, cocok dgn kondisi kode nyata,
+tidak ada temuan bermasalah):**
+- Packaging `paax_schemas`: `packages/schemas/python/pyproject.toml` ada
+  & valid (package `paax-schemas` 0.1.0). `services/core-engine/pyproject.
+  toml` & `services/document-intelligence/pyproject.toml` mencatat
+  dependency-nya. `.github/workflows/ci.yml` menginstal shared schemas
+  SEBELUM service Python. Grep `sys\.path\.insert|except ModuleNotFoundError`
+  di `services/*/app` (bukan test) = **kosong** — fallback path hack memang
+  sudah hilang dari source, bukan cuma diklaim.
+- Investigasi footplat: `bridging_tanah.py` baris 91-92 memang mencari alias
+  `b/b_ft/lebar/lebar_bawah` & `l/l_ft/panjang/panjang_bawah` seperti yang
+  diklaim laporan — bukan alias sempit yang jadi bug. Kesimpulan laporan
+  (dimensi footplat PLHUT ada di halaman detail/grafis, bukan tabel
+  kode-dimensi yang bisa diparse `page.find_tables()`) konsisten dgn cara
+  kerja pipeline saat ini (tidak diverifikasi ulang lewat re-run PDF asli
+  sesi ini, tapi klaim mekanisnya masuk akal & bukti kutipan teks halaman 49
+  di laporan tidak dipalsukan/tidak kontradiktif dgn kode).
+- Commit `6f355a7` (`git show --stat`) cocok persis file yang disebut
+  laporan. PR #38 draft, base `main`, belum merge — sesuai klaim.
+
+**Konsep baru diintegrasikan ke roadmap (bukan cuma satu file — semua
+dokumen arsitektur/roadmap diselaraskan):**
+- `CLAUDE.md` §1.1 & `AGENTS.md` §1.1 (baru): aturan resmi AI-assist
+  klasifikasi/binding — rule-based tetap fast-path, LLM hanya fallback utk
+  kasus gagal/ambigu, baca teks+koordinat SUDAH diekstrak (bukan piksel),
+  validasi deterministik wajib, tidak ada auto-commit ke input engine,
+  audit trail wajib, biaya/latency dipertimbangkan.
+- `docs/MASTER_PLAN.md` §6.2 (catatan sebelum Tahap 3) & §12.1 (baris baru
+  peta model) diperbarui.
+- `docs/BRAIN_ALIGNMENT.md` §4 (tabel eksekusi): baris Fase 2 diperbarui +
+  baris baru "Fase X2" + klarifikasi baris "Tetap ditunda" (Vision-LLM piksel
+  vs AI-assist teks+koordinat — dua hal berbeda, jangan disamakan).
+- `docs/ai-map/START_HERE.md`: baris "2 aturan" merujuk §1.1, baris Router
+  baru menunjuk ke §X2 big-plan.
+- `docs/ai-map/MAP.md`: `services/document-intelligence` DITAMBAHKAN (
+  sebelumnya tidak terdaftar sama sekali di MAP — gap ditemukan & diperbaiki
+  sesi ini) + endpoint + folder `perception/` + rencana `ai_assist/`.
+- `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md`: tabel
+  fase diperbarui (X1/X1B ditandai selesai dgn ringkasan §1a baru), fase
+  **X2 baru** ditambah dgn detail penuh (kenapa ada, prinsip desain,
+  slice pertama, keputusan arsitektur, interaksi dgn Fase Y).
+
+**Prompt Codex baru ditulis** (belum dijalankan):
+`docs/prompts/PAAX_CODEX_PROMPT_FASE_X2_AI_ASSIST_KLASIFIKASI_BINDING_2026-07-05.md`
+— vertical slice sempit: modul `ai_assist/` di document-intelligence utk
+kasus `pondasi_telapak` dimensi hilang dari halaman `detail_tabel`, klien
+Gemini Python baru (pola sama `orchestrator.ts`, `GEMINI_API_KEY` yang sudah
+ada), validasi deterministik wajib, test pakai stub/mock LLM (bukan API
+sungguhan), fixture sintetis independen (bukan PLHUT hardcoded).
+
+**Belum dikerjakan sesi ini (sengaja, di luar scope planning):** tidak ada
+kode baru ditulis, tidak ada commit dibuat (owner instruksikan Codex yang
+commit sesuai gerbang kerja §9 CLAUDE.md), tidak ada re-run pipeline PLHUT
+utk angka baru (itu tugas Fase Z, belum dijadwalkan sesi ini).
 
 ## FASE X1B - PACKAGING PAAX SCHEMAS + INVESTIGASI BINDING FOOTPLAT (prompt 2026-07-16, eksekusi Codex 2026-07-05)
 Branch kerja: `feat/fase-x1b-packaging-binding-footplat`.

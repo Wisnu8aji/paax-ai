@@ -7,7 +7,10 @@
 ## 2 aturan yang TAK BOLEH dilanggar (detail: `CLAUDE.md` §1 & §9)
 1. **ATURAN EMAS** — angka final (RAB/HSP/volume/durasi/tanggal/Kurva-S/skenario)
    SELALU dari engine Python (`services/core-engine`). AI & TypeScript **tidak
-   pernah** menghitung; hanya menstruktur / menjelaskan / menampilkan.
+   pernah** menghitung; hanya menstruktur / menjelaskan / menampilkan. Termasuk
+   lapisan AI-assist klasifikasi/binding gambar (`CLAUDE.md` §1.1) — LLM boleh
+   mengusulkan kandidat dari teks+koordinat yang sudah diekstrak, tidak pernah
+   auto-commit ke input engine tanpa validasi deterministik + review manusia.
 2. **GERBANG REVIEW** — kerja di branch baru → PR → tunggu owner + Claude.
    **Tidak auto-merge, tidak push ke `main`.** "lanjut kerja" ≠ "izin merge".
 
@@ -34,6 +37,7 @@
 | Tidak paham istilah | `GLOSSARY.md` |
 | Keputusan arsitektur lama | `docs/adr/` |
 | Butuh rumus takeoff lengkap / spek TKG / model entitas Evidence | `docs/BRAIN_ALIGNMENT.md` → `docs/specs/brain-v4.1/` |
+| Kerja AI-assist klasifikasi/binding gambar (bukan vision-piksel) | `CLAUDE.md` §1.1 → `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md` §X2 |
 
 ## Disiplin token (wajib)
 - Urutan baca: **START_HERE → STATE → (1–2 file relevan dari Router)**. Berhenti di situ.

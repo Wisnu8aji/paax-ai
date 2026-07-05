@@ -218,6 +218,23 @@ Gambar diunggah (PDF/CAD/foto). Lapis Persepsi menjalankan OCR (teks, dimensi, l
 
 Estimation Agent memetakan tiap elemen ke kode pekerjaan AHSP yang sesuai (mis. "dinding bata 1/2 batu" → kode AHSP terkait), memakai LLM reasoning + retrieval ke basis pengetahuan AHSP. LLM mengusulkan kode & koefisien acuan; ia tidak menghitung harga. Setiap usulan menyertakan tingkat keyakinan & rujukan AHSP agar dapat diverifikasi.
 
+> **AI-assist klasifikasi/binding sebelum tahap ini (2026-07-05).** Sebelum
+> elemen bisa dipetakan ke AHSP, ia harus lebih dulu dikenali & diikat ke
+> grid/kode/dimensi dari gambar (Tahap 1-2). Rule-based (regex/heuristik) di
+> `services/document-intelligence` (`zone_classifier.py`, `binding.py`,
+> `consolidate.py`) tetap jalur utama. Temuan Fase X1B (2026-07-05): PDF
+> PLHUT nyata menghasilkan 13/13 elemen `pondasi_telapak` `perlu_review`
+> karena dimensinya hanya ada di halaman detail/grafis, bukan tabel
+> kode-dimensi yang bisa diparse regex — bukti nyata bahwa rule-based murni
+> punya batas keras untuk sebagian notasi gambar. Untuk kasus itu, PAAX
+> menambah LLM sebagai fallback paralel yang membaca span teks + koordinat
+> YANG SUDAH DIEKSTRAK (bukan piksel mentah), dengan validasi deterministik +
+> gerbang review manusia wajib sebelum jadi input engine — detail aturan
+> `CLAUDE.md` §1.1, rencana teknis `docs/BRAIN_ALIGNMENT.md` &
+> `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md` §X2. Ini
+> tidak mengubah Aturan Emas: lapisan ini menghasilkan kandidat klasifikasi/
+> binding, bukan angka RAB.
+
 ### 6.3 Tahap 4: Engine Deterministik Menghitung RAB
 
 Engine mengonversi kuantitas mentah ke volume satuan pekerjaan, lalu menghitung HSP dari koefisien AHSP × harga regional, dikalikan volume menjadi harga item, dijumlahkan menjadi subtotal & RAB total. Semua deterministik & auditable (rumus di Bagian 11). Tidak ada angka dari LLM.
@@ -398,12 +415,26 @@ Tidak ada satu model unggul di semua tugas. PAAX memakai beberapa model & merute
 |---|---|---|
 | Pemahaman dokumen & OCR | Multimodal LLM (vision) + OCR khusus | Konteks panjang, baca PDF/legenda/tabel/notasi |
 | Deteksi & ukur elemen | CV terspesialisasi (deteksi objek/garis) | Presisi geometri yang tak bisa diandalkan ke LLM |
+| Klasifikasi/binding gambar saat rule-based gagal (2026-07-05, `CLAUDE.md` §1.1) | LLM reasoning atas teks+koordinat TERSTRUKTUR (bukan piksel) | Fallback paralel utk `zone_classifier`/`binding`/`consolidate`; usulan divalidasi deterministik + gerbang review sebelum jadi input engine |
 | Klasifikasi elemen → AHSP | LLM reasoning + RAG | Perlu penalaran + rujukan basis pengetahuan AHSP |
 | Orkestrasi & tool-calling | LLM reasoning | Memilih tool, menyusun langkah, memanggil engine |
 | Engineering Chat | LLM + RAG + tools | Jawaban berbasis data proyek |
 | Pencarian semantik AHSP | Model embedding | Vektorisasi AHSP & spesifikasi untuk RAG |
 | Justifikasi & narasi skenario | LLM reasoning | Mengubah angka engine jadi penjelasan manusiawi |
 | Analisa foto progres | Vision-LLM + heuristik | Estimasi % progres & deteksi anomali dari foto |
+
+> **Perbandingan provider AI (2026-07-05).** Provider default sekarang tetap
+> Gemini (2.5 Flash utk lapisan AI-assist, Genkit/Vertex utk orkestrasi
+> §15.1) — TIDAK berubah. Sbg referensi keputusan masa depan (mis. kalau
+> kuota gratis tidak lagi cukup di skala produksi, atau ingin membandingkan
+> kualitas reasoning), alternatif yang sudah dipetakan (harga, context
+> window, kekuatan/kelemahan, cloud vs open-weight): DeepSeek (V4 Flash/R1),
+> OpenRouter (aggregator model open-weight gratis), Groq (inferensi cepat
+> LPU), Qwen3 Coder 480B. Tabel lengkap: `docs/plans/PAAX_ANALISA_RAB_DARI_
+> GAMBAR_BIG_PLAN_2026-07-13.md` §X2.3a. Konsisten ADR-0003 (`docs/adr/
+> 0003-google-first-cloud.md`): semua opsi ini dipakai sbg cloud API, bukan
+> self-host — self-host model open-weight adalah jalur arsitektur berbeda
+> yang tidak direncanakan.
 
 ### 12.2 Estimasi Biaya AI per Operasi (Indikatif)
 
@@ -499,7 +530,7 @@ Ringkasan sumber biaya & cara mengendalikannya. Tujuannya bukan angka pasti (mas
 |---|---|---|
 | Frontend | Next.js 14 (App Router), React, TS, Tailwind, shadcn/ui | Pertahankan |
 | State/Data FE | React Query / Server Components, Zod | Pertahankan |
-| AI Orchestrator | Node/Genkit (model-agnostic), tool-calling, RAG, scheduler | Perkuat |
+| AI Orchestrator | Node/TypeScript, REST langsung ke Gemini (function-calling manual) — **direvisi 2026-07-05** dari rencana awal "Genkit": scaffold Genkit lama (`scripts/scaffolding/create_ai_orch.py`) tidak pernah dijalankan & sudah usang; pola REST manual sudah terbukti jalan di `apps/web/src/lib/ai/orchestrator.ts`, dipilih utk `services/ai-orchestrator` (disetujui owner 2026-07-05, spek: `docs/prompts/PAAX_CODEX_CHAIN_AIO_01/02_*.md`). Migrasi ke Genkit tetap opsi terbuka nanti. | Sedang dibangun (Codex) |
 | Core Engine | Python 3.11+, FastAPI, Pydantic, NumPy | Pertahankan & perdalam |
 | Document Intelligence | Python: OCR + CV (deteksi/ukur) + Vision-LLM | Bangun di v1.0 |
 | Site Agent | Python/TS: progres & analisa foto | Fase lanjut (v2.0) |
