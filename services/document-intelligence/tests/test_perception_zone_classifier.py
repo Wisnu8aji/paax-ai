@@ -87,6 +87,56 @@ def test_detail_tabel_fallback_without_floor_qualifier():
     assert classify_zone(judul) == "detail_tabel"
 
 
+def test_judul_and_zone_daftar_gambar_synthetic():
+    """Fase U-2 (2026-07-13): bukti nyata screenshot `G:\\gambar contoh`
+    menunjukkan sheet daftar-gambar jatuh 'Belum diketahui' krn rule lama
+    hanya kenal keyword struktur."""
+    runs = _runs_for_text([("DAFTAR GAMBAR KERJA", 50, 50, 12)])
+    judul, _ = extract_judul(runs)
+    assert judul == "DAFTAR GAMBAR KERJA"
+    assert classify_zone(judul) == "daftar_gambar"
+
+
+def test_judul_and_zone_daftar_singkatan_notasi_synthetic():
+    """Bukti nyata: 'DAFTAR SINGKATAN DAN NOTASI GAMBAR' (halaman legenda,
+    BUKAN daftar-gambar per se) juga masuk kategori `daftar_gambar` -- rule
+    generik 'diawali DAFTAR' sengaja luas krn ini semua front-matter list,
+    bukan pekerjaan struktur yang perlu takeoff."""
+    runs = _runs_for_text([("DAFTAR SINGKATAN DAN NOTASI GAMBAR", 50, 50, 12)])
+    judul, _ = extract_judul(runs)
+    assert classify_zone(judul) == "daftar_gambar"
+
+
+def test_judul_and_zone_situasi_synthetic():
+    runs = _runs_for_text([("SITUASI LOKASI PROYEK", 50, 50, 12)])
+    judul, _ = extract_judul(runs)
+    assert classify_zone(judul) == "situasi"
+
+
+def test_judul_and_zone_tampak_synthetic():
+    runs = _runs_for_text([("TAMPAK DEPAN DAN SAMPING", 50, 50, 12)])
+    judul, _ = extract_judul(runs)
+    assert judul == "TAMPAK DEPAN DAN SAMPING"
+    assert classify_zone(judul) == "tampak"
+
+
+def test_judul_and_zone_potongan_synthetic():
+    runs = _runs_for_text([("POTONGAN A-A", 50, 50, 12)])
+    judul, _ = extract_judul(runs)
+    assert classify_zone(judul) == "potongan"
+
+
+def test_cover_fallback_only_for_early_page_without_grid_or_elements():
+    """Sheet tanpa judul/grid/elemen di antara 2 halaman pertama -> `cover`.
+    Sheet SERUPA tapi bukan di halaman awal (mis. index 5) tetap jujur
+    `None` -- heuristik posisi bukan bukti pasti (§0.1, jangan dipaksakan)."""
+    assert classify_zone(None, page_index=0, has_grid=False, has_elements=False) == "cover"
+    assert classify_zone(None, page_index=1, has_grid=False, has_elements=False) == "cover"
+    assert classify_zone(None, page_index=5, has_grid=False, has_elements=False) is None
+    assert classify_zone(None, page_index=0, has_grid=True, has_elements=False) is None
+    assert classify_zone(None, page_index=0, has_grid=False, has_elements=True) is None
+
+
 @pytest.mark.skipif(not os.environ.get("PAAX_PLHUT_PDF"), reason="butuh PDF PLHUT asli (env PAAX_PLHUT_PDF)")
 def test_smoke_real_plhut_zone_judul_skala_matches_manual_verification():
     """Nilai acuan diverifikasi manual terhadap 15 halaman PDF PLHUT asli

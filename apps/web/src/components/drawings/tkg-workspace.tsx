@@ -33,9 +33,9 @@ import {
   X,
 } from 'lucide-react';
 
-import type { TakeoffResult, TkgDocument, TkgValidationResult } from '@paax/schemas';
+import type { TakeoffAhspSuggestion, TakeoffResult, TkgDocument, TkgValidationResult } from '@paax/schemas';
 import { Card, Button, StatusPill } from '@/components/ui';
-import { renderTkg, takeoffTkg, validateTkg } from '@/lib/engine';
+import { renderTkg, takeoffAhspSuggestTkg, validateTkg } from '@/lib/engine';
 import { emptyTkgRecord, tkgRepository, type ProjectTkgRecord } from '@/lib/projects/tkg-repository';
 import { emptyRabLine, rabRepository } from '@/lib/projects/rab-repository';
 import { TriagePanel, type TriageItemView } from '@/components/review/triage-panel';
@@ -136,6 +136,10 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
   const [info, setInfo] = useState<string | null>(null);
   const [validation, setValidation] = useState<TkgValidationResult | null>(null);
   const [takeoff, setTakeoff] = useState<TakeoffResult | null>(null);
+  // Fase T — usulan kode AHSP per item takeoff (token-overlap deterministik,
+  // BUKAN keputusan final). Dihitung ulang tiap kali pipeline jalan, tidak
+  // disimpan permanen — usulan harus selalu mencerminkan katalog AHSP terkini.
+  const [ahspSuggestions, setAhspSuggestions] = useState<TakeoffAhspSuggestion[]>([]);
   const [rabDraftPath, setRabDraftPath] = useState<string | null>(null);
 
   useEffect(() => {
@@ -156,6 +160,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     setRabDraftPath(null);
     setValidation(null);
     setTakeoff(null);
+    setAhspSuggestions([]);
 
     setBusy('validate');
     const nextValidation = await validateTkg(tkg);
@@ -167,7 +172,9 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     setRecord(renderedRecord);
 
     setBusy('takeoff');
-    const nextTakeoff = await takeoffTkg(tkg);
+    const nextResult = await takeoffAhspSuggestTkg(tkg);
+    const nextTakeoff = nextResult.takeoff;
+    setAhspSuggestions(nextResult.suggestions);
     const finalRecord = await tkgRepository.save({ ...renderedRecord, lastTakeoff: nextTakeoff });
     setRecord(finalRecord);
     setTakeoff(nextTakeoff);
@@ -303,23 +310,38 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     try {
       const draft = await rabRepository.get(projectId);
       const okItems = takeoff.items.filter((item) => !item.needs_review && item.quantity != null);
-      const newLines = okItems.map((item) => ({
-        ...emptyRabLine(),
-        // Kode AHSP sengaja kosong: mapping AHSP adalah keputusan user/AI terpisah.
-        ahsp_code: '',
-        volume: item.quantity ?? null,
-        duration_days: null,
-      }));
+      // Fase T: kode AHSP terisi HANYA bila usulan cukup yakin (ahsp_suggested
+      // true, ambang diverifikasi manual thd katalog CK 2026 nyata) -- selain
+      // itu tetap kosong seperti sebelumnya, user pilih manual di halaman RAB.
+      const suggestionByKey = new Map(
+        ahspSuggestions.map((s) => [`${s.kode}|${s.lantai ?? ''}|${s.work_type}`, s]),
+      );
+      const newLines = okItems.map((item) => {
+        const suggestion = suggestionByKey.get(`${item.kode}|${item.lantai ?? ''}|${item.work_type}`);
+        const suggested = suggestion?.ahsp_suggested === true;
+        return {
+          ...emptyRabLine(),
+          ahsp_code: suggested ? suggestion!.ahsp_code : '',
+          ahsp_suggested: suggested,
+          volume: item.quantity ?? null,
+          duration_days: null,
+        };
+      });
+      const nSuggested = newLines.filter((l) => l.ahsp_suggested).length;
       const kept = draft.lines.filter((line) => line.ahsp_code || line.volume != null);
       await rabRepository.save({ ...draft, lines: [...kept, ...newLines] });
       setRabDraftPath(`/proyek/${projectId}/rab`);
-      setInfo(`${newLines.length} baris volume terkirim ke Draft RAB. ${takeoff.items.length - okItems.length} item review tidak ikut dikirim.`);
+      setInfo(
+        `${newLines.length} baris volume terkirim ke Draft RAB` +
+        (nSuggested > 0 ? ` (${nSuggested} sudah ada usulan kode AHSP, tetap bisa diganti)` : '') +
+        `. ${takeoff.items.length - okItems.length} item review tidak ikut dikirim.`,
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kirim ke RAB gagal.');
     } finally {
       setBusy(null);
     }
-  }, [projectId, takeoff]);
+  }, [ahspSuggestions, projectId, takeoff]);
 
   const openRabDraft = useCallback(() => {
     if (!rabDraftPath) return;
