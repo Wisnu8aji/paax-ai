@@ -144,4 +144,27 @@ Pending:
 
 ## Commit dan PR
 
-Commit dan PR akan dilengkapi setelah commit Chain 02 dan draft PR dibuat.
+Commit sesi ini:
+```text
+78e8e0a35cd0b18d69223c37384242ee407bd773
+feat(ai-orchestrator): add project context tools
+
+
+```
+
+```text
+74d7f507d3010635ac4899d00c6fc1353bc96ae3
+feat(ai-orchestrator): scaffold tool calling loop
+
+
+```
+
+PR:
+- Draft PR: https://github.com/Wisnu8aji/paax-ai/pull/39
+- Base: `main`
+- Head: `feat/ai-orchestrator-toolcalling`
+- Status: draft, open, belum merge.
+
+Catatan:
+- Output commit di atas adalah salinan mentah dari `git log -1 --format="%H%n%s%n%n%b" <sha>` untuk masing-masing commit implementasi.
+- Body kedua commit kosong; tidak ada `Co-Authored-By` atau signature AI.
