@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from 'react';
 
-export type OverlayName = 'newProject' | 'upload' | 'settings';
+export type OverlayName = 'newProject' | 'upload' | 'settings' | 'connectSource';
 
 export type SettingsTab =
   | 'umum'

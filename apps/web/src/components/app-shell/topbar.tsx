@@ -5,7 +5,7 @@ import { PanelLeft, Search, Bell } from 'lucide-react';
 import { useShell } from './shell-context';
 
 export default function Topbar() {
-  const { toggleNav, openSettings } = useShell();
+  const { toggleNav, openSettings, openOverlay } = useShell();
   const [query, setQuery] = useState('');
 
   return (
@@ -97,6 +97,27 @@ export default function Topbar() {
         />
         <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text2)' }}>AI Ready</span>
       </div>
+
+      <button
+        onClick={() => openOverlay('connectSource')}
+        aria-label="Connect Source"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          height: 38,
+          borderRadius: 11,
+          padding: '0 12px',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          cursor: 'pointer',
+          fontWeight: 600,
+          fontSize: 13,
+          color: 'var(--text)'
+        }}
+      >
+        + Connect
+      </button>
 
       <button
         onClick={() => openSettings('notifikasi')}
