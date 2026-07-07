@@ -1,7 +1,18 @@
 # PAAX AI — System Architecture Overview
 
-> Arsitektur sistem PAAX AI v0.3: layered architecture dengan pemisahan jelas
-> antara frontend, API layer, services, dan storage.
+> ⚠️ **SANGAT USANG — DITEMUKAN 2026-07-05 saat audit dokumentasi.** Dokumen
+> ini (arsitektur v0.3) mendeskripsikan stack Firebase Auth + Firestore
+> multi-tenant (orgs/RBAC/quota) + Genkit AI Orchestrator + Gemini-Vision
+> sbg jalur utama baca gambar + shadcn/ui — **TIDAK ADA satupun yang cocok
+> dengan implementasi nyata sekarang**: tidak ada Firebase Auth/org/quota,
+> `services/ai-orchestrator` pakai REST manual (bukan Genkit), document-
+> intelligence pakai ekstraksi vektor PyMuPDF (bukan Gemini Vision piksel —
+> lihat `CLAUDE.md` §1.1, ini sengaja dihindari krn melanggar semangat
+> Aturan Emas §1), frontend BUKAN shadcn/ui. Arsitektur yang BERLAKU:
+> `CLAUDE.md` §3 (4 lapis) & `docs/ai-map/MAP.md` (lokasi kode nyata).
+> Dibiarkan sbg arsip histori desain awal (kemungkinan sebelum keputusan
+> "Deterministic Foundation" v0.6 yang mengarsipkan engine v0.5 berbasis
+> template), BUKAN arsitektur yang berlaku sekarang.
 
 ---
 

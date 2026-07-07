@@ -1,5 +1,25 @@
 # PAAX AI — Document Intelligence API Documentation
 
+> ⚠️ **SANGAT USANG & BERTENTANGAN DENGAN ATURAN EMAS — DITEMUKAN 2026-07-05.**
+> File ini mendeskripsikan pipeline **Vision-LLM piksel-mentah sbg jalur
+> UTAMA** (page-split → OCR → "Page Classifier (Gemini Vision)" → "Dimension
+> Extractor (Gemini Vision)" membaca gambar teknik langsung dari piksel) —
+> ini PERSIS pendekatan yang `CLAUDE.md`/`docs/MASTER_PLAN.md` sengaja
+> TAHAN karena Vision-LLM murni ~60% akurat baca dimensi gambar teknik.
+> **TIDAK PERNAH diimplementasikan seperti ini.** Pipeline NYATA
+> (`services/document-intelligence`, dibangun 2026-07-05): ekstraksi
+> **vektor PyMuPDF** (span teks + koordinat grid presisi, BUKAN piksel),
+> TKG (Transkrip Kanonik Gambar), bridging ke core-engine per kategori
+> elemen, dan lapisan AI-assist (`CLAUDE.md` §1.1) yang membaca TEKS YANG
+> SUDAH DIEKSTRAK (bukan gambar) sbg fallback saat regex gagal — beda
+> filosofi total dari dokumen ini. PaddleOCR raster hanya dipakai utk
+> halaman scan tanpa layer teks (fallback sempit, bukan jalur utama).
+> Endpoint nyata: `/health`, `/upload`, `/pdf`, `/excel`, `/drawings/
+> analyze/start`, `/drawings/analyze/status/{job_id}`, `/drawings/tkg/
+> work-items` — lihat `docs/ai-map/MAP.md` (akurat). Dibiarkan sbg arsip
+> histori desain awal, BUKAN kontrak API yang berlaku — jangan
+> diimplementasikan sesuai isi file ini.
+
 > API reference untuk Document Intelligence service.
 > Bertanggung jawab memproses gambar teknik dan dokumen konstruksi.
 

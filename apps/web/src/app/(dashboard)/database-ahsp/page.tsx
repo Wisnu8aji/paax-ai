@@ -92,8 +92,8 @@ export default function DatabaseAhspPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader
-        title="Database AHSP"
-        subtitle="Acuan koefisien Analisa Harga Satuan Pekerjaan — live dari engine deterministik"
+        title="Ledger"
+        subtitle="Database AHSP — acuan koefisien Analisa Harga Satuan Pekerjaan, live dari engine deterministik"
       />
 
       {error && (

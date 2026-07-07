@@ -1,5 +1,13 @@
 # PAAX AI — Dashboard Blueprint
 
+> ⚠️ **SANGAT USANG — DITEMUKAN 2026-07-05 saat audit dokumentasi.** Dokumen
+> v0.3 ini pakai route `/project/:id/*` (real: `/proyek/[projectId]/*`),
+> Genkit AI Orchestrator (real: REST manual), Gemini Vision pipeline (real:
+> ekstraksi vektor PyMuPDF), dan sidebar 12-menu yang tidak cocok dengan UI
+> nyata sekarang. Untuk halaman & route yang BERLAKU: `docs/pages/README.md`
+> §2 (indeks halaman akurat) + `docs/ai-map/MAP.md`. Dibiarkan sbg arsip
+> histori desain awal, BUKAN blueprint yang berlaku sekarang.
+
 > Dokumen ini menjelaskan struktur lengkap workspace dashboard PAAX AI v0.3,
 > termasuk 12 menu sidebar, AI agent yang terlibat, dan prioritas MVP.
 

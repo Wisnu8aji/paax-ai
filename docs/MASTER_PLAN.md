@@ -44,6 +44,19 @@ PAAX AI adalah workspace berbasis AI untuk insinyur sipil, kontraktor, dan proje
 
 Dokumen ini memperdalam tiga area yang ditekankan: (a) inti AI — gambar menjadi pemecahan data lalu RAB; (b) kecerdasan proaktif & agen — laporan pagi otomatis, prediksi pembelian material sesuai jadwal, peringatan dini keterlambatan, konsultasi taktis (mis. strategi kerja saat hujan), serta agen yang menyunting RAB/jadwal sendiri; dan (c) model bisnis — tiga paket langganan beserta estimasi biaya, batasan, benefit, dan teknologi API yang dipakai.
 
+> **AI sebagai lapisan pusat, bukan fitur tempelan (per 2026-07-05).** PAAX
+> memang AI-centric — tapi dalam artian yang presisi: AI adalah lapisan
+> **interpretasi & asistensi** yang hadir di hampir SETIAP tahap alur kerja
+> (klasifikasi & binding elemen gambar via AI-assist saat rule-based gagal,
+> Smart RAB Builder menyusun usulan item dari teks bebas, Engineering Chat
+> tool-calling via `services/ai-orchestrator`, transkripsi gambar fallback),
+> bukan hanya di satu-dua fitur terisolasi. Yang membuat ini aman untuk
+> dokumen finansial/legal seperti RAB: peran AI di titik manapun SELALU
+> interpretasi/klasifikasi, **tidak pernah kalkulasi** — pilar 1 di bawah
+> menjelaskan kenapa batas itu dipegang, bukan sekadar pembatas kaku.
+> Detail teknis: `CLAUDE.md` §0.1 & §1.1, status implementasi per kategori:
+> `docs/ai-map/STATE.md`.
+
 > **Tiga pilar yang tidak berubah.**
 > 1. **AI bukan kalkulator.** Vision-LLM murni hanya ~60% akurat membaca dimensi gambar teknik. AI dipakai untuk mendeteksi, mengklasifikasi, mengorkestrasi, dan menjustifikasi — angka RAB dihitung mesin deterministik yang di-grounding ke AHSP. Ini sekaligus menghapus ketergantungan template.
 > 2. **Moat PAAX adalah lokal.** AHSP (Permen PUPR No. 8/2023 + SE DJBK), bilingual, harga satuan regional. Pemain global buta regulasi biaya konstruksi Indonesia. Di situ posisi PAAX.
@@ -142,7 +155,7 @@ Arsitektur berlapis & modular agar tiap bagian dibangun & diuji terpisah. Empat 
 **Gambar 1 — Arsitektur empat lapis (representasi blok):**
 
 ```
-LAPIS 0 — PRESENTASI · Next.js 14 + Tailwind + shadcn/ui
+LAPIS 0 — PRESENTASI · Next.js 15 + Tailwind CSS v4 + komponen custom (bukan shadcn/ui)
   Dashboard · Workspace · Viewer · Editor RAB/BoQ · Kurva S · Skenario · Chat · Monitoring
 ─────────────────────────────────────────────────────────────────────────────
 LAPIS 1 — ORKESTRASI AI
@@ -166,8 +179,8 @@ AI hanya mendeteksi, mengklasifikasi, mengorkestrasi, menjelaskan.
 
 | Lapis | Teknologi | Tanggung Jawab | Tidak Boleh |
 |---|---|---|---|
-| 0 — Presentasi | Next.js 14, TS, Tailwind, shadcn/ui | Seluruh UI | Menghitung angka RAB |
-| 1 — Orkestrasi | Node/Genkit, tool-calling, RAG, scheduler | Router + agen, pilih model, panggil engine, tugas terjadwal | Mengarang angka final |
+| 0 — Presentasi | Next.js 15 (App Router), React 19, TS, Tailwind CSS v4, komponen custom `components/ui/` (BUKAN shadcn/ui, dicek 2026-07-05) | Seluruh UI | Menghitung angka RAB |
+| 1 — Orkestrasi | Node/Express + REST manual ke Gemini (`services/ai-orchestrator`, dibangun 2026-07-05 — deviasi sadar dari Genkit, lihat §15.1), tool-calling, scheduler (RAG belum) | Router + agen, pilih model, panggil engine, tugas terjadwal | Mengarang angka final |
 | 2A — Persepsi | Python: OCR + CV + Vision-LLM | Deteksi & ukur elemen, pemecahan per-lantai | Menetapkan harga/biaya |
 | 2B — Engine | FastAPI/Python, Pydantic, NumPy | Semua perhitungan deterministik | Memakai LLM untuk aritmetika |
 | 2C — Site Agent | Python/TS | Lapor progres, analisa foto, deviasi | Menggantikan verifikasi manusia |
@@ -424,8 +437,8 @@ Tidak ada satu model unggul di semua tugas. PAAX memakai beberapa model & merute
 | Analisa foto progres | Vision-LLM + heuristik | Estimasi % progres & deteksi anomali dari foto |
 
 > **Perbandingan provider AI (2026-07-05).** Provider default sekarang tetap
-> Gemini (2.5 Flash utk lapisan AI-assist, Genkit/Vertex utk orkestrasi
-> §15.1) — TIDAK berubah. Sbg referensi keputusan masa depan (mis. kalau
+> Gemini (2.5 Flash utk lapisan AI-assist, REST manual — BUKAN Genkit/Vertex —
+> utk `services/ai-orchestrator`, lihat §15.1) — TIDAK berubah. Sbg referensi keputusan masa depan (mis. kalau
 > kuota gratis tidak lagi cukup di skala produksi, atau ingin membandingkan
 > kualitas reasoning), alternatif yang sudah dipetakan (harga, context
 > window, kekuatan/kelemahan, cloud vs open-weight): DeepSeek (V4 Flash/R1),
@@ -528,7 +541,7 @@ Ringkasan sumber biaya & cara mengendalikannya. Tujuannya bukan angka pasti (mas
 
 | Lapisan | Teknologi | Status |
 |---|---|---|
-| Frontend | Next.js 14 (App Router), React, TS, Tailwind, shadcn/ui | Pertahankan |
+| Frontend | Next.js 15 (App Router), React 19, TS, Tailwind CSS v4, komponen custom (BUKAN shadcn/ui, dicek 2026-07-05) | Pertahankan |
 | State/Data FE | React Query / Server Components, Zod | Pertahankan |
 | AI Orchestrator | Node/TypeScript, REST langsung ke Gemini (function-calling manual) — **direvisi 2026-07-05** dari rencana awal "Genkit": scaffold Genkit lama (`scripts/scaffolding/create_ai_orch.py`) tidak pernah dijalankan & sudah usang; pola REST manual sudah terbukti jalan di `apps/web/src/lib/ai/orchestrator.ts`, dipilih utk `services/ai-orchestrator` (disetujui owner 2026-07-05, spek: `docs/prompts/PAAX_CODEX_CHAIN_AIO_01/02_*.md`). Migrasi ke Genkit tetap opsi terbuka nanti. | Sedang dibangun (Codex) |
 | Core Engine | Python 3.11+, FastAPI, Pydantic, NumPy | Pertahankan & perdalam |
@@ -566,6 +579,13 @@ paax-ai/
 ---
 
 ## 16. Roadmap & Rencana Rilis Bertahap
+
+> **Tabel §16/§17 di bawah adalah RENCANA ASLI per-versi (arsip perencanaan),
+> bukan status implementasi terkini.** Realisasi sejauh ini sudah melewati
+> beberapa target di sini secara tidak berurutan (mis. `services/ai-
+> orchestrator` v0.8 sudah dibangun; sebagian besar pipeline v1.0
+> gambar→BoQ sudah berjalan). Untuk status per-fase yang akurat, baca
+> `docs/ai-map/STATE.md` (live) dan `docs/BRAIN_ALIGNMENT.md` §4.
 
 Visi besar dieksekusi versi demi versi. Setiap rilis punya satu "aha moment" baru yang bisa didemokan, dibangun di atas rilis sebelumnya tanpa membuang pekerjaan. Estimasi waktu mengasumsikan kerja solo ~20 jam/minggu dengan Claude Code; bila ada kesibukan lain (mis. kursus IBM AI Engineer), kalikan 1,3–1,5×.
 

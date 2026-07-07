@@ -1,8 +1,17 @@
 # Engineering Chat — Asisten Lintas-Halaman
 
 Route: `/proyek/[projectId]/chat` (entri per-proyek) — **tetapi cakupannya
-lintas-proyek & lintas-halaman**. Status: **[roadmap]** (rancang sekarang,
-bangun setelah v0.8 Gemini wiring).
+lintas-proyek & lintas-halaman**. Status: **[sebagian]** — backend tool-
+calling sudah dibangun (`services/ai-orchestrator`, 2026-07-05, REST manual
+ke Gemini — BUKAN Genkit), TAPI `apps/web` **belum di-wiring** ke service
+ini (chat saat ini masih panggilan Gemini one-shot via `app/api/ai/chat/
+route.ts`, bukan tool-calling nyata). Tool nyata sekarang: `lookup_ahsp`,
+`run_scenario`, `analyze_drawing`, `query_rab`, `query_schedule` (baca
+`context` yg dikirim client — TIDAK ADA DB proyek server-side),
+`query_progress`/`query_materials` (stub jujur, belum dibangun). Beda dari
+daftar tool §3.1 di bawah (`get_rab`, `recalc_rab`, dll — rencana awal,
+belum tentu 1:1 sama nama/perilaku dgn implementasi nyata). Detail:
+`services/ai-orchestrator/README.md`, `docs/ai-map/STATE.md`.
 
 > Baca [README.md](README.md) §1 dulu (kontrak bersama & Aturan Emas).
 
@@ -110,7 +119,15 @@ mengembalikan angka; LLM menarasikan. (= alur langkah 6 di diagram arsitektur.)
 - Semua usulan AI bisa diabaikan; user tetap bisa edit manual di halaman terkait.
 
 ## 7. STATUS & URUTAN BANGUN
-- Prasyarat: wiring Gemini (v0.8) + endpoint engine (sudah ada).
-- Tahap 1: chat per-proyek read-only + tool `get_rab`/`get_schedule`/`get_hsp`.
-- Tahap 2: lintas-proyek + notifikasi/warning + RAG grounding.
-- Tahap 3: PROPOSE + recompute (skenario "lebih murah" / mitigasi jadwal).
+- Prasyarat: wiring Gemini (v0.8) + endpoint engine (sudah ada) — **DONE**,
+  `services/ai-orchestrator` aktif dgn 7 tool (lihat header file ini).
+- Tahap 1 (SEBAGIAN): backend tool-calling ada; `apps/web` BELUM wiring ke
+  `services/ai-orchestrator` — ini pekerjaan Claude berikutnya yg belum
+  dijadwalkan (`docs/ai-map/STATE.md` §KOREKSI POLA KERJA & AI-ORCHESTRATOR
+  DISETUJUI).
+- Tahap 2: lintas-proyek + notifikasi/warning + RAG grounding — belum mulai
+  (tidak ada database proyek server-side sama sekali sekarang; RAB/jadwal
+  hidup di localStorage/Firestore client, ini blocker nyata utk "lintas-
+  proyek" krn orchestrator butuh `context` dikirim client per-request).
+- Tahap 3: PROPOSE + recompute (skenario "lebih murah" / mitigasi jadwal) —
+  belum mulai.

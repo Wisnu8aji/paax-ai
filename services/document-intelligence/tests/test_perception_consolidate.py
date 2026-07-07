@@ -614,6 +614,41 @@ def test_ai_assist_arsitektur_area_creates_plafon_synthetic_entry_when_note_foun
     }
 
 
+def test_ai_assist_arsitektur_area_creates_pondasi_batu_synthetic_entry_when_note_found():
+    sheet = TkgSheet(
+        sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH PONDASI BATU KALI", zone="arsitektur"),
+        unclassified=[
+            Unclassified(raw="PONDASI BATU KALI", alasan="x"),
+            Unclassified(raw="A ATAS 0.3 M", alasan="x"),
+            Unclassified(raw="A BAWAH 0.6 M", alasan="x"),
+            Unclassified(raw="TINGGI 0.8 M", alasan="x"),
+            Unclassified(raw="PANJANG 10 M", alasan="x"),
+        ],
+    )
+    fake = _FakeAiAssistClient({
+        "a_atas": 0.3,
+        "a_bawah": 0.6,
+        "h_pond": 0.8,
+        "l": 10.0,
+        "confidence": 0.8,
+        "reasoning": "data pondasi batu eksplisit",
+        "source_texts": ["A ATAS 0.3 M", "A BAWAH 0.6 M", "TINGGI 0.8 M", "PANJANG 10 M"],
+    })
+
+    result = consolidate_document(_doc([sheet]), ai_client=fake)
+
+    entry = next(e for e in result.element_registry if e.kode == "PONDASI_BATU-AUTO-1")
+    assert entry.kategori == "pondasi_batu"
+    assert entry.status == "perlu_review"
+    assert entry.ai_arsitektur_area_suggestion is not None
+    assert entry.ai_arsitektur_area_suggestion.fields == {
+        "a_atas": 0.3,
+        "a_bawah": 0.6,
+        "h_pond": 0.8,
+        "l": 10.0,
+    }
+
+
 def test_ai_assist_arsitektur_area_not_invoked_without_keywords():
     sheet = TkgSheet(
         sheet_id="S1", jenis="denah", meta=SheetMeta(judul="DENAH KOLOM", zone="struktur_lantai_1"),

@@ -1,63 +1,31 @@
 'use client';
 
 import { useState } from 'react';
-import { PanelLeft, Search, Bell } from 'lucide-react';
+import { Search, Bell, Settings } from 'lucide-react';
 import { useShell } from './shell-context';
 
+/**
+ * Header area konten (rombak 2026-07-07, referensi dashboard utama):
+ * search pill kiri (inset shadow), status AI kecil + gear + bell kanan.
+ * Tidak lagi berupa kartu kaca terpisah — menyatu dengan main container.
+ */
 export default function Topbar() {
-  const { toggleNav, openSettings } = useShell();
+  const { openSettings } = useShell();
   const [query, setQuery] = useState('');
 
   return (
     <header
-      className="pax-glass pax-glass-edge"
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 12,
-        borderRadius: 16,
-        padding: '11px 16px',
-        boxShadow: 'var(--shadow-card)',
+        gap: 14,
+        padding: '4px 2px',
       }}
     >
-      <button
-        onClick={toggleNav}
-        title="Sembunyikan / tampilkan panel"
-        aria-label="Toggle panel navigasi"
-        className="pax-btn-secondary"
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          flexShrink: 0,
-          color: 'var(--text2)',
-        }}
-      >
-        <PanelLeft size={17} />
-      </button>
-
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 9,
-          flex: 1,
-          maxWidth: 380,
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 11,
-          padding: '8px 12px',
-        }}
-      >
-        <Search size={16} color="var(--text3)" />
+      <div className="pax-search-pill" style={{ flex: 1, maxWidth: 420 }}>
+        <Search size={15} color="var(--text3)" />
         <input
-          placeholder="Cari proyek, AHSP, dokumen…"
+          placeholder="Search"
           aria-label="Cari"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -66,14 +34,20 @@ export default function Topbar() {
             background: 'transparent',
             outline: 'none',
             flex: 1,
-            fontSize: 13,
+            fontSize: 12.5,
             color: 'var(--text)',
             minWidth: 0,
           }}
         />
         <span
           className="pax-mono"
-          style={{ fontSize: 10, color: 'var(--text3)', border: '1px solid var(--border)', borderRadius: 6, padding: '2px 6px' }}
+          style={{
+            fontSize: 9.5,
+            color: 'var(--text3)',
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+            padding: '1px 6px',
+          }}
         >
           ⌘K
         </span>
@@ -86,56 +60,76 @@ export default function Topbar() {
           display: 'flex',
           alignItems: 'center',
           gap: 7,
-          padding: '6px 12px',
-          borderRadius: 10,
-          background: 'color-mix(in srgb,var(--text) 5%,transparent)',
-          border: '1px solid color-mix(in srgb,var(--text) 10%,transparent)',
+          padding: '5px 11px',
+          borderRadius: 999,
+          background: 'var(--surface)',
+          border: '1px solid var(--border-soft)',
         }}
       >
         <span
-          style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--ok-dot)', animation: 'paxpulse 2.4s infinite' }}
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: 'var(--ok-dot)',
+            animation: 'paxpulse 2.4s infinite',
+          }}
         />
-        <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text2)' }}>AI Ready</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text2)' }}>AI Ready</span>
       </div>
 
       <button
-        onClick={() => openSettings('notifikasi')}
-        aria-label="Notifikasi"
+        onClick={() => openSettings('umum')}
+        aria-label="Settings"
+        className="pax-btn-ghost pax-press"
         style={{
-          position: 'relative',
-          width: 38,
-          height: 38,
+          width: 36,
+          height: 36,
           borderRadius: 11,
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
+          background: 'transparent',
+          border: 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
+          color: 'var(--text2)',
         }}
       >
-        <Bell size={17} color="var(--text2)" />
+        <Settings size={17} strokeWidth={1.7} />
+      </button>
+
+      <button
+        onClick={() => openSettings('notifikasi')}
+        aria-label="Notifikasi"
+        className="pax-btn-ghost pax-press"
+        style={{
+          position: 'relative',
+          width: 36,
+          height: 36,
+          borderRadius: 11,
+          background: 'transparent',
+          border: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          color: 'var(--text2)',
+        }}
+      >
+        <Bell size={17} strokeWidth={1.7} />
         <span
-          className="pax-mono"
+          aria-hidden="true"
           style={{
             position: 'absolute',
-            top: -4,
-            right: -4,
-            minWidth: 16,
-            height: 16,
-            borderRadius: 8,
-            background: 'var(--dng-dot)',
-            color: '#fff',
-            fontSize: 9.5,
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '0 4px',
+            top: 7,
+            right: 8,
+            width: 7,
+            height: 7,
+            borderRadius: '50%',
+            background: 'var(--gold)',
+            border: '2px solid var(--panel)',
           }}
-        >
-          5
-        </span>
+        />
       </button>
     </header>
   );

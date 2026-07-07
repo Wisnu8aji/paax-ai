@@ -17,6 +17,10 @@ from app.perception.bridging_arsitektur_area import (
     bridge_keramik_dinding,
     bridge_plafon,
     bridge_waterproofing,
+    bridge_pondasi_batu,
+    bridge_lantai,
+    bridge_atap_miring,
+    bridge_aanstamping,
 )
 from app.perception.bridging_dinding import DindingTakeoffClient, bridge_dinding_pasangan
 from app.perception.bridging_kuda_kuda import BajaTakeoffClient, bridge_kuda_kuda
@@ -356,16 +360,28 @@ _ARSITEKTUR_AREA_BRIDGE_FN = {
     "keramik_dinding": bridge_keramik_dinding,
     "plafon": bridge_plafon,
     "waterproofing": bridge_waterproofing,
+    "pondasi_batu": bridge_pondasi_batu,
+    "lantai": bridge_lantai,
+    "atap_miring": bridge_atap_miring,
+    "aanstamping": bridge_aanstamping,
 }
 _ARSITEKTUR_AREA_WORK_TYPE = {
     "keramik_dinding": "keramik_dinding",
     "plafon": "plafon",
     "waterproofing": "waterproofing",
+    "pondasi_batu": "pondasi_batu",
+    "lantai": "lantai",
+    "atap_miring": "atap_miring",
+    "aanstamping": "aanstamping",
 }
 _ARSITEKTUR_AREA_SECTION_CATEGORY = {
     "keramik_dinding": "finishing",
     "plafon": "plafon",
     "waterproofing": "finishing",
+    "pondasi_batu": "tanah",
+    "lantai": "lantai",
+    "atap_miring": "atap",
+    "aanstamping": "tanah",
 }
 
 

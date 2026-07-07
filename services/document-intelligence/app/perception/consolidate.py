@@ -297,7 +297,10 @@ def _apply_kuda_kuda_ai_assist(
 
 
 _KODE_SANITIZE_PATTERN = re.compile(r"[^A-Z0-9]+")
-_ARSITEKTUR_AREA_CATEGORIES = ("keramik_dinding", "plafon", "waterproofing")
+_ARSITEKTUR_AREA_CATEGORIES = (
+    "keramik_dinding", "plafon", "waterproofing",
+    "pondasi_batu", "lantai", "atap_miring", "aanstamping"
+)
 
 
 def _apply_arsitektur_area_ai_assist(

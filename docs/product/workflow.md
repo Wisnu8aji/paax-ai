@@ -1,7 +1,15 @@
 # PAAX AI — Workflow Documentation
 
-> Dokumen ini menjelaskan alur kerja lengkap pengguna PAAX AI,
-> dari pembuatan proyek hingga monitoring lapangan.
+> ⚠️ **SANGAT USANG — DITEMUKAN 2026-07-05 saat audit dokumentasi.** Dokumen
+> ini bagian dari keluarga v0.3 yang sama dgn `dashboard-blueprint.md` &
+> `docs/api/*` — pipeline Gemini-Vision-sbg-jalur-utama, Genkit orchestrator,
+> Firestore multi-tenant, RAB Advisor/Optimize flow — **TIDAK ADA yang
+> cocok dgn implementasi nyata**. Alur nyata: upload PDF → persepsi vektor
+> PyMuPDF (`services/document-intelligence`) → TKG → takeoff engine →
+> Draft RAB (kode AHSP dipilih manual, TIDAK auto dari AI) → editor RAB
+> manual + Smart RAB Builder rule-based/Gemini opsional. Lihat
+> `docs/pages/gambar-kerja.md` & `docs/pages/rab.md` (akurat, live).
+> Dibiarkan sbg arsip histori desain awal, BUKAN alur yang berlaku sekarang.
 
 ---
 

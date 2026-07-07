@@ -4,7 +4,13 @@ Workspace AI untuk insinyur sipil Indonesia. Mengubah data konstruksi menjadi
 **RAB patuh AHSP**, **jadwal Kurva S**, dan simulasi skenario — dengan **setiap angka
 yang dapat diaudit**.
 
-> **Aturan emas:** engine yang **menghitung**, AI (nanti) yang **menjelaskan**.
+AI di PAAX bukan fitur tempelan — ia lapisan interpretasi/asistensi yang
+hadir di hampir setiap tahap alur kerja (baca gambar kerja via AI-assist,
+susun RAB via Smart RAB Builder, chat insinyur via `services/ai-orchestrator`
+tool-calling). Detail: `CLAUDE.md` §0.1. **Batas yang tidak berubah:**
+
+> **Aturan emas:** engine yang **menghitung**, AI yang **menjelaskan/
+> menstruktur/mengklasifikasi** — di mana pun AI dipakai.
 > Semua angka berasal dari engine deterministik; LLM tidak pernah menghasilkan angka.
 
 ---
@@ -51,10 +57,26 @@ AI jadi otak tiap halaman: **AI menstruktur, engine menghitung**.
 
 - ✅ **Smart RAB Builder** ("Susun dengan AI" di editor RAB): tulis daftar elemen + dimensi → AI memecah jadi tipe + AHSP + seksi WBS + confidence → **engine hitung volume** (`/geometry/volume`) → **engine susun RAB tersektor** (`/rab/build`) → verifikasi/koreksi → terapkan ke editor untuk edit manual.
 - ✅ **Berjalan gratis** dengan otak **rule-based** (tanpa API key). Untuk ekstraksi lebih pintar, sambungkan **Gemini free tier** (Google AI Studio) lewat `GEMINI_API_KEY` di `apps/web/.env.local` — server-side, tidak terekspos browser.
-- ⛔ **v1.0 (CV / baca gambar mentah)** ditahan — validasi Wizard-of-Oz dulu (bagian tersulit & termahal).
+- ⛔ **v1.0 (Vision-LLM piksel mentah sbg jalur utama)** tetap ditahan — TAPI
+  jalur vektor (baca teks+koordinat presisi dari PDF, bukan piksel) SUDAH
+  berjalan di `services/document-intelligence` (lihat bagian "Status
+  terkini" di bawah); ini bukan lagi hal yang murni ditunda.
 
 > Jalankan engine (`pnpm run dev:core`) agar halaman workspace bisa menghitung.
 > Tanpa engine, RAB/AHSP menampilkan pesan/contoh fallback.
+
+---
+
+## Status terkini (di luar cakupan versi di atas)
+
+README ini menjelaskan cara pakai v0.6-v0.8 (rilis awal). Progres nyata sudah
+melewati itu secara tidak berurutan — `services/document-intelligence` sudah
+punya pipeline persepsi gambar nyata (PyMuPDF, TKG, bridging non-struktur:
+dinding/atap/kusen/MEP/kuda-kuda baja/keramik/plafon/waterproofing) dan
+`services/ai-orchestrator` (tool-calling Gemini, REST manual — bukan Genkit)
+sudah dibangun & aktif. **Status hidup & akurat**: `docs/ai-map/STATE.md`.
+Jangan andalkan bagian "Belum ada di v0.6" di atas untuk menilai progres
+terkini — itu snapshot rilis v0.6, bukan status sekarang.
 
 ---
 

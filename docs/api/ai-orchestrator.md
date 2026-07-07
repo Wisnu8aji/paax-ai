@@ -1,5 +1,20 @@
 # PAAX AI — AI Orchestrator API Documentation
 
+> ⚠️ **SANGAT USANG — DITEMUKAN 2026-07-05 saat audit dokumentasi.** File ini
+> mendeskripsikan desain lama berbasis **Firebase Genkit** dengan 6 flow
+> (`/flow/engineering-chat`, `/flow/rab-advisor`, `/flow/drawing-
+> understanding`, `/flow/schedule-advisor`, `/flow/document-qa`, `/flow/
+> site-analysis`) dan 11 tool — **TIDAK PERNAH dibangun seperti ini**.
+> `services/ai-orchestrator` YANG NYATA (dibangun 2026-07-05): Node/Express +
+> REST manual ke Gemini (BUKAN Genkit — deviasi sadar, lihat `CLAUDE.md`
+> §1.1 & `docs/MASTER_PLAN.md` §15.1), HANYA 2 endpoint (`GET /health`,
+> `POST /chat`) dan 7 tool (`lookup_ahsp`, `run_scenario`, `analyze_drawing`,
+> `query_rab`, `query_schedule`, `query_progress` stub, `query_materials`
+> stub). Tidak ada Firebase Auth, tidak ada SSE streaming, tidak ada
+> `usageLogs` Firestore. Kontrak yang benar: `services/ai-orchestrator/
+> README.md` (akurat) & `docs/ai-map/MAP.md`. Dibiarkan sbg arsip histori
+> desain awal, BUKAN kontrak API yang berlaku.
+
 > API reference untuk AI Orchestrator (Firebase Genkit / TypeScript).
 > Service ini mengelola semua interaksi AI: chat, advisory, dan document understanding.
 

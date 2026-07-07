@@ -26,6 +26,39 @@ harga satuan regional.
 
 ---
 
+## 0.1 AI Sebagai Lapisan Pusat — Hadir di Hampir Setiap Tahap, Bukan Fitur Tempelan
+
+PAAX **bukan** aplikasi RAB manual yang ditempeli AI di satu-dua tempat.
+AI adalah lapisan **interpretasi & asistensi** yang hadir di hampir setiap
+tahap alur kerja nyata (dikonfirmasi di kode per 2026-07-05), bukan klaim
+pemasaran:
+
+- **Baca gambar kerja** — lapisan AI-assist (§1.1) mengisi celah
+  klasifikasi/binding SETIAP KALI rule-based gagal/ambigu: dimensi
+  footplat, klasifikasi zona sheet, dinding pasangan bata, rangka atap
+  (gording/trekstang/ikatan angin), jadwal kusen, titik MEP, kuda-kuda/
+  profil baja, arsitektur area (keramik/plafon/waterproofing).
+- **Menyusun RAB** — Smart RAB Builder: teks/tabel elemen bebas → usulan
+  tipe + kode AHSP + seksi WBS + confidence (rule-based gratis, Gemini
+  opsional).
+- **Asisten insinyur** — Engineering Chat via `services/ai-orchestrator`
+  (tool-calling nyata ke Gemini): membaca konteks proyek, memanggil tool
+  (`lookup_ahsp`, `run_scenario`, `analyze_drawing`, `query_rab`,
+  `query_schedule`), menalar jawaban.
+- **Mentranskripsi gambar (fallback)** — menyalin teks gambar → struktur
+  TkgDocument saat upload PDF langsung tidak tersedia/gagal.
+
+Hampir tidak ada tahap dari upload gambar sampai RAB jadi yang sama sekali
+tidak disentuh lapisan AI dalam beberapa bentuk. **Tapi** — dan inilah yang
+membedakan PAAX dari produk "AI generates everything" — peran AI di setiap
+titik itu SELALU interpretasi/klasifikasi/asistensi, **TIDAK PERNAH
+kalkulasi angka final.** §1 di bawah bukan pembatas yang bertentangan
+dengan poin ini — justru itulah yang membuat AI-di-mana-mana ini AMAN
+dipakai untuk dokumen finansial/legal seperti RAB. Baca §1 sebelum
+menyentuh kode apa pun yang berhubungan dengan AI.
+
+---
+
 ## 1. ATURAN EMAS — AI TIDAK PERNAH MENGHITUNG
 
 **Setiap angka** di RAB, BoQ, jadwal, Kurva S, dan skenario WAJIB berasal dari
@@ -108,8 +141,8 @@ agar ini tidak melanggar Aturan Emas secara halus:
 
 | Lapis | Teknologi | Tanggung Jawab | TIDAK BOLEH |
 |---|---|---|---|
-| 0 — Presentasi | Next.js 14, TS, Tailwind, shadcn/ui | Seluruh UI | Menghitung angka RAB |
-| 1 — Orkestrasi | Node/Genkit, tool-calling, RAG, scheduler | Router + agen, pilih model, panggil engine | Mengarang angka final |
+| 0 — Presentasi | Next.js 15 (App Router), React 19, TS, Tailwind CSS v4, komponen custom `components/ui/` (BUKAN shadcn/ui — dicek langsung 2026-07-05, tidak ada dependency shadcn di repo) | Seluruh UI | Menghitung angka RAB |
+| 1 — Orkestrasi | Node/Express, REST manual ke Gemini, tool-calling loop (`services/ai-orchestrator`, dibangun 2026-07-05 — BUKAN Genkit; deviasi sadar, lihat §1.1 & `docs/MASTER_PLAN.md` §15.1) | Router + agen, pilih model, panggil engine | Mengarang angka final |
 | 2A — Persepsi | Python: OCR + CV + Vision-LLM | Deteksi & ukur elemen, pemecahan per-lantai | Menetapkan harga/biaya |
 | 2B — Engine | FastAPI/Python, Pydantic, NumPy | **Semua perhitungan deterministik** | Memakai LLM untuk aritmetika |
 | 2C — Site Agent | Python/TS | Lapor progres, analisa foto, deviasi | Menggantikan verifikasi manusia |
@@ -125,8 +158,8 @@ paax-ai/
 │  └─ app/projects/[id]/      # drawings · rab · schedule · scenarios · chat · monitoring
 ├─ services/
 │  ├─ core-engine/            # FastAPI — perhitungan deterministik (Lapis 2B)
-│  ├─ ai-orchestrator/        # router + agents + RAG + scheduler  (mulai v0.8)
-│  ├─ document-intelligence/  # OCR + CV + ekstraksi kuantitas     (mulai v1.0)
+│  ├─ ai-orchestrator/        # tool-calling Gemini (7 tool, dibangun 2026-07-05, lihat STATE.md)
+│  ├─ document-intelligence/  # persepsi gambar (PyMuPDF real) + bridging non-struktur, sedang berjalan
 │  └─ site-agent/             # progres lapangan + analisa foto    (v2.0)
 ├─ packages/
 │  ├─ schemas/                # JSON Schema → Zod + Pydantic (1 sumber kebenaran)
@@ -168,18 +201,20 @@ manual dan mencatat sumber koefisien AHSP-nya.
 
 ## 6. STATE SAAT INI & ROADMAP
 
-**Sekarang:** transisi **v0.6 (Deterministic Foundation) → v0.7 (Workspace Hidup).**
+> **Status hidup ada di `docs/ai-map/STATE.md` — baca file itu untuk detail
+> terkini, jangan andalkan ringkasan di bawah ini untuk keputusan presisi.**
+> Ringkasan per 2026-07-05 (garis besar, bukan status lengkap):
 
-- v0.6 — Engine HSP/RAB/Kurva-S deterministik + test + halaman uji RAB.
-- v0.7 — Multi-proyek + DB CRUD + UI shell + editor RAB + browser AHSP/harga + export Excel/PDF.
-- v0.8 — Smart Import (upload RAB Excel + AI mapping kolom + deteksi anomali harga). **AI orchestrator pertama aktif.**
-- v0.9 — Gantt + jalur kritis + simulator skenario + narasi AI.
-- v1.0 — Gambar → BoQ → RAB (CV) + Engineering Chat (RAG + tools). **Lompatan terbesar.**
-- v1.5 — Laporan pagi · prediksi material · Agent Autopilot (add-on metered).
-- v2.0 — Monitoring multi-proyek · Site Agent · dashboard PM.
+- v0.6 — ✅ Engine HSP/RAB/Kurva-S deterministik + test + halaman uji RAB.
+- v0.7 — ✅ Multi-proyek + DB CRUD + UI shell + editor RAB + browser AHSP/harga + export Excel/PDF.
+- v0.8 — ✅ Smart RAB Builder (AI-assist rule-based + Gemini opsional) + `services/ai-orchestrator` **sudah dibangun & aktif** (7 tool tool-calling ke Gemini, REST manual — bukan Genkit, lihat §3).
+- v0.9 — ✅ Simulator skenario (frontier waktu-biaya) sudah jadi. ⏳ Gantt UI + jalur kritis (CPM): engine (`/schedule/cpm`, `/schedule/plan`) sudah lengkap & teruji, **UI-nya belum dibangun** — gap murni frontend.
+- v1.0 — 🟡 **sedang berjalan, bukan lagi ditunda.** `services/document-intelligence` sudah punya pipeline persepsi PDF nyata (PyMuPDF, TKG, grid, PaddleOCR) + bridging ke core-engine untuk banyak kategori (footplat, dinding, atap/gording/kuda-kuda-baja, kusen, MEP, keramik/plafon/waterproofing). Lapisan AI-assist klasifikasi/binding (§1.1) berjalan sbg fallback teks (bukan vision-piksel). Engineering Chat (RAG + tools) masih tahap awal — orchestrator sudah ada tapi belum full-wired ke `apps/web`.
+- v1.5 — ⚪ Laporan pagi · prediksi material · Agent Autopilot (add-on metered) — belum dimulai.
+- v2.0 — ⚪ Monitoring multi-proyek · Site Agent · dashboard PM — belum dimulai.
 
-> **Tahan godaan membangun v1.0 (vision) lebih awal.** Risiko terbesar ditunda
-> sampai fondasi matang. Nilai mengalir tiap rilis lewat jalur manual + Smart Import.
+> Vision-LLM piksel-mentah (baca gambar scan tanpa layer teks sbg jalur UTAMA)
+> tetap ditahan — beda dari AI-assist teks+koordinat §1.1 yang sudah berjalan.
 
 ---
 

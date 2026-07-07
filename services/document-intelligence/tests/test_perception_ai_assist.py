@@ -549,6 +549,58 @@ def test_kuda_kuda_assist_rejects_standard_weight_when_not_sourced_from_text():
             },
             {"a_bidang_m2": 32.0, "keliling_upstand_m": 22.0, "h_upstand_m": 0.25},
         ),
+        (
+            "pondasi_batu",
+            ["PONDASI BATU KALI", "A ATAS 0.3 M", "A BAWAH 0.6 M", "TINGGI 0.8 M", "PANJANG 10 M"],
+            {
+                "a_atas": 0.3,
+                "a_bawah": 0.6,
+                "h_pond": 0.8,
+                "l": 10.0,
+                "confidence": 0.8,
+                "reasoning": "data pondasi batu valid",
+                "source_texts": ["A ATAS 0.3 M", "A BAWAH 0.6 M", "TINGGI 0.8 M", "PANJANG 10 M"],
+            },
+            {"a_atas": 0.3, "a_bawah": 0.6, "h_pond": 0.8, "l": 10.0},
+        ),
+        (
+            "lantai",
+            ["PENUTUP LANTAI", "PANJANG 5 M", "LEBAR 4 M", "LEBAR PINTU 0.9 M"],
+            {
+                "panjang": 5.0,
+                "lebar": 4.0,
+                "lebar_pintu_total": 0.9,
+                "confidence": 0.8,
+                "reasoning": "data lantai valid",
+                "source_texts": ["PANJANG 5 M", "LEBAR 4 M", "LEBAR PINTU 0.9 M"],
+            },
+            {"panjang": 5.0, "lebar": 4.0, "lebar_pintu_total": 0.9},
+        ),
+        (
+            "atap_miring",
+            ["ATAP MIRING", "LUAS PROYEKSI 100 M2", "SUDUT 30 DERAJAT"],
+            {
+                "a_proyeksi": 100.0,
+                "theta_deg": 30.0,
+                "confidence": 0.8,
+                "reasoning": "data atap miring valid",
+                "source_texts": ["LUAS PROYEKSI 100 M2", "SUDUT 30 DERAJAT"],
+            },
+            {"a_proyeksi": 100.0, "theta_deg": 30.0},
+        ),
+        (
+            "aanstamping",
+            ["AANSTAMPING", "LEBAR BAWAH 0.8 M", "TEBAL 0.2 M", "PANJANG 10 M"],
+            {
+                "a_bawah_m": 0.8,
+                "t_aanstamping_m": 0.2,
+                "panjang_m": 10.0,
+                "confidence": 0.8,
+                "reasoning": "data aanstamping valid",
+                "source_texts": ["LEBAR BAWAH 0.8 M", "TEBAL 0.2 M", "PANJANG 10 M"],
+            },
+            {"a_bawah_m": 0.8, "t_aanstamping_m": 0.2, "panjang_m": 10.0},
+        ),
     ],
 )
 def test_arsitektur_area_assist_accepts_complete_valid_suggestions(kategori, texts, payload, expected_fields):
@@ -601,6 +653,19 @@ def test_arsitektur_area_assist_accepts_complete_valid_suggestions(kategori, tex
             },
             {"a_bidang_m2": 32.0},
         ),
+        (
+            "lantai",
+            ["KERAMIK LANTAI", "PANJANG 5 M", "LEBAR 4 M"],
+            {
+                "panjang": 5.0,
+                "lebar": 4.0,
+                "lebar_pintu_total": None,
+                "confidence": 0.8,
+                "reasoning": "data lantai tanpa pintu",
+                "source_texts": ["PANJANG 5 M", "LEBAR 4 M"],
+            },
+            {"panjang": 5.0, "lebar": 4.0},
+        ),
     ],
 )
 def test_arsitektur_area_assist_accepts_required_only_suggestions(kategori, texts, payload, expected_fields):
@@ -624,6 +689,22 @@ def test_arsitektur_area_assist_accepts_required_only_suggestions(kategori, text
         ("waterproofing", ["WATERPROOFING", "KELILING UPSTAND 22 M"], {
             "a_bidang_m2": None, "keliling_upstand_m": 22.0, "confidence": 0.7,
             "reasoning": "field wajib kosong", "source_texts": ["KELILING UPSTAND 22 M"],
+        }),
+        ("pondasi_batu", ["PONDASI BATU", "L 10 M"], {
+            "a_atas": None, "a_bawah": None, "h_pond": None, "l": 10.0, "confidence": 0.7,
+            "reasoning": "field wajib kosong", "source_texts": ["L 10 M"],
+        }),
+        ("lantai", ["PENUTUP LANTAI", "LEBAR 4 M"], {
+            "panjang": None, "lebar": 4.0, "lebar_pintu_total": None, "confidence": 0.7,
+            "reasoning": "field wajib kosong", "source_texts": ["LEBAR 4 M"],
+        }),
+        ("atap_miring", ["ATAP MIRING", "SUDUT 30"], {
+            "a_proyeksi": None, "theta_deg": 30.0, "confidence": 0.7,
+            "reasoning": "field wajib kosong", "source_texts": ["SUDUT 30"],
+        }),
+        ("aanstamping", ["AANSTAMPING", "TEBAL 0.2 M"], {
+            "a_bawah_m": None, "t_aanstamping_m": 0.2, "panjang_m": None, "confidence": 0.7,
+            "reasoning": "field wajib kosong", "source_texts": ["TEBAL 0.2 M"],
         }),
     ],
 )

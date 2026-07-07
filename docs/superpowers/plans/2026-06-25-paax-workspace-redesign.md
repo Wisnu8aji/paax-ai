@@ -1,5 +1,19 @@
 # PAAX Workspace Redesign — Implementation Plan
 
+> ⚠️ **SUPERSEDED — DITEMUKAN 2026-07-05 saat audit dokumentasi.** Plan ini
+> (2026-06-25) tampaknya TIDAK PERNAH dieksekusi seperti tertulis (tidak ada
+> jejak Hanken Grotesk/JetBrains Mono atau struktur `components/ui/*` di
+> atas yang cocok persis di `apps/web` saat ini — UI nyata sekarang memakai
+> font Outfit/Inter, tema `light`/`dark`/`grey` "Medium Grey Glass" dibangun
+> 2026-07-03, lihat memory `ui-premium-redesign-2026-07-03`). Rencana
+> redesign BARU & aktif: `docs/plans/PAAX_FRONTEND_REDESIGN_MASTER_PLAN_
+> 2026-07-05.md` + `docs/plans/PAAX_FRONTEND_DESIGN_SYSTEM_2026-07-05.md`
+> (ditulis sesi Claude 2026-07-05, mencakup audit UI nyata terkini). Baca
+> dokumen BARU itu utk kerja redesign sekarang; dokumen INI dibiarkan sbg
+> arsip histori rencana lama, kemungkinan besar sudah tidak relevan dgn
+> struktur `apps/web` saat ini (mis. baris "NEVER touch `apps/web/src/app/
+> rab-tester/page.tsx`" di bawah sudah usang — route itu sudah dihapus).
+
 > Pure visual / mock-data redesign of `apps/web`. No commits during this pass (per user).
 > Spec: `docs/superpowers/specs/2026-06-25-paax-workspace-redesign-design.md`.
 

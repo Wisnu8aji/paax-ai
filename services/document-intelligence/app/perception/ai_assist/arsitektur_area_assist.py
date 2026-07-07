@@ -35,6 +35,26 @@ _CATEGORY_FIELDS: dict[str, tuple[_FieldSpec, ...]] = {
         _FieldSpec("keliling_upstand_m", 0.0, 200.0, required=False),
         _FieldSpec("h_upstand_m", 0.05, 2.0, required=False),
     ),
+    "pondasi_batu": (
+        _FieldSpec("a_atas", 0.1, 2.0, required=True),
+        _FieldSpec("a_bawah", 0.1, 3.0, required=True),
+        _FieldSpec("h_pond", 0.1, 2.0, required=True),
+        _FieldSpec("l", 1.0, 200.0, required=True),
+    ),
+    "lantai": (
+        _FieldSpec("panjang", 0.5, 100.0, required=True),
+        _FieldSpec("lebar", 0.5, 100.0, required=True),
+        _FieldSpec("lebar_pintu_total", 0.0, 20.0, required=False),
+    ),
+    "atap_miring": (
+        _FieldSpec("a_proyeksi", 1.0, 500.0, required=True),
+        _FieldSpec("theta_deg", 5.0, 60.0, required=True),
+    ),
+    "aanstamping": (
+        _FieldSpec("a_bawah_m", 0.1, 3.0, required=True),
+        _FieldSpec("t_aanstamping_m", 0.05, 1.0, required=True),
+        _FieldSpec("panjang_m", 1.0, 200.0, required=True),
+    ),
 }
 
 _CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
@@ -47,6 +67,10 @@ _CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
     ),
     "plafon": ("PLAFON", "PLAFOND", "CEILING"),
     "waterproofing": ("WATERPROOFING", "WATERPROOF", "ANTI BOCOR", "KEDAP AIR"),
+    "pondasi_batu": ("PONDASI BATU", "PONDASI BATU KALI", "BATU BELAH", "PASANGAN BATU KALI"),
+    "lantai": ("PENUTUP LANTAI", "KERAMIK LANTAI", "LANTAI KERAMIK", "FLOOR FINISH"),
+    "atap_miring": ("ATAP MIRING", "PENUTUP ATAP", "GENTENG", "KEMIRINGAN ATAP"),
+    "aanstamping": ("AANSTAMPING", "PASANGAN BATU KOSONG", "LAPIS PENYARING"),
 }
 
 _SYSTEM_PROMPT = (

@@ -168,6 +168,15 @@ Dok interaktif: `http://localhost:8081/docs`.
 | `POST /rab/calculate` | `{ region_code, ppn_rate, lines[] }` | `RABResult` (`lines[]` + subtotal + ppn + total) |
 | `POST /schedule/s-curve` | `{ region_code, ppn_rate, period_days, mode, lines[] }` | `SCurveResult` (`total_days`, `period_days`, `mode`, `points[]`) |
 
+> **Tabel di atas HANYA endpoint v0.6 asli.** Engine sudah tumbuh jauh
+> lebih besar sejak itu (v0.7-v1.0, belum diperbarui di README ini):
+> `/rab/validate`, `/rab/build`, `/rab/export/excel`, `/schedule/cpm`,
+> `/schedule/plan`, `/scenario/simulate`, `/geometry/volume`,
+> `/geometry/elements`, `/wbs/sections`, `/tkg/validate|render|takeoff`,
+> `/takeoff/{baja,atap,kusen,mep,mep-advanced,smkk,tanah,arsitektur}`.
+> Daftar lengkap & lokasi kode: `docs/ai-map/MAP.md` atau `app/main.py`
+> langsung (sumber kebenaran).
+
 Contoh body `POST /rab/calculate`:
 
 ```json

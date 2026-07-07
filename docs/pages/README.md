@@ -70,7 +70,7 @@ susun jadwal manual). Item ber-confidence rendah ditandai `needs_review`.
 | Laporan | `/laporan` | [laporan.md](laporan.md) |
 | Kolaborasi | `/kolaborasi` | [kolaborasi.md](kolaborasi.md) |
 | Pengaturan | `/pengaturan` | [pengaturan.md](pengaturan.md) |
-| RAB Tester (dev) | `/rab-tester` | [rab-tester.md](rab-tester.md) |
+| RAB Tester (dev) | ~~`/rab-tester`~~ **DIHAPUS** (2026-07-05, dicek langsung tidak ada lagi di `apps/web/src/app`) | [rab-tester.md](rab-tester.md) |
 
 ---
 

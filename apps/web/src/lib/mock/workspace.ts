@@ -329,10 +329,10 @@ export const connectedApps = [
 ];
 
 export const currentUser = {
-  name: 'Budi Andrean',
-  email: 'pm@paax.id',
-  role: 'Project Manager',
-  initials: 'BA',
+  name: 'wisnu',
+  email: 'wisnu@paax.id',
+  role: 'Pro',
+  initials: 'W',
 };
 
 export const aiCredits = { used: 670, total: 1000, pct: 67 };

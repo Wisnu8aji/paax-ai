@@ -28,9 +28,9 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   // SSR renders the default; the stored theme is applied on mount to avoid mismatch.
-  // Default 'grey' = medium grey premium (referensi desain 2026-07-03);
+  // Default 'light' = soft neumorphism putih-abu (referensi G:\Dashboard 2026-07-07);
   // pilihan user di localStorage tetap dihormati.
-  const [theme, setThemeState] = useState<PaaxTheme>('grey');
+  const [theme, setThemeState] = useState<PaaxTheme>('light');
 
   useEffect(() => {
     try {

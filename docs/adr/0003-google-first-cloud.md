@@ -1,7 +1,19 @@
 # ADR 0003: Google-First Cloud Architecture
 
 ## Status
-Accepted
+Accepted, dengan 1 amandemen (lihat catatan 2026-07-05 di bawah)
+
+> **Amandemen 2026-07-05**: keputusan "Google-first" (Gemini sbg model AI,
+> tidak self-host) TETAP berlaku. TAPI baris "AI Framework: Firebase Genkit"
+> **direvisi** — `services/ai-orchestrator` (dibangun 2026-07-05) memakai
+> **REST manual ke Gemini API** (bukan Genkit, bukan Vertex AI), karena
+> scaffold Genkit lama tidak pernah dipakai/sudah usang dan pola REST manual
+> sudah terbukti jalan di `apps/web/src/lib/ai/orchestrator.ts`. Provider
+> default juga **Gemini 2.5 Flash via Google AI Studio API key** (bukan
+> Vertex AI 1.5 Pro) untuk semua lapisan AI saat ini (`CLAUDE.md` §1.1,
+> `docs/MASTER_PLAN.md` §15.1). Migrasi ke Genkit/Vertex tetap opsi terbuka
+> di masa depan, bukan ditutup permanen. Firestore/Cloud Run/Cloud Storage
+> masih berlaku sesuai rencana awal ADR ini.
 
 ## Context
 PAAX AI requires robust cloud infrastructure for hosting, database, authentication, and particularly, AI inference. We evaluated AWS, Azure, and Google Cloud Platform (GCP).

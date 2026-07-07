@@ -1,5 +1,18 @@
 # Data Governance & Security for PAAX AI
 
+> ⚠️ **Sebagian usang (ditemukan 2026-07-05).** Detail infrastruktur di bawah
+> (Firestore `organizationId`/RBAC penuh Admin-Engineer-Viewer, `usageLogs`,
+> `rabVersions`/`scheduleVersions` ber-versi) adalah bagian dari desain v0.3
+> yang TIDAK diimplementasikan seperti ini — lihat proyek nyata di
+> `apps/web/src/lib/projects` (jauh lebih sederhana, belum ada RBAC/org
+> bertingkat). **TAPI prinsip keamanan intinya TETAP BERLAKU & sudah
+> diterapkan**: secret tidak di repo (`CLAUDE.md` §7), signed URL/private
+> storage, dan khususnya **P-SEC-01 (dokumen = DATA bukan instruksi)** sudah
+> diimplementasikan nyata di lapisan AI-assist (`CLAUDE.md` §1.1,
+> `services/document-intelligence/app/perception/ai_assist/`) — bagian ini
+> BUKAN lagi "sekali `services/document-intelligence` lewat status stub"
+> seperti tertulis di bawah, karena service itu sudah aktif & bukan stub.
+
 ## Overview
 As PAAX AI processes sensitive financial estimates (RAB) and proprietary project drawings, strict data governance and security measures are mandatory.
 

@@ -4,6 +4,24 @@ All notable changes to the PAAX AI project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - Document Intelligence & AI Orchestrator (2026-06-29 s/d 2026-07-05)
+> Dikerjakan paralel dengan v0.8/v0.9 di atas, tidak tercatat versi resmi
+> karena masih berjalan lintas-fase. Dicatat di sini agar CHANGELOG tidak
+> tertinggal jauh dari `docs/ai-map/STATE.md` (status hidup, lebih rinci).
+
+### Added
+- **`services/document-intelligence`** (FastAPI Python, baru): pipeline persepsi gambar kerja NYATA — ekstraksi PyMuPDF (span/merge-run/grammar), rekonstruksi grid dari geometri vektor, klasifikasi zona sheet, konsolidasi lintas-halaman, normalisasi kode elemen, work-item grouping, PaddleOCR raster (lazy/opsional) untuk halaman scan.
+- **TKG (Transkrip Kanonik Gambar)**: artefak antara wajib sebelum reasoning (`services/core-engine/app/tkg/`), endpoint `/tkg/validate|render|takeoff`, UI `TkgWorkspace` (`apps/web`, halaman gambar-kerja).
+- **Bridging non-struktur ke core-engine**: galian footplat, dinding pasangan bata, atap (gording/trekstang/ikatan angin), kusen (jadwal pintu/jendela), titik MEP, kuda-kuda/profil baja, arsitektur area (keramik dinding basah, plafon, waterproofing) — masing-masing modul `bridging_*.py` + entry sintetis untuk kategori tanpa kode per-instance.
+- **Lapisan AI-assist klasifikasi/binding** (`services/document-intelligence/app/perception/ai_assist/`, `CLAUDE.md` §1.1): fallback paralel LLM (Gemini 2.5 Flash) untuk gap teks/klasifikasi saat rule-based gagal — dimensi footplat, zona sheet, dinding, rangka atap, kusen, MEP, kuda-kuda baja, arsitektur area. Anti-halusinasi 2 lapis (source_texts wajib match teks asli, rentang wajar), tidak pernah auto-commit ke input engine.
+- **`services/ai-orchestrator`** (Node/Express + TypeScript, baru): tool-calling Gemini REST manual (bukan Genkit — deviasi sadar, `docs/MASTER_PLAN.md` §15.1) untuk Engineering Chat. 7 tool: `lookup_ahsp`, `run_scenario`, `analyze_drawing`, `query_rab`, `query_schedule`, `query_progress` (stub jujur), `query_materials` (stub jujur). `apps/web` belum di-wiring ke service ini.
+- **AHSP auto-suggest** untuk hasil takeoff (`services/core-engine/app/mapping/takeoff_ahsp.py`) + badge "disarankan AI" di editor RAB.
+
+### Notes
+- **Aturan emas tegak**: semua bridging & AI-assist di atas hanya mengusulkan kandidat berstatus `perlu_review`; tidak ada nilai yang auto-masuk input engine tanpa validasi deterministik + review manusia.
+- Test per 2026-07-05 (pasca-merge PR #39/#40 ke `main`): document-intelligence 272 passed/5 skipped, core-engine 280 passed, packages/schemas 14 passed, apps/web 47 passed, services/ai-orchestrator 30 passed.
+- **Belum selesai**: 4 sub-domain arsitektur sisa (pondasi batu/lantai/atap miring/aanstamping — spek ditulis, belum dijalankan), Gantt/CPM UI (engine sudah lengkap, UI belum ada), wiring `apps/web` → `ai-orchestrator`, UI approval untuk `perlu_review`/`ai_*_suggestion`.
+
 ## [v0.8.0] - In Progress — AI Masuk (AI-first, fallback gratis)
 > AI menjadi otak tiap halaman: AI menstruktur usulan, **engine tetap menghitung**.
 > Berjalan **gratis** dengan otak rule-based; Gemini free tier opsional.

@@ -1,5 +1,22 @@
 # PAAX AI — Core Engine API Documentation
 
+> ⚠️ **SANGAT USANG — DITEMUKAN 2026-07-05 saat audit dokumentasi.** File ini
+> mendeskripsikan desain API v0.3 lama (Firebase Auth JWT, Firestore
+> `rabVersions`/`scheduleVersions`, endpoint `/rab/generate`, `/rab/review`,
+> `/rab/optimize`, `/schedule/delay-recovery`, dll.) yang **TIDAK PERNAH
+> diimplementasikan seperti ini**. Endpoint core-engine YANG NYATA (v0.6+):
+> `/health`, `/ahsp`, `/ahsp/{code}`, `/regions`, `/rab/hsp`, `/rab/calculate`,
+> `/rab/validate`, `/rab/build`, `/rab/export/excel`, `/schedule/s-curve`,
+> `/schedule/cpm`, `/schedule/plan`, `/scenario/simulate`, `/geometry/volume`,
+> `/geometry/elements`, `/wbs/sections`, `/tkg/validate|render|takeoff`,
+> `/takeoff/{baja,atap,kusen,mep,mep-advanced,smkk,tanah,arsitektur}` — lihat
+> `docs/ai-map/MAP.md` (akurat, live) dan `services/core-engine/app/main.py`
+> (sumber kebenaran). Tidak ada Firebase Auth/Firestore versioned RAB di
+> implementasi nyata — proyek disimpan via `apps/web/src/lib/projects`
+> (Firestore ATAU fallback localStorage, jauh lebih sederhana dari yang
+> didokumentasikan di sini). Dibiarkan sbg arsip histori desain awal, BUKAN
+> kontrak API yang berlaku — jangan diimplementasikan sesuai isi file ini.
+
 > API reference untuk Core Engine (FastAPI / Python).
 > Service ini menangani semua kalkulasi deterministik: RAB, jadwal, validasi, dan export.
 

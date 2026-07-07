@@ -4,6 +4,11 @@
 > tanpa membaca semua file. **Baca file spesifik HANYA sesuai task** (lihat Router).
 > Ini bukan tempat menaruh detail — ini peta. Detail ada di file tujuan.
 
+> **Konteks produk (1 baris):** PAAX adalah AI-centric — AI adalah lapisan
+> interpretasi/asistensi di HAMPIR SETIAP tahap (baca gambar, susun RAB,
+> chat insinyur), bukan fitur tempelan di satu tempat. Detail: `CLAUDE.md`
+> §0.1. Tapi lapisan itu selalu dibatasi tegas oleh aturan #1 di bawah.
+
 ## 2 aturan yang TAK BOLEH dilanggar (detail: `CLAUDE.md` §1 & §9)
 1. **ATURAN EMAS** — angka final (RAB/HSP/volume/durasi/tanggal/Kurva-S/skenario)
    SELALU dari engine Python (`services/core-engine`). AI & TypeScript **tidak

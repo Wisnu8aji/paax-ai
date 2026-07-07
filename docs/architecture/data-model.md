@@ -1,7 +1,18 @@
 # PAAX AI — Data Model Documentation
 
-> Dokumentasi lengkap Firestore data model untuk PAAX AI v0.3.
-> Semua koleksi, field definitions, relationships, dan indexing strategy.
+> ⚠️ **SANGAT USANG — DITEMUKAN 2026-07-05 saat audit dokumentasi.** Model
+> data v0.3 ini (koleksi `organizations`/`rabVersions`/`scheduleVersions`
+> ber-versi dgn RBAC multi-tenant penuh) **TIDAK PERNAH diimplementasikan
+> seperti ini**. Penyimpanan proyek nyata jauh lebih sederhana:
+> `apps/web/src/lib/projects` (Firestore dgn fallback localStorage bila env
+> Firebase kosong, tanpa struktur org/quota/RBAC bertingkat ini), draft RAB
+> per-proyek via `rab-repository.ts` (input terstruktur, BUKAN versioned
+> calculation result — semua angka dihitung ulang live dari
+> `services/core-engine` tiap dibuka, bukan disimpan sbg snapshot
+> `rabVersions.divisions[].items[].total`). Skema yang BERLAKU:
+> `packages/schemas/src/index.ts` (Zod, 1 sumber kebenaran, selaras
+> Pydantic). Dibiarkan sbg arsip histori desain awal, BUKAN skema data yang
+> berlaku sekarang — jangan diimplementasikan sesuai isi file ini.
 
 ---
 

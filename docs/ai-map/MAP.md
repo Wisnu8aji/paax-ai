@@ -6,9 +6,10 @@
 ## Folder utama (tanggung jawab)
 | Path | Tanggung jawab | Tidak boleh |
 |---|---|---|
-| `apps/web` | Next.js 14 — semua UI | Menghitung angka RAB |
+| `apps/web` | Next.js 15 — semua UI | Menghitung angka RAB |
 | `services/core-engine` | FastAPI Python — **semua perhitungan deterministik** | Pakai LLM untuk aritmetika |
-| `services/document-intelligence` | FastAPI Python — persepsi gambar (span/grid/tabel/elemen), TKG, work-items, bridging ke core-engine | Menetapkan harga/biaya, menghitung volume sendiri |
+| `services/document-intelligence` | FastAPI Python — persepsi gambar (span/grid/tabel/elemen), TKG, work-items, AI-assist klasifikasi/binding, bridging ke core-engine | Menetapkan harga/biaya, menghitung volume sendiri |
+| `services/ai-orchestrator` | Node/Express — tool-calling Gemini (REST manual, BUKAN Genkit) utk Engineering Chat, 7 tool | Mengarang angka final |
 | `packages/schemas` | Zod + Pydantic = 1 sumber kebenaran tipe (`src/index.ts`) | Beda antara Zod & Pydantic |
 | `data/` | AHSP + harga satuan (koefisien) | — |
 | `docs/` | Rencana, ADR, aturan halaman, strategi | — |
@@ -21,13 +22,32 @@
 /drawings/tkg/work-items
 ```
 - Logika: `app/perception/` (span/merge-run, grammar, `zone_classifier.py`,
-  `binding.py` §5, `consolidate.py`, `work_items.py`, `bridging_tanah.py`),
+  `binding.py` §5, `consolidate.py`, `work_items.py`, `bridging_tanah.py`,
+  `bridging_dinding.py`, `bridging_atap.py`, `bridging_kusen.py`,
+  `bridging_mep.py`, `bridging_kuda_kuda.py`, `bridging_arsitektur_area.py`),
   `app/perception/vector/grid_geometry.py`, `app/perception/ocr/` (PaddleOCR
   raster, opsional/lazy).
-- **Rencana (belum ada)**: `app/perception/ai_assist/` — lapisan LLM fallback
-  paralel untuk klasifikasi/binding saat rule-based gagal (`CLAUDE.md` §1.1,
-  `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md` §X2).
+- **`app/perception/ai_assist/`** (dibangun 2026-07-05, BUKAN lagi rencana):
+  lapisan LLM fallback paralel utk klasifikasi/binding saat rule-based
+  gagal (`CLAUDE.md` §1.1) — `client.py` (`GeminiAiAssistClient`),
+  `dimension_assist.py`, `zone_assist.py`, `wall_assist.py`,
+  `roof_frame_assist.py`, `kusen_assist.py`, `mep_assist.py`,
+  `kuda_kuda_assist.py`, `arsitektur_area_assist.py`. Detail rencana asal:
+  `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md` §X2.
 - Test: `services/document-intelligence/tests/` · jalankan `pytest -q`.
+
+## AI Orchestrator — endpoint (`services/ai-orchestrator/src/index.ts`)
+```
+/health
+/chat   (POST — message, project_id, context{rab_lines,schedule})
+```
+- Logika: `src/gemini/client.ts` (REST langsung ke Gemini), `src/gemini/
+  tool-loop.ts` (loop multi-turn, guard `MAX_TOOL_TURNS`), `src/tools/*`
+  (`lookup_ahsp`, `run_scenario`, `analyze_drawing`, `query_rab`,
+  `query_schedule`, `query_progress` stub, `query_materials` stub).
+- `apps/web` BELUM memanggil service ini (wiring frontend belum dikerjakan).
+- Test: `services/ai-orchestrator/` · jalankan `pnpm --filter ai-orchestrator test`.
+- Detail: `services/ai-orchestrator/README.md`.
 
 ## Engine — endpoint (`services/core-engine/app/main.py`)
 ```

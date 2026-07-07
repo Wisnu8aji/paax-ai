@@ -1,6 +1,19 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-05** (Task 4 Codex — bridging arsitektur area
+> **UPDATE 2026-07-05 malam — PR #39 & #40 SEKARANG MERGED.** Dikonfirmasi
+> ulang `gh pr view` + `git log origin/main` sesi Claude berikutnya: kedua PR
+> yang dirujuk di seluruh isi file ini sbg "draft"/"belum merge" (Task 1-4,
+> AIO_01/02, Task 3) **sudah di-merge ke `main`** (HEAD `78b963c`), bersama
+> seluruh PR historis lain hari itu (#29-#38). Semua angka test di bawah
+> re-verified BERSIH di `main` pasca-merge (tidak ada regresi): document-
+> intelligence 272 passed/5 skipped, core-engine 280 passed, schemas 14
+> passed, web 47 passed, ai-orchestrator 30 passed. Detail lengkap:
+> `report-remote/REPORT_REKAP_KERJA_CODEX_MINGGU_2026-07-05.md` &
+> `report-remote/REPORT_DAILY_SUMMARY_CODEX_2026-07-05.md`. Task 5 (bridging
+> 4 sub-domain arsitektur sisa) TETAP belum dijalankan (dihentikan sengaja
+> oleh owner) — status ini TIDAK berubah oleh merge di atas.
+>
+> Update sebelumnya: **2026-07-05** (Task 4 Codex — bridging arsitektur area
 > keramik dinding basah/plafon/waterproofing — diverifikasi Claude BERSIH,
 > tidak ada temuan masalah. Task 5 baru ditulis: bridging 4 sub-domain
 > `ArsitekturRequest` sisa (pondasi batu/lantai/atap miring/aanstamping),
@@ -8,7 +21,9 @@
 > & TASK 5 di bawah. Riwayat Task 1-3 (juga bersih): §TASK 1-3
 > TERVERIFIKASI lebih bawah. Konteks approval ai-orchestrator &
 > koreksi pola kerja: §KOREKSI POLA KERJA & AI-ORCHESTRATOR DISETUJUI
-> lebih bawah).
+> lebih bawah. Catatan "BELUM di-commit" di bagian-bagian di bawah ini
+> merujuk ke titik waktu SEBELUM Task 1-4 Codex mengcommit & PR di-merge —
+> dibiarkan apa adanya sbg riwayat, jangan dibaca sbg status commit terkini).
 
 ## TASK 4 TERVERIFIKASI BERSIH & TASK 5 DITULIS (Claude, 2026-07-05)
 

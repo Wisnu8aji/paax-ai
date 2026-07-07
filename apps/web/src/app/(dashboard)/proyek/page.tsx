@@ -47,8 +47,8 @@ export default function ProyekPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader
-        title="Proyek"
-        subtitle={`Kelola semua proyek konstruksi Anda - ${backend === 'firestore' ? 'Firestore' : 'localStorage fallback'}`}
+        title="Project Studio"
+        subtitle={`Pusat kerja proyek — pilih proyek lalu akses Drawing Intelligence, Cost & Quantity Analysis, dan Schedule Planning (${backend === 'firestore' ? 'Firestore' : 'localStorage fallback'})`}
         actions={
           <Button onClick={() => openOverlay('newProject')}>
             <Plus size={15} /> Buat Proyek Baru
@@ -81,7 +81,7 @@ export default function ProyekPage() {
           />
         </Card>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }} className="pax-grid-3">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }} className="pax-grid-3 pax-stagger">
           {projects.map((p) => (
             <Card key={p.id} hover padding={18} onClick={() => router.push(`/proyek/${p.id}`)}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 9 }}>

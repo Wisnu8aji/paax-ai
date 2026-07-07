@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { useEffect, use } from 'react';
+import { usePathname } from 'next/navigation';
 import {
   ChevronRight,
   ArrowLeft,
@@ -14,6 +15,15 @@ import { Card, StatusPill, EmptyState } from '@/components/ui';
 import { useProjects } from '@/lib/projects/projects-context';
 import { PROJECT_STATUS_LABEL, PROJECT_STATUS_TONE } from '@/lib/projects/types';
 
+/** Tab modul Project Studio (nama baru per utama.txt; route lama tetap). */
+const MODULE_TABS = [
+  { seg: '', label: 'Overview' },
+  { seg: '/gambar-kerja', label: 'Drawing Intelligence' },
+  { seg: '/rab', label: 'Cost & Quantity' },
+  { seg: '/schedule', label: 'Schedule Planning' },
+  { seg: '/site-agent', label: 'Site Agent' },
+];
+
 export default function ProjectDetailLayout({
   children,
   params,
@@ -22,6 +32,7 @@ export default function ProjectDetailLayout({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = use(params);
+  const pathname = usePathname();
   const { getProject, loading } = useProjects();
   const project = getProject(projectId);
 
@@ -51,7 +62,7 @@ export default function ProjectDetailLayout({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
         <Link href="/proyek" style={{ color: 'var(--text2)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
-          <ArrowLeft size={13} /> Proyek
+          <ArrowLeft size={13} /> Project Studio
         </Link>
         <ChevronRight size={13} color="var(--text3)" />
         <Link href={`/proyek/${projectId}`} style={{ color: 'var(--text)', fontWeight: 600, textDecoration: 'none' }}>
@@ -74,9 +85,41 @@ export default function ProjectDetailLayout({
             <ProjectSwitcher currentProjectId={projectId} />
           </div>
         </div>
+
+        {/* Tab modul studio */}
+        <nav
+          aria-label="Modul proyek"
+          style={{ display: 'flex', gap: 4, marginTop: 14, borderTop: '1px solid var(--border-soft)', paddingTop: 12, flexWrap: 'wrap' }}
+        >
+          {MODULE_TABS.map((t) => {
+            const href = `/proyek/${projectId}${t.seg}`;
+            const active = t.seg === '' ? pathname === href : pathname.startsWith(href);
+            return (
+              <Link
+                key={t.label}
+                href={href}
+                aria-current={active ? 'page' : undefined}
+                className={active ? '' : 'pax-btn-ghost'}
+                style={{
+                  padding: '7px 13px',
+                  borderRadius: 999,
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  background: active ? 'var(--rail-grad)' : 'transparent',
+                  color: active ? '#fff' : 'var(--text2)',
+                  boxShadow: active ? '0 6px 16px rgba(30,40,50,0.18)' : 'none',
+                  transition: 'background .22s var(--ease), color .22s var(--ease), box-shadow .22s var(--ease)',
+                }}
+              >
+                {t.label}
+              </Link>
+            );
+          })}
+        </nav>
       </Card>
 
-      <div className="pax-fade">{children}</div>
+      <div className="pax-fade" key={pathname}>{children}</div>
     </div>
   );
 }

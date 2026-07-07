@@ -1,6 +1,15 @@
 # Halaman RAB Tester (Dev)
 
-Route: `/rab-tester`. Status: **[ada]** — halaman uji internal, BUKAN untuk
+> ⚠️ **USANG — DITEMUKAN 2026-07-05.** Route `/rab-tester` **sudah dihapus**
+> dari `apps/web` (dicek langsung: tidak ada folder route ini lagi di
+> `apps/web/src/app`). Halaman uji manual/harness ini sudah tidak ada;
+> fungsi verifikasi engine sekarang cukup lewat `pytest` di
+> `services/core-engine` + halaman produk nyata (`/proyek/[id]/rab`).
+> Dibiarkan sbg arsip histori, hapus baris `rab-tester.md` dari indeks
+> `docs/pages/README.md` §2 kapan-kapan saat dirapikan (belum dihapus sesi
+> ini krn instruksi audit: jangan hapus konten, hanya tandai).
+
+Route: `/rab-tester`. Status: **[dihapus]** — halaman uji internal, BUKAN untuk
 end-user.
 
 > Baca [README.md](README.md) §1 (Aturan Emas) dulu.

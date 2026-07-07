@@ -5,37 +5,34 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowRight,
   Plus,
-  Receipt,
   MapPin,
   AlertTriangle,
   Calculator,
   FileImage,
   CalendarClock,
   FileSpreadsheet,
-  FolderKanban,
-  TrendingUp,
   HeartPulse,
 } from 'lucide-react';
-import { Card, StatusPill, Button, ProgressBar, PageHeader, EmptyState } from '@/components/ui';
-import { DonutChart, HBarList, ColumnChart, RingGauge } from '@/components/charts/dashboard-charts';
+import { Card, StatusPill, Button, ProgressBar, EmptyState } from '@/components/ui';
+import { DonutChart, HBarList, WaveSpark, RingGauge } from '@/components/charts/dashboard-charts';
 import { useShell } from '@/components/app-shell/shell-context';
-import { quickActions } from '@/lib/mock/workspace';
+import { quickActions, currentUser } from '@/lib/mock/workspace';
 import { formatRupiahCompact } from '@/lib/format';
 import { useProjects } from '@/lib/projects/projects-context';
 import { PROJECT_STATUS_LABEL, PROJECT_STATUS_TONE, type Project, type ProjectStatus } from '@/lib/projects/types';
 
 /**
- * Dashboard bisnis civil engineering.
- * ATURAN EMAS: semua angka di halaman ini adalah METADATA TERSIMPAN proyek
- * (progress, warnings, health, cache rabValue dari engine). Chart hanya
- * MENAMPILKAN nilai itu — tidak ada perhitungan RAB/HSP di frontend.
+ * OVERVIEW (rombak 2026-07-07, komposisi referensi G:\Dashboard\dashboard utama):
+ * kartu statistik bergelombang (1 gelap), tabel aktivitas, donut status,
+ * kolom kanan profil + bar progres. ATURAN EMAS: semua angka = metadata
+ * tersimpan / cache hasil engine — chart hanya MENAMPILKAN.
  */
 
 const quickIcons: Record<string, ReactNode> = {
-  rab: <Calculator size={16} />,
-  gambar: <FileImage size={16} />,
-  jadwal: <CalendarClock size={16} />,
-  laporan: <FileSpreadsheet size={16} />,
+  rab: <Calculator size={15} />,
+  gambar: <FileImage size={15} />,
+  jadwal: <CalendarClock size={15} />,
+  laporan: <FileSpreadsheet size={15} />,
 };
 
 const STATUS_CHART_COLOR: Record<ProjectStatus, string> = {
@@ -51,62 +48,60 @@ function rabDisplay(project: Project): string {
     : project.rabValue.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
 }
 
-function KpiCard({
+/** Kartu statistik bergelombang ala referensi; `dark` = kartu gelap ke-3. */
+function WaveStat({
   label,
   value,
+  badge,
+  values,
+  dark = false,
+  color,
   sub,
-  icon,
-  pill,
-  delay = 0,
 }: {
   label: string;
   value: ReactNode;
-  sub?: ReactNode;
-  icon: ReactNode;
-  pill?: ReactNode;
-  delay?: number;
+  badge?: string;
+  values: number[];
+  dark?: boolean;
+  color?: string;
+  sub?: string;
 }) {
   return (
     <div
-      className="pax-glass pax-glass-edge pax-card-hover pax-fade"
+      className="pax-card-hover"
       style={{
-        borderRadius: 16,
-        padding: '18px 20px',
-        boxShadow: 'var(--shadow-card)',
+        borderRadius: 18,
+        overflow: 'hidden',
+        background: dark ? 'var(--rail-grad)' : 'var(--elev)',
+        border: dark ? 'none' : '1px solid var(--border)',
+        boxShadow: dark ? 'var(--shadow-rail)' : 'var(--shadow-card)',
         display: 'flex',
         flexDirection: 'column',
-        gap: 12,
-        transition: 'all .2s',
-        animationDelay: `${delay}ms`,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text2)' }}>
-          {label}
-        </span>
-        <span
-          aria-hidden="true"
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 10,
-            background: 'var(--gold-soft)',
-            border: '1px solid var(--gold-bd)',
-            color: 'var(--gold)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {icon}
-        </span>
+      <div style={{ padding: '16px 18px 6px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+        <div>
+          <div style={{ fontSize: 12.5, fontWeight: 600, color: dark ? 'rgba(255,255,255,0.85)' : 'var(--text)' }}>{label}</div>
+          <div className="pax-mono" style={{ fontSize: 'clamp(15px, 1.4vw, 21px)', fontWeight: 600, marginTop: 6, color: dark ? '#fff' : 'var(--text)', lineHeight: 1.1, overflowWrap: 'anywhere' }}>
+            {value}
+          </div>
+          {sub && (
+            <div style={{ fontSize: 10, marginTop: 5, color: dark ? 'rgba(255,255,255,0.55)' : 'var(--text3)' }}>{sub}</div>
+          )}
+        </div>
+        {badge && (
+          <span className="pax-mono" style={{ fontSize: 10.5, fontWeight: 600, color: dark ? 'rgba(255,255,255,0.75)' : 'var(--text2)' }}>
+            {badge}
+          </span>
+        )}
       </div>
-      <div className="pax-mono" style={{ fontSize: 25, fontWeight: 600, color: 'var(--text)', lineHeight: 1 }}>
-        {value}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 18 }}>
-        {pill}
-        {sub && <span style={{ fontSize: 11, color: 'var(--text3)' }}>{sub}</span>}
+      <div style={{ marginTop: 'auto' }}>
+        <WaveSpark
+          values={values}
+          height={52}
+          color={dark ? 'rgba(255,255,255,0.9)' : (color ?? 'var(--chart-1)')}
+          fillOpacity={dark ? 0.18 : 0.12}
+        />
       </div>
     </div>
   );
@@ -115,13 +110,13 @@ function KpiCard({
 function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-      <span className="pax-display" style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{children}</span>
+      <span className="pax-display" style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>{children}</span>
       {action}
     </div>
   );
 }
 
-export default function DashboardPage() {
+export default function OverviewPage() {
   const router = useRouter();
   const { openOverlay } = useShell();
   const { projects, loading } = useProjects();
@@ -135,6 +130,11 @@ export default function DashboardPage() {
     ? Math.round(projects.reduce((sum, p) => sum + p.progress, 0) / projects.length)
     : 0;
 
+  // Deret gelombang dari nilai TERSIMPAN per proyek (murni tampilan).
+  const rabSeries = projects.map((p) => (p.rabValue ?? 0) / 1e6);
+  const progressSeries = projects.map((p) => p.progress);
+  const healthSeries = projects.map((p) => p.health);
+
   const statusSlices = (Object.keys(PROJECT_STATUS_LABEL) as ProjectStatus[])
     .map((status) => ({
       label: PROJECT_STATUS_LABEL[status],
@@ -146,52 +146,125 @@ export default function DashboardPage() {
   const warningProjects = projects.filter((p) => p.warnings > 0);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <PageHeader
-        title="Dashboard"
-        subtitle="Ringkasan portfolio & aktivitas PAAX Workspace"
-        actions={
-          <Button onClick={() => openOverlay('newProject')}>
-            <Plus size={15} /> Proyek Baru
-          </Button>
-        }
-      />
-
-      {/* KPI */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }} className="pax-grid-4">
-        <KpiCard
-          label="Nilai Portfolio RAB"
-          icon={<Receipt size={16} />}
-          value={withRab.length ? formatRupiahCompact(portfolioValue) : 'Belum dihitung'}
-          pill={withRab.length === 0 ? <StatusPill tone="neutral">Menunggu Core Engine</StatusPill> : undefined}
-          sub={withRab.length ? `${withRab.length} dari ${projects.length} proyek (cache engine)` : `${projects.length} proyek tersimpan`}
-        />
-        <KpiCard
-          label="Proyek Aktif"
-          icon={<FolderKanban size={16} />}
-          value={String(activeCount)}
-          sub={`${projects.length} total proyek`}
-          delay={50}
-        />
-        <KpiCard
-          label="Progres Rata-rata"
-          icon={<TrendingUp size={16} />}
-          value={projects.length ? `${avgProgress}%` : '-'}
-          sub="metadata progres proyek"
-          delay={100}
-        />
-        <KpiCard
-          label="Warning Terbuka"
-          icon={<AlertTriangle size={16} />}
-          value={String(totalWarnings)}
-          pill={totalWarnings > 0 ? <StatusPill tone="warn">PERLU TINDAKAN</StatusPill> : <StatusPill tone="ok">BERSIH</StatusPill>}
-          delay={150}
-        />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Header */}
+      <div className="pax-rise" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '2px 2px 0' }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <h1 className="pax-display" style={{ fontSize: 19, fontWeight: 800, color: 'var(--text)', margin: 0 }}>Overview</h1>
+          <p style={{ fontSize: 11.5, color: 'var(--text3)', margin: '3px 0 0' }}>Ringkasan portfolio & aktivitas workspace</p>
+        </div>
+        <Button onClick={() => openOverlay('newProject')}>
+          <Plus size={14} /> Proyek Baru
+        </Button>
       </div>
 
-      {/* Chart utama: progres + komposisi status */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 14 }} className="pax-grid-2">
-        <Card padding={20} className="pax-fade">
+      {/* Grid utama: 3 kartu statistik + kolom kanan (profil) */}
+      <div
+        className="pax-stagger pax-grid-hero"
+        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 0.9fr', gap: 14, alignItems: 'stretch' }}
+      >
+        <WaveStat
+          label="Nilai Portfolio"
+          value={withRab.length ? formatRupiahCompact(portfolioValue) : 'Belum dihitung'}
+          badge={withRab.length ? `${withRab.length}/${projects.length}` : undefined}
+          values={rabSeries}
+          color="var(--chart-2)"
+          sub="cache hasil Core Engine"
+        />
+        <WaveStat
+          label="Proyek Aktif"
+          value={String(activeCount)}
+          badge={`${projects.length} total`}
+          values={healthSeries}
+          color="var(--chart-1)"
+          sub="status tersimpan proyek"
+        />
+        <WaveStat
+          label="Progres Rata-rata"
+          value={projects.length ? `${avgProgress}%` : '—'}
+          badge={totalWarnings > 0 ? `${totalWarnings} warning` : undefined}
+          values={progressSeries}
+          dark
+          sub="metadata progres proyek"
+        />
+
+        {/* Kolom kanan: kartu profil (referensi) */}
+        <div
+          className="pax-card-hover"
+          style={{
+            gridRow: 'span 2',
+            borderRadius: 18,
+            background: 'var(--surface)',
+            border: '1px solid var(--border-soft)',
+            padding: '26px 18px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 4,
+          }}
+        >
+          <span
+            style={{
+              width: 62,
+              height: 62,
+              borderRadius: 18,
+              background: 'var(--elev)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--shadow-card)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 20,
+              fontWeight: 800,
+              color: 'var(--text)',
+            }}
+          >
+            {currentUser.initials}
+          </span>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginTop: 10 }}>{currentUser.name}</div>
+          <div style={{ fontSize: 11, color: 'var(--text3)' }}>Civil Engineer · PAAX {currentUser.role}</div>
+
+          {/* Progres proyek — bar vertikal ala "Daily Sale" */}
+          <div style={{ width: '100%', marginTop: 18, background: 'var(--elev)', border: '1px solid var(--border)', borderRadius: 14, padding: '14px 14px 10px' }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>Progres Proyek</div>
+            {projects.length === 0 ? (
+              <div style={{ fontSize: 11, color: 'var(--text3)', padding: '8px 0 12px' }}>Belum ada proyek.</div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 92 }}>
+                {projects.slice(0, 7).map((p, i) => (
+                  <div key={p.id} title={`${p.name}: ${p.progress}%`} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, height: '100%', justifyContent: 'flex-end' }}>
+                    <div style={{ width: 9, height: '100%', borderRadius: 6, background: 'var(--surface2)', display: 'flex', alignItems: 'flex-end', overflow: 'hidden' }}>
+                      <div
+                        className="pax-bar-grow"
+                        style={{ width: '100%', height: `${Math.max(4, p.progress)}%`, borderRadius: 6, background: i % 2 === 0 ? 'var(--chart-1)' : 'var(--chart-4)', animationDelay: `${i * 60}ms` }}
+                      />
+                    </div>
+                    <span style={{ fontSize: 8.5, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase' }}>
+                      {p.name.slice(0, 2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Health ringkas */}
+          <div style={{ width: '100%', marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {projects.slice(0, 3).map((p) => (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <RingGauge pct={p.health} size={38} thickness={4} color={p.health >= 80 ? 'var(--chart-1)' : 'var(--warn-fg)'} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                  <div style={{ fontSize: 9.5, color: 'var(--text3)' }}>{p.lastActivity}</div>
+                </div>
+                <HeartPulse size={13} color={p.health >= 80 ? 'var(--ok-dot)' : 'var(--warn-fg)'} aria-hidden="true" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Baris 2: tabel aktivitas (2 kolom) + donut */}
+        <Card padding={20} radius={18} style={{ gridColumn: 'span 2' }}>
           <SectionTitle
             action={
               <span onClick={() => router.push('/proyek')} style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -199,12 +272,68 @@ export default function DashboardPage() {
               </span>
             }
           >
-            Progres per Proyek
+            Aktivitas Proyek
           </SectionTitle>
           {loading ? (
             <EmptyState title="Memuat proyek..." />
           ) : projects.length === 0 ? (
-            <EmptyState title="Belum ada proyek" message="Buat proyek pertama untuk melihat progres di sini." />
+            <EmptyState title="Belum ada proyek" message="Buat proyek pertama untuk melihat aktivitas di sini." />
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  {['Proyek', 'Aktivitas', 'Nilai RAB', 'Status'].map((h) => (
+                    <th key={h} style={{ textAlign: 'left', fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text3)', padding: '4px 8px 9px' }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {projects.slice(0, 5).map((p) => (
+                  <tr
+                    key={p.id}
+                    className="pax-row-hover"
+                    onClick={() => router.push(`/proyek/${p.id}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <td style={{ padding: '9px 8px', fontSize: 12.5, fontWeight: 600, color: 'var(--text)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</td>
+                    <td style={{ padding: '9px 8px', fontSize: 11.5, color: 'var(--text2)', whiteSpace: 'nowrap' }}>{p.lastActivity}</td>
+                    <td className="pax-mono" style={{ padding: '9px 8px', fontSize: 12, color: p.rabValue === null ? 'var(--text3)' : 'var(--text)', whiteSpace: 'nowrap' }}>
+                      {p.rabValue === null ? 'belum' : formatRupiahCompact(p.rabValue)}
+                    </td>
+                    <td style={{ padding: '9px 8px', minWidth: 90 }}>
+                      <div
+                        role="img"
+                        aria-label={`Progres ${p.progress}%`}
+                        style={{ height: 5, borderRadius: 4, background: 'var(--surface2)', overflow: 'hidden' }}
+                      >
+                        <div style={{ height: '100%', width: `${p.progress}%`, borderRadius: 4, background: STATUS_CHART_COLOR[p.status], transition: 'width .6s var(--ease)' }} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
+
+        <Card padding={20} radius={18}>
+          <SectionTitle>Status Proyek</SectionTitle>
+          {projects.length === 0 ? (
+            <EmptyState title="Belum ada data" message="Status muncul setelah proyek dibuat." />
+          ) : (
+            <DonutChart slices={statusSlices} size={130} thickness={18} centerValue={projects.length} centerLabel="Proyek" />
+          )}
+        </Card>
+      </div>
+
+      {/* Progres per proyek + warning */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 14 }} className="pax-grid-2">
+        <Card padding={20} radius={18} className="pax-rise">
+          <SectionTitle>Progres per Proyek</SectionTitle>
+          {projects.length === 0 ? (
+            <EmptyState title="Belum ada proyek" />
           ) : (
             <HBarList
               rows={projects.map((p, i) => ({
@@ -217,114 +346,53 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        <Card padding={20} className="pax-fade" style={{ animationDelay: '60ms' }}>
-          <SectionTitle>Komposisi Status</SectionTitle>
-          {projects.length === 0 ? (
-            <EmptyState title="Belum ada data" message="Status proyek muncul setelah proyek dibuat." />
+        <Card padding={20} radius={18} className="pax-rise" style={{ animationDelay: '60ms' }}>
+          <SectionTitle>Warning Proyek</SectionTitle>
+          {warningProjects.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {warningProjects.map((project) => (
+                <div
+                  key={project.id}
+                  className="pax-row-hover"
+                  onClick={() => router.push(`/proyek/${project.id}`)}
+                  style={{ display: 'flex', gap: 11, padding: '9px 8px', borderRadius: 10, cursor: 'pointer' }}
+                >
+                  <AlertTriangle size={13} color="var(--warn-fg)" style={{ marginTop: 2, flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.4 }}>{project.warnings} warning terbuka</div>
+                    <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2 }}>{project.name}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
-            <DonutChart
-              slices={statusSlices}
-              centerValue={projects.length}
-              centerLabel="Proyek"
-            />
+            <EmptyState title="Belum ada warning" message="Warning muncul setelah validasi proyek berjalan." />
           )}
         </Card>
-      </div>
-
-      {/* Nilai RAB + health + warning */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 14 }} className="pax-grid-2">
-        <Card padding={20} className="pax-fade" style={{ animationDelay: '90ms' }}>
-          <SectionTitle>Nilai Draft RAB per Proyek</SectionTitle>
-          {projects.length === 0 ? (
-            <EmptyState title="Belum ada data" message="Nilai muncul setelah RAB dihitung Core Engine." />
-          ) : (
-            <>
-              <ColumnChart
-                data={projects.map((p, i) => ({
-                  label: p.name,
-                  value: p.rabValue,
-                  valueLabel: p.rabValue === null ? 'belum' : formatRupiahCompact(p.rabValue),
-                  color: i % 2 === 0 ? 'var(--chart-1)' : 'var(--chart-4)',
-                }))}
-              />
-              <p style={{ margin: '8px 0 0', fontSize: 10.5, color: 'var(--text3)' }}>
-                Nilai adalah cache hasil Core Engine per proyek — bukan dihitung di halaman ini.
-              </p>
-            </>
-          )}
-        </Card>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Card padding={20} className="pax-fade" style={{ animationDelay: '120ms' }}>
-            <SectionTitle>Health Proyek</SectionTitle>
-            {projects.length === 0 ? (
-              <EmptyState title="Belum ada data" />
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {projects.slice(0, 4).map((p) => (
-                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <RingGauge pct={p.health} color={p.health >= 80 ? 'var(--chart-1)' : 'var(--warn-fg)'} />
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {p.name}
-                      </div>
-                      <div style={{ fontSize: 10.5, color: 'var(--text3)' }}>{p.lastActivity}</div>
-                    </div>
-                    <HeartPulse size={14} color={p.health >= 80 ? 'var(--ok-dot)' : 'var(--warn-fg)'} aria-hidden="true" />
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-
-          <Card padding={20} className="pax-fade" style={{ animationDelay: '150ms' }}>
-            <SectionTitle>Warning Proyek</SectionTitle>
-            {warningProjects.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {warningProjects.map((project) => (
-                  <div
-                    key={project.id}
-                    className="pax-row-hover"
-                    onClick={() => router.push(`/proyek/${project.id}`)}
-                    style={{ display: 'flex', gap: 11, padding: '10px 8px', borderRadius: 10, cursor: 'pointer' }}
-                  >
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', marginTop: 5, flexShrink: 0, background: 'var(--warn-fg)' }} />
-                    <div>
-                      <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.4 }}>{project.warnings} warning terbuka</div>
-                      <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 3 }}>{project.name}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState title="Belum ada warning" message="Warning muncul setelah validasi proyek berjalan." />
-            )}
-          </Card>
-        </div>
       </div>
 
       {/* Quick actions */}
-      <Card padding="16px 18px" className="pax-fade" style={{ animationDelay: '180ms' }}>
-        <div className="pax-display" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 13 }}>Quick Actions</div>
+      <Card padding="16px 18px" radius={18} className="pax-rise" style={{ animationDelay: '90ms' }}>
+        <div className="pax-display" style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>Quick Actions</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }} className="pax-grid-4">
           {quickActions.map((q) => (
             <div
               key={q.key}
               onClick={() => router.push(q.href)}
-              className="pax-card-hover"
-              style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '13px 14px', borderRadius: 12, background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', transition: 'all .15s' }}
+              className="pax-card-hover pax-press"
+              style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '12px 14px', borderRadius: 13, background: 'var(--surface)', border: '1px solid var(--border-soft)', cursor: 'pointer' }}
             >
-              <span style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--accent)', color: 'var(--accent-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--rail-grad)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {quickIcons[q.key]}
               </span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', lineHeight: 1.25 }}>{q.label}</span>
+              <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text)', lineHeight: 1.25 }}>{q.label}</span>
             </div>
           ))}
         </div>
       </Card>
 
       {/* Proyek aktif */}
-      <Card padding={18} className="pax-fade" style={{ animationDelay: '210ms' }}>
+      <Card padding={18} radius={18} className="pax-rise" style={{ animationDelay: '120ms' }}>
         <SectionTitle
           action={
             <span onClick={() => router.push('/proyek')} style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text2)', cursor: 'pointer' }}>Semua</span>
@@ -342,29 +410,29 @@ export default function DashboardPage() {
               <div
                 key={p.id}
                 onClick={() => router.push(`/proyek/${p.id}`)}
-                className="pax-card-hover"
-                style={{ padding: 14, borderRadius: 13, background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', transition: 'all .15s' }}
+                className="pax-card-hover pax-press"
+                style={{ padding: 14, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border-soft)', cursor: 'pointer' }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 9 }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{p.name}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3, fontSize: 11, color: 'var(--text2)' }}>
-                      <MapPin size={12} /> {p.location || 'Lokasi belum diisi'}
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>{p.name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3, fontSize: 10.5, color: 'var(--text2)' }}>
+                      <MapPin size={11} /> {p.location || 'Lokasi belum diisi'}
                     </div>
                   </div>
                   <StatusPill tone={PROJECT_STATUS_TONE[p.status]}>{PROJECT_STATUS_LABEL[p.status]}</StatusPill>
                 </div>
-                <div className="pax-mono" style={{ fontSize: 14.5, fontWeight: 600, color: p.rabValue === null ? 'var(--text3)' : 'var(--text)', marginBottom: 10 }}>{rabDisplay(p)}</div>
+                <div className="pax-mono" style={{ fontSize: 13.5, fontWeight: 600, color: p.rabValue === null ? 'var(--text3)' : 'var(--text)', marginBottom: 10 }}>{rabDisplay(p)}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, marginBottom: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 4 }}>
                       <span style={{ color: 'var(--text2)' }}>Progress</span>
                       <span className="pax-mono" style={{ fontWeight: 600, color: 'var(--text)' }}>{p.progress}%</span>
                     </div>
                     <ProgressBar value={p.progress} />
                   </div>
                   <div className="pax-mono" style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: p.warnings ? 'var(--warn-fg)' : 'var(--text3)' }}>
-                    <AlertTriangle size={13} /> {p.warnings}
+                    <AlertTriangle size={12} /> {p.warnings}
                   </div>
                 </div>
               </div>
