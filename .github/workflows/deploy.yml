@@ -1,0 +1,89 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        type: choice
+        required: true
+        options:
+          - staging
+          - production
+        default: 'staging'
+
+env:
+  GCP_REGION: asia-southeast2
+  ARTIFACT_REGISTRY: asia-southeast2-docker.pkg.dev
+  # Assume user will set GCP_PROJECT_ID secret
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # If triggered by push to main, environment is staging. If manual, use input.
+    environment: ${{ github.event_name == 'push' && 'staging' || github.event.inputs.environment }}
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.ARTIFACT_REGISTRY }}
+
+      - name: Build and Push Core Engine
+        run: |
+          IMAGE="${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/paax-repo/core-engine:${{ github.sha }}"
+          docker build -t $IMAGE -f services/core-engine/Dockerfile .
+          docker push $IMAGE
+          echo "CORE_IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      - name: Build and Push Document Intelligence
+        run: |
+          IMAGE="${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/paax-repo/document-intelligence:${{ github.sha }}"
+          docker build -t $IMAGE -f services/document-intelligence/Dockerfile .
+          docker push $IMAGE
+          echo "DOC_IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      - name: Build and Push AI Orchestrator
+        run: |
+          IMAGE="${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/paax-repo/ai-orchestrator:${{ github.sha }}"
+          docker build -t $IMAGE -f services/ai-orchestrator/Dockerfile .
+          docker push $IMAGE
+          echo "AI_IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      - name: Deploy Core Engine to Cloud Run
+        run: |
+          gcloud run deploy core-engine \
+            --image ${{ env.CORE_IMAGE }} \
+            --region ${{ env.GCP_REGION }} \
+            --allow-unauthenticated \
+            --set-env-vars="ENV=${{ github.event_name == 'push' && 'staging' || github.event.inputs.environment }}"
+
+      - name: Deploy Document Intelligence to Cloud Run
+        run: |
+          gcloud run deploy document-intelligence \
+            --image ${{ env.DOC_IMAGE }} \
+            --region ${{ env.GCP_REGION }} \
+            --allow-unauthenticated \
+            --set-env-vars="ENV=${{ github.event_name == 'push' && 'staging' || github.event.inputs.environment }}"
+
+      - name: Deploy AI Orchestrator to Cloud Run
+        run: |
+          gcloud run deploy ai-orchestrator \
+            --image ${{ env.AI_IMAGE }} \
+            --region ${{ env.GCP_REGION }} \
+            --allow-unauthenticated \
+            --set-secrets="GEMINI_API_KEY=GEMINI_API_KEY:latest,DB_API_URL=DB_API_URL:latest" \
+            --set-env-vars="ENV=${{ github.event_name == 'push' && 'staging' || github.event.inputs.environment }}"
