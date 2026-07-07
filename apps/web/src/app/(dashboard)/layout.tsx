@@ -3,8 +3,7 @@
 import { useCallback, useState } from 'react';
 import { ThemeProvider, useTheme } from '@/components/theme/theme-provider';
 import { ShellContext, type OverlayName, type SettingsTab } from '@/components/app-shell/shell-context';
-import { IconRail } from '@/components/app-shell/icon-rail';
-import { NavPanel } from '@/components/app-shell/nav-panel';
+import { Sidebar } from '@/components/app-shell/sidebar';
 import Topbar from '@/components/app-shell/topbar';
 import { WorkspaceOverlays } from '@/components/app-shell/overlays';
 import { RoutePrefetcher } from '@/components/app-shell/route-prefetcher';
@@ -33,17 +32,14 @@ function Shell({ children }: { children: React.ReactNode }) {
         className="pax-scope"
         style={{
           display: 'flex',
-          gap: 16,
-          padding: 16,
           minHeight: '100vh',
           background: 'var(--bg)',
           color: 'var(--text)',
           fontFamily: 'var(--font-sans)',
         }}
       >
-        <IconRail />
-        <NavPanel collapsed={navCollapsed} />
-        <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <Sidebar />
+        <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16, padding: '16px 24px' }}>
           <Topbar />
           <div style={{ flex: 1, minWidth: 0 }} className="pax-fade">
             {children}

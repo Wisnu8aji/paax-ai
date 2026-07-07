@@ -13,6 +13,7 @@
     "@paax/schemas": "workspace:*",
     "@paax/types": "workspace:*",
     "firebase": "^11.10.0",
+    "framer-motion": "^12.42.2",
     "lucide-react": "^0.460.0",
     "next": "^15.3.0",
     "react": "^19.0.0",

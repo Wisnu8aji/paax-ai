@@ -110,40 +110,60 @@ export function WorkspaceOverlays() {
       <Modal
         open={current === 'newProject'}
         onClose={closeOverlay}
-        title="Buat Proyek Baru"
+        title="Create a project"
         footer={
           <>
-            <Button variant="secondary" onClick={closeOverlay}>Batal</Button>
+            <Button variant="secondary" onClick={closeOverlay}>Cancel</Button>
             <Button onClick={handleCreateProject} disabled={savingProject}>
-              {savingProject ? 'Menyimpan...' : 'Simpan'}
+              {savingProject ? 'Creating...' : 'Create project'}
             </Button>
           </>
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <p style={{ margin: 0, fontSize: 11, color: 'var(--text3)' }}>
-            Penyimpanan aktif: {backend === 'firestore' ? 'Firestore' : 'localStorage fallback'}.
-          </p>
-          <Field label="Nama Proyek">
-            <input className="pax-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="mis. Gedung Kuliah Terpadu" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: '8px 0' }}>
+          <Field label="What are you working on?">
+            <input className="pax-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name your project" />
           </Field>
-          <Field label="Lokasi">
-            <input className="pax-input" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Kota, Provinsi" />
-          </Field>
-          <Field label="Klien / Owner">
-            <input className="pax-input" value={form.client} onChange={(e) => setForm({ ...form, client: e.target.value })} placeholder="mis. Dinas PUPR / PT ..." />
-          </Field>
-          <Field label="Tipe Proyek">
-            <select className="pax-input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-              <option>Gedung</option>
-              <option>Infrastruktur</option>
-              <option>Renovasi</option>
-            </select>
-          </Field>
-          <Field label="Deskripsi">
-            <textarea className="pax-input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Ringkasan lingkup pekerjaan" rows={3} />
+          <Field label="What are you trying to achieve?">
+            <textarea className="pax-input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describe your project, goals, subject, etc..." rows={4} />
           </Field>
           {projectError && <p style={{ margin: 0, fontSize: 11, color: 'var(--dng-dot)' }}>{projectError}</p>}
+        </div>
+      </Modal>
+
+      {/* Connect Source Modal */}
+      <Modal
+        open={current === 'connectSource'}
+        onClose={closeOverlay}
+        title="Connect to data source"
+        footer={
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button variant="secondary" onClick={closeOverlay}>Close</Button>
+          </div>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '8px 0' }}>
+          {[
+            { label: 'Google Drive', sub: 'Import documents & sheets', icon: '☁️' },
+            { label: 'Gmail', sub: 'Import emails & attachments', icon: '📧' },
+            { label: 'Local files', sub: 'Upload PDF, DWG, Excel', icon: '📁' },
+            { label: 'GitHub', sub: 'Connect repositories', icon: '🐙' }
+          ].map(source => (
+            <button key={source.label} style={{
+              display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px',
+              background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12,
+              cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--border-hover)'}
+            onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+            >
+              <div style={{ fontSize: 24 }}>{source.icon}</div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{source.label}</div>
+                <div style={{ fontSize: 12, color: 'var(--text2)' }}>{source.sub}</div>
+              </div>
+            </button>
+          ))}
         </div>
       </Modal>
     </>
