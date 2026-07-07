@@ -98,8 +98,13 @@ from app.perception.consolidate import consolidate_document
 from app.perception.render import render_tkg_txt
 from app.perception.validate import aggregate_metrics, build_gerbang
 from app.jobs.store import JobStore
+from app.perception.analysis_cache import AnalysisCache
+from app.perception.ai_assist import AI_ASSIST_PROMPT_VERSION
+from app.perception.ai_assist.client import GEMINI_MODEL
 
 _job_store = JobStore()
+_analysis_cache = AnalysisCache()
+AI_ASSIST_FULL_VERSION = f"{AI_ASSIST_PROMPT_VERSION}:{GEMINI_MODEL}"
 
 # --- Endpoints ---
 
@@ -130,9 +135,15 @@ def _perform_analysis(
         )
     ]
 
+    pdf_bytes = None
     if os.path.exists(file_path) and file_name.lower().endswith(".pdf"):
         with open(file_path, "rb") as f:
             pdf_bytes = f.read()
+            
+        cached = _analysis_cache.get(pdf_bytes, AI_ASSIST_FULL_VERSION)
+        if cached is not None:
+            return DrawingAnalysisResponse.model_validate(cached)
+
         try:
             tkg_document, per_sheet_metrics = assemble_document_from_pdf_bytes(
                 pdf_bytes, prj_id=req.file_metadata.project_id or "prj-123",
@@ -213,7 +224,7 @@ def _perform_analysis(
             related_elements=[],
         ))
 
-    return DrawingAnalysisResponse(
+    res = DrawingAnalysisResponse(
         file_id=str(uuid.uuid4()),
         classification=classification,
         classification_confidence=classification_confidence,
@@ -228,6 +239,9 @@ def _perform_analysis(
         gerbang=gerbang_out,
         consolidated=consolidated_out,
     )
+    if pdf_bytes is not None:
+        _analysis_cache.put(pdf_bytes, AI_ASSIST_FULL_VERSION, res.model_dump())
+    return res
 
 
 @router.post("/analyze", response_model=DrawingAnalysisResponse)
@@ -317,6 +331,15 @@ async def cleanup_old_jobs(older_than_minutes: int = None):
     for jid in stale_ids:
         _job_store.delete(jid)
     return {"deleted": len(stale_ids), "job_ids": stale_ids}
+
+@router.get("/analyze/cache-stats")
+async def cache_stats():
+    return _analysis_cache.stats()
+
+@router.post("/analyze/cache-invalidate")
+async def cache_invalidate():
+    deleted = _analysis_cache.invalidate_all()
+    return {"deleted": deleted}
 
 
 @router.post("/classify")
