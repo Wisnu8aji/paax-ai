@@ -66,6 +66,21 @@ export async function runToolCallingLoop(params: {
     const response = await geminiGenerateContent({ apiKey: params.apiKey, body, fetchImpl: params.fetchImpl });
     const part = firstPart(response);
     
+    const { logUsage } = require("../usage");
+    const tenantId = params.context?.project_id || "default-tenant";
+    const usageMetadata = (response as any).usageMetadata || {};
+    
+    // Fire and forget usage logging
+    logUsage(
+      tenantId,
+      "tool_calling_turn",
+      true,
+      usageMetadata.promptTokenCount,
+      usageMetadata.candidatesTokenCount,
+      undefined,
+      false
+    ).catch(() => {});
+
     if (part?.text) {
       if (params.onEvent) {
         // pseudo-stream the text

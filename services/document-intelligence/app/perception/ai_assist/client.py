@@ -44,6 +44,7 @@ class AiAssistClient(Protocol):
         system_prompt: str,
         user_prompt: str,
         response_schema: dict[str, Any],
+        operation_name: str = "ai_assist:default",
     ) -> dict[str, Any] | None:
         ...
 
@@ -54,13 +55,14 @@ class GeminiAiAssistClient:
     model: str = GEMINI_MODEL
     temperature: float = _DEFAULT_TEMPERATURE
     timeout_seconds: float = _DEFAULT_TIMEOUT_SECONDS
+    usage_logger: Any = None
 
     @classmethod
-    def from_env(cls) -> "GeminiAiAssistClient | None":
+    def from_env(cls, usage_logger: Any = None) -> "GeminiAiAssistClient | None":
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key or not api_key.strip():
             return None
-        return cls(api_key=api_key.strip())
+        return cls(api_key=api_key.strip(), usage_logger=usage_logger)
 
     def generate_json(
         self,
@@ -68,7 +70,11 @@ class GeminiAiAssistClient:
         system_prompt: str,
         user_prompt: str,
         response_schema: dict[str, Any],
+        operation_name: str = "ai_assist:default",
     ) -> dict[str, Any] | None:
+        import time
+        start_time = time.time()
+        
         body = {
             "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
             "systemInstruction": {"parts": [{"text": system_prompt}]},
@@ -90,16 +96,40 @@ class GeminiAiAssistClient:
         try:
             with request.urlopen(req, timeout=self.timeout_seconds) as response:
                 payload = json.loads(response.read().decode("utf-8"))
-        except (error.URLError, TimeoutError, OSError, ValueError):
+        except (error.URLError, TimeoutError, OSError, ValueError) as e:
+            if self.usage_logger:
+                latency_ms = int((time.time() - start_time) * 1000)
+                self.usage_logger(operation=operation_name, success=False, latency_ms=latency_ms)
             return None
 
         try:
             text = payload["candidates"][0]["content"]["parts"][0]["text"]
             parsed = json.loads(text)
+            usage = payload.get("usageMetadata", {})
+            tokens_in = usage.get("promptTokenCount", 0)
+            tokens_out = usage.get("candidatesTokenCount", 0)
         except (KeyError, IndexError, TypeError, ValueError):
+            if self.usage_logger:
+                latency_ms = int((time.time() - start_time) * 1000)
+                self.usage_logger(operation=operation_name, success=False, latency_ms=latency_ms)
             return None
+            
         if not isinstance(parsed, dict):
+            if self.usage_logger:
+                latency_ms = int((time.time() - start_time) * 1000)
+                self.usage_logger(operation=operation_name, success=False, latency_ms=latency_ms)
             return None
+            
+        if self.usage_logger:
+            latency_ms = int((time.time() - start_time) * 1000)
+            self.usage_logger(
+                operation=operation_name,
+                success=True,
+                tokens_in=tokens_in,
+                tokens_out=tokens_out,
+                latency_ms=latency_ms
+            )
+            
         return parsed
 
 
@@ -113,5 +143,6 @@ class NullAiAssistClient:
         system_prompt: str,
         user_prompt: str,
         response_schema: dict[str, Any],
+        operation_name: str = "ai_assist:default",
     ) -> dict[str, Any] | None:
         return None
