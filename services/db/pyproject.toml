@@ -5,10 +5,14 @@ description = "Database schema and migrations for PAAX"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "sqlalchemy>=2.0",
     "alembic>=1.13",
     "psycopg2-binary>=2.9",
-    "psycopg[binary]>=3.0"
+    "psycopg[binary]>=3.0",
+    "sqlalchemy>=2.0",
+    "fastapi>=0.111.0",
+    "uvicorn>=0.30.0",
+    "asyncpg>=0.29.0",
+    "pydantic>=2.7.0"
 ]
 
 [project.optional-dependencies]
