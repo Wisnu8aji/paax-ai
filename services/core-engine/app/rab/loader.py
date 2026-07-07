@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 from typing import Dict
 
-from .models import AHSPItem, ResourcePrice
+from .models import AHSPItem, ResourcePrice, PriceBookVersion
 
 
 def data_dir() -> Path:
@@ -26,17 +26,32 @@ def data_dir() -> Path:
 class DataStore:
     def __init__(self) -> None:
         self.ahsp: Dict[str, AHSPItem] = {}
-        self.regions: Dict[str, Dict[str, ResourcePrice]] = {}
+        self.regions: Dict[str, list[PriceBookVersion]] = {}
         self.region_names: Dict[str, str] = {}
 
-    def price_book(self, region_code: str) -> Dict[str, ResourcePrice]:
-        book = self.regions.get(region_code)
-        if book is None:
+    def price_book(self, region_code: str, as_of_date: str | None = None) -> Dict[str, ResourcePrice]:
+        versions = self.regions.get(region_code)
+        if not versions:
             raise KeyError(
                 f"Wilayah '{region_code}' tidak ditemukan. "
                 f"Tersedia: {', '.join(self.regions) or '(kosong)'}"
             )
-        return book
+            
+        if not as_of_date:
+            # Return newest
+            return max(versions, key=lambda v: v.effective_date).resources
+            
+        # Filter versions <= as_of_date
+        valid = [v for v in versions if v.effective_date <= as_of_date]
+        if not valid:
+            oldest = min(versions, key=lambda v: v.effective_date).effective_date
+            raise KeyError(
+                f"Tidak ada versi buku harga yang berlaku pada atau sebelum '{as_of_date}'. "
+                f"Versi tertua yang tersedia: {oldest}"
+            )
+            
+        # Return newest among the valid ones
+        return max(valid, key=lambda v: v.effective_date).resources
 
 
 def load_data(base: Path | None = None) -> DataStore:
@@ -61,11 +76,22 @@ def load_data(base: Path | None = None) -> DataStore:
             if not isinstance(resources, list):
                 continue
             code = raw.get("region_code") or f.stem
+            effective_date = raw.get("effective_date", "2026-06-28")
             store.region_names[code] = raw.get("region", code)
+            
             book: Dict[str, ResourcePrice] = {}
             for r in resources:
                 rp = ResourcePrice(**r)
                 book[rp.code] = rp
-            store.regions[code] = book
+                
+            pb_version = PriceBookVersion(
+                effective_date=effective_date,
+                source_file=f.name,
+                resources=book
+            )
+            
+            if code not in store.regions:
+                store.regions[code] = []
+            store.regions[code].append(pb_version)
 
     return store

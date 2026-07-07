@@ -40,6 +40,13 @@ class ResourcePrice(BaseModel):
     price: float
 
 
+class PriceBookVersion(BaseModel):
+    """Satu versi buku harga untuk satu wilayah pada tanggal tertentu."""
+    effective_date: str
+    source_file: str
+    resources: dict[str, ResourcePrice]
+
+
 # ----------------------------- Output: HSP -----------------------------
 class ComponentCost(BaseModel):
     resource_code: str

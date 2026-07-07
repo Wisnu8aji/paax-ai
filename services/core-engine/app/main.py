@@ -120,6 +120,7 @@ STORE = load_data()
 class HSPRequest(BaseModel):
     ahsp_code: str
     region_code: str = "jateng"
+    as_of_date: Optional[str] = None
 
 
 class RABRequest(BaseModel):
@@ -127,6 +128,7 @@ class RABRequest(BaseModel):
     ppn_rate: float = 0.11
     overhead_override: Optional[float] = None
     rounding_mode: Literal["exact", "rounddown_int"] = "exact"
+    as_of_date: Optional[str] = None
     lines: List[RABLineInput]
 
 
@@ -135,6 +137,7 @@ class SCurveRequest(BaseModel):
     ppn_rate: float = 0.11
     period_days: int = 7
     mode: str = "sequential"
+    as_of_date: Optional[str] = None
     lines: List[RABLineInput]
 
 
@@ -212,7 +215,7 @@ def hsp(req: HSPRequest):
     if item is None:
         raise HTTPException(404, f"Item AHSP '{req.ahsp_code}' tidak ditemukan")
     try:
-        return compute_hsp(item, STORE.price_book(req.region_code))
+        return compute_hsp(item, STORE.price_book(req.region_code, req.as_of_date))
     except KeyError as e:
         raise HTTPException(400, str(e))
 
@@ -221,7 +224,7 @@ def hsp(req: HSPRequest):
 def calculate(req: RABRequest):
     try:
         return compute_rab(
-            req.lines, STORE.ahsp, STORE.price_book(req.region_code),
+            req.lines, STORE.ahsp, STORE.price_book(req.region_code, req.as_of_date),
             region=STORE.region_names.get(req.region_code, req.region_code),
             region_code=req.region_code,
             ppn_rate=req.ppn_rate,
@@ -235,7 +238,7 @@ def calculate(req: RABRequest):
 @api_router.post("/rab/validate", response_model=ValidationResult)
 def rab_validate(req: RABRequest):
     try:
-        book = STORE.price_book(req.region_code)
+        book = STORE.price_book(req.region_code, req.as_of_date)
     except KeyError as e:
         raise HTTPException(400, str(e))
     return validate_rab(
@@ -249,7 +252,7 @@ def rab_validate(req: RABRequest):
 def rab_build(req: RABRequest):
     try:
         return build_sectioned_rab(
-            req.lines, STORE.ahsp, STORE.price_book(req.region_code),
+            req.lines, STORE.ahsp, STORE.price_book(req.region_code, req.as_of_date),
             region=STORE.region_names.get(req.region_code, req.region_code),
             region_code=req.region_code, ppn_rate=req.ppn_rate,
             overhead_override=req.overhead_override, rounding_mode=req.rounding_mode,
@@ -261,7 +264,7 @@ def rab_build(req: RABRequest):
 @api_router.post("/rab/export/excel")
 def rab_export_excel(req: RABRequest):
     try:
-        book = STORE.price_book(req.region_code)
+        book = STORE.price_book(req.region_code, req.as_of_date)
         result = build_sectioned_rab(
             req.lines, STORE.ahsp, book,
             region=STORE.region_names.get(req.region_code, req.region_code),
@@ -477,7 +480,7 @@ def export_bbs(req: BbsResult):
 def s_curve(req: SCurveRequest):
     try:
         rab = compute_rab(
-            req.lines, STORE.ahsp, STORE.price_book(req.region_code),
+            req.lines, STORE.ahsp, STORE.price_book(req.region_code, req.as_of_date),
             region=STORE.region_names.get(req.region_code, req.region_code),
             region_code=req.region_code,
             ppn_rate=req.ppn_rate,
@@ -507,7 +510,7 @@ def schedule_plan(req: SchedulePlanRequest):
 def scenario_simulate(req: ScenarioConfig):
     try:
         return compute_scenarios(
-            req, STORE.ahsp, STORE.price_book(req.region_code),
+            req, STORE.ahsp, STORE.price_book(req.region_code, req.as_of_date),
             region=STORE.region_names.get(req.region_code, req.region_code),
         )
     except KeyError as e:

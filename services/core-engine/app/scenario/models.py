@@ -31,6 +31,7 @@ class ScenarioParams(BaseModel):
 
 class ScenarioConfig(BaseModel):
     region_code: str = "jateng"
+    as_of_date: Optional[str] = None
     ppn_rate: float = 0.11
     base_mode: Literal["sequential", "parallel"] = "sequential"
     crew_factor: float = Field(default=2.0, gt=0)        # pengali crew untuk skenario "tambah_crew"
