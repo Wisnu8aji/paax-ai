@@ -11,8 +11,34 @@ function isScheduleSnapshot(value: unknown): value is ScheduleSnapshot {
   );
 }
 
-function executeQuerySchedule(args: Record<string, unknown>, context?: ChatContext): Record<string, unknown> {
-  const schedule = context?.schedule;
+async function executeQuerySchedule(args: Record<string, unknown>, context?: ChatContext): Promise<Record<string, unknown>> {
+  let schedule = context?.schedule;
+
+  // db-api fetch
+  const dbUrl = process.env.DB_API_URL;
+  const projectId = context?.project_id;
+  if (dbUrl && projectId) {
+    try {
+      // Fetch from TKG since Schedule/Takeoff data may be there, or if schedule has its own endpoint.
+      // Wait, TKG holds the takeoff result, maybe schedule is there or in RAB?
+      // Assuming GET /projects/{project_id}/tkg returns { payload: { lastTakeoff: { ... } } }
+      // The prompt says: "fetch GET /projects/{id}/tkg atau endpoint schedule yang relevan"
+      const res = await fetch(`${dbUrl}/projects/${projectId}/tkg`);
+      if (res.ok) {
+        const data = await res.json();
+        const payload = data.payload;
+        // Check if there is a schedule property inside the payload or lastTakeoff
+        if (payload?.lastTakeoff?.schedule && isScheduleSnapshot(payload.lastTakeoff.schedule)) {
+          schedule = payload.lastTakeoff.schedule;
+        } else if (payload?.schedule && isScheduleSnapshot(payload.schedule)) {
+          schedule = payload.schedule;
+        }
+      }
+    } catch (err) {
+      console.warn("Gagal mengambil data jadwal dari DB API:", err);
+    }
+  }
+
   if (!isScheduleSnapshot(schedule)) {
     return { available: false, message: MISSING_SCHEDULE_MESSAGE };
   }

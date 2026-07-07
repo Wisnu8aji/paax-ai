@@ -2,14 +2,33 @@ import type { ChatContext, ToolDefinition } from "./types";
 
 const MISSING_RAB_MESSAGE = "Data RAB tidak tersedia di konteks percakapan ini - user perlu membuka halaman RAB proyek dulu.";
 
-function executeQueryRab(args: Record<string, unknown>, context?: ChatContext): Record<string, unknown> {
-  const lines = context?.rab_lines;
+async function executeQueryRab(args: Record<string, unknown>, context?: ChatContext): Promise<Record<string, unknown>> {
+  let lines = context?.rab_lines;
+
+  // db-api fetch
+  const dbUrl = process.env.DB_API_URL;
+  const projectId = context?.project_id;
+  if (dbUrl && projectId) {
+    try {
+      const res = await fetch(`${dbUrl}/projects/${projectId}/rab`);
+      if (res.ok) {
+        const data = await res.json();
+        // payload may contain lines
+        if (data.payload && Array.isArray(data.payload.lines)) {
+          lines = data.payload.lines;
+        }
+      }
+    } catch (err) {
+      console.warn("Gagal mengambil data RAB dari DB API:", err);
+    }
+  }
+
   if (!lines || lines.length === 0) {
     return { available: false, message: MISSING_RAB_MESSAGE };
   }
   const filter = typeof args.filter_ahsp_code === "string" ? args.filter_ahsp_code.toLowerCase() : "";
   const filtered = filter
-    ? lines.filter((line) => line.ahsp_code.toLowerCase().includes(filter))
+    ? lines.filter((line: any) => typeof line.ahsp_code === "string" && line.ahsp_code.toLowerCase().includes(filter))
     : lines;
   return {
     available: true,

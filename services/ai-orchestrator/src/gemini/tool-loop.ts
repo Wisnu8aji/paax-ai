@@ -49,6 +49,7 @@ export async function runToolCallingLoop(params: {
   context?: ChatContext;
   maxTurns?: number;
   fetchImpl?: typeof fetch;
+  onEvent?: (event: any) => void;
 }): Promise<ToolLoopResult> {
   const maxTurns = params.maxTurns ?? Number(process.env.AI_ORCH_MAX_TOOL_TURNS || MAX_TOOL_TURNS);
   const contents: GeminiContent[] = [{ role: "user", parts: [{ text: params.userMessage }] }];
@@ -64,14 +65,50 @@ export async function runToolCallingLoop(params: {
     };
     const response = await geminiGenerateContent({ apiKey: params.apiKey, body, fetchImpl: params.fetchImpl });
     const part = firstPart(response);
-    if (part?.text) return { answer: part.text, toolCalls, hitMaxTurns: false };
+    
+    if (part?.text) {
+      if (params.onEvent) {
+        // pseudo-stream the text
+        const chunks = part.text.match(/.{1,20}/g) || [part.text];
+        for (const chunk of chunks) {
+          params.onEvent({ type: "token", content: chunk });
+        }
+      }
+      return { answer: part.text, toolCalls, hitMaxTurns: false };
+    }
 
     const functionCall = part?.functionCall;
     if (!functionCall) return { answer: "Gemini tidak mengembalikan jawaban teks.", toolCalls, hitMaxTurns: false };
     if (turn >= maxTurns) return { answer: MAX_TURNS_FALLBACK, toolCalls, hitMaxTurns: true };
 
     const args = functionCall.args ?? {};
+    if (params.onEvent) {
+      params.onEvent({ type: "tool_call", tool: functionCall.name, input: args });
+    }
+    const startTime = Date.now();
     const toolResult = await executeToolCall(functionCall, params.tools, params.context);
+    const latencyMs = Date.now() - startTime;
+    
+    // Asynchronously log to audit DB
+    const dbUrl = process.env.DB_API_URL;
+    if (dbUrl) {
+      const fetchApi = params.fetchImpl ?? fetch;
+      fetchApi(`${dbUrl}/audit/tool-call`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: crypto.randomUUID(),
+          conversation_id: params.context?.conversation_id || "unknown",
+          project_id: params.context?.project_id,
+          tool_name: functionCall.name,
+          input_json: args,
+          output_json: toolResult.response,
+          model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+          latency_ms: latencyMs,
+        }),
+      }).catch(err => console.warn("Failed to log tool call audit:", err));
+    }
+
     toolCalls.push({ tool: functionCall.name, args, resultSummary: toolResult.summary });
     contents.push({ role: "model", parts: [{ functionCall }] });
     contents.push({

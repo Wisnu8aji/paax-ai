@@ -36,3 +36,18 @@ class TkgRecord(Base):
     project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True)
     payload = Column(JSONB, nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+class ToolCallAudit(Base):
+    __tablename__ = "tool_call_audit"
+    
+    id = Column(String, primary_key=True) # UUID mapped as string
+    conversation_id = Column(String, index=True)
+    project_id = Column(String)
+    tool_name = Column(String, nullable=False)
+    input_json = Column(JSONB, nullable=False)
+    output_json = Column(JSONB)
+    model = Column(String)
+    latency_ms = Column(Integer)
+    tokens_in = Column(Integer)
+    tokens_out = Column(Integer)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

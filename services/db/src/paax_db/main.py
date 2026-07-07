@@ -109,6 +109,14 @@ async def save_tkg(id: str, tkg_data: schemas.TkgPayload, db: AsyncSession = Dep
     await db.commit()
     return {"status": "success"}
 
+@app.post("/audit/tool-call", response_model=schemas.ToolCallAuditResponse)
+async def create_tool_call_audit(audit: schemas.ToolCallAuditCreate, db: AsyncSession = Depends(get_db)):
+    db_audit = models.ToolCallAudit(**audit.model_dump())
+    db.add(db_audit)
+    await db.commit()
+    await db.refresh(db_audit)
+    return db_audit
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8001))
