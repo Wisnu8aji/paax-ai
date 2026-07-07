@@ -218,11 +218,36 @@ def _numbers_compatible(source_name: str, resource_name: str) -> bool:
     return not source_numbers or not resource_numbers or source_numbers == resource_numbers
 
 
-def parse_harga_sheet(ws: Worksheet) -> List[HargaRow]:
+def parse_harga_sheet(ws: Worksheet, fmt: str = "auto") -> List[HargaRow]:
     rows: List[HargaRow] = []
+    
+    # Defaults for "semarang" or old format
+    col_name = 2
+    col_unit = 5
+    col_price = 6
+    
+    if fmt == "auto":
+        # Scan first 10 rows for headers
+        found = False
+        for r in range(1, 11):
+            for c in range(1, ws.max_column + 1):
+                val = str(ws.cell(row=r, column=c).value or "").lower()
+                if "uraian" in val or "bahan" in val or "nama" in val:
+                    col_name = c
+                elif "satuan" in val:
+                    col_unit = c
+                elif "harga" in val:
+                    col_price = c
+            # If we found at least name and price, we assume headers found
+            if col_name and col_price:
+                found = True
+                break
+        if not found:
+            raise ValueError("format tidak dikenali, kolom nama/satuan/harga tidak ditemukan dalam 10 baris pertama")
+    
     category: str | None = None
     for row in range(1, ws.max_row + 1):
-        name_cell = ws.cell(row=row, column=2).value
+        name_cell = ws.cell(row=row, column=col_name).value
         name = str(name_cell).strip() if name_cell is not None else ""
         marker = normalize_name(name)
         if marker == "upah":
@@ -235,9 +260,11 @@ def parse_harga_sheet(ws: Worksheet) -> List[HargaRow]:
             continue
         if marker in {"no", "uraian pekerja", "satuan", "harga"}:
             continue
-        unit = normalize_unit(ws.cell(row=row, column=5).value)
+        unit = normalize_unit(ws.cell(row=row, column=col_unit).value)
+        # column letter for formula resolving
+        price_col_letter = ws.cell(row=row, column=col_price).column_letter
         try:
-            price = resolve_formula_value(ws, f"F{row}")
+            price = resolve_formula_value(ws, f"{price_col_letter}{row}")
         except ValueError:
             continue
         price_num = _as_number(price)
@@ -253,11 +280,11 @@ def parse_harga_sheet(ws: Worksheet) -> List[HargaRow]:
     return rows
 
 
-def load_price_rows(source_xlsx: Path) -> List[HargaRow]:
+def load_price_rows(source_xlsx: Path, fmt: str = "auto") -> List[HargaRow]:
     wb = load_workbook(source_xlsx, data_only=False)
     try:
         ws = wb["Lembar1"] if "Lembar1" in wb.sheetnames else wb.active
-        return parse_harga_sheet(ws)
+        return parse_harga_sheet(ws, fmt)
     finally:
         wb.close()
 
@@ -590,9 +617,10 @@ def write_outputs(
     harga_dir.mkdir(parents=True, exist_ok=True)
     audit_dir.mkdir(parents=True, exist_ok=True)
 
-    price_path = harga_dir / f"{region_code}.json"
-    audit_path = audit_dir / f"harga_{region_code}.json"
-    review_path = audit_dir / f"harga_{region_code}_review.csv"
+    # Change output filename to include effective_date so multiple versions can coexist
+    price_path = harga_dir / f"{region_code}_{effective_date}.json"
+    audit_path = audit_dir / f"harga_{region_code}_{effective_date}.json"
+    review_path = audit_dir / f"harga_{region_code}_{effective_date}_review.csv"
     price_path.write_text(json.dumps(price_book, ensure_ascii=False, indent=2), encoding="utf-8")
     audit_path.write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
     with review_path.open("w", encoding="utf-8-sig", newline="") as f:
@@ -611,8 +639,9 @@ def run_extract(
     effective_date: str,
     ahsp_path: Path | None = None,
     overrides_path: Path | None = None,
+    fmt: str = "auto",
 ) -> tuple[Path, Path, Path, Dict[str, Any]]:
-    rows = load_price_rows(source_xlsx)
+    rows = load_price_rows(source_xlsx, fmt)
     catalog = load_catalog(catalog_path)
     usage_counts = load_usage_counts(ahsp_path)
     overrides = load_overrides(overrides_path)
@@ -623,7 +652,7 @@ def run_extract(
     audit["overrides_path"] = str(overrides_path) if overrides_path else ""
     pending = [*unmatched, *ambiguous]
     review_rows = build_review_rows(pending, catalog)
-    price_path, audit_path, review_path = write_outputs(price_book, audit, review_rows, out_dir, region_code)
+    price_path, audit_path, review_path = write_outputs(price_book, audit, review_rows, out_dir, region_code, effective_date)
     audit["review_path"] = str(review_path)
     audit_path.write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
     return price_path, audit_path, review_path, audit
@@ -639,17 +668,35 @@ def main() -> None:
     ap.add_argument("--region", default="Semarang")
     ap.add_argument("--region-code", default="semarang")
     ap.add_argument("--effective-date", default="2026-06-28")
+    ap.add_argument("--format", default="auto")
+    ap.add_argument("--supersede-check", action="store_true")
     args = ap.parse_args()
+    
+    out_dir = Path(args.out)
+    if args.supersede_check:
+        harga_dir = out_dir / "harga-satuan"
+        if harga_dir.exists():
+            for f in harga_dir.glob("*.json"):
+                try:
+                    raw = json.loads(f.read_text(encoding="utf-8"))
+                    if raw.get("region_code") == args.region_code and raw.get("effective_date") == args.effective_date:
+                        print(f"ERROR: Region code '{args.region_code}' dengan effective_date '{args.effective_date}' sudah ada di {f.name}.")
+                        print("gunakan tanggal berbeda atau hapus manual")
+                        import sys
+                        sys.exit(1)
+                except Exception:
+                    pass
 
     price_path, audit_path, review_path, audit = run_extract(
         source_xlsx=Path(args.src),
         catalog_path=Path(args.catalog),
-        out_dir=Path(args.out),
+        out_dir=out_dir,
         region=args.region,
         region_code=args.region_code,
         effective_date=args.effective_date,
         ahsp_path=Path(args.ahsp) if args.ahsp else None,
         overrides_path=Path(args.overrides) if args.overrides else None,
+        fmt=args.format,
     )
     stats = audit["stats"]
     print("=== RINGKASAN HARGA ===")
