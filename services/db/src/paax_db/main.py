@@ -117,6 +117,53 @@ async def create_tool_call_audit(audit: schemas.ToolCallAuditCreate, db: AsyncSe
     await db.refresh(db_audit)
     return db_audit
 
+@app.post("/knowledge/index")
+async def index_knowledge(chunk: schemas.KnowledgeChunkCreate, db: AsyncSession = Depends(get_db)):
+    # Upsert by source_type + source_ref + id
+    result = await db.execute(
+        select(models.KnowledgeChunk)
+        .where(
+            models.KnowledgeChunk.source_type == chunk.source_type,
+            models.KnowledgeChunk.source_ref == chunk.source_ref,
+            models.KnowledgeChunk.id == chunk.id
+        )
+    )
+    existing = result.scalars().first()
+    if existing:
+        existing.content = chunk.content
+        existing.embedding = chunk.embedding
+        existing.metadata_json = chunk.metadata_json
+    else:
+        new_chunk = models.KnowledgeChunk(
+            id=chunk.id,
+            source_type=chunk.source_type,
+            source_ref=chunk.source_ref,
+            content=chunk.content,
+            embedding=chunk.embedding,
+            metadata_json=chunk.metadata_json
+        )
+        db.add(new_chunk)
+    await db.commit()
+    return {"status": "success"}
+
+@app.post("/knowledge/search", response_model=List[schemas.KnowledgeChunkResponse])
+async def search_knowledge(req: schemas.KnowledgeSearchRequest, db: AsyncSession = Depends(get_db)):
+    # ORDER BY embedding <=> query_embedding LIMIT top_k
+    query = select(models.KnowledgeChunk)
+    if req.source_type:
+        query = query.where(models.KnowledgeChunk.source_type == req.source_type)
+    
+    # Simple similarity search using pgvector
+    # We will use cosine distance '<=>'
+    query = query.order_by(models.KnowledgeChunk.embedding.cosine_distance(req.query_embedding)).limit(req.top_k)
+    
+    result = await db.execute(query)
+    chunks = result.scalars().all()
+    
+    # We cannot easily return distance mapped to similarity without a custom select, 
+    # so we'll just return the chunks.
+    return chunks
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8001))

@@ -60,3 +60,27 @@ class ToolCallAuditCreate(BaseModel):
 class ToolCallAuditResponse(ToolCallAuditCreate):
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
+
+class KnowledgeChunkCreate(BaseModel):
+    id: str
+    source_type: str
+    source_ref: str
+    content: str
+    embedding: List[float]
+    metadata_json: Optional[Dict[str, Any]] = None
+
+class KnowledgeChunkResponse(BaseModel):
+    id: str
+    source_type: str
+    source_ref: str
+    content: str
+    metadata_json: Optional[Dict[str, Any]] = None
+    similarity_score: Optional[float] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class KnowledgeSearchRequest(BaseModel):
+    query_embedding: List[float]
+    source_type: Optional[str] = None
+    project_id: Optional[str] = None
+    top_k: int = 5
