@@ -19,6 +19,7 @@ import {
   type ProjectCreateInput,
   type ProjectUpdateInput,
 } from './types';
+import { dbApiRepository } from './db-api';
 
 const COLLECTION = 'projects';
 
@@ -30,9 +31,12 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-export type ProjectBackend = 'firestore' | 'localStorage';
+export type ProjectBackend = 'firestore' | 'localStorage' | 'postgres';
 
 export function getProjectBackend(): ProjectBackend {
+  if (process.env.NEXT_PUBLIC_USE_DB === 'true') {
+    return 'postgres';
+  }
   return Object.values(firebaseConfig).every(Boolean) ? 'firestore' : 'localStorage';
 }
 
@@ -121,7 +125,9 @@ export const projectRepository = {
   },
 
   async list(): Promise<Project[]> {
-    if (getProjectBackend() === 'localStorage') return listLocalProjects();
+    const backend = getProjectBackend();
+    if (backend === 'postgres') return dbApiRepository.list();
+    if (backend === 'localStorage') return listLocalProjects();
     const snapshot = await getDocs(collection(getDb(), COLLECTION));
     return snapshot.docs
       .map((item) => normalizeProject(item.data() as Partial<Project>))
@@ -130,7 +136,9 @@ export const projectRepository = {
   },
 
   async get(id: string): Promise<Project | null> {
-    if (getProjectBackend() === 'localStorage') {
+    const backend = getProjectBackend();
+    if (backend === 'postgres') return dbApiRepository.get(id);
+    if (backend === 'localStorage') {
       return readLocalProjects().find((project) => project.id === id) ?? null;
     }
     const snapshot = await getDoc(doc(getDb(), COLLECTION, id));
@@ -138,14 +146,21 @@ export const projectRepository = {
   },
 
   async create(input: ProjectCreateInput): Promise<Project> {
-    if (getProjectBackend() === 'localStorage') return createLocalProject(input);
+    const backend = getProjectBackend();
+    if (backend === 'postgres') {
+      const project = createProjectFromInput(input);
+      return dbApiRepository.create({ ...input, id: project.id });
+    }
+    if (backend === 'localStorage') return createLocalProject(input);
     const project = createProjectFromInput(input);
     await setDoc(doc(getDb(), COLLECTION, project.id), project);
     return project;
   },
 
   async update(id: string, input: ProjectUpdateInput): Promise<Project | null> {
-    if (getProjectBackend() === 'localStorage') return updateLocalProject(id, input);
+    const backend = getProjectBackend();
+    if (backend === 'postgres') return dbApiRepository.update(id, input);
+    if (backend === 'localStorage') return updateLocalProject(id, input);
     const current = await this.get(id);
     if (!current) return null;
     const updated: Project = {

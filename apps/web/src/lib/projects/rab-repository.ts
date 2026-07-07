@@ -91,7 +91,12 @@ function localKey(projectId: string): string {
 
 export const rabRepository = {
   async get(projectId: string): Promise<ProjectRabDraft> {
-    if (getProjectBackend() === 'localStorage') {
+    const backend = getProjectBackend();
+    if (backend === 'postgres') {
+      const payload = await dbApiRabRepository.get(projectId);
+      return normalizeDraft(projectId, payload as Partial<ProjectRabDraft>);
+    }
+    if (backend === 'localStorage') {
       return normalizeDraft(projectId, LocalStorage.get<Partial<ProjectRabDraft> | null>(localKey(projectId), null));
     }
     const snapshot = await getDoc(doc(getDb(), COLLECTION, projectId));
@@ -100,7 +105,12 @@ export const rabRepository = {
 
   async save(draft: ProjectRabDraft): Promise<ProjectRabDraft> {
     const next: ProjectRabDraft = { ...draft, updatedAt: new Date().toISOString() };
-    if (getProjectBackend() === 'localStorage') {
+    const backend = getProjectBackend();
+    if (backend === 'postgres') {
+      await dbApiRabRepository.save(draft.projectId, next);
+      return next;
+    }
+    if (backend === 'localStorage') {
       LocalStorage.set(localKey(draft.projectId), next);
       return next;
     }
