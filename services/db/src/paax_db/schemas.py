@@ -44,3 +44,19 @@ class RabPayload(BaseModel):
 
 class TkgPayload(BaseModel):
     payload: Dict[str, Any]
+
+class ToolCallAuditCreate(BaseModel):
+    id: str
+    conversation_id: Optional[str] = None
+    project_id: Optional[str] = None
+    tool_name: str
+    input_json: Dict[str, Any]
+    output_json: Optional[Dict[str, Any]] = None
+    model: Optional[str] = None
+    latency_ms: Optional[int] = None
+    tokens_in: Optional[int] = None
+    tokens_out: Optional[int] = None
+
+class ToolCallAuditResponse(ToolCallAuditCreate):
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
