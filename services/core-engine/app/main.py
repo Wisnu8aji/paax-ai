@@ -86,11 +86,23 @@ from .review.corrections import log_correction
 from .review.models import CorrectionLogRequest, CorrectionRecord, ReviewTriageRequest, ReviewTriageResult
 from .review.triage import triage_review_tasks
 
+import os
+
 app = FastAPI(title="PAAX Core Engine", version="0.6.0")
+
+allowed_origins_env = os.environ.get("ALLOWED_ORIGINS")
+env_mode = os.environ.get("ENV", "development")
+
+if allowed_origins_env:
+    allowed_origins = [o.strip() for o in allowed_origins_env.split(",")]
+elif env_mode == "development":
+    allowed_origins = ["*"]
+else:
+    allowed_origins = [] # Strict by default if not dev and no env provided
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],          # ketatkan di produksi
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

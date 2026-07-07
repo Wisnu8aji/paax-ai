@@ -48,3 +48,9 @@ jobs:
       - name: Run Document Intelligence Tests
         working-directory: ./services/document-intelligence
         run: pytest
+      - name: Test AI Orchestrator
+        run: pnpm --filter ai-orchestrator test
+      - name: Typecheck AI Orchestrator
+        run: pnpm --filter ai-orchestrator run build
+      - name: Test Apps/Web
+        run: pnpm --dir apps/web test

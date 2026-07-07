@@ -2,16 +2,23 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import health_routes, upload_routes, pdf_routes, excel_routes, drawing_routes, tkg_routes
 
+import os
+
 app = FastAPI(title="PAAX Document Intelligence", version="0.5.0")
+
+allowed_origins_env = os.environ.get("ALLOWED_ORIGINS")
+env_mode = os.environ.get("ENV", "development")
+
+if allowed_origins_env:
+    allowed_origins = [o.strip() for o in allowed_origins_env.split(",")]
+elif env_mode == "development":
+    allowed_origins = ["*"]
+else:
+    allowed_origins = [] # Strict by default if not dev and no env provided
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
