@@ -37,8 +37,7 @@ def test_rule_based_fallback(auth_headers):
         mock_db.execute = AsyncMock(return_value=mock_result)
         
         # Run report generation
-        loop = asyncio.get_event_loop()
-        report = loop.run_until_complete(generate_report("proj-1", mock_db))
+        report = asyncio.run(generate_report("proj-1", mock_db))
         
         assert report.narrative_source == "rule-based-fallback"
         assert "42%" in report.summary
@@ -84,8 +83,7 @@ def test_anti_hallucination(auth_headers):
         instance = mock_client.return_value.__aenter__.return_value
         instance.post = mock_post
         
-        loop = asyncio.get_event_loop()
-        report = loop.run_until_complete(generate_report("proj-2", mock_db))
+        report = asyncio.run(generate_report("proj-2", mock_db))
         
         assert report.narrative_source != "rule-based-fallback"
         
