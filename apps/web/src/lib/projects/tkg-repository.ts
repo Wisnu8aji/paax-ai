@@ -4,6 +4,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { TakeoffResult, TkgDocument } from '@paax/schemas';
 import { LocalStorage, projectStorageKey } from '@/lib/local-storage';
 import { getDb, getProjectBackend } from './project-repository';
+import { dbApiTkgRepository } from './db-api';
 
 /**
  * Penyimpanan TKG (Transkrip Kanonik Gambar) per-proyek.
@@ -70,7 +71,12 @@ function localKey(projectId: string): string {
 
 export const tkgRepository = {
   async get(projectId: string): Promise<ProjectTkgRecord> {
-    if (getProjectBackend() === 'localStorage') {
+    const backend = getProjectBackend();
+    if (backend === 'postgres') {
+      const payload = await dbApiTkgRepository.get(projectId);
+      return normalize(projectId, payload as Partial<ProjectTkgRecord>);
+    }
+    if (backend === 'localStorage') {
       return normalize(projectId, LocalStorage.get<Partial<ProjectTkgRecord> | null>(localKey(projectId), null));
     }
     const snapshot = await getDoc(doc(getDb(), COLLECTION, projectId));
@@ -79,7 +85,12 @@ export const tkgRepository = {
 
   async save(record: ProjectTkgRecord): Promise<ProjectTkgRecord> {
     const next: ProjectTkgRecord = { ...record, updatedAt: new Date().toISOString() };
-    if (getProjectBackend() === 'localStorage') {
+    const backend = getProjectBackend();
+    if (backend === 'postgres') {
+      await dbApiTkgRepository.save(record.projectId, next);
+      return next;
+    }
+    if (backend === 'localStorage') {
       LocalStorage.set(localKey(record.projectId), next);
       return next;
     }
