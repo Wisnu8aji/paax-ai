@@ -167,41 +167,95 @@ def _validate_row(row: _ParsedRow, available_texts: tuple[str, ...]) -> bool:
 def suggest_kusen_schedule(
     document_texts: list[str],
     client: AiAssistClient,
+    symbol_counts: dict[str, int] | None = None,
 ) -> list[AiKusenSuggestion]:
     """Usulkan baris jadwal kusen dari teks dokumen. List KOSONG kalau
     tidak ada kata kunci/tidak ada baris valid -- setiap baris divalidasi
     INDEPENDEN (baris gagal dibuang sendiri, bukan menggagalkan semua)."""
-    if not document_texts or not has_kusen_keyword(document_texts):
+    has_text = bool(document_texts and has_kusen_keyword(document_texts))
+    if not has_text and not symbol_counts:
         return []
+        
+    raw = None
+    if has_text:
+        raw = client.generate_json(
+            system_prompt=_SYSTEM_PROMPT,
+            user_prompt=_build_user_prompt(document_texts),
+            response_schema=_RESPONSE_SCHEMA,
+        )
 
-    raw = client.generate_json(
-        system_prompt=_SYSTEM_PROMPT,
-        user_prompt=_build_user_prompt(document_texts),
-        response_schema=_RESPONSE_SCHEMA,
-    )
-    if not raw:
-        return []
-
-    items_raw = raw.get("items")
-    if not isinstance(items_raw, list):
+    items_raw = raw.get("items") if raw else []
+    if raw and not isinstance(items_raw, list):
         return []
 
     available_texts = tuple(t.strip() for t in document_texts)
     now = datetime.now(timezone.utc).isoformat()
     results: list[AiKusenSuggestion] = []
-    for entry in items_raw:
-        row = _parse_row(entry)
-        if row is None or not _validate_row(row, available_texts):
-            continue
-        results.append(AiKusenSuggestion(
-            tipe=row.tipe,
-            width_m=row.width_m,
-            height_m=row.height_m,
-            qty=row.qty,
-            confidence=0.7,
-            reasoning=f"disimpulkan dari jadwal pintu/jendela: {', '.join(row.source_texts)}",
-            source_texts=list(row.source_texts),
-            model=GEMINI_MODEL,
-            generated_at=now,
-        ))
+    
+    # 1. Dari Text
+    if items_raw:
+        for entry in items_raw:
+            row = _parse_row(entry)
+            if row is None or not _validate_row(row, available_texts):
+                continue
+            
+            # Cek terhadap symbol_counts untuk corroborate QTY
+            confidence = 0.8
+            reasoning = "Diekstrak dari jadwal pintu/jendela"
+            if symbol_counts and row.qty:
+                # Ini heuristik sederhana: cek apakah row.qty mirip dengan jumlah pintu/jendela
+                is_door = "PINTU" in row.tipe.upper() or "P" in row.tipe.upper()
+                is_window = "JENDELA" in row.tipe.upper() or "J" in row.tipe.upper()
+                
+                if is_door and "arc_door" in symbol_counts:
+                    # Kalau jumlahnya mirip (misal di floor plan ini pintu yg tergambar = qty jadwal)
+                    if symbol_counts["arc_door"] > 0 and symbol_counts["arc_door"] >= row.qty * 0.5:
+                        confidence = min(1.0, confidence + 0.1)
+                        reasoning += f" (Didukung simbol gambar: ~{symbol_counts['arc_door']} pintu)"
+                elif is_window and "rect_window" in symbol_counts:
+                    if symbol_counts["rect_window"] > 0 and symbol_counts["rect_window"] >= row.qty * 0.5:
+                        confidence = min(1.0, confidence + 0.1)
+                        reasoning += f" (Didukung simbol gambar: ~{symbol_counts['rect_window']} jendela)"
+                        
+            results.append(AiKusenSuggestion(
+                tipe=row.tipe,
+                width_m=row.width_m,
+                height_m=row.height_m,
+                qty=row.qty,
+                confidence=confidence,
+                reasoning=reasoning,
+                source_texts=list(row.source_texts),
+                model=GEMINI_MODEL,
+                generated_at=now,
+            ))
+            
+    # 2. Dari Simbol Geometri (jika teks tidak ada jadwal sama sekali)
+    if not results and symbol_counts:
+        door_qty = symbol_counts.get("arc_door", 0)
+        if door_qty > 0:
+            results.append(AiKusenSuggestion(
+                tipe="PINTU-AUTO",
+                width_m=None,
+                height_m=None,
+                qty=door_qty,
+                confidence=0.5,
+                reasoning=f"Dideteksi dari {door_qty} simbol pintu (geometri arc/garis) - tanpa ukuran",
+                source_texts=[],
+                model="geometry",
+                generated_at=now,
+            ))
+        window_qty = symbol_counts.get("rect_window", 0)
+        if window_qty > 0:
+            results.append(AiKusenSuggestion(
+                tipe="JENDELA-AUTO",
+                width_m=None,
+                height_m=None,
+                qty=window_qty,
+                confidence=0.5,
+                reasoning=f"Dideteksi dari {window_qty} simbol jendela (geometri kotak/garis) - tanpa ukuran",
+                source_texts=[],
+                model="geometry",
+                generated_at=now,
+            ))
+
     return results

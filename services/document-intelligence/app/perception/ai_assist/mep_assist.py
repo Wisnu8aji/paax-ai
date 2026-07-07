@@ -134,40 +134,81 @@ def _validate_row(row: _ParsedRow, available_texts: tuple[str, ...]) -> bool:
 def suggest_mep_points(
     document_texts: list[str],
     client: AiAssistClient,
+    symbol_counts_from_legend: dict[str, int] | None = None,
 ) -> list[AiMepSuggestion]:
     """Usulkan titik MEP (jenis+jumlah) dari CATATAN TEKS eksplisit. List
     KOSONG kalau tidak ada kata kunci/tidak ada baris valid. Deteksi
     simbol/ikon dari piksel TIDAK dicoba (di luar cakupan, lihat docstring
     modul)."""
-    if not document_texts or not has_mep_keyword(document_texts):
+    has_text = bool(document_texts and has_mep_keyword(document_texts))
+    if not has_text and not symbol_counts_from_legend:
         return []
 
-    raw = client.generate_json(
-        system_prompt=_SYSTEM_PROMPT,
-        user_prompt=_build_user_prompt(document_texts),
-        response_schema=_RESPONSE_SCHEMA,
-    )
-    if not raw:
-        return []
+    raw = None
+    if has_text:
+        raw = client.generate_json(
+            system_prompt=_SYSTEM_PROMPT,
+            user_prompt=_build_user_prompt(document_texts),
+            response_schema=_RESPONSE_SCHEMA,
+        )
 
-    items_raw = raw.get("items")
-    if not isinstance(items_raw, list):
-        return []
+    items_raw = raw.get("items") if raw else []
+    if raw and not isinstance(items_raw, list):
+        items_raw = []
 
     available_texts = tuple(t.strip() for t in document_texts)
     now = datetime.now(timezone.utc).isoformat()
     results: list[AiMepSuggestion] = []
-    for entry in items_raw:
-        row = _parse_row(entry)
-        if row is None or not _validate_row(row, available_texts):
-            continue
-        results.append(AiMepSuggestion(
-            jenis=row.jenis,
-            count=row.count,
-            confidence=0.7,
-            reasoning=f"disimpulkan dari catatan jumlah titik MEP: {', '.join(row.source_texts)}",
-            source_texts=list(row.source_texts),
-            model=GEMINI_MODEL,
-            generated_at=now,
-        ))
+    
+    if items_raw:
+        for entry in items_raw:
+            row = _parse_row(entry)
+            if row is None or not _validate_row(row, available_texts):
+                continue
+            
+            confidence = 0.8
+            reasoning = f"Diekstrak dari catatan jumlah titik MEP: {', '.join(row.source_texts)}"
+            
+            if symbol_counts_from_legend and row.count:
+                # Coba cari nama yang mirip di legenda
+                matched = False
+                for legend_name, legend_count in symbol_counts_from_legend.items():
+                    # Jika nama mirip (subset)
+                    if legend_name.upper() in row.jenis.upper() or row.jenis.upper() in legend_name.upper():
+                        if legend_count > 0:
+                            if legend_count == row.count:
+                                confidence = min(1.0, confidence + 0.15)
+                                reasoning += f" (Sangat sesuai dengan hitungan geometri legenda '{legend_name}': {legend_count})"
+                            elif legend_count >= row.count * 0.5:
+                                confidence = min(1.0, confidence + 0.05)
+                                reasoning += f" (Didukung hitungan geometri legenda '{legend_name}': {legend_count})"
+                            else:
+                                confidence = max(0.0, confidence - 0.2)
+                                reasoning += f" [WARNING: Hitungan geometri legenda '{legend_name}' ({legend_count}) jauh di bawah teks ({row.count})]"
+                            matched = True
+                            break
+                            
+            results.append(AiMepSuggestion(
+                jenis=row.jenis,
+                count=row.count,
+                confidence=confidence,
+                reasoning=reasoning,
+                source_texts=list(row.source_texts),
+                model=GEMINI_MODEL,
+                generated_at=now,
+            ))
+            
+    if not results and symbol_counts_from_legend:
+        for legend_name, legend_count in symbol_counts_from_legend.items():
+            if legend_count > 0:
+                results.append(AiMepSuggestion(
+                    jenis=f"{legend_name}-AUTO",
+                    count=legend_count,
+                    confidence=0.6,
+                    reasoning=f"Dihitung otomatis dari kemiripan geometri dengan simbol legenda '{legend_name}'",
+                    source_texts=[],
+                    model="geometry",
+                    generated_at=now,
+                ))
+
     return results

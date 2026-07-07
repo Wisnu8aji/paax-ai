@@ -127,80 +127,115 @@ def _as_optional_float(value: Any) -> float | None:
 def suggest_dinding_pasangan(
     candidate_texts: list[str],
     client: AiAssistClient,
+    geometry_candidate_m: float | None = None,
 ) -> AiDindingSuggestion | None:
     """Usulkan panjang/tinggi/bukaan dinding dari catatan teks eksplisit.
     `None` kalau tidak ada catatan yang bisa disimpulkan, parsing gagal, atau
     validasi anti-halusinasi/rentang gagal."""
-    if not candidate_texts or not has_wall_keyword(candidate_texts):
+    has_text = bool(candidate_texts and has_wall_keyword(candidate_texts))
+    if not has_text and geometry_candidate_m is None:
         return None
 
-    raw = client.generate_json(
-        system_prompt=_SYSTEM_PROMPT,
-        user_prompt=_build_user_prompt(candidate_texts),
-        response_schema=_RESPONSE_SCHEMA,
-    )
-    if not raw:
-        return None
+    raw = None
+    if has_text:
+        raw = client.generate_json(
+            system_prompt=_SYSTEM_PROMPT,
+            user_prompt=_build_user_prompt(candidate_texts),
+            response_schema=_RESPONSE_SCHEMA,
+        )
 
-    l_dinding_m = _as_optional_float(raw.get("l_dinding_m"))
-    h_dinding_m = _as_optional_float(raw.get("h_dinding_m"))
-    bukaan_total_m2 = _as_optional_float(raw.get("bukaan_total_m2"))
-    reasoning = str(raw.get("reasoning") or "").strip()
-    source_texts_raw = raw.get("source_texts") or []
-    if not isinstance(source_texts_raw, list):
+    l_dinding_m = _as_optional_float(raw.get("l_dinding_m")) if raw else None
+    h_dinding_m = _as_optional_float(raw.get("h_dinding_m")) if raw else None
+    bukaan_total_m2 = _as_optional_float(raw.get("bukaan_total_m2")) if raw else None
+    reasoning = str(raw.get("reasoning") or "").strip() if raw else ""
+    
+    source_texts_raw = raw.get("source_texts") or [] if raw else []
+    if raw and not isinstance(source_texts_raw, list):
         return None
     source_texts = tuple(str(item).strip() for item in source_texts_raw if str(item).strip())
 
     try:
-        confidence = float(raw.get("confidence", 0.0))
+        confidence = float(raw.get("confidence", 0.0)) if raw else 0.0
     except (TypeError, ValueError):
-        return None
+        confidence = 0.0
 
-    if l_dinding_m is None and h_dinding_m is None:
+    if l_dinding_m is None and h_dinding_m is None and geometry_candidate_m is None:
         return None
-    if not reasoning or not source_texts:
-        return None
+        
+    if raw:
+        if not reasoning or not source_texts:
+            return None
+        available_texts = tuple(t.strip() for t in candidate_texts)
+        for src in source_texts:
+            if not any(src in avail for avail in available_texts):
+                return None
 
-    available_texts = tuple(t.strip() for t in candidate_texts)
-    for src in source_texts:
-        if not any(src in avail for avail in available_texts):
+        available_numbers = _numbers_in_texts(source_texts)
+        if not (
+            _matches_available(l_dinding_m, available_numbers)
+            and _matches_available(h_dinding_m, available_numbers)
+            and _matches_available(bukaan_total_m2, available_numbers)
+        ):
             return None
 
-    available_numbers = _numbers_in_texts(source_texts)
-    if not (
-        _matches_available(l_dinding_m, available_numbers)
-        and _matches_available(h_dinding_m, available_numbers)
-        and _matches_available(bukaan_total_m2, available_numbers)
-    ):
-        return None
+        if l_dinding_m is not None and not (_MIN_PANJANG_M <= l_dinding_m <= _MAX_PANJANG_M):
+            return None
+        if h_dinding_m is not None and not (_MIN_TINGGI_M <= h_dinding_m <= _MAX_TINGGI_M):
+            return None
+        if bukaan_total_m2 is not None and bukaan_total_m2 < 0:
+            return None
 
-    if l_dinding_m is not None and not (_MIN_PANJANG_M <= l_dinding_m <= _MAX_PANJANG_M):
-        return None
-    if h_dinding_m is not None and not (_MIN_TINGGI_M <= h_dinding_m <= _MAX_TINGGI_M):
-        return None
-    if bukaan_total_m2 is not None and bukaan_total_m2 < 0:
-        return None
-
-    plester_sisi_raw = raw.get("plester_sisi")
+    plester_sisi_raw = raw.get("plester_sisi") if raw else None
     plester_sisi = 0
     if isinstance(plester_sisi_raw, (int, float)) and not isinstance(plester_sisi_raw, bool):
         candidate = int(plester_sisi_raw)
         if candidate in (0, 1, 2):
             plester_sisi = candidate
+            
+    now = datetime.now(timezone.utc).isoformat()
+    if not raw and geometry_candidate_m is not None:
+        return AiDindingSuggestion(
+            l_dinding_m=geometry_candidate_m,
+            h_dinding_m=None,
+            bukaan_total_m2=None,
+            plester_sisi=0,
+            acian=False,
+            cat=False,
+            confidence=0.6,
+            reasoning=f"Kandidat geometri independen ({geometry_candidate_m:.2f}m), teks dinding tidak ditemukan",
+            source_texts=[],
+            model="geometry",
+            generated_at=now,
+        )
 
-    return AiDindingSuggestion(
+    suggestion = AiDindingSuggestion(
         l_dinding_m=l_dinding_m,
         h_dinding_m=h_dinding_m,
         bukaan_total_m2=bukaan_total_m2,
         plester_sisi=plester_sisi,
-        acian=bool(raw.get("acian")) if isinstance(raw.get("acian"), bool) else False,
-        cat=bool(raw.get("cat")) if isinstance(raw.get("cat"), bool) else False,
+        acian=bool(raw.get("acian")) if raw and isinstance(raw.get("acian"), bool) else False,
+        cat=bool(raw.get("cat")) if raw and isinstance(raw.get("cat"), bool) else False,
         confidence=max(0.0, min(1.0, confidence)),
         reasoning=reasoning,
         source_texts=list(source_texts),
         model=GEMINI_MODEL,
-        generated_at=datetime.now(timezone.utc).isoformat(),
+        generated_at=now,
     )
+
+    if geometry_candidate_m is not None:
+        if suggestion.l_dinding_m is not None:
+            diff = abs(suggestion.l_dinding_m - geometry_candidate_m)
+            if diff / max(suggestion.l_dinding_m, 1.0) <= 0.15:
+                suggestion.confidence = min(1.0, suggestion.confidence + 0.2)
+                suggestion.reasoning += f" (Divalidasi silang dgn geometri polygon: {geometry_candidate_m:.2f}m)"
+            else:
+                suggestion.confidence = max(0.0, suggestion.confidence - 0.2)
+                suggestion.reasoning += f" [WARNING: selisih geometri {geometry_candidate_m:.2f}m vs teks {suggestion.l_dinding_m:.2f}m. Perlu review]"
+        else:
+            suggestion.l_dinding_m = geometry_candidate_m
+            suggestion.reasoning += f" (Panjang dinding ditambahkan dari geometri: {geometry_candidate_m:.2f}m)"
+
+    return suggestion
 
 # --- Gap jujur yang TIDAK dikerjakan di slice ini (dicatat, bukan disembunyikan) ---
 # Deteksi otomatis panjang dinding dari GEOMETRI garis gambar (mis. pasangan
