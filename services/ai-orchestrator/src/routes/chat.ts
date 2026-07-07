@@ -45,10 +45,20 @@ export function createChatHandler(params: {
       });
     }
 
+    const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const headers = new Headers(init?.headers);
+      const internalKey = process.env.INTERNAL_SERVICE_KEY;
+      if (internalKey) headers.set("X-Internal-Key", internalKey);
+      const user = (req as any).user;
+      if (user?.uid) headers.set("X-User-Id", user.uid);
+      const baseFetch = params.fetchImpl ?? fetch;
+      return baseFetch(input, { ...init, headers });
+    };
+
     const tools = createToolRegistry({
       coreEngineUrl: params.coreEngineUrl,
       documentIntelligenceUrl: params.documentIntelligenceUrl,
-      fetchImpl: params.fetchImpl,
+      fetchImpl: customFetch,
     });
     const result = await runToolCallingLoop({
       apiKey: params.geminiApiKey,
@@ -57,7 +67,7 @@ export function createChatHandler(params: {
       tools,
       context: parsed.data.context,
       maxTurns: params.maxTurns,
-      fetchImpl: params.fetchImpl,
+      fetchImpl: customFetch,
     });
 
     return res.json({

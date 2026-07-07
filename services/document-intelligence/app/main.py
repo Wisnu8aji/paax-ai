@@ -24,9 +24,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi import Depends
+from .auth import get_current_user
+
 app.include_router(health_routes.router)
-app.include_router(upload_routes.router)
-app.include_router(pdf_routes.router)
-app.include_router(excel_routes.router)
-app.include_router(drawing_routes.router)
-app.include_router(tkg_routes.router)
+app.include_router(upload_routes.router, dependencies=[Depends(get_current_user)])
+app.include_router(pdf_routes.router, dependencies=[Depends(get_current_user)])
+app.include_router(excel_routes.router, dependencies=[Depends(get_current_user)])
+app.include_router(drawing_routes.router, dependencies=[Depends(get_current_user)])
+app.include_router(tkg_routes.router, dependencies=[Depends(get_current_user)])

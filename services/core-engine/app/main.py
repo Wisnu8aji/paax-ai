@@ -107,6 +107,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi import APIRouter, Depends
+from .auth import get_current_user
+
+api_router = APIRouter(dependencies=[Depends(get_current_user)])
+
+
 STORE = load_data()
 
 
@@ -153,7 +159,7 @@ def health():
     }
 
 
-@app.get("/ahsp")
+@api_router.get("/ahsp")
 def list_ahsp():
     return [
         {"code": i.code, "name": i.name, "unit": i.unit, "bidang": i.bidang}
@@ -161,7 +167,7 @@ def list_ahsp():
     ]
 
 
-@app.get("/ahsp/{code}")
+@api_router.get("/ahsp/{code}")
 def get_ahsp(code: str):
     item = STORE.ahsp.get(code)
     if item is None:
@@ -169,17 +175,17 @@ def get_ahsp(code: str):
     return item
 
 
-@app.post("/ahsp/search", response_model=AhspSearchResult)
+@api_router.post("/ahsp/search", response_model=AhspSearchResult)
 def ahsp_search(req: AhspSearchRequest):
     return search_ahsp(req, STORE.ahsp)
 
 
-@app.post("/ahsp/map", response_model=AhspMapResult)
+@api_router.post("/ahsp/map", response_model=AhspMapResult)
 def ahsp_map(req: AhspMapRequest):
     return map_workitem_to_ahsp(req, STORE.ahsp)
 
 
-@app.post("/price/bind", response_model=PriceBindingResult)
+@api_router.post("/price/bind", response_model=PriceBindingResult)
 def price_bind(req: PriceBindRequest):
     try:
         return bind_prices(req, STORE.ahsp, STORE.price_book(req.region_code))
@@ -187,12 +193,12 @@ def price_bind(req: PriceBindRequest):
         raise HTTPException(400, str(e))
 
 
-@app.get("/regions")
+@api_router.get("/regions")
 def list_regions():
     return [{"code": c, "name": n} for c, n in STORE.region_names.items()]
 
 
-@app.get("/data/coverage", response_model=DataCoverageResult)
+@api_router.get("/data/coverage", response_model=DataCoverageResult)
 def data_coverage(region_code: str = "jateng"):
     try:
         return audit_data_coverage(STORE.ahsp, STORE.price_book(region_code), region_code)
@@ -200,7 +206,7 @@ def data_coverage(region_code: str = "jateng"):
         raise HTTPException(400, str(e))
 
 
-@app.post("/rab/hsp", response_model=HSPBreakdown)
+@api_router.post("/rab/hsp", response_model=HSPBreakdown)
 def hsp(req: HSPRequest):
     item = STORE.ahsp.get(req.ahsp_code)
     if item is None:
@@ -211,7 +217,7 @@ def hsp(req: HSPRequest):
         raise HTTPException(400, str(e))
 
 
-@app.post("/rab/calculate", response_model=RABResult)
+@api_router.post("/rab/calculate", response_model=RABResult)
 def calculate(req: RABRequest):
     try:
         return compute_rab(
@@ -226,7 +232,7 @@ def calculate(req: RABRequest):
         raise HTTPException(400, str(e))
 
 
-@app.post("/rab/validate", response_model=ValidationResult)
+@api_router.post("/rab/validate", response_model=ValidationResult)
 def rab_validate(req: RABRequest):
     try:
         book = STORE.price_book(req.region_code)
@@ -239,7 +245,7 @@ def rab_validate(req: RABRequest):
     )
 
 
-@app.post("/rab/build", response_model=SectionedRABResult)
+@api_router.post("/rab/build", response_model=SectionedRABResult)
 def rab_build(req: RABRequest):
     try:
         return build_sectioned_rab(
@@ -252,7 +258,7 @@ def rab_build(req: RABRequest):
         raise HTTPException(400, str(e))
 
 
-@app.post("/rab/export/excel")
+@api_router.post("/rab/export/excel")
 def rab_export_excel(req: RABRequest):
     try:
         book = STORE.price_book(req.region_code)
@@ -287,17 +293,17 @@ def rab_export_excel(req: RABRequest):
     )
 
 
-@app.get("/wbs/sections")
+@api_router.get("/wbs/sections")
 def wbs_sections():
     return [{"code": code, "title": title} for code, title in WBS_SECTIONS]
 
 
-@app.get("/wbs/master")
+@api_router.get("/wbs/master")
 def wbs_master():
     return WBS_MASTER
 
 
-@app.post("/workitems/completeness", response_model=WbsCompletenessResult)
+@api_router.post("/workitems/completeness", response_model=WbsCompletenessResult)
 def workitems_completeness(req: WbsCompletenessRequest):
     return check_wbs_completeness(req)
 
@@ -307,22 +313,22 @@ class WorkItemExpandRequest(BaseModel):
     elements: List[ElementSeed]
 
 
-@app.post("/workitems/expand", response_model=WorkItemsResult)
+@api_router.post("/workitems/expand", response_model=WorkItemsResult)
 def workitems_expand(req: WorkItemExpandRequest):
     return expand_elements(req.elements, req.prj_id)
 
 
-@app.post("/workitems/implied", response_model=WorkItemsResult)
+@api_router.post("/workitems/implied", response_model=WorkItemsResult)
 def workitems_implied(req: ImpliedRequest):
     return implied_workitems(req)
 
 
-@app.get("/geometry/elements")
+@api_router.get("/geometry/elements")
 def geometry_elements():
     return {"element_types": ELEMENT_TYPES}
 
 
-@app.post("/geometry/volume", response_model=VolumeResult)
+@api_router.post("/geometry/volume", response_model=VolumeResult)
 def geometry_volume(req: VolumeRequest):
     try:
         return compute_volume(req.element_type, req.dims)
@@ -340,18 +346,18 @@ class TkgRenderResult(BaseModel):
     text: str
 
 
-@app.post("/tkg/validate", response_model=TkgValidationResult)
+@api_router.post("/tkg/validate", response_model=TkgValidationResult)
 def tkg_validate(req: TkgRequest):
     return validate_tkg(req.doc, req.params)
 
 
-@app.post("/tkg/render", response_model=TkgRenderResult)
+@api_router.post("/tkg/render", response_model=TkgRenderResult)
 def tkg_render(req: TkgRequest):
     validation = validate_tkg(req.doc, req.params)
     return TkgRenderResult(text=render_tkg_txt(req.doc, validation))
 
 
-@app.post("/tkg/takeoff", response_model=TakeoffResult)
+@api_router.post("/tkg/takeoff", response_model=TakeoffResult)
 def tkg_takeoff(req: TkgRequest):
     return takeoff_tkg(req.doc, req.params)
 
@@ -364,7 +370,7 @@ class TakeoffAhspSuggestResult(BaseModel):
     suggestions: List[TakeoffAhspSuggestion]
 
 
-@app.post("/tkg/takeoff-ahsp-suggest", response_model=TakeoffAhspSuggestResult)
+@api_router.post("/tkg/takeoff-ahsp-suggest", response_model=TakeoffAhspSuggestResult)
 def tkg_takeoff_ahsp_suggest(req: TkgRequest):
     takeoff = takeoff_tkg(req.doc, req.params)
     suggestions = suggest_ahsp_for_takeoff(takeoff.items, STORE.ahsp)
@@ -372,54 +378,54 @@ def tkg_takeoff_ahsp_suggest(req: TkgRequest):
 
 
 # ----------------- Take-off arsitektur/tanah (brain §E/§F/§G) ----------------
-@app.post("/takeoff/tanah", response_model=ManualTakeoffResult)
+@api_router.post("/takeoff/tanah", response_model=ManualTakeoffResult)
 def takeoff_tanah_ep(req: TanahRequest):
     return takeoff_tanah(req)
 
 
-@app.post("/takeoff/dinding", response_model=ManualTakeoffResult)
+@api_router.post("/takeoff/dinding", response_model=ManualTakeoffResult)
 def takeoff_dinding_ep(req: DindingRequest):
     return takeoff_dinding(req)
 
 
-@app.post("/takeoff/arsitektur", response_model=ManualTakeoffResult)
+@api_router.post("/takeoff/arsitektur", response_model=ManualTakeoffResult)
 def takeoff_arsitektur_ep(req: ArsitekturRequest):
     return takeoff_arsitektur(req)
 
 
-@app.post("/takeoff/baja", response_model=ManualTakeoffResult)
+@api_router.post("/takeoff/baja", response_model=ManualTakeoffResult)
 def takeoff_baja_ep(req: BajaRequest):
     return takeoff_baja(req)
 
 
-@app.post("/takeoff/atap", response_model=ManualTakeoffResult)
+@api_router.post("/takeoff/atap", response_model=ManualTakeoffResult)
 def takeoff_atap_ep(req: AtapDetailRequest):
     return takeoff_atap(req)
 
 
-@app.post("/takeoff/kusen", response_model=ManualTakeoffResult)
+@api_router.post("/takeoff/kusen", response_model=ManualTakeoffResult)
 def takeoff_kusen_ep(req: KusenRequest):
     return takeoff_kusen(req)
 
 
-@app.post("/takeoff/mep", response_model=ManualTakeoffResult)
+@api_router.post("/takeoff/mep", response_model=ManualTakeoffResult)
 def takeoff_mep_ep(req: MepRequest):
     return takeoff_mep(req)
 
 
 # Konsisten dgn endpoint takeoff lain (tanpa prefix /v1 — satu konvensi API)
-@app.post("/takeoff/mep-advanced", response_model=ManualTakeoffResult)
+@api_router.post("/takeoff/mep-advanced", response_model=ManualTakeoffResult)
 def takeoff_mep_advanced_ep(req: MepAdvancedRequest):
     return takeoff_mep_advanced(req)
 
 
-@app.post("/takeoff/smkk", response_model=ManualTakeoffResult)
+@api_router.post("/takeoff/smkk", response_model=ManualTakeoffResult)
 def takeoff_smkk_ep(req: SmkkRequest):
     return takeoff_smkk(req)
 
 
 # ----------------------------- Brain audit primitives -----------------------------
-@app.post("/brain/confidence", response_model=ConfidenceResult)
+@api_router.post("/brain/confidence", response_model=ConfidenceResult)
 def brain_confidence(req: ConfidenceRequest):
     return score_confidence(
         method=req.method,
@@ -432,42 +438,42 @@ def brain_confidence(req: ConfidenceRequest):
     )
 
 
-@app.post("/brain/qa", response_model=QaResult)
+@api_router.post("/brain/qa", response_model=QaResult)
 def brain_qa(req: QaRequest):
     return run_qa(req)
 
 
-@app.post("/brain/boe", response_model=BrainBoe)
+@api_router.post("/brain/boe", response_model=BrainBoe)
 def brain_boe(req: BrainBoeRequest):
     return build_boe(req)
 
 
-@app.post("/review/triage", response_model=ReviewTriageResult)
+@api_router.post("/review/triage", response_model=ReviewTriageResult)
 def review_triage(req: ReviewTriageRequest):
     return triage_review_tasks(req)
 
 
-@app.post("/review/corrections", response_model=CorrectionRecord)
+@api_router.post("/review/corrections", response_model=CorrectionRecord)
 def review_corrections(req: CorrectionLogRequest):
     return log_correction(req)
 
 
-@app.post("/eval/run", response_model=EvalRunResult)
+@api_router.post("/eval/run", response_model=EvalRunResult)
 def eval_run(req: EvalRunRequest):
     return run_eval(req)
 
 
-@app.post("/export/boe")
+@api_router.post("/export/boe")
 def export_boe(req: BrainBoe):
     return export_boe_payload(req)
 
 
-@app.post("/export/bbs")
+@api_router.post("/export/bbs")
 def export_bbs(req: BbsResult):
     return export_bbs_payload(req)
 
 
-@app.post("/schedule/s-curve", response_model=SCurveResult)
+@api_router.post("/schedule/s-curve", response_model=SCurveResult)
 def s_curve(req: SCurveRequest):
     try:
         rab = compute_rab(
@@ -481,7 +487,7 @@ def s_curve(req: SCurveRequest):
     return build_s_curve(rab, req.lines, period_days=req.period_days, mode=req.mode)
 
 
-@app.post("/schedule/cpm", response_model=CPMResult)
+@api_router.post("/schedule/cpm", response_model=CPMResult)
 def schedule_cpm(req: CPMRequest):
     try:
         return compute_cpm(req)
@@ -489,7 +495,7 @@ def schedule_cpm(req: CPMRequest):
         raise HTTPException(400, str(e))
 
 
-@app.post("/schedule/plan", response_model=SchedulePlanResult)
+@api_router.post("/schedule/plan", response_model=SchedulePlanResult)
 def schedule_plan(req: SchedulePlanRequest):
     try:
         return build_schedule_plan(req)
@@ -497,7 +503,7 @@ def schedule_plan(req: SchedulePlanRequest):
         raise HTTPException(400, str(e))
 
 
-@app.post("/scenario/simulate", response_model=ScenarioResult)
+@api_router.post("/scenario/simulate", response_model=ScenarioResult)
 def scenario_simulate(req: ScenarioConfig):
     try:
         return compute_scenarios(
@@ -506,3 +512,5 @@ def scenario_simulate(req: ScenarioConfig):
         )
     except KeyError as e:
         raise HTTPException(400, str(e))
+
+app.include_router(api_router)

@@ -14,7 +14,8 @@ dependencies = [
     "asyncpg>=0.29.0",
     "pydantic>=2.7.0",
     "pgvector>=0.2.5",
-    "requests>=2.31.0"
+    "requests>=2.31.0",
+    "firebase-admin>=6.5.0"
 ]
 
 [project.optional-dependencies]

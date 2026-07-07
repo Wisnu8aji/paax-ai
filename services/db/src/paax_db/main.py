@@ -7,6 +7,7 @@ from sqlalchemy.future import select
 
 from . import models, schemas
 from .database import get_db
+from .auth import get_current_user, RoleChecker, User
 
 app = FastAPI(title="PAAX DB API", description="Server-side persistent storage for PAAX AI")
 
@@ -18,29 +19,38 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 @app.get("/projects", response_model=List[schemas.ProjectResponse])
-async def list_projects(owner_id: str | None = None, db: AsyncSession = Depends(get_db)):
-    query = select(models.Project)
-    if owner_id:
-        query = query.where(models.Project.owner_id == owner_id)
-    
+async def list_projects(db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    # R10: Enforce user.uid scoping
+    query = select(models.Project).where(models.Project.owner_id == user.uid)
     result = await db.execute(query)
     return result.scalars().all()
 
 @app.post("/projects", response_model=schemas.ProjectResponse)
-async def create_project(project: schemas.ProjectCreate, db: AsyncSession = Depends(get_db)):
-    # Check if project exists
+async def create_project(project: schemas.ProjectCreate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
     result = await db.execute(select(models.Project).where(models.Project.id == project.id))
     if result.scalars().first():
         raise HTTPException(status_code=400, detail="Project with this ID already exists")
     
-    db_project = models.Project(**project.model_dump())
+    # Force owner_id to user.uid
+    project_dict = project.model_dump()
+    project_dict["owner_id"] = user.uid
+    db_project = models.Project(**project_dict)
     db.add(db_project)
+    
+    # Auto-add to members
+    member = models.ProjectMember(project_id=project.id, user_id=user.uid, role="owner")
+    db.add(member)
+    
     await db.commit()
     await db.refresh(db_project)
     return db_project
 
-@app.get("/projects/{id}", response_model=schemas.ProjectResponse)
+@app.get("/projects/{id}", response_model=schemas.ProjectResponse, dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))])
 async def get_project(id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(models.Project).where(models.Project.id == id))
     project = result.scalars().first()
@@ -48,7 +58,7 @@ async def get_project(id: str, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Project not found")
     return project
 
-@app.put("/projects/{id}", response_model=schemas.ProjectResponse)
+@app.put("/projects/{id}", response_model=schemas.ProjectResponse, dependencies=[Depends(RoleChecker(["owner"]))])
 async def update_project(id: str, project_update: schemas.ProjectUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(models.Project).where(models.Project.id == id))
     db_project = result.scalars().first()
@@ -63,7 +73,7 @@ async def update_project(id: str, project_update: schemas.ProjectUpdate, db: Asy
     await db.refresh(db_project)
     return db_project
 
-@app.get("/projects/{id}/rab")
+@app.get("/projects/{id}/rab", dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))])
 async def get_rab(id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(models.RabDraft).where(models.RabDraft.project_id == id))
     rab = result.scalars().first()
@@ -71,7 +81,7 @@ async def get_rab(id: str, db: AsyncSession = Depends(get_db)):
         return {"payload": None}
     return {"payload": rab.payload}
 
-@app.put("/projects/{id}/rab")
+@app.put("/projects/{id}/rab", dependencies=[Depends(RoleChecker(["estimator", "pm", "owner"]))])
 async def save_rab(id: str, rab_data: schemas.RabPayload, db: AsyncSession = Depends(get_db)):
     # Upsert logic
     result = await db.execute(select(models.RabDraft).where(models.RabDraft.project_id == id))
@@ -86,7 +96,7 @@ async def save_rab(id: str, rab_data: schemas.RabPayload, db: AsyncSession = Dep
     await db.commit()
     return {"status": "success"}
 
-@app.get("/projects/{id}/tkg")
+@app.get("/projects/{id}/tkg", dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))])
 async def get_tkg(id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(models.TkgRecord).where(models.TkgRecord.project_id == id))
     tkg = result.scalars().first()
@@ -94,7 +104,7 @@ async def get_tkg(id: str, db: AsyncSession = Depends(get_db)):
         return {"payload": None}
     return {"payload": tkg.payload}
 
-@app.put("/projects/{id}/tkg")
+@app.put("/projects/{id}/tkg", dependencies=[Depends(RoleChecker(["estimator", "pm", "owner"]))])
 async def save_tkg(id: str, tkg_data: schemas.TkgPayload, db: AsyncSession = Depends(get_db)):
     # Upsert logic
     result = await db.execute(select(models.TkgRecord).where(models.TkgRecord.project_id == id))
@@ -109,7 +119,7 @@ async def save_tkg(id: str, tkg_data: schemas.TkgPayload, db: AsyncSession = Dep
     await db.commit()
     return {"status": "success"}
 
-@app.post("/audit/tool-call", response_model=schemas.ToolCallAuditResponse)
+@app.post("/audit/tool-call", response_model=schemas.ToolCallAuditResponse, dependencies=[Depends(get_current_user)])
 async def create_tool_call_audit(audit: schemas.ToolCallAuditCreate, db: AsyncSession = Depends(get_db)):
     db_audit = models.ToolCallAudit(**audit.model_dump())
     db.add(db_audit)
@@ -117,7 +127,7 @@ async def create_tool_call_audit(audit: schemas.ToolCallAuditCreate, db: AsyncSe
     await db.refresh(db_audit)
     return db_audit
 
-@app.post("/knowledge/index")
+@app.post("/knowledge/index", dependencies=[Depends(get_current_user)])
 async def index_knowledge(chunk: schemas.KnowledgeChunkCreate, db: AsyncSession = Depends(get_db)):
     # Upsert by source_type + source_ref + id
     result = await db.execute(
@@ -146,7 +156,7 @@ async def index_knowledge(chunk: schemas.KnowledgeChunkCreate, db: AsyncSession 
     await db.commit()
     return {"status": "success"}
 
-@app.post("/knowledge/search", response_model=List[schemas.KnowledgeChunkResponse])
+@app.post("/knowledge/search", response_model=List[schemas.KnowledgeChunkResponse], dependencies=[Depends(get_current_user)])
 async def search_knowledge(req: schemas.KnowledgeSearchRequest, db: AsyncSession = Depends(get_db)):
     # ORDER BY embedding <=> query_embedding LIMIT top_k
     query = select(models.KnowledgeChunk)

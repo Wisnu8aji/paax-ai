@@ -84,3 +84,15 @@ class KnowledgeSearchRequest(BaseModel):
     source_type: Optional[str] = None
     project_id: Optional[str] = None
     top_k: int = 5
+
+class ProjectMemberBase(BaseModel):
+    role: str
+
+class ProjectMemberCreate(ProjectMemberBase):
+    project_id: str
+    user_id: str
+
+class ProjectMemberResponse(ProjectMemberCreate):
+    added_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)

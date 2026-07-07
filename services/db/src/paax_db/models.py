@@ -69,3 +69,11 @@ class KnowledgeChunk(Base):
     embedding = Column(Vector(768) if HAS_VECTOR else String) 
     metadata_json = Column("metadata", JSONB)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+class ProjectMember(Base):
+    __tablename__ = "project_members"
+    
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True)
+    user_id = Column(String, primary_key=True)
+    role = Column(String, nullable=False) # 'estimator' | 'pm' | 'lapangan' | 'owner'
+    added_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

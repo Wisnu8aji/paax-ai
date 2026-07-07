@@ -33,11 +33,14 @@ function rateLimiter(req: express.Request, res: express.Response, next: express.
   next();
 }
 
+import { authMiddleware } from "./auth";
+
 app.get("/health", healthHandler);
 
 app.post(
   "/chat",
   rateLimiter,
+  authMiddleware,
   createChatHandler({
     geminiApiKey: config.geminiApiKey,
     coreEngineUrl: config.coreEngineUrl,
@@ -49,6 +52,7 @@ app.post(
 app.post(
   "/chat/stream",
   rateLimiter,
+  authMiddleware,
   createStreamHandler({
     geminiApiKey: config.geminiApiKey,
     coreEngineUrl: config.coreEngineUrl,
