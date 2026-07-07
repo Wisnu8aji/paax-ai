@@ -1,0 +1,50 @@
+[
+  {
+    "input": "Lantai Granit HT 60x60 cm Unpolished",
+    "kategori": "keramik_dinding",
+    "expected": {"a_neto_m2": null},
+    "reason": "Homogeneous tile lantai, ini bukan plafon/dinding"
+  },
+  {
+    "input": "Plafon Gypsum Board 9mm Rangka Hollow Luas = 10.5 m2",
+    "kategori": "plafon",
+    "expected": {"a_neto_m2": 10.5},
+    "reason": "Plafon gypsum"
+  },
+  {
+    "input": "Dinding Keramik 20x40 cm merk Roman, keliling 15m tinggi 2m",
+    "kategori": "keramik_dinding",
+    "expected": {"keliling_basah_m": 15.0, "h_pasang_m": 2.0},
+    "reason": "Keramik dinding"
+  },
+  {
+    "input": "Waterproofing Coating Ex. Sika 2 lapis 25m2, naik 0.1m",
+    "kategori": "waterproofing",
+    "expected": {"a_bidang_m2": 25.0, "h_upstand_m": 0.1},
+    "reason": "Waterproofing coating"
+  },
+  {
+    "input": "Plafon PVC panel 20 cm keliling 12m luas 9m2",
+    "kategori": "plafon",
+    "expected": {"a_neto_m2": 9.0, "keliling_tepi_m": 12.0},
+    "reason": "Plafon PVC"
+  },
+  {
+    "input": "Waterproofing lantai atap 100 m2",
+    "kategori": "waterproofing",
+    "expected": {"a_bidang_m2": 100.0},
+    "reason": "Waterproofing"
+  },
+  {
+    "input": "Dinding keramik km/wc k=8m",
+    "kategori": "keramik_dinding",
+    "expected": {"keliling_basah_m": 8.0},
+    "reason": "Keramik dinding"
+  },
+  {
+    "input": "Plafon gypsum keliling 15",
+    "kategori": "plafon",
+    "expected": {"keliling_tepi_m": 15.0},
+    "reason": "Plafon"
+  }
+]

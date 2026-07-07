@@ -1,0 +1,42 @@
+[
+  {
+    "input": "DENAH INSTALASI AIR BERSIH LANTAI 1",
+    "expected": "struktur_lantai_1",
+    "reason": "Lantai 1"
+  },
+  {
+    "input": "POTONGAN A-A",
+    "expected": "potongan",
+    "reason": "Ada kata potongan"
+  },
+  {
+    "input": "TAMPAK DEPAN",
+    "expected": "tampak",
+    "reason": "Ada kata tampak"
+  },
+  {
+    "input": "DETAIL PENULANGAN BALOK B1",
+    "expected": "detail_tabel",
+    "reason": "Kata detail ada di awal"
+  },
+  {
+    "input": "RENCANA ATAP",
+    "expected": "struktur_atap",
+    "reason": "Rencana atap"
+  },
+  {
+    "input": "DETAIL PONDASI",
+    "expected": "substruktur",
+    "reason": "Pondasi = substruktur"
+  },
+  {
+    "input": "DAFTAR GAMBAR",
+    "expected": "daftar_gambar",
+    "reason": "Daftar gambar eksplisit"
+  },
+  {
+    "input": "GAMBAR KERJA",
+    "expected": "cover",
+    "reason": "Umum sekali, cover"
+  }
+]

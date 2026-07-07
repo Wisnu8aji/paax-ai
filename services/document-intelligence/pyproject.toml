@@ -16,6 +16,10 @@ paax-schemas = { path = "../../packages/schemas/python", develop = true }
 paddleocr = { version = "*", optional = true }
 paddlepaddle = { version = "*", optional = true }
 
+[tool.poetry.group.dev.dependencies]
+hypothesis = "*"
+pytest = "*"
+
 [tool.poetry.extras]
 # Fase 2 P6 + Fase G (rencana besar 2026-07-05): OCR utk sheet RASTER
 # (scan/foto) saja — TIDAK wajib utk pipeline vektor (P1-P4). Berat (native,

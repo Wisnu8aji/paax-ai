@@ -1,0 +1,42 @@
+[
+  {
+    "input": "P1 1200x1200x400 kedalaman 1000",
+    "expected": {"b_mm": 1200.0, "l_mm": 1200.0, "d_gali_mm": 1000.0},
+    "reason": "1200x1200x400 ada angka 1200 dan 1000"
+  },
+  {
+    "input": "Pondasi tipe F1 ukuran 1.5 x 1.5 kedalaman gali 1.2 m",
+    "expected": {"b_mm": 1500.0, "l_mm": 1500.0, "d_gali_mm": 1200.0},
+    "reason": "Harus jadi mm"
+  },
+  {
+    "input": "PC1 80 x 80 d=100 cm",
+    "expected": {"b_mm": 800.0, "l_mm": 800.0, "d_gali_mm": 1000.0},
+    "reason": "Satuan cm"
+  },
+  {
+    "input": "Dimensi F2: 2m x 2m t: 300mm",
+    "expected": {"b_mm": 2000.0, "l_mm": 2000.0, "d_gali_mm": null},
+    "reason": "Kedalaman gali null"
+  },
+  {
+    "input": "Footplat P4 1000x800",
+    "expected": {"b_mm": 1000.0, "l_mm": 800.0, "d_gali_mm": null},
+    "reason": "P x L"
+  },
+  {
+    "input": "P5 1500x1500",
+    "expected": {"b_mm": 1500.0, "l_mm": 1500.0, "d_gali_mm": null},
+    "reason": "P x L"
+  },
+  {
+    "input": "Galian P6: -1.5m, uk: 120x120",
+    "expected": {"b_mm": 1200.0, "l_mm": 1200.0, "d_gali_mm": 1500.0},
+    "reason": "Minus elevasi"
+  },
+  {
+    "input": "DETAIL F1: 150 x 150 tebal 35 cm",
+    "expected": {"b_mm": 1500.0, "l_mm": 1500.0, "d_gali_mm": null},
+    "reason": "150 berarti cm jika melihat tebalnya"
+  }
+]

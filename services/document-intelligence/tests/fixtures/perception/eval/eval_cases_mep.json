@@ -1,0 +1,42 @@
+[
+  {
+    "input": "Titik Lampu Downlight LED 12W: 10 ttk",
+    "expected": [{"jenis": "Lampu Downlight LED 12W", "jumlah": 10}],
+    "reason": "Teks mentah eksplisit jumlah 10"
+  },
+  {
+    "input": "Stop Kontak Dinding = 5 buah",
+    "expected": [{"jenis": "Stop Kontak Dinding", "jumlah": 5}],
+    "reason": "Stop kontak 5 buah"
+  },
+  {
+    "input": "Saklar Ganda - 3 unit",
+    "expected": [{"jenis": "Saklar Ganda", "jumlah": 3}],
+    "reason": "Saklar ganda"
+  },
+  {
+    "input": "Titik AC Split 1 PK (2 titik)",
+    "expected": [{"jenis": "AC Split 1 PK", "jumlah": 2}],
+    "reason": "Instalasi AC"
+  },
+  {
+    "input": "Floor Drain (FD) 4 bh",
+    "expected": [{"jenis": "Floor Drain (FD)", "jumlah": 4}],
+    "reason": "Floor drain = sanitair lain"
+  },
+  {
+    "input": "Closet Duduk merk TOTO: 2 unit",
+    "expected": [{"jenis": "Closet Duduk merk TOTO", "jumlah": 2}],
+    "reason": "Closet duduk"
+  },
+  {
+    "input": "Exhaust Fan plafon 3 ttk",
+    "expected": [{"jenis": "Exhaust Fan plafon", "jumlah": 3}],
+    "reason": "Exhaust fan"
+  },
+  {
+    "input": "Kran dinding 5 bh",
+    "expected": [{"jenis": "Kran dinding", "jumlah": 5}],
+    "reason": "Kran air"
+  }
+]

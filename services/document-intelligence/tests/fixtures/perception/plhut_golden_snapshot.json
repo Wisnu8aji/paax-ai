@@ -1,0 +1,16 @@
+{
+  "kategori": {
+    "pondasi_telapak": 3,
+    "sloof": 3,
+    "kolom": 4,
+    "balok": 6,
+    "ring_balok": 5,
+    "plat": 2
+  },
+  "status": {
+    "perlu_review": 23,
+    "dihitung": 0,
+    "belum_didukung": 0
+  },
+  "total_assumptions": 486
+}
