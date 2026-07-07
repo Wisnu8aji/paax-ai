@@ -174,6 +174,140 @@ async def search_knowledge(req: schemas.KnowledgeSearchRequest, db: AsyncSession
     # so we'll just return the chunks.
     return chunks
 
+@app.post("/usage/log", response_model=schemas.AiUsageLogResponse, dependencies=[Depends(get_current_user)])
+async def log_usage(log_data: schemas.AiUsageLogCreate, db: AsyncSession = Depends(get_db)):
+    db_log = models.AiUsageLog(**log_data.model_dump())
+    db.add(db_log)
+    
+    # Increment quota usage if it's a tenant
+    if log_data.tenant_id:
+        result = await db.execute(select(models.TenantQuota).where(models.TenantQuota.tenant_id == log_data.tenant_id))
+        quota = result.scalars().first()
+        if quota:
+            quota.monthly_ai_calls_used += 1
+
+    await db.commit()
+    await db.refresh(db_log)
+    return db_log
+
+@app.get("/usage/summary", response_model=schemas.UsageSummaryResponse, dependencies=[Depends(get_current_user)])
+async def get_usage_summary(tenant_id: str, period: str = "monthly", db: AsyncSession = Depends(get_db)):
+    # Very simple summary implementation
+    query = select(models.AiUsageLog).where(models.AiUsageLog.tenant_id == tenant_id)
+    result = await db.execute(query)
+    logs = result.scalars().all()
+    
+    total_in = sum(l.tokens_in or 0 for l in logs)
+    total_out = sum(l.tokens_out or 0 for l in logs)
+    ops_count = {}
+    hits = 0
+    total = len(logs)
+    
+    for l in logs:
+        ops_count[l.operation] = ops_count.get(l.operation, 0) + 1
+        if l.cache_hit:
+            hits += 1
+            
+    return schemas.UsageSummaryResponse(
+        total_tokens_in=total_in,
+        total_tokens_out=total_out,
+        operations_count=ops_count,
+        cache_hit_ratio=(hits / total) if total > 0 else 0.0
+    )
+
+@app.get("/usage/anomalies", dependencies=[Depends(get_current_user)])
+async def get_usage_anomalies(tenant_id: str, db: AsyncSession = Depends(get_db)):
+    import datetime
+    now = datetime.datetime.now(datetime.timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_start = today_start - datetime.timedelta(days=7)
+    
+    # Fetch logs for the past 7 days and today
+    query = select(models.AiUsageLog).where(
+        models.AiUsageLog.tenant_id == tenant_id,
+        models.AiUsageLog.created_at >= week_start
+    )
+    result = await db.execute(query)
+    logs = result.scalars().all()
+    
+    today_count = 0
+    past_7_days_count = 0
+    for l in logs:
+        if l.created_at >= today_start:
+            today_count += 1
+        else:
+            past_7_days_count += 1
+            
+    avg_7day = past_7_days_count / 7.0 if past_7_days_count > 0 else 0
+    threshold = float(os.environ.get("ANOMALY_THRESHOLD_MULTIPLIER", "3.0"))
+    
+    is_anomaly = today_count > (threshold * avg_7day) and avg_7day > 0
+    
+    return {
+        "tenant_id": tenant_id,
+        "today_calls": today_count,
+        "avg_7day": avg_7day,
+        "is_anomaly": is_anomaly
+    }
+
+@app.get("/usage/quota/check", response_model=schemas.QuotaCheckResponse, dependencies=[Depends(get_current_user)])
+async def check_quota(tenant_id: str, db: AsyncSession = Depends(get_db)):
+    import datetime
+    result = await db.execute(select(models.TenantQuota).where(models.TenantQuota.tenant_id == tenant_id))
+    quota = result.scalars().first()
+    
+    now = datetime.datetime.now(datetime.timezone.utc)
+    
+    if not quota:
+        # Create default quota for new tenant
+        next_month = now + datetime.timedelta(days=30)
+        quota = models.TenantQuota(
+            tenant_id=tenant_id,
+            plan="free",
+            monthly_ai_calls_limit=100, # default free tier limit
+            monthly_ai_calls_used=0,
+            reset_at=next_month
+        )
+        db.add(quota)
+        await db.commit()
+        await db.refresh(quota)
+        
+    # Lazy reset
+    if now > quota.reset_at:
+        quota.monthly_ai_calls_used = 0
+        quota.reset_at = now + datetime.timedelta(days=30)
+        await db.commit()
+        await db.refresh(quota)
+        
+    return schemas.QuotaCheckResponse(
+        tenant_id=tenant_id,
+        plan=quota.plan,
+        limit=quota.monthly_ai_calls_limit,
+        used=quota.monthly_ai_calls_used,
+        remaining=max(0, quota.monthly_ai_calls_limit - quota.monthly_ai_calls_used),
+        reset_at=quota.reset_at,
+        quota_exceeded=quota.monthly_ai_calls_used >= quota.monthly_ai_calls_limit
+    )
+
+@app.post("/reports/morning/{project_id}/generate", response_model=schemas.MorningReportResponse, dependencies=[Depends(get_current_user)])
+async def generate_morning_report_endpoint(project_id: str, db: AsyncSession = Depends(get_db)):
+    from paax_db.report_generator import generate_report
+    try:
+        report_data = await generate_report(project_id, db)
+        db_report = models.MorningReport(**report_data.model_dump())
+        db.add(db_report)
+        await db.commit()
+        await db.refresh(db_report)
+        return db_report
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+        
+@app.get("/reports/morning/{project_id}", response_model=List[schemas.MorningReportResponse], dependencies=[Depends(get_current_user)])
+async def list_morning_reports(project_id: str, limit: int = 10, db: AsyncSession = Depends(get_db)):
+    query = select(models.MorningReport).where(models.MorningReport.project_id == project_id).order_by(models.MorningReport.generated_at.desc()).limit(limit)
+    result = await db.execute(query)
+    return result.scalars().all()
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8001))

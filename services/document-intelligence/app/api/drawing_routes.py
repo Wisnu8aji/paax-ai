@@ -103,6 +103,7 @@ from app.perception.validate import aggregate_metrics, build_gerbang
 def _perform_analysis(
     req: DrawingAnalyzeRequest,
     on_page_done: Optional[Callable[[int, int], None]] = None,
+    ai_client: Optional[Any] = None,
 ) -> DrawingAnalysisResponse:
     """Logika inti `/drawings/analyze` — diekstrak jadi fungsi sinkron murni
     supaya bisa dipanggil LANGSUNG (endpoint lama, sinkron) MAUPUN dari job
@@ -126,6 +127,11 @@ def _perform_analysis(
             related_elements=[],
         )
     ]
+    
+    if getattr(ai_client, "__class__", None).__name__ == "NullAiAssistClient":
+        # Check if it was forced to Null due to quota or other reasons, we don't log explicitly unless needed,
+        # but the warning should be added outside if it was quota-related.
+        pass
 
     if os.path.exists(file_path) and file_name.lower().endswith(".pdf"):
         with open(file_path, "rb") as f:
@@ -145,11 +151,14 @@ def _perform_analysis(
         else:
             tkg_doc = tkg_document.model_dump()
             tkg_text = render_tkg_txt(tkg_document)
-            # Fase X2 (2026-07-05): AI-assist HANYA aktif kalau GEMINI_API_KEY
-            # tersedia di env (degradasi anggun, pola sama PaddleOCR) — tanpa
-            # itu, consolidate_document() berperilaku identik sebelum X2.
+            
+            # Use provided ai_client or fallback to env
+            if ai_client is None:
+                from app.perception.ai_assist.client import GeminiAiAssistClient
+                ai_client = GeminiAiAssistClient.from_env()
+                
             consolidated_out = consolidate_document(
-                tkg_document, ai_client=GeminiAiAssistClient.from_env(),
+                tkg_document, ai_client=ai_client,
             ).model_dump()
 
             if per_sheet_metrics:
@@ -238,7 +247,35 @@ async def analyze_drawing(req: DrawingAnalyzeRequest):
     halaman, pakai `/analyze/start` + `/analyze/status/{job_id}` (Fase F)
     supaya klien tidak menunggu blocking.
     """
-    return _perform_analysis(req)
+    from app.usage import check_quota, log_usage
+    import asyncio
+    from app.perception.ai_assist.client import GeminiAiAssistClient, NullAiAssistClient
+
+    tenant_id = req.file_metadata.project_id or "default-tenant"
+    quota_res = await check_quota(tenant_id)
+
+    if quota_res.quota_exceeded:
+        ai_client = NullAiAssistClient()
+    else:
+        def usage_logger(operation, success, tokens_in=None, tokens_out=None, latency_ms=None):
+            try:
+                loop = asyncio.get_event_loop()
+                loop.create_task(log_usage(tenant_id, operation, success, tokens_in, tokens_out, latency_ms, False))
+            except Exception:
+                pass
+        ai_client = GeminiAiAssistClient.from_env(usage_logger=usage_logger)
+
+    res = _perform_analysis(req, ai_client=ai_client)
+
+    if quota_res.quota_exceeded:
+        res.warnings.append(DrawingWarning(
+            id=str(uuid.uuid4()),
+            message="Kuota AI bulan ini habis. Upgrade paket atau tunggu reset tanggal berikutnya. Mode rule-based-only.",
+            level="WARNING",
+            related_elements=[]
+        ))
+        
+    return res
 
 
 # --- Fase F: proses latar belakang (job async) ---
@@ -260,7 +297,7 @@ _ANALYZE_JOBS: dict[str, AnalyzeJobStatus] = {}
 _ANALYZE_JOBS_LOCK = threading.Lock()
 
 
-def _run_analyze_job(job_id: str, req: DrawingAnalyzeRequest) -> None:
+def _run_analyze_job(job_id: str, req: DrawingAnalyzeRequest, ai_client: Optional[Any] = None, quota_exceeded: bool = False) -> None:
     def _set(**kwargs):
         with _ANALYZE_JOBS_LOCK:
             job = _ANALYZE_JOBS[job_id]
@@ -275,7 +312,14 @@ def _run_analyze_job(job_id: str, req: DrawingAnalyzeRequest) -> None:
 
     try:
         _set(progress_message="Menyusun grid & elemen...")
-        result = _perform_analysis(req, on_page_done=_on_page_done)
+        result = _perform_analysis(req, on_page_done=_on_page_done, ai_client=ai_client)
+        if quota_exceeded:
+            result.warnings.append(DrawingWarning(
+                id=str(uuid.uuid4()),
+                message="Kuota AI bulan ini habis. Upgrade paket atau tunggu reset tanggal berikutnya. Mode rule-based-only.",
+                level="WARNING",
+                related_elements=[]
+            ))
         _set(progress_message="Menggabungkan hasil antar halaman...")
         _set(status="COMPLETED", result=result, progress_message="Selesai")
     except Exception as e:  # pragma: no cover - jalur gagal dicatat, bukan disembunyikan
@@ -291,7 +335,28 @@ async def start_analyze_job(req: DrawingAnalyzeRequest, background_tasks: Backgr
             job_id=job_id, status="PENDING", created_at=now, updated_at=now,
             progress_message="Menunggu diproses...",
         )
-    background_tasks.add_task(_run_analyze_job, job_id, req)
+        
+    from app.usage import check_quota, log_usage
+    import asyncio
+    from app.perception.ai_assist.client import GeminiAiAssistClient, NullAiAssistClient
+    
+    tenant_id = req.file_metadata.project_id or "default-tenant"
+    quota_res = await check_quota(tenant_id)
+    
+    if quota_res.quota_exceeded:
+        ai_client = NullAiAssistClient()
+    else:
+        def usage_logger(operation, success, tokens_in=None, tokens_out=None, latency_ms=None):
+            try:
+                # running async function from sync thread pool
+                loop = asyncio.new_event_loop()
+                loop.run_until_complete(log_usage(tenant_id, operation, success, tokens_in, tokens_out, latency_ms, False))
+                loop.close()
+            except Exception:
+                pass
+        ai_client = GeminiAiAssistClient.from_env(usage_logger=usage_logger)
+        
+    background_tasks.add_task(_run_analyze_job, job_id, req, ai_client, quota_res.quota_exceeded)
     return {"job_id": job_id, "status": "PENDING"}
 
 

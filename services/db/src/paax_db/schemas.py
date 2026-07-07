@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, Any, Dict, List
 from datetime import datetime
+import uuid
 
 class ProjectBase(BaseModel):
     owner_id: str
@@ -60,6 +61,55 @@ class ToolCallAuditCreate(BaseModel):
 class ToolCallAuditResponse(ToolCallAuditCreate):
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
+
+
+class AiUsageLogCreate(BaseModel):
+    id: Optional[uuid.UUID] = None
+    tenant_id: Optional[str] = None
+    service: str
+    operation: str
+    cache_hit: bool = False
+    tokens_in: Optional[int] = None
+    tokens_out: Optional[int] = None
+    latency_ms: Optional[int] = None
+    success: bool
+
+class AiUsageLogResponse(AiUsageLogCreate):
+    id: uuid.UUID
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class MorningReportCreate(BaseModel):
+    project_id: str
+    summary: str
+    highlights: List[str]
+    concerns: List[str]
+    metrics_snapshot: Dict[str, Any]
+    narrative_source: str
+
+class MorningReportResponse(MorningReportCreate):
+    id: str
+    generated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class UsageSummaryResponse(BaseModel):
+    total_tokens_in: int
+    total_tokens_out: int
+    operations_count: Dict[str, int]
+    cache_hit_ratio: float
+
+class QuotaCheckResponse(BaseModel):
+    tenant_id: str
+    plan: str
+    limit: int
+    used: int
+    remaining: int
+    reset_at: datetime
+    quota_exceeded: bool
 
 class KnowledgeChunkCreate(BaseModel):
     id: str

@@ -24,6 +24,17 @@ export function createStreamHandler(params: {
     const parsed = ChatBodySchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "message wajib diisi" });
 
+    const tenantId = parsed.data.context?.project_id || "default-tenant";
+    const { checkQuota } = require("../usage");
+    const quotaRes = await checkQuota(tenantId);
+    if (quotaRes.quota_exceeded) {
+      return res.status(429).json({
+        error: "quota_exceeded",
+        message: "Kuota AI bulan ini habis. Upgrade paket atau tunggu reset tanggal berikutnya.",
+        reset_at: quotaRes.reset_at || null
+      });
+    }
+
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");

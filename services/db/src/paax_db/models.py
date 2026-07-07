@@ -1,8 +1,9 @@
-from sqlalchemy import Column, String, Integer, Numeric, Boolean, DateTime, ForeignKey, Index
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Column, String, Integer, Numeric, Boolean, DateTime, ForeignKey, Index, JSON
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from .database import Base
+import uuid
 
 class Project(Base):
     __tablename__ = "projects"
@@ -39,18 +40,52 @@ class TkgRecord(Base):
 
 class ToolCallAudit(Base):
     __tablename__ = "tool_call_audit"
-    
-    id = Column(String, primary_key=True) # UUID mapped as string
-    conversation_id = Column(String, index=True)
-    project_id = Column(String)
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    session_id = Column(String, index=True)
+    project_id = Column(String, index=True)
     tool_name = Column(String, nullable=False)
-    input_json = Column(JSONB, nullable=False)
-    output_json = Column(JSONB)
-    model = Column(String)
-    latency_ms = Column(Integer)
-    tokens_in = Column(Integer)
-    tokens_out = Column(Integer)
+    tool_args = Column(JSON, nullable=False)
+    result_payload = Column(JSON, nullable=True)
+    tokens_in = Column(Integer, default=0)
+    tokens_out = Column(Integer, default=0)
+    latency_ms = Column(Integer, default=0)
+    success = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class AiUsageLog(Base):
+    __tablename__ = "ai_usage_log"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String, index=True, nullable=True)
+    service = Column(String, nullable=False)
+    operation = Column(String, nullable=False)
+    cache_hit = Column(Boolean, default=False, nullable=False)
+    tokens_in = Column(Integer, nullable=True)
+    tokens_out = Column(Integer, nullable=True)
+    latency_ms = Column(Integer, nullable=True)
+    success = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+class MorningReport(Base):
+    __tablename__ = "morning_reports"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(String, index=True, nullable=False)
+    generated_at = Column(DateTime(timezone=True), server_default=func.now(), index=True, nullable=False)
+    summary = Column(String, nullable=False)
+    highlights = Column(JSONB, nullable=False)
+    concerns = Column(JSONB, nullable=False)
+    metrics_snapshot = Column(JSONB, nullable=False)
+    narrative_source = Column(String, nullable=False)
+
+class TenantQuota(Base):
+    __tablename__ = "tenant_quota"
+    
+    tenant_id = Column(String, primary_key=True)
+    plan = Column(String, nullable=False)
+    monthly_ai_calls_limit = Column(Integer, nullable=False)
+    monthly_ai_calls_used = Column(Integer, nullable=False, default=0)
+    reset_at = Column(DateTime(timezone=True), nullable=False)
 
 try:
     from pgvector.sqlalchemy import Vector
