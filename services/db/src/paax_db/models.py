@@ -51,3 +51,21 @@ class ToolCallAudit(Base):
     tokens_in = Column(Integer)
     tokens_out = Column(Integer)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+try:
+    from pgvector.sqlalchemy import Vector
+    HAS_VECTOR = True
+except ImportError:
+    HAS_VECTOR = False
+
+class KnowledgeChunk(Base):
+    __tablename__ = "knowledge_chunks"
+    
+    id = Column(String, primary_key=True) # UUID
+    source_type = Column(String, nullable=False)
+    source_ref = Column(String, nullable=False)
+    content = Column(String, nullable=False)
+    # Using type fallback to avoid hard crash if pgvector isn't installed yet
+    embedding = Column(Vector(768) if HAS_VECTOR else String) 
+    metadata_json = Column("metadata", JSONB)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
