@@ -97,6 +97,9 @@ from app.perception.assemble import assemble_document_from_pdf_bytes
 from app.perception.consolidate import consolidate_document
 from app.perception.render import render_tkg_txt
 from app.perception.validate import aggregate_metrics, build_gerbang
+from app.jobs.store import JobStore
+
+_job_store = JobStore()
 
 # --- Endpoints ---
 
@@ -256,17 +259,9 @@ class AnalyzeJobStatus(BaseModel):
     error: Optional[str] = None
 
 
-_ANALYZE_JOBS: dict[str, AnalyzeJobStatus] = {}
-_ANALYZE_JOBS_LOCK = threading.Lock()
-
-
 def _run_analyze_job(job_id: str, req: DrawingAnalyzeRequest) -> None:
     def _set(**kwargs):
-        with _ANALYZE_JOBS_LOCK:
-            job = _ANALYZE_JOBS[job_id]
-            for k, v in kwargs.items():
-                setattr(job, k, v)
-            job.updated_at = datetime.now().isoformat()
+        _job_store.update(job_id, **kwargs)
 
     _set(status="PROCESSING", progress_message="Membaca gambar...")
 
@@ -285,23 +280,43 @@ def _run_analyze_job(job_id: str, req: DrawingAnalyzeRequest) -> None:
 @router.post("/analyze/start")
 async def start_analyze_job(req: DrawingAnalyzeRequest, background_tasks: BackgroundTasks):
     job_id = str(uuid.uuid4())
-    now = datetime.now().isoformat()
-    with _ANALYZE_JOBS_LOCK:
-        _ANALYZE_JOBS[job_id] = AnalyzeJobStatus(
-            job_id=job_id, status="PENDING", created_at=now, updated_at=now,
-            progress_message="Menunggu diproses...",
-        )
+    _job_store.create(job_id, request_json=req.model_dump_json())
     background_tasks.add_task(_run_analyze_job, job_id, req)
     return {"job_id": job_id, "status": "PENDING"}
 
 
 @router.get("/analyze/status/{job_id}", response_model=AnalyzeJobStatus)
 async def get_analyze_job_status(job_id: str):
-    with _ANALYZE_JOBS_LOCK:
-        job = _ANALYZE_JOBS.get(job_id)
+    job = _job_store.get(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job tidak ditemukan (mungkin server sudah restart)")
     return job
+
+@router.post("/analyze/retry/{job_id}")
+async def retry_analyze_job(job_id: str, background_tasks: BackgroundTasks):
+    job = _job_store.get(job_id)
+    if job is None:
+        raise HTTPException(404, "Job tidak ditemukan")
+    if job.status != "FAILED":
+        raise HTTPException(400, f"Job berstatus {job.status}, hanya job FAILED yang bisa di-retry")
+    attempts = _job_store.increment_attempts(job_id)
+    if attempts > 2:
+        raise HTTPException(409, "Job sudah dicoba 2x, perlu investigasi manual sebelum retry lagi")
+    _job_store.update(job_id, status="PENDING", error=None, progress_message="Menunggu diproses ulang...")
+    req_json = _job_store.get_request_json(job_id)
+    if not req_json:
+        raise HTTPException(500, "Data request asli tidak ditemukan, tidak bisa retry")
+    req = DrawingAnalyzeRequest.model_validate_json(req_json)
+    background_tasks.add_task(_run_analyze_job, job_id, req)
+    return {"job_id": job_id, "status": "PENDING", "attempts": attempts}
+
+@router.post("/analyze/cleanup")
+async def cleanup_old_jobs(older_than_minutes: int = None):
+    minutes = older_than_minutes or int(os.getenv("JOB_RETENTION_MINUTES", "1440"))
+    stale_ids = _job_store.list_stale(minutes)
+    for jid in stale_ids:
+        _job_store.delete(jid)
+    return {"deleted": len(stale_ids), "job_ids": stale_ids}
 
 
 @router.post("/classify")
