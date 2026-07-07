@@ -1,0 +1,32 @@
+[
+  {
+    "id": "project-170123-112233",
+    "owner_id": "default_user",
+    "name": "Proyek PLHUT Jember",
+    "location": "Jember",
+    "client": "Kemenag Jember",
+    "type": "Gedung",
+    "status": "active",
+    "description": "Pembangunan Pusat Layanan Haji dan Umrah Terpadu",
+    "rab_value": 2500000000,
+    "progress": 0,
+    "warnings": 0,
+    "health": 100,
+    "last_activity": "Initial Migration"
+  },
+  {
+    "id": "project-170123-445566",
+    "owner_id": "default_user",
+    "name": "Renovasi Sekolah SD",
+    "location": "Surabaya",
+    "client": "Dinas Pendidikan",
+    "type": "Renovasi",
+    "status": "active",
+    "description": "Renovasi 3 ruang kelas",
+    "rab_value": 450000000,
+    "progress": 50,
+    "warnings": 1,
+    "health": 90,
+    "last_activity": "Initial Migration"
+  }
+]
