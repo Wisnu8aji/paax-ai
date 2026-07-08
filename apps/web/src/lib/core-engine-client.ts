@@ -9,7 +9,7 @@
  * semuanya berasal dari services/core-engine.
  */
 export const CORE_ENGINE_URL =
-  process.env.NEXT_PUBLIC_CORE_ENGINE_URL || 'http://127.0.0.1:8081';
+  process.env.NEXT_PUBLIC_CORE_ENGINE_PROXY_URL || '/api/core-engine';
 
 export class CoreEngineError extends Error {
   constructor(public message: string, public status?: number, public data?: unknown) {

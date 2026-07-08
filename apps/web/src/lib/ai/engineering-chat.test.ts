@@ -91,11 +91,13 @@ describe("engineering chat helpers", () => {
     const answer = fallbackEngineeringAnswer({
       message: "halo",
       engine: onlineEngine,
-      aiError: "Gemini gagal (429): quota exceeded",
+      aiProvider: "NVIDIA DeepSeek Pro",
+      aiError: "NVIDIA timeout setelah 120 detik",
     });
 
-    expect(answer).toContain("Gemini API belum memberi jawaban");
-    expect(answer).toContain("quota exceeded");
+    expect(answer).toContain("NVIDIA DeepSeek Pro belum memberi jawaban");
+    expect(answer).toContain("NVIDIA timeout");
+    expect(answer).not.toContain("Gemini");
     expect(answer).not.toContain("RAB");
   });
 

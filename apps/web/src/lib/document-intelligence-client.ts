@@ -1,6 +1,6 @@
 import { DocumentIntelligenceHealth, DrawingAnalysisResult } from "@paax/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_DOCUMENT_INTELLIGENCE_URL || "http://127.0.0.1:8083";
+const BASE_URL = process.env.NEXT_PUBLIC_DOCUMENT_INTELLIGENCE_PROXY_URL || "/api/document-intelligence";
 
 export interface DrawingFileMetadata {
   file_id?: string;

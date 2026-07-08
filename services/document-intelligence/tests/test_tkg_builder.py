@@ -4,9 +4,11 @@ from pathlib import Path
 
 from app.tkg.builder import build_tkg_from_text, classification_to_jenis
 
+_FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
+
 
 def test_build_tkg_from_structured_text_fixture():
-    raw = Path("tests/fixtures/golden_tkg_text_sheet.txt").read_text(encoding="utf-8")
+    raw = (_FIXTURES_DIR / "golden_tkg_text_sheet.txt").read_text(encoding="utf-8")
 
     result = build_tkg_from_text(
         project_id="PRJ", revision_id="R1", sheet_id="S01", title="Denah", raw_text=raw, jenis="denah",

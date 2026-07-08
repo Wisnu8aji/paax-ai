@@ -1,4 +1,5 @@
 import os
+import datetime
 from typing import List, Dict, Any
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,6 +19,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _utc_now() -> datetime.datetime:
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
+def _as_aware_utc(value: datetime.datetime) -> datetime.datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=datetime.timezone.utc)
+    return value.astimezone(datetime.timezone.utc)
 
 @app.get("/health")
 def health():
@@ -158,21 +169,35 @@ async def index_knowledge(chunk: schemas.KnowledgeChunkCreate, db: AsyncSession 
 
 @app.post("/knowledge/search", response_model=List[schemas.KnowledgeChunkResponse], dependencies=[Depends(get_current_user)])
 async def search_knowledge(req: schemas.KnowledgeSearchRequest, db: AsyncSession = Depends(get_db)):
-    # ORDER BY embedding <=> query_embedding LIMIT top_k
     query = select(models.KnowledgeChunk)
     if req.source_type:
         query = query.where(models.KnowledgeChunk.source_type == req.source_type)
-    
-    # Simple similarity search using pgvector
-    # We will use cosine distance '<=>'
-    query = query.order_by(models.KnowledgeChunk.embedding.cosine_distance(req.query_embedding)).limit(req.top_k)
-    
+
+    bind = db.get_bind()
+    dialect_name = bind.dialect.name if bind is not None else "postgresql"
+
+    if dialect_name == "postgresql" and models.HAS_VECTOR:
+        query = query.order_by(models.KnowledgeChunk.embedding.cosine_distance(req.query_embedding)).limit(req.top_k)
+        result = await db.execute(query)
+        return result.scalars().all()
+
     result = await db.execute(query)
     chunks = result.scalars().all()
-    
-    # We cannot easily return distance mapped to similarity without a custom select, 
-    # so we'll just return the chunks.
-    return chunks
+    return sorted(
+        chunks,
+        key=lambda chunk: _cosine_distance(chunk.embedding or [], req.query_embedding),
+    )[:req.top_k]
+
+
+def _cosine_distance(left: list[float], right: list[float]) -> float:
+    if not left or not right or len(left) != len(right):
+        return 1.0
+    dot = sum(a * b for a, b in zip(left, right))
+    norm_left = sum(a * a for a in left) ** 0.5
+    norm_right = sum(b * b for b in right) ** 0.5
+    if norm_left == 0 or norm_right == 0:
+        return 1.0
+    return 1.0 - (dot / (norm_left * norm_right))
 
 @app.post("/usage/log", response_model=schemas.AiUsageLogResponse, dependencies=[Depends(get_current_user)])
 async def log_usage(log_data: schemas.AiUsageLogCreate, db: AsyncSession = Depends(get_db)):
@@ -183,8 +208,16 @@ async def log_usage(log_data: schemas.AiUsageLogCreate, db: AsyncSession = Depen
     if log_data.tenant_id:
         result = await db.execute(select(models.TenantQuota).where(models.TenantQuota.tenant_id == log_data.tenant_id))
         quota = result.scalars().first()
-        if quota:
-            quota.monthly_ai_calls_used += 1
+        if not quota:
+            quota = models.TenantQuota(
+                tenant_id=log_data.tenant_id,
+                plan="free",
+                monthly_ai_calls_limit=100,
+                monthly_ai_calls_used=0,
+                reset_at=_utc_now() + datetime.timedelta(days=30),
+            )
+            db.add(quota)
+        quota.monthly_ai_calls_used += 1
 
     await db.commit()
     await db.refresh(db_log)
@@ -252,11 +285,10 @@ async def get_usage_anomalies(tenant_id: str, db: AsyncSession = Depends(get_db)
 
 @app.get("/usage/quota/check", response_model=schemas.QuotaCheckResponse, dependencies=[Depends(get_current_user)])
 async def check_quota(tenant_id: str, db: AsyncSession = Depends(get_db)):
-    import datetime
     result = await db.execute(select(models.TenantQuota).where(models.TenantQuota.tenant_id == tenant_id))
     quota = result.scalars().first()
     
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = _utc_now()
     
     if not quota:
         # Create default quota for new tenant
@@ -273,7 +305,7 @@ async def check_quota(tenant_id: str, db: AsyncSession = Depends(get_db)):
         await db.refresh(quota)
         
     # Lazy reset
-    if now > quota.reset_at:
+    if now > _as_aware_utc(quota.reset_at):
         quota.monthly_ai_calls_used = 0
         quota.reset_at = now + datetime.timedelta(days=30)
         await db.commit()

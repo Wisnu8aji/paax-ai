@@ -3,6 +3,7 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { LocalStorage, STORAGE_KEYS, projectStorageKey } from '@/lib/local-storage';
 import { getDb, getProjectBackend } from './project-repository';
+import { dbApiRabRepository } from './db-api';
 
 /**
  * Penyimpanan draft RAB per-proyek.

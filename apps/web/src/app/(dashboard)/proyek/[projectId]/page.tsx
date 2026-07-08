@@ -1,14 +1,47 @@
 'use client';
 
-import { useParams } from 'next/navigation';
-import { TrendingUp, AlertTriangle, Activity, CheckCircle2 } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import {
+  TrendingUp,
+  AlertTriangle,
+  Activity,
+  ArrowRight,
+  CheckCircle2,
+  FileImage,
+  Calculator,
+  CalendarClock,
+} from 'lucide-react';
 import { Card, StatCard, ProgressBar, EmptyState } from '@/components/ui';
 import { scheduleTasks } from '@/lib/mock/workspace';
 import { useProjects } from '@/lib/projects/projects-context';
 import { formatRupiah } from '@/lib/format';
 
+/** Modul Project Studio (utama.txt): Drawing Intelligence / Cost & Quantity
+ *  Analysis / Schedule Planning — nama baru, route & flow lama tetap. */
+const STUDIO_MODULES = [
+  {
+    seg: 'gambar-kerja',
+    title: 'Drawing Intelligence',
+    desc: 'Baca gambar kerja PDF → TKG → takeoff. AI-assist mengisi celah klasifikasi.',
+    icon: FileImage,
+  },
+  {
+    seg: 'rab',
+    title: 'Cost & Quantity Analysis',
+    desc: 'Susun RAB & BoQ patuh AHSP — semua angka dihitung Core Engine.',
+    icon: Calculator,
+  },
+  {
+    seg: 'schedule',
+    title: 'Schedule Planning',
+    desc: 'Kurva S rencana & simulasi skenario waktu-biaya deterministik.',
+    icon: CalendarClock,
+  },
+];
+
 export default function ProjectOverviewPage() {
   const params = useParams();
+  const router = useRouter();
   const projectId = params.projectId as string;
   const { getProject, loading } = useProjects();
   const project = getProject(projectId);
@@ -23,6 +56,54 @@ export default function ProjectOverviewPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Modul studio */}
+      <div className="pax-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+        {STUDIO_MODULES.map((m) => {
+          const Icon = m.icon;
+          return (
+            <div
+              key={m.seg}
+              onClick={() => router.push(`/proyek/${projectId}/${m.seg}`)}
+              className="pax-card-hover pax-press"
+              role="link"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && router.push(`/proyek/${projectId}/${m.seg}`)}
+              style={{
+                borderRadius: 18,
+                background: 'var(--elev)',
+                border: '1px solid var(--border)',
+                boxShadow: 'var(--shadow-card)',
+                padding: '18px 19px',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+              }}
+            >
+              <span
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 13,
+                  background: 'var(--rail-grad)',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icon size={18} strokeWidth={1.7} />
+              </span>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>{m.title}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--text2)', lineHeight: 1.55, flex: 1 }}>{m.desc}</div>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 700, color: 'var(--gold)' }}>
+                Buka modul <ArrowRight size={13} />
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }} className="pax-grid-4">
         <StatCard label="Nilai RAB" value={project.rabValue === null ? 'Belum dihitung' : formatRupiah(project.rabValue)} sub={project.rabValue === null ? 'menunggu engine' : 'dari engine (RAB)'} />
         <StatCard label="Progress" value={`${project.progress}%`} sub="metadata proyek" dot="var(--ok-dot)" />

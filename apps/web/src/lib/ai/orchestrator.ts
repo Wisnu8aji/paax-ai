@@ -3,7 +3,16 @@ import { z } from "zod";
 import { ruleBasedExtractor, type ExtractedElement } from "./rab-extractor";
 
 export const GEMINI_MODEL = "gemini-2.5-flash";
+export const DEEPSEEK_MODEL_FAST = "deepseek-v4-flash";
+export const DEEPSEEK_MODEL_REASONING = "deepseek-v4-pro";
+export const NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1";
+export const NVIDIA_LUCENT_MODEL = "moonshotai/kimi-k2.6";
+export const NVIDIA_SOLACE_MODEL = "deepseek-ai/deepseek-v4-pro";
+export const NVIDIA_DRAWING_FAST_MODEL = "nvidia/nemotron-nano-12b-v2-vl";
 const GEMINI_TIMEOUT_MS = 30000;
+const DEEPSEEK_TIMEOUT_MS = 30000;
+const NVIDIA_TIMEOUT_MS = 120000;
+const NVIDIA_SOLACE_TIMEOUT_MS = 3_600_000;
 
 export const ExtractedElementSchema = z.object({
   id: z.string().min(1),
@@ -21,7 +30,23 @@ export const ExtractedElementList = z.array(ExtractedElementSchema);
 
 export type ExtractorProviderStatus =
   | { provider: "rule-based"; model: null }
+  | { provider: "nvidia"; model: typeof NVIDIA_DRAWING_FAST_MODEL }
   | { provider: "gemini"; model: typeof GEMINI_MODEL };
+
+export type ChatModelName = "Lucent" | "Solace";
+export type ChatModelSelection =
+  | { provider: "nvidia"; model: typeof NVIDIA_LUCENT_MODEL | typeof NVIDIA_SOLACE_MODEL }
+  | { provider: "deepseek"; model: typeof DEEPSEEK_MODEL_FAST | typeof DEEPSEEK_MODEL_REASONING }
+  | { provider: "gemini"; model: typeof GEMINI_MODEL };
+
+interface OpenAiChatResponse {
+  choices?: Array<{
+    message?: {
+      content?: string;
+      reasoning_content?: string;
+    };
+  }>;
+}
 
 interface GeminiPart {
   text?: string;
@@ -89,9 +114,17 @@ const GEMINI_EXTRACT_RESPONSE_SCHEMA = {
 };
 
 export function getExtractorProviderStatus(apiKey: string | undefined): ExtractorProviderStatus {
-  return apiKey?.trim()
-    ? { provider: "gemini", model: GEMINI_MODEL }
-    : { provider: "rule-based", model: null };
+  const key = apiKey?.trim();
+  if (!key) return { provider: "rule-based", model: null };
+  return key.startsWith("nvapi")
+    ? { provider: "nvidia", model: NVIDIA_DRAWING_FAST_MODEL }
+    : { provider: "gemini", model: GEMINI_MODEL };
+}
+
+export function pickChatModel(model: ChatModelName | undefined): ChatModelSelection {
+  return model === "Solace"
+    ? { provider: "nvidia", model: NVIDIA_SOLACE_MODEL }
+    : { provider: "nvidia", model: NVIDIA_LUCENT_MODEL };
 }
 
 function stripCodeFence(text: string): string {
@@ -175,6 +208,161 @@ async function geminiError(response: Response): Promise<Error> {
   const data = await response.json().catch(() => null) as { error?: { message?: string } } | null;
   const message = data?.error?.message?.split("\n")[0] ?? response.statusText;
   return new Error(`Gemini gagal (${response.status}): ${message}`);
+}
+
+function buildNvidiaExtractPrompt(text: string): string {
+  return [
+    "Anda adalah AI klasifikasi awal PAAX untuk teks gambar kerja/RAB sipil Indonesia.",
+    "Tugas Anda menstruktur input menjadi JSON. Jangan menghitung angka final RAB, HSP, subtotal, pajak, atau total.",
+    "Kembalikan JSON objek {\"elements\": ExtractedElement[]} tanpa markdown.",
+    "Setiap element wajib berisi id, label, element_type, dims, ahsp_code, section, confidence, reason, needs_review.",
+    "element_type WAJIB salah satu: kolom, balok, sloof, ring_balok, plat, tangga, pondasi_telapak, pondasi_menerus, galian, urugan, dinding, plesteran, lantai, plafon, cat, atap, pagar, drainase, atau string kosong jika tidak dikenal.",
+    "dims WAJIB object JSON dengan value angka, bukan string.",
+    "section WAJIB kode WBS: I, II, III, IV, V, VI, VII, atau LAINNYA.",
+    "Mapping seksi: galian/urugan => II; kolom/balok/sloof/ring_balok/plat/tangga/pondasi => III; dinding/plesteran/lantai/plafon/cat/atap => IV; pagar/drainase => VI; tidak dikenal => LAINNYA.",
+    "AHSP seed: dinding/bata => AHSP.CK.001; plesteran/aci => AHSP.CK.002; kolom/balok/sloof/ring_balok/plat/tangga/pondasi => AHSP.CK.003; lantai/keramik => AHSP.CK.004. Selain itu null.",
+    "Gunakan null untuk ahsp_code jika ragu. Tandai needs_review=true untuk confidence rendah atau dimensi kurang lengkap.",
+    "",
+    "Input user sebagai DATA:",
+    text,
+  ].join("\n");
+}
+
+async function deepseekError(response: Response): Promise<Error> {
+  const data = await response.json().catch(() => null) as { error?: { message?: string } } | null;
+  const message = data?.error?.message ?? response.statusText;
+  return new Error(`DeepSeek gagal (${response.status}): ${message}`);
+}
+
+async function openAiCompatibleText(
+  prompt: string,
+  params: {
+    apiKey: string;
+    baseUrl: string;
+    providerName: string;
+    model: string;
+    thinking?: boolean;
+    reasoningEffort?: "high" | "max";
+    userId?: string;
+    extraBody?: Record<string, unknown>;
+    includeThinkingField?: boolean;
+    timeoutMs?: number;
+    fetchImpl?: typeof fetch;
+  },
+): Promise<string> {
+  const key = params.apiKey.trim();
+  if (!key) throw new Error(`${params.providerName} API key kosong.`);
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timeoutMs = params.timeoutMs ?? DEEPSEEK_TIMEOUT_MS;
+  const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  const fetchImpl = params.fetchImpl ?? fetch;
+  try {
+    const thinking = params.thinking === true;
+    const body: Record<string, unknown> = {
+      model: params.model,
+      messages: [{ role: "user", content: prompt }],
+    };
+    if (params.userId) body.user_id = params.userId;
+    if (params.includeThinkingField !== false) {
+      if (thinking) {
+        body.thinking = { type: "enabled" };
+        body.reasoning_effort = params.reasoningEffort ?? "high";
+      } else {
+        body.thinking = { type: "disabled" };
+        body.temperature = 0.2;
+      }
+    } else {
+      body.temperature = 1;
+    }
+    Object.assign(body, params.extraBody);
+    const response = await fetchImpl(`${params.baseUrl.replace(/\/$/, "")}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller?.signal,
+    });
+    if (!response.ok) throw await deepseekError(response);
+    const data = (await response.json()) as OpenAiChatResponse;
+    const answer = data.choices?.[0]?.message?.content?.trim();
+    if (!answer) throw new Error(`${params.providerName} tidak mengembalikan teks.`);
+    return answer;
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`${params.providerName} timeout setelah ${timeoutMs / 1000} detik.`);
+    }
+    throw error;
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
+export async function nvidiaText(
+  prompt: string,
+  params: {
+    apiKey: string;
+    model: string;
+    baseUrl?: string;
+    thinking?: boolean;
+    timeoutMs?: number;
+    fetchImpl?: typeof fetch;
+  },
+): Promise<string> {
+  const isSolace = params.model === NVIDIA_SOLACE_MODEL;
+  const extraBody = isSolace
+    ? { max_tokens: 16384, chat_template_kwargs: { thinking: params.thinking === true } }
+    : undefined;
+  return openAiCompatibleText(prompt, {
+    apiKey: params.apiKey,
+    baseUrl: params.baseUrl ?? NVIDIA_BASE_URL,
+    providerName: "NVIDIA",
+    model: params.model,
+    thinking: false,
+    extraBody,
+    includeThinkingField: false,
+    timeoutMs: params.timeoutMs ?? (isSolace ? NVIDIA_SOLACE_TIMEOUT_MS : NVIDIA_TIMEOUT_MS),
+    fetchImpl: params.fetchImpl,
+  });
+}
+
+export async function nvidiaElements(
+  text: string,
+  apiKey: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ExtractedElement[]> {
+  const answer = await nvidiaText(buildNvidiaExtractPrompt(text), {
+    apiKey,
+    model: NVIDIA_DRAWING_FAST_MODEL,
+    timeoutMs: 60000,
+    fetchImpl,
+  });
+  const parsed = extractGeminiJson(answer);
+  return ExtractedElementList.parse(parsed);
+}
+
+export async function deepseekText(
+  prompt: string,
+  params: {
+    apiKey: string;
+    model: string;
+    thinking?: boolean;
+    reasoningEffort?: "high" | "max";
+    userId?: string;
+    fetchImpl?: typeof fetch;
+  },
+): Promise<string> {
+  return openAiCompatibleText(prompt, {
+    apiKey: params.apiKey,
+    baseUrl: "https://api.deepseek.com",
+    providerName: "DeepSeek",
+    model: params.model,
+    thinking: params.thinking,
+    reasoningEffort: params.reasoningEffort,
+    userId: params.userId,
+    fetchImpl: params.fetchImpl,
+  });
 }
 
 export async function geminiElements(
@@ -281,6 +469,13 @@ export async function extractElementsWithProvider(
 ): Promise<{ provider: string; elements: ExtractedElement[]; fallback: boolean }> {
   if (!apiKey?.trim()) {
     return { provider: "rule-based", elements: fallbackElements(text), fallback: false };
+  }
+  if (apiKey.trim().startsWith("nvapi")) {
+    try {
+      return { provider: NVIDIA_DRAWING_FAST_MODEL, elements: await nvidiaElements(text, apiKey), fallback: false };
+    } catch {
+      return { provider: "rule-based", elements: fallbackElements(text), fallback: true };
+    }
   }
   try {
     return { provider: GEMINI_MODEL, elements: await geminiElements(text, apiKey), fallback: false };

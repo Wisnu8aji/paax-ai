@@ -31,6 +31,8 @@ export interface ChatFolder {
   id: string;
   projectId: string;
   name: string;
+  /** Deskripsi/goal project percakapan (modal "Create a project", Command Room). */
+  description?: string;
   createdAt: string;
 }
 
@@ -161,11 +163,12 @@ export function toggleArchived(id: string): void {
   save(state);
 }
 
-export function createFolder(projectId: string, name: string): ChatFolder {
+export function createFolder(projectId: string, name: string, description = ''): ChatFolder {
   const folder: ChatFolder = {
     id: newId('folder'),
     projectId,
     name: name.trim() || 'Project baru',
+    description: description.trim() || undefined,
     createdAt: new Date().toISOString(),
   };
   const state = load();

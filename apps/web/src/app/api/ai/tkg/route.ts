@@ -6,16 +6,38 @@
  * engine via POST /tkg/takeoff. Fallback: input manual TKG di UI.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { extractTkgWithProvider } from "@/lib/ai/tkg-extractor";
 import { getExtractorProviderStatus } from "@/lib/ai/orchestrator";
 
 export const runtime = "nodejs";
 
+function envValue(name: string): string | undefined {
+  const direct = process.env[name]?.trim();
+  if (direct) return direct;
+  try {
+    const envText = readFileSync(join(process.cwd(), "..", "..", ".env.local"), "utf-8");
+    const line = envText
+      .split(/\r?\n/)
+      .map((entry) => entry.trim())
+      .find((entry) => entry.startsWith(`${name}=`));
+    const value = line?.split("=").slice(1).join("=").trim().replace(/^['"]|['"]$/g, "");
+    return value || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function extractorKey(): string | undefined {
+  return envValue("NVIDIA_DRAWING_FAST_API_KEY") ?? envValue("NVIDIA_DRAWING_API_KEY") ?? envValue("NVIDIA_API_KEY");
+}
+
 export async function GET() {
-  const status = getExtractorProviderStatus(process.env.GEMINI_API_KEY);
+  const status = getExtractorProviderStatus(extractorKey());
   return NextResponse.json({
-    provider: status.provider === "gemini" ? status.model : "manual",
+    provider: status.provider === "gemini" ? status.model : status.provider,
     model: status.model,
   });
 }
@@ -37,6 +59,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "projectId wajib diisi." }, { status: 400 });
   }
 
-  const result = await extractTkgWithProvider(text, projectId, process.env.GEMINI_API_KEY);
+  const result = await extractTkgWithProvider(text, projectId, extractorKey());
   return NextResponse.json(result);
 }

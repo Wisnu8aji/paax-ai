@@ -1,9 +1,7 @@
-import fetch from 'node-fetch';
-
 const DB_API_URL = process.env.DB_API_URL || 'http://localhost:8001';
 const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || 'test-internal-key';
 
-export async function checkQuota(tenantId: string): Promise<{quota_exceeded: boolean, remaining: number}> {
+export async function checkQuota(tenantId: string): Promise<{ quota_exceeded: boolean; remaining: number; reset_at?: string | null }> {
     if (process.env.METERING_ENABLED === '0') {
         return { quota_exceeded: false, remaining: 999999 };
     }

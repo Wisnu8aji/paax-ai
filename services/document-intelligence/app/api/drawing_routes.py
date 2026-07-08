@@ -66,6 +66,7 @@ class DrawingAnalysisResponse(BaseModel):
     # elemen lintas-zona, assumption ledger, dimensi bangunan. Dipakai UI
     # "Review Gambar" ramah-pengguna (Fase H), TIDAK menggantikan tkg_document.
     consolidated: Optional[dict] = None
+    ai_report: Optional[dict] = None
 
 class VerifyCandidateRequest(BaseModel):
     candidate_id: str
@@ -92,11 +93,13 @@ def generate_demo_extraction(file_name: str) -> DrawingAnalysisResponse:
         ]
     )
 
-from app.perception.ai_assist.client import GeminiAiAssistClient
+from app.perception.ai_assist.client import NvidiaAiAssistClient
 from app.perception.assemble import assemble_document_from_pdf_bytes
 from app.perception.consolidate import consolidate_document
 from app.perception.render import render_tkg_txt
 from app.perception.validate import aggregate_metrics, build_gerbang
+from app.perception.ai_report import build_ai_report
+from app.perception.work_items import build_work_items
 
 # --- Endpoints ---
 
@@ -118,6 +121,7 @@ def _perform_analysis(
     metrics_out: Optional[dict] = None
     gerbang_out: Optional[dict] = None
     consolidated_out: Optional[dict] = None
+    ai_report_out: Optional[dict] = None
 
     warnings = [
         DrawingWarning(
@@ -154,11 +158,21 @@ def _perform_analysis(
             
             # Use provided ai_client or fallback to env
             if ai_client is None:
-                from app.perception.ai_assist.client import GeminiAiAssistClient
-                ai_client = GeminiAiAssistClient.from_env()
+                from app.perception.ai_assist.client import NvidiaAiAssistClient
+                ai_client = NvidiaAiAssistClient.from_env()
                 
-            consolidated_out = consolidate_document(
+            consolidated = consolidate_document(
                 tkg_document, ai_client=ai_client,
+            )
+            consolidated_out = consolidated.model_dump()
+            work_items = build_work_items(consolidated, [])
+            ai_report_out = build_ai_report(
+                project_id=req.file_metadata.project_id or "prj-123",
+                file_name=file_name,
+                classification=classification,
+                classification_confidence=classification_confidence,
+                consolidated=consolidated,
+                work_items=work_items,
             ).model_dump()
 
             if per_sheet_metrics:
@@ -233,6 +247,7 @@ def _perform_analysis(
         metrics=metrics_out,
         gerbang=gerbang_out,
         consolidated=consolidated_out,
+        ai_report=ai_report_out,
     )
 
 
@@ -249,7 +264,7 @@ async def analyze_drawing(req: DrawingAnalyzeRequest):
     """
     from app.usage import check_quota, log_usage
     import asyncio
-    from app.perception.ai_assist.client import GeminiAiAssistClient, NullAiAssistClient
+    from app.perception.ai_assist.client import NullAiAssistClient, NvidiaAiAssistClient
 
     tenant_id = req.file_metadata.project_id or "default-tenant"
     quota_res = await check_quota(tenant_id)
@@ -263,7 +278,7 @@ async def analyze_drawing(req: DrawingAnalyzeRequest):
                 loop.create_task(log_usage(tenant_id, operation, success, tokens_in, tokens_out, latency_ms, False))
             except Exception:
                 pass
-        ai_client = GeminiAiAssistClient.from_env(usage_logger=usage_logger)
+        ai_client = NvidiaAiAssistClient.from_env(usage_logger=usage_logger)
 
     res = _perform_analysis(req, ai_client=ai_client)
 
@@ -338,7 +353,7 @@ async def start_analyze_job(req: DrawingAnalyzeRequest, background_tasks: Backgr
         
     from app.usage import check_quota, log_usage
     import asyncio
-    from app.perception.ai_assist.client import GeminiAiAssistClient, NullAiAssistClient
+    from app.perception.ai_assist.client import NullAiAssistClient, NvidiaAiAssistClient
     
     tenant_id = req.file_metadata.project_id or "default-tenant"
     quota_res = await check_quota(tenant_id)
@@ -354,7 +369,7 @@ async def start_analyze_job(req: DrawingAnalyzeRequest, background_tasks: Backgr
                 loop.close()
             except Exception:
                 pass
-        ai_client = GeminiAiAssistClient.from_env(usage_logger=usage_logger)
+        ai_client = NvidiaAiAssistClient.from_env(usage_logger=usage_logger)
         
     background_tasks.add_task(_run_analyze_job, job_id, req, ai_client, quota_res.quota_exceeded)
     return {"job_id": job_id, "status": "PENDING"}

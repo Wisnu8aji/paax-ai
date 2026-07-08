@@ -15,7 +15,7 @@ LARANGAN KERAS (ditegakkan di kode, bukan hanya niat):
 from __future__ import annotations
 
 import os
-from typing import Optional
+from typing import Any, Optional
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query
@@ -29,7 +29,9 @@ from .models import (
 )
 from .store import get_log_by_date, get_logs, save_log
 
-CORE_ENGINE_URL = os.getenv("CORE_ENGINE_URL", "http://localhost:8080")
+CORE_ENGINE_URL = os.getenv("CORE_ENGINE_URL", "http://127.0.0.1:8081")
+DB_API_URL = os.getenv("DB_API_URL", "http://127.0.0.1:8084")
+INTERNAL_SERVICE_KEY = os.getenv("INTERNAL_SERVICE_KEY", "")
 
 app = FastAPI(
     title="PAAX Site Agent",
@@ -86,6 +88,7 @@ async def get_deviation(
     planned_day: int = Query(..., description="Hari ke berapa dari awal proyek"),
     # core_engine_url override (untuk testing)
     core_url: Optional[str] = Query(None, description="Override URL core-engine (testing)"),
+    db_url: Optional[str] = Query(None, description="Override URL db-api (testing)"),
 ) -> DeviationResult:
     """
     Bandingkan rencana vs realisasi pada tanggal tertentu.
@@ -104,19 +107,17 @@ async def get_deviation(
             detail=f"Tidak ada laporan lapangan untuk project_id='{project_id}' pada tanggal '{date}'"
         )
 
-    # 2. Panggil core-engine untuk planned progress
+    # 2. Panggil db-api untuk RAB, lalu core-engine untuk planned progress.
     engine_url = core_url or CORE_ENGINE_URL
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            # Panggil /schedule/s-curve dengan data minimal
-            # Note: di produksi, RAB data akan diambil dari db-api (Task R6)
-            # Untuk scaffold ini, kita perlu lines dari parameter - disederhanakan
-            # dengan endpoint /schedule/s-curve yang sudah ada
-            # Karena scaffold, kita mock planned_progress_pct dari parameter planned_day
-            # TODO v2.0: Ambil data RAB aktual proyek dari db-api lalu panggil core-engine
-            planned_progress_pct = _estimate_planned_progress(planned_day, total_days)
-    except httpx.RequestError:
-        # Fallback: estimasi linear jika core-engine tidak tersedia
+    storage_url = db_url or DB_API_URL
+    planned_progress_pct = await _planned_progress_from_services(
+        project_id=project_id,
+        planned_day=planned_day,
+        period_days=period_days,
+        db_url=storage_url,
+        core_url=engine_url,
+    )
+    if planned_progress_pct is None:
         planned_progress_pct = _estimate_planned_progress(planned_day, total_days)
 
     # 3. Hitung deviasi (pengurangan sederhana — bukan pelanggaran Aturan Emas,
@@ -140,6 +141,95 @@ async def get_deviation(
         status=status,
         threshold_pct=ON_TRACK_THRESHOLD_PCT,
     )
+
+
+async def _planned_progress_from_services(
+    *,
+    project_id: str,
+    planned_day: int,
+    period_days: int,
+    db_url: str,
+    core_url: str,
+) -> float | None:
+    if not db_url or not core_url:
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            rab_payload = await _fetch_rab_payload(client, db_url, project_id)
+            lines = rab_payload.get("lines") if isinstance(rab_payload, dict) else None
+            if not isinstance(lines, list) or not lines:
+                return None
+
+            s_curve = await _fetch_s_curve(
+                client,
+                core_url,
+                lines=lines,
+                period_days=period_days,
+                region_code=str(rab_payload.get("region_code") or "jateng"),
+                ppn_rate=float(rab_payload.get("ppn_rate") or 0.11),
+                mode=str(rab_payload.get("schedule_mode") or "sequential"),
+                as_of_date=rab_payload.get("as_of_date"),
+            )
+            return _planned_progress_at_day(s_curve, planned_day)
+    except (httpx.HTTPError, ValueError, TypeError, KeyError):
+        return None
+
+
+async def _fetch_rab_payload(
+    client: httpx.AsyncClient,
+    db_url: str,
+    project_id: str,
+) -> dict[str, Any]:
+    headers = {}
+    if INTERNAL_SERVICE_KEY:
+        headers["X-Internal-Key"] = INTERNAL_SERVICE_KEY
+    response = await client.get(f"{db_url.rstrip('/')}/projects/{project_id}/rab", headers=headers)
+    response.raise_for_status()
+    data = response.json()
+    payload = data.get("payload") if isinstance(data, dict) else None
+    return payload if isinstance(payload, dict) else {}
+
+
+async def _fetch_s_curve(
+    client: httpx.AsyncClient,
+    core_url: str,
+    *,
+    lines: list[dict[str, Any]],
+    period_days: int,
+    region_code: str,
+    ppn_rate: float,
+    mode: str,
+    as_of_date: Any,
+) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "region_code": region_code,
+        "ppn_rate": ppn_rate,
+        "period_days": period_days,
+        "mode": mode,
+        "lines": lines,
+    }
+    if as_of_date:
+        body["as_of_date"] = as_of_date
+    response = await client.post(f"{core_url.rstrip('/')}/schedule/s-curve", json=body)
+    response.raise_for_status()
+    data = response.json()
+    return data if isinstance(data, dict) else {}
+
+
+def _planned_progress_at_day(s_curve: dict[str, Any], planned_day: int) -> float | None:
+    points = s_curve.get("points")
+    if not isinstance(points, list) or not points:
+        return None
+    for point in points:
+        if not isinstance(point, dict):
+            continue
+        day_end = int(point.get("day_end") or 0)
+        if planned_day <= day_end:
+            return round(float(point.get("cumulative_pct") or 0.0), 4)
+    last = points[-1]
+    if isinstance(last, dict):
+        return round(float(last.get("cumulative_pct") or 0.0), 4)
+    return None
 
 
 def _estimate_planned_progress(planned_day: int, total_days: int) -> float:

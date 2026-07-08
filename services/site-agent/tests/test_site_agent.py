@@ -18,6 +18,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+import app.main as site_main
 from app.main import app
 from app.store import reset_store
 
@@ -176,6 +177,86 @@ class TestDeviation:
         assert r.status_code == 200
         data = r.json()
         assert data["threshold_pct"] == 2.0
+
+    def test_deviation_uses_db_api_rab_and_core_engine(self, monkeypatch):
+        """Planned progress harus berasal dari RAB db-api + Kurva S core-engine."""
+        calls: list[tuple[str, str, Any]] = []
+
+        class FakeResponse:
+            def __init__(self, payload: dict):
+                self._payload = payload
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return self._payload
+
+        class FakeAsyncClient:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, exc_type, exc, tb):
+                return False
+
+            async def get(self, url, headers=None):
+                calls.append(("GET", url, headers))
+                return FakeResponse({
+                    "payload": {
+                        "lines": [
+                            {"ahsp_code": "AHSP.CK.001", "volume": 120, "duration_days": 10}
+                        ],
+                        "region_code": "jateng",
+                    }
+                })
+
+            async def post(self, url, json=None):
+                calls.append(("POST", url, json))
+                return FakeResponse({
+                    "total_days": 10,
+                    "period_days": 7,
+                    "mode": "sequential",
+                    "points": [
+                        {
+                            "period": 1,
+                            "day_start": 1,
+                            "day_end": 10,
+                            "planned_pct": 42.0,
+                            "cumulative_pct": 42.0,
+                        }
+                    ],
+                })
+
+        monkeypatch.setattr(site_main.httpx, "AsyncClient", FakeAsyncClient)
+        client.post("/site-logs", json={
+            "project_id": "proj-real",
+            "date": "2026-07-07",
+            "actual_progress_pct": 45.0,
+        })
+
+        r = client.get(
+            "/site-logs/proj-real/deviation",
+            params={
+                "date": "2026-07-07",
+                "total_days": 100,
+                "planned_day": 10,
+                "db_url": "http://db-api",
+                "core_url": "http://core-engine",
+            },
+        )
+
+        assert r.status_code == 200
+        data = r.json()
+        assert data["planned_progress_pct"] == 42.0
+        assert data["deviation_pct"] == 3.0
+        assert calls[0][0] == "GET"
+        assert calls[0][1] == "http://db-api/projects/proj-real/rab"
+        assert calls[1][0] == "POST"
+        assert calls[1][1] == "http://core-engine/schedule/s-curve"
+        assert calls[1][2]["lines"][0]["ahsp_code"] == "AHSP.CK.001"
 
 
 # ===== 5. 404 saat tidak ada laporan =====

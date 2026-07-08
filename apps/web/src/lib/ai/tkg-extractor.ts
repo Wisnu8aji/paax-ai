@@ -1,6 +1,6 @@
 import { TkgDocumentSchema, type TkgDocument } from "@paax/schemas";
 
-import { GEMINI_MODEL, geminiJson } from "./orchestrator";
+import { GEMINI_MODEL, geminiJson, NVIDIA_DRAWING_FAST_MODEL, nvidiaText, extractGeminiJson } from "./orchestrator";
 
 /**
  * PAAX — Ekstraktor TKG (Transkrip Kanonik Gambar) via AI.
@@ -85,15 +85,23 @@ export async function extractTkgWithProvider(
       provider: "manual",
       tkg: null,
       fallback: true,
-      error: "GEMINI_API_KEY belum diset — gunakan jalur input manual TKG.",
+      error: "NVIDIA_API_KEY belum diset - gunakan jalur input manual TKG.",
     };
   }
+  const provider = apiKey.trim().startsWith("nvapi") ? NVIDIA_DRAWING_FAST_MODEL : GEMINI_MODEL;
   try {
-    const raw = await geminiJson(buildTkgPrompt(sourceText, projectId), apiKey, fetchImpl);
+    const raw = apiKey.trim().startsWith("nvapi")
+      ? extractGeminiJson(await nvidiaText(buildTkgPrompt(sourceText, projectId), {
+          apiKey,
+          model: NVIDIA_DRAWING_FAST_MODEL,
+          timeoutMs: 60000,
+          fetchImpl,
+        }))
+      : await geminiJson(buildTkgPrompt(sourceText, projectId), apiKey, fetchImpl);
     const parsed = TkgDocumentSchema.safeParse(raw);
     if (!parsed.success) {
       return {
-        provider: GEMINI_MODEL,
+        provider,
         tkg: null,
         fallback: true,
         error: `Output AI tidak lolos skema TkgDocument: ${parsed.error.issues[0]?.message ?? "invalid"}`,
@@ -101,13 +109,13 @@ export async function extractTkgWithProvider(
     }
     // Paksa penanda sumber: ini USULAN AI, wajib direview manusia sebelum dipakai.
     return {
-      provider: GEMINI_MODEL,
+      provider,
       tkg: { ...parsed.data, prj_id: projectId, generated_by: "ai_proposal" },
       fallback: false,
     };
   } catch (error) {
     return {
-      provider: GEMINI_MODEL,
+      provider,
       tkg: null,
       fallback: true,
       error: error instanceof Error ? error.message : "Ekstraksi TKG gagal.",

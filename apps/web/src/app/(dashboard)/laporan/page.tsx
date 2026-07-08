@@ -7,9 +7,9 @@ import { reports } from '@/lib/mock/workspace';
 export default function LaporanPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <PageHeader title="Laporan & Export" subtitle="Hasilkan dokumen RAB, jadwal, dan jejak audit angka" />
+      <PageHeader title="Artifacts" subtitle="Laporan & export — dokumen RAB, jadwal, dan jejak audit angka" />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }} className="pax-grid-3">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }} className="pax-grid-3 pax-stagger">
         {reports.map((r) => (
           <Card key={r.id} padding={18} hover>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>

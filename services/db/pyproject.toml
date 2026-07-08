@@ -20,6 +20,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "aiosqlite>=0.20.0",
     "pytest>=8.0",
     "pytest-postgresql>=6.0"
 ]

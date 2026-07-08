@@ -13,10 +13,10 @@ import {
   type ReactNode,
 } from 'react';
 
-export type PaaxTheme = 'light' | 'dark' | 'grey' | 'chat';
+export type PaaxTheme = 'light' | 'dark' | 'grey';
 
 const STORAGE_KEY = 'paax-theme';
-const THEMES: PaaxTheme[] = ['light', 'dark', 'grey', 'chat'];
+const THEMES: PaaxTheme[] = ['light', 'dark', 'grey'];
 
 interface ThemeContextValue {
   theme: PaaxTheme;
@@ -28,9 +28,9 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   // SSR renders the default; the stored theme is applied on mount to avoid mismatch.
-  // Default 'chat' = Engineering Chat theme (referensi desain 2026-07-07);
+  // Default 'light' = soft neumorphism putih-abu (referensi G:\Dashboard 2026-07-07);
   // pilihan user di localStorage tetap dihormati.
-  const [theme, setThemeState] = useState<PaaxTheme>('chat');
+  const [theme, setThemeState] = useState<PaaxTheme>('light');
 
   useEffect(() => {
     try {

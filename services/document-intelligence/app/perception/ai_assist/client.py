@@ -30,8 +30,27 @@ from urllib import error, request
 
 GEMINI_MODEL = "gemini-2.5-flash"
 _GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
+NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
+NVIDIA_DRAWING_REVIEW_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+NVIDIA_AI_ASSIST_MODEL = NVIDIA_DRAWING_REVIEW_MODEL
 _DEFAULT_TEMPERATURE = 0.1
 _DEFAULT_TIMEOUT_SECONDS = 20.0
+_NVIDIA_TIMEOUT_SECONDS = 3600.0
+
+
+def _model_env(name: str, fallback: str) -> str:
+    value = os.getenv(name, "").strip()
+    if not value or value.startswith("nvapi-"):
+        return fallback
+    return value
+
+
+def _nvidia_key_env(*names: str) -> str:
+    for name in (*names, "NVIDIA_API_KEY"):
+        value = os.getenv(name, "").strip()
+        if value:
+            return value
+    return ""
 
 
 class AiAssistClient(Protocol):
@@ -131,6 +150,96 @@ class GeminiAiAssistClient:
             )
             
         return parsed
+
+
+@dataclass
+class NvidiaAiAssistClient:
+    api_key: str
+    model: str = NVIDIA_AI_ASSIST_MODEL
+    api_url: str = f"{NVIDIA_BASE_URL}/chat/completions"
+    temperature: float = _DEFAULT_TEMPERATURE
+    timeout_seconds: float = _NVIDIA_TIMEOUT_SECONDS
+    usage_logger: Any = None
+
+    @classmethod
+    def from_env(cls, usage_logger: Any = None) -> "NvidiaAiAssistClient | None":
+        api_key = _nvidia_key_env(
+            "NVIDIA_DRAWING_REVIEW_API_KEY",
+            "NVIDIA_SOLACE_API_KEY",
+            "NVIDIA_DEEPSEEK_API_KEY",
+        )
+        if not api_key:
+            return None
+        base_url = os.getenv("NVIDIA_BASE_URL", NVIDIA_BASE_URL).strip() or NVIDIA_BASE_URL
+        model = _model_env("NVIDIA_AI_ASSIST_MODEL", _model_env("NVIDIA_DRAWING_REVIEW_MODEL", NVIDIA_AI_ASSIST_MODEL))
+        return cls(
+            api_key=api_key,
+            model=model,
+            api_url=f"{base_url.rstrip('/')}/chat/completions",
+            usage_logger=usage_logger,
+        )
+
+    def generate_json(
+        self,
+        *,
+        system_prompt: str,
+        user_prompt: str,
+        response_schema: dict[str, Any],
+        operation_name: str = "ai_assist:default",
+    ) -> dict[str, Any] | None:
+        import time
+        start_time = time.time()
+        prompt = (
+            f"{system_prompt}\n\n"
+            "Kembalikan HANYA JSON object valid tanpa markdown. "
+            "Ikuti bentuk schema berikut sebagai kontrak output:\n"
+            f"{json.dumps(response_schema, ensure_ascii=False)}\n\n"
+            f"DATA:\n{user_prompt}"
+        )
+        body = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": self.temperature,
+            "max_tokens": 2048,
+            "chat_template_kwargs": {"thinking": False},
+        }
+        req = request.Request(
+            self.api_url,
+            data=json.dumps(body).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.api_key.strip()}",
+            },
+            method="POST",
+        )
+        try:
+            with request.urlopen(req, timeout=self.timeout_seconds) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            text = payload["choices"][0]["message"]["content"]
+            parsed = json.loads(_strip_code_fence(text))
+        except (error.URLError, TimeoutError, OSError, ValueError, KeyError, IndexError, TypeError, json.JSONDecodeError):
+            if self.usage_logger:
+                latency_ms = int((time.time() - start_time) * 1000)
+                self.usage_logger(operation=operation_name, success=False, latency_ms=latency_ms)
+            return None
+        if not isinstance(parsed, dict):
+            if self.usage_logger:
+                latency_ms = int((time.time() - start_time) * 1000)
+                self.usage_logger(operation=operation_name, success=False, latency_ms=latency_ms)
+            return None
+        if self.usage_logger:
+            latency_ms = int((time.time() - start_time) * 1000)
+            self.usage_logger(operation=operation_name, success=True, latency_ms=latency_ms)
+        return parsed
+
+
+def _strip_code_fence(text: str) -> str:
+    stripped = text.strip()
+    if stripped.startswith("```"):
+        lines = stripped.splitlines()
+        if len(lines) >= 3:
+            return "\n".join(lines[1:-1]).strip()
+    return stripped
 
 
 class NullAiAssistClient:

@@ -2,6 +2,7 @@ import { geminiGenerateContent } from "./client";
 import type { GeminiContent, GeminiFunctionCall, GeminiGenerateContentRequest } from "./types";
 import type { ChatContext, ToolDefinition } from "../tools/types";
 import { summarizeResult } from "../tools/types";
+import { logUsage } from "../usage";
 
 export const MAX_TOOL_TURNS = 3;
 export const MAX_TURNS_FALLBACK = "Maaf, saya butuh terlalu banyak langkah untuk pertanyaan ini. Coba perjelas pertanyaan Anda.";
@@ -66,7 +67,6 @@ export async function runToolCallingLoop(params: {
     const response = await geminiGenerateContent({ apiKey: params.apiKey, body, fetchImpl: params.fetchImpl });
     const part = firstPart(response);
     
-    const { logUsage } = require("../usage");
     const tenantId = params.context?.project_id || "default-tenant";
     const usageMetadata = (response as any).usageMetadata || {};
     

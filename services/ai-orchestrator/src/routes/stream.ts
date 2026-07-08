@@ -6,6 +6,7 @@ import { runToolCallingLoop } from "../gemini/tool-loop";
 import { createToolRegistry } from "../tools/registry";
 import type { ChatContext } from "../tools/types";
 import { systemPrompt } from "./chat";
+import { checkQuota } from "../usage";
 
 const ChatBodySchema = z.object({
   message: z.string().min(1),
@@ -25,7 +26,6 @@ export function createStreamHandler(params: {
     if (!parsed.success) return res.status(400).json({ error: "message wajib diisi" });
 
     const tenantId = parsed.data.context?.project_id || "default-tenant";
-    const { checkQuota } = require("../usage");
     const quotaRes = await checkQuota(tenantId);
     if (quotaRes.quota_exceeded) {
       return res.status(429).json({

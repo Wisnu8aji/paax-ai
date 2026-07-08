@@ -154,6 +154,52 @@ const intakeResult = {
     ],
     building_dimensions: { total_x_mm: 20000, total_y_mm: 10000, sumber: "grid" as const },
   },
+  aiReport: {
+    project_summary: {
+      project_id: "project-1",
+      file_name: "gambar.pdf",
+      project_kind: "Gambar kerja struktur",
+      total_pages: 1,
+      confidence: 0.83,
+    },
+    sheets: [
+      {
+        page: 1,
+        sheet_id: "S01",
+        interpreted_title: "DENAH KOLOM LT.1",
+        role: "Denah struktur lantai 1",
+        zone: "Struktur Lantai 1",
+        scale: "1:100",
+        summary: "Memuat posisi kolom K1 pada as A1.",
+      },
+    ],
+    technical_summary: "AI membaca 1 halaman gambar struktur dan menemukan kolom K1 yang siap diproses ke RAB.",
+    detected_work_items: [
+      {
+        category: "kolom",
+        item_pekerjaan: "Beton kolom K1",
+        source_pages: [1],
+        dasar_pembacaan: "K1 ditemukan pada denah dan tabel kolom.",
+        unit: "m3",
+        volume: 1.25,
+        formula: "0.3 * 0.4 * tinggi * n",
+        ahsp_candidate: null,
+        confidence: 0.86,
+        status: "Siap diproses",
+        verification_note: null,
+      },
+    ],
+    verification_notes: [
+      {
+        level: "rendah",
+        note: "Satuan dimensi perlu konfirmasi sebelum final.",
+        source_pages: [1],
+      },
+    ],
+    next_action_label: "Proses RAB",
+    provider: "local-structured",
+    model: null,
+  },
 };
 
 const validationResult: TkgValidationResult = {
@@ -239,10 +285,10 @@ describe("TkgWorkspace Review Gambar (rencana besar 2026-07-05)", () => {
     renderWorkspace();
 
     const upload = await screen.findByLabelText(/unggah pdf gambar kerja/i);
-    const runButton = screen.getByRole("button", { name: /analisa gambar kerja/i }) as HTMLButtonElement;
+    const runButton = screen.getByRole("button", { name: /analisa rab dari gambar kerja/i }) as HTMLButtonElement;
 
     expect(upload).toBeTruthy();
-    expect(screen.getByText(/belum ada hasil analisis/i)).toBeTruthy();
+    expect(screen.getAllByText(/unggah pdf gambar kerja/i).length).toBeGreaterThan(0);
     expect(runButton.disabled).toBe(true);
     expect(saveMock).not.toHaveBeenCalled();
   });
@@ -256,27 +302,28 @@ describe("TkgWorkspace Review Gambar (rencana besar 2026-07-05)", () => {
     // chip lampiran menampilkan nama file (bukan lagi teks polos di dropzone)
     expect(await screen.findByText("gambar.pdf")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: /analisa gambar kerja/i }));
+    fireEvent.click(screen.getByRole("button", { name: /analisa rab dari gambar kerja/i }));
 
     expect(analyzeDrawingFileInBackgroundMock).toHaveBeenCalledWith(expect.any(File), "project-1", expect.any(Function));
     await waitFor(() => expect(saveMock).not.toHaveBeenCalled());
 
-    // Halaman & zona ditampilkan bahasa manusia, bukan kode teknis.
+    // UI utama menampilkan hasil olahan, bukan chip/grid/debug mentah.
     expect(await screen.findByText("DENAH KOLOM LT.1")).toBeTruthy();
-    expect(screen.getAllByText(/struktur lantai 1/i).length).toBeGreaterThan(0);
-    // Grid & elemen: alamat asli "A1" tampil, dikelompokkan per zona.
-    expect(screen.getByText("A1")).toBeTruthy();
-    // Dimensi bangunan dikonversi ke meter.
-    expect(screen.getByText(/20 m/)).toBeTruthy();
-    // "Perlu dicek" pakai bahasa manusia, bukan field 'alasan' mentah tampil sbg label teknis.
-    expect(screen.getByText(/teks bebas/i)).toBeTruthy();
+    expect(screen.queryByText(/status proses/i)).toBeNull();
+    expect(screen.getByText(/gambar kerja struktur/i)).toBeTruthy();
+    expect(screen.getAllByText(/AI membaca 1 halaman/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole("columnheader", { name: /item pekerjaan/i })).toBeTruthy();
+    expect(screen.getByRole("cell", { name: /beton kolom k1/i })).toBeTruthy();
+    expect(screen.queryByText(/grid & elemen per zona/i)).toBeNull();
+    expect(screen.queryByText(/perlu dicek/i)).toBeNull();
+    expect(screen.queryByText(/grid tidak tersedia/i)).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: /simpan hasil analisis/i }));
+    fireEvent.click(screen.getByRole("button", { name: /proses rab/i }));
 
     await waitFor(() => expect(validateTkg).toHaveBeenCalledWith(mockTkg));
     expect(renderTkg).toHaveBeenCalledWith(mockTkg);
     expect(takeoffAhspSuggestTkg).toHaveBeenCalledWith(mockTkg);
-    expect(await screen.findByRole("button", { name: /kirim volume ke draft rab/i })).toBeTruthy();
+    expect(rabRepository.save).toHaveBeenCalled();
     expect(saveMock.mock.calls.at(-1)?.[0]).toMatchObject({
       projectId: "project-1",
       tkg: mockTkg,
@@ -290,10 +337,9 @@ describe("TkgWorkspace Review Gambar (rencana besar 2026-07-05)", () => {
     fireEvent.change(await screen.findByLabelText(/unggah pdf gambar kerja/i), {
       target: { files: [makePdfFile()] },
     });
-    fireEvent.click(screen.getByRole("button", { name: /analisa gambar kerja/i }));
+    fireEvent.click(screen.getByRole("button", { name: /analisa rab dari gambar kerja/i }));
 
-    fireEvent.click(await screen.findByRole("button", { name: /simpan hasil analisis/i }));
-    fireEvent.click(await screen.findByRole("button", { name: /kirim volume ke draft rab/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /proses rab/i }));
 
     await waitFor(() => expect(rabRepository.save).toHaveBeenCalled());
     expect(rabRepository.save).toHaveBeenCalledWith(expect.objectContaining({
@@ -324,10 +370,9 @@ describe("TkgWorkspace Review Gambar (rencana besar 2026-07-05)", () => {
     fireEvent.change(await screen.findByLabelText(/unggah pdf gambar kerja/i), {
       target: { files: [makePdfFile()] },
     });
-    fireEvent.click(screen.getByRole("button", { name: /analisa gambar kerja/i }));
+    fireEvent.click(screen.getByRole("button", { name: /analisa rab dari gambar kerja/i }));
 
-    fireEvent.click(await screen.findByRole("button", { name: /simpan hasil analisis/i }));
-    fireEvent.click(await screen.findByRole("button", { name: /kirim volume ke draft rab/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /proses rab/i }));
 
     await waitFor(() => expect(rabRepository.save).toHaveBeenCalled());
     expect(rabRepository.save).toHaveBeenCalledWith(expect.objectContaining({
@@ -346,10 +391,9 @@ describe("TkgWorkspace Review Gambar (rencana besar 2026-07-05)", () => {
     fireEvent.change(await screen.findByLabelText(/unggah pdf gambar kerja/i), {
       target: { files: [makePdfFile()] },
     });
-    fireEvent.click(screen.getByRole("button", { name: /analisa gambar kerja/i }));
+    fireEvent.click(screen.getByRole("button", { name: /analisa rab dari gambar kerja/i }));
 
-    fireEvent.click(await screen.findByRole("button", { name: /simpan hasil analisis/i }));
-    fireEvent.click(await screen.findByRole("button", { name: /kirim volume ke draft rab/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /proses rab/i }));
 
     const openDraftButton = await screen.findByRole("button", { name: /lihat draft rab/i });
     expect(routerPushMock).not.toHaveBeenCalled();
@@ -376,7 +420,7 @@ describe("TkgWorkspace Review Gambar (rencana besar 2026-07-05)", () => {
     await waitFor(() => expect(validateTkg).toHaveBeenCalledWith(mockTkg));
     expect(renderTkg).toHaveBeenCalledWith(mockTkg);
     expect(takeoffAhspSuggestTkg).toHaveBeenCalledWith(mockTkg);
-    expect(await screen.findByRole("button", { name: /kirim volume ke draft rab/i })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /proses rab/i })).toBeTruthy();
   });
 
   it("does not render the stale disabled Generate RAB placeholder", async () => {
@@ -384,9 +428,9 @@ describe("TkgWorkspace Review Gambar (rencana besar 2026-07-05)", () => {
     fireEvent.change(await screen.findByLabelText(/unggah pdf gambar kerja/i), {
       target: { files: [makePdfFile()] },
     });
-    fireEvent.click(screen.getByRole("button", { name: /analisa gambar kerja/i }));
+    fireEvent.click(screen.getByRole("button", { name: /analisa rab dari gambar kerja/i }));
 
-    expect(await screen.findByRole("button", { name: /simpan hasil analisis/i })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /proses rab/i })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /generate rab/i })).toBeNull();
     expect(screen.queryByText(/segera hadir/i)).toBeNull();
   });

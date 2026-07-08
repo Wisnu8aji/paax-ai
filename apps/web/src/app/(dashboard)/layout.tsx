@@ -1,16 +1,24 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { ThemeProvider, useTheme } from '@/components/theme/theme-provider';
 import { ShellContext, type OverlayName, type SettingsTab } from '@/components/app-shell/shell-context';
-import { Sidebar } from '@/components/app-shell/sidebar';
+import { SideRail } from '@/components/app-shell/side-rail';
 import Topbar from '@/components/app-shell/topbar';
 import { WorkspaceOverlays } from '@/components/app-shell/overlays';
 import { RoutePrefetcher } from '@/components/app-shell/route-prefetcher';
 import { ProjectsProvider } from '@/lib/projects/projects-context';
 
+/**
+ * Shell rombak 2026-07-07 (referensi G:\Dashboard\dashboard utama):
+ * SATU container rounded besar mengambang di atas --bg, berisi sidebar
+ * gelap (kiri, radius kiri besar) + area konten terang (--panel).
+ * Command Room (/command-room) full-bleed gelap tanpa topbar.
+ */
 function Shell({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
+  const pathname = usePathname();
   const [current, setCurrent] = useState<OverlayName | null>(null);
   const [settingsTab, setSettingsTab] = useState<SettingsTab>('umum');
   const [navCollapsed, setNavCollapsed] = useState(false);
@@ -23,6 +31,8 @@ function Shell({ children }: { children: React.ReactNode }) {
   }, []);
   const toggleNav = useCallback(() => setNavCollapsed((c) => !c), []);
 
+  const isCommandRoom = pathname.startsWith('/command-room');
+
   return (
     <ShellContext.Provider
       value={{ current, openOverlay, closeOverlay, settingsTab, openSettings, navCollapsed, toggleNav }}
@@ -31,20 +41,59 @@ function Shell({ children }: { children: React.ReactNode }) {
         data-theme={theme}
         className="pax-scope"
         style={{
-          display: 'flex',
           minHeight: '100vh',
-          background: 'var(--bg)',
+          background: 'var(--shell-bg)',
           color: 'var(--text)',
           fontFamily: 'var(--font-sans)',
+          padding: 0,
+          overflow: 'hidden',
         }}
       >
-        <Sidebar />
-        <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16, padding: '16px 24px' }}>
-          <Topbar />
-          <div style={{ flex: 1, minWidth: 0 }} className="pax-fade">
-            {children}
-          </div>
-        </main>
+        <div
+          style={{
+            display: 'flex',
+            minHeight: '100vh',
+            alignItems: 'stretch',
+            transition: 'background .3s var(--ease)',
+          }}
+        >
+          <SideRail />
+          <main
+            className="pax-shell-main"
+            data-command-room={isCommandRoom ? 'true' : undefined}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              margin: '18px 28px 0 0',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: isCommandRoom ? 0 : 14,
+              height: 'calc(100vh - 18px)',
+              padding: isCommandRoom ? 0 : '16px 22px 28px',
+              background: isCommandRoom ? '#0A1118' : 'var(--panel)',
+              borderRadius: '34px 34px 0 0',
+              boxShadow: isCommandRoom ? 'none' : 'var(--shadow-shell-panel)',
+              overflow: 'hidden',
+            }}
+          >
+            {!isCommandRoom && <Topbar />}
+            <div
+              style={{
+                flex: 1,
+                minWidth: 0,
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                overflowY: isCommandRoom ? 'hidden' : 'auto',
+                overflowX: 'hidden',
+              }}
+              className="pax-fade"
+              key={pathname}
+            >
+              {children}
+            </div>
+          </main>
+        </div>
         <WorkspaceOverlays />
       </div>
     </ShellContext.Provider>
