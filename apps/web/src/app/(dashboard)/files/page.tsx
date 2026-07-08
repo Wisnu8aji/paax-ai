@@ -11,7 +11,7 @@ export default function FilesPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader
-        title="File & Dokumen"
+        title="Files & Documents"
         subtitle="Semua berkas proyek di satu tempat"
         actions={
           <Button onClick={() => openOverlay('upload')}>

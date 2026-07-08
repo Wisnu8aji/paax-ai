@@ -57,6 +57,7 @@ from app.perception.grammar.section import parse_section
 from app.perception.grammar.type_code import parse_type_code
 from app.perception.ingest.raster_detector import is_raster_sheet
 from app.perception.ingest.span_extractor import extract_spans_from_page
+from app.perception.ocr.nvidia_vision_extractor import extract_spans_via_nvidia
 from app.perception.ocr.paddle_ocr_extractor import extract_spans_via_ocr
 from app.perception.lexicon.units import infer_unit
 from app.perception.models import Run
@@ -330,6 +331,7 @@ def assemble_sheet_from_page(page: "fitz.Page", page_index: int, sheet_id: str, 
     """
     is_raster, n_vector_spans = is_raster_sheet(page)
     ocr_message: str | None = None
+    ocr_provider: str | None = None
 
     if is_raster:
         # RULE-EXT-30: sheet raster (scan/foto) -> jalur OCR opsional/lazy.
@@ -338,7 +340,16 @@ def assemble_sheet_from_page(page: "fitz.Page", page_index: int, sheet_id: str, 
         with tempfile.TemporaryDirectory() as tmp_dir:
             png_path = str(Path(tmp_dir) / "page.png")
             page.get_pixmap(dpi=200).save(png_path)
-            ocr_result = extract_spans_via_ocr(png_path, page_index)
+            ocr_result = extract_spans_via_nvidia(png_path, page_index)
+            if ocr_result.available:
+                ocr_provider = "nvidia"
+            else:
+                nvidia_message = ocr_result.message
+                ocr_result = extract_spans_via_ocr(png_path, page_index)
+                if ocr_result.available:
+                    ocr_provider = "paddleocr"
+                elif nvidia_message and ocr_result.message:
+                    ocr_result.message = f"{nvidia_message} {ocr_result.message}"
         spans = ocr_result.spans
         if not ocr_result.available:
             ocr_message = ocr_result.message
@@ -394,6 +405,7 @@ def assemble_sheet_from_page(page: "fitz.Page", page_index: int, sheet_id: str, 
         "is_raster": is_raster,
         "n_vector_spans": n_vector_spans,
         "ocr_message": ocr_message,
+        "ocr_provider": ocr_provider,
     }
     return sheet, metrics
 

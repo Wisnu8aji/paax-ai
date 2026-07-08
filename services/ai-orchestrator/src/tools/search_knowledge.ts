@@ -1,7 +1,8 @@
 import { GEMINI_MODEL } from "../config";
 import type { ChatContext, ToolDefinition } from "./types";
+import type { GeminiFunctionDeclaration } from "../gemini/types";
 
-export const searchKnowledgeDeclaration = {
+export const searchKnowledgeDeclaration: GeminiFunctionDeclaration = {
   name: "search_knowledge",
   description: "Cari data/pengetahuan dari database (contoh: katalog AHSP atau referensi proyek). WAJIB gunakan tool ini ketika ditanya tentang kode AHSP, harga, atau detail dokumen. WAJIB kutip source_ref di jawaban akhir.",
   parameters: {

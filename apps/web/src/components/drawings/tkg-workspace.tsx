@@ -21,12 +21,7 @@ import { useRouter } from 'next/navigation';
 import {
   AlertTriangle,
   CheckCircle2,
-  ChevronDown,
-  ChevronRight,
   FileText,
-  Layers,
-  ListChecks,
-  Ruler,
   Send,
   Sparkles,
   UploadCloud,
@@ -42,7 +37,6 @@ import { TriagePanel, type TriageItemView } from '@/components/review/triage-pan
 import {
   analyzeDrawingFileInBackground,
   DocumentIntelligenceError,
-  type ConsolidatedAssumption,
   type DrawingIntakeResult,
 } from '@/lib/ai/document-intelligence-tkg';
 
@@ -55,33 +49,6 @@ const statusBox = {
   border: '1px solid var(--border)',
   marginBottom: 10,
 };
-
-const ZONE_LABELS: Record<string, string> = {
-  substruktur: 'Substruktur / Pondasi',
-  struktur_lantai_1: 'Struktur Lantai 1',
-  struktur_lantai_2: 'Struktur Lantai 2',
-  struktur_lantai_3: 'Struktur Lantai 3',
-  struktur_atap: 'Struktur Atap',
-  detail_tabel: 'Detail & Tabel',
-};
-
-function zoneLabel(zone: string | null): string {
-  if (!zone) return 'Belum diketahui';
-  return ZONE_LABELS[zone] ?? zone.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-const DAMPAK_TONE: Record<ConsolidatedAssumption['dampak'], 'ok' | 'warn' | 'dng'> = {
-  rendah: 'ok',
-  sedang: 'warn',
-  tinggi: 'dng',
-};
-
-const ASSUMPTIONS_PREVIEW_COUNT = 12;
-
-function formatBuildingSize(mm: number | null): string | null {
-  if (mm == null) return null;
-  return `${(mm / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} m`;
-}
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -127,7 +94,6 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
   const [record, setRecord] = useState<ProjectTkgRecord>(() => emptyTkgRecord(projectId));
   const [selectedPdf, setSelectedPdf] = useState<File | null>(null);
   const [perceptionReview, setPerceptionReview] = useState<PerceptionReview | null>(null);
-  const [assumptionsExpanded, setAssumptionsExpanded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [progressMessage, setProgressMessage] = useState<string | null>(null);
   const [sourceText, setSourceText] = useState('');
@@ -156,7 +122,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
 
   const runPipeline = useCallback(async (baseRecord: ProjectTkgRecord) => {
     const tkg = baseRecord.tkg;
-    if (!tkg) return;
+    if (!tkg) return null;
     setRabDraftPath(null);
     setValidation(null);
     setTakeoff(null);
@@ -179,6 +145,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     setRecord(finalRecord);
     setTakeoff(nextTakeoff);
     setInfo('Analisis selesai. Tinjau item yang ditandai sebelum mengirim volume ke Draft RAB.');
+    return { takeoff: nextTakeoff, suggestions: nextResult.suggestions };
   }, []);
 
   const runAiExtract = useCallback(async () => {
@@ -225,10 +192,9 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
   const applyFile = useCallback((file: File) => {
     setSelectedPdf(file);
     setPerceptionReview(null);
-    setAssumptionsExpanded(false);
     setRabDraftPath(null);
     setError(null);
-    setInfo(`${file.name} siap dianalisis. Klik "Analisa Gambar Kerja" untuk melihat hasilnya.`);
+    setInfo(`${file.name} siap dianalisis. Klik "Analisa RAB dari Gambar Kerja" untuk memproses hasilnya.`);
   }, []);
 
   const runPerception = useCallback(async () => {
@@ -244,8 +210,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     try {
       const result = await analyzeDrawingFileInBackground(selectedPdf, projectId, setProgressMessage);
       setPerceptionReview({ result });
-      setAssumptionsExpanded(false);
-      setInfo('Hasil analisis siap direview di bawah.');
+      setInfo('Hasil AI siap. Tinjau tabel pekerjaan, lalu klik Proses RAB.');
     } catch (err) {
       setError(err instanceof DocumentIntelligenceError ? err.message : (err instanceof Error ? err.message : 'Upload gambar gagal.'));
     } finally {
@@ -254,37 +219,26 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     }
   }, [projectId, selectedPdf]);
 
-  const usePerceptionAsTranscript = useCallback(async () => {
-    if (!perceptionReview) return;
-    setBusy('save-perception');
-    setError(null);
-    setRabDraftPath(null);
-    try {
-      const next = await tkgRepository.save({
-        ...record,
-        projectId,
-        tkg: perceptionReview.result.tkg,
-        source: 'pipeline',
-        reviewed: false,
-        lastRenderedText: perceptionReview.result.tkgText ?? null,
-        lastTakeoff: null,
-      });
-      setRecord(next);
-      setValidation(null);
-      setTakeoff(null);
-      setInfo('Hasil analisis gambar tersimpan. Validasi dan hitung volume berjalan otomatis.');
-      await runPipeline(next);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Simpan hasil analisis atau proses engine gagal.');
-    } finally {
-      setBusy(null);
-    }
-  }, [perceptionReview, projectId, record, runPipeline]);
+  const savePerceptionAsTranscript = useCallback(async () => {
+    if (!perceptionReview) return null;
+    const next = await tkgRepository.save({
+      ...record,
+      projectId,
+      tkg: perceptionReview.result.tkg,
+      source: 'pipeline',
+      reviewed: false,
+      lastRenderedText: perceptionReview.result.tkgText ?? null,
+      lastTakeoff: null,
+    });
+    setRecord(next);
+    setValidation(null);
+    setTakeoff(null);
+    return next;
+  }, [perceptionReview, projectId, record]);
 
   const discardPerception = useCallback(() => {
     setSelectedPdf(null);
     setPerceptionReview(null);
-    setAssumptionsExpanded(false);
     setRabDraftPath(null);
     setError(null);
     setInfo('Hasil analisis dibuang. Pilih PDF lain atau gunakan teks deskripsi.');
@@ -303,45 +257,67 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
     }
   }, [record, runPipeline]);
 
-  const sendToRab = useCallback(async () => {
-    if (!takeoff) return;
+  const sendTakeoffToRab = useCallback(async (
+    takeoffInput: TakeoffResult,
+    suggestionsInput: TakeoffAhspSuggestion[],
+  ) => {
     setBusy('rab');
     setError(null);
+    const draft = await rabRepository.get(projectId);
+    const okItems = takeoffInput.items.filter((item) => !item.needs_review && item.quantity != null);
+    const suggestionByKey = new Map(
+      suggestionsInput.map((s) => [`${s.kode}|${s.lantai ?? ''}|${s.work_type}`, s]),
+    );
+    const newLines = okItems.map((item) => {
+      const suggestion = suggestionByKey.get(`${item.kode}|${item.lantai ?? ''}|${item.work_type}`);
+      const suggested = suggestion?.ahsp_suggested === true;
+      return {
+        ...emptyRabLine(),
+        ahsp_code: suggested ? suggestion!.ahsp_code : '',
+        ahsp_suggested: suggested,
+        volume: item.quantity ?? null,
+        duration_days: null,
+      };
+    });
+    const nSuggested = newLines.filter((l) => l.ahsp_suggested).length;
+    const kept = draft.lines.filter((line) => line.ahsp_code || line.volume != null);
+    await rabRepository.save({ ...draft, lines: [...kept, ...newLines] });
+    setRabDraftPath(`/proyek/${projectId}/rab`);
+    setInfo(
+      `${newLines.length} baris volume terkirim ke Draft RAB` +
+      (nSuggested > 0 ? ` (${nSuggested} sudah ada usulan kode AHSP, tetap bisa diganti)` : '') +
+      `. ${takeoffInput.items.length - okItems.length} item review tidak ikut dikirim.`,
+    );
+  }, [projectId]);
+
+  const processPerceptionToRab = useCallback(async () => {
+    if (!perceptionReview) return;
+    setBusy('save-perception');
+    setError(null);
+    setRabDraftPath(null);
     try {
-      const draft = await rabRepository.get(projectId);
-      const okItems = takeoff.items.filter((item) => !item.needs_review && item.quantity != null);
-      // Fase T: kode AHSP terisi HANYA bila usulan cukup yakin (ahsp_suggested
-      // true, ambang diverifikasi manual thd katalog CK 2026 nyata) -- selain
-      // itu tetap kosong seperti sebelumnya, user pilih manual di halaman RAB.
-      const suggestionByKey = new Map(
-        ahspSuggestions.map((s) => [`${s.kode}|${s.lantai ?? ''}|${s.work_type}`, s]),
-      );
-      const newLines = okItems.map((item) => {
-        const suggestion = suggestionByKey.get(`${item.kode}|${item.lantai ?? ''}|${item.work_type}`);
-        const suggested = suggestion?.ahsp_suggested === true;
-        return {
-          ...emptyRabLine(),
-          ahsp_code: suggested ? suggestion!.ahsp_code : '',
-          ahsp_suggested: suggested,
-          volume: item.quantity ?? null,
-          duration_days: null,
-        };
-      });
-      const nSuggested = newLines.filter((l) => l.ahsp_suggested).length;
-      const kept = draft.lines.filter((line) => line.ahsp_code || line.volume != null);
-      await rabRepository.save({ ...draft, lines: [...kept, ...newLines] });
-      setRabDraftPath(`/proyek/${projectId}/rab`);
-      setInfo(
-        `${newLines.length} baris volume terkirim ke Draft RAB` +
-        (nSuggested > 0 ? ` (${nSuggested} sudah ada usulan kode AHSP, tetap bisa diganti)` : '') +
-        `. ${takeoff.items.length - okItems.length} item review tidak ikut dikirim.`,
-      );
+      const next = await savePerceptionAsTranscript();
+      if (!next) return;
+      const pipeline = await runPipeline(next);
+      if (!pipeline) return;
+      await sendTakeoffToRab(pipeline.takeoff, pipeline.suggestions);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Proses RAB dari gambar gagal.');
+    } finally {
+      setBusy(null);
+    }
+  }, [perceptionReview, runPipeline, savePerceptionAsTranscript, sendTakeoffToRab]);
+
+  const sendToRab = useCallback(async () => {
+    if (!takeoff) return;
+    try {
+      await sendTakeoffToRab(takeoff, ahspSuggestions);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kirim ke RAB gagal.');
     } finally {
       setBusy(null);
     }
-  }, [ahspSuggestions, projectId, takeoff]);
+  }, [ahspSuggestions, sendTakeoffToRab, takeoff]);
 
   const openRabDraft = useCallback(() => {
     if (!rabDraftPath) return;
@@ -349,15 +325,6 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
   }, [rabDraftPath, router]);
 
   const tkg = record.tkg;
-  const counts = useMemo(() => {
-    const sheets = tkg?.sheets ?? [];
-    return {
-      sheets: sheets.length,
-      tables: sheets.reduce((sum, sheet) => sum + sheet.tables.length, 0),
-      elements: sheets.reduce((sum, sheet) => sum + sheet.elements.length, 0),
-    };
-  }, [tkg]);
-
   const triageItems: TriageItemView[] = useMemo(() => {
     if (!takeoff) return [];
     return takeoff.items
@@ -374,42 +341,9 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
       }));
   }, [takeoff]);
 
-  // Elemen per-zona: gabung `element_registry` (lintas-halaman) dengan zona
-  // sheet asal tiap instance, supaya tampilan "grid & elemen" dikelompokkan
-  // per paket pekerjaan (substruktur/struktur lantai N/atap), bukan per kode
-  // mentah — bahasa teknik sipil, bukan struktur data internal.
-  const elementsByZone = useMemo(() => {
-    const consolidated = perceptionReview?.result.consolidated;
-    if (!consolidated) return [] as Array<{ zone: string | null; rows: Array<{ alamat: string; kode: string }> }>;
-
-    const zoneBySheetPage = new Map<number, string | null>();
-    for (const sheet of consolidated.sheets) zoneBySheetPage.set(sheet.page, sheet.zone);
-
-    const rowsByZone = new Map<string, Array<{ alamat: string; kode: string }>>();
-    for (const entry of consolidated.element_registry) {
-      for (const instance of entry.instances) {
-        const zone = zoneBySheetPage.get(instance.sheet_page) ?? null;
-        const key = zone ?? '__unknown__';
-        const rows = rowsByZone.get(key) ?? [];
-        rows.push({ alamat: instance.alamat, kode: entry.kode });
-        rowsByZone.set(key, rows);
-      }
-    }
-    return Array.from(rowsByZone, ([key, rows]) => ({ zone: key === '__unknown__' ? null : key, rows }));
-  }, [perceptionReview]);
-
-  const assumptions = perceptionReview?.result.consolidated?.assumptions ?? [];
-  const highImpactAssumptions = assumptions.filter((a) => a.dampak === 'tinggi');
-  const visibleAssumptions = assumptionsExpanded ? assumptions : assumptions.slice(0, ASSUMPTIONS_PREVIEW_COUNT);
+  const aiReport = perceptionReview?.result.aiReport ?? null;
 
   const readyItems = takeoff?.items.filter((item) => !item.needs_review && item.quantity != null).length ?? 0;
-  const statusText = takeoff
-    ? `AI menemukan ${counts.elements} elemen dari ${counts.tables} tabel pada ${counts.sheets} sheet. ${readyItems} volume siap dikirim, ${takeoff.n_needs_review} item perlu review.`
-    : perceptionReview
-    ? 'Hasil analisis gambar siap direview di bawah. Tekan simpan untuk menjalankan validasi dan hitung volume otomatis.'
-    : tkg
-      ? `AI menemukan ${counts.elements} elemen dari ${counts.tables} tabel pada ${counts.sheets} sheet. Proses engine siap dijalankan ulang.`
-      : 'Unggah PDF gambar kerja, atau tempel teks deskripsi, untuk memulai analisis.';
 
   return (
     <Card padding={18}>
@@ -434,8 +368,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(260px, .9fr)', gap: 14 }} className="pax-grid-2">
-        <div>
+      <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4 }}>
             Unggah PDF gambar kerja
           </div>
@@ -527,116 +460,122 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
 
           <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
             <Button onClick={runPerception} disabled={!selectedPdf || busy !== null}>
-              <Sparkles size={14} /> {busy === 'perception' ? 'Menganalisis...' : 'Analisa Gambar Kerja'}
+              <Sparkles size={14} /> {busy === 'perception' ? 'Menganalisis...' : 'Analisa RAB dari Gambar Kerja'}
             </Button>
           </div>
           {busy === 'perception' && <AnalyzingIndicator progressMessage={progressMessage} />}
 
-          <div style={{ marginTop: 12, border: '1px solid var(--border)', borderRadius: 12, background: 'var(--surface)', padding: 12 }}>
+          <div style={{ marginTop: 12, border: '1px solid var(--border)', borderRadius: 12, background: 'var(--surface)', padding: 12, width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4 }}>Review Gambar</div>
-              {highImpactAssumptions.length > 0 && (
-                <StatusPill tone="warn">{highImpactAssumptions.length} perlu perhatian</StatusPill>
-              )}
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4 }}>Hasil analisis AI</div>
+              {aiReport && <StatusPill tone="ok">{aiReport.project_summary.total_pages} halaman</StatusPill>}
             </div>
 
             {!perceptionReview ? (
               <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.5 }}>
-                Belum ada hasil analisis. Unggah PDF lalu klik &quot;Analisa Gambar Kerja&quot; untuk melihat ringkasan gambar per halaman.
+                Unggah PDF lalu klik &quot;Analisa RAB dari Gambar Kerja&quot;. Proses mentah berjalan di belakang layar; hasil utama berupa ringkasan dan tabel pekerjaan.
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {aiReport && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(180px, 240px)', gap: 10 }} className="pax-grid-2">
+                    <div style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 12, background: 'var(--elev)' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6 }}>Ringkasan gambar</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', marginBottom: 6 }}>{aiReport.project_summary.project_kind}</div>
+                      <div style={{ fontSize: 12.5, color: 'var(--text2)', lineHeight: 1.55 }}>{aiReport.technical_summary}</div>
+                    </div>
+                    <div style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 12, background: 'var(--elev)' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>File</div>
+                      <div style={{ fontSize: 18, fontWeight: 850, color: 'var(--text)' }}>{aiReport.project_summary.total_pages}</div>
+                      <div style={{ fontSize: 11.5, color: 'var(--text3)' }}>halaman terbaca</div>
+                    </div>
+                  </div>
+                )}
+                {aiReport?.model_stack?.length ? (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6 }}>
+                      <Sparkles size={13} /> Model AI
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {aiReport.model_stack.map((stage) => (
+                        <StatusPill key={stage.stage} tone={stage.active ? 'ok' : 'warn'} mono>
+                          {stage.stage.replace(/_/g, ' ')}: {stage.model}
+                        </StatusPill>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6 }}>
                     <FileText size={13} /> Halaman gambar
                   </div>
                   <div style={{ display: 'grid', gap: 6 }}>
-                    {perceptionReview.result.consolidated?.sheets.map((sheet) => (
+                    {(aiReport?.sheets ?? []).map((sheet) => (
                       <div key={sheet.sheet_id} style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px', background: 'var(--elev)' }}>
                         <StatusPill tone="ok" mono>{`Hal. ${sheet.page}`}</StatusPill>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>{sheet.judul}</div>
+                          <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>{sheet.interpreted_title}</div>
                           <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-                            {zoneLabel(sheet.zone)}{sheet.skala ? ` · Skala ${sheet.skala}` : ''}
+                            {sheet.role}{sheet.scale ? ` · Skala ${sheet.scale}` : ''}
                           </div>
                         </div>
                       </div>
-                    )) ?? <div style={{ fontSize: 12, color: 'var(--text3)' }}>Tidak ada data halaman.</div>}
+                    ))}
+                    {!aiReport?.sheets.length && <div style={{ fontSize: 12, color: 'var(--text3)' }}>Tidak ada data halaman.</div>}
                   </div>
                 </div>
 
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6 }}>
-                    <Layers size={13} /> Grid &amp; elemen per zona
+                    <CheckCircle2 size={13} /> Item pekerjaan hasil AI
                   </div>
-                  {elementsByZone.length === 0 ? (
-                    <div style={{ fontSize: 12, color: 'var(--text3)' }}>Belum ada elemen dengan grid yang terbaca.</div>
-                  ) : (
-                    <div style={{ display: 'grid', gap: 8 }}>
-                      {elementsByZone.map(({ zone, rows }) => (
-                        <div key={zone ?? 'unknown'} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 10, background: 'var(--elev)' }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>{zoneLabel(zone)}</div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                            {rows.map((row, index) => (
-                              <div key={`${row.alamat}-${row.kode}-${index}`} style={{ fontSize: 11.5, padding: '3px 8px', borderRadius: 999, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text2)' }}>
-                                <span style={{ fontWeight: 700, color: 'var(--text)' }}>{row.alamat}</span>: {row.kode}
-                              </div>
-                            ))}
-                          </div>
+                  <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--elev)' }}>
+                    <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                      <thead>
+                        <tr style={{ color: 'var(--text3)', textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
+                          {['Kategori', 'Item pekerjaan', 'Sumber halaman', 'Dasar pembacaan', 'Satuan', 'Volume', 'Rumus', 'AHSP kandidat', 'Status', 'Catatan verifikasi'].map((head) => (
+                            <th key={head} scope="col" style={{ padding: '9px 10px', fontWeight: 800, whiteSpace: 'nowrap' }}>{head}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(aiReport?.detected_work_items ?? []).map((item, index) => (
+                          <tr key={`${item.item_pekerjaan}-${index}`} style={{ borderBottom: '1px solid var(--border)' }}>
+                            <td style={{ padding: '9px 10px', color: 'var(--text2)' }}>{item.category}</td>
+                            <td style={{ padding: '9px 10px', color: 'var(--text)', fontWeight: 800 }}>{item.item_pekerjaan}</td>
+                            <td style={{ padding: '9px 10px', color: 'var(--text2)', whiteSpace: 'nowrap' }}>{item.source_pages.map((p) => `Hal. ${p}`).join(', ') || '-'}</td>
+                            <td style={{ padding: '9px 10px', color: 'var(--text2)', minWidth: 220 }}>{item.dasar_pembacaan}</td>
+                            <td style={{ padding: '9px 10px', color: 'var(--text2)' }}>{item.unit ?? '-'}</td>
+                            <td style={{ padding: '9px 10px', color: 'var(--text2)' }}>{item.volume ?? '-'}</td>
+                            <td style={{ padding: '9px 10px', color: 'var(--text2)', minWidth: 160 }}>{item.formula ?? '-'}</td>
+                            <td style={{ padding: '9px 10px', color: 'var(--text2)' }}>{item.ahsp_candidate ?? '-'}</td>
+                            <td style={{ padding: '9px 10px' }}>
+                              <StatusPill tone={item.status === 'Siap diproses' ? 'ok' : 'warn'}>{item.status}</StatusPill>
+                            </td>
+                            <td style={{ padding: '9px 10px', color: 'var(--text2)', minWidth: 180 }}>{item.verification_note ?? '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {!aiReport?.detected_work_items.length && (
+                      <div style={{ padding: 12, fontSize: 12, color: 'var(--text3)' }}>Belum ada item pekerjaan yang siap ditampilkan.</div>
+                    )}
+                  </div>
+                  {aiReport?.verification_notes.length ? (
+                    <div style={{ display: 'grid', gap: 6, marginTop: 8 }}>
+                      {aiReport.verification_notes.slice(0, 4).map((note, index) => (
+                        <div key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'var(--text2)' }}>
+                          <StatusPill tone={note.level === 'tinggi' ? 'dng' : note.level === 'sedang' ? 'warn' : 'ok'}>{note.level}</StatusPill>
+                          <span>{note.note}{note.source_pages.length ? ` (hal. ${note.source_pages.join(', ')})` : ''}</span>
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
-
-                {perceptionReview.result.consolidated?.building_dimensions.sumber !== 'tidak_tersedia' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 10, padding: 10, background: 'var(--elev)' }}>
-                    <Ruler size={16} color="var(--gold)" />
-                    <div style={{ fontSize: 12.5, color: 'var(--text)' }}>
-                      Bangunan diperkirakan{' '}
-                      <strong>
-                        {formatBuildingSize(perceptionReview.result.consolidated?.building_dimensions.total_x_mm ?? null) ?? '?'}
-                        {' × '}
-                        {formatBuildingSize(perceptionReview.result.consolidated?.building_dimensions.total_y_mm ?? null) ?? '?'}
-                      </strong>
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6 }}>
-                    <ListChecks size={13} /> Perlu dicek {assumptions.length > 0 ? `(${assumptions.length})` : ''}
-                  </div>
-                  {assumptions.length === 0 ? (
-                    <div style={{ fontSize: 12, color: 'var(--text3)' }}>Tidak ada yang perlu dicek — semua terbaca jelas.</div>
-                  ) : (
-                    <div style={{ display: 'grid', gap: 6 }}>
-                      {visibleAssumptions.map((assumption, index) => (
-                        <div key={index} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', border: '1px solid var(--border)', borderRadius: 10, padding: 8, background: 'var(--elev)' }}>
-                          <StatusPill tone={DAMPAK_TONE[assumption.dampak]}>{assumption.dampak}</StatusPill>
-                          <div style={{ fontSize: 12, color: 'var(--text2)' }}>
-                            {assumption.pernyataan}
-                            {assumption.sheet_page != null && <span style={{ color: 'var(--text3)' }}> (hal. {assumption.sheet_page})</span>}
-                          </div>
-                        </div>
-                      ))}
-                      {assumptions.length > ASSUMPTIONS_PREVIEW_COUNT && (
-                        <button
-                          type="button"
-                          onClick={() => setAssumptionsExpanded((prev) => !prev)}
-                          style={{ border: 0, background: 'transparent', color: 'var(--text3)', cursor: 'pointer', fontSize: 11.5, textAlign: 'left', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 4 }}
-                        >
-                          {assumptionsExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                          {assumptionsExpanded ? 'Sembunyikan' : `Lihat ${assumptions.length - ASSUMPTIONS_PREVIEW_COUNT} lainnya`}
-                        </button>
-                      )}
-                    </div>
-                  )}
+                  ) : null}
                 </div>
 
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <Button onClick={usePerceptionAsTranscript} disabled={busy !== null}>
-                    <CheckCircle2 size={14} /> Simpan hasil analisis
+                  <Button onClick={processPerceptionToRab} disabled={busy !== null}>
+                    <CheckCircle2 size={14} /> {aiReport?.next_action_label ?? 'Proses RAB'}
                   </Button>
                   <Button variant="secondary" onClick={discardPerception} disabled={busy !== null}>
                     Buang hasil
@@ -671,20 +610,21 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
           </div>
         </div>
 
+        {false && (
         <div style={{ border: '1px solid var(--border)', borderRadius: 12, background: 'var(--surface)', padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.4 }}>Status proses</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', lineHeight: 1.45 }}>{statusText}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', lineHeight: 1.45 }} />
           {validation && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', fontSize: 11.5, color: 'var(--text3)' }}>
-              <StatusPill tone={validation.gate_passed ? 'ok' : validation.ok ? 'warn' : 'dng'}>
-                {validation.gate_passed ? 'VALID' : validation.ok ? 'DRAFT' : 'PERLU PERBAIKAN'}
+              <StatusPill tone={validation!.gate_passed ? 'ok' : validation!.ok ? 'warn' : 'dng'}>
+                {validation!.gate_passed ? 'VALID' : validation!.ok ? 'DRAFT' : 'PERLU PERBAIKAN'}
               </StatusPill>
-              {validation.n_errors} error · {validation.n_warnings} warning
+              {validation!.n_errors} error · {validation!.n_warnings} warning
             </div>
           )}
           {busy && busy !== 'perception' && <div style={{ fontSize: 12, color: 'var(--text2)' }}>Sedang menjalankan tahap: {busy}</div>}
         </div>
-      </div>
+        )}
 
       {takeoff && (
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -692,7 +632,7 @@ export function TkgWorkspace({ projectId }: { projectId: string }) {
           {readyItems > 0 && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <Button variant="secondary" onClick={sendToRab} disabled={busy !== null} style={{ alignSelf: 'flex-start' }}>
-                <Send size={14} /> Kirim Volume ke Draft RAB
+                <Send size={14} /> Proses RAB
               </Button>
               {rabDraftPath && (
                 <Button variant="secondary" onClick={openRabDraft} disabled={busy !== null} style={{ alignSelf: 'flex-start' }}>

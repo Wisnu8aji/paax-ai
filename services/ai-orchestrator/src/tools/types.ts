@@ -32,6 +32,8 @@ export interface ScheduleSnapshot {
 }
 
 export interface ChatContext {
+  project_id?: string;
+  conversation_id?: string;
   rab_lines?: RabLineSnapshot[];
   schedule?: ScheduleSnapshot | Record<string, unknown>;
 }

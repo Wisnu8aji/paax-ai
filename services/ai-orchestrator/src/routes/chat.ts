@@ -5,6 +5,7 @@ import { GEMINI_MODEL } from "../config";
 import { runToolCallingLoop } from "../gemini/tool-loop";
 import { createToolRegistry } from "../tools/registry";
 import type { ChatContext } from "../tools/types";
+import { checkQuota } from "../usage";
 
 export const systemPrompt = [
   "Anda adalah Engineering Chat PAAX, asisten AI di workspace insinyur sipil Indonesia.",
@@ -46,7 +47,6 @@ export function createChatHandler(params: {
     }
 
     const tenantId = parsed.data.context?.project_id || "default-tenant";
-    const { checkQuota } = require("../usage");
     const quotaRes = await checkQuota(tenantId);
     if (quotaRes.quota_exceeded) {
       return res.status(429).json({

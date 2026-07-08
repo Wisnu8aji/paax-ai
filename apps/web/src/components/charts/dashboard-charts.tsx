@@ -215,6 +215,68 @@ export function ColumnChart({ data, height = 150 }: { data: ColumnDatum[]; heigh
   );
 }
 
+/**
+ * Sparkline gelombang halus (referensi kartu statistik G:\Dashboard).
+ * Kurva dibangun dari NILAI TERSIMPAN (mis. progres per proyek) via
+ * interpolasi Catmull-Rom → bezier — murni rendering, bukan perhitungan.
+ * Data < 2 titik → garis landai datar (placeholder jujur).
+ */
+export function WaveSpark({
+  values,
+  width = 220,
+  height = 56,
+  color = 'var(--chart-1)',
+  fillOpacity = 0.14,
+  label,
+}: {
+  values: number[];
+  width?: number;
+  height?: number;
+  color?: string;
+  fillOpacity?: number;
+  label?: string;
+}) {
+  const pts = values.length >= 2 ? values : [40, 42, 41, 43, 42];
+  const min = Math.min(...pts);
+  const max = Math.max(...pts);
+  const span = max - min || 1;
+  const pad = 6;
+  const xy = pts.map((v, i) => ({
+    x: (i / (pts.length - 1)) * (width - 2) + 1,
+    y: pad + (1 - (v - min) / span) * (height - pad * 2),
+  }));
+  // Catmull-Rom → cubic bezier agar gelombang lembut
+  let d = `M ${xy[0].x} ${xy[0].y}`;
+  for (let i = 0; i < xy.length - 1; i++) {
+    const p0 = xy[Math.max(0, i - 1)];
+    const p1 = xy[i];
+    const p2 = xy[i + 1];
+    const p3 = xy[Math.min(xy.length - 1, i + 2)];
+    const c1x = p1.x + (p2.x - p0.x) / 6;
+    const c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6;
+    const c2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`;
+  }
+  const area = `${d} L ${width - 1} ${height} L 1 ${height} Z`;
+  return (
+    <svg
+      className="pax-chart-draw"
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      role={label ? 'img' : undefined}
+      aria-label={label}
+      aria-hidden={label ? undefined : true}
+      style={{ display: 'block' }}
+    >
+      <path d={area} fill={color} opacity={fillOpacity} stroke="none" style={{ animation: 'none', strokeDasharray: 'none' }} />
+      <path d={d} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" style={{ ['--dash' as string]: 700 }} />
+    </svg>
+  );
+}
+
 /** Cincin persentase tunggal (mis. health tersimpan per proyek). */
 export function RingGauge({
   pct,

@@ -21,7 +21,7 @@
 import { TkgDocumentSchema, type TkgDocument } from '@paax/schemas';
 
 export const DOCUMENT_INTELLIGENCE_URL =
-  process.env.NEXT_PUBLIC_DOCUMENT_INTELLIGENCE_URL || 'http://127.0.0.1:8083';
+  process.env.NEXT_PUBLIC_DOCUMENT_INTELLIGENCE_PROXY_URL || '/api/document-intelligence';
 
 export class DocumentIntelligenceError extends Error {
   constructor(message: string) {
@@ -116,6 +116,55 @@ export interface DrawingIntakeResult {
   metrics: PerceptionMetrics | null;
   gerbang: PerceptionGerbang | null;
   consolidated: ConsolidatedExtraction | null;
+  aiReport: DrawingAiReport | null;
+}
+
+export interface DrawingAiReport {
+  project_summary: {
+    project_id: string;
+    file_name: string;
+    project_kind: string;
+    total_pages: number;
+    confidence: number | null;
+  };
+  sheets: Array<{
+    page: number;
+    sheet_id: string;
+    interpreted_title: string;
+    role: string;
+    zone: string | null;
+    scale: string | null;
+    summary: string;
+  }>;
+  technical_summary: string;
+  detected_work_items: Array<{
+    category: string;
+    item_pekerjaan: string;
+    source_pages: number[];
+    dasar_pembacaan: string;
+    unit: string | null;
+    volume: number | null;
+    formula: string | null;
+    ahsp_candidate: string | null;
+    confidence: number;
+    status: string;
+    verification_note: string | null;
+  }>;
+  verification_notes: Array<{
+    level: string;
+    note: string;
+    source_pages: number[];
+  }>;
+  model_stack?: Array<{
+    stage: string;
+    provider: string;
+    model: string;
+    purpose: string;
+    active: boolean;
+  }>;
+  next_action_label: string;
+  provider: string;
+  model: string | null;
 }
 
 interface DrawingAnalyzeResponse {
@@ -127,6 +176,7 @@ interface DrawingAnalyzeResponse {
   metrics: PerceptionMetrics | null;
   gerbang: PerceptionGerbang | null;
   consolidated: ConsolidatedExtraction | null;
+  ai_report: DrawingAiReport | null;
 }
 
 interface AnalyzeJobStatusResponse {
@@ -187,6 +237,7 @@ function toIntakeResult(data: DrawingAnalyzeResponse): DrawingIntakeResult {
     metrics: data.metrics ?? null,
     gerbang: data.gerbang ?? null,
     consolidated: data.consolidated ?? null,
+    aiReport: data.ai_report ?? null,
   };
 }
 

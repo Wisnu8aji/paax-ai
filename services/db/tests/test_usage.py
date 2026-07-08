@@ -48,6 +48,17 @@ def test_log_usage_increments_quota(auth_headers):
     assert data["remaining"] == 99
 
 def test_usage_summary(auth_headers):
+    payload = {
+        "tenant_id": "tenant-123",
+        "service": "document-intelligence",
+        "operation": "test-ops",
+        "success": True,
+        "tokens_in": 10,
+        "tokens_out": 20
+    }
+    seed = client.post("/usage/log", json=payload, headers=auth_headers)
+    assert seed.status_code == 200, seed.text
+
     res = client.get("/usage/summary?tenant_id=tenant-123", headers=auth_headers)
     assert res.status_code == 200, res.text
     data = res.json()

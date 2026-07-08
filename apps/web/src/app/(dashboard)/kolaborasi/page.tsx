@@ -8,7 +8,7 @@ export default function KolaborasiPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader
-        title="Kolaborasi"
+        title="Team"
         subtitle="Anggota tim & hak akses workspace"
         actions={
           <Button>

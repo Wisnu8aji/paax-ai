@@ -9,18 +9,21 @@ from app.main import app
 from tests.fixtures.perception._generate_synthetic_table_pdf import build_synthetic_table_pdf_bytes
 
 client = TestClient(app)
+AUTH_HEADERS = {"X-Internal-Key": "test-internal-key", "X-User-Id": "test-suite"}
 
 
 def test_analyze_returns_real_metrics_and_gerbang():
     pdf_bytes = build_synthetic_table_pdf_bytes()
     upload_res = client.post(
         "/upload",
+        headers=AUTH_HEADERS,
         files={"file": ("p4_test_sheet.pdf", pdf_bytes, "application/pdf")},
     )
     assert upload_res.status_code == 200
 
     analyze_res = client.post(
         "/drawings/analyze",
+        headers=AUTH_HEADERS,
         json={"file_metadata": {"file_name": "p4_test_sheet.pdf", "file_type": "DRAWING_PDF", "project_id": "prj-test"}},
     )
     assert analyze_res.status_code == 200
@@ -46,11 +49,15 @@ def test_analyze_returns_real_metrics_and_gerbang():
     assert data["consolidated"] is not None
     assert len(data["consolidated"]["sheets"]) == 1
     assert data["consolidated"]["sheets"][0]["judul"]
+    assert data["ai_report"] is not None
+    assert data["ai_report"]["next_action_label"] == "Proses RAB"
+    assert data["ai_report"]["project_summary"]["total_pages"] == 1
 
 
 def test_analyze_missing_file_reports_warning_not_crash():
     analyze_res = client.post(
         "/drawings/analyze",
+        headers=AUTH_HEADERS,
         json={"file_metadata": {"file_name": "tidak-ada-di-server.pdf", "file_type": "DRAWING_PDF"}},
     )
     assert analyze_res.status_code == 200
@@ -65,12 +72,14 @@ def test_analyze_start_and_poll_status_reaches_completed():
     pdf_bytes = build_synthetic_table_pdf_bytes()
     upload_res = client.post(
         "/upload",
+        headers=AUTH_HEADERS,
         files={"file": ("p4_test_sheet_async.pdf", pdf_bytes, "application/pdf")},
     )
     assert upload_res.status_code == 200
 
     start_res = client.post(
         "/drawings/analyze/start",
+        headers=AUTH_HEADERS,
         json={"file_metadata": {"file_name": "p4_test_sheet_async.pdf", "file_type": "DRAWING_PDF", "project_id": "prj-async"}},
     )
     assert start_res.status_code == 200
@@ -80,7 +89,7 @@ def test_analyze_start_and_poll_status_reaches_completed():
     deadline = time.monotonic() + 10
     status_data = None
     while time.monotonic() < deadline:
-        status_res = client.get(f"/drawings/analyze/status/{job_id}")
+        status_res = client.get(f"/drawings/analyze/status/{job_id}", headers=AUTH_HEADERS)
         assert status_res.status_code == 200
         status_data = status_res.json()
         if status_data["status"] in ("COMPLETED", "FAILED"):
@@ -94,6 +103,6 @@ def test_analyze_start_and_poll_status_reaches_completed():
 
 
 def test_analyze_status_unknown_job_returns_404():
-    res = client.get("/drawings/analyze/status/not-a-real-job-id")
+    res = client.get("/drawings/analyze/status/not-a-real-job-id", headers=AUTH_HEADERS)
     assert res.status_code == 404
 

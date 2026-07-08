@@ -19,6 +19,11 @@ from app.perception.work_items import (
     section_for_category,
 )
 
+AUTH_HEADERS = {"X-Internal-Key": "test-internal-key", "X-User-Id": "test-suite"}
+_TEST_DIR = Path(__file__).resolve().parent
+_SERVICE_DIR = _TEST_DIR.parent
+_SERVICES_DIR = _SERVICE_DIR.parent
+
 
 class FakeArsitekturClient:
     def takeoff_arsitektur(self, payload: dict) -> dict:
@@ -104,8 +109,8 @@ def test_all_known_tkg_categories_map_to_explicit_wbs_section_not_lainnya():
 
 
 def test_work_items_does_not_import_core_engine_sections_by_filesystem_path():
-    source = Path("app/perception/work_items.py").read_text(encoding="utf-8")
-    takeoff_source = Path("../core-engine/app/tkg/takeoff.py").read_text(encoding="utf-8")
+    source = (_SERVICE_DIR / "app" / "perception" / "work_items.py").read_text(encoding="utf-8")
+    takeoff_source = (_SERVICES_DIR / "core-engine" / "app" / "tkg" / "takeoff.py").read_text(encoding="utf-8")
 
     assert "spec_from_file_location" not in source
     assert "core-engine" not in source
@@ -189,6 +194,7 @@ def test_work_items_endpoint_returns_grouping_response():
     client = TestClient(app)
     response = client.post(
         "/drawings/tkg/work-items",
+        headers=AUTH_HEADERS,
         json={
             "consolidated": {
                 "element_registry": [

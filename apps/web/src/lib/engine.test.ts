@@ -49,7 +49,7 @@ describe("Core Engine client wiring", () => {
 
     const result = await fetchSchedulePlan(request);
 
-    expect(capturedUrl).toBe("http://127.0.0.1:8081/schedule/plan");
+    expect(capturedUrl).toBe("/api/core-engine/schedule/plan");
     expect(capturedInit?.method).toBe("POST");
     expect(JSON.parse(String(capturedInit?.body))).toEqual(request);
     expect(result).toEqual(engineResult);
@@ -186,7 +186,7 @@ describe("Core Engine client wiring", () => {
 
     const result = await triageReviewTasks(request);
 
-    expect(capturedUrl).toBe("http://127.0.0.1:8081/review/triage");
+    expect(capturedUrl).toBe("/api/core-engine/review/triage");
     expect(capturedBody).toEqual(request);
     expect(result).toEqual(engineResult);
   });

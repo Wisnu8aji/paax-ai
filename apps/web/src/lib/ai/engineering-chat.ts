@@ -16,6 +16,7 @@ export interface EngineeringChatPromptInput {
   message: string;
   engine: EngineeringChatEngineStatus;
   projectId?: string;
+  aiProvider?: string;
   aiError?: string;
   /**
    * Context pack proyek (skrip TKG + draft RAB) yang dibangun client-side.
@@ -91,24 +92,25 @@ export function buildEngineeringChatPrompt(input: EngineeringChatPromptInput): s
 
 export function fallbackEngineeringAnswer(input: EngineeringChatPromptInput): string {
   const aiError = input.aiError ? ` (${input.aiError})` : "";
+  const provider = input.aiProvider ?? "AI NVIDIA";
   if (!isEngineeringQuestion(input.message)) {
     return [
-      `Gemini API belum memberi jawaban saat ini${aiError}.`,
-      "Untuk obrolan umum, coba kirim lagi sebentar setelah limit Gemini pulih.",
+      `${provider} belum memberi jawaban saat ini${aiError}.`,
+      "Coba kirim lagi sebentar lagi; pesan tidak dialihkan ke provider lain.",
       `Pesan Anda sudah diterima: "${input.message}"`,
     ].join(" ");
   }
 
   if (input.engine.online && input.engine.health) {
     return [
-      `Gemini API belum memberi jawaban saat ini${aiError}.`,
+      `${provider} belum memberi jawaban saat ini${aiError}.`,
       `Core Engine tetap aktif di ${input.engine.url} dengan ${input.engine.health.ahsp_items} item AHSP untuk wilayah ${input.engine.health.regions.join(", ")}.`,
       "Untuk topik engineering, saya bisa membantu menyiapkan input dan menjelaskan alur; angka final tetap dihitung engine.",
     ].join(" ");
   }
 
   return [
-    `Gemini API belum memberi jawaban saat ini${aiError}.`,
+    `${provider} belum memberi jawaban saat ini${aiError}.`,
     `Core Engine belum aktif di ${input.engine.url}.`,
     "Jalankan engine dengan `pnpm run dev:core` atau `python -m uvicorn app.main:app --reload --port 8081` dari folder `services/core-engine`.",
   ].join(" ");
