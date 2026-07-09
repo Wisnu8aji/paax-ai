@@ -29,7 +29,14 @@ import {
 } from 'lucide-react';
 import { PaaxMark } from '@/components/brand/paax-logo';
 import { useShell } from '@/components/app-shell/shell-context';
-import { readEngineeringChatResponse } from '@/lib/ai/engineering-chat';
+import {
+  type ModelAlias,
+  type ReasoningEffort,
+  type ThinkingMode,
+  PAAX_MODELS,
+  composerBadge,
+  resolveThinking,
+} from '@/lib/paax-models';
 import {
   createConversation,
   deleteConversation,
@@ -59,7 +66,6 @@ const SCOPE = 'command-room';
 
 type SideTab = 'home' | 'project';
 type FilterMode = 'recent' | 'archived' | 'all';
-type ModelName = 'Lucent' | 'Solace';
 
 const filterLabels: Record<FilterMode, string> = {
   recent: 'Recent',
@@ -93,7 +99,6 @@ function inferMime(file: File): string {
   if (file.type) return file.type;
   const n = file.name.toLowerCase();
   if (n.endsWith('.pdf')) return 'application/pdf';
-  if (n.endsWith('.png')) return 'image/png';
   if (n.endsWith('.jpg') || n.endsWith('.jpeg')) return 'image/jpeg';
   if (n.endsWith('.webp')) return 'image/webp';
   return 'application/octet-stream';
@@ -146,7 +151,9 @@ export default function CommandRoomPage() {
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [model, setModel] = useState<ModelName>('Lucent');
+  const [modelAlias, setModelAlias] = useState<ModelAlias>('lucent');
+  const [reasoningEffort, setReasoningEffort] = useState<ReasoningEffort>('high');
+  const [thinking, setThinking] = useState<ThinkingMode>('off');
   const [modelOpen, setModelOpen] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
   const [addToOpen, setAddToOpen] = useState(false);
@@ -154,6 +161,10 @@ export default function CommandRoomPage() {
   const [note, setNote] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const [usageDismissed, setUsageDismissed] = useState(false);
+
+  const activeModelDef = PAAX_MODELS[modelAlias];
+  const resolvedThinking = resolveThinking(modelAlias, thinking);
+  const badgeLabel = composerBadge(modelAlias, resolvedThinking, reasoningEffort);
 
   // Projects page state
   const [projectSearch, setProjectSearch] = useState('');
@@ -301,23 +312,32 @@ export default function CommandRoomPage() {
     refresh(next.id);
 
     try {
-      const supported = attachments
-        .filter((a) => a.supported && a.base64)
-        .map((a) => ({ mimeType: a.mimeType, data: a.base64 as string }));
-      const response = await fetch('/api/ai/chat', {
+      const historyMessages = next.messages.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.text,
+      }));
+
+      const response = await fetch('/api/command-room/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message,
-          projectId: SCOPE,
-          model,
-          ...(supported.length > 0 ? { attachments: supported } : {}),
+          messages: historyMessages,
+          modelAlias,
+          reasoningEffort,
+          thinking: resolvedThinking,
         }),
       });
-      const data = await readEngineeringChatResponse(response);
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null) as { error?: string; detail?: string } | null;
+        throw new Error(errData?.error ?? `Server error ${response.status}`);
+      }
+
+      const data = await response.json() as { answer: string };
+      const answer = data.answer?.trim() ?? 'Tidak ada jawaban.';
       next = {
         ...next,
-        messages: [...next.messages, { id: `a-${Date.now()}`, role: 'assistant', text: data.answer, time: nowLabel() }],
+        messages: [...next.messages, { id: `a-${Date.now()}`, role: 'assistant', text: answer, time: nowLabel() }],
       };
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Command Room gagal merespons.';
@@ -618,82 +638,92 @@ export default function CommandRoomPage() {
                     <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{project.name}</span>
                   </button>
                 ))}
-                <div style={{ height: 1, background: 'var(--cr-border)', margin: '4px 8px' }} />
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => { setAddToOpen(false); setCreateOpen(true); }}
-                  className="pax-cr-hover"
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-orange)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
-                >
-                  <Plus size={13} /> New project
-                </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => { setAddToOpen(false); setCreateOpen(true); }}
+                    className="pax-cr-hover"
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-orange)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
+                  >
+                    <Plus size={13} /> New project
+                  </button>
               </div>
             )}
           </div>
 
           <div style={{ flex: 1 }} />
 
-          {/* Model selector: Lucent / Solace */}
+          {/* Badge: model · thinking · effort */}
+          <span title={badgeLabel} style={{ fontSize: 11, color: 'var(--cr-text3)', background: 'var(--cr-panel2)', border: '1px solid var(--cr-border)', borderRadius: 7, padding: '3px 8px', whiteSpace: 'nowrap', fontWeight: 600 }}>
+            {badgeLabel}
+          </span>
+
+          {/* Model selector */}
           <div ref={modelRef} style={{ position: 'relative' }}>
             <button
               type="button"
+              id="cr-model-selector"
               onClick={() => setModelOpen((v) => !v)}
               aria-expanded={modelOpen}
-              aria-label="Pilih model"
+              aria-haspopup="menu"
+              aria-label="Pilih model AI"
               className="pax-cr-hover"
-              style={{ display: 'flex', alignItems: 'center', gap: 6, height: 32, padding: '0 9px', borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text2)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, height: 32, padding: '0 9px', borderRadius: 9, border: '1px solid var(--cr-border)', background: 'transparent', color: 'var(--cr-text)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
             >
-              {model}
+              {activeModelDef.displayName}
               <ChevronDown size={13} style={{ transition: 'transform .2s var(--ease)', transform: modelOpen ? 'rotate(180deg)' : 'none' }} />
             </button>
             {modelOpen && (
-              <div className="pax-scale-in" role="menu" style={{ position: 'absolute', bottom: 40, right: 0, width: 216, borderRadius: 13, background: 'var(--cr-panel2)', border: '1px solid var(--cr-border-strong)', boxShadow: '0 18px 44px rgba(0,0,0,0.5)', padding: 5, zIndex: 40 }}>
-                {([
-                  { name: 'Lucent' as ModelName, desc: 'Cepat — jawaban harian' },
-                  { name: 'Solace' as ModelName, desc: 'Penalaran kompleks & mendalam' },
-                ]).map((m) => (
+              <div className="pax-scale-in" role="menu" style={{ position: 'absolute', bottom: 42, right: 0, width: 240, borderRadius: 13, background: 'var(--cr-panel2)', border: '1px solid var(--cr-border-strong)', boxShadow: '0 18px 44px rgba(0,0,0,0.5)', padding: 5, zIndex: 40 }}>
+                {(Object.values(PAAX_MODELS) as (typeof PAAX_MODELS)[keyof typeof PAAX_MODELS][]).map((m) => (
                   <button
-                    key={m.name}
+                    key={m.id}
                     type="button"
                     role="menuitem"
-                    onClick={() => { setModel(m.name); setModelOpen(false); }}
+                    onClick={() => { setModelAlias(m.id); if (m.id === 'solace') setThinking(m.defaultThinking); if (m.id === 'lucent') setThinking('off'); setModelOpen(false); }}
                     className="pax-cr-hover"
-                    style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, padding: '9px 10px', borderRadius: 9, border: 'none', background: model === m.name ? 'rgba(255,255,255,0.08)' : 'transparent', color: 'var(--cr-text)', cursor: 'pointer', textAlign: 'left' }}
+                    style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3, padding: '9px 10px', borderRadius: 9, border: 'none', background: modelAlias === m.id ? 'rgba(255,255,255,0.08)' : 'transparent', color: 'var(--cr-text)', cursor: 'pointer', textAlign: 'left' }}
                   >
-                    <span style={{ fontSize: 12.5, fontWeight: 700 }}>{m.name}</span>
-                    <span style={{ fontSize: 11, color: 'var(--cr-text3)' }}>{m.desc}</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 700 }}>{m.displayName}</span>
+                    <span style={{ fontSize: 11, color: 'var(--cr-text3)' }}>{m.description}</span>
                   </button>
                 ))}
+                <div style={{ height: 1, background: 'var(--cr-border)', margin: '4px 8px' }} />
+                <div style={{ padding: '7px 10px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--cr-text3)', marginBottom: 6 }}>Thinking</div>
+                  {activeModelDef.supportsThinking ? (
+                    <div style={{ display: 'flex', gap: 5 }}>
+                      {(['off', 'on'] as ThinkingMode[]).map((t) => (
+                        <button key={t} type="button" onClick={() => setThinking(t)} style={{ flex: 1, padding: '5px 0', borderRadius: 7, border: '1px solid var(--cr-border)', background: resolvedThinking === t ? 'var(--cr-orange-soft)' : 'transparent', color: resolvedThinking === t ? 'var(--cr-orange)' : 'var(--cr-text2)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>
+                          {t === 'on' ? 'On' : 'Off'}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: 11, color: 'var(--cr-text3)', fontStyle: 'italic' }}>Lucent runs with thinking off</span>
+                  )}
+                </div>
+                <div style={{ padding: '7px 10px 10px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--cr-text3)', marginBottom: 6 }}>Reasoning Effort</div>
+                  <div style={{ display: 'flex', gap: 5 }}>
+                    {(['high', 'max'] as ReasoningEffort[]).map((e) => (
+                      <button key={e} type="button" onClick={() => setReasoningEffort(e)} style={{ flex: 1, padding: '5px 0', borderRadius: 7, border: '1px solid var(--cr-border)', background: reasoningEffort === e ? 'rgba(255,255,255,0.1)' : 'transparent', color: reasoningEffort === e ? 'var(--cr-text)' : 'var(--cr-text2)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>
+                        {e === 'high' ? 'High' : 'Max'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={() => showNote('Input suara hadir di rilis berikutnya.')}
-            aria-label="Input suara (mic)"
-            className="pax-cr-hover pax-press"
-            style={{ width: 32, height: 32, borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-          >
+          <button type="button" onClick={() => showNote('Input suara hadir di rilis berikutnya.')} aria-label="Input suara (mic)" className="pax-cr-hover pax-press" style={{ width: 32, height: 32, borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <Mic size={15} />
           </button>
-          <button
-            type="button"
-            onClick={() => showNote('Mode voice hadir di rilis berikutnya.')}
-            aria-label="Mode voice"
-            className="pax-cr-hover pax-press"
-            style={{ width: 32, height: 32, borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-          >
+          <button type="button" onClick={() => showNote('Mode voice hadir di rilis berikutnya.')} aria-label="Mode voice" className="pax-cr-hover pax-press" style={{ width: 32, height: 32, borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <AudioLines size={15} />
           </button>
-          <button
-            type="submit"
-            aria-label="Kirim"
-            disabled={busy || !draft.trim()}
-            className="pax-press"
-            style={{ width: 32, height: 32, borderRadius: 9, background: 'var(--cr-orange)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy ? 'wait' : 'pointer', opacity: busy || !draft.trim() ? 0.45 : 1, transition: 'opacity .2s var(--ease), transform .16s var(--ease)' }}
-          >
+          <button type="submit" aria-label="Kirim" disabled={busy || !draft.trim()} className="pax-press" style={{ width: 32, height: 32, borderRadius: 9, background: 'var(--cr-orange)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy ? 'wait' : 'pointer', opacity: busy || !draft.trim() ? 0.45 : 1, transition: 'opacity .2s var(--ease), transform .16s var(--ease)' }}>
             {busy ? <Loader2 size={15} className="animate-spin" /> : <ArrowUp size={15} strokeWidth={2.4} />}
           </button>
         </div>
@@ -726,8 +756,10 @@ export default function CommandRoomPage() {
     </div>
   );
 
+
   return (
     <div className="pax-command" style={{ display: 'flex', flex: 1, minHeight: 0, height: '100%', borderRadius: 0, overflow: 'hidden' }}>
+
       {/* ══ SIDEBAR ══ */}
       <div
         style={{
@@ -1056,7 +1088,7 @@ export default function CommandRoomPage() {
               </span>
               <ChevronDown size={13} color="var(--cr-text3)" />
               <span style={{ flex: 1 }} />
-              <span className="pax-mono" style={{ fontSize: 11, color: 'var(--cr-text3)' }}>PAAX · {model}</span>
+              <span className="pax-mono" style={{ fontSize: 11, color: 'var(--cr-text3)' }}>PAAX · {activeModelDef.displayName}</span>
             </div>
             <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '26px 0' }}>
               <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 22px', display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -1071,7 +1103,7 @@ export default function CommandRoomPage() {
                     <div key={m.id} className="pax-rise" style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                         <span style={{ color: 'var(--cr-orange)', display: 'flex' }}><PaaxMark size={13} /></span>
-                        <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--cr-text2)' }}>PAAX · {model}</span>
+                        <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--cr-text2)' }}>PAAX · {activeModelDef.displayName}</span>
                         <span className="pax-mono" style={{ fontSize: 10, color: 'var(--cr-text3)' }}>{m.time}</span>
                       </div>
                       <div style={{ fontSize: 13.5, lineHeight: 1.7, color: 'var(--cr-text)', whiteSpace: 'pre-wrap' }}>
