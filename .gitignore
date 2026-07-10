@@ -64,5 +64,8 @@ fix-genkit.js
 /.AI-*.log
 reports/
 
+# Graphify's generated knowledge graph (regenerated via hook/graphify update)
+graphify-out/
+
 .saya/
 skills-lock.json

@@ -1,0 +1,4 @@
+# graphify's generated knowledge graph — access via `graphify query`/`graphify explain`
+# (the installed skill), not raw reads. graph.json/graph.html are multi-MB generated
+# artifacts with no direct value read verbatim.
+graphify-out/
