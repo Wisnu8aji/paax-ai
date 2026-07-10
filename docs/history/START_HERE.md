@@ -1,3 +1,7 @@
+> **DIARSIPKAN 2026-07-10** — digantikan `docs/INDEX.md` (indeks on-demand,
+> bukan wajib dibaca tiap sesi) + `CLAUDE.md`/`AGENTS.md` (aturan permanen) +
+> Graphify (navigasi kode). Disimpan sebagai referensi historis saja.
+
 # 🧭 PAAX — START HERE (baca ini DULU, jangan crawl repo)
 
 > Tujuan file ini: orientasi cepat untuk AI mana pun (Saya / Gemini / Saya)

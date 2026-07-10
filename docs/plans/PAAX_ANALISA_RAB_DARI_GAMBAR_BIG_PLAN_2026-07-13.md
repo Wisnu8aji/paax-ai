@@ -98,7 +98,7 @@ proyek ini).
 |---|---|---|
 | U | Perbaiki noise konsolidasi: grid-conflict relatif+dedupe, filter teks metadata administratif | 🟢 selesai — verifikasi PDF nyata: 0 "tinggi" severity (dari puluhan berulang), 85/88 sheet terklasifikasi |
 | U-2 | Tutup gap page-type classifier (cover/daftar-gambar/situasi/tampak/potongan generik) | 🟢 selesai — kategori baru terpakai nyata di PDF 88-halaman |
-| T | AHSP auto-suggest (spek sudah ada: `docs/prompts/PAAX_SAYA_PROMPT_FASE_T_AHSP_AUTO_SUGGEST_2026-07-12.md`) | 🟢 selesai — aktif utk sebagian bekisting (margin terverifikasi), beton/besi sengaja tidak (ambigu nyata, lihat `docs/ai-map/STATE.md` Fase T) |
+| T | AHSP auto-suggest (spek sudah ada: `docs/prompts/PAAX_SAYA_PROMPT_FASE_T_AHSP_AUTO_SUGGEST_2026-07-12.md`) | 🟢 selesai — aktif utk sebagian bekisting (margin terverifikasi), beton/besi sengaja tidak (ambigu nyata, lihat `docs/history/STATE_ARCHIVE_2026-06_2026-07.md` Fase T) |
 | V | Reasoning lintas-halaman lanjutan: linking elemen→detail yang lebih toleran (variasi penulisan kode), fallback klasifikasi halaman via LLM terbatas (opsional, hanya kalau rule-based gagal) | ⚪ belum mulai |
 | W | Lapisan "Item Pekerjaan" (BOQ grouping): ubah `TakeoffItem`+registry jadi baris pekerjaan berkategori (persiapan/tanah/pondasi/sloof/kolom/balok/pelat/dinding/lantai/plafon/atap/sanitasi/drainase/finishing) — bagian yg SUDAH ada rumus (beton/bekisting/besi) dipetakan langsung, bagian yg BELUM ada rumus ditandai jujur "perlu rumus baru" | ⚪ belum mulai |
 | X | **KOREKSI 2026-07-13 (lihat catatan di bawah §4)**: rumus tanah/dinding/ arsitektur/baja SUDAH ADA di `app/takeoff/*` (Fase 3b, `docs/BRAIN_ALIGNMENT.md`) — gap sebenarnya adalah BRIDGING dari TKG/konsolidasi ke input model-model itu, bukan menulis rumus dari nol. Sisa gap rumus murni jauh lebih kecil dari perkiraan awal (F-F06, F-G04/G06-G14, F-C07-C10) | 🟢 X1 (bridging galian footplat) selesai — lihat §4a |
@@ -109,7 +109,7 @@ proyek ini).
 
 Legenda: 🟢 selesai · 🟡 sebagian · ⚪ belum mulai.
 
-### 1a. Fase X1/X1B — ringkasan (detail penuh: `docs/ai-map/STATE.md`)
+### 1a. Fase X1/X1B — ringkasan (detail penuh: `docs/history/STATE_ARCHIVE_2026-06_2026-07.md`)
 
 - **X1 (prompt 2026-07-15, eksekusi 2026-07-05, PR #37)**: WBS & taksonomi
   kategori TKG dipindah ke `packages/schemas/python/paax_schemas` (shared,
@@ -275,7 +275,7 @@ berubah setelah lihat hasil Fase U)
 - **Fase Z** — jalankan ulang PDF yang SAMA dgn bukti screenshot owner
   (`GAMBAR KERJA PLHUT SURAKARTA (1).pdf` di Downloads, 24.6MB) lewat
   pipeline yang sudah diperbaiki, laporkan angka noise sebelum/sesudah
-  (4281 → ?) secara jujur, update `docs/ai-map/STATE.md`.
+  (4281 → ?) secara jujur, update `docs/history/STATE_ARCHIVE_2026-06_2026-07.md`.
 
 ---
 
@@ -432,7 +432,7 @@ harus sebelum Y MULAI dikerjakan.
   ini (di atas) karena langsung relevan utk Fase W/Y (BOQ butuh AHSP
   ter-suggest). Spek lama TETAP DIPAKAI, tidak ditulis ulang.
 - **8 item harga ambigu** (Wiremesh/Kran air/Keramik/Tukang Cat/Paku/dst,
-  lihat `docs/ai-map/STATE.md` Fase S) tetap terbuka, butuh keputusan owner,
+  lihat `docs/history/STATE_ARCHIVE_2026-06_2026-07.md` Fase S) tetap terbuka, butuh keputusan owner,
   di luar cakupan rencana ini.
 
 ---
