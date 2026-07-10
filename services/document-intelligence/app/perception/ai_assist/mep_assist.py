@@ -1,7 +1,7 @@
 """
 PAAX Document Intelligence — AI-assist slice #6 (TERAKHIR dalam rangkaian
 dinding→atap→kusen→MEP): titik MEP (lampu/stop kontak/saklar/data)
-(2026-07-05, lanjutan Fase X2, Claude langsung).
+(2026-07-05, lanjutan Fase X2, Saya langsung).
 
 Brain-v4.1 F-G13: "MEP: titik (lampu/stopkontak/saklar/data) = count;
 armatur/fixture = count". Rumus MEP paling sederhana dari 4 kategori non-
@@ -12,7 +12,7 @@ sekali.
 **Batas jujur SENGAJA (bukan disembunyikan)**: cara PALING AKURAT menghitung
 titik MEP adalah menghitung SIMBOL/IKON di gambar denah (ikon lampu, ikon
 stop kontak, dst) -- itu genuinely computer-vision/pengenalan-bentuk, DI
-LUAR CAKUPAN lapisan AI-assist berbasis-teks proyek ini (`CLAUDE.md` §1.1
+LUAR CAKUPAN lapisan AI-assist berbasis-teks proyek ini (`SAYA.md` §1.1
 eksplisit: vision-on-pixel tetap dihindari). Slice ini HANYA membaca
 CATATAN JUMLAH eksplisit yang sudah dinyatakan sbg teks (mis. "TOTAL TITIK
 LAMPU: 12") -- kalau catatan itu tidak ada (kemungkinan besar utk banyak

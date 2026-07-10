@@ -188,7 +188,7 @@ KEJUJURAN BIAYA/AKSES (verifikasi saat implementasi):
 ================================================================================
 §3. ARSITEKTUR SERVICE, STATE MACHINE, STORAGE
 ================================================================================
-Lapis (selaras CLAUDE.md):
+Lapis (selaras SAYA.md):
   L2A services/document-intelligence  = SK-01..SK-25 (persepsi+penalaran).
       Subpaket: ingest, ocr, layout, tables, grid, symbols, scale, join,
       conflict, revision, reasoning{expand,implied,derived}, mapping{ahsp,price},

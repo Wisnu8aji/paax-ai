@@ -1,7 +1,7 @@
 """
 PAAX Document Intelligence — Klien LLM untuk lapisan AI-assist (Fase X2,
 2026-07-05: `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md`
-§X2, aturan `CLAUDE.md` §1.1).
+§X2, aturan `SAYA.md` §1.1).
 
 Ini BUKAN Vision-LLM (tidak pernah menerima gambar/piksel) -- client ini
 HANYA menerima teks (span/unclassified yang SUDAH diekstrak PyMuPDF di
@@ -11,7 +11,7 @@ model `gemini-2.5-flash`, header `x-goog-api-key`, temperature rendah).
 
 Pakai stdlib `urllib.request` (BUKAN dependency baru) -- pola sama dengan
 `app/perception/bridging_tanah.py::HttpTanahTakeoffClient`, konsisten
-`CLAUDE.md` §2 ("jangan tambah dependency tanpa alasan jelas").
+`SAYA.md` §2 ("jangan tambah dependency tanpa alasan jelas").
 
 Degradasi anggun WAJIB: kalau `GEMINI_API_KEY` tidak diset, kalau request
 gagal (timeout/network/HTTP error), atau kalau response tidak bisa di-parse

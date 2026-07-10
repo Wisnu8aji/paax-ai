@@ -4,7 +4,7 @@ halaman detail/grafis (Fase X2, dipicu temuan X1/X1B: 13/13 elemen
 `pondasi_telapak` PLHUT nyata jatuh `perlu_review` krn dimensi hanya ada di
 halaman detail, bukan tabel kode-dimensi yang bisa diparse `page.find_tables()`).
 
-WAJIB dibaca sebelum mengubah: `CLAUDE.md` §1.1 dan `docs/plans/
+WAJIB dibaca sebelum mengubah: `SAYA.md` §1.1 dan `docs/plans/
 PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md` §X2.
 
 Prinsip (tidak boleh dilanggar):

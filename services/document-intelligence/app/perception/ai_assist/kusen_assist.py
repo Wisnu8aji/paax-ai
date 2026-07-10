@@ -1,6 +1,6 @@
 """
 PAAX Document Intelligence — AI-assist slice #5: jadwal kusen pintu/jendela
-(2026-07-05, lanjutan Fase X2, Claude langsung atas instruksi owner).
+(2026-07-05, lanjutan Fase X2, Saya langsung atas instruksi owner).
 
 Brain-v4.1 F-G11 eksplisit: "KUSEN/PINTU/JENDELA: per SCHEDULE" — beda dari
 dinding (tidak ada tabel sama sekali) dan gording/dkk (kode SUDAH dikenal

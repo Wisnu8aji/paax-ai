@@ -1,6 +1,6 @@
 """
 PAAX Document Intelligence — Bridging dinding pasangan bata ke core-engine
-`/takeoff/dinding` (2026-07-05, lanjutan Fase X2, dikerjakan langsung Claude
+`/takeoff/dinding` (2026-07-05, lanjutan Fase X2, dikerjakan langsung Saya
 atas instruksi owner — mengikuti pola `bridging_tanah.py` persis).
 
 Beda dari `bridge_galian_footplat` (X1): footplat punya `ElementRegistryEntry.

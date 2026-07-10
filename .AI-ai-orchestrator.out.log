@@ -1,0 +1,6 @@
+
+> ai-orchestrator@0.1.0 start G:\paax-ai-main\services\ai-orchestrator
+> tsx src/index.ts
+
+AI Orchestrator berjalan di port 8082
+ ELIFECYCLE  Command failed with exit code 1073807364.

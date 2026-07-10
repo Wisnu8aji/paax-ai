@@ -4,7 +4,7 @@ PAAX BRAIN · TXT 1/3 — PRINSIP & PENALARAN (OTAK AI)
 ================================================================================
 VERSI: v4.1 FINAL (Fable 5) · menggantikan seluruh versi sebelumnya;
 terintegrasi dengan TXT 00 (TKG — Transkrip Kanonik Gambar).
-SIFAT: MENGIKAT (normatif) bagi semua AI agent (Claude Code, Codex, dll.) dan
+SIFAT: MENGIKAT (normatif) bagi semua AI agent (Saya Code, Saya, dll.) dan
 manusia yang menyentuh modul drawing-intelligence / RAB / schedule.
 BAHASA: civil engineer (QS) + software engineer + AI engineer.
 ATURAN PENULISAN: TANPA angka contoh dari proyek mana pun. Bila butuh angka ->
@@ -49,7 +49,7 @@ KONVENSI ID (lintas trilogi, wajib dirujuk di PR/commit/kode):
   INV-TKG-nn / RULE-EXT-nn / V-nn / AP-E-nn  ekstraksi & validasi TKG | TXT 00
   W-xxx / E-xxx  kode warning / error        | TXT 1 §6.7
 
-HUBUNGAN REPO: patuh CLAUDE.md (peran Claude=spek/UI/review, Codex=wiring/impl;
+HUBUNGAN REPO: patuh SAYA.md (peran Saya=spek/UI/review, Saya=wiring/impl;
 branch->PR->review->merge, no auto-merge). STATE berjalan: docs/ai-map/STATE.md.
 Kontrak data dasar: @paax/schemas (PAKAI ULANG; perluasan didefinisikan TXT 3 §4).
 Bila TXT ini bertentangan dengan catatan lama mana pun -> TXT v4 menang.
@@ -493,7 +493,7 @@ RULE-HITL-02  Edit manusia -> Correction (flywheel) + state APPROVED; LOCK saat
   finalisasi; revisi membuka siklus baru (§6.9).
 RULE-HITL-03  Flywheel dipakai untuk: perbaikan prompt/threshold (pendek),
   peringkat mapping AHSP (menengah), kalibrasi/fine-tune (panjang).
-RULE-HITL-04  Gerbang kode: branch->PR->review->merge; no auto-merge (CLAUDE.md).
+RULE-HITL-04  Gerbang kode: branch->PR->review->merge; no auto-merge (SAYA.md).
 
 
 ================================================================================

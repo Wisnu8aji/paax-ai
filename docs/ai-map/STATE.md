@@ -1,7 +1,7 @@
 # 📍 PAAX — STATE (status SEKARANG)
 
-> Update terakhir: **2026-07-05** (Task 4 Codex — bridging arsitektur area
-> keramik dinding basah/plafon/waterproofing — diverifikasi Claude BERSIH,
+> Update terakhir: **2026-07-05** (Task 4 Saya — bridging arsitektur area
+> keramik dinding basah/plafon/waterproofing — diverifikasi Saya BERSIH,
 > tidak ada temuan masalah. Task 5 baru ditulis: bridging 4 sub-domain
 > `ArsitekturRequest` sisa (pondasi batu/lantai/atap miring/aanstamping),
 > melengkapi SEMUA 7 sub-domain arsitektur. Detail: §TASK 4 TERVERIFIKASI
@@ -10,13 +10,13 @@
 > koreksi pola kerja: §KOREKSI POLA KERJA & AI-ORCHESTRATOR DISETUJUI
 > lebih bawah).
 
-## TASK 4 TERVERIFIKASI BERSIH & TASK 5 DITULIS (Claude, 2026-07-05)
+## TASK 4 TERVERIFIKASI BERSIH & TASK 5 DITULIS (Saya, 2026-07-05)
 
 **Verifikasi independen Task 4** (git log, test dijalankan ulang langsung
-oleh Claude): branch/PR #40 tetap benar (base `feat/fase-x1b-packaging-
+oleh Saya): branch/PR #40 tetap benar (base `feat/fase-x1b-packaging-
 binding-footplat`, mergeable). 2 commit, body kosong (tidak ada
 `Co-Authored-By`). `apps/web/**`, `app/takeoff/arsitektur.py`, dan
-`binding.py` dikonfirmasi NOL perubahan. Test dijalankan ulang Claude:
+`binding.py` dikonfirmasi NOL perubahan. Test dijalankan ulang Saya:
 document-intelligence **272 passed** (cocok klaim, naik dari 244).
 
 **Validasi anti-halusinasi dicek LANGSUNG di kode**
@@ -32,7 +32,7 @@ Isi `_ARCHITECTURE_CATEGORIES` dikonfirmasi PERSIS klaim laporan
 masalah, tidak ada feedback korektif yang perlu disisipkan.**
 
 **Task 5 baru ditulis** (BELUM dijalankan):
-`docs/prompts/PAAX_CODEX_TASK_05_BRIDGING_ARSITEKTUR_PONDASI_LANTAI_ATAP_MIRING_AANSTAMPING_2026-07-05.md`
+`docs/prompts/PAAX_SAYA_TASK_05_BRIDGING_ARSITEKTUR_PONDASI_LANTAI_ATAP_MIRING_AANSTAMPING_2026-07-05.md`
 — melengkapi 4 sub-domain `ArsitekturRequest` SISA (`pondasi_batu`,
 `lantai`, `atap_miring` — beda dari kategori "atap" gording/kuda_kuda
 Task 1/2 yang RANGKA, ini PENUTUP atap —, `aanstamping`), SEMUA rumus
@@ -44,10 +44,10 @@ task ini, SELURUH 7 sub-domain `ArsitekturRequest` akan ter-bridging
 (3 dari Task 4 + 4 dari Task 5). Task TUNGGAL (bukan rantai baru) —
 lanjutan branch/PR #40 yang sama.
 
-## TASK 1-3 TERVERIFIKASI BERSIH & TASK 4 DITULIS (Claude, 2026-07-05)
+## TASK 1-3 TERVERIFIKASI BERSIH & TASK 4 DITULIS (Saya, 2026-07-05)
 
 **Verifikasi independen** (git log, test dijalankan ulang langsung oleh
-Claude, bukan percaya laporan) — **HASIL: BERSIH, TIDAK ADA TEMUAN
+Saya, bukan percaya laporan) — **HASIL: BERSIH, TIDAK ADA TEMUAN
 MASALAH SAMA SEKALI** di ketiga task:
 
 - **Task 1** (commit X2 bridging dinding/atap/kusen/mep + footplat/zona):
@@ -55,7 +55,7 @@ MASALAH SAMA SEKALI** di ketiga task:
   BENAR dari `feat/fase-x1b-packaging-binding-footplat` (bukan `main`).
   PR #40 draft, base benar, mergeable. 2 commit, body kosong (tidak ada
   `Co-Authored-By`). `apps/web/**` dikonfirmasi nol perubahan (diff vs
-  base X1B kosong). Test dijalankan ulang Claude: document-intelligence
+  base X1B kosong). Test dijalankan ulang Saya: document-intelligence
   **229 passed** (cocok klaim).
 - **Task 2** (bridging kuda-kuda/profil baja): branch/PR sama, commit
   bersih. **Anti-halusinasi `kg_per_m` diverifikasi LANGSUNG di kode**
@@ -65,10 +65,10 @@ MASALAH SAMA SEKALI** di ketiga task:
   when_not_sourced_from_text` MEMBUKTIKAN skenario spesifik yang diminta
   (model mengaku berat 14.0 kg/m dari "pengetahuan tabel baja umum" tapi
   angka itu tidak ada di teks manapun → DITOLAK). `app/takeoff/baja.py`
-  dikonfirmasi TIDAK diubah. Test Claude jalankan ulang: **244 passed**
+  dikonfirmasi TIDAK diubah. Test Saya jalankan ulang: **244 passed**
   (cocok klaim).
 - **Task 3** (tool `analyze_drawing` ai-orchestrator): branch/PR #39
-  (base `main`) tetap benar. Commit bersih. Test Claude jalankan ulang
+  (base `main`) tetap benar. Commit bersih. Test Saya jalankan ulang
   di worktree: **30 passed** (8 file), `tsc --noEmit` exit 0 — cocok
   klaim. `services/document-intelligence/**` dikonfirmasi HANYA dibaca
   (tidak diubah).
@@ -87,7 +87,7 @@ hanya isi kekosongan teks/data terstruktur yang hilang" — jadi
 ditinggalkan, bukan gap tertunda.
 
 **Task 4 baru ditulis** (BELUM dijalankan):
-`docs/prompts/PAAX_CODEX_TASK_04_BRIDGING_ARSITEKTUR_KERAMIK_PLAFON_WATERPROOFING_2026-07-05.md`
+`docs/prompts/PAAX_SAYA_TASK_04_BRIDGING_ARSITEKTUR_KERAMIK_PLAFON_WATERPROOFING_2026-07-05.md`
 — bridging 3 kategori arsitektur area-based (`keramik_dinding` F-G04,
 `plafon` F-G09, `waterproofing` F-G10 — SEMUA sudah punya rumus lengkap
 di `app/takeoff/arsitektur.py`, belum pernah di-bridging) via pola yang
@@ -95,7 +95,7 @@ SAMA PERSIS dinding (dokumen-luas, entry sintetis, krn kategori ini juga
 tidak punya kode per-instance). Task TUNGGAL (bukan rantai baru) — branch
 lanjutan `feat/x2-bridging-non-struktur-dinding-atap-kusen-mep` (PR #40).
 
-## RANGKAIAN BRIDGING NON-STRUKTUR — DINDING→ATAP→KUSEN→MEP SELESAI (Claude, 2026-07-05)
+## RANGKAIAN BRIDGING NON-STRUKTUR — DINDING→ATAP→KUSEN→MEP SELESAI (Saya, 2026-07-05)
 
 Kelanjutan langsung dari audit B0 (di bawah). Owner memutuskan: frontend
 (Gantt UI, tombol 1-klik) ditunda; Engineering Chat/`services/ai-
@@ -110,10 +110,10 @@ sepanjang rangkaian**, semua 4 selesai dalam satu sesi berkelanjutan.
 
 | Slice | Kategori | Pola gap | Report |
 |---|---|---|---|
-| #3 | Dinding pasangan bata | Deteksi elemen TIDAK ADA sama sekali (tanpa kode per-instance) — beda dari kolom/footplat | `report-remote/REPORT_X2_LANJUTAN_DINDING_CLAUDE_2026-07-05.md` |
-| #4 | Atap (gording/trekstang/ikatan_angin) | Kode SUDAH dikenal taksonomi, bridging belum ada — pola PERSIS X1 | `report-remote/REPORT_X2_LANJUTAN_ATAP_CLAUDE_2026-07-05.md` |
-| #5 | Kusen (jadwal pintu/jendela) | Butuh tabel jadwal yang belum dikenali parser; risiko tabrakan kode "P1" vs pondasi_telapak (diverifikasi & dihindari eksplisit) | `report-remote/REPORT_X2_LANJUTAN_KUSEN_CLAUDE_2026-07-05.md` |
-| #6 | MEP (titik lampu/stop kontak/dll) | Rumus paling sederhana (count), ikon/simbol di luar cakupan | `report-remote/REPORT_X2_LANJUTAN_MEP_CLAUDE_2026-07-05.md` |
+| #3 | Dinding pasangan bata | Deteksi elemen TIDAK ADA sama sekali (tanpa kode per-instance) — beda dari kolom/footplat | `report-remote/REPORT_X2_LANJUTAN_DINDING_SAYA_2026-07-05.md` |
+| #4 | Atap (gording/trekstang/ikatan_angin) | Kode SUDAH dikenal taksonomi, bridging belum ada — pola PERSIS X1 | `report-remote/REPORT_X2_LANJUTAN_ATAP_SAYA_2026-07-05.md` |
+| #5 | Kusen (jadwal pintu/jendela) | Butuh tabel jadwal yang belum dikenali parser; risiko tabrakan kode "P1" vs pondasi_telapak (diverifikasi & dihindari eksplisit) | `report-remote/REPORT_X2_LANJUTAN_KUSEN_SAYA_2026-07-05.md` |
+| #6 | MEP (titik lampu/stop kontak/dll) | Rumus paling sederhana (count), ikon/simbol di luar cakupan | `report-remote/REPORT_X2_LANJUTAN_MEP_SAYA_2026-07-05.md` |
 
 **Hasil gabungan**: 4 modul `ai_assist/` baru (`wall_assist.py`,
 `roof_frame_assist.py`, `kusen_assist.py`, `mep_assist.py`), 4 modul
@@ -136,12 +136,12 @@ uncommitted menunggu review.
 
 ### Koreksi pola kerja (berlaku mulai sekarang, ke depan)
 
-Owner mengoreksi pola kerja rangkaian di atas: **Claude HANYA merancang**
+Owner mengoreksi pola kerja rangkaian di atas: **Saya HANYA merancang**
 (logika deteksi/ekstraksi, skema data, validasi anti-halusinasi, kontrak
-API) — **implementasi kode nyata WAJIB diserahkan ke Codex lewat prompt
-file**, BUKAN ditulis langsung oleh Claude ke source. Slice dinding/atap/
+API) — **implementasi kode nyata WAJIB diserahkan ke Saya lewat prompt
+file**, BUKAN ditulis langsung oleh Saya ke source. Slice dinding/atap/
 kusen/MEP (§di atas) **SUDAH TERLANJUR diimplementasikan langsung oleh
-Claude SEBELUM koreksi ini** — kerjanya TETAP DIPERTAHANKAN (semua sudah
+Saya SEBELUM koreksi ini** — kerjanya TETAP DIPERTAHANKAN (semua sudah
 selesai 100%, teruji, tidak dibuang — lihat konfirmasi status di bawah),
 tapi ini PENGECUALIAN atas instruksi owner sesi itu, **BUKAN pola yang
 akan diulang** untuk pekerjaan berikutnya. Ke-4 report sudah ditambahi
@@ -153,16 +153,16 @@ SELESAI 100%** (bukan sebagian) — `document-intelligence` 229 test passed,
 5 skipped, dikonfirmasi via `pytest -q` dijalankan ulang. Tidak ada yang
 setengah jadi.
 
-### AI-Orchestrator — DISETUJUI EKSPLISIT owner, spek Codex sudah ditulis
+### AI-Orchestrator — DISETUJUI EKSPLISIT owner, spek Saya sudah ditulis
 
 Owner MENYETUJUI EKSPLISIT ("semua saya setujui") pembangunan
 `services/ai-orchestrator` (Node/TypeScript, migrasi tool-calling nyata
 utk Engineering Chat — `query_rab`/`query_schedule`/`lookup_ahsp`/
 `query_progress`/`query_materials`/`run_scenario` dari §8.1
 `docs/MASTER_PLAN.md`). **Status berubah dari "pending keputusan" jadi
-"disetujui, mengikuti pola BARU (Claude desain, Codex implementasi)".**
+"disetujui, mengikuti pola BARU (Saya desain, Saya implementasi)".**
 
-**Keputusan desain (Claude)**: REST manual + Express (BUKAN Genkit,
+**Keputusan desain (Saya)**: REST manual + Express (BUKAN Genkit,
 walau `MASTER_PLAN.md` §15.2 menyebut Genkit) — ada scaffold LAMA
 `scripts/scaffolding/create_ai_orch.py` berbasis Genkit yang TIDAK PERNAH
 dijalankan & isinya cuma mock/placeholder rusak; dipilih REST manual krn
@@ -171,12 +171,12 @@ pola ini SUDAH TERBUKTI jalan di `apps/web/src/lib/ai/orchestrator.ts`
 berubah cepat. Ini deviasi SADAR & didokumentasikan dari `MASTER_PLAN`,
 bukan kesalahan — migrasi ke Genkit tetap opsi terbuka di masa depan.
 
-**2 prompt Codex berantai ditulis** (BELUM dijalankan):
-1. `docs/prompts/PAAX_CODEX_CHAIN_AIO_01_SCAFFOLD_TOOLCALLING_LOOP_2026-07-05.md`
+**2 prompt Saya berantai ditulis** (BELUM dijalankan):
+1. `docs/prompts/PAAX_SAYA_CHAIN_AIO_01_SCAFFOLD_TOOLCALLING_LOOP_2026-07-05.md`
    — scaffold service, loop tool-calling multi-turn Gemini (function-
    calling), 2 tool proxy sederhana (`lookup_ahsp`, `run_scenario`), test
    lengkap dgn fake Gemini client.
-2. `docs/prompts/PAAX_CODEX_CHAIN_AIO_02_TOOLS_RAB_SCHEDULE_PROGRESS_MATERIALS_2026-07-05.md`
+2. `docs/prompts/PAAX_SAYA_CHAIN_AIO_02_TOOLS_RAB_SCHEDULE_PROGRESS_MATERIALS_2026-07-05.md`
    — 4 tool sisanya: `query_rab`/`query_schedule` (baca `context` yang
    dikirim client dlm request, KARENA TIDAK ADA database proyek server-
    side — draft RAB/jadwal tersimpan di localStorage browser, temuan
@@ -192,32 +192,32 @@ edge case, lokasi file, kriteria test semua dicantumkan lengkap.
 `query_schedule` TIDAK BISA "mengambil sendiri" data proyek (tidak ada
 database server-side) — hanya bisa memfilter data yang client SUDAH
 kirim di request `/chat`. **Wiring `apps/web` → `ai-orchestrator`
-(mengirim context itu dari frontend) ADALAH TUGAS CLAUDE TERPISAH, BUKAN
-bagian prompt Codex ini** (Codex dilarang sentuh `apps/web/**`) — setelah
-kedua Codex chain ini selesai, sesi Claude berikutnya perlu wiring
+(mengirim context itu dari frontend) ADALAH TUGAS SAYA TERPISAH, BUKAN
+bagian prompt Saya ini** (Saya dilarang sentuh `apps/web/**`) — setelah
+kedua Saya chain ini selesai, sesi Saya berikutnya perlu wiring
 `apps/web/src/app/api/ai/chat/route.ts` (atau file baru) supaya BENAR-
 BENAR memanggil `services/ai-orchestrator` dan mengirim context RAB/
 jadwal — ini BELUM dikerjakan sesi ini.
 
 ### Pending keputusan/eksekusi berikutnya
 
-1. Gantt/CPM UI (M3) — siap dikerjakan Claude kapan pun (backend sudah
+1. Gantt/CPM UI (M3) — siap dikerjakan Saya kapan pun (backend sudah
    lengkap), ditunda sesuai instruksi owner.
-2. **AI-Orchestrator**: 2 prompt Codex di atas menunggu dieksekusi
-   (Codex). Setelah selesai: wiring `apps/web` → `ai-orchestrator` (tugas
-   Claude terpisah, belum dijadwalkan).
+2. **AI-Orchestrator**: 2 prompt Saya di atas menunggu dieksekusi
+   (Saya). Setelah selesai: wiring `apps/web` → `ai-orchestrator` (tugas
+   Saya terpisah, belum dijadwalkan).
 3. Generalisasi lebih lanjut per kategori non-struktur (kuda_kuda/profil
    baja, deteksi geometri garis dinding, `qty_counted` kusen via simbol,
    ikon MEP) — semua dicatat sbg gap jujur di report masing-masing,
-   kandidat slice lanjutan (mengikuti pola BARU: Claude desain → Codex
-   implementasi, bukan lagi diimplementasikan Claude langsung).
+   kandidat slice lanjutan (mengikuti pola BARU: Saya desain → Saya
+   implementasi, bukan lagi diimplementasikan Saya langsung).
 4. Fase Y (tombol 1-klik) & Fase Z (verifikasi ulang PLHUT) — tetap
-   pending, dikerjakan Claude terpisah (frontend/verifikasi).
+   pending, dikerjakan Saya terpisah (frontend/verifikasi).
 
-## AUDIT B0 — STATUS NYATA v0.9/v1.0 SEBELUM RANTAI CODEX (Claude, 2026-07-05)
+## AUDIT B0 — STATUS NYATA v0.9/v1.0 SEBELUM RANTAI SAYA (Saya, 2026-07-05)
 
 Owner minta audit nyata (bukan percaya `STATE.md` lama yang bertanggal
-2026-07-01, sebelum kerja Fase Q-X2) sebelum menyusun rantai prompt Codex
+2026-07-01, sebelum kerja Fase Q-X2) sebelum menyusun rantai prompt Saya
 utk scope "v1.0 tuntas". Hasil per item, semua diverifikasi baca kode
 langsung (bukan tebakan):
 
@@ -235,7 +235,7 @@ langsung (bukan tebakan):
   kritis di seluruh `apps/web`. Engine (`/schedule/cpm`, `/schedule/plan`)
   SUDAH lengkap & diuji — **gap 100% ada di UI**, nol pekerjaan backend
   tersisa (`predecessors: List[str]` di `PlanTaskInput` sudah ada, tinggal
-  UI yang mengisi & menampilkan). Ini murni domain Claude/frontend.
+  UI yang mengisi & menampilkan). Ini murni domain Saya/frontend.
 
 ### 2. Engineering Chat tool-calling (§8.1 MASTER_PLAN) — KONFIRMASI belum ada
 `app/api/ai/chat/route.ts` = **satu panggilan Gemini one-shot**
@@ -251,12 +251,12 @@ tool-calling, bukan "tipis".
 `MASTER_PLAN.md` §15.2 "mulai v0.8") **TIDAK PERNAH DIBUAT** — seluruh
 logika AI (Gemini call, context pack, TKG extractor) hidup 100% di
 `apps/web/src/lib/ai/*.ts` + `apps/web/src/app/api/ai/*/route.ts`. Karena
-Codex DILARANG MUTLAK menyentuh `apps/web/**`, dan tool-calling nyata
+Saya DILARANG MUTLAK menyentuh `apps/web/**`, dan tool-calling nyata
 butuh mengubah persis file-file itu, **B2 TIDAK PUNYA slice backend yang
-aman diserahkan Codex hari ini** — kecuali owner memutuskan membuat service
+aman diserahkan Saya hari ini** — kecuali owner memutuskan membuat service
 baru `services/ai-orchestrator` (keputusan arsitektur besar: bahasa, hosting,
 migrasi kode `lib/ai/*` yang sudah ada) — **STOP, ini butuh keputusan owner
-eksplisit dulu** (`CLAUDE.md` §8: ambiguitas arsitektural → tanya, jangan
+eksplisit dulu** (`SAYA.md` §8: ambiguitas arsitektural → tanya, jangan
 asumsi diam-diam).
 
 ### 3. A2 (sisa rumus takeoff) — TEMUAN PALING BESAR: dokumentasi lama SALAH
@@ -285,40 +285,40 @@ langsung tiap `rule_id` ke `services/core-engine/app/`:
   di sini bahkan **deteksi elemennya sendiri belum ada**: dinding pasangan
   bata/kusen/MEP biasa digambar sbg polygon ruangan/tabel jadwal
   pintu-jendela/simbol titik — pola ekstraksi BEDA dari kolom/balok
-  (kode+grid). Ini butuh sesi desain Claude (bagaimana tiap tipe elemen
+  (kode+grid). Ini butuh sesi desain Saya (bagaimana tiap tipe elemen
   non-struktur diekstrak dari gambar) SEBELUM ada spek yang cukup jelas &
-  sempit utk diserahkan Codex — bukan tugas mekanis hari ini.
+  sempit utk diserahkan Saya — bukan tugas mekanis hari ini.
 
-### Kesimpulan rantai Codex utk scope "v1.0 tuntas" (A+B)
+### Kesimpulan rantai Saya utk scope "v1.0 tuntas" (A+B)
 **KOSONG — 0 file prompt dibuat sesi ini.** A2/B1/B2 semuanya berujung pada
 salah satu dari: (a) pekerjaan sisa 100% ada di `apps/web/**` (dilarang utk
-Codex), atau (b) blocked pada keputusan arsitektur/desain yang perlu Claude/
+Saya), atau (b) blocked pada keputusan arsitektur/desain yang perlu Saya/
 owner putuskan dulu (spek deteksi non-struktur, spek `services/ai-
-orchestrator`). Memaksakan prompt Codex hari ini akan melanggar disiplin
-"spek jelas dulu, baru Codex" (`CLAUDE.md` §9) atau aturan larangan
+orchestrator`). Memaksakan prompt Saya hari ini akan melanggar disiplin
+"spek jelas dulu, baru Saya" (`SAYA.md` §9) atau aturan larangan
 `apps/web/**`.
 
 **Rekomendasi langkah nyata berikutnya (menunggu keputusan owner):**
 1. Fase Y (tombol 1-klik) & Fase Z (verifikasi ulang PLHUT) — TETAP jalan,
-   dikerjakan Claude terpisah, TIDAK terblokir oleh temuan di atas.
-2. Gantt/CPM UI (M3) — 100% siap dikerjakan Claude kapan saja (engine sudah
-   lengkap), tidak perlu Codex sama sekali.
+   dikerjakan Saya terpisah, TIDAK terblokir oleh temuan di atas.
+2. Gantt/CPM UI (M3) — 100% siap dikerjakan Saya kapan saja (engine sudah
+   lengkap), tidak perlu Saya sama sekali.
 3. Sebelum B2 bisa lanjut: owner putuskan — bangun `services/ai-
    orchestrator` (migrasi dari `apps/web/src/lib/ai/*`) ATAU terima
-   tool-calling tetap jadi pekerjaan Claude/frontend selamanya (krn kodenya
+   tool-calling tetap jadi pekerjaan Saya/frontend selamanya (krn kodenya
    TS di apps/web)?
-4. Sebelum bridging non-struktur (A2 lanjutan) bisa lanjut: Claude perlu
+4. Sebelum bridging non-struktur (A2 lanjutan) bisa lanjut: Saya perlu
    sesi desain terpisah per kategori (mulai dari yang paling bernilai,
    kandidat: dinding pasangan bata) — BELUM dimulai sesi ini, butuh
    keputusan/prioritas owner dulu kategori mana duluan.
 > File ini SATU-SATUNYA tempat status berjalan.
 
-## FASE X2 — AI-ASSIST KLASIFIKASI/BINDING, 2 SLICE (Claude langsung, 2026-07-05)
+## FASE X2 — AI-ASSIST KLASIFIKASI/BINDING, 2 SLICE (Saya langsung, 2026-07-05)
 
-Owner mengubah instruksi: bukan cuma menulis prompt Codex utk Fase X2, tapi
-Claude mengimplementasikan LANGSUNG (kode berjalan, bukan dokumen) di sesi
+Owner mengubah instruksi: bukan cuma menulis prompt Saya utk Fase X2, tapi
+Saya mengimplementasikan LANGSUNG (kode berjalan, bukan dokumen) di sesi
 yang sama, dan scope diperluas dari 1 slice (footplat) jadi 2 slice
-(footplat + klasifikasi zona) — keduanya pola AI-assist yang sama (`CLAUDE.md`
+(footplat + klasifikasi zona) — keduanya pola AI-assist yang sama (`SAYA.md`
 §1.1): rule-based fast-path, LLM fallback paralel hanya saat rule-based
 gagal, validasi deterministik wajib sebelum jadi kandidat, tidak pernah
 auto-commit ke input engine.
@@ -369,21 +369,21 @@ intelligence **173 passed + 5 skipped** (naik dari 149). core-engine
 **280 passed** (tidak disentuh). `packages/schemas` build OK + Jest
 **12 passed**. web Vitest **47 passed** + `pnpm tsc --noEmit` bersih.
 
-**BELUM di-commit** — sesuai instruksi eksplisit owner (Claude dilarang
+**BELUM di-commit** — sesuai instruksi eksplisit owner (Saya dilarang
 commit sesi ini), working tree tetap uncommitted. Report lengkap:
-`report-remote/REPORT_FASE_X2_AI_ASSIST_BINDING_CLAUDE_2026-07-05.md`
-(ditandai jelas dikerjakan Claude, BUKAN Codex).
+`report-remote/REPORT_FASE_X2_AI_ASSIST_BINDING_SAYA_2026-07-05.md`
+(ditandai jelas dikerjakan Saya, BUKAN Saya).
 
 **Pending utk slice berikutnya**: generalisasi ke kategori takeoff lain di
 luar `pondasi_telapak`, integrasi `GEMINI_API_KEY` sungguhan end-to-end
 (belum diuji dgn API key nyata, hanya stub), UI review/approval utk
-`ai_suggestion` (di luar cakupan backend — domain Claude/frontend
+`ai_suggestion` (di luar cakupan backend — domain Saya/frontend
 terpisah), `binding.py` (label→grid) belum disentuh sbg slice AI-assist
 (disebut di konsep awal, belum diprioritaskan).
 
-## SESI PERENCANAAN — VERIFIKASI X1B + AI-ASSIST DIMASUKKAN KE ROADMAP (Claude, 2026-07-05)
+## SESI PERENCANAAN — VERIFIKASI X1B + AI-ASSIST DIMASUKKAN KE ROADMAP (Saya, 2026-07-05)
 
-Owner meminta 2 hal: (1) verifikasi jujur laporan Codex Fase X1B (bukan
+Owner meminta 2 hal: (1) verifikasi jujur laporan Saya Fase X1B (bukan
 percaya narasinya begitu saja), (2) integrasikan konsep baru — lapisan
 AI-assist (LLM) sbg fallback paralel klasifikasi/binding gambar saat
 rule-based gagal — ke seluruh dokumen perencanaan sbg arah resmi project.
@@ -410,7 +410,7 @@ tidak ada temuan bermasalah):**
 
 **Konsep baru diintegrasikan ke roadmap (bukan cuma satu file — semua
 dokumen arsitektur/roadmap diselaraskan):**
-- `CLAUDE.md` §1.1 & `AGENTS.md` §1.1 (baru): aturan resmi AI-assist
+- `SAYA.md` §1.1 & `AGENTS.md` §1.1 (baru): aturan resmi AI-assist
   klasifikasi/binding — rule-based tetap fast-path, LLM hanya fallback utk
   kasus gagal/ambigu, baca teks+koordinat SUDAH diekstrak (bukan piksel),
   validasi deterministik wajib, tidak ada auto-commit ke input engine,
@@ -430,8 +430,8 @@ dokumen arsitektur/roadmap diselaraskan):**
   **X2 baru** ditambah dgn detail penuh (kenapa ada, prinsip desain,
   slice pertama, keputusan arsitektur, interaksi dgn Fase Y).
 
-**Prompt Codex baru ditulis** (belum dijalankan):
-`docs/prompts/PAAX_CODEX_PROMPT_FASE_X2_AI_ASSIST_KLASIFIKASI_BINDING_2026-07-05.md`
+**Prompt Saya baru ditulis** (belum dijalankan):
+`docs/prompts/PAAX_SAYA_PROMPT_FASE_X2_AI_ASSIST_KLASIFIKASI_BINDING_2026-07-05.md`
 — vertical slice sempit: modul `ai_assist/` di document-intelligence utk
 kasus `pondasi_telapak` dimensi hilang dari halaman `detail_tabel`, klien
 Gemini Python baru (pola sama `orchestrator.ts`, `GEMINI_API_KEY` yang sudah
@@ -439,14 +439,14 @@ ada), validasi deterministik wajib, test pakai stub/mock LLM (bukan API
 sungguhan), fixture sintetis independen (bukan PLHUT hardcoded).
 
 **Belum dikerjakan sesi ini (sengaja, di luar scope planning):** tidak ada
-kode baru ditulis, tidak ada commit dibuat (owner instruksikan Codex yang
-commit sesuai gerbang kerja §9 CLAUDE.md), tidak ada re-run pipeline PLHUT
+kode baru ditulis, tidak ada commit dibuat (owner instruksikan Saya yang
+commit sesuai gerbang kerja §9 SAYA.md), tidak ada re-run pipeline PLHUT
 utk angka baru (itu tugas Fase Z, belum dijadwalkan sesi ini).
 
-## FASE X1B - PACKAGING PAAX SCHEMAS + INVESTIGASI BINDING FOOTPLAT (prompt 2026-07-16, eksekusi Codex 2026-07-05)
+## FASE X1B - PACKAGING PAAX SCHEMAS + INVESTIGASI BINDING FOOTPLAT (prompt 2026-07-16, eksekusi Saya 2026-07-05)
 Branch kerja: `feat/fase-x1b-packaging-binding-footplat`.
 PR: https://github.com/Wisnu8aji/paax-ai/pull/38
-Report remote: `report-remote/REPORT_FASE_X1B_PACKAGING_BINDING_CODEX_2026-07-05.md`.
+Report remote: `report-remote/REPORT_FASE_X1B_PACKAGING_BINDING_SAYA_2026-07-05.md`.
 
 - **Packaging diperbaiki**: `packages/schemas/python` sekarang package
   Python installable (`paax-schemas` 0.1.0), bukan folder yang hanya
@@ -467,10 +467,10 @@ Report remote: `report-remote/REPORT_FASE_X1B_PACKAGING_BINDING_CODEX_2026-07-05
   **149 passed + 5 skipped**, packages/schemas build OK + Jest **12 passed**,
   web Vitest **47 passed**, `pnpm tsc --noEmit` exit 0.
 
-## FASE X1 - BRIDGING GALIAN FOOTPLAT + FIX ARSITEKTUR (prompt 2026-07-15, eksekusi Codex 2026-07-05)
+## FASE X1 - BRIDGING GALIAN FOOTPLAT + FIX ARSITEKTUR (prompt 2026-07-15, eksekusi Saya 2026-07-05)
 Branch kerja: `feat/fase-x1-bridging-galian-footplat`.
 PR: https://github.com/Wisnu8aji/paax-ai/pull/37
-Report remote: `report-remote/REPORT_FASE_X1_BRIDGING_GALIAN_CODEX_2026-07-05.md`.
+Report remote: `report-remote/REPORT_FASE_X1_BRIDGING_GALIAN_SAYA_2026-07-05.md`.
 
 - **Fix WBS**: `document-intelligence` tidak lagi memuat
   `core-engine/app/rab/sections.py` lewat filesystem/importlib. WBS pindah ke
@@ -496,14 +496,14 @@ Report remote: `report-remote/REPORT_FASE_X1_BRIDGING_GALIAN_CODEX_2026-07-05.md
   web Vitest **47 passed**, `pnpm tsc --noEmit` exit 0.
 > Selesai satu fase → perbarui di sini (jangan sebar ke banyak file).
 
-## ✅ FASE V/W — NORMALISASI KODE + WORK ITEM GROUPING (prompt 2026-07-14, eksekusi Codex 2026-07-05)
+## ✅ FASE V/W — NORMALISASI KODE + WORK ITEM GROUPING (prompt 2026-07-14, eksekusi Saya 2026-07-05)
 Branch kerja: `feat/gambar-rab-fase-v-w-normalisasi-work-items`.
 PR: https://github.com/Wisnu8aji/paax-ai/pull/36
-Report remote: `report-remote/REPORT_FASE_V_W_CODEX_2026-07-05.md`.
+Report remote: `report-remote/REPORT_FASE_V_W_SAYA_2026-07-05.md`.
 
 - **Step 0 selesai lebih dulu**: backlog Fase S/T/U/U-2 diverifikasi cocok
   dengan STATE lalu di-commit terpisah pada branch
-  `fix/semarang-candidate-ranking-claude-direct`; PR draft:
+  `fix/semarang-candidate-ranking-saya-direct`; PR draft:
   https://github.com/Wisnu8aji/paax-ai/pull/35.
 - **Fase V selesai**: `consolidate.py` sekarang memakai kode kanonik untuk
   registry lintas-halaman. Variasi seperti `K1`, `K-1`, `K 1`, dan
@@ -531,8 +531,8 @@ Report remote: `report-remote/REPORT_FASE_V_W_CODEX_2026-07-05.md`.
   **141 passed + 5 skipped**, `packages/schemas` build OK + Jest
   **12 passed**, web Vitest **47 passed**, `pnpm tsc --noEmit` exit 0.
 
-## ✅ FASE T — AHSP AUTO-SUGGEST AKTIF (2026-07-13, dikerjakan langsung oleh Claude)
-Spek: `docs/prompts/PAAX_CODEX_PROMPT_FASE_T_AHSP_AUTO_SUGGEST_2026-07-12.md`.
+## ✅ FASE T — AHSP AUTO-SUGGEST AKTIF (2026-07-13, dikerjakan langsung oleh Saya)
+Spek: `docs/prompts/PAAX_SAYA_PROMPT_FASE_T_AHSP_AUTO_SUGGEST_2026-07-12.md`.
 Rencana besar terkait: `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md`.
 
 - **Modul baru** `services/core-engine/app/mapping/takeoff_ahsp.py`:
@@ -587,11 +587,11 @@ Rencana besar terkait: `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07
   document-intelligence **136 passed + 5 skipped** (tidak disentuh),
   `pnpm tsc --noEmit` bersih di root & `apps/web`.
 - **BELUM di-commit** — kerja di working tree yang sama (branch
-  `fix/semarang-candidate-ranking-claude-direct`).
+  `fix/semarang-candidate-ranking-saya-direct`).
 
-## ✅ FASE U/U-2 — PERBAIKAN NOISE KONSOLIDASI + GAP PAGE-TYPE (2026-07-13, dikerjakan langsung oleh Claude)
+## ✅ FASE U/U-2 — PERBAIKAN NOISE KONSOLIDASI + GAP PAGE-TYPE (2026-07-13, dikerjakan langsung oleh Saya)
 
-## ✅ FASE U/U-2 — PERBAIKAN NOISE KONSOLIDASI + GAP PAGE-TYPE (2026-07-13, dikerjakan langsung oleh Claude)
+## ✅ FASE U/U-2 — PERBAIKAN NOISE KONSOLIDASI + GAP PAGE-TYPE (2026-07-13, dikerjakan langsung oleh Saya)
 Rencana lengkap: `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md`
 (dokumen baru, melanjutkan `PAAX_GAMBAR_TEKNIK_SIPIL_BIG_PLAN_2026-07-05.md`
 yang Fase 0-S-nya sudah selesai). Dipicu kritik mendalam owner + BUKTI NYATA
@@ -645,7 +645,7 @@ PLHUT SURAKARTA (1).pdf` 88 halaman ke proyek uji "Gedung 3 lantai").
   126). core-engine/web TIDAK disentuh sesi ini (tidak dijalankan ulang,
   scope murni document-intelligence).
 - **BELUM di-commit** — bekerja di working tree yang sama dgn Fase S
-  (branch `fix/semarang-candidate-ranking-claude-direct`), 2 concern beda
+  (branch `fix/semarang-candidate-ranking-saya-direct`), 2 concern beda
   domain (harga vs perception) tidak saling ganggu.
 - **Selanjutnya (lihat big-plan 2026-07-13)**: Fase T (AHSP auto-suggest,
   spek sudah lengkap) → V (cross-page linking lebih toleran) → W (BOQ
@@ -653,10 +653,10 @@ PLHUT SURAKARTA (1).pdf` 88 halaman ke proyek uji "Gedung 3 lantai").
   BESAR, multi-sesi) → Y (UI 1-tombol "Analisa RAB dari Gambar Kerja") →
   Z (verifikasi ulang PDF yang sama, update angka noise final).
 
-## ✅ FASE S — PERBAIKAN RANKING KANDIDAT + TUTUP JALUR HARGA SEMARANG (2026-07-12, dikerjakan langsung oleh Claude)
-Branch kerja: `fix/semarang-candidate-ranking-claude-direct` (dari
+## ✅ FASE S — PERBAIKAN RANKING KANDIDAT + TUTUP JALUR HARGA SEMARANG (2026-07-12, dikerjakan langsung oleh Saya)
+Branch kerja: `fix/semarang-candidate-ranking-saya-direct` (dari
 `origin/feat/ahsp-unit-apply-semarang-import-kejaksaan`, PR #34).
-Owner minta perbaikan ini dikerjakan langsung tanpa prompt Codex terpisah.
+Owner minta perbaikan ini dikerjakan langsung tanpa prompt Saya terpisah.
 
 - **Bug ditemukan saat verifikasi PR #34**: baris "Kloset jongkok porselen"
   (KEJAKSAAN row 71) jatuh ke "tidak ketemu" padahal katalog master punya
@@ -699,8 +699,8 @@ Owner minta perbaikan ini dikerjakan langsung tanpa prompt Codex terpisah.
   passed**, `pnpm tsc --noEmit` exit 0, document-intelligence tidak
   disentuh (tidak dijalankan ulang, tidak ada perubahan di service itu).
 - **BELUM di-commit** — working tree di branch
-  `fix/semarang-candidate-ranking-claude-direct`, menunggu keputusan owner
-  soal commit/PR (Claude tidak commit tanpa diminta eksplisit).
+  `fix/semarang-candidate-ranking-saya-direct`, menunggu keputusan owner
+  soal commit/PR (Saya tidak commit tanpa diminta eksplisit).
 
 ## ✅ FASE Q/R — TERAPKAN HASIL O/P + HARGA KEJAKSAAN SEMARANG (prompt 2026-07-11)
 Branch kerja: `feat/ahsp-unit-apply-semarang-import-kejaksaan`.
@@ -735,7 +735,7 @@ PR #29-#33 masih open dan fase ini bergantung pada laporan/data Fase O/P.
   `pnpm tsc --noEmit` exit 0, document-intelligence **126 passed + 5 skipped**.
 - Report detail:
   `report/HARGA_KEJAKSAAN_SEMARANG_2026-07-11.md`,
-  `report/REPORT_FASE_Q_R_TERAPKAN_HASIL_KEJAKSAAN_SEMARANG_CODEX_2026-07-11.md`.
+  `report/REPORT_FASE_Q_R_TERAPKAN_HASIL_KEJAKSAAN_SEMARANG_SAYA_2026-07-11.md`.
 
 ## ✅ FASE O/P — AHSP UNIT GAP + HARGA SEMARANG BATCH2 (prompt 2026-07-10)
 Branch kerja: `feat/ahsp-unit-gap-semarang-price-batch2`.
@@ -766,7 +766,7 @@ dan M-2, sehingga tidak bisa dikerjakan langsung dari `main`.
 - Report detail:
   `report/AHSP_UNIT_GAP_RESOLUTION_2026-07-10.md`,
   `report/HARGA_SEMARANG_BATCH2_FINDINGS_2026-07-10.md`,
-  `report/REPORT_FASE_O_P_AHSP_UNIT_GAP_SEMARANG_PRICE_CODEX_2026-07-10.md`.
+  `report/REPORT_FASE_O_P_AHSP_UNIT_GAP_SEMARANG_PRICE_SAYA_2026-07-10.md`.
 
 ## ✅ FASE M-2 — V-03 RELATIVE POSITION FIX (prompt 2026-07-09)
 Branch kerja: `fix/v03-relative-position-check`.
@@ -795,7 +795,7 @@ sesuai prompt dan belum di-merge.
   exit 0, document-intelligence **126 passed + 5 skipped**.
 - **Fase N/AHSP tidak disentuh**: tidak ada perubahan pada `data/ahsp` maupun
   test AHSP.
-- Report: `report/REPORT_FASE_M2_V03_RELATIVE_FIX_CODEX_2026-07-09.md`.
+- Report: `report/REPORT_FASE_M2_V03_RELATIVE_FIX_SAYA_2026-07-09.md`.
 
 ## ✅ FASE M/N — V-03 FIX + IMPOR AHSP CK 2026 (prompt 2026-07-08)
 Branch kerja: `feat/v03-fix-ahsp-catalog-import`.
@@ -847,7 +847,7 @@ belum merged saat eksekusi.
   (mis. sheet atap hanya B-C sementara sheet lantai penuh A-C) saat ini masih
   menjadi `E-GRID` karena validator membandingkan fingerprint grid penuh antar
   semua sheet `denah`. Test ditandai `xfail(strict=True)` agar temuan terlihat
-  tanpa mengubah gate logic sepihak. Perlu keputusan Claude/owner sebelum V-03
+  tanpa mengubah gate logic sepihak. Perlu keputusan Saya/owner sebelum V-03
   diubah dari error keras menjadi aturan yang lebih sesuai realita multi-sheet.
 - **Fase L di-skip sengaja**: masih opsional, katalog AHSP repo hanya sample 4
   item. Auto-suggest berisiko memberi kesan mapping AHSP sudah matang. Jalur
@@ -894,7 +894,7 @@ di `Downloads/paax_plhut_extraction_*`, HANYA bahan belajar §0.1 — bukan
 template) + UI disederhanakan total (istilah teknis disembunyikan) + PaddleOCR
 sungguhan + semua `.md` diselaraskan ulang. Detail lengkap tiap fase:
 **`docs/plans/PAAX_GAMBAR_TEKNIK_SIPIL_BIG_PLAN_2026-07-05.md`**. Dikerjakan
-LANGSUNG oleh Claude (bukan prompt Codex), berurutan tanpa berhenti minta izin
+LANGSUNG oleh Saya (bukan prompt Saya), berurutan tanpa berhenti minta izin
 tiap fase (arahan eksplisit owner). **Semua fase 0-H selesai; Fase I (dokumen
 ini) sedang berjalan.** Ringkasan hasil NYATA:
 
@@ -954,11 +954,11 @@ core-engine belum diuji ulang dgn pipeline baru.
 
 Investigasi branch (dari sesi sebelumnya): `feat/fase0-plhut-golden-anchor`
 (Fase 0 RAB) dan `feat/ui-premium-redesign` (Fase 2 UI+persepsi) **SUDAH
-DI-MERGE ke `main`** oleh Codex sebelum sesi ini dimulai (lihat `git log`
+DI-MERGE ke `main`** oleh Saya sebelum sesi ini dimulai (lihat `git log`
 commit `d17a67d`/`97161a4`/`38ac2ef`) — working tree SEKARANG langsung di
 `main`, bukan lagi branch terpisah. Semua perubahan Fase 0-H sesi ini
-**MASIH BELUM DI-COMMIT** (Claude dilarang commit) — prompt Codex baru:
-`docs/prompts/PAAX_CODEX_PROMPT_COMMIT_GAMBAR_TEKNIK_SIPIL_2026-07-05.md`.
+**MASIH BELUM DI-COMMIT** (Saya dilarang commit) — prompt Saya baru:
+`docs/prompts/PAAX_SAYA_PROMPT_COMMIT_GAMBAR_TEKNIK_SIPIL_2026-07-05.md`.
 
 ## ⚠️ DIVERGENSI BRANCH — SUDAH DIINVESTIGASI (2026-07-04 malam), TERNYATA KECIL
 `feat/ui-premium-redesign` (branch aktif, UI premium + SEMUA implementasi Fase
@@ -974,22 +974,22 @@ tree ini, bukan hilang. **Temuan investigasi (bukan asumsi):**
 - `gh pr list`: ketiga PR draft (#26 `ui-premium-redesign`, #27 `fase0-plhut-
   golden-anchor`, #28 `fase2-p5-ui-persepsi-review` lama/superseded) berstatus
   `MERGEABLE` ke `main` **secara independen**.
-- **Rekomendasi (keputusan owner/Codex, BUKAN dieksekusi Claude — merge = commit):**
+- **Rekomendasi (keputusan owner/Saya, BUKAN dieksekusi Saya — merge = commit):**
   merge PR #27 ke `main` dulu (isinya murni core-engine, tidak menyentuh
   UI/document-intelligence, resiko rendah), lalu commit+push pekerjaan sesi ini
   ke PR #26 dan selesaikan SATU konflik `STATE.md` secara manual saat merge
   PR #26 ke `main` setelahnya. Tidak perlu rebase besar-besaran.
 
-## ⏩ TERBARU (2026-07-04, malam) — Fase 2 P1-P4+P6 DIIMPLEMENTASIKAN LANGSUNG OLEH CLAUDE
+## ⏩ TERBARU (2026-07-04, malam) — Fase 2 P1-P4+P6 DIIMPLEMENTASIKAN LANGSUNG OLEH SAYA
 - **FASE 0 DI-COMMIT**: commit `1ee7665`, draft PR #27 (belum merge), 238 test
-  hijau. Report: `report/REPORT_FASE0_PLHUT_GOLDEN_ANCHOR_CODEX_2026-07-04.md`.
-- **Audit pagi** menemukan Codex hanya menjalankan P5 (frontend) dan
+  hijau. Report: `report/REPORT_FASE0_PLHUT_GOLDEN_ANCHOR_SAYA_2026-07-04.md`.
+- **Audit pagi** menemukan Saya hanya menjalankan P5 (frontend) dan
   memfabrikasi kode gerbang ad-hoc yang bentrok nama dgn validator resmi brain
   — lihat riwayat di [[roadmap-gambar-ke-rab]] memory / git log sesi ini untuk
   detail insiden & analisis PaddleOCR.
-- **KEPUTUSAN OWNER (sore/malam):** Claude mengerjakan LANGSUNG seluruh backend
+- **KEPUTUSAN OWNER (sore/malam):** Saya mengerjakan LANGSUNG seluruh backend
   Fase 2 (P1, P2, P3, P4, P6) + koreksi konektor frontend — TIDAK via prompt
-  Codex. Codex hanya bagian commit (belum dijalankan — semua perubahan di
+  Saya. Saya hanya bagian commit (belum dijalankan — semua perubahan di
   bawah masih **UNCOMMITTED** di worktree `feat/ui-premium-redesign`, yang
   tetap jadi satu-satunya branch/worktree aktif, bukan cabang terpisah).
 - **HASIL NYATA (bukan rencana lagi):**
@@ -1046,11 +1046,11 @@ tree ini, bukan hilang. **Temuan investigasi (bukan asumsi):**
   rec_boxes` PAS jadi `TextSpan` kedua (`method="ocr"`) mengalir ke pipeline
   SAMA dgn vektor — bukan pipeline terpisah spt diusulkan konsep awal owner.
   Detail lengkap: `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` §P6.1.
-- **Dokumen prompt Codex Fase 2 (`docs/prompts/PAAX_CODEX_PROMPT_FASE2_*.md`)
+- **Dokumen prompt Saya Fase 2 (`docs/prompts/PAAX_SAYA_PROMPT_FASE2_*.md`)
   kini BERSTATUS HISTORIS/SUPERSEDED** — spek di dalamnya sudah diimplementasikan
-  langsung oleh Claude, bukan dijalankan Codex. Jangan diserahkan ke Codex lagi.
+  langsung oleh Saya, bukan dijalankan Saya. Jangan diserahkan ke Saya lagi.
 - **BELUM DIKERJAKAN (prioritas berikutnya):** commit seluruh perubahan
-  (Codex, sesuai arahan owner) — termasuk resolusi PR #27 (Fase 0, lihat
+  (Saya, sesuai arahan owner) — termasuk resolusi PR #27 (Fase 0, lihat
   §divergensi branch di atas); binding label↔objek↔alamat §5 (grid sekarang
   sudah ada posisi_mm nyata, jadi ini sekarang MUNGKIN dikerjakan, belum
   dimulai); deteksi simbol grafis (`count_simbol`); garis-as itu sendiri
@@ -1091,10 +1091,10 @@ rumus `services/core-engine/app/geometry/` (lihat EPIC D di bawah), yang aman
 dikerjakan sekarang karena murni deterministik & tidak menyentuh CV/vision.
 
 ## Berikutnya (ringkas; rencana detail: lihat di bawah)
-- **EPIC A — selesaikan v0.9 frontend**: A1 wiring client (Codex) → A2 Gantt UI +
-  A3 panel knob (Claude) → wiring (Codex) → A4 narasi AI skenario.
-- **EPIC B — Engineering Chat lintas-halaman**: B1 context pack (Codex) → B2 grounding
-  → B3 UI chat global (Claude) → B4 tool-calling.
+- **EPIC A — selesaikan v0.9 frontend**: A1 wiring client (Saya) → A2 Gantt UI +
+  A3 panel knob (Saya) → wiring (Saya) → A4 narasi AI skenario.
+- **EPIC B — Engineering Chat lintas-halaman**: B1 context pack (Saya) → B2 grounding
+  → B3 UI chat global (Saya) → B4 tool-calling.
 - **EPIC C — fixes**: C1 poles pembulatan 9B (`custom.subtotal`/`labor_cost` → `_r2`), dst.
 - **EPIC D — ekspansi rumus takeoff (baru, dari brain v4.1)**:
   D1 ✅ volume beton F-B01–B11 (`geometry/volume.py`, 5 tipe baru) + Evidence
@@ -1134,7 +1134,7 @@ dikerjakan sekarang karena murni deterministik & tidak menyentuh CV/vision.
   tanpa teks vektor) sbg jalur UTAMA — itu hanya fallback OCR-gagal. Site
   Agent penuh (v2.0) tetap ditunda, tidak tersentuh oleh keputusan ini.
 
-## 🎨 UI Premium Redesign — Medium Grey Glass (2026-07-03) — terverifikasi, menunggu commit Codex
+## 🎨 UI Premium Redesign — Medium Grey Glass (2026-07-03) — terverifikasi, menunggu commit Saya
 Rombak besar sesuai spek owner (`G:\Design\prompt\PAAX_PLAN_SESI_DESAIN_PREMIUM_2026-07-03.txt`):
 - **Tema default Medium Grey** (#A6A6AA) + token **gold/bronze** & palet
   `--chart-1..5` dari brand sheet; light/dark tetap ada, ganti via
@@ -1161,14 +1161,14 @@ Rombak besar sesuai spek owner (`G:\Design\prompt\PAAX_PLAN_SESI_DESAIN_PREMIUM_
 Verifikasi: tsc OK · vitest **30** · build sukses (route /rab-tester hilang) ·
 uji interaktif browser (tema, dialog, chat kirim+riwayat, menu +, redirect,
 halaman gambar-kerja render TKG workspace + tabel kandidat).
-Prompt commit: `docs/prompts/PAAX_CODEX_PROMPT_UI_PREMIUM_REDESIGN.md`
+Prompt commit: `docs/prompts/PAAX_SAYA_PROMPT_UI_PREMIUM_REDESIGN.md`
 (branch `feat/ui-premium-redesign` dari `main`, draft PR base `main`).
 
-## 🐞 Perbaikan pasca-redesign (2026-07-03) — prompt siap, MENUNGGU Codex
+## 🐞 Perbaikan pasca-redesign (2026-07-03) — prompt siap, MENUNGGU Saya
 Owner uji PR #26 di browser, catat 14 temuan di `Downloads/perbaikan.txt`.
-Claude investigasi root cause tiap poin (bukan tebakan) + tanya-jawab
+Saya investigasi root cause tiap poin (bukan tebakan) + tanya-jawab
 keputusan arsitektural, hasilnya 2 prompt siap jalan:
-- `docs/prompts/PAAX_CODEX_PROMPT_PERBAIKAN_UI_BATCH_2026-07-03.md` — **siap
+- `docs/prompts/PAAX_SAYA_PROMPT_PERBAIKAN_UI_BATCH_2026-07-03.md` — **siap
   dijalankan sekarang** di branch `feat/ui-premium-redesign` (PR #26, masih
   draft): (1) fix hydration mismatch dashboard — root cause: `ProjectsProvider`
   baca `localStorage` sinkron di `useState` initializer
@@ -1181,17 +1181,17 @@ keputusan arsitektural, hasilnya 2 prompt siap jalan:
   disederhanakan (transkrip/skrip/takeoff mentah **dihapus dari UI** sesuai
   keputusan owner — user hanya lihat status ringkas + Triage + kirim ke RAB),
   upload file dibuat nyata (metadata tersimpan, BELUM dibaca AI).
-- `docs/prompts/PAAX_CODEX_PROMPT_AI_MULTIMODAL_LAMPIRAN_2026-07-03.md` —
+- `docs/prompts/PAAX_SAYA_PROMPT_AI_MULTIMODAL_LAMPIRAN_2026-07-03.md` —
   **JANGAN jalankan dulu**, menunggu owner isi kotak persetujuan di dalam
   file. Bagian A (lampiran Engineering Chat beneran dibaca Gemini vision —
   aman, tak menyentuh gerbang F0) + Bagian B (opsional: vision MVP utk
   upload Gambar Kerja AI langsung jadi draft TKG — **menyentuh gerbang F0**,
   `BRAIN_ALIGNMENT.md` sudah menggerbang "TKG builder sungguhan" sbg DITUNDA
   menunggu data-grounding + Wizard-of-Oz; owner sudah dikonfirmasi paham
-  tensi ini, prompt berisi kotak checklist eksplisit sebelum Codex boleh
+  tensi ini, prompt berisi kotak checklist eksplisit sebelum Saya boleh
   kerjakan Bagian B).
 
-## 🔧 Gambar Kerja AI — upload PDF nyata ke TKG (2026-07-03, sesi lanjutan) — dikerjakan Claude, BELUM di-commit
+## 🔧 Gambar Kerja AI — upload PDF nyata ke TKG (2026-07-03, sesi lanjutan) — dikerjakan Saya, BELUM di-commit
 Owner minta perbaikan langsung (bukan sekadar prompt) untuk "upload gambar kerja
 langsung, AI yang membaca" (lihat `Downloads/perbaikan.txt` poin 1-2). Investigasi
 menemukan `services/document-intelligence` (commit `ed6f511`, 2026-07-03 pagi,
@@ -1225,21 +1225,21 @@ penuh: leksikon prefiks, merge-run, rekonstruksi grid/tabel dari geometri). Jadi
 pipeline SEKARANG genuinely bekerja & teruji, tapi PDF proyek nyata masih akan
 menghasilkan TKG hampir kosong (semua masuk `unclassified`) sampai grammar penuh
 dibangun (pekerjaan terpisah, besar — bukan sesi ini).
-**Belum di-commit** — sesuai instruksi owner, Claude tidak commit; Codex yang akan
+**Belum di-commit** — sesuai instruksi owner, Saya tidak commit; Saya yang akan
 commit (branch `feat/ui-premium-redesign`, sama seperti batch perbaikan sebelumnya).
 File berubah: `apps/web/.env.example`, `apps/web/src/components/drawings/tkg-workspace.tsx`,
 `apps/web/src/lib/ai/document-intelligence-tkg.ts` (baru),
 `services/document-intelligence/app/api/{drawing_routes,upload_routes}.py`,
 `services/document-intelligence/app/tkg/builder.py`,
 `services/document-intelligence/tests/{test_tkg_builder.py,fixtures/golden_tkg_text_sheet.txt}`.
-**Catatan untuk `PAAX_CODEX_PROMPT_AI_MULTIMODAL_LAMPIRAN_2026-07-03.md` Bagian B**:
+**Catatan untuk `PAAX_SAYA_PROMPT_AI_MULTIMODAL_LAMPIRAN_2026-07-03.md` Bagian B**:
 sebagian premisnya sudah berubah — untuk PDF vektor, jalur deterministik (non
 vision-LLM) di atas sudah jalan & TIDAK menyentuh gerbang F0 sama sekali (murni
 baca teks PDF, bukan tebakan model). Vision-LLM (Bagian B asli) sekarang relevan
 HANYA untuk sheet raster murni (foto/scan tanpa teks vektor) — kasus yang lebih
 sempit dari yang dikira sebelumnya.
 
-## ✅ FASE 0 (0a penuh + 0b-parsial harga) SELESAI & TERVERIFIKASI (2026-07-03), prompt Codex siap
+## ✅ FASE 0 (0a penuh + 0b-parsial harga) SELESAI & TERVERIFIKASI (2026-07-03), prompt Saya siap
 Milestone besar terverifikasi ujung-ke-ujung lewat engine ASLI (bukan replika),
 **238 passed** (198 lama + 40 baru), tak ada regresi:
 - **0a-1 HSP**: `compute_hsp()` reproduksi **32/32 HSP profesional** dari `ALFA.xlsx`
@@ -1253,7 +1253,7 @@ Milestone besar terverifikasi ujung-ke-ujung lewat engine ASLI (bukan replika),
   **Rp 1.885.558.837 vs Rp 1.860.078.608 = +1,37%** (dalam ±10%); deviasi
   seluruhnya dari **5 inkonsistensi harga internal ALFA sendiri** (tercatat di
   `alfa_price_conflicts`, auditable RULE-HRG-02). Coverage 100% resource PLHUT.
-Fixture + 3 generator + README + 3 test dibuat Claude di `services/core-engine/
+Fixture + 3 generator + README + 3 test dibuat Saya di `services/core-engine/
 tests/{fixtures/plhut/, test_plhut_hsp_golden.py, test_plhut_rab_golden.py,
 test_plhut_surakarta_pricebook.py}` + `data/harga-satuan/surakarta.json`.
 **Temuan penting**: (a) kode resource ALFA TIDAK andal (M.504 = 2 material beda)
@@ -1261,8 +1261,8 @@ test_plhut_surakarta_pricebook.py}` + `data/harga-satuan/surakarta.json`.
 di luar repo (`G:\paax-data`, 109 resource, sesi sebelumnya) dgn penomoran kode
 BEDA — tak aktif bug (loader pilih satu via env `PAAX_DATA_DIR`) tapi belum
 direkonsiliasi, dicatat di gap doc. Prinsip §0.1 dipatuhi penuh. Prompt commit:
-`docs/prompts/PAAX_CODEX_PROMPT_FASE0A_HSP_GOLDEN.md` (branch
-`feat/fase0-plhut-golden-anchor` dari main; Codex commit, belum di-commit).
+`docs/prompts/PAAX_SAYA_PROMPT_FASE0A_HSP_GOLDEN.md` (branch
+`feat/fase0-plhut-golden-anchor` dari main; Saya commit, belum di-commit).
 
 ## ⚠️ Sisa GERBANG-0b penuh: pemetaan ke katalog AHSP RESMI (2.542 item) — butuh owner
 Harga BUKAN lagi penghalang untuk lingkup PLHUT/Surakarta. Sisa: mengikat 112
@@ -1275,7 +1275,7 @@ Tidak memblokir Fase 1 (workspace) / Fase 2 (persepsi) — bisa paralel.
 
 ## 🗺️ Roadmap "Gambar → RAB benar" (2026-07-03) — analisis mendalam brain, keputusan owner: Fase 0 dulu
 Owner minta rencana lengkap sampai gambar nyata → RAB benar sesuai brain.
-Claude baca 4 berkas brain penuh + audit repo. Hasil: `docs/plans/PAAX_ROADMAP_GAMBAR_KE_RAB_2026-07-03.md`.
+Saya baca 4 berkas brain penuh + audit repo. Hasil: `docs/plans/PAAX_ROADMAP_GAMBAR_KE_RAB_2026-07-03.md`.
 **Temuan inti**: 3 "setengah" sistem beda kematangan — Engine hitung ~70%
 (jalan KALAU TKG benar), Data grounding ~40% (AHSP asli 2.542 item ada di
 `G:\paax-data` tapi belum tersambung; harga ~4%), Persepsi baca gambar ~20%
@@ -1289,11 +1289,11 @@ otomatis = golden transkrip-tangan) → FASE 3-4 tutup GERBANG-4 (gambar nyata �
 RAB auditable). Owner PUNYA materi anchor lengkap: PLHUT PDF + RAB manual
 `ALFA.xlsx`+`MC 00.xlsx`. **Butuh keputusan owner** (4 hal, lihat §5 dokumen):
 setuju urutan Fase 0 dulu? ambang deviasi (usul ±10%)? bantu baca ALFA.xlsx?
-konfirm PLHUT proyek golden? Baru lalu Claude pecah Fase 0 jadi prompt Codex 0A–0D.
+konfirm PLHUT proyek golden? Baru lalu Saya pecah Fase 0 jadi prompt Saya 0A–0D.
 
 ## Pembagian peran (2026-06-29)
-- **Claude** = planning + semua spek/prompt + **UI frontend** + review.
-- **Codex** = penyambungan teknis (lib/engine, fetch, state, route AI, backend, engine).
+- **Saya** = planning + semua spek/prompt + **UI frontend** + review.
+- **Saya** = penyambungan teknis (lib/engine, fetch, state, route AI, backend, engine).
 
 ## Git
 - Branch utama: `main`. Open PR: **#20 (draft — sistem TKG, branch
@@ -1301,6 +1301,6 @@ konfirm PLHUT proyek golden? Baru lalu Claude pecah Fase 0 jadi prompt Codex 0A�
 - PR terakhir merged: #19 (dashboard navigation performance).
 
 ## Rencana detail (di luar repo)
-- Master plan + prompt Codex (A1, B1): file `PAAX_MASTER_PLAN_*` & `PAAX_CODEX_PROMPT_*`
+- Master plan + prompt Saya (A1, B1): file `PAAX_MASTER_PLAN_*` & `PAAX_SAYA_PROMPT_*`
   di folder Downloads owner.
-- Konteks lintas-sesi: memory Claude (`MEMORY.md`).
+- Konteks lintas-sesi: memory Saya (`MEMORY.md`).

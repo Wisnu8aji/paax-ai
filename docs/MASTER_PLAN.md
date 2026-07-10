@@ -67,9 +67,9 @@ Setiap angka di RAB, BoQ, jadwal, Kurva S, dan skenario **WAJIB** berasal dari e
 
 ### 2.2 Prinsip Bangun Bertahap (Vertical Slices)
 
-Bangun satu alur vertikal sampai benar-benar jalan, baru lanjut. Jangan membangun banyak service paralel setengah jadi. Aturan praktis untuk Claude Code:
+Bangun satu alur vertikal sampai benar-benar jalan, baru lanjut. Jangan membangun banyak service paralel setengah jadi. Aturan praktis untuk Saya Code:
 
-- Satu sesi Claude Code = satu task sempit & terdefinisi. Konteks terlalu lebar membuat asisten "lupa" aturan emas.
+- Satu sesi Saya Code = satu task sempit & terdefinisi. Konteks terlalu lebar membuat asisten "lupa" aturan emas.
 - Verifikasi kriteria terima tiap task sebelum lanjut. Commit kecil & sering (Conventional Commits).
 - Setiap fungsi perhitungan baru wajib disertai test dengan nilai acuan yang dihitung manual.
 - Setiap fitur AI baru wajib punya fallback manual: bila AI gagal/ragu, pengguna tetap bisa menyelesaikan pekerjaan.
@@ -230,7 +230,7 @@ Estimation Agent memetakan tiap elemen ke kode pekerjaan AHSP yang sesuai (mis. 
 > menambah LLM sebagai fallback paralel yang membaca span teks + koordinat
 > YANG SUDAH DIEKSTRAK (bukan piksel mentah), dengan validasi deterministik +
 > gerbang review manusia wajib sebelum jadi input engine — detail aturan
-> `CLAUDE.md` §1.1, rencana teknis `docs/BRAIN_ALIGNMENT.md` &
+> `SAYA.md` §1.1, rencana teknis `docs/BRAIN_ALIGNMENT.md` &
 > `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md` §X2. Ini
 > tidak mengubah Aturan Emas: lapisan ini menghasilkan kandidat klasifikasi/
 > binding, bukan angka RAB.
@@ -415,7 +415,7 @@ Tidak ada satu model unggul di semua tugas. PAAX memakai beberapa model & merute
 |---|---|---|
 | Pemahaman dokumen & OCR | Multimodal LLM (vision) + OCR khusus | Konteks panjang, baca PDF/legenda/tabel/notasi |
 | Deteksi & ukur elemen | CV terspesialisasi (deteksi objek/garis) | Presisi geometri yang tak bisa diandalkan ke LLM |
-| Klasifikasi/binding gambar saat rule-based gagal (2026-07-05, `CLAUDE.md` §1.1) | LLM reasoning atas teks+koordinat TERSTRUKTUR (bukan piksel) | Fallback paralel utk `zone_classifier`/`binding`/`consolidate`; usulan divalidasi deterministik + gerbang review sebelum jadi input engine |
+| Klasifikasi/binding gambar saat rule-based gagal (2026-07-05, `SAYA.md` §1.1) | LLM reasoning atas teks+koordinat TERSTRUKTUR (bukan piksel) | Fallback paralel utk `zone_classifier`/`binding`/`consolidate`; usulan divalidasi deterministik + gerbang review sebelum jadi input engine |
 | Klasifikasi elemen → AHSP | LLM reasoning + RAG | Perlu penalaran + rujukan basis pengetahuan AHSP |
 | Orkestrasi & tool-calling | LLM reasoning | Memilih tool, menyusun langkah, memanggil engine |
 | Engineering Chat | LLM + RAG + tools | Jawaban berbasis data proyek |
@@ -530,7 +530,7 @@ Ringkasan sumber biaya & cara mengendalikannya. Tujuannya bukan angka pasti (mas
 |---|---|---|
 | Frontend | Next.js 14 (App Router), React, TS, Tailwind, shadcn/ui | Pertahankan |
 | State/Data FE | React Query / Server Components, Zod | Pertahankan |
-| AI Orchestrator | Node/TypeScript, REST langsung ke Gemini (function-calling manual) — **direvisi 2026-07-05** dari rencana awal "Genkit": scaffold Genkit lama (`scripts/scaffolding/create_ai_orch.py`) tidak pernah dijalankan & sudah usang; pola REST manual sudah terbukti jalan di `apps/web/src/lib/ai/orchestrator.ts`, dipilih utk `services/ai-orchestrator` (disetujui owner 2026-07-05, spek: `docs/prompts/PAAX_CODEX_CHAIN_AIO_01/02_*.md`). Migrasi ke Genkit tetap opsi terbuka nanti. | Sedang dibangun (Codex) |
+| AI Orchestrator | Node/TypeScript, REST langsung ke Gemini (function-calling manual) — **direvisi 2026-07-05** dari rencana awal "Genkit": scaffold Genkit lama (`scripts/scaffolding/create_ai_orch.py`) tidak pernah dijalankan & sudah usang; pola REST manual sudah terbukti jalan di `apps/web/src/lib/ai/orchestrator.ts`, dipilih utk `services/ai-orchestrator` (disetujui owner 2026-07-05, spek: `docs/prompts/PAAX_SAYA_CHAIN_AIO_01/02_*.md`). Migrasi ke Genkit tetap opsi terbuka nanti. | Sedang dibangun (Saya) |
 | Core Engine | Python 3.11+, FastAPI, Pydantic, NumPy | Pertahankan & perdalam |
 | Document Intelligence | Python: OCR + CV (deteksi/ukur) + Vision-LLM | Bangun di v1.0 |
 | Site Agent | Python/TS: progres & analisa foto | Fase lanjut (v2.0) |
@@ -567,7 +567,7 @@ paax-ai/
 
 ## 16. Roadmap & Rencana Rilis Bertahap
 
-Visi besar dieksekusi versi demi versi. Setiap rilis punya satu "aha moment" baru yang bisa didemokan, dibangun di atas rilis sebelumnya tanpa membuang pekerjaan. Estimasi waktu mengasumsikan kerja solo ~20 jam/minggu dengan Claude Code; bila ada kesibukan lain (mis. kursus IBM AI Engineer), kalikan 1,3–1,5×.
+Visi besar dieksekusi versi demi versi. Setiap rilis punya satu "aha moment" baru yang bisa didemokan, dibangun di atas rilis sebelumnya tanpa membuang pekerjaan. Estimasi waktu mengasumsikan kerja solo ~20 jam/minggu dengan Saya Code; bila ada kesibukan lain (mis. kursus IBM AI Engineer), kalikan 1,3–1,5×.
 
 | Rilis | Aha Moment | Cakupan Inti | Estimasi* |
 |---|---|---|---|
@@ -585,7 +585,7 @@ Visi besar dieksekusi versi demi versi. Setiap rilis punya satu "aha moment" bar
 
 ## 17. Rincian Tugas Pembangunan per Versi
 
-Daftar tugas terurut. Setiap tugas punya kriteria terima; selesaikan & verifikasi sebelum lanjut. Ini turunan langsung untuk prompt Claude Code (satu tugas per sesi).
+Daftar tugas terurut. Setiap tugas punya kriteria terima; selesaikan & verifikasi sebelum lanjut. Ini turunan langsung untuk prompt Saya Code (satu tugas per sesi).
 
 ### 17.1 v0.6 — Deterministic Foundation (selesaikan dulu)
 
@@ -706,8 +706,8 @@ PAAX tidak perlu dibangun ulang dari nol — fondasinya benar. Yang dibutuhkan: 
 
 > **Langkah konkret minggu ini (sebelum melompat ke fitur AI besar):**
 > 1. **Selesaikan v0.6 lebih dulu** — amankan UI shell hasil import design ke `apps/web/app/_draft_v07/` (bukan dibuang, dipakai di v0.7), bersihkan route utama, lalu selesaikan integrasi test API & halaman uji RAB sederhana.
-> 2. Jadikan dokumen ini sebagai **MASTER_PLAN** di `docs/`, dan rujuk dari **CLAUDE.md** agar Claude Code di sesi berikutnya tidak overscope.
-> 3. **Satu task per sesi Claude Code**, verifikasi kriteria terima, commit kecil. Bawa hasil tiap task untuk direview sebelum lanjut.
+> 2. Jadikan dokumen ini sebagai **MASTER_PLAN** di `docs/`, dan rujuk dari **SAYA.md** agar Saya Code di sesi berikutnya tidak overscope.
+> 3. **Satu task per sesi Saya Code**, verifikasi kriteria terima, commit kecil. Bawa hasil tiap task untuk direview sebelum lanjut.
 > 4. **Tahan godaan membangun v1.0 sekaligus.** Nilai tetap mengalir tiap rilis; risiko terbesar (vision) ditunda sampai fondasi matang.
 
 ---

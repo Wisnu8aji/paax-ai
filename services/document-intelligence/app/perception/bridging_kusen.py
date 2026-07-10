@@ -1,6 +1,6 @@
 """
 PAAX Document Intelligence — Bridging jadwal kusen pintu/jendela ke
-core-engine `/takeoff/kusen` (2026-07-05, lanjutan Fase X2, Claude
+core-engine `/takeoff/kusen` (2026-07-05, lanjutan Fase X2, Saya
 langsung).
 
 Sama pola `bridging_dinding.py`: kusen TIDAK PUNYA sumber rule-based sama

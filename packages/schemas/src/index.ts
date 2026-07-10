@@ -1941,7 +1941,7 @@ export type DrawingWorkItemsResult = z.infer<typeof DrawingWorkItemsResultSchema
 // paralel HANYA saat rule-based gagal, usulan sudah lolos validasi
 // deterministik (anti-halusinasi + rentang wajar) di Python sebelum sampai
 // ke sini — field ini TIDAK PERNAH dipakai sbg angka RAB final, murni
-// kandidat menunggu review manusia. Detail: `CLAUDE.md` §1.1,
+// kandidat menunggu review manusia. Detail: `SAYA.md` §1.1,
 // `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md` §X2.
 export const AiDimensionSuggestionSchema = z.object({
   b_mm: z.number().nullish(),
@@ -2049,7 +2049,7 @@ export type AiKusenSuggestion = z.infer<typeof AiKusenSuggestionSchema>;
 // kusen→MEP) — mirror `AiMepSuggestion`: SATU jenis titik MEP (lampu/stop
 // kontak/saklar/dll), HANYA dari catatan jumlah eksplisit di teks —
 // deteksi simbol/ikon dari piksel TIDAK dicoba (vision-on-pixel tetap
-// dihindari, `CLAUDE.md` §1.1).
+// dihindari, `SAYA.md` §1.1).
 export const AiMepSuggestionSchema = z.object({
   jenis: z.string(),
   count: z.number().int().nullish(),

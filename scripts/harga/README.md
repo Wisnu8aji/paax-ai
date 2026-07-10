@@ -60,7 +60,7 @@ extractor tetap memakai harga persis dari XLSX sumber.
 ## Worksheet Review
 
 Untuk item yang belum tersambung, extractor menulis CSV review dengan kandidat
-top-5 dan kolom `chosen_code` kosong. Owner/Claude bisa memakai file itu sebagai
+top-5 dan kolom `chosen_code` kosong. Owner/Saya bisa memakai file itu sebagai
 daftar keputusan manual berikutnya. Item seperti mutu beton, watt lampu, ukuran
 keramik/plywood berbeda, atau substitusi satuan harus diputuskan di worksheet,
 bukan ditebak oleh auto-match.

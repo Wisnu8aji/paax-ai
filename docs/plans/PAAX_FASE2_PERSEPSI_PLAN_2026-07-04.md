@@ -1,6 +1,6 @@
 # PAAX — Rencana Fase 2: Persepsi Baca-Gambar (Gambar → TKG benar)
 
-> Ditulis Claude, 2026-07-04 (revisi sore — lihat §0.2 "Insiden & koreksi"). Sumber
+> Ditulis Saya, 2026-07-04 (revisi sore — lihat §0.2 "Insiden & koreksi"). Sumber
 > kebenaran: `docs/specs/brain-v4.1/PAAX_BRAIN_00_EKSTRAKSI_GAMBAR_KERJA.txt`
 > (grammar §2, SOP sheet §3, binding §5, validator V-01..V-10 §7, raster §8) +
 > roadmap `docs/plans/PAAX_ROADMAP_GAMBAR_KE_RAB_2026-07-03.md` + konsep integrasi
@@ -9,8 +9,8 @@
 > nyata) SELESAI & ter-commit (commit `1ee7665`, draft PR #27, 238 test hijau).
 
 > ## ✅ UPDATE 2026-07-04 (malam) — P1, P2, P3, P4, P6, P5-FIX DIIMPLEMENTASIKAN
-> Owner memutuskan: Claude mengerjakan LANGSUNG seluruh paket di bawah (bukan
-> lewat prompt Codex — dokumen prompt di `docs/prompts/PAAX_CODEX_PROMPT_FASE2_
+> Owner memutuskan: Saya mengerjakan LANGSUNG seluruh paket di bawah (bukan
+> lewat prompt Saya — dokumen prompt di `docs/prompts/PAAX_SAYA_PROMPT_FASE2_
 > *.md` kini HISTORIS/SUPERSEDED, jangan dijalankan lagi). Hasil: `services/
 > document-intelligence/app/perception/` lengkap (span+merge-run+locale+kontrak
 > TKG, grammar §2, rakit grid/tabel/elemen via `page.find_tables()` NYATA,
@@ -24,7 +24,7 @@
 > rata-rata baru **16,24%** — kemajuan nyata, **BUKAN** GERBANG-2 selesai
 > (grid-dari-geometri §3.1.1, binding §5, deteksi simbol MASIH gap). Detail
 > lengkap tiap paket ditandai `[SELESAI]`/`[BELUM]` di §3 di bawah. Semua
-> perubahan **belum di-commit** (menunggu Codex, sesuai arahan owner).
+> perubahan **belum di-commit** (menunggu Saya, sesuai arahan owner).
 
 > ## ✅ SUSULAN (2026-07-04, lanjutan malam) — GRID DARI GEOMETRI (§3.1.1) SELESAI
 > Owner memilih lanjut (bukan berhenti): rekonstruksi grid dari bubble-as +
@@ -63,13 +63,13 @@ menghasilkan output.
 
 ### 0.2 INSIDEN & KOREKSI (2026-07-04, sore) — WAJIB dibaca sebelum lanjut
 Sesi pagi menulis dokumen ini + 3 prompt (P1 fondasi, P2 grammar, P5 UI review)
-dan menyerahkannya ke Codex. Setelah Codex bekerja (lihat
-`report/REPORT_CODEX_FULL_WORKLOG_UI_PREMIUM_DOC_INTEL_2026-07-04.md`), Claude
+dan menyerahkannya ke Saya. Setelah Saya bekerja (lihat
+`report/REPORT_SAYA_FULL_WORKLOG_UI_PREMIUM_DOC_INTEL_2026-07-04.md`), Saya
 mengaudit ulang hasilnya dan menemukan 3 hal:
 
 1. **File dokumen ini + 3 prompt HILANG dari disk** (bukan cuma dari git —
    hilang total, tak pernah ter-commit). Root cause: file-file itu berstatus
-   *untracked* di worktree utama; saat Codex membereskan kebingungan
+   *untracked* di worktree utama; saat Saya membereskan kebingungan
    branch/worktree (server sempat menampilkan dashboard lama, worktree
    `G:\paax-ai-main-fase2-p5` dibuat lalu dihapus), operasi pembersihan
    (`git clean -fd` atau setara) ikut menghapus file untracked yang TIDAK ADA
@@ -80,7 +80,7 @@ mengaudit ulang hasilnya dan menemukan 3 hal:
    riwayat percakapan), + perbaikan.
 2. **P1 (fondasi persepsi) dan P2 (grammar/lexicon) TIDAK PERNAH DIJALANKAN.**
    Tidak ada folder `app/perception/` di `services/document-intelligence` sama
-   sekali. Codex hari ini HANYA mengeksekusi P5 (frontend). Ini berarti
+   sekali. Saya hari ini HANYA mengeksekusi P5 (frontend). Ini berarti
    **kualitas persepsi backend TIDAK BERUBAH** dari sebelumnya — pipeline
    `drawing_classifier.py`/`grid_extractor.py`/`table_extractor.py`/
    `tkg/builder.py` yang lama (regex naif, sudah terbukti gagal di PDF PLHUT
@@ -93,7 +93,7 @@ mengaudit ulang hasilnya dan menemukan 3 hal:
      `TODO: sambung P4 saat endpoint kontrak final sudah merge`. Tidak ada
      angka difabrikasi di frontend.
    - **Eksekusi kedua** (langsung di `feat/ui-premium-redesign`, commit
-     `a45b4c1`, "port ke UI premium") — Codex **menulis ulang dari nol**
+     `a45b4c1`, "port ke UI premium") — Saya **menulis ulang dari nol**
      alih-alih rebase/merge PR #28 yang sudah benar. Hasilnya DIWIRE ke
      endpoint LAMA yang nyata (`POST /drawings/analyze`, backend naif) dan
      **menghitung sendiri di TypeScript** (`buildPerceptionReview()`): field
@@ -105,7 +105,7 @@ mengaudit ulang hasilnya dan menemukan 3 hal:
      di frontend dari data yang SUDAH ADA di memori, bukan angka RAB/HSP — jadi
      BUKAN pelanggaran Aturan Emas §1 secara harfiah, tapi tetap berisiko
      menyesatkan (memberi kesan tervalidasi padahal cuma heuristik tally lokal).
-   - **Keputusan Claude:** JANGAN buang eksekusi kedua (ia real, jalan hari
+   - **Keputusan Saya:** JANGAN buang eksekusi kedua (ia real, jalan hari
      ini, teruji 40/40 vitest). Perbaiki di tempat lewat **P5-FIX**
      (§Paket P5-FIX di bawah) — ganti kode `V-*` supaya tidak bentrok nama
      dengan validator resmi, beri label eksplisit "heuristik UI sementara",
@@ -148,7 +148,7 @@ perbaikan kecil, bukan pembangunan baru.
 
 ---
 
-## 2. INVARIAN WAJIB tiap paket (kunci lakmus review Claude)
+## 2. INVARIAN WAJIB tiap paket (kunci lakmus review Saya)
 
 - **§0.1 fixture-bukan-template** (lihat atas).
 - **INV-TKG-02 ZERO-LOSS:** tiap span teks masuk TKG — ke blok tepat atau
@@ -166,14 +166,14 @@ perbaikan kecil, bukan pembangunan baru.
 - **Kode validator tidak boleh direkayasa ulang di frontend.** Kode `V-01..V-10`
   adalah milik validator resmi brain (`core-engine` / P4). UI TIDAK BOLEH
   membuat kode baru yang meniru pola penamaan itu (pelajaran §0.2 poin 3).
-- **ATURAN EMAS (CLAUDE.md §1):** tak ada perhitungan biaya di sini; angka
+- **ATURAN EMAS (SAYA.md §1):** tak ada perhitungan biaya di sini; angka
   kuantitas tetap dihitung engine deterministik core-engine.
 - **Dokumen rencana/prompt WAJIB di-commit segera setelah ditulis** — jangan
   dibiarkan untracked lintas-sesi (pelajaran §0.2 poin 1).
 
 ---
 
-## 3. Dekomposisi paket kerja (untuk Codex) + gerbang review (untuk Claude)
+## 3. Dekomposisi paket kerja (untuk Saya) + gerbang review (untuk Saya)
 
 Layout target (audit dulu, jangan buat baru bila sudah ada):
 ```
@@ -195,7 +195,7 @@ tests/fixtures/perception/   plhut_spans.json + sintetis + raster sintetis (P6)
 ---
 
 ### ▶ PAKET F2-P1 — Fondasi persepsi vektor (span + merge-run + locale + kontrak skema)
-**Prompt (historis, SUPERSEDED — dikerjakan langsung Claude):** `docs/prompts/PAAX_CODEX_PROMPT_FASE2_P1_FONDASI_PERSEPSI.md`
+**Prompt (historis, SUPERSEDED — dikerjakan langsung Saya):** `docs/prompts/PAAX_SAYA_PROMPT_FASE2_P1_FONDASI_PERSEPSI.md`
 **Status: ✅ SELESAI (2026-07-04 malam).** Implementasi:
 `services/document-intelligence/app/perception/{models.py,ingest/span_extractor.py,
 vector/merge_run.py,locale.py,tkg/models.py}`. Bug nyata ditemukan & diperbaiki
@@ -210,13 +210,13 @@ kontrak), `merge_runs` (RULE-EXT-03), deteksi locale (§2.6), mirror `TkgDocumen
 kanonik + contract test paritas skema. Fixture: span PLHUT nyata (derivatif) +
 1 PDF sintetis non-PLHUT.
 
-**Gerbang review Claude P1:** contract test hijau; merge-run lulus 5 anchor;
+**Gerbang review Saya P1:** contract test hijau; merge-run lulus 5 anchor;
 tak ada dep berat baru; suite lama tetap hijau; §0.1/INV-TKG-03 patuh.
 
 ---
 
 ### ▶ PAKET F2-P2 — Leksikon & grammar notasi (brain-00 §2), murni & teruji tebal
-**Prompt (historis, SUPERSEDED):** `docs/prompts/PAAX_CODEX_PROMPT_FASE2_P2_LEKSIKON_GRAMMAR.md`
+**Prompt (historis, SUPERSEDED):** `docs/prompts/PAAX_SAYA_PROMPT_FASE2_P2_LEKSIKON_GRAMMAR.md`
 **Status: ✅ SELESAI (2026-07-04 malam).** Implementasi:
 `app/perception/{lexicon/{prefixes,typo,units}.py,grammar/{type_code,rebar,
 section,mutu,level}.py,params.py}`. 37 test hijau, semua ~50 kasus tabel
@@ -225,7 +225,7 @@ Catatan: `result.py` terpisah dari spek awal TIDAK dibuat — tiap parser punya
 dataclass hasil sendiri (lebih sederhana, tanpa abstraksi base class yang
 belum perlu).
 
-**Gerbang review Claude P2:** ~50 anchor grammar hijau; kasus di luar kamus
+**Gerbang review Saya P2:** ~50 anchor grammar hijau; kasus di luar kamus
 BENAR jadi UNCLASSIFIED; fungsi murni; §2.7 inferensi satuan tercatat sbg
 assumption.
 
@@ -271,7 +271,7 @@ PLHUT (15 sheet, agregat): 16,24% → 33,75%** (hampir 2x lipat,
 `span_terklasifikasi` 543/1609) — kemajuan terukur jujur, **BUKAN**
 golden-match `test_plhut_golden.py` (itu masih butuh §5 binding penuh + simbol).
 
-**Gerbang review Claude P3 (tercapai untuk cakupan di atas):** sintetis
+**Gerbang review Saya P3 (tercapai untuk cakupan di atas):** sintetis
 non-PLHUT (2 fixture independen) lulus semua test; smoke PLHUT tidak crash,
 angka jujur dilaporkan & cocok anchor manual. Golden-match penuh ke
 `test_plhut_golden.py` MASIH gap terbuka (perlu §5 + simbol grafis).
@@ -304,7 +304,7 @@ sambung ke V-02/03/04/05/08 core-engine (jangan tulis ulang), blok METRICS
 GERBANG §7, renderer `.tkg.txt`, golden TKG harness (T-08) dibanding
 `buat_tkg_plhut()`, + sintetis kedua.
 
-**Gerbang review Claude P4 = GERBANG-2 TUTUP (backend) — BELUM SEPENUHNYA
+**Gerbang review Saya P4 = GERBANG-2 TUTUP (backend) — BELUM SEPENUHNYA
 TERCAPAI, dicatat jujur:** `DrawingAnalysisResponse` SUDAH punya `metrics`+
 `gerbang` nyata (bukan lagi dihitung di frontend) ✅. Cakupan V-01 pada PDF
 PLHUT nyata naik dari ~16% → **~34%** setelah grid geometri §3.1.1 (lihat
@@ -318,7 +318,7 @@ bukan KRITERIA gerbang itu sendiri.
 
 ### ▶ PAKET F2-P5-FIX — Perbaikan panel review persepsi (frontend, KOREKSI bukan bangun baru)
 **Prompt (historis, SUPERSEDED — koreksi lebih dalam dari rencana awal):**
-`docs/prompts/PAAX_CODEX_PROMPT_FASE2_P5_FIX_UI_PERSEPSI_REVIEW.md`
+`docs/prompts/PAAX_SAYA_PROMPT_FASE2_P5_FIX_UI_PERSEPSI_REVIEW.md`
 **Status: ✅ SELESAI (2026-07-04 malam) — lebih tuntas dari rencana awal.**
 Karena P4 kini benar-benar mengembalikan `metrics`/`gerbang` NYATA (bukan
 mock/nanti), `buildPerceptionReview()` di `tkg-workspace.tsx` DIROMBAK penuh:
@@ -329,16 +329,16 @@ diperluas dgn tipe `PerceptionMetrics`/`PerceptionGerbang`. Test regresi baru
 memastikan tak ada lagi kode gerbang buatan. **Diverifikasi end-to-end di
 browser nyata** (bukan cuma unit test) — lihat log verifikasi sesi ini.
 41 test web hijau, tsc bersih. PR #28 (mock version lama) BELUM ditutup
-(keputusan owner, bukan Claude).
+(keputusan owner, bukan Saya).
 
-**Gerbang review Claude P5-FIX (tercapai):** vitest+tsc hijau; tidak ada lagi
+**Gerbang review Saya P5-FIX (tercapai):** vitest+tsc hijau; tidak ada lagi
 kode `V-*` buatan di frontend; UI membaca data asli backend; verifikasi
 browser nyata sukses (upload→analyze→review menampilkan angka asli).
 
 ---
 
 ### ▶ PAKET F2-P6 — Raster (scan/foto) via PaddleOCR, berbagi pipeline dgn P1-P4
-**Prompt (historis, SUPERSEDED):** `docs/prompts/PAAX_CODEX_PROMPT_FASE2_P6_PADDLEOCR_RASTER.md`
+**Prompt (historis, SUPERSEDED):** `docs/prompts/PAAX_SAYA_PROMPT_FASE2_P6_PADDLEOCR_RASTER.md`
 **Status: ✅ KODE SELESAI, dependency SENGAJA belum di-install (2026-07-04 malam).**
 Implementasi: `app/perception/ingest/raster_detector.py` +
 `app/perception/ocr/paddle_ocr_extractor.py`, terintegrasi ke
@@ -395,10 +395,10 @@ ke PaddleOCR 3.7.0 nyata (`G:\paax-data\PaddleOCR-main`, diperiksa README,
   LAZY & OPSIONAL** — service tetap boot normal tanpa PaddleOCR terpasang;
   jalur raster mengembalikan warning jelas ("OCR raster tidak tersedia, install
   `paddleocr` extra") bila import gagal, BUKAN crash seluruh service. Ini
-  konsisten prinsip "fitur AI baru wajib fallback manual" (CLAUDE.md §2).
+  konsisten prinsip "fitur AI baru wajib fallback manual" (SAYA.md §2).
 - **OpenAI Vision fallback (bagian konsep owner §3/§7):** DITUNDA, bukan
   bagian P6. Ini domain "AI Multimodal Bagian B" yang SUDAH ADA promptnya
-  (`docs/prompts/PAAX_CODEX_PROMPT_AI_MULTIMODAL_LAMPIRAN_2026-07-03.md`) dan
+  (`docs/prompts/PAAX_SAYA_PROMPT_AI_MULTIMODAL_LAMPIRAN_2026-07-03.md`) dan
   masih menunggu owner centang kotak persetujuan biaya API. P6 SENGAJA tidak
   menyentuh itu supaya tidak duplikasi cakupan & tidak melompati gerbang
   persetujuan yang sudah ada.
@@ -430,7 +430,7 @@ sebagai data latih/tebakan, hanya sbg uji manual opsional)
 4. Sheet vektor (ber-text-layer) TIDAK PERNAH masuk jalur OCR (assert deteksi
    vektor vs raster benar) — ini menjaga RULE-EXT-05 vektor-dulu.
 
-**Gerbang review Claude P6:** dependency lazy terverifikasi (uninstall
+**Gerbang review Saya P6:** dependency lazy terverifikasi (uninstall
 `paddleocr` → service tetap boot & test lain tetap hijau); span OCR bentuknya
 identik kontrak P1; tak ada angka dipercaya 100% tanpa `needs_review`/warning;
 §0.1 lakmus (tak ada logic PLHUT-spesifik).
@@ -439,12 +439,12 @@ identik kontrak P1; tak ada angka dipercaya 100% tanpa `needs_review`/warning;
 
 ## 4. Sekuens, branch, dan pola kerja — DIREVISI setelah keputusan owner (malam)
 
-**Rencana asli** (di bawah, dipertahankan sbg arsip) mengasumsikan Codex
-mengerjakan tiap paket via branch+PR terpisah, Claude menulis prompt & mereview.
-**Owner mengubah ini di sesi yang sama**: Claude mengerjakan P1/P2/P3/P4/P6/
-P5-FIX LANGSUNG (tanpa Codex, tanpa branch per-paket) di working tree
+**Rencana asli** (di bawah, dipertahankan sbg arsip) mengasumsikan Saya
+mengerjakan tiap paket via branch+PR terpisah, Saya menulis prompt & mereview.
+**Owner mengubah ini di sesi yang sama**: Saya mengerjakan P1/P2/P3/P4/P6/
+P5-FIX LANGSUNG (tanpa Saya, tanpa branch per-paket) di working tree
 `feat/ui-premium-redesign` yang sudah aktif — supaya branch itu tetap SATU
-dashboard utama, bukan bercabang. **Codex hanya akan menjalankan `git commit`
+dashboard utama, bukan bercabang. **Saya hanya akan menjalankan `git commit`
 atas hasil yang sudah ada** (belum dieksekusi saat dokumen ini ditulis).
 
 ```
@@ -455,8 +455,8 @@ P6 ✅(kode, tanpa dependency asli) ──┘  kriteria cakupan/golden-match bel
 ```
 
 - Semua paket di atas **sudah diimplementasikan** (lihat status ✅ per paket
-  §3) — TIDAK ADA lagi yang menunggu Codex untuk *membangun*; sisanya
-  menunggu Codex untuk *commit*, dan Claude/owner untuk memutuskan iterasi
+  §3) — TIDAK ADA lagi yang menunggu Saya untuk *membangun*; sisanya
+  menunggu Saya untuk *commit*, dan Saya/owner untuk memutuskan iterasi
   lanjutan (rekonstruksi grid geometri, binding §5, deteksi simbol, install
   `paddleocr` sungguhan).
 - **Tidak ada branch baru dibuat** untuk paket-paket ini (beda dari rencana
@@ -481,13 +481,13 @@ P6 (PaddleOCR raster, butuh P1) ──────────┘ (span OCR ikut
 - **Branch:** tiap paket branch sendiri dari `main` (setelah PR #27 Fase 0
   merge) — Nama: `feat/fase2-p5-fix-ui-persepsi`, `feat/fase2-p1-fondasi-persepsi`,
   `feat/fase2-p2-leksikon-grammar`, `feat/fase2-p6-paddleocr-raster`, dst.
-  Draft PR, TIDAK auto-merge (CLAUDE.md §9). **JANGAN reimplement dari nol di
+  Draft PR, TIDAK auto-merge (SAYA.md §9). **JANGAN reimplement dari nol di
   branch lain bila PR yang benar sudah ada** (pelajaran §0.2 poin 3) — rebase
   atau merge, jangan tulis ulang.
-- **Pola:** Claude tulis prompt+anchor → Codex implement+commit+draft PR+report
-  → Claude review (pytest/vitest hijau + angka cocok + lakmus §0.1) → baru
-  finalkan prompt paket berikutnya. Report Codex ditaruh di `report/`.
-- **WAJIB BARU:** setiap dokumen rencana/prompt yang Claude tulis di sesi ini
+- **Pola:** Saya tulis prompt+anchor → Saya implement+commit+draft PR+report
+  → Saya review (pytest/vitest hijau + angka cocok + lakmus §0.1) → baru
+  finalkan prompt paket berikutnya. Report Saya ditaruh di `report/`.
+- **WAJIB BARU:** setiap dokumen rencana/prompt yang Saya tulis di sesi ini
   di-commit SEGERA (bukan dibiarkan untracked) — lihat §0.2 poin 1.
 
 ---
@@ -503,7 +503,7 @@ P6 (PaddleOCR raster, butuh P1) ──────────┘ (span OCR ikut
     HANYA setelah OCR (P6) sudah ada sbg lapis pertama — vision jadi fallback
     KETIKA OCR gagal/rendah confidence (persis alur di konsep owner §7), bukan
     pengganti OCR. Menunggu centang owner (biaya API) di
-    `docs/prompts/PAAX_CODEX_PROMPT_AI_MULTIMODAL_LAMPIRAN_2026-07-03.md`.
+    `docs/prompts/PAAX_SAYA_PROMPT_AI_MULTIMODAL_LAMPIRAN_2026-07-03.md`.
   - **Rekonsiliasi `surakarta.json` ganda** (repo vs `G:\paax-data`).
 
 ---
@@ -512,10 +512,10 @@ P6 (PaddleOCR raster, butuh P1) ──────────┘ (span OCR ikut
 
 | Risiko | Mitigasi |
 |---|---|
-| Overfit ke PLHUT (langgar §0.1) | Wajib fixture sintetis non-PLHUT tiap paket; lakmus review Claude. |
+| Overfit ke PLHUT (langgar §0.1) | Wajib fixture sintetis non-PLHUT tiap paket; lakmus review Saya. |
 | Table extraction PDF nyata rapuh | Pakai `find_tables()` PyMuPDF (vektor) / `TableStructureRecognition` (raster, iterasi lanjutan); sel gagal → raw+W-CEL. |
 | Skema TKG divergen makin jauh | P1 kunci kontrak paritas via contract test. |
-| PDF PLHUT tak accessible ke Codex | Generator baca via env `PAAX_PLHUT_PDF`, GAGAL keras; commit spans JSON derivatif. |
+| PDF PLHUT tak accessible ke Saya | Generator baca via env `PAAX_PLHUT_PDF`, GAGAL keras; commit spans JSON derivatif. |
 | Scope creep (vision/CV berat) | Fase 2 = vektor+OCR-teks deterministik SAJA; vision-LLM jalur terpisah owner-gated. |
 | PaddleOCR berat/gagal install | Dependency lazy-optional; service tetap boot tanpa itu; warning jelas. |
 | **Dokumen hilang lagi** (insiden hari ini) | Commit dokumen rencana/prompt SEGERA setelah ditulis; jangan biarkan untracked lintas-sesi. |
@@ -527,7 +527,7 @@ P6 (PaddleOCR raster, butuh P1) ──────────┘ (span OCR ikut
 
 1. **Konfirmasi commit dokumen rencana ini SEKARANG** (supaya tidak hilang lagi).
 2. **Merge PR #27** (Fase 0) — atau izin stacking di atas branch Fase 0.
-3. **Akses PDF PLHUT** untuk Codex (env `PAAX_PLHUT_PDF`) saat menjalankan P1.
-4. **Urutan eksekusi**: rekomendasi Claude = P5-FIX (cepat) → P1 & P2 (paralel)
+3. **Akses PDF PLHUT** untuk Saya (env `PAAX_PLHUT_PDF`) saat menjalankan P1.
+4. **Urutan eksekusi**: rekomendasi Saya = P5-FIX (cepat) → P1 & P2 (paralel)
    → P6 (paralel dgn P3, butuh P1) → P3 → P4 (Gerbang-2 tutup, termasuk
    menyerap P6). Setuju urutan ini?

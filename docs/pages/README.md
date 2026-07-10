@@ -2,8 +2,8 @@
 
 > Dokumen ini mendefinisikan **aturan & batas tanggung jawab tiap halaman** di
 > `apps/web`, plus peran AI di tiap halaman. Sumber kebenaran utama tetap
-> `CLAUDE.md` (Aturan Emas) & `docs/MASTER_PLAN.md`. Kalau ada konflik,
-> CLAUDE.md menang.
+> `SAYA.md` (Aturan Emas) & `docs/MASTER_PLAN.md`. Kalau ada konflik,
+> SAYA.md menang.
 
 Dibuat: 2026-06-28. Status tiap fitur ditandai **[ada]** (sudah jalan),
 **[sebagian]** (kerangka ada), atau **[roadmap]** (belum dibangun).

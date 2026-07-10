@@ -1,0 +1,141 @@
+
+> @paax/web@0.6.0 dev G:\paax-ai-main\apps\web
+> next dev --port 3000
+
+   ▲ Next.js 15.5.19
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.8:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 3.9s
+ ○ Compiling /proyek ...
+ ✓ Compiled /proyek in 11.6s (948 modules)
+ GET /proyek 200 in 13075ms
+ GET /proyek 200 in 328ms
+ GET /proyek 200 in 1132ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 2.5s (945 modules)
+ GET /dashboard 200 in 2890ms
+ ○ Compiling /gambar-kerja-ai ...
+ ✓ Compiled /gambar-kerja-ai in 1063ms (940 modules)
+ GET /gambar-kerja-ai 200 in 1305ms
+ GET /gambar-kerja-ai 200 in 320ms
+ GET /proyek 200 in 2702ms
+ GET /proyek 200 in 322ms
+ GET /dashboard 200 in 149ms
+ GET /gambar-kerja-ai 200 in 108ms
+ GET /dashboard 200 in 81ms
+ GET /proyek 200 in 132ms
+ GET /gambar-kerja-ai 200 in 63ms
+ GET /proyek 200 in 63ms
+ GET /proyek 200 in 69ms
+ GET /proyek 200 in 54ms
+ GET /proyek 200 in 57ms
+ GET /dashboard 200 in 79ms
+ ○ Compiling /pengaturan ...
+ ✓ Compiled /pengaturan in 3.5s (947 modules)
+ GET /pengaturan 200 in 4025ms
+ GET /dashboard 200 in 76ms
+ ✓ Compiled in 862ms (330 modules)
+ GET /dashboard 200 in 209ms
+ GET /proyek 200 in 200ms
+ ✓ Compiled in 2s (961 modules)
+ GET /dashboard 200 in 591ms
+ GET /proyek 200 in 591ms
+ ✓ Compiled in 964ms (330 modules)
+ GET /dashboard 200 in 195ms
+ GET /proyek 200 in 198ms
+ ✓ Compiled in 765ms (330 modules)
+ ✓ Compiled in 670ms (330 modules)
+ GET /dashboard 200 in 877ms
+ GET /proyek 200 in 879ms
+ GET /dashboard 200 in 214ms
+ GET /proyek 200 in 84ms
+ ✓ Compiled in 1814ms (961 modules)
+ GET /dashboard 200 in 457ms
+ GET /proyek 200 in 462ms
+ ✓ Compiled in 419ms (330 modules)
+ ✓ Compiled in 565ms (330 modules)
+ GET /dashboard 200 in 782ms
+ GET /proyek 200 in 782ms
+ GET /dashboard 200 in 140ms
+ GET /proyek 200 in 130ms
+ ✓ Compiled in 1213ms (330 modules)
+ ✓ Compiled in 709ms (330 modules)
+ GET /dashboard 200 in 917ms
+ GET /proyek 200 in 834ms
+ GET /dashboard 200 in 231ms
+ GET /proyek 200 in 231ms
+ ✓ Compiled in 2.5s (961 modules)
+ GET /dashboard 200 in 616ms
+ GET /proyek 200 in 618ms
+ ✓ Compiled in 721ms (330 modules)
+ ✓ Compiled in 432ms (330 modules)
+ GET /dashboard 200 in 630ms
+ GET /proyek 200 in 628ms
+ GET /dashboard 200 in 165ms
+ GET /proyek 200 in 152ms
+ ✓ Compiled in 324ms (330 modules)
+ GET /dashboard 200 in 184ms
+ GET /proyek 200 in 180ms
+ ✓ Compiled in 433ms (330 modules)
+ GET /dashboard 200 in 167ms
+ GET /proyek 200 in 167ms
+ ✓ Compiled in 364ms (330 modules)
+ ✓ Compiled in 300ms (330 modules)
+ GET /dashboard 200 in 481ms
+ GET /proyek 200 in 497ms
+ GET /dashboard 200 in 130ms
+ GET /proyek 200 in 110ms
+ ✓ Compiled in 572ms (330 modules)
+ ✓ Compiled in 308ms (330 modules)
+ GET /dashboard 200 in 439ms
+ GET /proyek 200 in 449ms
+ GET /dashboard 200 in 145ms
+ GET /proyek 200 in 136ms
+ ✓ Compiled in 320ms (330 modules)
+ ✓ Compiled in 299ms (330 modules)
+ GET /dashboard 200 in 427ms
+ GET /proyek 200 in 427ms
+ GET /dashboard 200 in 136ms
+ GET /proyek 200 in 130ms
+ ✓ Compiled in 295ms (330 modules)
+ ✓ Compiled in 540ms (330 modules)
+ GET /dashboard 200 in 668ms
+ GET /proyek 200 in 661ms
+ GET /dashboard 200 in 133ms
+ GET /proyek 200 in 131ms
+ ✓ Compiled in 319ms (330 modules)
+ GET /dashboard 200 in 183ms
+ GET /proyek 200 in 180ms
+ ✓ Compiled in 351ms (330 modules)
+ GET /dashboard 200 in 181ms
+ GET /proyek 200 in 182ms
+ ✓ Compiled in 669ms (330 modules)
+ ✓ Compiled in 333ms (330 modules)
+ GET /dashboard 200 in 465ms
+ GET /proyek 200 in 473ms
+ GET /dashboard 200 in 142ms
+ GET /proyek 200 in 131ms
+ ✓ Compiled in 318ms (330 modules)
+ ✓ Compiled in 282ms (330 modules)
+ GET /dashboard 200 in 406ms
+ GET /proyek 200 in 404ms
+ GET /dashboard 200 in 136ms
+ GET /proyek 200 in 127ms
+ ✓ Compiled in 308ms (330 modules)
+ ✓ Compiled in 572ms (330 modules)
+ GET /dashboard 200 in 704ms
+ GET /proyek 200 in 680ms
+ GET /dashboard 200 in 167ms
+ GET /proyek 200 in 159ms
+ ✓ Compiled in 329ms (330 modules)
+ GET /dashboard 200 in 184ms
+ GET /proyek 200 in 184ms
+ ✓ Compiled in 340ms (330 modules)
+ ✓ Compiled in 333ms (330 modules)
+ GET /dashboard 200 in 482ms
+ GET /proyek 200 in 483ms
+ GET /dashboard 200 in 187ms
+ GET /proyek 200 in 182ms

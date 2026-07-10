@@ -1,6 +1,6 @@
 # PAAX — Rencana Besar: Dari "OCR Viewer" ke "AI Estimator" (Gambar → RAB) (2026-07-13)
 
-> Ditulis Claude, 2026-07-13, atas instruksi owner (`docs/ai-map/prompt claude.txt`,
+> Ditulis Saya, 2026-07-13, atas instruksi owner (`docs/ai-map/prompt saya.txt`,
 > file itu SENGAJA dibiarkan sbg arsip instruksi asli — jangan dihapus tanpa
 > tanya). Ini **melanjutkan & menggantikan arah lanjutan** dari
 > `docs/plans/PAAX_GAMBAR_TEKNIK_SIPIL_BIG_PLAN_2026-07-05.md` (Fase 0-S sudah
@@ -55,7 +55,7 @@ lapisan structuring BOQ, takeoff formula cuma cover beton/bekisting/besi
 struktural). Rencana ini menangani keduanya, berurutan dari yang paling
 murah-tapi-berdampak ke yang paling besar.
 
-## 0.1 Batasan yang TIDAK BERUBAH (Aturan Emas, CLAUDE.md §1)
+## 0.1 Batasan yang TIDAK BERUBAH (Aturan Emas, SAYA.md §1)
 
 Ini bagian PALING PENTING dari dokumen ini karena permintaan owner
 ("AI harus menalar", "AI harus berpikir seperti estimator", "AI boleh buat
@@ -70,7 +70,7 @@ tidak dijaga ketat. Interpretasi yang BENAR & dipakai di seluruh rencana ini:
   bukan aritmetika.
 - **AI/reasoning TIDAK PERNAH**: menghitung volume/mandays/HSP/subtotal RAB
   sendiri. Volume tetap wajib lewat rumus `services/core-engine` (§5
-  CLAUDE.md, `app/tkg/takeoff.py`). Kalau suatu jenis pekerjaan BELUM punya
+  SAYA.md, `app/tkg/takeoff.py`). Kalau suatu jenis pekerjaan BELUM punya
   rumus takeoff (mis. pekerjaan tanah, dinding, sanitasi — lihat Fase X), AI
   **TIDAK BOLEH mengarang angkanya** — item itu masuk daftar "belum bisa
   dihitung otomatis, perlu input manual", bukan diberi angka tebakan.
@@ -98,12 +98,12 @@ proyek ini).
 |---|---|---|
 | U | Perbaiki noise konsolidasi: grid-conflict relatif+dedupe, filter teks metadata administratif | 🟢 selesai — verifikasi PDF nyata: 0 "tinggi" severity (dari puluhan berulang), 85/88 sheet terklasifikasi |
 | U-2 | Tutup gap page-type classifier (cover/daftar-gambar/situasi/tampak/potongan generik) | 🟢 selesai — kategori baru terpakai nyata di PDF 88-halaman |
-| T | AHSP auto-suggest (spek sudah ada: `docs/prompts/PAAX_CODEX_PROMPT_FASE_T_AHSP_AUTO_SUGGEST_2026-07-12.md`) | 🟢 selesai — aktif utk sebagian bekisting (margin terverifikasi), beton/besi sengaja tidak (ambigu nyata, lihat `docs/ai-map/STATE.md` Fase T) |
+| T | AHSP auto-suggest (spek sudah ada: `docs/prompts/PAAX_SAYA_PROMPT_FASE_T_AHSP_AUTO_SUGGEST_2026-07-12.md`) | 🟢 selesai — aktif utk sebagian bekisting (margin terverifikasi), beton/besi sengaja tidak (ambigu nyata, lihat `docs/ai-map/STATE.md` Fase T) |
 | V | Reasoning lintas-halaman lanjutan: linking elemen→detail yang lebih toleran (variasi penulisan kode), fallback klasifikasi halaman via LLM terbatas (opsional, hanya kalau rule-based gagal) | ⚪ belum mulai |
 | W | Lapisan "Item Pekerjaan" (BOQ grouping): ubah `TakeoffItem`+registry jadi baris pekerjaan berkategori (persiapan/tanah/pondasi/sloof/kolom/balok/pelat/dinding/lantai/plafon/atap/sanitasi/drainase/finishing) — bagian yg SUDAH ada rumus (beton/bekisting/besi) dipetakan langsung, bagian yg BELUM ada rumus ditandai jujur "perlu rumus baru" | ⚪ belum mulai |
 | X | **KOREKSI 2026-07-13 (lihat catatan di bawah §4)**: rumus tanah/dinding/ arsitektur/baja SUDAH ADA di `app/takeoff/*` (Fase 3b, `docs/BRAIN_ALIGNMENT.md`) — gap sebenarnya adalah BRIDGING dari TKG/konsolidasi ke input model-model itu, bukan menulis rumus dari nol. Sisa gap rumus murni jauh lebih kecil dari perkiraan awal (F-F06, F-G04/G06-G14, F-C07-C10) | 🟢 X1 (bridging galian footplat) selesai — lihat §4a |
 | X1B | Perbaikan arsitektur packaging `paax_schemas` (installable, bukan fallback `sys.path.insert`) + investigasi kenapa dimensi footplat PLHUT tidak sampai ke `TypeRecord.dimensi` | 🟢 selesai (2026-07-05, PR #38) — lihat §4a |
-| X2 | Lapisan AI-assist klasifikasi/binding — LLM fallback paralel (bukan pengganti) utk `zone_classifier.py`/`consolidate.py` saat rule-based gagal, dipicu bukti nyata X1B (13/13 `pondasi_telapak` PLHUT `perlu_review` krn dimensi hanya di halaman detail/grafis). Detail penuh: §X2 di bawah. | 🟢 slice #1 (dimensi footplat) + slice #2 (zona sheet) SELESAI diimplementasikan langsung oleh Claude 2026-07-05 (owner mengubah rencana dari "tulis prompt Codex" jadi "kerjakan langsung"), **belum di-commit**. `binding.py` (label→grid) belum jadi slice terpisah. |
+| X2 | Lapisan AI-assist klasifikasi/binding — LLM fallback paralel (bukan pengganti) utk `zone_classifier.py`/`consolidate.py` saat rule-based gagal, dipicu bukti nyata X1B (13/13 `pondasi_telapak` PLHUT `perlu_review` krn dimensi hanya di halaman detail/grafis). Detail penuh: §X2 di bawah. | 🟢 slice #1 (dimensi footplat) + slice #2 (zona sheet) SELESAI diimplementasikan langsung oleh Saya 2026-07-05 (owner mengubah rencana dari "tulis prompt Saya" jadi "kerjakan langsung"), **belum di-commit**. `binding.py` (label→grid) belum jadi slice terpisah. |
 | Y | Alur 1-tombol: rename "Analisa Gambar Kerja" → "Analisa RAB dari Gambar Kerja", wiring penuh upload→perception→konsolidasi→BOQ→takeoff→AHSP-suggest→isi halaman RAB otomatis; panel data mentah (grid/elemen/OCR) dipindah ke "mode developer" (toggle, bukan dihapus dari kode); halaman RAB tetap bisa diedit manual | ⚪ belum mulai — lihat catatan interaksi dgn X2 di §X2.4 |
 | Z | Verifikasi ulang PLHUT (1).pdf yg sama dgn screenshot bukti, ukur noise 4281→berapa, update STATE.md | ⚪ belum mulai |
 
@@ -131,7 +131,7 @@ Legenda: 🟢 selesai · 🟡 sebagian · ⚪ belum mulai.
   bukan bug alias field (`bridging_tanah.py` sudah cari `b/b_ft/lebar/
   lebar_bawah` & `l/l_ft/panjang/panjang_bawah`), tapi gap ekstraksi
   detail/grafis. Tidak ada perbaikan dipaksakan — status `perlu_review`
-  tetap jujur. **Diverifikasi ulang di sesi ini (Claude, 2026-07-05)**:
+  tetap jujur. **Diverifikasi ulang di sesi ini (Saya, 2026-07-05)**:
   klaim packaging & investigasi cocok dgn kondisi kode nyata (`git show
   6f355a7`, grep `sys.path.insert`/`except ModuleNotFoundError` di source
   target = kosong, `bridging_tanah.py` baris 91-92 memang mencari alias yang
@@ -240,9 +240,9 @@ terklasifikasi, assert cover-like sheet di fixture sintetis baru juga benar).
 fase itu mulai dikerjakan, supaya tidak jadi dokumen basi kalau desain
 berubah setelah lihat hasil Fase U)
 
-- **Fase T** — jalankan spek yang SUDAH lengkap (`PAAX_CODEX_PROMPT_FASE_T_
-  AHSP_AUTO_SUGGEST_2026-07-12.md`), dieksekusi LANGSUNG oleh Claude
-  (bukan Codex, konsisten mode sesi ini), tanpa mengubah spek intinya.
+- **Fase T** — jalankan spek yang SUDAH lengkap (`PAAX_SAYA_PROMPT_FASE_T_
+  AHSP_AUTO_SUGGEST_2026-07-12.md`), dieksekusi LANGSUNG oleh Saya
+  (bukan Saya, konsisten mode sesi ini), tanpa mengubah spek intinya.
 - **Fase V** — perluas `consolidate.py` type-record binding: saat ini
   binding registry per `kode` sudah ADA (baris 82-106) tapi PERSIS
   string-match; owner minta toleransi variasi penulisan (K1 vs K-1 vs
@@ -290,12 +290,12 @@ dimensinya (`b`, `l`, `d_gali`) hanya ada di halaman detail/grafis (mis.
 halaman 49: kode `PC 1/2/3` + angka `1500/1300/...` berserakan sbg span teks
 lepas, BUKAN tabel kode-dimensi yang bisa diparse `page.find_tables()`).
 Angka ini jauh di atas ambang 30-40% yang dipakai sbg sinyal keputusan (lihat
-diskusi owner-Claude 2026-07-05): ini alasan kuat utk memprioritaskan
+diskusi owner-Saya 2026-07-05): ini alasan kuat utk memprioritaskan
 lapisan AI-assist berbasis-teks INI lebih dulu, sebelum menaikkan investasi
 ke Vision-LLM piksel penuh (v1.0, masih ditunda) yang risikonya jauh lebih
 tinggi (akurasi ~60% baca dimensi dari piksel).
 
-### X2.1 Prinsip desain (WAJIB, mengunci Aturan Emas — lihat `CLAUDE.md` §1.1)
+### X2.1 Prinsip desain (WAJIB, mengunci Aturan Emas — lihat `SAYA.md` §1.1)
 
 1. **Regex/rule-based tetap fast-path utama** — cepat, gratis, deterministik,
    sudah teruji (`zone_classifier.py`, `binding.py`, `consolidate.py`,
@@ -354,13 +354,13 @@ lain menyusul di slice berikutnya setelah pola ini terbukti aman:
   sungguhan (deterministik, gratis, cepat). Integrasi nyata (opsional,
   di belakang `GEMINI_API_KEY` ada/tidak) diverifikasi terpisah, pola sama
   dgn PaddleOCR (`ocr` extra, degradasi anggun kalau dependency/key tak ada).
-- Detail teknis & kriteria terima lengkap: lihat prompt Codex
-  `docs/prompts/PAAX_CODEX_PROMPT_FASE_X2_AI_ASSIST_KLASIFIKASI_BINDING_2026-07-05.md`.
+- Detail teknis & kriteria terima lengkap: lihat prompt Saya
+  `docs/prompts/PAAX_SAYA_PROMPT_FASE_X2_AI_ASSIST_KLASIFIKASI_BINDING_2026-07-05.md`.
 
 ### X2.3 Keputusan arsitektur yang perlu diperhatikan
 
 - **Kenapa Python (document-intelligence), bukan Node (ai-orchestrator)?**
-  `CLAUDE.md` §3 Lapis 2A (Persepsi) SUDAH mencantumkan "Vision-LLM" sbg
+  `SAYA.md` §3 Lapis 2A (Persepsi) SUDAH mencantumkan "Vision-LLM" sbg
   teknologi yang sah di lapis ini. Memanggil LLM langsung dari
   document-intelligence (Python) lebih dekat ke data (span+koordinat sudah
   ada di proses yang sama, tidak perlu round-trip HTTP tambahan ke Node).
@@ -370,7 +370,7 @@ lain menyusul di slice berikutnya setelah pola ini terbukti aman:
   baru ditambahkan. `ai_assist/client.py` pakai REST call manual via stdlib
   `urllib.request` (pola sama `bridging_tanah.py::HttpTanahTakeoffClient`),
   bukan SDK `google-genai` — pilihan ini menghindari dependency baru sama
-  sekali, konsisten `CLAUDE.md` §2.
+  sekali, konsisten `SAYA.md` §2.
 
 ### X2.3a Perbandingan provider AI (Gemini vs alternatif) — 2026-07-05
 
@@ -378,7 +378,7 @@ Ditambahkan sbg dokumentasi referensi (owner meminta pencatatan opsi,
 **BUKAN mengganti keputusan/implementasi** — `GeminiAiAssistClient` TETAP
 default aktif di `ai_assist/client.py`). Tabel ini relevan spesifik utk
 lapisan AI-assist X2 (yang HANYA butuh baca/reasoning TEKS, bukan
-vision/piksel — lihat `CLAUDE.md` §1.1), jadi kriteria "harus multimodal"
+vision/piksel — lihat `SAYA.md` §1.1), jadi kriteria "harus multimodal"
 tidak berlaku mutlak seperti pada Tahap 1-2 pipeline gambar (§6.1
 `MASTER_PLAN.md`, vision-LLM ~60% akurat dimensi, tetap dihindari).
 
@@ -407,8 +407,8 @@ halusinasi X2) — bukan perubahan implementasi sesi ini.
 ### X2.4 Interaksi dengan Fase Y (tombol 1-klik)
 
 Fase Y (alur 1-tombol "Analisa RAB dari Gambar Kerja") **TIDAK terblokir**
-oleh X2 — Y bisa dikerjakan Claude (frontend) secara paralel dgn X2 dikerjakan
-Codex (backend), sesuai pembagian kerja `CLAUDE.md` §9. Tapi urutan yang
+oleh X2 — Y bisa dikerjakan Saya (frontend) secara paralel dgn X2 dikerjakan
+Saya (backend), sesuai pembagian kerja `SAYA.md` §9. Tapi urutan yang
 disarankan: **selesaikan slice pertama X2 dulu (atau minimal jalankan
 paralel, verifikasi bareng) sebelum mengklaim demo Fase Y "selesai"** —
 alasannya: nilai demo 1-tombol Y sangat bergantung pada berapa banyak item
@@ -425,7 +425,7 @@ harus sebelum Y MULAI dikerjakan.
 
 - **Fase S (perbaikan ranking kandidat harga Semarang/Kejaksaan)**: sudah
   selesai & terverifikasi, masih **BELUM di-commit** di branch
-  `fix/semarang-candidate-ranking-claude-direct`. TIDAK bagian dari rencana
+  `fix/semarang-candidate-ranking-saya-direct`. TIDAK bagian dari rencana
   gambar→RAB ini (beda domain: harga vs perception) — tetap menunggu
   keputusan commit dari owner, dikerjakan di working tree yang sama.
 - **Fase T (AHSP auto-suggest)**: SEKARANG masuk sbg bagian resmi rencana
@@ -441,7 +441,7 @@ harus sebelum Y MULAI dikerjakan.
 
 - Tiap fase: pytest core-engine + document-intelligence, vitest + tsc web,
   fixture sintetis WAJIB sebelum smoke PLHUT/PDF asli dianggap valid.
-- Tidak commit — Claude kerja di working tree, laporan jujur tiap fase
+- Tidak commit — Saya kerja di working tree, laporan jujur tiap fase
   selesai (bukan minta izin tiap langkah kecil, konsisten mode sesi ini),
   TAPI berhenti & tanya kalau ketemu keputusan arsitektural yang sungguh
   butuh owner (mis. Fase Y soal hapus/tidak tombol RAB manual).

@@ -1,10 +1,10 @@
 # PAAX — Rencana Kerja Frontend Pasca-Bridging (2026-07-05)
 
-> Ditulis Claude, 2026-07-05, atas instruksi owner. **Ini rencana kerja
-> Claude sendiri — BUKAN prompt Codex, BUKAN untuk diserahkan ke Codex.**
+> Ditulis Saya, 2026-07-05, atas instruksi owner. **Ini rencana kerja
+> Saya sendiri — BUKAN prompt Saya, BUKAN untuk diserahkan ke Saya.**
 > Semua item di sini menyentuh `apps/web/**`, yang menurut aturan baku
-> proyek ini (`CLAUDE.md` §9) SELALU jadi domain Claude, tidak pernah
-> Codex. Dokumen ini murni utk didiskusikan dgn owner dulu — **BELUM ada
+> proyek ini (`SAYA.md` §9) SELALU jadi domain Saya, tidak pernah
+> Saya. Dokumen ini murni utk didiskusikan dgn owner dulu — **BELUM ada
 > eksekusi apa pun**.
 >
 > Latar belakang: sepanjang sesi 2026-07-05 (lihat `report-remote/
@@ -52,7 +52,7 @@ sudah pernah ditegaskan di rencana besar sebelumnya).
 
 **Kenapa PALING PRIORITAS**: ini satu-satunya jalur yang membuat SELURUH
 pekerjaan backend sesi ini (7 kategori bridging) benar-benar terlihat &
-berguna bagi user. Tanpa ini, semua kerja Codex hari ini "tidur" di
+berguna bagi user. Tanpa ini, semua kerja Saya hari ini "tidur" di
 backend.
 
 **Kompleksitas**: **BESAR**. Bukan sekadar wiring tombol — perlu
@@ -78,7 +78,7 @@ sbg input terstruktur → panggil ulang engine via endpoint yang sesuai)
 atau **Tolak** (tetap `perlu_review`, user isi manual).
 
 **Kenapa ini WAJIB, bukan nice-to-have**: ini GERBANG REVIEW MANUSIA yang
-disebut eksplisit di `CLAUDE.md` §1.1 ("Tidak ada auto-commit ke input
+disebut eksplisit di `SAYA.md` §1.1 ("Tidak ada auto-commit ke input
 engine... menunggu gerbang review manusia sebelum dipakai sebagai input
 `core-engine`") — **gerbang itu SAAT INI TIDAK ADA WUJUDNYA DI UI SAMA
 SEKALI**. Backend sudah benar (tidak pernah auto-commit), tapi tanpa UI
@@ -163,7 +163,7 @@ bisa ditunda ke iterasi berikutnya.
 - **1.1+1.2 dulu** — ini SATU-SATUNYA jalur yang membuat kerja backend
   hari ini (7 kategori bridging, ratusan test) mulai memberi nilai nyata
   ke user. Menunda ini berarti menunda nilai dari pekerjaan yang SUDAH
-  selesai & dibayar (secara token/waktu Codex) tapi belum dipanen.
+  selesai & dibayar (secara token/waktu Saya) tapi belum dipanen.
   Digabung krn secara teknis satu alur UI yang sama (halaman "Review
   Gambar" perlu menampilkan WORK ITEMS, dan work items yang
   `perlu_review` dgn usulan AI perlu kartu approval — memisahnya jadi 2
@@ -196,13 +196,13 @@ bisa ditunda ke iterasi berikutnya.
 - **1.2 kemungkinan menyingkap kebutuhan desain baru** (endpoint "approve
   usulan AI" mungkin belum ada di `core-engine`/`document-intelligence`)
   — ini perlu diinvestigasi LEBIH DALAM di awal 1.1/1.2, bisa jadi
-  memunculkan kebutuhan spek backend TAMBAHAN (yang berarti prompt Codex
+  memunculkan kebutuhan spek backend TAMBAHAN (yang berarti prompt Saya
   baru, bukan pekerjaan frontend murni) — akan dilaporkan terpisah kalau
   ditemukan saat mulai kerja, bukan diasumsikan sekarang.
 - **1.4 butuh keputusan operasional**: `services/ai-orchestrator` harus
   benar-benar berjalan (lokal via `pnpm dev` atau dideploy) supaya wiring
   ini bisa diuji nyata — bukan cuma soal kode.
-- PR #39 & #40 (Codex) masih **draft, belum di-review/merge owner** —
+- PR #39 & #40 (Saya) masih **draft, belum di-review/merge owner** —
   disarankan direview & di-merge (atau diputuskan nasibnya) SEBELUM
   frontend mulai bergantung padanya, supaya tidak membangun UI di atas
   API yang mungkin masih berubah.

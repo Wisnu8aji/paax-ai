@@ -1,0 +1,28 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "paax-web",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": [
+        "/c",
+        "set PATH=C:\\Program Files\\nodejs;%APPDATA%\\npm;%PATH% && pnpm --dir apps/web dev"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "paax-doc-intel",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8083"],
+      "cwd": "services/document-intelligence",
+      "port": 8083
+    },
+    {
+      "name": "paax-core-engine",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8081"],
+      "cwd": "services/core-engine",
+      "port": 8081
+    }
+  ]
+}

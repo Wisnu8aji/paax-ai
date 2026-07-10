@@ -23,7 +23,7 @@ from app.perception.tkg.models import Grid, RebarSpec
 class AiZoneSuggestion(BaseModel):
     """Usulan AI-assist (Fase X2) utk sheet yang gagal diklasifikasi
     rule-based (`zone is None`). TIDAK PERNAH menimpa `zone` asli -- murni
-    metadata tambahan menunggu review manusia. Lihat `CLAUDE.md` §1.1 dan
+    metadata tambahan menunggu review manusia. Lihat `SAYA.md` §1.1 dan
     `app/perception/ai_assist/zone_assist.py`."""
     zone: str
     confidence: float
@@ -62,7 +62,7 @@ class AiDimensionSuggestion(BaseModel):
     detail/grafis, bukan tabel kode-dimensi -- temuan X1/X1B). TIDAK PERNAH
     dipakai langsung sbg input `core-engine` -- ini murni kandidat yang
     sudah lolos validasi deterministik (anti-halusinasi angka + rentang
-    wajar), menunggu gerbang review manusia. Lihat `CLAUDE.md` §1.1 dan
+    wajar), menunggu gerbang review manusia. Lihat `SAYA.md` §1.1 dan
     `app/perception/ai_assist/dimension_assist.py`."""
     b_mm: Optional[float] = None
     l_mm: Optional[float] = None
@@ -165,7 +165,7 @@ class AiMepSuggestion(BaseModel):
     """Usulan AI-assist (2026-07-05, lanjutan Fase X2, slice TERAKHIR
     rangkaian) utk SATU jenis titik MEP (lampu/stop kontak/saklar/dll).
     HANYA dari catatan jumlah eksplisit di teks -- deteksi simbol/ikon dari
-    piksel TIDAK dicoba (vision-on-pixel tetap dihindari, `CLAUDE.md`
+    piksel TIDAK dicoba (vision-on-pixel tetap dihindari, `SAYA.md`
     §1.1). Lihat `app/perception/ai_assist/mep_assist.py`."""
     jenis: str
     count: Optional[int] = None

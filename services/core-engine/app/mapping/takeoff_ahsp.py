@@ -1,11 +1,11 @@
 """
 PAAX Core Engine — Fase T: usulan AHSP untuk `TakeoffItem` (rencana besar
 2026-07-13, `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md`;
-spek dasar `docs/prompts/PAAX_CODEX_PROMPT_FASE_T_AHSP_AUTO_SUGGEST_2026-07-
-12.md`, batasan dari `PAAX_CODEX_PROMPT_FASE_J_GENERATE_RAB_WIRING_2026-07-
+spek dasar `docs/prompts/PAAX_SAYA_PROMPT_FASE_T_AHSP_AUTO_SUGGEST_2026-07-
+12.md`, batasan dari `PAAX_SAYA_PROMPT_FASE_J_GENERATE_RAB_WIRING_2026-07-
 06.md` §4 tetap berlaku penuh).
 
-ATURAN EMAS (CLAUDE.md §1): modul ini HANYA memanggil `search_ahsp` yang
+ATURAN EMAS (SAYA.md §1): modul ini HANYA memanggil `search_ahsp` yang
 SUDAH ADA (token-overlap deterministik, TIDAK diubah di sini) untuk
 MENGUSULKAN kode AHSP — tidak pernah menghitung/mengarang angka RAB. Usulan
 selalu terlihat (`ahsp_candidates`) dan ditandai eksplisit

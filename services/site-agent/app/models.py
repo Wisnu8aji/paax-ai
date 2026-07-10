@@ -5,7 +5,7 @@ Aturan emas:
   - actual_progress_pct HANYA bisa diisi manusia (role=lapangan/pm/owner).
   - TIDAK ADA proses otomatis/AI yang mengisi actual_progress_pct.
   - DILARANG KERAS: import google.generativeai, vision LLM, atau apapun yang
-    menganalisa gambar. Vision-LLM tetap ditunda per CLAUDE.md §1.1.
+    menganalisa gambar. Vision-LLM tetap ditunda per SAYA.md §1.1.
 """
 from __future__ import annotations
 from typing import Optional, Literal

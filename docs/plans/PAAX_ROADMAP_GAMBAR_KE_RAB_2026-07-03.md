@@ -4,7 +4,7 @@
 > TXT02 rumus · TXT03 skill/pipeline/roadmap). Dokumen ini = pemetaan keadaan
 > NYATA repo hari ini ke gerbang brain (F0–F5) + rencana bertahap sampai satu
 > gambar kerja nyata benar-benar menghasilkan RAB yang BENAR (bukan sekadar
-> "menghasilkan sesuatu"). Ditulis Claude untuk review owner.
+> "menghasilkan sesuatu"). Ditulis Saya untuk review owner.
 
 > ## ✅ STATUS TERKINI (2026-07-03, sesi lanjutan) — GERBANG-0a TUTUP + harga Surakarta nyata
 > Owner setuju Fase 0 dulu, mengizinkan pakai harga ALFA.xlsx sbg HSD Surakarta
@@ -13,8 +13,8 @@
 > RAB total dev **+0,0009%** (harga fixture) dan **+1,37%** (harga
 > `data/harga-satuan/surakarta.json`, 112 resource NYATA, dev 100% dijelaskan oleh
 > inkonsistensi internal ALFA sendiri). Detail: `docs/plans/PAAX_FASE0B_GAP_HARGA_2026-07-03.md`,
-> prompt commit `docs/prompts/PAAX_CODEX_PROMPT_FASE0A_HSP_GOLDEN.md` (belum
-> di-commit — Codex yang commit). Tabel "Headline" §0 di bawah adalah snapshot
+> prompt commit `docs/prompts/PAAX_SAYA_PROMPT_FASE0A_HSP_GOLDEN.md` (belum
+> di-commit — Saya yang commit). Tabel "Headline" §0 di bawah adalah snapshot
 > ANALISIS AWAL (sebelum kerja hari ini) — angka "Data grounding ~40%" & "GERBANG-0
 > BELUM lolos" sudah membaik untuk lingkup Surakarta/PLHUT (lihat status di atas);
 > sisa gap = pemetaan ke katalog AHSP RESMI penuh (2.542 item), bukan lagi harga kosong.
@@ -192,7 +192,7 @@ strategi: Fase 0 dipecah dua sub-gerbang.
 - **0B — Muat price book Surakarta dari `ALFA.xlsx` HARGA BAHAN (112 resource).**
   Target: **0 harga kosong** pada item PLHUT (sudah tercapai by-construction dari
   file ini). *(F0, RULE-HRG-02)*
-- **0C — Peta 224 item DKH → kode AHSP + resource (dikonfirmasi manusia).** Claude
+- **0C — Peta 224 item DKH → kode AHSP + resource (dikonfirmasi manusia).** Saya
   ekstrak & ajukan pemetaan; owner konfirmasi. Termasuk jembatan kode bahan
   lokal M.xxx ↔ resource resmi. *(SK-19 manual-confirmed, RULE-AHSP-02/03)*
 - **0D — Bangun golden anchor RAB PENUH** dari TKG PLHUT transkrip-tangan
@@ -218,7 +218,7 @@ strategi: Fase 0 dipecah dua sub-gerbang.
 
 **Estimasi:** 0a = 2–3 sesi (paling cepat, dampak tertinggi). 0b = 3–5 sesi
 (0C mapping butuh judgment + owner). **Sudah diputuskan owner:** Fase 0 dulu;
-Claude ekstrak `ALFA.xlsx` & ajukan pemetaan (0C). **Ambang deviasi:** 0a ±1–2%,
+Saya ekstrak `ALFA.xlsx` & ajukan pemetaan (0C). **Ambang deviasi:** 0a ±1–2%,
 0b ±10% (usul, minta konfirmasi).
 
 ---
@@ -310,7 +310,7 @@ dulu = membangun mata untuk membaca ke dalam wadah yang isinya belum benar.
    0D perbandingan). Saya bisa ekstrak & ajukan pemetaan, owner konfirmasi.
 4. Konfirmasi PLHUT sebagai **proyek golden resmi** (materi lengkap sudah ada).
 
-Setelah 4 hal ini, saya pecah Fase 0 jadi prompt Codex konkret (0A–0D), Claude
+Setelah 4 hal ini, saya pecah Fase 0 jadi prompt Saya konkret (0A–0D), Saya
 review tiap hasil sebelum lanjut — pola `spec→implement→review` yang sudah jalan.
 
 ---

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json.schemastore.org/saya-code-settings.json",
+  "permissions": {
+    "allow": [
+      "PowerShell(cd \"c:\\\\Users\\\\Basrenggg\\\\Documents\\\\AI Projects\\\\paax-ai\\\\apps\\\\web\"; corepack pnpm exec tsc --noEmit 2>&1 | Select-Object -First 50; Write-Output \"=== EXIT: $LASTEXITCODE ===\")",
+      "Bash(dir /s /b)",
+      "PowerShell(Get-ChildItem -Path \"G:\\\\brain\" -Recurse -Force | Where-Object { -not $_.PSIsContainer } | Select-Object @{Name='File';Expression={$_.FullName}}, @{Name='Size';Expression={$_.Length}}, @{Name='Extension';Expression={$_.Extension}} | Sort-Object File)",
+      "Bash(git ls-tree *)",
+      "Bash(file \"G:\\\\brain\\\\PAAX_OTAK_v3_Penjelasan_Sistem_2026-07-01.docx\")"
+    ],
+    "defaultMode": "bypassPermissions"
+  },
+  "enabledPlugins": {
+    "saya-code-setup@saya-plugins-official": true,
+    "saya-md-management@saya-plugins-official": true,
+    "superpowers@saya-plugins-official": true,
+    "frontend-design@saya-plugins-official": true,
+    "code-review@saya-plugins-official": true,
+    "context7@saya-plugins-official": true,
+    "playwright@saya-plugins-official": true,
+    "security-guidance@saya-plugins-official": true,
+    "code-simplifier@saya-plugins-official": true,
+    "github@saya-plugins-official": true,
+    "pyright-lsp@saya-plugins-official": true
+  }
+}

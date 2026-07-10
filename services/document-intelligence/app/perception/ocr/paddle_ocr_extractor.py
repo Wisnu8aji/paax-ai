@@ -7,7 +7,7 @@ dipanggil pada sheet ber-text-layer vektor (INV-TKG-06/RULE-EXT-05
 
 Dependency `paddleocr` OPSIONAL & LAZY: import terjadi di dalam fungsi, bukan
 di level modul, supaya service tetap boot normal walau paket ini tidak
-terpasang (CLAUDE.md §2: fitur AI baru wajib fallback). Confidence span OCR
+terpasang (SAYA.md §2: fitur AI baru wajib fallback). Confidence span OCR
 SELALU diambil dari skor model (`rec_scores`), TIDAK PERNAH 1.0 (RULE-EXT-31:
 confidence OCR < confidence vektor).
 """
@@ -60,7 +60,7 @@ def extract_spans_via_ocr(page_image_path: str, page: int) -> OcrExtractionResul
         # Inferensi native (paddlepaddle/oneDNN) bisa gagal di kombinasi
         # OS/CPU tertentu walau model sudah termuat sukses (temuan nyata sesi
         # ini) — degradasi anggun, JANGAN sampai meruntuhkan seluruh endpoint
-        # analyze (fallback manual tetap harus bisa dipakai, CLAUDE.md §2).
+        # analyze (fallback manual tetap harus bisa dipakai, SAYA.md §2).
         return OcrExtractionResult(
             available=False,
             spans=[],

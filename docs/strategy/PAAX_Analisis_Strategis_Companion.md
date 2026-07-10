@@ -49,11 +49,11 @@ Blueprint benar: jangan kunci satu vendor, pakai *orchestrator model-agnostic*. 
 | Tugas | Kandidat | Pertimbangan | **Pilihan saya** |
 | --- | --- | --- | --- |
 | OCR teks/dimensi/legenda | Google Document AI, AWS Textract, Azure Doc Intelligence, **PaddleOCR (open, self-host)** | Layanan cloud presisi tabel; open-source gratis & cukup untuk teks/notasi | **PaddleOCR self-host** untuk tekan biaya, fallback Document AI untuk sheet rumit |
-| Pemahaman dokumen/konteks gambar (vision-LLM) | Gemini Flash/Flash-Lite, GPT-4o-class, Claude Sonnet | Gemini Flash = termurah multimodal, konteks besar; Claude = reasoning terbaik; GPT = kuat tapi mahal | **Gemini Flash** untuk ingest massal (murah), naikkan ke model kuat hanya saat ragu |
+| Pemahaman dokumen/konteks gambar (vision-LLM) | Gemini Flash/Flash-Lite, GPT-4o-class, Saya Sonnet | Gemini Flash = termurah multimodal, konteks besar; Saya = reasoning terbaik; GPT = kuat tapi mahal | **Gemini Flash** untuk ingest massal (murah), naikkan ke model kuat hanya saat ragu |
 | Deteksi & ukur geometri (CV) | YOLO/Detectron custom (self-host), tidak ada off-the-shelf yang pas gambar teknik ID | **Tidak bisa diandalkan ke LLM** — presisi piksel. Ini bagian custom termahal | **Custom CV self-host — TAPI tunda sampai validasi WoO** |
-| Klasifikasi elemen → AHSP | Claude Sonnet, Gemini Pro | Reasoning langsung memengaruhi benar/salahnya RAB → kualitas > harga | **Claude Sonnet** (atau Gemini Pro) — jangan irit di sini |
-| Orkestrasi & tool-calling | Claude Sonnet, GPT, model dgn function-calling kuat | Pemilihan tool & langkah agen | **Claude Sonnet** (tool-use paling andal) |
-| Engineering Chat | Model reasoning + RAG + tools | Jawaban berbasis data proyek | **Claude/Gemini Pro** untuk pertanyaan teknis, **Flash/Haiku-class** untuk chat ringan |
+| Klasifikasi elemen → AHSP | Saya Sonnet, Gemini Pro | Reasoning langsung memengaruhi benar/salahnya RAB → kualitas > harga | **Saya Sonnet** (atau Gemini Pro) — jangan irit di sini |
+| Orkestrasi & tool-calling | Saya Sonnet, GPT, model dgn function-calling kuat | Pemilihan tool & langkah agen | **Saya Sonnet** (tool-use paling andal) |
+| Engineering Chat | Model reasoning + RAG + tools | Jawaban berbasis data proyek | **Saya/Gemini Pro** untuk pertanyaan teknis, **Flash/Haiku-class** untuk chat ringan |
 | Embedding (RAG AHSP) | **BGE-m3 / multilingual-e5 (open, self-host)**, API embedding murah | Korpus kecil & statis | **Open embedding self-host + pgvector** (≈ gratis) |
 | Narasi/ringkasan/laporan | Gemini Flash, Haiku-class | Volume tinggi, tugas ringan | **Model termurah-yang-cukup** |
 | Klasifikasi/binding gambar saat rule-based gagal (AI-assist X2, 2026-07-05, HANYA baca teks yang sudah diekstrak, bukan piksel) | Gemini 2.5 Flash (dipakai sekarang), DeepSeek V4 Flash/R1 (open-weight, murah setelah trial), OpenRouter (aggregator model open-weight gratis), Groq (inferensi cepat), Qwen3 Coder 480B (kuat di output terstruktur/JSON) | Tugas ini TIDAK butuh vision (data sudah teks+koordinat presisi dari PyMuPDF) — kriteria "harus multimodal" di baris vision-LLM di atas TIDAK berlaku di sini, jadi model reasoning-teks murni (DeepSeek/Qwen) jadi kandidat serius utk tekan biaya | **Gemini 2.5 Flash** (SUDAH diimplementasikan, kuota gratis AI Studio cukup di skala saat ini) — alternatif dipetakan lengkap (harga/context/kelebihan-kekurangan) di `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md` §X2.3a utk keputusan migrasi kalau kuota gratis habis di skala produksi |
@@ -236,7 +236,7 @@ Ini niche B2B Indonesia. Lupakan marketing massal di awal. Yang berhasil: **foun
 | **Margin bocor lewat ekstraksi/laporan harian** | Sukses pemakaian = biaya meledak tanpa metering | Metering kredit + caching ekstraksi + batasi proaktif **sebelum** fitur live |
 | **Liability RAB salah** | Pengguna ikut tender pakai RAB-mu, lalu rugi → risiko hukum/reputasi | **Disclaimer wajib:** "titik awal terverifikasi, bukan hasil final." Selalu sediakan UI verifikasi |
 | **UU PDP & residensi data** | Penting untuk enterprise | Kebijakan privasi + opsi penyimpanan dalam negeri sejak desain. Jangan taruh kunci API di repo |
-| **Founder solo + sambil belajar** | Roadmap ke v1.0 setahun itu agresif | Rilis bertahap, satu task/sesi Claude Code, reviewer teknis untuk audit aturan emas |
+| **Founder solo + sambil belajar** | Roadmap ke v1.0 setahun itu agresif | Rilis bertahap, satu task/sesi Saya Code, reviewer teknis untuk audit aturan emas |
 | **Skema FE/BE menyimpang** | Bug integrasi sulit dilacak | 1 sumber kebenaran (JSON Schema → Zod/Pydantic), uji parsing tiap perubahan |
 | **Net tipis di bawah ~40 user** | Normal untuk SaaS | Paket tahunan untuk runway; jaga biaya fixed serendah mungkin di awal |
 
@@ -247,7 +247,7 @@ Ini niche B2B Indonesia. Lupakan marketing massal di awal. Yang berhasil: **foun
 1. **Selesaikan v0.6, lalu bangun produk deterministik (v0.7–v0.9) sebagai MVP yang dijual.** Ini margin tinggi, risiko rendah, dan sudah memecahkan pain Excel yang nyata.
 2. **Validasi vision lewat Wizard-of-Oz dan tagih.** Jangan tulis satu baris kode CV sampai ada bukti orang bayar untuk hasilnya.
 3. **Meter ekstraksi & Agent sebagai kredit sejak hari pertama. Batasi laporan proaktif harian.** Ini pelindung margin nomor satu.
-4. **Routing model:** Gemini Flash (ingest/narasi), Claude Sonnet (klasifikasi AHSP/orkestrasi), open embedding + pgvector (RAG ≈ gratis). Jangan bayar vector DB.
+4. **Routing model:** Gemini Flash (ingest/narasi), Saya Sonnet (klasifikasi AHSP/orkestrasi), open embedding + pgvector (RAG ≈ gratis). Jangan bayar vector DB.
 5. **Positioning: lawan Excel, bukan Autodesk.** Moat = AHSP + lokalitas + feedback loop.
 6. **Sales founder-led ke jaringanmu dulu, konten before/after Excel→PAAX.** Rekrut 5–10 design partners.
 7. **Pasang disclaimer "titik awal terverifikasi" + UI verifikasi.** Lindungi diri secara hukum & jaga kepercayaan.
