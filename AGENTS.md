@@ -1,225 +1,109 @@
 # AGENTS.md — PAAX AI
 
-> ⚡ **SEBELUM KERJA: baca `docs/ai-map/START_HERE.md` dulu** (peta + status + navigasi)
-> agar langsung terarah, tidak boros token, dan tidak meng-crawl semua file.
+> Aturan permanen & pendek — bukan peta kode atau status proyek.
+> Peta dokumentasi on-demand: `docs/INDEX.md`. Status aktif: `docs/ai-map/STATE_CURRENT.md`.
+> Navigasi kode/dependency/test: **Graphify dulu** (§7), jangan Glob/Grep buta.
 > File ini dibaca otomatis oleh Codex di setiap sesi. **Patuhi sepenuhnya.**
-> Sumber kebenaran lengkap ada di `docs/MASTER_PLAN.md` (Blueprint Besar v2.0).
-> Jika ragu, ikuti aturan di sini lebih dulu, lalu rujuk MASTER_PLAN.
-> Dokumen strategi tambahan: `docs/strategy/PAAX_Analisis_Strategis_Companion.md`
-> adalah pressure-test bisnis, biaya AI, margin, pricing, vendor model, dan
-> prioritas roadmap. Baca saat task menyentuh roadmap, fitur AI, pricing,
-> ekstraksi gambar, agent, biaya model, atau keputusan MVP.
-
----
-
-## 0. Apa itu PAAX AI
-
-Workspace AI untuk insinyur sipil / kontraktor / PM Indonesia: mengubah data
-konstruksi tak-terstruktur (gambar kerja, PDF, RAB lama) menjadi keluaran
-**auditable**: HSP, RAB patuh AHSP, BoQ, jadwal + Kurva S, simulasi skenario,
-monitoring portofolio, dan Engineering Chat ter-grounding.
-
-Moat = lokal Indonesia: AHSP (Permen PUPR No. 8/2023 + SE DJBK), bilingual,
-harga satuan regional.
 
 ---
 
 ## 1. ATURAN EMAS — AI TIDAK PERNAH MENGHITUNG
 
 **Setiap angka** di RAB, BoQ, jadwal, Kurva S, dan skenario WAJIB berasal dari
-**engine deterministik (Python, Lapis 2B)**. LLM hanya boleh menyentuh angka
-untuk MENJELASKAN — tidak pernah MENGHITUNG atau MENGARANG.
+**engine deterministik** (`services/core-engine`, Python). LLM/TypeScript hanya
+boleh MENJELASKAN — tidak pernah MENGHITUNG atau MENGARANG.
 
-Implikasi konkret yang HARUS ditegakkan:
+- ❌ Tidak ada perhitungan RAB/HSP/bobot/durasi di frontend. Frontend hanya **menampilkan** hasil engine.
+- ❌ Tidak ada LLM di jalur perhitungan — hanya klasifikasi/ekstraksi → **usulan/mapping**; angka tetap dari engine.
+- ✅ AHSP = sumber **koefisien**, bukan template output.
+- ✅ AI Agent otonom tunduk juga: boleh ubah **input terstruktur** lalu panggil ulang engine — tidak pernah menulis angka hasil sendiri.
 
-- ❌ Tidak ada perhitungan RAB/HSP/bobot/durasi di frontend (TypeScript). Frontend hanya **menampilkan** hasil engine.
-- ❌ Tidak ada LLM di jalur perhitungan. LLM boleh klasifikasi/ekstraksi (gambar → kode AHSP) dan hanya menghasilkan **usulan/mapping**; angka tetap dihitung engine.
-- ✅ AHSP = sumber **koefisien**, bukan template output. RAB dibangun dari `koef × harga`, bukan disalin dari contoh.
-- ✅ Satu sumber kebenaran tipe data: skema **Zod** (TS) selaras dengan model **Pydantic** (Python). Keduanya diubah **bersamaan**.
-- ✅ Bahkan AI Agent otonom tunduk: agen boleh mengubah **input terstruktur** (volume, item, urutan) lalu memanggil ulang engine — tetapi **tidak pernah menulis angka hasil sendiri**.
+Kalau task yang kamu terima akan membuat LLM atau TypeScript menghitung angka
+final — **STOP, jangan menebak, lapor ke pemilik repo.** Itu pelanggaran aturan emas.
 
-> Jika sebuah task akan membuat LLM atau TypeScript menghitung angka final,
-> **STOP dan lapor ke pemilik repo.** Itu pelanggaran aturan emas.
+### 1.1 Batas AI-Assist (klasifikasi/binding gambar, bukan vision-piksel)
 
-### 1.1 AI-Assist untuk Klasifikasi & Binding (Lapisan 2A, paralel — bukan pengganti rule-based)
+Lapisan AI-assist (`services/document-intelligence/app/perception/ai_assist/`)
+adalah **fallback paralel**, bukan pengganti rule-based:
 
-Sejak 2026-07-05 (dipicu temuan Fase X1/X1B: 13/13 elemen `pondasi_telapak`
-PLHUT jatuh `perlu_review` karena dimensi hanya ada di halaman detail/grafis,
-bukan tabel kode-dimensi yang bisa diparse regex), PAAX mengadopsi lapisan
-AI-assist sebagai **fallback paralel** untuk `zone_classifier.py`,
-`binding.py`, dan `consolidate.py` di `services/document-intelligence`
-(rencana lengkap: `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md`
-§X2, ringkasan gap: `docs/BRAIN_ALIGNMENT.md`). Aturan yang WAJIB ditegakkan
-agar ini tidak melanggar Aturan Emas secara halus:
-
-- **Rule-based tetap fast-path utama.** LLM HANYA dipanggil ketika ekstraksi
-  regex/heuristik gagal atau ambigu (hasilnya `perlu_review`/`belum_didukung`).
-  Tidak ada kasus di mana LLM menggantikan jalur deterministik yang sudah
-  bekerja.
-- **LLM membaca DATA YANG SUDAH DIEKSTRAK** (span teks + koordinat grid presisi
-  dari PyMuPDF) — **BUKAN piksel gambar mentah**. Vision-on-raw-image tetap
-  dihindari kecuali untuk halaman scan/raster tanpa layer teks (fallback
-  OCR yang sudah ada, §12.1 MASTER_PLAN), karena vision-LLM murni ~60% akurat
-  membaca dimensi gambar teknik vs data vektor PDF yang sudah eksak.
-- **Setiap usulan LLM WAJIB divalidasi deterministik** sebelum jadi kandidat:
-  angka yang diusulkan harus benar-benar muncul di span yang diekstrak
-  (tidak boleh halusinasi), grid/kode yang diusulkan harus ada di registry,
-  nilai harus masuk rentang wajar. Usulan yang gagal validasi ini dibuang,
-  bukan dipaksakan.
-- **Tidak ada auto-commit ke input engine.** Hasil lolos validasi tetap masuk
-  sebagai kandidat berstatus `perlu_review` dengan `confidence` + `reason` —
-  sama seperti alur `perlu_review` yang sudah ada — menunggu approval manusia
-  sebelum dipakai sebagai input `services/core-engine`.
-- **Audit trail wajib.** Setiap keputusan klasifikasi berbasis-AI dicatat
-  (model, prompt/versi, input, output, reasoning) karena keluaran LLM bisa
-  bervariasi antar run dan RAB harus tetap auditable. Pakai temperature
-  rendah untuk meminimalkan varian, tapi tidak diklaim deterministik.
-- **Biaya & latency dipertimbangkan di desain** — panggilan LLM per
-  halaman/elemen di skala produksi tidak gratis; cache hasil per dokumen,
-  jangan panggil ulang untuk dokumen yang sama (selaras §12–14 MASTER_PLAN).
-- Ini BUKAN Vision-LLM v1.0 yang masih ditunda (baca piksel penuh sebagai
-  jalur utama). Ini lapisan lebih sempit: LLM membaca teks+koordinat yang
-  sudah eksak dari PyMuPDF untuk mengisi kekosongan klasifikasi/binding saat
-  regex gagal — risiko jauh lebih rendah karena datanya sudah presisi.
-- **Provider default: Gemini 2.5 Flash** (`GeminiAiAssistClient`,
-  `services/document-intelligence/app/perception/ai_assist/client.py`) —
-  sama dgn provider yang sudah dipakai `apps/web/src/lib/ai/orchestrator.ts`.
-  Perbandingan alternatif (DeepSeek, OpenRouter, Groq, Qwen3 Coder) sudah
-  didokumentasikan sbg referensi keputusan masa depan (bukan perubahan
-  implementasi) di `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_
-  2026-07-13.md` §X2.3a.
+- Rule-based tetap fast-path utama; LLM hanya dipanggil saat regex/heuristik gagal/ambigu.
+- LLM membaca **teks+koordinat yang sudah diekstrak** (PyMuPDF) — **bukan piksel gambar mentah**.
+- Setiap usulan LLM **wajib divalidasi deterministik** (tidak boleh halusinasi, harus masuk rentang wajar) sebelum jadi kandidat `perlu_review`.
+- **Tidak ada auto-commit ke input engine** — selalu menunggu approval manusia.
+- Audit trail wajib: model, prompt/versi, input, output, reasoning dicatat.
 
 ---
 
-## 2. PRINSIP BANGUN BERTAHAP (Vertical Slices)
+## 2. SCHEMA: SATU SUMBER KEBENARAN
 
-- **Satu sesi = satu task sempit & terdefinisi.** Jangan overscope. Konteks terlalu lebar membuat aturan emas terlupakan.
-- **Verifikasi kriteria terima** tiap task sebelum lanjut.
-- **Commit kecil & sering**, format **Conventional Commits** (`feat:`, `fix:`, `chore:`, `test:`, `docs:`, `refactor:`).
-- Setiap **fungsi perhitungan baru** WAJIB disertai **test dengan nilai acuan yang dihitung manual**.
-- Setiap **fitur AI baru** WAJIB punya **fallback manual**: bila AI gagal/ragu, pengguna tetap bisa menyelesaikan pekerjaan.
-- Jangan menambah dependency / service baru tanpa alasan yang jelas terkait task aktif.
+Skema **Zod** (TS, `packages/schemas`) dan **Pydantic** (Python) WAJIB selaras —
+diubah **bersamaan** dalam commit yang sama, tidak pernah salah satu saja.
 
 ---
 
-## 3. ARSITEKTUR (4 lapis + data) — tanggung jawab tidak boleh tertukar
+## 3. TESTING WAJIB
 
-| Lapis | Teknologi | Tanggung Jawab | TIDAK BOLEH |
-|---|---|---|---|
-| 0 — Presentasi | Next.js 14, TS, Tailwind, shadcn/ui | Seluruh UI | Menghitung angka RAB |
-| 1 — Orkestrasi | Node/Genkit, tool-calling, RAG, scheduler | Router + agen, pilih model, panggil engine | Mengarang angka final |
-| 2A — Persepsi | Python: OCR + CV + Vision-LLM | Deteksi & ukur elemen, pemecahan per-lantai | Menetapkan harga/biaya |
-| 2B — Engine | FastAPI/Python, Pydantic, NumPy | **Semua perhitungan deterministik** | Memakai LLM untuk aritmetika |
-| 2C — Site Agent | Python/TS | Lapor progres, analisa foto, deviasi | Menggantikan verifikasi manusia |
-| 3 — Data | Postgres/Firestore, Object Storage, Vector Store, DB AHSP | Data proyek, file, RAG, koefisien & harga | Menyimpan rahasia di repo |
+- Setiap **fungsi perhitungan baru** → test dengan **nilai acuan dihitung manual** sebagai anchor.
+- Setiap **fitur AI baru** → wajib punya **fallback manual**: bila AI gagal/ragu, pengguna tetap bisa menyelesaikan pekerjaan.
+- Sebelum commit: jalankan test yang relevan (pytest/vitest/`tsc --noEmit`). Kalau merah, jangan commit — lapor.
 
 ---
 
-## 4. STRUKTUR MONOREPO
+## 4. KEAMANAN
 
-```
-paax-ai/
-├─ apps/web/                  # Next.js workspace + dashboard
-│  └─ app/projects/[id]/      # drawings · rab · schedule · scenarios · chat · monitoring
-├─ services/
-│  ├─ core-engine/            # FastAPI — perhitungan deterministik (Lapis 2B)
-│  ├─ ai-orchestrator/        # router + agents + RAG + scheduler  (mulai v0.8)
-│  ├─ document-intelligence/  # OCR + CV + ekstraksi kuantitas     (mulai v1.0)
-│  └─ site-agent/             # progres lapangan + analisa foto    (v2.0)
-├─ packages/
-│  ├─ schemas/                # JSON Schema → Zod + Pydantic (1 sumber kebenaran)
-│  └─ ui/ · constants/ · tsconfig/
-├─ data/  ├─ ahsp/  └─ harga-satuan/   # koefisien & harga regional
-└─ docs/  # MASTER_PLAN.md, ADR, API
-```
-
-Stack: pnpm workspaces + Turborepo · Next.js 14 (App Router) · React Query + Zod ·
-Python 3.11+ / FastAPI / Pydantic / NumPy · Deploy: Cloud Run (services) + Vercel/Firebase (web).
+- ❌ JANGAN taruh rahasia/kunci API di repo. Gunakan `.env.example` + secret manager; `.env*` selalu di `.gitignore`.
+- ✅ RBAC per peran (estimator/PM/lapangan/owner) untuk fitur multi-user.
 
 ---
 
-## 5. RUMUS ENGINE (kanonik — semua deterministik)
+## 5. PEMBAGIAN CODEX vs CLAUDE & GERBANG REVIEW
 
-```
-A (Bahan) = Σ (koef_bahanᵢ × harga_bahanᵢ)
-B (Upah)  = Σ (koef_upahⱼ × harga_upahⱼ)        ; koef tenaga dalam OH (Orang-Hari)
-C (Alat)  = Σ (koef_alatₖ × harga_alatₖ)
-HSP       = (A + B + C) × (1 + BUK%)            ; BUK = Biaya Umum & Keuntungan
-
-Harga Item = Volume × HSP
-Subtotal   = Σ Harga Item
-RAB Total  = Subtotal + PPN
-
-Bobot Item (%) = (Harga Item / RAB Total) × 100%
-Kurva S        = Σ kumulatif progres seluruh item per periode
-
-mandays      = Volume × koef_OH
-durasi (hari) = mandays ÷ jumlah pekerja efektif
-```
-
-**Nilai acuan test (WAJIB diverifikasi ke repo asli sebelum diandalkan):**
-test engine harus memuat minimal satu nilai HSP dan satu subtotal RAB yang
-dihitung manual sebagai anchor. Jangan ubah angka acuan tanpa menghitung ulang
-manual dan mencatat sumber koefisien AHSP-nya.
-
----
-
-## 6. STATE SAAT INI & ROADMAP
-
-**Sekarang:** transisi **v0.6 (Deterministic Foundation) → v0.7 (Workspace Hidup).**
-
-- v0.6 — Engine HSP/RAB/Kurva-S deterministik + test + halaman uji RAB.
-- v0.7 — Multi-proyek + DB CRUD + UI shell + editor RAB + browser AHSP/harga + export Excel/PDF.
-- v0.8 — Smart Import (upload RAB Excel + AI mapping kolom + deteksi anomali harga). **AI orchestrator pertama aktif.**
-- v0.9 — Gantt + jalur kritis + simulator skenario + narasi AI.
-- v1.0 — Gambar → BoQ → RAB (CV) + Engineering Chat (RAG + tools). **Lompatan terbesar.**
-- v1.5 — Laporan pagi · prediksi material · Agent Autopilot (add-on metered).
-- v2.0 — Monitoring multi-proyek · Site Agent · dashboard PM.
-
-> **Tahan godaan membangun v1.0 (vision) lebih awal.** Risiko terbesar ditunda
-> sampai fondasi matang. Nilai mengalir tiap rilis lewat jalur manual + Smart Import.
-
----
-
-## 7. KEAMANAN & DISIPLIN REPO
-
-- ❌ JANGAN menaruh rahasia/kunci API/`.env` di repo. Gunakan `.env.example` + secret manager.
-- ✅ Pastikan `.gitignore` mencakup: `node_modules/`, `.next/`, `.turbo/`, `dist/`, `build/`, `__pycache__/`, `*.pyc`, `.venv/`, `venv/`, `.env`, `.env.*`, `.DS_Store`, `coverage/`, `.pytest_cache/`.
-- ✅ Sebelum commit: jalankan test engine (pytest). Kalau merah, jangan commit — lapor.
-- ✅ Konsistensi versi & dokumentasi (CHANGELOG/README) dijaga sejak awal.
-- ✅ RBAC per peran (estimator/PM/lapangan/owner) saat fitur multi-user mulai dibangun.
-
----
-
-## 8. CARA KERJA DENGAN PEMILIK REPO (Wisnu)
-
-- Pemilik = **product owner non-coder**: pandu dengan ringkasan jelas, skrip demo, dan kriteria terima — bukan dump kode panjang.
-- Bahasa: **Indonesia**.
-- Saat selesai task: tampilkan (1) apa yang berubah, (2) cara mencoba/verifikasi, (3) `git status` + commit yang dibuat, (4) usulan task berikutnya.
-- Jika menemui ambiguitas keputusan arsitektural (mis. Postgres vs Firestore), **STOP dan tanyakan** — jangan asumsi diam-diam.
-
----
-
-## 9. PEMBAGIAN TUGAS: CODEX vs CLAUDE
-
-Sejak 2026-06-28, Wisnu memakai Codex dan Claude berdampingan di repo ini.
 Pembagian (dicerminkan juga di `CLAUDE.md` untuk Claude):
 
-- **Codex (kamu)** → kode tanpa thinking berat: implementasi backend yang
-  SUDAH punya spek jelas (rumus §5 / ADR terkait), wiring config/env,
-  endpoint mengikuti pola yang sudah ada, script & test mekanis.
-- **Claude** → thinking berat: frontend (`apps/web`), kerja "data" (dataset
-  AHSP, pencocokan harga by-nama, pemetaan template export), keputusan
-  arsitektur, dan apa pun yang menyentuh Aturan Emas (§1) atau butuh
-  judgment domain.
+- **Codex (kamu)** → kode tanpa thinking berat: implementasi dengan spek jelas,
+  wiring config/env, endpoint mengikuti pola yang sudah ada, script & test mekanis.
+- **Claude** → thinking berat: frontend (`apps/web`), kerja "data" (dataset AHSP,
+  pencocokan harga, pemetaan template), keputusan arsitektur, dan apa pun yang
+  menyentuh Aturan Emas (§1) atau butuh judgment domain.
 
 Kalau task yang kamu terima ternyata butuh keputusan domain/ambigu, atau
-menyentuh rumus inti RAB/HSP TANPA spek/nilai-acuan yang sudah jelas —
-**STOP, jangan menebak. Minta Wisnu bawa ke sesi Claude dulu.** Konsisten
-dengan Aturan Emas §1: jangan mengarang angka atau logika perhitungan sendiri.
+menyentuh rumus inti RAB/HSP TANPA spek/nilai-acuan yang sudah jelas — **STOP,
+jangan menebak. Minta Wisnu bawa ke sesi Claude dulu.**
 
-**GERBANG REVIEW (wajib, sejak 2026-06-28):** kerjakan di **branch baru →
-push → buka PR**, lalu **BERHENTI**. JANGAN merge ke `main` sendiri dan jangan
-commit/push langsung ke `main`. PR menunggu pemeriksaan owner + Claude; merge
-hanya setelah disetujui. Kalau review minta perbaikan, push lagi ke branch yang
-sama.
+**GERBANG REVIEW (wajib):** kerjakan di **branch baru → push → buka PR**, lalu
+**BERHENTI**. JANGAN merge ke `main` sendiri dan jangan commit/push langsung
+ke `main`. PR menunggu pemeriksaan owner + Claude; merge hanya setelah
+disetujui. Kalau review minta perbaikan, push lagi ke branch yang sama.
+
+---
+
+## 6. PROTEKSI COMMAND ROOM
+
+File terkait Command Room (chat AI utama, model routing Lucent/Solace) **tidak
+boleh dihapus atau dipindah** kecuali sudah terbukti tidak dipakai — buktikan
+dulu lewat `graphify query`/`graphify path` + grep import + cek test:
+
+- `apps/web/src/app/(dashboard)/command-room/`, `apps/web/src/components/command-room/`
+- `apps/web/src/app/api/command-room/chat/route.ts`
+- `apps/web/src/lib/paax-models.ts`, `apps/web/src/lib/ai/orchestrator.ts` (+ test)
+- `apps/web/src/lib/chat/*` (chat-history, chat-run-store, chat-stream-events, use-chat-runs, format-run-duration)
+- `.env.example` / `.env.local` (kunci NVIDIA/DeepSeek) — jangan pernah tampilkan isinya.
+
+---
+
+## 7. WORKFLOW GRAPHIFY-FIRST
+
+Repo ini punya knowledge graph di `graphify-out/` (node/edge/community lintas
+`apps/web`, `services/*`, `packages/*`).
+
+- Untuk pertanyaan kode/arsitektur/dependency: `graphify query "<pertanyaan>"`
+  dulu, lalu `graphify path "<A>" "<B>"` (relasi antar simbol) atau
+  `graphify explain "<konsep>"` (penjelasan terfokus) — baru pakai
+  Glob/Grep/Read kalau graph belum cukup menjawab.
+- Setelah mengubah kode: `graphify update .` (AST-only, tanpa biaya API). Hook
+  git (`post-commit`/`post-checkout`) sudah auto-rebuild — jalankan manual
+  hanya kalau perubahan belum tercakup hook.
+- Full rebuild (`graphify .`) hanya kalau graph hilang/rusak atau struktur
+  repo berubah besar — jangan rebuild ulang tiap sesi/chat.
+- Baca `graphify-out/GRAPH_REPORT.md` hanya untuk overview arsitektur luas saat
+  query/path/explain tidak cukup.
