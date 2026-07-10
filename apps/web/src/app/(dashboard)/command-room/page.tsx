@@ -60,7 +60,7 @@ import remarkGfm from 'remark-gfm';
 
 /**
  * COMMAND ROOM — pengganti Engineering Chat (rombak 2026-07-07,
- * referensi G:\Dashboard\Engineering chat). Dark ala Claude app:
+ * referensi G:\Dashboard\Engineering chat). Dark ala Saya app:
  * sidebar Home/Project, hero "wisnu returns!", composer Lucent/Solace,
  * Projects grid + modal Create a project, Add to Project, connectors.
  * ATURAN EMAS tetap: AI menjelaskan — angka final dari Core Engine.

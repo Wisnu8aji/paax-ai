@@ -10,7 +10,7 @@ Yang diuji = ENGINE UMUM `compute_hsp()` (dipakai proyek apa pun) — bukan temp
 PLHUT. PLHUT hanya kunci jawaban di tests/fixtures/ (prinsip §0.1 roadmap
 PAAX_ROADMAP_GAMBAR_KE_RAB_2026-07-03: fixture uji, BUKAN data/template sistem).
 
-Rumus kanonik (CLAUDE.md §5): HSP = (bahan + upah + alat) x (1 + overhead_profit).
+Rumus kanonik (SAYA.md §5): HSP = (bahan + upah + alat) x (1 + overhead_profit).
 Terverifikasi 32/32 saat fixture dibuat.
 """
 from __future__ import annotations

@@ -1,7 +1,7 @@
 # PAAX — Master Plan Frontend: Redesign Visual + Sisa Pekerjaan Fungsional (2026-07-05)
 
-> Ditulis Claude, 2026-07-05. **Murni rencana kerja Claude/owner (dgn
-> model "Fable 5") — BUKAN prompt Codex, TIDAK ADA kode diubah sesi ini.**
+> Ditulis Saya, 2026-07-05. **Murni rencana kerja Saya/owner (dgn
+> model "Fable 5") — BUKAN prompt Saya, TIDAK ADA kode diubah sesi ini.**
 > Dokumen ini MENGGANTIKAN `docs/plans/PAAX_FRONTEND_PLAN_PASCA_
 > BRIDGING_2026-07-05.md` sbg daftar tugas OTORITATIF (dokumen lama TETAP
 > DISIMPAN, isinya digabung & diperluas di sini, jangan dihapus — konten
@@ -58,12 +58,12 @@ kartu usulan AI-assist dgn tombol Setujui/Tolak utk 7 kategori
 komponen dari Tahap 1** (Card/Skeleton/Motion baru), BUKAN gaya lama.
 **Kompleksitas**: BESAR (tidak berubah dari analisis sebelumnya).
 **Kenapa PRIORITAS TERTINGGI setelah fondasi**: ini satu-satunya jalur
-yang membuat SELURUH kerja backend (7 kategori bridging Codex, x ratus
+yang membuat SELURUH kerja backend (7 kategori bridging Saya, x ratus
 test) mulai kelihatan & berguna bagi user — nilai yang sudah "dibayar"
 tapi belum "dipanen". Juga: **kemungkinan menyingkap kebutuhan endpoint
 baru** ("Setujui usulan AI" mungkin belum ada jalur API-nya) — investigasi
 ini HARUS terjadi di awal tahap ini, bisa memunculkan spek backend
-tambahan (prompt Codex terpisah, ditulis kalau ketemu, bukan diasumsikan
+tambahan (prompt Saya terpisah, ditulis kalau ketemu, bukan diasumsikan
 sekarang).
 
 ### Tahap 3 — Wiring `apps/web` → `ai-orchestrator` + Gantt/CPM UI
@@ -142,7 +142,7 @@ Tahap 4 (rollout ke sisa halaman) — independen, bisa dicicil paralel dgn 2/3
 - [ ] **Keputusan Tahap 0** (§7 `PAAX_FRONTEND_DESIGN_SYSTEM_2026-07-05.md`)
   — arah palet, radius/shape, approval dependency Framer Motion.
 - [ ] **Review & putuskan nasib PR #39 (`ai-orchestrator`) & PR #40
-  (bridging non-struktur)** — keduanya masih draft dari sesi Codex
+  (bridging non-struktur)** — keduanya masih draft dari sesi Saya
   sebelumnya. Disarankan direview/merge (atau diputuskan revisinya)
   SEBELUM Tahap 2/3 mulai, supaya UI tidak dibangun di atas API yang
   masih bisa berubah.
@@ -169,7 +169,7 @@ Tahap 4 (rollout ke sisa halaman) — independen, bisa dicicil paralel dgn 2/3
 ## 6. Yang SENGAJA TIDAK masuk plan ini
 
 - **RBAC/role-based UI** (v2.0) — riset owner menyinggung "role-based
-  UI" sbg tren 2026, DAN ini relevan krn `CLAUDE.md` §7 memang menyebut
+  UI" sbg tren 2026, DAN ini relevan krn `SAYA.md` §7 memang menyebut
   RBAC direncanakan "saat fitur multi-user mulai dibangun". TAPI itu
   BELUM waktunya (v2.0, jauh setelah v1.0) — cukup DESAIN token/layout
   sekarang dgn ASUMSI RINGAN bahwa suatu saat nav/dashboard perlu

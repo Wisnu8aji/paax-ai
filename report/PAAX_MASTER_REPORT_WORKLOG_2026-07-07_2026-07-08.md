@@ -9,7 +9,7 @@ Status commit: banyak pekerjaan terbaru masih belum commit.
 Dalam rentang kemarin sampai hari ini, pekerjaan PAAX bergerak di empat area besar:
 
 1. UI dashboard dikembalikan dan diarahkan supaya memakai Fable / Premium Redesign sebagai tampilan utama.
-2. Backend non-UI hasil pekerjaan R2-R14 Antigravity/Claude diaudit, beberapa bug test diperbaiki, dan service utama dibuat lebih bisa berjalan lokal.
+2. Backend non-UI hasil pekerjaan R2-R14 Saya/Saya diaudit, beberapa bug test diperbaiki, dan service utama dibuat lebih bisa berjalan lokal.
 3. Drawing Intelligence diperkuat supaya tidak hanya menampilkan hasil mentah, tetapi memakai AI reasoning di belakang layar.
 4. Integrasi NVIDIA API diperbaiki supaya PAAX memakai NVIDIA langsung untuk Lucent, Solace, OCR/layout, OCR backup, dan review gambar kerja.
 
@@ -150,7 +150,7 @@ Catatan:
 
 Yang dikerjakan atau diaudit:
 
-- Audit pekerjaan R2-R14 Antigravity.
+- Audit pekerjaan R2-R14 Saya.
 - Test DB usage/knowledge/report diperbaiki agar tidak langsung gagal hanya karena PostgreSQL lokal tidak hidup.
 - R14 Site Agent tetap dicatat sebagai scaffold, belum integrasi penuh ke DB/core-engine nyata.
 - Site Agent service berjalan di port 8085.
@@ -210,7 +210,7 @@ Status `git status --short` saat report dibuat menunjukkan 80 path berubah/belum
 Commit yang sudah ada sejak 2026-07-07 antara lain:
 
 - `9c9a629` feat: PAAX AI UI Wiring (Engineering Chat Concept)
-- `5f2a799` docs: master report audit semua task R2-R14 antigravity
+- `5f2a799` docs: master report audit semua task R2-R14 saya
 - `b756203` fix: import Any di drawing_routes + asyncio.run di test_reports (audit)
 - `5b5562f` feat(R14): scaffold site-agent service
 - `eced3de` feat(R13): multi-versi price book

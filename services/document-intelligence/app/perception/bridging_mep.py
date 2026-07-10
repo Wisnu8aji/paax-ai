@@ -1,7 +1,7 @@
 """
 PAAX Document Intelligence — Bridging titik MEP ke core-engine
 `/takeoff/mep` (2026-07-05, lanjutan Fase X2, slice TERAKHIR rangkaian
-dinding->atap->kusen->MEP, Claude langsung).
+dinding->atap->kusen->MEP, Saya langsung).
 
 Sama pola `bridging_kusen.py`: MEP tidak punya sumber rule-based sama
 sekali -- satu-satunya sumber adalah `entry.ai_mep_suggestion` (dari

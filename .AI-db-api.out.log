@@ -1,0 +1,5 @@
+INFO:     127.0.0.1:50730 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51146 - "GET /usage/quota/check?tenant_id=4ae24c47-fba8-40b7-aabc-e25ac1eb85ac HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:52452 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55492 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59421 - "GET /health HTTP/1.1" 200 OK

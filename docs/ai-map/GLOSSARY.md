@@ -1,7 +1,7 @@
 # 📖 PAAX — GLOSSARY (istilah domain, 1 baris)
 
 > Supaya AI tidak salah tafsir istilah teknik sipil / RAB Indonesia.
-> Rumus kanonik lengkap: `CLAUDE.md` §5.
+> Rumus kanonik lengkap: `SAYA.md` §5.
 
 - **AHSP** — Analisa Harga Satuan Pekerjaan; sumber **koefisien** (Permen PUPR 8/2023). Bukan template output.
 - **HSP** — Harga Satuan Pekerjaan = (A bahan + B upah + C alat) × (1 + BUK).

@@ -5,7 +5,7 @@ Sumber master resource untuk cross-check: `G:\paax-data\harga-satuan\_resources_
 Total item sumber: **2542**
 Total resource master: **2456 baris / 2429 kode unik**
 
-Catatan: item bermasalah tetap disalin apa adanya ke repo; laporan ini hanya mencatat temuan mekanis untuk review Claude/owner.
+Catatan: item bermasalah tetap disalin apa adanya ke repo; laporan ini hanya mencatat temuan mekanis untuk review Saya/owner.
 
 ## Batch 1 (item 1-255)
 

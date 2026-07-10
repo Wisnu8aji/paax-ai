@@ -9,7 +9,7 @@
 > Kenapa dokumen ini ada: `G:\brain` jauh lebih rinci daripada
 > `docs/MASTER_PLAN.md` (92 rumus takeoff vs ~8, model entitas beraudit,
 > spek TKG, katalog 31 skill, roadmap bergerbang F0â€“F5). Supaya sesi
-> Claude/Codex berikutnya tidak perlu re-analisis dari nol, temuannya
+> Saya/Saya berikutnya tidak perlu re-analisis dari nol, temuannya
 > dipermanenkan di sini.
 
 ## Cara baca
@@ -27,14 +27,14 @@
 
 | Area | paax-ai-main | brain | Verdict |
 |---|---|---|---|
-| Aturan Emas | `CLAUDE.md` Â§1: AI tak pernah hitung, engine Python yang hitung | INV-01/02 (TXT01 Â§1): identik, diperluas jadi 13 invariant | Brain **memformalkan**, bukan mengubah |
-| Arsitektur 4-lapis | `CLAUDE.md` Â§3: Presentasi/Orkestrasi/Persepsi/Engine/Site Agent/Data | brain L0â€“L3 (TXT03): Web/Orchestrator/document-intelligence(L2A)/core-engine(L2B)/Data(L3) | Peta 1:1, tidak ada tabrakan |
+| Aturan Emas | `SAYA.md` Â§1: AI tak pernah hitung, engine Python yang hitung | INV-01/02 (TXT01 Â§1): identik, diperluas jadi 13 invariant | Brain **memformalkan**, bukan mengubah |
+| Arsitektur 4-lapis | `SAYA.md` Â§3: Presentasi/Orkestrasi/Persepsi/Engine/Site Agent/Data | brain L0â€“L3 (TXT03): Web/Orchestrator/document-intelligence(L2A)/core-engine(L2B)/Data(L3) | Peta 1:1, tidak ada tabrakan |
 
 === G:\paax-ai-main\docs\BUILD_v0.6.md ===
-# PAAX v0.6 â€” Rencana Build & Prompt Claude Code
+# PAAX v0.6 â€” Rencana Build & Prompt Saya Code
 ### "Deterministic Foundation Release"
 
-Dokumen ini adalah panduan eksekusi untuk meng-upgrade PAAX dari v0.5 ke **v0.6** menggunakan Claude Code. Acuan konsep penuh ada di `docs/PAAX_AI_Blueprint*.docx`.
+Dokumen ini adalah panduan eksekusi untuk meng-upgrade PAAX dari v0.5 ke **v0.6** menggunakan Saya Code. Acuan konsep penuh ada di `docs/PAAX_AI_Blueprint*.docx`.
 
 ---
 
@@ -224,7 +224,7 @@ We will **not** use LLMs to generate Excel layouts or styling.
 # ðŸ“– PAAX â€” GLOSSARY (istilah domain, 1 baris)
 
 > Supaya AI tidak salah tafsir istilah teknik sipil / RAB Indonesia.
-> Rumus kanonik lengkap: `CLAUDE.md` Â§5.
+> Rumus kanonik lengkap: `SAYA.md` Â§5.
 
 - **AHSP** â€” Analisa Harga Satuan Pekerjaan; sumber **koefisien** (Permen PUPR 8/2023). Bukan template output.
 - **HSP** â€” Harga Satuan Pekerjaan = (A bahan + B upah + C alat) Ã— (1 + BUK).
@@ -247,7 +247,7 @@ We will **not** use LLMs to generate Excel layouts or styling.
 # ðŸ—ºï¸ PAAX â€” MAP (di mana letak apa)
 
 > Pakai ini untuk menemukan lokasi TANPA grep buta. Prinsip arsitektur lengkap:
-> `CLAUDE.md` Â§3â€“Â§5. Monorepo: pnpm workspaces + Turborepo.
+> `SAYA.md` Â§3â€“Â§5. Monorepo: pnpm workspaces + Turborepo.
 
 ## Folder utama (tanggung jawab)
 | Path | Tanggung jawab | Tidak boleh |
@@ -278,21 +278,21 @@ We will **not** use LLMs to generate Excel layouts or styling.
 === G:\paax-ai-main\docs\ai-map\START_HERE.md ===
 # ðŸ§­ PAAX â€” START HERE (baca ini DULU, jangan crawl repo)
 
-> Tujuan file ini: orientasi cepat untuk AI mana pun (Claude / Gemini / Codex)
+> Tujuan file ini: orientasi cepat untuk AI mana pun (Saya / Gemini / Saya)
 > tanpa membaca semua file. **Baca file spesifik HANYA sesuai task** (lihat Router).
 > Ini bukan tempat menaruh detail â€” ini peta. Detail ada di file tujuan.
 
-## 2 aturan yang TAK BOLEH dilanggar (detail: `CLAUDE.md` Â§1 & Â§9)
+## 2 aturan yang TAK BOLEH dilanggar (detail: `SAYA.md` Â§1 & Â§9)
 1. **ATURAN EMAS** â€” angka final (RAB/HSP/volume/durasi/tanggal/Kurva-S/skenario)
    SELALU dari engine Python (`services/core-engine`). AI & TypeScript **tidak
    pernah** menghitung; hanya menstruktur / menjelaskan / menampilkan.
-2. **GERBANG REVIEW** â€” kerja di branch baru â†’ PR â†’ tunggu owner + Claude.
+2. **GERBANG REVIEW** â€” kerja di branch baru â†’ PR â†’ tunggu owner + Saya.
    **Tidak auto-merge, tidak push ke `main`.** "lanjut kerja" â‰  "izin merge".
 
 ## Daftar isi (peta dokumen)
 | File | Isi |
 |---|---|
-| `CLAUDE.md` / `AGENTS.md` | Konstitusi/aturan (auto-load Claude/Codex) |
+| `SAYA.md` / `AGENTS.md` | Konstitusi/aturan (auto-load Saya/Saya) |
 | `docs/ai-map/MAP.md` | DI MANA letak kode, endpoint, komponen, test |
 | `docs/ai-map/STATE.md` | Status SEKARANG: versi, selesai, next, PR, peran |
 | `docs/ai-map/GLOSSARY.md` | Istilah domain (AHSP, HSP, OH, BUK, Kurva S, CPMâ€¦) |
@@ -327,16 +327,16 @@ tree ini, bukan hilang. **Temuan investigasi (bukan asumsi):**
 - `gh pr list`: ketiga PR draft (#26 `ui-premium-redesign`, #27 `fase0-plhut-
   golden-anchor`, #28 `fase2-p5-ui-persepsi-review` lama/superseded) berstatus
   `MERGEABLE` ke `main` **secara independen**.
-- **Rekomendasi (keputusan owner/Codex, BUKAN dieksekusi Claude â€” merge = commit):**
+- **Rekomendasi (keputusan owner/Saya, BUKAN dieksekusi Saya â€” merge = commit):**
   merge PR #27 ke `main` dulu (isinya murni core-engine, tidak menyentuh
   UI/document-intelligence, resiko rendah), lalu commit+push pekerjaan sesi ini
   ke PR #26 dan selesaikan SATU konflik `STATE.md` secara manual saat merge
   PR #26 ke `main` setelahnya. Tidak perlu rebase besar-besaran.
 
-## â© TERBARU (2026-07-04, malam) â€” Fase 2 P1-P4+P6 DIIMPLEMENTASIKAN LANGSUNG OLEH CLAUDE
+## â© TERBARU (2026-07-04, malam) â€” Fase 2 P1-P4+P6 DIIMPLEMENTASIKAN LANGSUNG OLEH SAYA
 - **FASE 0 DI-COMMIT**: commit `1ee7665`, draft PR #27 (belum merge), 238 test
-  hijau. Report: `report/REPORT_FASE0_PLHUT_GOLDEN_ANCHOR_CODEX_2026-07-04.md`.
-- **Audit pagi** menemukan Codex hanya menjalankan P5 (frontend) dan
+  hijau. Report: `report/REPORT_FASE0_PLHUT_GOLDEN_ANCHOR_SAYA_2026-07-04.md`.
+- **Audit pagi** menemukan Saya hanya menjalankan P5 (frontend) dan
   memfabrikasi kode gerbang ad-hoc yang bentrok nama dgn validator resmi brain
 
 === G:\paax-ai-main\docs\api\ai-orchestrator.md ===
@@ -744,7 +744,7 @@ Mengubah BUK%/PPN/rounding mengubah hasil engine, bukan dihitung frontend.
 ## Peran AI & keamanan kunci (PENTING)
 - **API key model (Gemini, dll) TIDAK disimpan di repo.** Disimpan sebagai env
   server-side (`apps/web/.env.local`, gitignored) / secret manager â€” JANGAN
-  `NEXT_PUBLIC`, jangan dikirim ke browser. Lihat CLAUDE.md Â§7.
+  `NEXT_PUBLIC`, jangan dikirim ke browser. Lihat SAYA.md Â§7.
 - Jika key bocor (mis. terkirim di chat) â†’ rotate/buat ulang.
 - Key Gemini AI Studio normalnya diawali `AIza...`. Verifikasi sumbernya
   (https://aistudio.google.com/apikey).
@@ -883,8 +883,8 @@ subtotal/PPN/total. Semua **tampilan**, bukan hitungan frontend.
 
 > Dokumen ini mendefinisikan **aturan & batas tanggung jawab tiap halaman** di
 > `apps/web`, plus peran AI di tiap halaman. Sumber kebenaran utama tetap
-> `CLAUDE.md` (Aturan Emas) & `docs/MASTER_PLAN.md`. Kalau ada konflik,
-> CLAUDE.md menang.
+> `SAYA.md` (Aturan Emas) & `docs/MASTER_PLAN.md`. Kalau ada konflik,
+> SAYA.md menang.
 
 Dibuat: 2026-06-28. Status tiap fitur ditandai **[ada]** (sudah jalan),
 **[sebagian]** (kerangka ada), atau **[roadmap]** (belum dibangun).
@@ -1009,7 +1009,7 @@ adalah harga ASLI Surakarta 2024 â€” dipakai langsung sebagai HSD sistem.
 === G:\paax-ai-main\docs\plans\PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md ===
 # PAAX â€” Rencana Fase 2: Persepsi Baca-Gambar (Gambar â†’ TKG benar)
 
-> Ditulis Claude, 2026-07-04 (revisi sore â€” lihat Â§0.2 "Insiden & koreksi"). Sumber
+> Ditulis Saya, 2026-07-04 (revisi sore â€” lihat Â§0.2 "Insiden & koreksi"). Sumber
 > kebenaran: `docs/specs/brain-v4.1/PAAX_BRAIN_00_EKSTRAKSI_GAMBAR_KERJA.txt`
 > (grammar Â§2, SOP sheet Â§3, binding Â§5, validator V-01..V-10 Â§7, raster Â§8) +
 > roadmap `docs/plans/PAAX_ROADMAP_GAMBAR_KE_RAB_2026-07-03.md` + konsep integrasi
@@ -1018,8 +1018,8 @@ adalah harga ASLI Surakarta 2024 â€” dipakai langsung sebagai HSD sistem.
 > nyata) SELESAI & ter-commit (commit `1ee7665`, draft PR #27, 238 test hijau).
 
 > ## âœ… UPDATE 2026-07-04 (malam) â€” P1, P2, P3, P4, P6, P5-FIX DIIMPLEMENTASIKAN
-> Owner memutuskan: Claude mengerjakan LANGSUNG seluruh paket di bawah (bukan
-> lewat prompt Codex â€” dokumen prompt di `docs/prompts/PAAX_CODEX_PROMPT_FASE2_
+> Owner memutuskan: Saya mengerjakan LANGSUNG seluruh paket di bawah (bukan
+> lewat prompt Saya â€” dokumen prompt di `docs/prompts/PAAX_SAYA_PROMPT_FASE2_
 > *.md` kini HISTORIS/SUPERSEDED, jangan dijalankan lagi). Hasil: `services/
 > document-intelligence/app/perception/` lengkap (span+merge-run+locale+kontrak
 > TKG, grammar Â§2, rakit grid/tabel/elemen via `page.find_tables()` NYATA,
@@ -1033,7 +1033,7 @@ adalah harga ASLI Surakarta 2024 â€” dipakai langsung sebagai HSD sistem.
 > rata-rata baru **16,24%** â€” kemajuan nyata, **BUKAN** GERBANG-2 selesai
 > (grid-dari-geometri Â§3.1.1, binding Â§5, deteksi simbol MASIH gap). Detail
 > lengkap tiap paket ditandai `[SELESAI]`/`[BELUM]` di Â§3 di bawah. Semua
-> perubahan **belum di-commit** (menunggu Codex, sesuai arahan owner).
+> perubahan **belum di-commit** (menunggu Saya, sesuai arahan owner).
 
 > ## âœ… SUSULAN (2026-07-04, lanjutan malam) â€” GRID DARI GEOMETRI (Â§3.1.1) SELESAI
 > Owner memilih lanjut (bukan berhenti): rekonstruksi grid dari bubble-as +
@@ -1045,7 +1045,7 @@ adalah harga ASLI Surakarta 2024 â€” dipakai langsung sebagai HSD sistem.
 > TXT02 rumus Â· TXT03 skill/pipeline/roadmap). Dokumen ini = pemetaan keadaan
 > NYATA repo hari ini ke gerbang brain (F0â€“F5) + rencana bertahap sampai satu
 > gambar kerja nyata benar-benar menghasilkan RAB yang BENAR (bukan sekadar
-> "menghasilkan sesuatu"). Ditulis Claude untuk review owner.
+> "menghasilkan sesuatu"). Ditulis Saya untuk review owner.
 
 > ## âœ… STATUS TERKINI (2026-07-03, sesi lanjutan) â€” GERBANG-0a TUTUP + harga Surakarta nyata
 > Owner setuju Fase 0 dulu, mengizinkan pakai harga ALFA.xlsx sbg HSD Surakarta
@@ -1054,8 +1054,8 @@ adalah harga ASLI Surakarta 2024 â€” dipakai langsung sebagai HSD sistem.
 > RAB total dev **+0,0009%** (harga fixture) dan **+1,37%** (harga
 > `data/harga-satuan/surakarta.json`, 112 resource NYATA, dev 100% dijelaskan oleh
 > inkonsistensi internal ALFA sendiri). Detail: `docs/plans/PAAX_FASE0B_GAP_HARGA_2026-07-03.md`,
-> prompt commit `docs/prompts/PAAX_CODEX_PROMPT_FASE0A_HSP_GOLDEN.md` (belum
-> di-commit â€” Codex yang commit). Tabel "Headline" Â§0 di bawah adalah snapshot
+> prompt commit `docs/prompts/PAAX_SAYA_PROMPT_FASE0A_HSP_GOLDEN.md` (belum
+> di-commit â€” Saya yang commit). Tabel "Headline" Â§0 di bawah adalah snapshot
 > ANALISIS AWAL (sebelum kerja hari ini) â€” angka "Data grounding ~40%" & "GERBANG-0
 > BELUM lolos" sudah membaik untuk lingkup Surakarta/PLHUT (lihat status di atas);
 > sisa gap = pemetaan ke katalog AHSP RESMI penuh (2.542 item), bukan lagi harga kosong.
@@ -1134,8 +1134,8 @@ flowchart TD
         K -->|"Koreksi"| L["Edit manual /\nChat AI untuk klarifikasi"]
         L --> J
 
-=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_AI_MULTIMODAL_LAMPIRAN_2026-07-03.md ===
-# PROMPT CODEX â€” AI Multimodal: Lampiran Chat + (opsional) Vision Gambar Kerja (2026-07-03)
+=== G:\paax-ai-main\docs\prompts\PAAX_SAYA_PROMPT_AI_MULTIMODAL_LAMPIRAN_2026-07-03.md ===
+# PROMPT SAYA â€” AI Multimodal: Lampiran Chat + (opsional) Vision Gambar Kerja (2026-07-03)
 
 > **UPDATE (sesi lanjutan 2026-07-03, lihat `docs/ai-map/STATE.md`):** untuk PDF
 > gambar kerja BERBASIS VEKTOR, sudah ada jalur deterministik (PyMuPDF, BUKAN
@@ -1146,11 +1146,11 @@ flowchart TD
 > prompt ini. Baca ulang sebelum menjalankan Bagian B.
 
 > âš ï¸ **JANGAN JALANKAN sebelum owner mengisi kotak persetujuan Bagian B di
-> bawah.** Ini prompt TERPISAH dari `PAAX_CODEX_PROMPT_PERBAIKAN_UI_BATCH_2026-07-03.md`
+> bawah.** Ini prompt TERPISAH dari `PAAX_SAYA_PROMPT_PERBAIKAN_UI_BATCH_2026-07-03.md`
 > (owner sengaja minta dipisah â€” "task terpisah tapi tetap pikirkan, saya
 > akan tinggal running nanti"). Baca dulu catatan gerbang di bawah sebelum
 > mulai â€” ada satu keputusan roadmap yang harus dikonfirmasi owner secara
-> eksplisit (Bagian B), bukan diasumsikan oleh Codex.
+> eksplisit (Bagian B), bukan diasumsikan oleh Saya.
 
 ## Kenapa dipisah dari batch perbaikan UI
 
@@ -1166,17 +1166,17 @@ dulu sebelum dijalankan.
 ## Bagian A â€” Lampiran Engineering Chat (aman, TIDAK menyentuh gerbang F0)
 
 
-=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_BRAIN_BATCH_2026-07-02.md ===
-# PROMPT CODEX â€” Batch Brain v4.1: 10+ Irisan Engine (kerjakan semua, Claude review nanti)
+=== G:\paax-ai-main\docs\prompts\PAAX_SAYA_PROMPT_BRAIN_BATCH_2026-07-02.md ===
+# PROMPT SAYA â€” Batch Brain v4.1: 10+ Irisan Engine (kerjakan semua, Saya review nanti)
 
-> Owner mengizinkan Codex mengerjakan SEMUA task di bawah tanpa spek rinci per
+> Owner mengizinkan Saya mengerjakan SEMUA task di bawah tanpa spek rinci per
 > rumus â€” kamu baca sendiri rumus persisnya dari
 > `docs/specs/brain-v4.1/PAAX_BRAIN_02_RUMUS_LOGIKA_HITUNG.txt` (bagian Â§
 > yang disebutkan tiap task), ikuti konvensi kode yang SUDAH ADA di
 > `services/core-engine/app/takeoff/` (params.py + models.py + 1 file per
 > domain + test dengan anchor MANUAL dihitung tangan di docstring â€” lihat
 > `tanah.py`/`dinding.py`/`arsitektur.py`/`tests/test_takeoff.py` sbg pola)
-> dan `app/tkg/takeoff.py` untuk pola besi. Claude akan REVIEW & PERBAIKI
+> dan `app/tkg/takeoff.py` untuk pola besi. Saya akan REVIEW & PERBAIKI
 > semua hasil nanti â€” jangan tunda karena ragu, ambil keputusan wajar &
 > catat sebagai assumption/needs_review sesuai pola Aturan Emas: TIDAK ADA
 > angka ditebak, data kurang -> needs_review.
@@ -1192,20 +1192,20 @@ dulu sebelum dijalankan.
 - Branch baru per task atau per kelompok task terkait (nama bebas relevan),
   cabang dari `feat/engine-takeoff-arsitektur` bila sudah ada di remote,
   kalau belum ada cabang dari `feat/engine-rebar-bbs`. `git add` file
-  eksplisit (JANGAN `-A`/`.`), JANGAN stage `.claude/`/`skills-lock.json`.
+  eksplisit (JANGAN `-A`/`.`), JANGAN stage `.saya/`/`skills-lock.json`.
   PR **draft**, **JANGAN merge**, jangan push ke main/branch docs utama.
 - Tulis 1 report ringkas per task/kelompok di `report/`.
 
 ## Task (kerjakan berurutan, boleh gabung yang berdekatan jadi 1 PR)
 
-=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_COMMIT_FASE2_LENGKAP_2026-07-04.md ===
-# PROMPT CODEX â€” COMMIT Fase 2 Persepsi Lengkap (P1â€“P6 + Grid Geometri Â§3.1.1)
+=== G:\paax-ai-main\docs\prompts\PAAX_SAYA_PROMPT_COMMIT_FASE2_LENGKAP_2026-07-04.md ===
+# PROMPT SAYA â€” COMMIT Fase 2 Persepsi Lengkap (P1â€“P6 + Grid Geometri Â§3.1.1)
 
-> Ditulis Claude, 2026-07-04 malam. **Tugas ini HANYA commit + push â€” TIDAK
+> Ditulis Saya, 2026-07-04 malam. **Tugas ini HANYA commit + push â€” TIDAK
 > ADA kode yang perlu ditulis ulang atau diperbaiki.** Semua implementasi
 > (backend `services/document-intelligence`, koreksi frontend
-> `apps/web`) sudah dikerjakan LANGSUNG oleh Claude sesuai arahan owner
-> ("Codex hanya bagian commit saja"), sudah diverifikasi lewat 339 test
+> `apps/web`) sudah dikerjakan LANGSUNG oleh Saya sesuai arahan owner
+> ("Saya hanya bagian commit saja"), sudah diverifikasi lewat 339 test
 > otomatis + 1 uji langsung di browser. **JANGAN mengubah logika apa pun**
 > di file yang disebut di bawah â€” kalau ada godaan "memperbaiki" sesuatu,
 > STOP dan laporkan ke owner, jangan diam-diam diubah.
@@ -1214,9 +1214,9 @@ dulu sebelum dijalankan.
 
 ## 0. Konteks singkat
 
-Sesi ini (2026-07-04 malam, lanjutan) Claude membangun **seluruh pipeline
+Sesi ini (2026-07-04 malam, lanjutan) Saya membangun **seluruh pipeline
 persepsi baca-gambar** (Fase 2 paket P1â€“P6 + rekonstruksi grid dari
-geometri Â§3.1.1) langsung sebagai kode â€” bukan sebagai prompt Codex seperti
+geometri Â§3.1.1) langsung sebagai kode â€” bukan sebagai prompt Saya seperti
 biasanya. Semua sudah lolos test & terverifikasi. Working tree
 `feat/ui-premium-redesign` juga sudah **4 commit di depan `origin`**
 (`633ac68`, `c0fb447`, `a45b4c1`, `dec49f5` â€” lihat `git log --oneline -5`)
@@ -1225,21 +1225,21 @@ perubahan baru, lalu **push semuanya** (yang lama + yang baru) ke
 `origin/feat/ui-premium-redesign`.
 
 Laporan lengkap fungsi & hasil ada di
-`report/REPORT_FASE2_PERSEPSI_LENGKAP_CLAUDE_2026-07-04.txt` â€” baca itu
+`report/REPORT_FASE2_PERSEPSI_LENGKAP_SAYA_2026-07-04.txt` â€” baca itu
 untuk konteks, TIDAK perlu dibaca ulang di sini secara detail.
 
 ---
 
-=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_ENGINE_D3.md ===
-# PROMPT CODEX â€” Commit & PR: Engine D3 Besi Lanjutan + BBS (2026-07-02)
+=== G:\paax-ai-main\docs\prompts\PAAX_SAYA_PROMPT_ENGINE_D3.md ===
+# PROMPT SAYA â€” Commit & PR: Engine D3 Besi Lanjutan + BBS (2026-07-02)
 
-> Konteks: Claude selesai mengimplementasikan irisan D3 brain v4.1 di engine:
+> Konteks: Saya selesai mengimplementasikan irisan D3 brain v4.1 di engine:
 > F-D02 penuh (kait + lewatan), F-D04 pinggang, F-D06 waste_mode, F-D08 BBS,
 > + mirror Zod + 8 test anchor manual. Verifikasi HIJAU: pytest 134, jest 11,
 > vitest 25, tsc OK, build OK. Tugasmu HANYA commit + push + draft PR.
-> **JANGAN mengubah kode/rumus/angka acuan (Aturan Emas Â§1 + Â§9 CLAUDE.md).**
+> **JANGAN mengubah kode/rumus/angka acuan (Aturan Emas Â§1 + Â§9 SAYA.md).**
 
-## âš ï¸ URUTAN â€” jalankan SETELAH `PAAX_CODEX_PROMPT_UI_OVERHAUL.md` selesai
+## âš ï¸ URUTAN â€” jalankan SETELAH `PAAX_SAYA_PROMPT_UI_OVERHAUL.md` selesai
 
 Prompt UI membuat branch `feat/ui-workspace-premium` dan meng-commit file UI.
 Perubahan engine D3 (daftar di bawah) sengaja TIDAK ikut di sana dan masih
@@ -1256,21 +1256,21 @@ di-commit di sini. Kalau checkout ditolak karena konflik, STOP dan lapor.)
 ## Aturan keras
 
 1. **DILARANG** `git add .` / `git add -A` â€” tambah file satu per satu.
-2. **DILARANG** commit `.claude/`, `skills-lock.json`.
+2. **DILARANG** commit `.saya/`, `skills-lock.json`.
 3. PR = **draft**, **DILARANG merge**, dilarang push ke `main`/branch docs.
 4. Guardrail merah â†’ STOP + lapor, jangan commit.
 
 ## Toolchain
 
-=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_ENGINE_TAKEOFF.md ===
-# PROMPT CODEX â€” Commit & PR: Engine Take-off Arsitektur/Tanah (2026-07-02)
+=== G:\paax-ai-main\docs\prompts\PAAX_SAYA_PROMPT_ENGINE_TAKEOFF.md ===
+# PROMPT SAYA â€” Commit & PR: Engine Take-off Arsitektur/Tanah (2026-07-02)
 
-> Konteks: Claude selesai mengimplementasikan irisan brain **D4 + Â§E + Â§F + Â§G**
+> Konteks: Saya selesai mengimplementasikan irisan brain **D4 + Â§E + Â§F + Â§G**
 > di engine â€” paket baru `app/takeoff/` (params Â§Z, tanah, dinding/finishing,
 > arsitektur) + 3 endpoint + mirror Zod + requests.http + 13 test anchor manual.
-> Verifikasi Claude HIJAU: pytest **147**, schemas jest **11** + build, web tsc
+> Verifikasi Saya HIJAU: pytest **147**, schemas jest **11** + build, web tsc
 > OK + vitest **25** + build. Tugasmu HANYA commit + push + draft PR.
-> **JANGAN mengubah kode/rumus/angka acuan (Aturan Emas Â§1 + Â§9 CLAUDE.md).**
+> **JANGAN mengubah kode/rumus/angka acuan (Aturan Emas Â§1 + Â§9 SAYA.md).**
 
 ---
 
@@ -1292,23 +1292,23 @@ Kalau checkout ditolak karena konflik â†’ STOP dan lapor.
 ## Aturan keras
 
 1. **DILARANG** `git add .` / `git add -A` â€” stage file satu per satu sesuai daftar.
-2. **DILARANG** men-stage: `.claude/`, `skills-lock.json`,
+2. **DILARANG** men-stage: `.saya/`, `skills-lock.json`,
 
-=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_FASE0A_HSP_GOLDEN.md ===
-# PROMPT CODEX â€” Fase 0: Golden anchor RAB nyata PLHUT + price book Surakarta (2026-07-03)
+=== G:\paax-ai-main\docs\prompts\PAAX_SAYA_PROMPT_FASE0A_HSP_GOLDEN.md ===
+# PROMPT SAYA â€” Fase 0: Golden anchor RAB nyata PLHUT + price book Surakarta (2026-07-03)
 
 > Konteks: **GERBANG-0a TUTUP** + **harga Surakarta NYATA terpasang** (roadmap
 > `docs/plans/PAAX_ROADMAP_GAMBAR_KE_RAB_2026-07-03.md`, "data dulu, baru mata").
-> Claude sudah **membangun & memverifikasi** fixture + 3 test golden anchor dari
+> Saya sudah **membangun & memverifikasi** fixture + 3 test golden anchor dari
 > RAB manual NYATA `rab gedung plhut surakarta ALFA.xlsx`, dan membangun price
 > book regional Surakarta dari data harga asli di file yang sama (owner-authorized
 > 2026-07-03: "harga DKH/HSP/HARGA BAHAN itu harga asli Surakarta, pakai saja").
 > Tugasmu: **verifikasi hijau + commit + draft PR**. **JANGAN ubah kode/engine/
 > rumus/test/data.**
 >
-> Bukti terverifikasi Claude (jalankan ulang untuk pastikan):
+> Bukti terverifikasi Saya (jalankan ulang untuk pastikan):
 > - **0a-1 HSP**: engine UMUM `app.rab.rab.compute_hsp()` reproduksi **32/32** HSP
->   profesional (baris F ALFA) via `(A+B+C)Ã—(1+OP)` (CLAUDE.md Â§5).
+>   profesional (baris F ALFA) via `(A+B+C)Ã—(1+OP)` (SAYA.md Â§5).
 > - **0a-2 RAB total**: engine UMUM `compute_rab()` reproduksi grand_total
 >   **Rp 1.860.078.607** dengan deviasi **+0,0009%** (224 baris; 79 ber-AHS pakai
 >   HSP dari koefisien, 145 direct/lump-sum pseudo-AHSP harga langsung).
@@ -1326,21 +1326,21 @@ Kalau checkout ditolak karena konflik â†’ STOP dan lapor.
 - **Harga = pengecualian yang sah**: `data/harga-satuan/surakarta.json` BOLEH ada
   di `data/` karena itu **harga regional Surakarta** (berlaku proyek Surakarta
 
-=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_FASE2_P1_FONDASI_PERSEPSI.md ===
-# PROMPT CODEX â€” FASE 2 Â· PAKET P1: Fondasi Persepsi Vektor (span + merge-run + locale + kontrak skema)
+=== G:\paax-ai-main\docs\prompts\PAAX_SAYA_PROMPT_FASE2_P1_FONDASI_PERSEPSI.md ===
+# PROMPT SAYA â€” FASE 2 Â· PAKET P1: Fondasi Persepsi Vektor (span + merge-run + locale + kontrak skema)
 
 > ## âš ï¸ STATUS: HISTORIS / SUPERSEDED (2026-07-04 malam)
-> Owner memutuskan Claude mengerjakan paket ini LANGSUNG (bukan via Codex).
+> Owner memutuskan Saya mengerjakan paket ini LANGSUNG (bukan via Saya).
 > **SUDAH DIIMPLEMENTASIKAN** di `services/document-intelligence/app/perception/
 > {models.py,ingest/span_extractor.py,vector/merge_run.py,locale.py,tkg/models.py}`,
-> 31 test hijau. **JANGAN jalankan prompt ini via Codex** â€” akan menulis ulang
+> 31 test hijau. **JANGAN jalankan prompt ini via Saya** â€” akan menulis ulang
 > kode yang sudah ada & sudah teruji. Lihat status nyata di
 > `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` Â§Paket F2-P1. Dipertahankan
 > di sini sbg spek historis/referensi, bukan instruksi aktif.
 
-> Ditulis Claude 2026-07-04 (rekonstruksi + revisi setelah insiden file hilang â€”
+> Ditulis Saya 2026-07-04 (rekonstruksi + revisi setelah insiden file hilang â€”
 > lihat `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` Â§0.2) untuk dijalankan
-> Codex. Rencana induk: `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md`. Spek
+> Saya. Rencana induk: `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md`. Spek
 > persepsi mengikat: `docs/specs/brain-v4.1/PAAX_BRAIN_00_EKSTRAKSI_GAMBAR_KERJA.txt`
 > (Â§1, Â§2.6, Â§6, Â§8, Â§10). **Ini paket fondasi.** Jangan bangun grammar/grid/tabel
 > di sini â€” itu paket P2/P3.
@@ -1358,18 +1358,18 @@ implementasi yang sudah benar. Jangan ulangi pola ini.)
 
 1. **Â§0.1 FIXTURE-BUKAN-TEMPLATE.** Semua kode di `app/perception/` harus UMUM
 
-=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_FASE2_P2_LEKSIKON_GRAMMAR.md ===
-# PROMPT CODEX â€” FASE 2 Â· PAKET P2: Leksikon & Grammar Notasi Struktur (brain-00 Â§2)
+=== G:\paax-ai-main\docs\prompts\PAAX_SAYA_PROMPT_FASE2_P2_LEKSIKON_GRAMMAR.md ===
+# PROMPT SAYA â€” FASE 2 Â· PAKET P2: Leksikon & Grammar Notasi Struktur (brain-00 Â§2)
 
 > ## âš ï¸ STATUS: HISTORIS / SUPERSEDED (2026-07-04 malam)
-> Owner memutuskan Claude mengerjakan paket ini LANGSUNG (bukan via Codex).
+> Owner memutuskan Saya mengerjakan paket ini LANGSUNG (bukan via Saya).
 > **SUDAH DIIMPLEMENTASIKAN** di `services/document-intelligence/app/perception/
 > {lexicon/,grammar/,params.py}`, 37 test hijau, semua anchor tabel Â§4 lolos.
-> **JANGAN jalankan prompt ini via Codex.** Lihat status nyata di
+> **JANGAN jalankan prompt ini via Saya.** Lihat status nyata di
 > `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` Â§Paket F2-P2. Dipertahankan
 > di sini sbg spek historis/referensi, bukan instruksi aktif.
 
-> Ditulis Claude 2026-07-04 (rekonstruksi setelah insiden file hilang â€” lihat
+> Ditulis Saya 2026-07-04 (rekonstruksi setelah insiden file hilang â€” lihat
 > `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` Â§0.2). Rencana induk:
 > `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md`. Spek mengikat:
 > `docs/specs/brain-v4.1/PAAX_BRAIN_00_EKSTRAKSI_GAMBAR_KERJA.txt` Â§2 (Â§2.1â€“Â§2.8)
@@ -1390,18 +1390,18 @@ Kalau sudah ada pekerjaan paket ini, JANGAN tulis ulang dari nol â€” rebase
    (typo, satuan) ditandai bendera, bukan diam-diam.
 3. **Â§2.7 satuan lewat INFERENSI, bukan asumsi tetap.** Keputusan satuan
 
-=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_FASE2_P5_FIX_UI_PERSEPSI_REVIEW.md ===
-# PROMPT CODEX â€” FASE 2 Â· PAKET P5-FIX: Perbaikan Terarah Panel Review Persepsi
+=== G:\paax-ai-main\docs\prompts\PAAX_SAYA_PROMPT_FASE2_P5_FIX_UI_PERSEPSI_REVIEW.md ===
+# PROMPT SAYA â€” FASE 2 Â· PAKET P5-FIX: Perbaikan Terarah Panel Review Persepsi
 
 > ## âš ï¸ STATUS: HISTORIS / SUPERSEDED (2026-07-04 malam)
-> Owner memutuskan Claude mengerjakan paket ini LANGSUNG. **SUDAH
+> Owner memutuskan Saya mengerjakan paket ini LANGSUNG. **SUDAH
 > DIIMPLEMENTASIKAN** â€” lebih tuntas dari rencana di bawah (fabrikasi kode
 > gerbang DIHAPUS TOTAL, bukan sekadar di-rename, karena `metrics`/`gerbang`
 > ASLI dari backend sudah tersedia). Diverifikasi end-to-end di browser
-> nyata. **JANGAN jalankan prompt ini via Codex.** Lihat status nyata di
+> nyata. **JANGAN jalankan prompt ini via Saya.** Lihat status nyata di
 > `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` Â§Paket F2-P5-FIX.
 
-> Ditulis Claude 2026-07-04 setelah audit hasil kerja hari ini. Rencana induk:
+> Ditulis Saya 2026-07-04 setelah audit hasil kerja hari ini. Rencana induk:
 > `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` Â§0.2 & Â§Paket F2-P5-FIX.
 > **Ini BUKAN pembangunan baru.** Fitur "Analisis Gambar AI" / panel review
 > persepsi di `TkgWorkspace` SUDAH ADA dan SUDAH JALAN (commit `a45b4c1` di
@@ -1414,7 +1414,7 @@ Kalau sudah ada pekerjaan paket ini, JANGAN tulis ulang dari nol â€” rebase
 
 ## 0. Konteks â€” kenapa perbaikan ini perlu
 
-Audit Claude menemukan `buildPerceptionReview()` di
+Audit Saya menemukan `buildPerceptionReview()` di
 `apps/web/src/components/drawings/tkg-workspace.tsx` menghitung sendiri (di
 TypeScript) sebuah blok "Gerbang" dengan kode `V-TKG`, `V-COV`, `V-WARN`,
 `V-CLS`. Ini BUKAN pelanggaran Aturan Emas secara harfiah (bukan angka
@@ -1422,21 +1422,21 @@ RAB/HSP â€” cuma tally elemen/tabel/dimensi yang sudah ada di memori), TAPI
 2 masalah nyata:
 
 
-=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_FASE2_P6_PADDLEOCR_RASTER.md ===
-# PROMPT CODEX â€” FASE 2 Â· PAKET P6: Perception Raster via PaddleOCR (sheet scan/foto)
+=== G:\paax-ai-main\docs\prompts\PAAX_SAYA_PROMPT_FASE2_P6_PADDLEOCR_RASTER.md ===
+# PROMPT SAYA â€” FASE 2 Â· PAKET P6: Perception Raster via PaddleOCR (sheet scan/foto)
 
 > ## âš ï¸ STATUS: HISTORIS / SUPERSEDED (2026-07-04 malam)
-> Owner memutuskan Claude mengerjakan paket ini LANGSUNG. **KODE SUDAH
+> Owner memutuskan Saya mengerjakan paket ini LANGSUNG. **KODE SUDAH
 > DIIMPLEMENTASIKAN** (`app/perception/{ingest/raster_detector.py,
 > ocr/paddle_ocr_extractor.py}`, 6 test hijau via mock). Dependency `paddleocr`
 > SENGAJA belum di-install (berat/opsional) â€” jalur nyata (non-mock) belum
 > diverifikasi, butuh owner `pip install paddleocr` dulu. **JANGAN jalankan
-> prompt ini via Codex** untuk membangun ulang; kalau ingin lanjut ke modul
+> prompt ini via Saya** untuk membangun ulang; kalau ingin lanjut ke modul
 > table/layout PaddleOCR (di luar scope awal), tulis prompt baru mengacu ke
 > kode yang sudah ada. Lihat status nyata di
 > `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` Â§Paket F2-P6.
 
-> Ditulis Claude 2026-07-04. Rencana induk:
+> Ditulis Saya 2026-07-04. Rencana induk:
 > `docs/plans/PAAX_FASE2_PERSEPSI_PLAN_2026-07-04.md` Â§Paket F2-P6. Konsep
 > awal dari owner: `Downloads/konsep_paddleocr_openai_vision_paax.txt` â€” sudah
 > dianalisis kritis terhadap kode nyata & PaddleOCR 3.7.0 asli
@@ -1444,8 +1444,8 @@ RAB/HSP â€” cuma tally elemen/tabel/dimensi yang sudah ada di memori), TAPI
 > `docs/specs/brain-v4.1/PAAX_BRAIN_00_EKSTRAKSI_GAMBAR_KERJA.txt` Â§8
 > (RULE-EXT-30..33) + INV-TKG-06 + RULE-EXT-05 ("vektor-dulu").
 
-**PRASYARAT KERAS: Paket P1 (`docs/prompts/PAAX_CODEX_PROMPT_FASE2_P1_FONDASI_PERSEPSI.md`)
-HARUS SUDAH SELESAI & DI-REVIEW Claude sebelum paket ini dimulai** â€” P6
+**PRASYARAT KERAS: Paket P1 (`docs/prompts/PAAX_SAYA_PROMPT_FASE2_P1_FONDASI_PERSEPSI.md`)
+HARUS SUDAH SELESAI & DI-REVIEW Saya sebelum paket ini dimulai** â€” P6
 memakai kontrak `TextSpan`/`Run` (dengan field `method`/`confidence`) yang
 didefinisikan P1. Cek dulu: `find services/document-intelligence/app/perception -iname "models.py"`
 harus ADA dan berisi `TextSpan` dengan field `method: Literal["vector","ocr"]`.
@@ -1454,19 +1454,19 @@ Kalau belum ada, STOP â€” jalankan P1 dulu.
 ---
 
 
-=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_PERBAIKAN_UI_BATCH_2026-07-03.md ===
-# PROMPT CODEX â€” Batch Perbaikan: Hydration, Navigasi Ganda, Chat, Gambar Kerja AI (2026-07-03)
+=== G:\paax-ai-main\docs\prompts\PAAX_SAYA_PROMPT_PERBAIKAN_UI_BATCH_2026-07-03.md ===
+# PROMPT SAYA â€” Batch Perbaikan: Hydration, Navigasi Ganda, Chat, Gambar Kerja AI (2026-07-03)
 
 > Sumber: `Downloads/perbaikan.txt` (14 poin ditulis owner setelah mencoba build
 > hasil redesign UI premium, branch `feat/ui-premium-redesign`, PR **#26
-> draft, belum di-merge**) + investigasi Claude di sesi ini yang menemukan
+> draft, belum di-merge**) + investigasi Saya di sesi ini yang menemukan
 > root cause persis di kode untuk tiap poin (dikutip file:baris di bawah).
 > Owner sudah menjawab pertanyaan arsitektural (lihat Batch 4) â€” JANGAN
 > menebak ulang keputusan itu, ikuti seperti tertulis.
 >
 > **Semua batch di bawah HANYA presentasi/orkestrasi UI.** Tidak ada satupun
 > yang mengubah rumus/angka di `services/core-engine` atau kontrak
-> `@paax/schemas`. Aturan Emas (`CLAUDE.md` Â§1) tetap: engine yang hitung,
+> `@paax/schemas`. Aturan Emas (`SAYA.md` Â§1) tetap: engine yang hitung,
 > frontend hanya menampilkan/mengurutkan panggilan.
 >
 > Kerjakan di branch **`feat/ui-premium-redesign`** (SUDAH checked out, PR #26
@@ -1478,7 +1478,7 @@ Kalau belum ada, STOP â€” jalankan P1 dulu.
 ## Aturan keras
 
 1. **DILARANG** `git add .` / `git add -A`. Tambahkan file satu per satu.
-2. **DILARANG** commit `.claude/`, `skills-lock.json`, `excel_extracted.txt`, `pdf_extracted.txt` (lihat `git status` â€” ada file liar ini di working tree, JANGAN ikut ter-stage).
+2. **DILARANG** commit `.saya/`, `skills-lock.json`, `excel_extracted.txt`, `pdf_extracted.txt` (lihat `git status` â€” ada file liar ini di working tree, JANGAN ikut ter-stage).
 3. **DILARANG** merge / mengubah PR #26 dari draft ke ready.
 4. **DILARANG** push ke `main`.
 5. **DILARANG** menyentuh rumus/angka di `services/core-engine`, atau mengubah signature fungsi di `apps/web/src/lib/engine.ts` (`validateTkg`/`renderTkg`/`takeoffTkg`) â€” batch ini murni presentasi.
@@ -1486,10 +1486,10 @@ Kalau belum ada, STOP â€” jalankan P1 dulu.
 
 ## Toolchain (PATH non-interaktif â€” mesin Windows ini)
 
-=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_PLHUT_GOLDEN.md ===
-# PROMPT CODEX â€” Commit: Golden Anchor TKG PLHUT (2026-07-03, lanjutan PR #25)
+=== G:\paax-ai-main\docs\prompts\PAAX_SAYA_PROMPT_PLHUT_GOLDEN.md ===
+# PROMPT SAYA â€” Commit: Golden Anchor TKG PLHUT (2026-07-03, lanjutan PR #25)
 
-> Claude menambahkan golden anchor dari GAMBAR KERJA PLHUT ASLI (grid nyata,
+> Saya menambahkan golden anchor dari GAMBAR KERJA PLHUT ASLI (grid nyata,
 > hitungan kolom nyata dari denah, tabel kolom nyata; footplat tanpa tebal =
 > bukti no-guess pada data nyata). pytest total **198 passed**. Tugasmu HANYA
 > commit + push ke branch `task/brain-v4.1-tkg-implementation` (PR #25 sudah
@@ -1500,36 +1500,36 @@ Kalau belum ada, STOP â€” jalankan P1 dulu.
    â†’ harus **198 passed**. Merah = STOP + lapor.
 2. Commit (stage HANYA file ini â€” dilarang `git add .`):
    - `services/core-engine/tests/test_plhut_golden.py`
-   - `docs/prompts/PAAX_CODEX_PROMPT_PLHUT_GOLDEN.md`
+   - `docs/prompts/PAAX_SAYA_PROMPT_PLHUT_GOLDEN.md`
 
    Pesan (persis):
    ```
    test(engine): PLHUT golden anchors from real drawings (grid, kolom, no-guess footplat)
    ```
 3. `git push` (branch sudah tracking origin). Jangan buka PR baru â€” sudah ada
-   PR #25. Update report `report/REPORT_PLHUT_COMMIT_CODEX_2026-07-03.md`
+   PR #25. Update report `report/REPORT_PLHUT_COMMIT_SAYA_2026-07-03.md`
    (tambah bagian "Golden Anchor") boleh digabung dalam commit yang sama.
 4. TETAP dilarang: commit `excel_extracted.txt` / `pdf_extracted.txt` /
-   `.claude/` / `skills-lock.json`.
+   `.saya/` / `skills-lock.json`.
 
 ## Catatan penting untuk owner (tulis juga di report):
-Commit `790b2ee` (sesi batch sebelumnya) terlanjur men-track `.claude/skills/`
-(35 file skill pihak ketiga) + `skills-lock.json` + `.claude/launch.json` â€”
-melanggar aturan "jangan commit .claude/". JANGAN perbaiki sendiri tanpa
+Commit `790b2ee` (sesi batch sebelumnya) terlanjur men-track `.saya/skills/`
+(35 file skill pihak ketiga) + `skills-lock.json` + `.saya/launch.json` â€”
+melanggar aturan "jangan commit .saya/". JANGAN perbaiki sendiri tanpa
 persetujuan owner (butuh `git rm -r --cached` + entri `.gitignore`); tunggu
 
-=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_PLHUT_REVIEW.md ===
-# PROMPT CODEX â€” Commit & PR: Review PLHUT + Triage UI + Data Surakarta (2026-07-03)
+=== G:\paax-ai-main\docs\prompts\PAAX_SAYA_PROMPT_PLHUT_REVIEW.md ===
+# PROMPT SAYA â€” Commit & PR: Review PLHUT + Triage UI + Data Surakarta (2026-07-03)
 
-> Claude selesai me-review & MEMPERBAIKI hasil sesi PLHUT-mu (rincian:
-> `report/REVIEW_CLAUDE_PLHUT_2026-07-03.md`) + membangun Triage UI + data
+> Saya selesai me-review & MEMPERBAIKI hasil sesi PLHUT-mu (rincian:
+> `report/REVIEW_SAYA_PLHUT_2026-07-03.md`) + membangun Triage UI + data
 > harga Surakarta. Guardrail HIJAU: pytest 193, schemas 11+build, tsc,
 > vitest 30, build. Tugasmu HANYA commit + push + draft PR di branch aktif
 > `task/brain-v4.1-tkg-implementation`. **JANGAN ubah kode/angka acuan.**
 
 ## Aturan keras
 1. DILARANG `git add .`/`-A`; stage eksplisit sesuai daftar.
-2. DILARANG stage: `.claude/`, `skills-lock.json`, `excel_extracted.txt`,
+2. DILARANG stage: `.saya/`, `skills-lock.json`, `excel_extracted.txt`,
    `pdf_extracted.txt` (data proyek mentah â€” jangan masuk repo).
 3. **HAPUS** `scratch_extract.py` (digantikan `services/core-engine/scripts/
    extract_harga_surakarta.py`) â€” ikutkan penghapusan bila file terlanjur
@@ -1550,21 +1550,21 @@ cd apps/web ; pnpm exec tsc --noEmit -p tsconfig.json ; pnpm test    # 30
 - `services/core-engine/app/takeoff/smkk.py`
 - `services/core-engine/app/takeoff/mep_advanced.py`
 
-=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_TKG.md ===
-# PROMPT CODEX â€” Sesi TKG (brain v4.1), 2026-07-02
+=== G:\paax-ai-main\docs\prompts\PAAX_SAYA_PROMPT_TKG.md ===
+# PROMPT SAYA â€” Sesi TKG (brain v4.1), 2026-07-02
 
-> Salin-tempel per-tugas ke Codex. Konteks repo: baca `AGENTS.md` +
+> Salin-tempel per-tugas ke Saya. Konteks repo: baca `AGENTS.md` +
 > `docs/ai-map/START_HERE.md` dulu. Semua pekerjaan di bawah adalah
 > **tugas ringan/mekanis** â€” implementasi berat (rumus, model, UI) SUDAH
-> dikerjakan Claude dan ada di working tree branch `docs/brain-v4.1-alignment`.
+> dikerjakan Saya dan ada di working tree branch `docs/brain-v4.1-alignment`.
 
 ## GUARDRAIL (berlaku untuk SEMUA tugas di file ini)
 
 1. **JANGAN mengubah rumus/logika** di `services/core-engine/app/tkg/`,
    `app/geometry/`, atau angka acuan test. Kalau test merah karena logika,
-   STOP dan lapor â€” jangan "perbaiki" angkanya (Aturan Emas, CLAUDE.md Â§1).
+   STOP dan lapor â€” jangan "perbaiki" angkanya (Aturan Emas, SAYA.md Â§1).
 2. **JANGAN push ke `main` dan JANGAN merge PR.** Branch â†’ PR â†’ tunggu review
-   owner + Claude (CLAUDE.md Â§9).
+   owner + Saya (SAYA.md Â§9).
 3. Sebelum tiap commit, WAJIB hijau semua:
    ```
    cd services/core-engine && python -m pytest -q     # harus 126+ passed
@@ -1582,10 +1582,10 @@ cd apps/web ; pnpm exec tsc --noEmit -p tsconfig.json ; pnpm test    # 30
 
 Working tree branch `docs/brain-v4.1-alignment` berisi pekerjaan belum
 
-=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_UI_OVERHAUL.md ===
-# PROMPT CODEX â€” Commit & PR: UI Overhaul Workspace Premium (2026-07-02)
+=== G:\paax-ai-main\docs\prompts\PAAX_SAYA_PROMPT_UI_OVERHAUL.md ===
+# PROMPT SAYA â€” Commit & PR: UI Overhaul Workspace Premium (2026-07-02)
 
-> Konteks: Claude sudah selesai mengimplementasikan & memverifikasi overhaul UI
+> Konteks: Saya sudah selesai mengimplementasikan & memverifikasi overhaul UI
 > dashboard (font Outfit/Inter, tema gelap default, settings dialog terpusat 2
 > kolom menggantikan 4 drawer). Semua verifikasi HIJAU: `tsc --noEmit` OK,
 > vitest 25 passed, `pnpm build` sukses, dialog diuji visual di browser.
@@ -1594,8 +1594,8 @@ Working tree branch `docs/brain-v4.1-alignment` berisi pekerjaan belum
 ## Aturan keras
 
 1. **DILARANG** `git add .` / `git add -A`. Tambahkan file satu per satu sesuai daftar di bawah.
-2. **DILARANG** commit `.claude/`, `skills-lock.json`, atau file lain di luar daftar.
-3. **DILARANG** merge. PR dibuka sebagai **draft**, menunggu review owner + Claude.
+2. **DILARANG** commit `.saya/`, `skills-lock.json`, atau file lain di luar daftar.
+3. **DILARANG** merge. PR dibuka sebagai **draft**, menunggu review owner + Saya.
 4. **DILARANG** push ke `main` atau ke `docs/brain-v4.1-alignment` langsung.
 5. Jika guardrail (langkah 2) merah â†’ STOP, tulis laporan, jangan commit.
 
@@ -1614,10 +1614,10 @@ ter-commit. Buat branch (perubahan ikut pindah):
 
 ```
 
-=== G:\paax-ai-main\docs\prompts\PAAX_CODEX_PROMPT_UI_PREMIUM_REDESIGN.md ===
-# PROMPT CODEX â€” Commit & PR: UI Premium Redesign Medium Grey (2026-07-03)
+=== G:\paax-ai-main\docs\prompts\PAAX_SAYA_PROMPT_UI_PREMIUM_REDESIGN.md ===
+# PROMPT SAYA â€” Commit & PR: UI Premium Redesign Medium Grey (2026-07-03)
 
-> Konteks: Claude sudah selesai mengimplementasikan & memverifikasi rombak
+> Konteks: Saya sudah selesai mengimplementasikan & memverifikasi rombak
 > besar UI/UX workspace (spek owner: `G:\Design\prompt\PAAX_PLAN_SESI_DESAIN_PREMIUM_2026-07-03.txt`):
 > tema **Medium Grey** default + glassmorphism, logo/wordmark SVG dari brand
 > sheet PAAX, konsolidasi sidebar (rail = tool global + gear; panel = konteks
@@ -1636,8 +1636,8 @@ ter-commit. Buat branch (perubahan ikut pindah):
 ## Aturan keras
 
 1. **DILARANG** `git add .` / `git add -A`. Tambahkan file satu per satu sesuai daftar.
-2. **DILARANG** commit `.claude/`, `skills-lock.json`, `excel_extracted.txt`, `pdf_extracted.txt`.
-3. **DILARANG** merge. PR dibuka sebagai **draft**, menunggu review owner + Claude.
+2. **DILARANG** commit `.saya/`, `skills-lock.json`, `excel_extracted.txt`, `pdf_extracted.txt`.
+3. **DILARANG** merge. PR dibuka sebagai **draft**, menunggu review owner + Saya.
 4. **DILARANG** push ke `main`.
 5. Jika guardrail merah â†’ STOP, tulis laporan, jangan commit.
 
@@ -1695,14 +1695,14 @@ ada: lihat **[docs/BRAIN_ALIGNMENT.md](../../BRAIN_ALIGNMENT.md)**.
 | File | Topik | Lapis arsitektur terkait | Status pemakaian |
 |---|---|---|---|
 | `PAAX_BRAIN_00_EKSTRAKSI_GAMBAR_KERJA.txt` | Spek persepsi: TKG (Transkrip Kanonik Gambar), grammar notasi gambar teknik ID, SOP baca per jenis sheet, 10 gerbang validasi (V-01â€“V-10) | Lapis 2A (`services/document-intelligence`) | **Referensi untuk v1.0** â€” belum diimplementasi. Jangan mulai bangun sebelum gerbang F0 (data grounding) selesai (lihat `docs/ai-map/STATE.md`). |
-| `PAAX_BRAIN_01_PRINSIP_PENALARAN.txt` | Konstitusi reasoning: 13 invariant (INV-01â€“13), model entitas (Evidence/Assumption/Warning/ReviewTask/Correction), aturan JOIN/precedence, expansion/implied-works, AHSP selection, dependency scheduling, anti-pattern (AP-01â€“16) | Lapis 1 (orchestrator) + Lapis 2A/2B | Invariant inti (AI tak pernah hitung) **sudah berlaku** via `CLAUDE.md` Â§1. Model entitas Evidence/Warning/Assumption **sudah ada sebagian** di `packages/schemas`; sisanya (ReviewTask, Correction, ElementInstance, WorkItem) masih draft/belum dipakai. |
+| `PAAX_BRAIN_01_PRINSIP_PENALARAN.txt` | Konstitusi reasoning: 13 invariant (INV-01â€“13), model entitas (Evidence/Assumption/Warning/ReviewTask/Correction), aturan JOIN/precedence, expansion/implied-works, AHSP selection, dependency scheduling, anti-pattern (AP-01â€“16) | Lapis 1 (orchestrator) + Lapis 2A/2B | Invariant inti (AI tak pernah hitung) **sudah berlaku** via `SAYA.md` Â§1. Model entitas Evidence/Warning/Assumption **sudah ada sebagian** di `packages/schemas`; sisanya (ReviewTask, Correction, ElementInstance, WorkItem) masih draft/belum dipakai. |
 | `PAAX_BRAIN_02_RUMUS_LOGIKA_HITUNG.txt` | 92 rumus deterministik (F-A00â€“K08): geometri, take-off beton/bekisting/besi/tanah/arsitektur/atap/MEP, AHSPâ†’HSPâ†’RAB, bobot/durasi/S-Curve/CPM/EVM, confidence, QA. Plus registry ~62 parameter (Â§Z). | Lapis 2B (`services/core-engine`) | **Sebagian kecil sudah diimplementasi** (F-H*/F-I* â€” HSP/RAB/S-Curve/CPM/skenario). Mayoritas (take-off beton/besi/bekisting/tanah/finishing) **belum** â€” jadi target ekspansi bertahap `app/geometry/`. |
-| `PAAX_BRAIN_03_SKILL_API_PIPELINE_DATA.txt` | Katalog 31 skill (SK-01â€“31), arsitektur layer L0â€“L3, kebijakan keamanan/ops (P-SEC/P-OPS), testing/eval (T-01â€“T08), roadmap bergerbang F0â€“F5 | Semua lapis | Arsitektur L0â€“L3 **selaras** dengan `CLAUDE.md` Â§3. Roadmap F0â€“F5 **menguatkan** urutan yang sudah dikunci di `STATE.md` (ground data dulu, CV/vision ditunda). |
+| `PAAX_BRAIN_03_SKILL_API_PIPELINE_DATA.txt` | Katalog 31 skill (SK-01â€“31), arsitektur layer L0â€“L3, kebijakan keamanan/ops (P-SEC/P-OPS), testing/eval (T-01â€“T08), roadmap bergerbang F0â€“F5 | Semua lapis | Arsitektur L0â€“L3 **selaras** dengan `SAYA.md` Â§3. Roadmap F0â€“F5 **menguatkan** urutan yang sudah dikunci di `STATE.md` (ground data dulu, CV/vision ditunda). |
 | `PAAX_OTAK_v3_Penjelasan_Sistem_2026-07-01.docx` | Ringkasan sistem versi v3 (lebih lama dari TXT 00-03 yang v4.1) | â€” | Arsip/referensi sejarah â€” **superseded** oleh TXT 00-03 v4.1. Simpan untuk konteks, bukan sumber kebenaran aktif. |
 
 ## Cara pakai
 
-- Kalau kamu (Claude/Codex) sedang mengerjakan task yang menyentuh rumus
+- Kalau kamu (Saya/Saya) sedang mengerjakan task yang menyentuh rumus
   take-off, model entitas Evidence/TKG, atau desain pipeline baca-gambar â€”
   baca bagian relevan di sini **sebagai spek rinci**, tapi cek dulu
   `docs/BRAIN_ALIGNMENT.md` untuk tahu bagian mana yang sudah/belum
@@ -1780,7 +1780,7 @@ Angka di blueprint (Bagian 12.2) **masuk akal untuk operasi sekali-jalan**. Yang
 **Date:** 2026-06-25
 **Status:** Approved for planning (implementation not started)
 **Scope owner:** apps/web (frontend only)
-**Source design:** Claude Design project "PAAX AI UI Redesign" (`e732735b-fa49-49b3-8f43-fc21d6512045`), file `PAAX Workspace.dc.html`
+**Source design:** Saya Design project "PAAX AI UI Redesign" (`e732735b-fa49-49b3-8f43-fc21d6512045`), file `PAAX Workspace.dc.html`
 
 ## 1. Summary
 
@@ -1804,7 +1804,7 @@ decision). The existing live deterministic path (`rab-tester`) is preserved unch
 
 ## 3. Golden-rule & protection constraints (must hold)
 
-These are hard constraints inherited from `CLAUDE.md` and prior agreement. Any change touching
+These are hard constraints inherited from `SAYA.md` and prior agreement. Any change touching
 
 === G:\paax-ai-main\docs\versions\v0.2-summary.md ===
 # PAAX AI v0.2 (Demo) - Summary

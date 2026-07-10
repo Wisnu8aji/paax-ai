@@ -20,7 +20,7 @@ Mengubah BUK%/PPN/rounding mengubah hasil engine, bukan dihitung frontend.
 ## Peran AI & keamanan kunci (PENTING)
 - **API key model (Gemini, dll) TIDAK disimpan di repo.** Disimpan sebagai env
   server-side (`apps/web/.env.local`, gitignored) / secret manager — JANGAN
-  `NEXT_PUBLIC`, jangan dikirim ke browser. Lihat CLAUDE.md §7.
+  `NEXT_PUBLIC`, jangan dikirim ke browser. Lihat SAYA.md §7.
 - Jika key bocor (mis. terkirim di chat) → rotate/buat ulang.
 - Key Gemini AI Studio normalnya diawali `AIza...`. Verifikasi sumbernya
   (https://aistudio.google.com/apikey).

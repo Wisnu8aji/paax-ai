@@ -1,7 +1,7 @@
 """
 PAAX Document Intelligence — Bridging rangka atap non-beton
 (gording/trekstang/ikatan_angin) ke core-engine `/takeoff/atap`
-(2026-07-05, lanjutan Fase X2, Claude langsung).
+(2026-07-05, lanjutan Fase X2, Saya langsung).
 
 Pola PERSIS `bridging_tanah.py` (X1): kategori sudah dikenali & terdeteksi
 via kode (GORDING/GD, TS, IA), gap-nya murni bridging + kelengkapan

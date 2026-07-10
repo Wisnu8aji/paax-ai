@@ -1,6 +1,6 @@
 """
 PAAX Document Intelligence — AI-assist slice #3: dinding pasangan bata
-(Fase X2 lanjutan, 2026-07-05, dikerjakan langsung Claude atas instruksi
+(Fase X2 lanjutan, 2026-07-05, dikerjakan langsung Saya atas instruksi
 owner). Latar: `docs/ai-map/STATE.md` audit B0 menemukan `/takeoff/dinding`
 (core-engine) SUDAH lengkap+teruji, tapi TIDAK PERNAH dipanggil karena
 `document-intelligence` tidak pernah mendeteksi elemen berkategori
@@ -48,7 +48,7 @@ _NUMBER_PATTERN = re.compile(r"\d+(?:[.,]\d+)?")
 
 # Keyword pemicu SEBELUM AI dipanggil sama sekali (fast filter, gratis) —
 # kalau tidak ada satu pun keyword ini di seluruh dokumen, jangan panggil
-# LLM sama sekali (hemat biaya, konsisten CLAUDE.md §1.1 "biaya & latency
+# LLM sama sekali (hemat biaya, konsisten SAYA.md §1.1 "biaya & latency
 # dipertimbangkan").
 WALL_KEYWORDS: tuple[str, ...] = (
     "DINDING", "PASANGAN", "BATA", "HEBEL", "BATAKO", "PARTISI",

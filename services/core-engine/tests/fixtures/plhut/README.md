@@ -16,7 +16,7 @@ dihitung estimator profesional di file itu = **kunci jawaban**.
 
 Dipakai golden anchor (brain TXT03 §6 T-04): **engine UMUM `compute_hsp()` wajib
 mereproduksi `expected_hsp` tiap analisa** via rumus kanonik
-`HSP = (bahan + upah + alat) × (1 + overhead_profit)` (CLAUDE.md §5).
+`HSP = (bahan + upah + alat) × (1 + overhead_profit)` (SAYA.md §5).
 Terverifikasi **32/32** saat fixture dibuat (2026-07-03).
 
 ### Catatan penting — kode resource ALFA TIDAK andal

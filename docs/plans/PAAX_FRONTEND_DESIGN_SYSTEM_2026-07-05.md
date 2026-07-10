@@ -1,6 +1,6 @@
 # PAAX — Spesifikasi Design System untuk Redesign Visual (2026-07-05)
 
-> Ditulis Claude, 2026-07-05. **Dokumen ini murni rencana/spesifikasi
+> Ditulis Saya, 2026-07-05. **Dokumen ini murni rencana/spesifikasi
 > desain — TIDAK ADA kode yang diubah.** Dimaksudkan sbg referensi teknis
 > mendalam utk eksekusi nanti (owner + model "Fable 5"). Companion dari
 > `docs/plans/PAAX_FRONTEND_REDESIGN_MASTER_PLAN_2026-07-05.md` (roadmap
@@ -13,9 +13,9 @@
 Sebelum merancang apa pun, ini realita teknis `apps/web` per 2026-07-05:
 
 ### 1.1 Stack styling yang SEBENARNYA dipakai (beda dari yang tertulis
-di `CLAUDE.md`!)
+di `SAYA.md`!)
 
-`CLAUDE.md`/`docs/MASTER_PLAN.md` menyebut stack "shadcn/ui" — **tapi
+`SAYA.md`/`docs/MASTER_PLAN.md` menyebut stack "shadcn/ui" — **tapi
 `apps/web/package.json` TIDAK PUNYA satu pun dependency shadcn**
 (`@radix-ui/*`, `class-variance-authority`, `tailwind-merge`, `clsx`
 semua TIDAK ADA). Realita: 
@@ -79,7 +79,7 @@ pilihan ini.
 
 ## 2. Keputusan arsitektur: EVOLUSI vs GANTI TOTAL
 
-**Rekomendasi Claude: EVOLUSI, bukan ganti total.** Alasan:
+**Rekomendasi Saya: EVOLUSI, bukan ganti total.** Alasan:
 - Sistem token CSS variable + multi-tema SUDAH bekerja, sudah
   diverifikasi di browser, dan MENDUKUNG rombakan visual besar (ganti
   warna = ganti nilai variable, TIDAK perlu ubah struktur komponen).
@@ -88,7 +88,7 @@ pilihan ini.
   besar utk manfaat yang tidak jelas (komponen kustom yang ada sudah
   cukup dgn kebutuhan aplikasi ini, TIDAK butuh keluasan shadcn spt
   dialog kompleks/command palette/dll KECUALI direncanakan spesifik).
-- **TAPI** — dokumentasi (`CLAUDE.md`/`MASTER_PLAN.md`) yang menyebut
+- **TAPI** — dokumentasi (`SAYA.md`/`MASTER_PLAN.md`) yang menyebut
   "shadcn/ui" perlu diperbarui supaya cocok realita (tugas dokumentasi
   kecil, catat di master plan §3).
 - **Satu penambahan dependency yang DIREKOMENDASIKAN**: **Framer Motion**
@@ -113,7 +113,7 @@ owner/Fable 5 sebelum eksekusi — lihat §7 checklist)
 Ketiganya kompatibel dgn arsitektur token yang ada (tinggal ganti NILAI
 variable, bukan strukturnya). Semua tetap sediakan varian light/dark.
 
-### Arah A — "Blueprint Precision" (REKOMENDASI UTAMA Claude)
+### Arah A — "Blueprint Precision" (REKOMENDASI UTAMA Saya)
 **Mood**: presisi teknis, kepercayaan, referensi literal ke gambar kerja
 teknik sipil (cetak biru/blueprint) — cocok krn PRODUK INI SECARA HARFIAH
 tentang membaca gambar kerja.

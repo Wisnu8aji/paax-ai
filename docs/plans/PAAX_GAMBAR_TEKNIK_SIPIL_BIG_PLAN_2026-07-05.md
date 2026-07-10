@@ -1,6 +1,6 @@
 # PAAX — Rencana Besar: Ekstraksi Gambar Kerja Teknik Sipil (2026-07-05)
 
-> Ditulis Claude, 2026-07-05, atas instruksi owner untuk menyusun rencana besar
+> Ditulis Saya, 2026-07-05, atas instruksi owner untuk menyusun rencana besar
 > ("big scope") setelah fondasi persepsi (Fase 2 P1-P6 + grid-geometri §3.1.1,
 > lihat `docs/ai-map/STATE.md`) berhasil menaikkan cakupan PLHUT 0%→33,75%.
 > Dokumen ini adalah **living roadmap** — perbarui statusnya seiring fase
@@ -66,7 +66,7 @@ validator) → user menyimpan hasil → engine menjalankan validasi/render/takeo
 RAB sampai mapping AHSP deterministik siap.
 
 ## 3. Peta fase (detail teknis lengkap ada di plan-file sesi eksekusi,
-`C:\Users\Nothing\.claude\plans\ancient-plotting-biscuit.md` — ringkasan di
+`C:\Users\Nothing\.saya\plans\ancient-plotting-biscuit.md` — ringkasan di
 sini supaya sesi depan tahu status tanpa baca file di luar repo)
 
 | Fase | Isi | Status |
@@ -79,7 +79,7 @@ sini supaya sesi depan tahu status tanpa baca file di luar repo)
 | F | Proses latar belakang (async job, polling status) | 🟢 selesai |
 | G | PaddleOCR sungguhan (bukan mock) | 🟡 terpasang & termuat, inferensi gagal native (oneDNN) di mesin ini — degradasi anggun diverifikasi |
 | H | UI/UX overhaul (drag-drop, animasi thinking, Review Gambar ramah pengguna) | 🟢 selesai — diverifikasi live browser |
-| I | Verifikasi akhir + update STATE.md + prompt commit Codex | 🟢 selesai |
+| I | Verifikasi akhir + update STATE.md + prompt commit Saya | 🟢 selesai |
 | J | Wiring Review Gambar → validate/render/takeoff → Draft RAB | 🟢 selesai — placeholder disabled dihapus, volume siap masuk Draft RAB |
 | J-2 | Navigasi setelah kirim volume ke Draft RAB | 🟢 selesai — setelah kirim sukses muncul tombol "Lihat Draft RAB" ke `/proyek/[projectId]/rab` |
 | K | Coverage validator untuk `zone`/`alamat_list`/`alamat_needs_review`/offset | 🟢 selesai — test membuktikan field pipeline baru tidak mengganggu validator lama |
@@ -98,7 +98,7 @@ Detail lengkap per fase: `docs/ai-map/STATE.md`.
 
 ## 4. Prinsip yang tidak boleh dilanggar sepanjang eksekusi
 
-1. **Aturan Emas (CLAUDE.md §1)**: zone classifier, grid-binding, konsolidasi
+1. **Aturan Emas (SAYA.md §1)**: zone classifier, grid-binding, konsolidasi
    = KLASIFIKASI/STRUKTURISASI persepsi, BUKAN perhitungan RAB. Tidak ada
    angka biaya yang muncul di sini. RAB tetap 100% dari `services/core-engine`.
 2. **§0.1 fixture bukan template**: PLHUT = kunci uji, bukan sumber logika.
@@ -109,14 +109,14 @@ Detail lengkap per fase: `docs/ai-map/STATE.md`.
 4. **Output template konsisten** (feedback owner eksplisit): hasil konsolidasi
    berupa skema Pydantic tetap (field selalu ada, meski null/kosong) — bukan
    dict bebas bentuk yang berubah tergantung isi gambar tertentu.
-5. **Tidak commit** — Claude hanya bekerja di working tree; Codex yang commit
+5. **Tidak commit** — Saya hanya bekerja di working tree; Saya yang commit
    (prompt disiapkan di Fase I).
 
 ## 5. Setelah rencana ini (di luar cakupan sesi ini, dicatat sbg arah)
 
 - **UPDATE 2026-07-12**: blocker lama utk mapping AHSP otomatis sudah hilang
   — katalog AHSP CK 2026 sekarang **2.546 item, 0 unit kosong** (Fase N+Q).
-  Spek lengkap sudah disiapkan di `docs/prompts/PAAX_CODEX_PROMPT_FASE_T_
+  Spek lengkap sudah disiapkan di `docs/prompts/PAAX_SAYA_PROMPT_FASE_T_
   AHSP_AUTO_SUGGEST_2026-07-12.md`, tinggal dijalankan kapan owner mau
   (belum dikerjakan per tanggal ini).
 - **Jalur harga Semarang DITUTUP** (Fase S, 2026-07-12): 2 sumber lokal yang

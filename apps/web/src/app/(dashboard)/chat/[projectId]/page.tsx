@@ -193,7 +193,7 @@ export default function ChatPage() {
               >
                 <option>Gemini 2.5 Flash</option>
                 <option>Gemini 2.5 Pro</option>
-                <option>Claude 3.5 Sonnet</option>
+                <option>Saya 3.5 Sonnet</option>
               </select>
               <ChevronDown size={14} color="var(--text3)" style={{ position: 'absolute', right: 8, top: 8, pointerEvents: 'none' }} />
             </div>

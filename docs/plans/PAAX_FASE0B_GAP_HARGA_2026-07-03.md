@@ -60,7 +60,7 @@ RULE-AHSP-01/02 mewajibkan pemetaan AHSP↔harga dikonfirmasi manusia ketika ada
 ambiguitas (di sini: pilihan satuan, potensi beda spek/mutu). Mengikat otomatis
 tanpa cek = risiko "Aturan Emas versi halus" (angka benar secara matematis tapi
 dari pasangan yang salah). Ini pekerjaan SK-19/SK-20 (pencarian semantik + price
-binding) — terpisah dari "pakai harga yang sudah ada", butuh Claude ajukan +
+binding) — terpisah dari "pakai harga yang sudah ada", butuh Saya ajukan +
 owner konfirmasi kasus ambigu.
 
 ## Kriteria GERBANG-0b penuh (katalog resmi, saat pemetaan siap)
@@ -70,8 +70,8 @@ pemetaan ambigu terkonfirmasi manusia; **BOE terbit** (mencatat semua keputusan
 pemetaan sebagai Assumption, brain RULE-BOE-01).
 
 ## Rekomendasi urutan berikutnya
-1. **Sekarang**: jalankan prompt Codex Fase 0a+0b-parsial (commit semua bukti).
-2. **Opsional (SK-19/20)**: Claude bangun pencocokan semantik 112 resource
+1. **Sekarang**: jalankan prompt Saya Fase 0a+0b-parsial (commit semua bukti).
+2. **Opsional (SK-19/20)**: Saya bangun pencocokan semantik 112 resource
    Surakarta → kode resmi (fuzzy/embedding + skor), ajukan tabel usulan ke owner
    untuk kasus yang tidak 100% yakin (terutama kategori bahan) — baru dikunci.
 3. **Terpisah**: peta 224 item DKH → kode ITEM AHSP resmi (bukan resource) untuk

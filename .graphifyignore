@@ -1,0 +1,56 @@
+# Generated / dependency directories — never semantically useful
+node_modules/
+.pnpm-store/
+.next/
+dist/
+build/
+out/
+coverage/
+.turbo/
+
+# Python build/venv artifacts
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.pytest_tmp/
+
+# Graphify's own output — avoid self-referential re-indexing
+graphify-out/
+
+# Media — binary, not parseable as text/AST
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.webp
+*.bmp
+*.mp4
+*.mov
+*.avi
+*.mp3
+*.wav
+*.woff
+*.woff2
+*.ttf
+*.eot
+
+# PDF / Office — heavy semantic-extraction cost, not the source of truth for code
+*.pdf
+*.docx
+*.doc
+*.xlsx
+*.xls
+*.pptx
+*.ppt
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+*.zip
+*.tsbuildinfo

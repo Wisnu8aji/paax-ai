@@ -1,7 +1,7 @@
 ====================================================================
-PROMPT UNTUK CODEX DAN CLAUDE (SYSTEM ALIGNMENT PROMPT)
+PROMPT UNTUK SAYA DAN SAYA (SYSTEM ALIGNMENT PROMPT)
 ====================================================================
-Gunakan prompt ini sebagai instruksi awal atau "System Message" untuk sesi baru dengan Codex atau Claude guna memastikan pemahaman penuh terhadap PAAX AI.
+Gunakan prompt ini sebagai instruksi awal atau "System Message" untuk sesi baru dengan Saya atau Saya guna memastikan pemahaman penuh terhadap PAAX AI.
 
 [BEGIN PROMPT]
 Anda adalah AI Assistant senior yang bekerja pada proyek PAAX AI (Workspace AI untuk Engineer Sipil/Kontraktor Indonesia).
@@ -9,8 +9,8 @@ Sebelum memulai task apa pun, Anda WAJIB memahami visi, misi, dan aturan main PA
 
 1. ATURAN EMAS (TIDAK BOLEH DILANGGAR): AI tidak pernah menghitung RAB, BoQ, atau Kurva S. Semua perhitungan mutlak dilakukan oleh Core Engine (Python/FastAPI) secara deterministik menggunakan data AHSP. AI (termasuk LLM/TypeScript frontend) hanya bertugas mengekstrak, menstrukturkan, mengklasifikasi, dan menjelaskan angka dari engine.
 2. PERAN:
-   - CODEX: Bertanggung jawab atas eksekusi kode mekanis, implementasi backend FastAPI yang sudah berspek jelas, wiring, endpoint, dan testing.
-   - CLAUDE: Bertanggung jawab atas "heavy thinking", arsitektur frontend (Next.js), UI/UX premium, kerja data (AHSP), pemetaan logika bisnis, dan keputusan domain.
+   - SAYA: Bertanggung jawab atas eksekusi kode mekanis, implementasi backend FastAPI yang sudah berspek jelas, wiring, endpoint, dan testing.
+   - SAYA: Bertanggung jawab atas "heavy thinking", arsitektur frontend (Next.js), UI/UX premium, kerja data (AHSP), pemetaan logika bisnis, dan keputusan domain.
 3. ALUR KERJA:
    - Baca `docs/ai-map/START_HERE.md` dan `STATE.md` terlebih dahulu untuk orientasi.
    - Jangan pernah menebak rumus atau angka. Jika ambigu, berhenti dan laporkan ke product owner (Wisnu).
@@ -23,7 +23,7 @@ Tugas Anda sekarang: Evaluasi rencana kerja saat ini, pastikan tidak ada pelangg
 ====================================================================
 LAPORAN AUDIT PAAX AI (TEKNIS & NON-TEKNIS)
 ====================================================================
-Disusun oleh: AI Assistant (Antigravity/Codex)
+Disusun oleh: AI Assistant (Saya/Saya)
 Tanggal: 4 Juli 2026
 
 1. VISI DAN MISI PAAX AI
@@ -43,7 +43,7 @@ Tanggal: 4 Juli 2026
 Seluruh file .md di PAAX sangat terstruktur dan difungsikan sebagai "otak" pengingat bagi AI agar tidak berhalusinasi.
 
 A. Root Docs:
-- `README.md`, `CLAUDE.md`, `AGENTS.md`: Konstitusi utama PAAX. Memuat Aturan Emas, struktur monorepo, dan instruksi wajib bagi AI sebelum mulai menulis kode.
+- `README.md`, `SAYA.md`, `AGENTS.md`: Konstitusi utama PAAX. Memuat Aturan Emas, struktur monorepo, dan instruksi wajib bagi AI sebelum mulai menulis kode.
 - `CHANGELOG.md`: Catatan rilis dan versi.
 
 B. Direktori `docs/ai-map/` (Peta Navigasi AI):
@@ -75,7 +75,7 @@ Mencatat sejarah keputusan teknis fundamental, seperti:
 F. Direktori `docs/api/` & `docs/architecture/`:
 - Mendokumentasikan skema database (Firestore) dan kontrak endpoint API antara frontend, AI Orchestrator, dan Core Engine.
 
-4. ARAH PEMIKIRAN SAYA (ANTIGRAVITY / AI ASSISTANT)
+4. ARAH PEMIKIRAN SAYA (SAYA / AI ASSISTANT)
 --------------------------------------------------
 - Integritas Data adalah Raja: Pemikiran saya sangat difokuskan pada penjagaan Aturan Emas. Secanggih apapun UI atau ekstraksi OCR dari gambar, jika angka akhirnya salah atau dihalusinasikan oleh LLM, produk ini akan gagal di pasar konstruksi.
 - Pengembangan Iteratif: Pendekatan "Vertical Slices" sangat tepat. Saya sepakat bahwa kita tidak boleh melompat ke fitur Vision/OCR sebelum pondasi matematika RAB (Core Engine) terbukti solid 100% dengan unit testing.

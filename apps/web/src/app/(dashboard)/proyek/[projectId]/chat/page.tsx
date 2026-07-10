@@ -111,7 +111,7 @@ function readFileBase64(file: File): Promise<string> {
   });
 }
 
-/** Status berpikir bertingkat, kedip perlahan ala Claude. */
+/** Status berpikir bertingkat, kedip perlahan ala Saya. */
 function ThinkingIndicator() {
   const [label, setLabel] = useState('Thinking...');
   useEffect(() => {

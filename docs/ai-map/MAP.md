@@ -1,7 +1,7 @@
 # 🗺️ PAAX — MAP (di mana letak apa)
 
 > Pakai ini untuk menemukan lokasi TANPA grep buta. Prinsip arsitektur lengkap:
-> `CLAUDE.md` §3–§5. Monorepo: pnpm workspaces + Turborepo.
+> `SAYA.md` §3–§5. Monorepo: pnpm workspaces + Turborepo.
 
 ## Folder utama (tanggung jawab)
 | Path | Tanggung jawab | Tidak boleh |
@@ -25,7 +25,7 @@
   `app/perception/vector/grid_geometry.py`, `app/perception/ocr/` (PaddleOCR
   raster, opsional/lazy).
 - **Rencana (belum ada)**: `app/perception/ai_assist/` — lapisan LLM fallback
-  paralel untuk klasifikasi/binding saat rule-based gagal (`CLAUDE.md` §1.1,
+  paralel untuk klasifikasi/binding saat rule-based gagal (`SAYA.md` §1.1,
   `docs/plans/PAAX_ANALISA_RAB_DARI_GAMBAR_BIG_PLAN_2026-07-13.md` §X2).
 - Test: `services/document-intelligence/tests/` · jalankan `pytest -q`.
 
@@ -58,7 +58,7 @@
 | `app/(dashboard)/proyek/[projectId]/{rab,schedule,chat,gambar-kerja,site-agent}/page.tsx` | Halaman proyek |
 - Test: `pnpm --dir apps/web test` (vitest).
 
-## Verifikasi (perintah generic — path mesin lokal ada di memory Claude)
+## Verifikasi (perintah generic — path mesin lokal ada di memory Saya)
 ```
 pytest -q                       # di services/core-engine
 pnpm run test:schemas           # selaras Zod↔Pydantic

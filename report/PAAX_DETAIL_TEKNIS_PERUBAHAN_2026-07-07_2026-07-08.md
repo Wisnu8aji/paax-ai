@@ -178,7 +178,7 @@ Catatan:
 
 - R14 belum menjadi agent lapangan penuh.
 - Integrasi DB/core-engine real masih perlu dilanjutkan.
-- Beberapa perubahan berasal dari audit pekerjaan Antigravity R2-R14.
+- Beberapa perubahan berasal dari audit pekerjaan Saya R2-R14.
 
 ## 7. File Env
 

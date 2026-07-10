@@ -42,8 +42,8 @@ legacy/**/data_private/
 PAAX_AI_Blueprint*
 *.docx
 
-# Claude Code (personal/local settings)
-.claude/settings.local.json
+# Saya Code (personal/local settings)
+.saya/settings.local.json
 
 # IDE & OS
 .vscode/
@@ -60,8 +60,8 @@ Thumbs.db
 # Temp files
 ci_log.txt
 fix-genkit.js
-.codex-*.log
+.saya-*.log
 reports/
 
-.claude/
+.saya/
 skills-lock.json

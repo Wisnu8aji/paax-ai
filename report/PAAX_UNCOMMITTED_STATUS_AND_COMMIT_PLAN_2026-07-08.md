@@ -22,7 +22,7 @@ Untracked penting:
 - `apps/web/src/app/api/document-intelligence/`
 - `apps/web/src/components/app-shell/side-rail.tsx`
 - `docs/plans/PAAX_UI_UTAMA_FABLE_PREMIUM_2026-07-07.md`
-- `docs/prompts/PAAX_CODEX_PROMPT_ANTIGRAVITY_WIRING_UI_TANPA_REDESIGN_2026-07-07.md`
+- `docs/prompts/PAAX_SAYA_PROMPT_SAYA_WIRING_UI_TANPA_REDESIGN_2026-07-07.md`
 - `docs/superpowers/plans/2026-07-08-nvidia-drawing-vision-ocr-plan.md`
 - `services/db/tests/conftest.py`
 - `services/document-intelligence/app/env.py`
@@ -38,10 +38,10 @@ File lama yang sudah berstatus deleted:
 - `apps/web/src/components/app-shell/icon-rail.tsx`
 - `apps/web/src/components/app-shell/nav-panel.tsx`
 - `apps/web/src/components/app-shell/sidebar.tsx`
-- `docs/plans/PAAX_CODEX_PLAN_UI_WIRING_antigravity.md`
-- `docs/prompts/PAAX_CODEX_PROMPT_PERBAIKAN_UI_BATCH_2026-07-03.md`
-- `docs/prompts/PAAX_CODEX_PROMPT_UI_OVERHAUL.md`
-- `docs/prompts/PAAX_CODEX_PROMPT_UI_PREMIUM_REDESIGN.md`
+- `docs/plans/PAAX_SAYA_PLAN_UI_WIRING_saya.md`
+- `docs/prompts/PAAX_SAYA_PROMPT_PERBAIKAN_UI_BATCH_2026-07-03.md`
+- `docs/prompts/PAAX_SAYA_PROMPT_UI_OVERHAUL.md`
+- `docs/prompts/PAAX_SAYA_PROMPT_UI_PREMIUM_REDESIGN.md`
 - `docs/superpowers/plans/2026-06-25-paax-workspace-redesign.md`
 - `docs/superpowers/specs/2026-06-25-paax-workspace-redesign-design.md`
 

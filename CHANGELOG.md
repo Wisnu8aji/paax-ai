@@ -60,7 +60,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Seed data AHSP** ilustratif (bidang Cipta Karya) + harga satuan regional (`jateng`) di `data/ahsp/` dan `data/harga-satuan/`.
 - **Skema bersama** v0.6 di `packages/schemas` (Zod) yang selaras 1:1 dengan model Pydantic engine (`Category`, `AHSPItem`, `HSPBreakdown`, `RABLineInput`, `RABResult`, `SCurveResult`, dst).
 - **8 unit test deterministik** (`tests/test_rab.py`) dengan nilai acuan dihitung manual + demo CLI (`python -m app.demo`).
-- Dokumen `docs/BUILD_v0.6.md` (rencana build) dan `CLAUDE.md` (aturan wajib repo).
+- Dokumen `docs/BUILD_v0.6.md` (rencana build) dan `SAYA.md` (aturan wajib repo).
 
 ### Changed
 - **Hapus output berbasis template.** Engine v0.5 berbasis template Excel diarsipkan ke `legacy/core-engine-v0.5/`; inti perhitungan kini engine deterministik baru.

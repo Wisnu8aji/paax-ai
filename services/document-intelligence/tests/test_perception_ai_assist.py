@@ -1,4 +1,4 @@
-"""Fase X2 (2026-07-05, dikerjakan langsung oleh Claude atas instruksi
+"""Fase X2 (2026-07-05, dikerjakan langsung oleh Saya atas instruksi
 owner) — test unit lapisan AI-assist (`app/perception/ai_assist/`).
 
 Prinsip yang diuji (bukan cuma "jalan tanpa error"):

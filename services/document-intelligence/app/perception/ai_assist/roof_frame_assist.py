@@ -1,6 +1,6 @@
 """
 PAAX Document Intelligence — AI-assist slice #4: rangka atap non-beton
-(gording/trekstang/ikatan_angin) (2026-07-05, lanjutan Fase X2, Claude
+(gording/trekstang/ikatan_angin) (2026-07-05, lanjutan Fase X2, Saya
 langsung atas instruksi owner).
 
 BEDA dari dinding (slice #3): kategori `gording`/`trekstang`/`ikatan_angin`

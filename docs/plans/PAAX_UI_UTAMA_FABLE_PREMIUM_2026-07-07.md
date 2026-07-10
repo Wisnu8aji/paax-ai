@@ -33,4 +33,4 @@ Jika task berikutnya perlu menyambungkan backend, chat, project, atau data real,
 
 ## Catatan Integrasi
 
-Bagian Antigravity yang berupa wiring data/backend boleh dipertahankan jika masih berguna, tetapi visual shell tidak boleh mengalahkan Fable premium redesign.
+Bagian Saya yang berupa wiring data/backend boleh dipertahankan jika masih berguna, tetapi visual shell tidak boleh mengalahkan Fable premium redesign.
