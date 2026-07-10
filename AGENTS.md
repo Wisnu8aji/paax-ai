@@ -2,7 +2,7 @@
 
 > ⚡ **SEBELUM KERJA: baca `docs/ai-map/START_HERE.md` dulu** (peta + status + navigasi)
 > agar langsung terarah, tidak boros token, dan tidak meng-crawl semua file.
-> File ini dibaca otomatis oleh Saya di setiap sesi. **Patuhi sepenuhnya.**
+> File ini dibaca otomatis oleh Codex di setiap sesi. **Patuhi sepenuhnya.**
 > Sumber kebenaran lengkap ada di `docs/MASTER_PLAN.md` (Blueprint Besar v2.0).
 > Jika ragu, ikuti aturan di sini lebih dulu, lalu rujuk MASTER_PLAN.
 > Dokumen strategi tambahan: `docs/strategy/PAAX_Analisis_Strategis_Companion.md`
@@ -200,26 +200,26 @@ manual dan mencatat sumber koefisien AHSP-nya.
 
 ---
 
-## 9. PEMBAGIAN TUGAS: SAYA vs SAYA
+## 9. PEMBAGIAN TUGAS: CODEX vs CLAUDE
 
-Sejak 2026-06-28, Wisnu memakai Saya dan Saya berdampingan di repo ini.
-Pembagian (dicerminkan juga di `SAYA.md` untuk Saya):
+Sejak 2026-06-28, Wisnu memakai Codex dan Claude berdampingan di repo ini.
+Pembagian (dicerminkan juga di `CLAUDE.md` untuk Claude):
 
-- **Saya (kamu)** → kode tanpa thinking berat: implementasi backend yang
+- **Codex (kamu)** → kode tanpa thinking berat: implementasi backend yang
   SUDAH punya spek jelas (rumus §5 / ADR terkait), wiring config/env,
   endpoint mengikuti pola yang sudah ada, script & test mekanis.
-- **Saya** → thinking berat: frontend (`apps/web`), kerja "data" (dataset
+- **Claude** → thinking berat: frontend (`apps/web`), kerja "data" (dataset
   AHSP, pencocokan harga by-nama, pemetaan template export), keputusan
   arsitektur, dan apa pun yang menyentuh Aturan Emas (§1) atau butuh
   judgment domain.
 
 Kalau task yang kamu terima ternyata butuh keputusan domain/ambigu, atau
 menyentuh rumus inti RAB/HSP TANPA spek/nilai-acuan yang sudah jelas —
-**STOP, jangan menebak. Minta Wisnu bawa ke sesi Saya dulu.** Konsisten
+**STOP, jangan menebak. Minta Wisnu bawa ke sesi Claude dulu.** Konsisten
 dengan Aturan Emas §1: jangan mengarang angka atau logika perhitungan sendiri.
 
 **GERBANG REVIEW (wajib, sejak 2026-06-28):** kerjakan di **branch baru →
 push → buka PR**, lalu **BERHENTI**. JANGAN merge ke `main` sendiri dan jangan
-commit/push langsung ke `main`. PR menunggu pemeriksaan owner + Saya; merge
+commit/push langsung ke `main`. PR menunggu pemeriksaan owner + Claude; merge
 hanya setelah disetujui. Kalau review minta perbaikan, push lagi ke branch yang
 sama.

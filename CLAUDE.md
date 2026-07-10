@@ -1,8 +1,8 @@
-# SAYA.md — PAAX AI
+# CLAUDE.md — PAAX AI
 
 > ⚡ **SEBELUM KERJA: baca `docs/ai-map/START_HERE.md` dulu** (peta + status + navigasi)
 > agar langsung terarah, tidak boros token, dan tidak meng-crawl semua file.
-> File ini dibaca otomatis oleh Saya Code di setiap sesi. **Patuhi sepenuhnya.**
+> File ini dibaca otomatis oleh Claude Code di setiap sesi. **Patuhi sepenuhnya.**
 > Sumber kebenaran lengkap ada di `docs/MASTER_PLAN.md` (Blueprint Besar v2.0).
 > Jika ragu, ikuti aturan di sini lebih dulu, lalu rujuk MASTER_PLAN.
 > Dokumen strategi tambahan: `docs/strategy/PAAX_Analisis_Strategis_Companion.md`
@@ -202,28 +202,28 @@ manual dan mencatat sumber koefisien AHSP-nya.
 
 ---
 
-## 9. PEMBAGIAN TUGAS: SAYA vs SAYA
+## 9. PEMBAGIAN TUGAS: CLAUDE vs CODEX
 
-Sejak 2026-06-28, Wisnu memakai Saya dan Saya berdampingan di repo ini.
-Pembagian (dicerminkan juga di `AGENTS.md` untuk Saya):
+Sejak 2026-06-28, Wisnu memakai Claude dan Codex berdampingan di repo ini.
+Pembagian (dicerminkan juga di `AGENTS.md` untuk Codex):
 
-- **Saya** → thinking berat: frontend (`apps/web`), kerja "data" (dataset
+- **Claude** → thinking berat: frontend (`apps/web`), kerja "data" (dataset
   AHSP, pencocokan harga by-nama, pemetaan template export ke spek ADR),
   keputusan arsitektur, dan apa pun yang menyentuh Aturan Emas (§1) atau
-  butuh judgment domain. Saya juga me-review hasil Saya yang menyentuh
+  butuh judgment domain. Claude juga me-review hasil Codex yang menyentuh
   perhitungan sebelum dianggap selesai.
-- **Saya** → kode tanpa thinking berat: implementasi backend yang SUDAH
+- **Codex** → kode tanpa thinking berat: implementasi backend yang SUDAH
   punya spek jelas (rumus §5 / ADR terkait), wiring config/env, endpoint
   mengikuti pola yang sudah ada, script & test mekanis.
 
-Untuk task yang menyentuh angka RAB/HSP: **Saya tulis spek + nilai acuan
-test manual → Saya implementasi → Saya verifikasi pytest & angka sebelum
-commit.** Saya tidak boleh mengubah rumus inti tanpa spek itu — tetap
+Untuk task yang menyentuh angka RAB/HSP: **Claude tulis spek + nilai acuan
+test manual → Codex implementasi → Claude verifikasi pytest & angka sebelum
+commit.** Codex tidak boleh mengubah rumus inti tanpa spek itu — tetap
 pelanggaran Aturan Emas kalau dilakukan diam-diam.
 
 **GERBANG REVIEW (wajib, sejak 2026-06-28):** semua pekerjaan dikerjakan di
-**branch baru → PR**, BUKAN langsung di `main`. Saya/Saya **tidak boleh
-auto-merge**: PR menunggu pemeriksaan owner + Saya dulu, merge hanya setelah
+**branch baru → PR**, BUKAN langsung di `main`. Codex/Claude **tidak boleh
+auto-merge**: PR menunggu pemeriksaan owner + Claude dulu, merge hanya setelah
 disetujui. Jangan commit/push langsung ke `main`.
 
 ## graphify
