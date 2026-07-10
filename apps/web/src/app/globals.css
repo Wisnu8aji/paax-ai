@@ -434,9 +434,23 @@
 }
 .pax-command ::-webkit-scrollbar { width: 8px; }
 .pax-command ::-webkit-scrollbar-thumb { background: rgba(157,184,210,0.16); border-radius: 6px; }
+
 .pax-cr-hover { transition: background .16s var(--ease), color .16s var(--ease); }
 .pax-cr-hover:hover { background: rgba(255,255,255,0.06); }
 .pax-cr-active { background: rgba(255,255,255,0.09) !important; }
+
+/* Markdown inside Command Room */
+.cr-markdown { font-family: var(--font-sans); }
+.cr-markdown p { margin-bottom: 0.8em; }
+.cr-markdown p:last-child { margin-bottom: 0; }
+.cr-markdown strong { font-weight: 700; color: #FFF; }
+.cr-markdown ul { list-style: disc; margin-left: 1.5em; margin-bottom: 0.8em; }
+.cr-markdown ol { list-style: decimal; margin-left: 1.5em; margin-bottom: 0.8em; }
+.cr-markdown li { margin-bottom: 0.3em; }
+.cr-markdown h1, .cr-markdown h2, .cr-markdown h3 { font-weight: 700; color: #FFF; margin-top: 1.2em; margin-bottom: 0.5em; }
+.cr-markdown code { background: rgba(255,255,255,0.1); padding: 0.1em 0.3em; border-radius: 4px; font-family: var(--font-mono); font-size: 0.9em; }
+.cr-markdown pre { background: rgba(0,0,0,0.3); padding: 1em; border-radius: 8px; overflow-x: auto; margin-bottom: 0.8em; }
+.cr-markdown pre code { background: none; padding: 0; }
 
 /* Settings dialog (2 kolom → menyusun vertikal di layar sempit) */
 .pax-settings-panel { display: flex; }

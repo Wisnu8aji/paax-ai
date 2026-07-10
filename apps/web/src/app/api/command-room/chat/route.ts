@@ -1,12 +1,9 @@
 /**
  * POST /api/command-room/chat
  *
- * Server-side API route untuk Command Room.
+ * Server-side API route untuk Command Room (Streaming).
  * Hanya menerima model "lucent" atau "solace" → provider DeepSeek.
  * DEEPSEEK_API_KEY TIDAK PERNAH dikirim ke client.
- *
- * ATURAN EMAS: Route ini hanya memanggil DeepSeek untuk menghasilkan
- * teks jawaban. Tidak ada kalkulasi angka RAB/HSP/volume di sini.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -21,11 +18,13 @@ import {
 } from "@/lib/paax-models";
 
 export const runtime = "nodejs";
-export const maxDuration = 600; // 10 menit — Solace thinking bisa lambat
+export const maxDuration = 600; // 10 menit
 
 // ─── Schema validasi request ─────────────────────────────────────────────────
 
 const CommandRoomChatSchema = z.object({
+  runId: z.string().optional(),
+  conversationId: z.string().optional(),
   messages: z
     .array(
       z.object({
@@ -36,13 +35,13 @@ const CommandRoomChatSchema = z.object({
     .min(1)
     .max(40),
   modelAlias: z.enum(["lucent", "solace"]),
-  reasoningEffort: z.enum(["high", "max"]).default("high"),
+  reasoningEffort: z.enum(["low", "medium", "high", "max"]).default("high"),
   thinking: z.enum(["on", "off"]).default("off"),
 });
 
 type CommandRoomChatBody = z.infer<typeof CommandRoomChatSchema>;
 
-// ─── Helper: baca env (prioritaskan proses env, fallback .env.local) ──────────
+// ─── Helper: baca env ──────────
 
 function getDeepSeekKey(): string | undefined {
   return process.env.DEEPSEEK_API_KEY?.trim() || undefined;
@@ -63,6 +62,7 @@ interface DeepSeekMessage {
 interface DeepSeekPayload {
   model: string;
   messages: DeepSeekMessage[];
+  stream: boolean;
   max_tokens?: number;
   temperature?: number;
   thinking?: { type: "enabled" | "disabled" };
@@ -96,217 +96,288 @@ function buildPayload(
   thinking: ThinkingMode,
   effort: ReasoningEffort,
   apiKey: string,
-): DeepSeekPayload {
+): DeepSeekPayload & any {
   const resolvedThinking = resolveThinking(modelAlias, thinking);
   const apiModel = resolveApiModel(apiKey, modelAlias);
 
-  const payload: DeepSeekPayload = {
+  const hasSystem = messages.some((m) => m.role === "system");
+  const finalMessages = hasSystem
+    ? messages
+    : [
+        {
+          role: "system" as const,
+          content:
+            "Anda adalah PAAX, asisten AI untuk insinyur sipil Indonesia. Anda WAJIB dan SELALU menjawab menggunakan Bahasa Indonesia yang natural dan profesional. Jangan pernah menjawab menggunakan bahasa Mandarin (Chinese). Jika pengguna menyapa dengan 'halo', balaslah dengan Bahasa Indonesia yang ramah.",
+        },
+        ...messages,
+      ];
+
+  const payload: any = {
     model: apiModel,
-    messages,
+    messages: finalMessages,
+    stream: true,
   };
 
-  // Jangan sertakan parameter platform khusus jika menggunakan OpenRouter
-  if (isOpenRouterKey(apiKey)) {
-    if (modelAlias === "solace") {
-      payload.max_tokens = 16384;
-    } else {
-      payload.temperature = 0.2;
+  const isOr = isOpenRouterKey(apiKey);
+  const normalizedEffort = effort === "max" ? (isOr ? "xhigh" : "max") : "high";
+
+  if (resolvedThinking === "on") {
+    payload.max_tokens = effort === "max" ? 8192 : 4096;
+    payload.reasoning = {
+      enabled: true,
+      effort: normalizedEffort,
+      exclude: false
+    };
+    payload.reasoning_effort = normalizedEffort;
+    payload.thinking = { type: "enabled" };
+    payload.include_reasoning = true;
+
+    if (isOr) {
+      payload.provider = { require_parameters: true };
     }
-    return payload;
+  } else {
+    payload.max_tokens = 2048;
+    payload.temperature = 0.2;
+    payload.reasoning = {
+      enabled: false,
+      effort: "none",
+      exclude: true
+    };
+    payload.thinking = { type: "disabled" };
   }
 
-  // Parameter platform DeepSeek murni
-  if (resolvedThinking === "on") {
-    payload.thinking = { type: "enabled" };
-    payload.reasoning_effort = effort;
-    payload.max_tokens = 16384;
-  } else {
-    payload.thinking = { type: "disabled" };
-    payload.temperature = 0.2;
-    payload.reasoning_effort = effort;
-  }
+  console.log(`\n=== API CALL DIAGNOSTICS ===`);
+  console.log(`Alias        : ${modelAlias}`);
+  console.log(`Target Model : ${payload.model}`);
+  console.log(`Thinking     : ${resolvedThinking}`);
+  console.log(`Effort       : ${effort} (Payload: ${normalizedEffort})`);
+  console.log(`Require Param: ${Boolean(payload.provider?.require_parameters)}`);
+  console.log(`============================\n`);
 
   return payload;
-}
-
-// ─── Helper: panggil DeepSeek API ────────────────────────────────────────────
-
-interface DeepSeekResponse {
-  choices?: Array<{
-    message?: {
-      content?: string | null;
-      reasoning_content?: string | null;
-    };
-  }>;
-  error?: { message?: string; type?: string; code?: string | number };
-}
-
-async function callDeepSeek(
-  payload: DeepSeekPayload,
-  apiKey: string,
-  baseUrl: string,
-  timeoutMs: number,
-): Promise<string> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const res = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-
-    if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as DeepSeekResponse | null;
-      const msg =
-        err?.error?.message ?? `HTTP ${res.status} ${res.statusText}`;
-      throw new Error(`DeepSeek gagal (${res.status}): ${msg}`);
-    }
-
-    const data = (await res.json()) as DeepSeekResponse;
-    const content = data.choices?.[0]?.message?.content?.trim();
-    if (!content) throw new Error("DeepSeek tidak mengembalikan teks.");
-    return content;
-  } catch (err) {
-    if (err instanceof Error && err.name === "AbortError") {
-      throw new Error(
-        `DeepSeek timeout setelah ${Math.round(timeoutMs / 1000)} detik.`,
-      );
-    }
-    throw err;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function callDeepSeekWithRetry(
-  messages: DeepSeekMessage[],
-  modelAlias: ModelAlias,
-  thinking: ThinkingMode,
-  effort: ReasoningEffort,
-  apiKey: string,
-  baseUrl: string,
-  timeoutMs: number,
-): Promise<string> {
-  const payload = buildPayload(messages, modelAlias, thinking, effort, apiKey);
-
-  try {
-    return await callDeepSeek(payload, apiKey, baseUrl, timeoutMs);
-  } catch (firstError) {
-    const msg =
-      firstError instanceof Error ? firstError.message.toLowerCase() : "";
-    // Jika error mengarah ke reasoning_effort tidak valid, retry tanpa field itu
-    const isReasoningError =
-      msg.includes("reasoning_effort") ||
-      msg.includes("400") ||
-      msg.includes("invalid");
-
-    if (!isReasoningError) throw firstError;
-
-    console.warn(
-      `[CommandRoom] reasoning_effort ditolak, retry tanpa field itu.`,
-    );
-    const retryPayload = { ...payload };
-    delete retryPayload.reasoning_effort;
-    return await callDeepSeek(retryPayload, apiKey, baseUrl, timeoutMs);
-  }
 }
 
 // ─── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  // 1. Parse body
   const body = await req.json().catch(() => null);
   const parsed = CommandRoomChatSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      {
-        error:
-          "Request tidak valid. Pastikan messages, modelAlias, reasoningEffort, dan thinking sudah benar.",
-        details: parsed.error.flatten().fieldErrors,
-      },
+      { error: "Request tidak valid.", details: parsed.error.flatten().fieldErrors },
       { status: 400 },
     );
   }
 
-  const { messages, modelAlias, reasoningEffort, thinking } =
-    parsed.data as CommandRoomChatBody;
-
-  // 2. Cek API key
+  const { runId, conversationId, messages, modelAlias, reasoningEffort, thinking } = parsed.data;
   const apiKey = getDeepSeekKey();
   if (!apiKey) {
     return NextResponse.json(
-      {
-        error:
-          "DeepSeek API key belum dikonfigurasi. Tambahkan DEEPSEEK_API_KEY ke .env.local.",
-      },
+      { error: "DeepSeek API key belum dikonfigurasi." },
       { status: 503 },
     );
   }
 
-  // 3. Resolusi model & thinking (Lucent dipaksa thinking off)
   const resolvedThinking = resolveThinking(modelAlias, thinking);
   const apiModel = resolveApiModel(apiKey, modelAlias);
   const configUrl = getDeepSeekBaseUrl();
   const baseUrl = resolveBaseUrl(apiKey, configUrl);
+  
+  const payload = buildPayload(messages, modelAlias, resolvedThinking, reasoningEffort as ReasoningEffort, apiKey);
+  
+  const controller = new AbortController();
+  req.signal.addEventListener("abort", () => controller.abort());
 
-
-  // Timeout: Solace thinking ON butuh waktu lebih lama
-  const timeoutMs =
-    modelAlias === "solace" && resolvedThinking === "on"
-      ? 600_000  // 10 menit untuk Solace thinking
-      : 120_000; // 2 menit untuk Lucent atau Solace non-thinking
-
-  // 4. Log (tanpa API key, tanpa data sensitif)
-  console.log(
-    `[CommandRoom] model=${modelAlias} apiModel=${apiModel} thinking=${resolvedThinking} effort=${reasoningEffort} messages=${messages.length}`,
-  );
-
-  // 5. Panggil DeepSeek
   try {
-    const answer = await callDeepSeekWithRetry(
-      messages,
-      modelAlias,
-      resolvedThinking,
-      reasoningEffort,
-      apiKey,
-      baseUrl,
-      timeoutMs,
-    );
+    const encoder = new TextEncoder();
 
-    return NextResponse.json({
-      answer,
-      model: modelAlias,
-      apiModel: apiModel,
-      thinking: resolvedThinking,
-      reasoningEffort,
+    const readableStream = new ReadableStream({
+      async start(controller) {
+        let sequenceCounter = 0;
+        const sendEvent = (type: string, data: any) => {
+          data.sequence = sequenceCounter++;
+          controller.enqueue(encoder.encode(`event: message\ndata: ${JSON.stringify(data)}\n\n`));
+        };
+
+        const MAX_CONTINUATIONS = 5;
+        let currentMessages = [...payload.messages];
+        let hitLengthLimit = true;
+        let continuationCount = 0;
+
+        try {
+          while (hitLengthLimit) {
+            hitLengthLimit = false; // Reset per loop
+
+            const currentPayload = { ...payload, messages: currentMessages };
+
+            // Jika ini auto-continue (loop > 0), matikan reasoning agar fokus menulis sisa konten
+            if (continuationCount > 0) {
+              currentPayload.reasoning = { enabled: false, effort: "none", exclude: true };
+              currentPayload.thinking = { type: "disabled" };
+              currentPayload.include_reasoning = false;
+              // reasoning_effort ikut ke-spread dari payload asli (mis. "xhigh") — jika
+              // tidak dihapus, OpenRouter menolak request karena bertentangan dengan
+              // reasoning.effort: "none" di atas ("reasoning_effort and reasoning.effort
+              // are both provided with conflicting values"), menggagalkan SETIAP auto-continue.
+              delete currentPayload.reasoning_effort;
+              // Reasoning sudah dimatikan — seluruh max_tokens dipakai untuk konten.
+              currentPayload.max_tokens = Math.max(payload.max_tokens ?? 4096, 4096);
+            }
+
+            const res = await fetch(`${baseUrl}/chat/completions`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+              },
+              body: JSON.stringify(currentPayload),
+              signal: req.signal, // Meneruskan signal dari client
+            });
+
+            if (!res.ok) {
+              let errMessage = `HTTP ${res.status} ${res.statusText}`;
+              try {
+                const errBody = await res.json();
+                if (errBody.error?.message) errMessage = errBody.error.message;
+              } catch (e) {}
+              throw new Error(errMessage);
+            }
+
+            if (!res.body) throw new Error("No response stream");
+
+            const reader = res.body.getReader();
+            const roundDecoder = new TextDecoder("utf-8");
+            let buffer = "";
+            let fullContentThisRound = "";
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              buffer += roundDecoder.decode(value, { stream: true });
+              const lines = buffer.split("\n\n");
+              buffer = lines.pop() || "";
+
+              for (const chunk of lines) {
+                const dataLine = chunk.split("\n").find(l => l.startsWith("data: "));
+                if (!dataLine) continue;
+                const dataStr = dataLine.slice(6).trim();
+                if (dataStr === "[DONE]") continue;
+                if (!dataStr) continue;
+
+                try {
+                  const parsedChunk = JSON.parse(dataStr);
+                  const delta = parsedChunk.choices?.[0]?.delta;
+                  const finishReason = parsedChunk.choices?.[0]?.finish_reason;
+
+                  if (finishReason === "length") {
+                    hitLengthLimit = true;
+                  }
+
+                  if (!delta) continue;
+
+                  // Reasoning — OpenRouter mengirim `reasoning` (string flat) DAN
+                  // `reasoning_details` (breakdown terstruktur) untuk KONTEN YANG
+                  // SAMA pada delta yang sama (dikonfirmasi via raw SSE probe).
+                  // Menjumlahkan keduanya menghasilkan teks dobel per-chunk —
+                  // itulah akar penyebab "Saya akanSaya akan t...". Pilih satu
+                  // sumber saja per prioritas, jangan digabung.
+                  let reasoningDelta = "";
+                  if (typeof delta.reasoning === "string" && delta.reasoning) {
+                    reasoningDelta = delta.reasoning;
+                  } else if (typeof delta.reasoning_content === "string" && delta.reasoning_content) {
+                    reasoningDelta = delta.reasoning_content;
+                  } else if (Array.isArray(delta.reasoning_details)) {
+                    for (const item of delta.reasoning_details) {
+                      if (item?.type === "reasoning.text" && typeof item.text === "string") reasoningDelta += item.text;
+                      if (item?.type === "reasoning.summary" && typeof item.summary === "string") reasoningDelta += item.summary;
+                    }
+                  }
+
+                  if (reasoningDelta) {
+                    sendEvent("message", {
+                      type: "reasoning", runId, conversationId,
+                      delta: reasoningDelta, timestamp: new Date().toISOString(),
+                    });
+                  }
+
+                  if (delta.content) {
+                    fullContentThisRound += delta.content;
+                    sendEvent("message", {
+                      type: "content", runId, conversationId,
+                      delta: delta.content, timestamp: new Date().toISOString(),
+                    });
+                  }
+                } catch (e) {
+                  // Ignore
+                }
+              }
+            } // End read stream loop
+
+            if (hitLengthLimit) {
+              continuationCount++;
+
+              if (continuationCount > MAX_CONTINUATIONS) {
+                hitLengthLimit = false;
+                sendEvent("message", {
+                  type: "status",
+                  phase: "streaming_response",
+                  statusLabel: "Batas auto-lanjut tercapai, menghentikan generasi.",
+                });
+                break;
+              }
+
+              if (fullContentThisRound.trim().length > 0) {
+                // Model sedang di tengah menulis jawaban — lanjutkan dari titik itu.
+                currentMessages.push({ role: "assistant", content: fullContentThisRound });
+              }
+              // Jika kosong, seluruh jatah token habis untuk reasoning tanpa
+              // menghasilkan konten. Jangan sisipkan pesan assistant kosong (bikin
+              // model bingung/mengulang dari awal) — ulangi langsung dengan reasoning
+              // dimatikan agar model menjawab tanpa berpikir ulang dari nol.
+
+              sendEvent("message", {
+                type: "status",
+                phase: "streaming_response",
+                statusLabel: `Auto-continuing (part ${continuationCount + 1})...`
+              });
+            }
+          } // End while hitLengthLimit
+
+          sendEvent("message", {
+            type: "done", runId, conversationId, timestamp: new Date().toISOString(),
+          });
+
+        } catch (err) {
+          if (err instanceof Error && err.name === "AbortError") {
+            // normal abort
+          } else {
+            sendEvent("message", {
+              type: "error", runId, conversationId,
+              errorMessage: err instanceof Error ? err.message : "Stream error",
+              timestamp: new Date().toISOString(),
+            });
+          }
+        } finally {
+          controller.close();
+        }
+      }
     });
+
+    return new Response(readableStream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        "Connection": "keep-alive"
+      }
+    });
+
   } catch (err) {
-    const errMsg =
-      err instanceof Error
-        ? err.message
-        : "Command Room gagal menghubungi DeepSeek.";
-
+    const errMsg = err instanceof Error ? err.message : "Command Room gagal menghubungi DeepSeek.";
     console.error(`[CommandRoom] Error: ${errMsg}`);
-
-    // Jangan expose stack trace atau detail rahasia ke client
-    return NextResponse.json(
-      {
-        error:
-          "Command Room gagal menghubungi DeepSeek. Cek API key, saldo, model, atau koneksi.",
-        detail: errMsg,
-      },
-      { status: 502 },
-    );
+    return NextResponse.json({ error: errMsg }, { status: 502 });
   }
 }
-
-// ─── GET handler (health check) ───────────────────────────────────────────────
 
 export async function GET() {
   const hasKey = Boolean(getDeepSeekKey());
