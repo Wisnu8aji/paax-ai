@@ -52,6 +52,11 @@ import {
 import { currentUser } from '@/lib/mock/workspace';
 import { useProjects } from '@/lib/projects/projects-context';
 import type { Project } from '@/lib/projects/types';
+import { chatRunStore } from '@/lib/chat/chat-run-store';
+import { useActiveChatRuns, useChatRuns } from '@/lib/chat/use-chat-runs';
+import { RunStatus } from '@/components/command-room/RunStatus';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 /**
  * COMMAND ROOM — pengganti Engineering Chat (rombak 2026-07-07,
@@ -149,8 +154,6 @@ export default function CommandRoomPage() {
   const [searchOpen, setSearchOpen] = useState(false);
 
   const [draft, setDraft] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [modelAlias, setModelAlias] = useState<ModelAlias>('lucent');
   const [reasoningEffort, setReasoningEffort] = useState<ReasoningEffort>('high');
   const [thinking, setThinking] = useState<ThinkingMode>('off');
@@ -185,7 +188,11 @@ export default function CommandRoomPage() {
 
   const active = useMemo(() => conversations.find((c) => c.id === activeId) ?? null, [conversations, activeId]);
   const messages: StoredChatMessage[] = useMemo(() => active?.messages ?? [], [active]);
-  const chatStarted = messages.length > 0 || busy;
+  const allRuns = useChatRuns(activeId);
+  const pendingRuns = allRuns.filter((r) => r.state !== 'completed');
+  const isBusy = pendingRuns.some((r) => r.state === 'running' || r.state === 'streaming' || r.state === 'queued');
+
+  const chatStarted = messages.length > 0 || pendingRuns.length > 0;
 
   function refresh(selectId?: string | null) {
     const list = listConversations(SCOPE);
@@ -198,9 +205,35 @@ export default function CommandRoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const safeMessages = Array.isArray(messages) ? messages : [];
+  const safePendingRuns = Array.isArray(pendingRuns) ? pendingRuns : [];
+
+  const pendingRunDraftSignature = safePendingRuns
+    .map((run) => {
+      const draftText =
+        // @ts-ignore
+        run?.answerBuffer ??
+        run?.finalMarkdown ??
+        "";
+
+      return draftText.length;
+    })
+    .join(",");
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages.length, busy]);
+  }, [
+    safeMessages.length,
+    safePendingRuns.length,
+    pendingRunDraftSignature,
+  ]);
+
+  useEffect(() => {
+    const hasCompletedRuns = allRuns.some(r => r.state === 'completed' && !messages.find(m => m.id === r.assistantMessageId));
+    if (hasCompletedRuns) {
+      refresh();
+    }
+  }, [allRuns, messages]);
 
   // Tutup dropdown saat klik di luar
   useEffect(() => {
@@ -294,7 +327,7 @@ export default function CommandRoomPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     const message = draft.trim();
-    if (!message || busy) return;
+    if (!message || isBusy) return;
 
     let conversation = active;
     if (!conversation) conversation = createConversation(SCOPE, null);
@@ -307,54 +340,24 @@ export default function CommandRoomPage() {
     };
     saveConversation(next);
     setDraft('');
-    setError(null);
-    setBusy(true);
+    setAttachments([]);
     refresh(next.id);
 
-    try {
-      const historyMessages = next.messages.map((m) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.text,
-      }));
+    const historyMessages = next.messages.map((m) => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.text,
+    }));
 
-      const response = await fetch('/api/command-room/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: historyMessages,
-          modelAlias,
-          reasoningEffort,
-          thinking: resolvedThinking,
-        }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => null) as { error?: string; detail?: string } | null;
-        throw new Error(errData?.error ?? `Server error ${response.status}`);
-      }
-
-      const data = await response.json() as { answer: string };
-      const answer = data.answer?.trim() ?? 'Tidak ada jawaban.';
-      next = {
-        ...next,
-        messages: [...next.messages, { id: `a-${Date.now()}`, role: 'assistant', text: answer, time: nowLabel() }],
-      };
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Command Room gagal merespons.';
-      setError(msg);
-      next = {
-        ...next,
-        messages: [
-          ...next.messages,
-          { id: `a-${Date.now()}`, role: 'assistant', text: `Saya belum bisa menjawab karena koneksi bermasalah: ${msg}`, time: nowLabel() },
-        ],
-      };
-    } finally {
-      saveConversation(next);
-      setBusy(false);
-      setAttachments([]);
-      refresh(next.id);
-    }
+    await chatRunStore.startChatRun({
+      conversationId: next.id,
+      userMessageId: userMsg.id,
+      message: message,
+      historyMessages,
+      modelId: modelAlias,
+      modelName: activeModelDef.displayName as 'Lucent' | 'Solace',
+      effort: reasoningEffort,
+      thinking: resolvedThinking,
+    });
   }
 
   const visibleConvs = conversations.filter((c) => {
@@ -405,8 +408,20 @@ export default function CommandRoomPage() {
       }}
     >
       <MessageSquare size={13} style={{ flexShrink: 0, opacity: 0.65 }} />
-      <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {c.title}
+      <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
+        {chatRunStore.getActiveRunsByConversationId(c.id).length > 0 && (
+          <span
+            style={{
+              color: 'var(--cr-orange)',
+              animation: 'paxspin 2.6s linear infinite',
+              lineHeight: 1,
+              flexShrink: 0,
+            }}
+          >
+            ✳
+          </span>
+        )}
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.title}</span>
       </span>
       <span className="pax-cr-row-actions" style={{ display: 'flex', gap: 2 }}>
         <button
@@ -539,7 +554,7 @@ export default function CommandRoomPage() {
           placeholder="Bring the problem. I'll break it down."
           aria-label="Pesan"
           rows={chatStarted ? 1 : 2}
-          disabled={busy}
+          disabled={isBusy}
           style={{
             width: '100%',
             resize: 'none',
@@ -638,7 +653,8 @@ export default function CommandRoomPage() {
                     <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{project.name}</span>
                   </button>
                 ))}
-                  <button
+
+                  <button
                     type="button"
                     role="menuitem"
                     onClick={() => { setAddToOpen(false); setCreateOpen(true); }}
@@ -723,8 +739,8 @@ export default function CommandRoomPage() {
           <button type="button" onClick={() => showNote('Mode voice hadir di rilis berikutnya.')} aria-label="Mode voice" className="pax-cr-hover pax-press" style={{ width: 32, height: 32, borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <AudioLines size={15} />
           </button>
-          <button type="submit" aria-label="Kirim" disabled={busy || !draft.trim()} className="pax-press" style={{ width: 32, height: 32, borderRadius: 9, background: 'var(--cr-orange)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy ? 'wait' : 'pointer', opacity: busy || !draft.trim() ? 0.45 : 1, transition: 'opacity .2s var(--ease), transform .16s var(--ease)' }}>
-            {busy ? <Loader2 size={15} className="animate-spin" /> : <ArrowUp size={15} strokeWidth={2.4} />}
+          <button type="submit" aria-label="Kirim" disabled={isBusy || !draft.trim()} className="pax-press" style={{ width: 32, height: 32, borderRadius: 9, background: 'var(--cr-orange)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isBusy ? 'wait' : 'pointer', opacity: isBusy || !draft.trim() ? 0.45 : 1, transition: 'opacity .2s var(--ease), transform .16s var(--ease)' }}>
+            {isBusy ? <Loader2 size={15} className="animate-spin" /> : <ArrowUp size={15} strokeWidth={2.4} />}
           </button>
         </div>
       </form>
@@ -1106,19 +1122,30 @@ export default function CommandRoomPage() {
                         <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--cr-text2)' }}>PAAX · {activeModelDef.displayName}</span>
                         <span className="pax-mono" style={{ fontSize: 10, color: 'var(--cr-text3)' }}>{m.time}</span>
                       </div>
-                      <div style={{ fontSize: 13.5, lineHeight: 1.7, color: 'var(--cr-text)', whiteSpace: 'pre-wrap' }}>
-                        {m.text}
+                      <div className="cr-markdown" style={{ fontSize: 13.5, lineHeight: 1.7, color: 'var(--cr-text)' }}>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.text}</ReactMarkdown>
                       </div>
                     </div>
                   ),
                 )}
-                {busy && (
-                  <div className="pax-fade" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <OrangeSpinner />
-                    <span className="pax-thinking" style={{ fontSize: 12.5, color: 'var(--cr-text2)', fontWeight: 600 }}>Thinking…</span>
+                {pendingRuns.map((run) => (
+                  <div key={run.runId} className="pax-rise" style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <span style={{ color: 'var(--cr-orange)', display: 'flex' }}><PaaxMark size={13} /></span>
+                      <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--cr-text2)' }}>PAAX · {run.modelName}</span>
+                    </div>
+
+                    {run.answerBuffer && (
+                      <div className="cr-markdown" style={{ fontSize: 13.5, lineHeight: 1.7, color: 'var(--cr-text)' }}>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{run.answerBuffer}</ReactMarkdown>
+                      </div>
+                    )}
+
+                    {run.state !== 'completed' && (
+                      <RunStatus run={run} onStop={() => chatRunStore.cancelRun(run.runId)} />
+                    )}
                   </div>
-                )}
-                {error && <div style={{ fontSize: 12, color: 'var(--cr-orange)' }}>{error}</div>}
+                ))}
               </div>
             </div>
             <div className="pax-rise" style={{ padding: '10px 22px 18px' }}>
