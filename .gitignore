@@ -61,6 +61,7 @@ Thumbs.db
 ci_log.txt
 fix-genkit.js
 .saya-*.log
+/.AI-*.log
 reports/
 
 .saya/
