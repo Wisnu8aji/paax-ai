@@ -254,7 +254,7 @@ Engine mengonversi kuantitas mentah ke volume satuan pekerjaan, lalu menghitung 
 > di `docs/specs/brain-v4.1/PAAX_BRAIN_00_EKSTRAKSI_GAMBAR_KERJA.txt` &amp;
 > `PAAX_BRAIN_01_PRINSIP_PENALARAN.txt`. Ringkasan gap vs dokumen ini:
 > `docs/BRAIN_ALIGNMENT.md`. **Belum diimplementasi** — tunduk ke urutan
-> gerbang di `docs/ai-map/STATE.md` (ground data dulu, v1.0/CV DITUNDA).
+> gerbang di `docs/history/STATE_ARCHIVE_2026-06_2026-07.md` (ground data dulu, v1.0/CV DITUNDA).
 
 ---
 

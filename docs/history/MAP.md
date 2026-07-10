@@ -1,3 +1,7 @@
+> **DIARSIPKAN 2026-07-10** — navigasi kode digantikan Graphify
+> (`graphify query`/`path`/`explain`, lihat `CLAUDE.md` §7). Dokumen di bawah
+> tidak lagi diperbarui, disimpan sebagai referensi historis saja.
+
 # 🗺️ PAAX — MAP (di mana letak apa)
 
 > Pakai ini untuk menemukan lokasi TANPA grep buta. Prinsip arsitektur lengkap:
