@@ -1,4 +1,4 @@
-# PAAX Core Engine (v0.6)
+# PAAX Core Engine
 
 Engine **deterministik** PAAX: menghitung **HSP**, **RAB**, dan **Kurva S** dari koefisien
 AHSP (kerangka Permen PUPR No. 8/2023) × harga satuan regional.
@@ -155,18 +155,23 @@ Output: RABResult + SCurveResult
 
 ## 6. API Endpoints ([`app/main.py`](app/main.py))
 
-FastAPI, judul "PAAX Core Engine", versi `0.6.0`. CORS terbuka (ketatkan di produksi).
-Dok interaktif: `http://localhost:8081/docs`.
+FastAPI. Semua endpoint di bawah `GET /health` butuh autentikasi (`get_current_user`,
+lihat [`app/auth.py`](app/auth.py) — Auth/RBAC lintas service). Dok interaktif:
+`http://localhost:8081/docs`. Repo tumbuh jauh melebihi 6 endpoint awal v0.6 — sekarang
+**43 endpoint**, dikelompokkan per area (path & body detail: `/docs` atau
+[`requests.http`](requests.http)):
 
-| Method & Path | Body / Param | Response |
-| --- | --- | --- |
-| `GET /health` | — | `{ status, version, ahsp_items, regions[] }` |
-| `GET /ahsp` | — | `[{ code, name, unit, bidang }, …]` |
-| `GET /ahsp/{code}` | `code` (mis. `AHSP.CK.001`) | `AHSPItem` lengkap dengan `components[]` |
-| `GET /regions` | — | `[{ code, name }, …]` |
-| `POST /rab/hsp` | `{ ahsp_code, region_code }` | `HSPBreakdown` (A, B, C, base, overhead, HSP, components) |
-| `POST /rab/calculate` | `{ region_code, ppn_rate, lines[] }` | `RABResult` (`lines[]` + subtotal + ppn + total) |
-| `POST /schedule/s-curve` | `{ region_code, ppn_rate, period_days, mode, lines[] }` | `SCurveResult` (`total_days`, `period_days`, `mode`, `points[]`) |
+| Area | Contoh path |
+| --- | --- |
+| Health | `GET /health` (tanpa auth) |
+| AHSP & harga | `GET /ahsp`, `GET /ahsp/{code}`, `POST /ahsp/search`, `POST /ahsp/map`, `POST /price/bind`, `GET /regions`, `GET /data/coverage` |
+| RAB & validasi | `POST /rab/hsp`, `/rab/calculate`, `/rab/validate`, `/rab/build`, `/rab/export/excel` |
+| WBS & work items | `GET /wbs/sections`, `/wbs/master`, `POST /workitems/completeness`, `/workitems/expand`, `/workitems/implied` |
+| Geometri & takeoff | `GET /geometry/elements`, `POST /geometry/volume`, `/takeoff/{tanah,dinding,arsitektur,baja,atap,kusen,mep,mep-advanced,smkk}` |
+| TKG (brain v4.1) | `POST /tkg/validate`, `/tkg/render`, `/tkg/takeoff`, `/tkg/takeoff-ahsp-suggest` |
+| Brain / QA / review | `POST /brain/confidence`, `/brain/qa`, `/brain/boe`, `/review/triage`, `/review/corrections`, `/eval/run` |
+| Export | `POST /export/boe`, `/export/bbs` |
+| Jadwal & skenario | `POST /schedule/s-curve`, `/schedule/cpm`, `/schedule/plan`, `/scenario/simulate` |
 
 Contoh body `POST /rab/calculate`:
 
@@ -199,7 +204,9 @@ pip install -e ".[dev]"        # fastapi, uvicorn, pydantic>=2.6, pytest, httpx
 
 ```bash
 python -m pytest -q
-# Expected: 8 passed
+# 2026-07-10: 246 passed, 35 failed — semua kegagalan adalah test lama yang
+# belum dikirimi header auth setelah Auth/RBAC (app/auth.py) ditambahkan;
+# BUKAN bug logika RAB/HSP/jadwal. Lihat docs/ai-map/STATE_CURRENT.md.
 ```
 
 ### Demo

@@ -1,60 +1,42 @@
 # PAAX AI — Civil Engineering AI Workspace
 
 Workspace AI untuk insinyur sipil Indonesia. Mengubah data konstruksi menjadi
-**RAB patuh AHSP**, **jadwal Kurva S**, dan simulasi skenario — dengan **setiap angka
-yang dapat diaudit**.
+**RAB patuh AHSP**, **jadwal Kurva S**, dan simulasi skenario — dengan **setiap
+angka yang dapat diaudit**.
 
-> **Aturan emas:** engine yang **menghitung**, AI (nanti) yang **menjelaskan**.
-> Semua angka berasal dari engine deterministik; LLM tidak pernah menghasilkan angka.
+> **Aturan emas:** engine yang **menghitung**, AI yang **menjelaskan**. Semua
+> angka RAB/HSP/Kurva-S/skenario berasal dari `services/core-engine`
+> (deterministik); LLM tidak pernah menghasilkan angka final. Detail lengkap:
+> `CLAUDE.md` / `AGENTS.md`.
 
----
-
-## Apa itu v0.6?
-
-**Deterministic Foundation Release** — fondasi perhitungan yang benar & auditable
-sebelum menyentuh ekstraksi gambar/AI. Engine Python menghitung HSP, RAB, dan Kurva S
-berdasarkan koefisien AHSP × harga satuan.
-
-### Fitur v0.6
-- ✅ **Core Engine deterministik** (FastAPI): HSP, RAB (+ bobot), Kurva S
-- ✅ **API REST**: 7 endpoint, termasuk rincian HSP per item yang auditable
-- ✅ **Shared schemas**: Zod (TypeScript) selaras 1:1 dengan Pydantic (Python)
-- ✅ **Seed data**: AHSP Cipta Karya + harga satuan Jawa Tengah (ILUSTRATIF)
-- ✅ **Halaman web Uji RAB manual** (Next.js → engine → tampilan), tanpa kalkulasi di frontend
-- ✅ **Test**: 8 unit engine + 20 integrasi API + 6 schema (Zod)
-
-### Belum ada di v0.6 (rencana v1.0+)
-- ❌ Ekstraksi gambar → BoQ (Document Intelligence)
-- ❌ AI Orchestrator, RAG, AI Engineering Chat
-- ❌ Simulasi skenario lanjutan, Monitoring multi-proyek
+> Status kerja aktif, blocker, dan langkah berikutnya: `docs/ai-map/STATE_CURRENT.md`.
+> Indeks dokumentasi lengkap (baca on-demand, bukan wajib tiap sesi): `docs/INDEX.md`.
+> Navigasi kode/dependency/endpoint: pakai Graphify (`graphify query`/`path`/`explain`),
+> bukan grep manual — lihat `CLAUDE.md` §7.
 
 ---
 
-## v0.7 — Workspace Hidup (sedang berjalan)
+## Arsitektur — 6 service
 
-Membangun **workspace nyata** di atas engine v0.6. Tetap **tanpa AI** — semua angka
-dari engine deterministik.
+Roadmap awal (`docs/MASTER_PLAN.md`) menandai beberapa service ini "mulai v0.8/v1.0/v2.0",
+tapi semuanya **sudah ada kode nyata di `main`** sekarang, dengan kematangan
+yang tidak merata (lihat catatan jujur per service di bawah).
 
-- ✅ **Multi-proyek + CRUD** tersimpan (Firestore, dengan fallback localStorage bila env Firebase kosong)
-- ✅ **Editor RAB per-proyek** (`/proyek/[id]/rab`): pilih item AHSP + volume + durasi → RAB, bobot, Kurva S, rincian HSP — **semua dari engine**, input tersimpan per-proyek
-- ✅ **Browser Database AHSP** (`/database-ahsp`): live dari engine, rincian koefisien × harga per-wilayah
-- ✅ **Export RAB/BoQ** ke Excel (CSV) & PDF (print)
-- ✅ **RAB Health Check** (`POST /rab/validate`): skor 0–100 + peringatan deterministik (duplikat, volume nol, bobot dominan, durasi hilang)
-- ✅ **Scenario Simulator** (`POST /scenario/simulate`, tab Schedule): frontier **waktu-biaya** ala ALICE — durasi dari produktivitas AHSP, skenario crew/lembur/paralel — semua titik dihitung engine
-- ⏳ Editor harga regional dari UI (butuh endpoint override harga di engine) — slice tambahan
+| Service | Port | Bahasa | Tanggung jawab | Kematangan |
+| --- | --- | --- | --- | --- |
+| `apps/web` | 3000 | Next.js 15 / React 19 | Seluruh UI (dashboard, RAB, jadwal, Command Room, gambar kerja) | Aktif dikembangkan |
+| `services/core-engine` | 8081 | FastAPI/Python | **Semua perhitungan deterministik** (HSP, RAB, Kurva S, CPM, skenario, takeoff, TKG) | Matang, 43 endpoint |
+| `services/document-intelligence` | 8083 | FastAPI/Python | Persepsi gambar kerja (PDF/Excel → elemen → TKG → bridging ke engine); OCR NVIDIA/Gemini | Matang, PLHUT 88 halaman teruji |
+| `services/ai-orchestrator` | 8082 | Express/TypeScript | Tool-calling Engineering Chat (Gemini): `lookup_ahsp`, `search_knowledge` (RAG), `run_scenario`, `analyze_drawing`, `query_rab/schedule` | Jalan, **belum dipanggil `apps/web`** |
+| `services/db` | 8084 | FastAPI/Python | CRUD proyek/RAB/TKG, RAG knowledge (pgvector), audit log, metering, laporan pagi | Jalan, **belum diuji ke Postgres nyata** (fallback SQLite untuk test) |
+| `services/site-agent` | 8085 | FastAPI/Python | Laporan harian lapangan + deviasi rencana-vs-realisasi | Scaffold modest (R14) |
 
----
-
-## v0.8 — AI Masuk (AI-first, fallback gratis)
-
-AI jadi otak tiap halaman: **AI menstruktur, engine menghitung**.
-
-- ✅ **Smart RAB Builder** ("Susun dengan AI" di editor RAB): tulis daftar elemen + dimensi → AI memecah jadi tipe + AHSP + seksi WBS + confidence → **engine hitung volume** (`/geometry/volume`) → **engine susun RAB tersektor** (`/rab/build`) → verifikasi/koreksi → terapkan ke editor untuk edit manual.
-- ✅ **Berjalan gratis** dengan otak **rule-based** (tanpa API key). Untuk ekstraksi lebih pintar, sambungkan **Gemini free tier** (Google AI Studio) lewat `GEMINI_API_KEY` di `apps/web/.env.local` — server-side, tidak terekspos browser.
-- ⛔ **v1.0 (CV / baca gambar mentah)** ditahan — validasi Wizard-of-Oz dulu (bagian tersulit & termahal).
-
-> Jalankan engine (`pnpm run dev:core`) agar halaman workspace bisa menghitung.
-> Tanpa engine, RAB/AHSP menampilkan pesan/contoh fallback.
+**Command Room** (`apps/web/src/app/(dashboard)/command-room/`) adalah chat AI
+utama dashboard — model routing Lucent/Solace via **NVIDIA NIM/DeepSeek**
+(bukan `services/ai-orchestrator`, yang masih pakai Gemini dan belum
+tersambung ke frontend). Chat per-proyek lama (`proyek/[projectId]/chat/`)
+masih ada terpisah, pakai Gemini langsung. Lihat proteksi file Command Room di
+`CLAUDE.md` §6 sebelum menyentuh area ini.
 
 ---
 
@@ -62,10 +44,15 @@ AI jadi otak tiap halaman: **AI menstruktur, engine menghitung**.
 
 | Lapisan | Teknologi |
 | --- | --- |
-| Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS v4, lucide-react |
-| Core Engine | Python 3.11+, FastAPI, Pydantic v2 |
-| Shared Types | Zod (TypeScript) ↔ Pydantic (Python) |
+| Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS |
+| Engine & persepsi | Python 3.11+, FastAPI, Pydantic v2 |
+| AI Orchestrator | Node/Express + TypeScript |
+| AI Chat (Command Room) | NVIDIA NIM (Lucent/DeepSeek-chat, Solace/DeepSeek-reasoner) |
+| AI Chat (per-proyek, AI-assist gambar) | Gemini |
+| Data | PostgreSQL + pgvector (fallback SQLite untuk test) |
+| Shared Types | Zod (TypeScript) ↔ Pydantic (Python), `packages/schemas` |
 | Monorepo | pnpm + Turborepo |
+| Navigasi kode | Graphify (`graphify query`/`path`/`explain`) |
 
 ---
 
@@ -73,124 +60,102 @@ AI jadi otak tiap halaman: **AI menstruktur, engine menghitung**.
 
 ```text
 paax-ai/
-├── apps/web/                     # Next.js — UI & halaman /rab-tester
-├── services/core-engine/         # FastAPI — SEMUA perhitungan deterministik (fokus v0.6)
-├── packages/schemas/             # Zod schemas (selaras dengan Pydantic)
-├── data/
-│   ├── ahsp/                     # Koefisien AHSP per bidang
-│   └── harga-satuan/             # Harga satuan per wilayah
-├── docs/                         # ADR, arsitektur, API, produk, versi
-└── legacy/                       # Kode lama (v0.1–v0.5) yang diarsipkan
+├── apps/web/                        # Next.js — seluruh UI
+├── services/
+│   ├── core-engine/                 # FastAPI — perhitungan deterministik
+│   ├── document-intelligence/       # FastAPI — persepsi gambar kerja + TKG
+│   ├── ai-orchestrator/             # Express — tool-calling Engineering Chat
+│   ├── db/                          # FastAPI — CRUD, RAG, audit, metering
+│   └── site-agent/                  # FastAPI — laporan lapangan
+├── packages/schemas/                # Zod ↔ Pydantic, 1 sumber kebenaran tipe
+├── data/{ahsp,harga-satuan}/        # Koefisien & harga regional
+├── docs/                            # INDEX.md, MASTER_PLAN, ADR, spesifikasi
+└── legacy/                          # Kode lama (v0.1–v0.5), diarsipkan
 ```
-
-> Service lain (`ai-orchestrator`, `document-intelligence`, `site-agent`) ada di repo
-> tetapi **di luar lingkup v0.6**. Engine FastAPI v0.5 lama diarsipkan di
-> `legacy/core-engine-v0.5/`.
 
 ---
 
 ## Prasyarat
-- Node.js 20+ dan **pnpm** (`corepack enable` atau `npm i -g pnpm`)
+- Node.js 20+ dan **pnpm** (`corepack enable`)
 - Python 3.11+
+- PostgreSQL (opsional untuk dev — `services/db` fallback SQLite tanpa itu)
 
 ## Quick Start
 
-### 1. Install dependencies (Node)
 ```bash
 pnpm install
-```
 
-### 2. Install Shared Python Schemas
-```bash
-python -m venv .venv
-# Windows:  .venv\Scripts\activate
-# macOS/Linux: source .venv/bin/activate
+# Shared Python schemas (dibutuhkan semua service Python)
+python -m venv .venv && .venv\Scripts\activate   # Windows; source .venv/bin/activate di macOS/Linux
 pip install -e packages/schemas/python
+
+# Tiap service Python
+pip install -e services/core-engine[dev]
+pip install -e services/document-intelligence
+pip install -e services/db
+pip install -e services/site-agent
 ```
 
-### 3. Install Core Engine (Python)
+Jalankan tiap service (terminal terpisah):
+
 ```bash
-cd services/core-engine
-pip install -e ".[dev]"
+pnpm run dev:core       # core-engine      :8081  http://localhost:8081/docs
+pnpm run dev:doc-intel  # document-intelligence :8083
+cd services/ai-orchestrator && pnpm dev    # :8082
+cd services/db && uvicorn src.paax_db.main:app --port 8084
+cd services/site-agent && uvicorn app.main:app --port 8085
+pnpm run dev:web        # web :3000
 ```
 
-### 4. Install Document Intelligence (Python)
-```bash
-cd ../document-intelligence
-pip install -e .
-```
-
-### 5. Jalankan Engine (terminal 1)
-```bash
-pnpm run dev:core
-# Engine: http://localhost:8081  •  API docs: http://localhost:8081/docs
-```
-
-### 6. Jalankan Web (terminal 2)
-```bash
-pnpm run dev:web
-# Web: http://localhost:3000
-# Halaman Uji RAB: http://localhost:3000/rab-tester
-```
-
-> Web membaca `NEXT_PUBLIC_CORE_ENGINE_URL` dari `apps/web/.env.local`
-> (default `http://localhost:8081`). Salin dari `apps/web/.env.example`.
+> `pnpm run dev`/`test` (root Turborepo script) saat ini hanya mencakup
+> `web`+`core-engine`+`schemas` — `document-intelligence`/`ai-orchestrator`/`db`/
+> `site-agent` dijalankan & diuji manual per-service (lihat tabel di atas).
 
 ---
 
-## Test
+## Test (per workspace, 2026-07-10)
+
+| Workspace | Hasil |
+| --- | --- |
+| `services/core-engine` | 246 passed, 35 failed* |
+| `services/document-intelligence` | 296 passed, 5 skipped |
+| `services/db` | 8 passed, 1 skipped |
+| `services/site-agent` | 17 passed |
+| `services/ai-orchestrator` | 32 passed |
+| `packages/schemas` | 14 passed |
+| `apps/web` | 53 passed, 1 failed* |
+
+\* Kegagalan core-engine: test lama belum kirim header auth setelah Auth/RBAC
+ditambahkan — bukan bug logika. Kegagalan web: 1 test `orchestrator.test.ts`
+(Command Room, di luar scope perbaikan dokumentasi ini) — lihat
+`docs/ai-map/STATE_CURRENT.md` untuk detail & rekomendasi.
 
 ```bash
-pnpm run test:core      # Engine (pytest): 8 unit + 20 integrasi API
-pnpm run test:schemas   # Schemas (jest/Zod): 6 test
-pnpm test               # test:core + test:schemas
+cd services/core-engine && python -m pytest -q
+cd services/document-intelligence && python -m pytest -q
+cd services/db && python -m pytest -q
+cd services/site-agent && python -m pytest -q
+pnpm --filter ai-orchestrator test
+pnpm run test:schemas
+pnpm --filter @paax/web test
 ```
-
-## Demo Engine (tanpa server)
-```bash
-cd services/core-engine
-python -m app.demo
-# Windows: set UTF-8 dulu agar grafik Kurva S tampil →  $env:PYTHONUTF8=1; python -m app.demo
-```
-
----
-
-## API Endpoints
-
-| Method | Endpoint | Fungsi |
-| --- | --- | --- |
-| GET | `/health` | Status engine |
-| GET | `/ahsp` | Daftar item AHSP |
-| GET | `/ahsp/{code}` | Detail item AHSP |
-| GET | `/regions` | Daftar wilayah |
-| POST | `/rab/hsp` | Hitung HSP satu item (auditable) |
-| POST | `/rab/calculate` | Hitung RAB lengkap |
-| POST | `/rab/validate` | Health check RAB (skor + peringatan, deterministik) |
-| POST | `/rab/build` | RAB tersektor (WBS I–VII) |
-| GET | `/wbs/sections` | Template 7 seksi WBS |
-| POST | `/geometry/volume` | Hitung volume/luas dari dimensi (dipanggil AI) |
-| GET | `/geometry/elements` | Tipe elemen yang didukung kalkulator volume |
-| POST | `/schedule/s-curve` | Bangun Kurva S |
-| POST | `/scenario/simulate` | Simulasi what-if waktu-biaya (deterministik) |
-
-Contoh request lengkap: [`services/core-engine/requests.http`](services/core-engine/requests.http).
-Detail engine: [`services/core-engine/README.md`](services/core-engine/README.md).
 
 ---
 
 ## Data
 
-Data di `data/` bersifat **ILUSTRATIF** untuk verifikasi engine. Sebelum produksi, ganti dengan:
-- Koefisien AHSP resmi: **Permen PUPR No. 8/2023** & SE DJBK terbaru
-- Harga satuan: **SHSD daerah** atau harga pasar resmi
+Data di `data/` bersifat **ILUSTRATIF** untuk verifikasi engine. Sebelum
+produksi, ganti dengan koefisien AHSP resmi (Permen PUPR No. 8/2023 + SE DJBK)
+dan harga satuan SHSD daerah/harga pasar resmi. Katalog AHSP lengkap
+(2.542 item) ada di luar repo (`G:\paax-data`, via env `PAAX_DATA_DIR`).
 
 ## Kontribusi
-**Aturan emas (wajib):** engine yang **menghitung**, AI yang **menjelaskan** — semua angka
-RAB/HSP/Kurva-S berasal dari `services/core-engine` (deterministik), tidak pernah dari LLM.
-Bangun dari koefisien AHSP (`data/ahsp`) × harga satuan (`data/harga-satuan`); jangan
-hardcode hasil RAB. Skema `packages/schemas` (Zod) wajib selaras dengan Pydantic engine
-(`services/core-engine/app/rab/models.py`). Commit mengikuti Conventional Commits
-(`feat:`, `fix:`, `docs:`, `refactor:`, `test:`).
+
+**Aturan emas (wajib):** engine yang **menghitung**, AI yang **menjelaskan** —
+lihat `CLAUDE.md`/`AGENTS.md` untuk aturan permanen lengkap (schema alignment,
+testing wajib, keamanan, pembagian Claude/Codex, gerbang review branch→PR,
+proteksi Command Room, workflow Graphify-first). Commit mengikuti Conventional
+Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`).
 
 ## Lisensi
 Proprietary — Do not distribute.
