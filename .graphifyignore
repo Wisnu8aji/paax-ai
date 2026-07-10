@@ -21,6 +21,21 @@ venv/
 # Graphify's own output — avoid self-referential re-indexing
 graphify-out/
 
+# Bundled third-party skill projects (e.g. ui-main ships a full shadcn/ui
+# monorepo as reference material) — not PAAX's own source code
+.claude/skills/
+
+# Old cleanup archive left inside graphify-out/ by a curated-graph backup
+graphify-out/2026-07-10/
+
+# Historical docs, old reports, and legacy app — reference material, not
+# active source; keep the graph focused on the live codebase
+report/
+report-remote/
+docs/history/
+docs/prompts/
+legacy/
+
 # Media — binary, not parseable as text/AST
 *.png
 *.jpg
