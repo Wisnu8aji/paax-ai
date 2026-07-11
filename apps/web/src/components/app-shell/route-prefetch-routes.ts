@@ -11,7 +11,7 @@ const STATIC_DASHBOARD_ROUTES = [
   '/laporan',
 ];
 
-const PROJECT_MODULE_SEGMENTS = ['', '/gambar-kerja', '/rab', '/schedule', '/chat', '/site-agent'];
+const PROJECT_MODULE_SEGMENTS = ['', '/gambar-kerja', '/rab', '/schedule', '/site-agent'];
 
 export function buildDashboardPrefetchRoutes(projects: PrefetchProject[]): string[] {
   const routes = new Set(STATIC_DASHBOARD_ROUTES);

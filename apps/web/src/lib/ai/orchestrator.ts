@@ -3,16 +3,11 @@ import { z } from "zod";
 import { ruleBasedExtractor, type ExtractedElement } from "./rab-extractor";
 
 export const GEMINI_MODEL = "gemini-2.5-flash";
-export const DEEPSEEK_MODEL_FAST = "deepseek-v4-flash";
-export const DEEPSEEK_MODEL_REASONING = "deepseek-v4-pro";
 export const NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1";
-export const NVIDIA_LUCENT_MODEL = "moonshotai/kimi-k2.6";
-export const NVIDIA_SOLACE_MODEL = "deepseek-ai/deepseek-v4-pro";
 export const NVIDIA_DRAWING_FAST_MODEL = "nvidia/nemotron-nano-12b-v2-vl";
 const GEMINI_TIMEOUT_MS = 30000;
 const DEEPSEEK_TIMEOUT_MS = 30000;
 const NVIDIA_TIMEOUT_MS = 120000;
-const NVIDIA_SOLACE_TIMEOUT_MS = 3_600_000;
 
 export const ExtractedElementSchema = z.object({
   id: z.string().min(1),
@@ -31,12 +26,6 @@ export const ExtractedElementList = z.array(ExtractedElementSchema);
 export type ExtractorProviderStatus =
   | { provider: "rule-based"; model: null }
   | { provider: "nvidia"; model: typeof NVIDIA_DRAWING_FAST_MODEL }
-  | { provider: "gemini"; model: typeof GEMINI_MODEL };
-
-export type ChatModelName = "Lucent" | "Solace";
-export type ChatModelSelection =
-  | { provider: "nvidia"; model: typeof NVIDIA_LUCENT_MODEL | typeof NVIDIA_SOLACE_MODEL }
-  | { provider: "deepseek"; model: typeof DEEPSEEK_MODEL_FAST | typeof DEEPSEEK_MODEL_REASONING }
   | { provider: "gemini"; model: typeof GEMINI_MODEL };
 
 interface OpenAiChatResponse {
@@ -119,12 +108,6 @@ export function getExtractorProviderStatus(apiKey: string | undefined): Extracto
   return key.startsWith("nvapi")
     ? { provider: "nvidia", model: NVIDIA_DRAWING_FAST_MODEL }
     : { provider: "gemini", model: GEMINI_MODEL };
-}
-
-export function pickChatModel(model: ChatModelName | undefined): ChatModelSelection {
-  return model === "Solace"
-    ? { provider: "nvidia", model: NVIDIA_SOLACE_MODEL }
-    : { provider: "nvidia", model: NVIDIA_LUCENT_MODEL };
 }
 
 function stripCodeFence(text: string): string {
@@ -310,19 +293,14 @@ export async function nvidiaText(
     fetchImpl?: typeof fetch;
   },
 ): Promise<string> {
-  const isSolace = params.model === NVIDIA_SOLACE_MODEL;
-  const extraBody = isSolace
-    ? { max_tokens: 16384, chat_template_kwargs: { thinking: params.thinking === true } }
-    : undefined;
   return openAiCompatibleText(prompt, {
     apiKey: params.apiKey,
     baseUrl: params.baseUrl ?? NVIDIA_BASE_URL,
     providerName: "NVIDIA",
     model: params.model,
     thinking: false,
-    extraBody,
     includeThinkingField: false,
-    timeoutMs: params.timeoutMs ?? (isSolace ? NVIDIA_SOLACE_TIMEOUT_MS : NVIDIA_TIMEOUT_MS),
+    timeoutMs: params.timeoutMs ?? NVIDIA_TIMEOUT_MS,
     fetchImpl: params.fetchImpl,
   });
 }
@@ -340,29 +318,6 @@ export async function nvidiaElements(
   });
   const parsed = extractGeminiJson(answer);
   return ExtractedElementList.parse(parsed);
-}
-
-export async function deepseekText(
-  prompt: string,
-  params: {
-    apiKey: string;
-    model: string;
-    thinking?: boolean;
-    reasoningEffort?: "high" | "max";
-    userId?: string;
-    fetchImpl?: typeof fetch;
-  },
-): Promise<string> {
-  return openAiCompatibleText(prompt, {
-    apiKey: params.apiKey,
-    baseUrl: "https://api.deepseek.com",
-    providerName: "DeepSeek",
-    model: params.model,
-    thinking: params.thinking,
-    reasoningEffort: params.reasoningEffort,
-    userId: params.userId,
-    fetchImpl: params.fetchImpl,
-  });
 }
 
 export async function geminiElements(

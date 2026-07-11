@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "C:\\Users\\Nothing\\.local\\bin\\graphify.EXE hook-guard search"
+            "command": "graphify.EXE hook-guard search"
           }
         ]
       },
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "C:\\Users\\Nothing\\.local\\bin\\graphify.EXE hook-guard read"
+            "command": "graphify.EXE hook-guard read"
           }
         ]
       }
