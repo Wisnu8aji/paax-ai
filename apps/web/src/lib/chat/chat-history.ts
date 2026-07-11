@@ -15,6 +15,14 @@ export interface StoredChatMessage {
   time: string;
 }
 
+export interface ConversationConnectors {
+  gambarKerja: boolean;
+  rab: boolean;
+  jadwal: boolean;
+}
+
+const EMPTY_CONNECTORS: ConversationConnectors = { gambarKerja: false, rab: false, jadwal: false };
+
 export interface ChatConversation {
   id: string;
   projectId: string;
@@ -25,6 +33,8 @@ export interface ChatConversation {
   archived: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Sumber data proyek yang diikutsertakan sebagai konteks percakapan ini. */
+  connectors: ConversationConnectors;
 }
 
 export interface ChatFolder {
@@ -57,6 +67,7 @@ function normalizeConversation(raw: Partial<ChatConversation>): ChatConversation
     archived: raw.archived ?? false,
     createdAt: raw.createdAt ?? now,
     updatedAt: raw.updatedAt ?? raw.createdAt ?? now,
+    connectors: { ...EMPTY_CONNECTORS, ...raw.connectors },
   };
 }
 
@@ -114,6 +125,7 @@ export function createConversation(projectId: string, folderId: string | null = 
     archived: false,
     createdAt: now,
     updatedAt: now,
+    connectors: { ...EMPTY_CONNECTORS },
   };
   const state = load();
   state.conversations.push(conversation);
@@ -161,6 +173,48 @@ export function toggleArchived(id: string): void {
   conv.archived = !conv.archived;
   conv.updatedAt = new Date().toISOString();
   save(state);
+}
+
+export function renameConversation(id: string, title: string): void {
+  const state = load();
+  const conv = state.conversations.find((c) => c.id === id);
+  if (!conv) return;
+  const trimmed = title.trim();
+  if (!trimmed) return;
+  conv.title = trimmed;
+  conv.updatedAt = new Date().toISOString();
+  save(state);
+}
+
+export function setConversationConnectors(id: string, connectors: Partial<ConversationConnectors>): void {
+  const state = load();
+  const conv = state.conversations.find((c) => c.id === id);
+  if (!conv) return;
+  conv.connectors = { ...EMPTY_CONNECTORS, ...conv.connectors, ...connectors };
+  conv.updatedAt = new Date().toISOString();
+  save(state);
+}
+
+/** Fork percakapan dari titik ini ke chat baru — riwayat ter-copy, judul "branch-<judul asal>". */
+export function branchConversation(id: string): ChatConversation | null {
+  const state = load();
+  const source = state.conversations.find((c) => c.id === id);
+  if (!source) return null;
+  const now = new Date().toISOString();
+  const branch: ChatConversation = {
+    ...source,
+    id: newId('conv'),
+    title: `branch-${source.title}`,
+    messages: source.messages.map((m) => ({ ...m })),
+    connectors: { ...source.connectors },
+    pinned: false,
+    archived: false,
+    createdAt: now,
+    updatedAt: now,
+  };
+  state.conversations.push(branch);
+  save(state);
+  return branch;
 }
 
 export function createFolder(projectId: string, name: string, description = ''): ChatFolder {

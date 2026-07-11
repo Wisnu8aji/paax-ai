@@ -439,8 +439,34 @@
 .pax-cr-hover:hover { background: rgba(255,255,255,0.06); }
 .pax-cr-active { background: rgba(255,255,255,0.09) !important; }
 
+/* Row/message hover-reveal (pin/archive/delete, copy/export/timestamp) —
+   hidden until the pointer is near, small + unobtrusive like a native app. */
+.pax-cr-row-actions,
+.pax-msg-actions,
+.pax-msg-time {
+  opacity: 0;
+  transition: opacity .18s var(--ease);
+}
+.pax-cr-hover:hover .pax-cr-row-actions,
+.pax-cr-active .pax-cr-row-actions,
+.pax-msg-row:hover .pax-msg-actions,
+.pax-msg-row:hover .pax-msg-time {
+  opacity: 1;
+}
+
+/* Composer textarea — smooth height grow up to an adjustable cap */
+.pax-cr-textarea { transition: max-height .22s var(--ease), min-height .22s var(--ease); }
+
+/* Side panel (Task/Summary) slide-in from the right */
+@keyframes paxpanelslide { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+.pax-cr-panel-slide { animation: paxpanelslide .28s var(--ease) both; }
+
+/* Floating buttons — scroll to bottom, active generation indicator */
+.pax-cr-float-btn { transition: background .16s var(--ease), transform .16s var(--ease), opacity .2s var(--ease), box-shadow .2s var(--ease); }
+.pax-cr-float-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0,0,0,0.35); }
+
 /* Markdown inside Command Room */
-.cr-markdown { font-family: var(--font-sans); }
+.cr-markdown { font-family: 'Times New Roman', Times, serif; }
 .cr-markdown p { margin-bottom: 0.8em; }
 .cr-markdown p:last-child { margin-bottom: 0; }
 .cr-markdown strong { font-weight: 700; color: #FFF; }

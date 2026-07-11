@@ -70,8 +70,8 @@ export function RunStatus({ run, onStop }: { run: ActiveRun, onStop: () => void 
             width: 26,
             height: 26,
             borderRadius: 7,
-            border: '1px solid var(--cr-border)',
-            background: 'transparent',
+            border: 'none',
+            background: 'var(--cr-elev)',
             color: 'var(--cr-text2)',
             cursor: 'pointer'
           }}
