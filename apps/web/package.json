@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.111.0",
     "@paax/schemas": "workspace:*",
     "@paax/types": "workspace:*",
     "firebase": "^11.10.0",

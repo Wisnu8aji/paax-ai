@@ -61,7 +61,7 @@ import remarkGfm from 'remark-gfm';
 /**
  * COMMAND ROOM — pengganti Engineering Chat (rombak 2026-07-07,
  * referensi G:\Dashboard\Engineering chat). Dark ala Saya app:
- * sidebar Home/Project, hero "wisnu returns!", composer Lucent/Solace,
+ * sidebar Home/Project, hero "wisnu returns!", composer Lucent/Arete/Noir,
  * Projects grid + modal Create a project, Add to Project, connectors.
  * ATURAN EMAS tetap: AI menjelaskan — angka final dari Core Engine.
  * Riwayat lokal (lib/chat/chat-history) dengan scope global 'command-room'.
@@ -354,7 +354,7 @@ export default function CommandRoomPage() {
       message: message,
       historyMessages,
       modelId: modelAlias,
-      modelName: activeModelDef.displayName as 'Lucent' | 'Solace',
+      modelName: activeModelDef.displayName as 'Lucent' | 'Arete' | 'Noir',
       effort: reasoningEffort,
       thinking: resolvedThinking,
     });
@@ -696,7 +696,7 @@ export default function CommandRoomPage() {
                     key={m.id}
                     type="button"
                     role="menuitem"
-                    onClick={() => { setModelAlias(m.id); if (m.id === 'solace') setThinking(m.defaultThinking); if (m.id === 'lucent') setThinking('off'); setModelOpen(false); }}
+                    onClick={() => { setModelAlias(m.id); setThinking(m.defaultThinking); setModelOpen(false); }}
                     className="pax-cr-hover"
                     style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3, padding: '9px 10px', borderRadius: 9, border: 'none', background: modelAlias === m.id ? 'rgba(255,255,255,0.08)' : 'transparent', color: 'var(--cr-text)', cursor: 'pointer', textAlign: 'left' }}
                   >

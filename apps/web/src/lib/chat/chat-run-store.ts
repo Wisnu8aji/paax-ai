@@ -60,7 +60,7 @@ export type RunState =
   | "failed"
   | "cancelled";
 
-export type AIModelName = "Lucent" | "Solace";
+export type AIModelName = "Lucent" | "Arete" | "Noir";
 
 export type ActiveRun = {
   runId: string;
@@ -109,7 +109,7 @@ export type StartChatRunInput = {
   message: string;
   historyMessages: { role: "user" | "assistant"; content: string }[];
   modelId: string;
-  modelName: "Lucent" | "Solace";
+  modelName: "Lucent" | "Arete" | "Noir";
   effort?: "low" | "medium" | "high" | "max";
   thinking?: "on" | "off";
 };
