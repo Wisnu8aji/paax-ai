@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { extractDelta } from "./route";
+import { extractDelta } from "./sse-helpers";
 
 describe("extractDelta", () => {
   it("extracts plain content", () => {
