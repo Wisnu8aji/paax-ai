@@ -7,10 +7,8 @@ import {
   geminiJson,
   geminiMultimodal,
   geminiText,
-  deepseekText,
   extractElementsWithProvider,
   nvidiaText,
-  pickChatModel,
   getExtractorProviderStatus,
 } from "./orchestrator";
 
@@ -155,12 +153,7 @@ describe("AI orchestrator", () => {
     });
   });
 
-  it("maps Command Room Lucent and Solace to NVIDIA model ids", () => {
-    expect(pickChatModel("Lucent")).toEqual({ provider: "nvidia", model: "moonshotai/kimi-k2.6" });
-    expect(pickChatModel("Solace")).toEqual({ provider: "nvidia", model: "deepseek-ai/deepseek-v4-pro" });
-  });
-
-  it("calls NVIDIA NIM for Lucent Kimi through OpenAI-compatible chat completions", async () => {
+  it("calls NVIDIA NIM through OpenAI-compatible chat completions", async () => {
     let sentUrl = "";
     let sentAuth = "";
     let sentBody: unknown = null;
@@ -188,133 +181,4 @@ describe("AI orchestrator", () => {
     });
   });
 
-  it("calls NVIDIA NIM DeepSeek Pro for Solace with template thinking enabled", async () => {
-    let sentBody: unknown = null;
-    let signal: AbortSignal | undefined;
-    const fetchImpl = async (_url: string | URL | Request, init?: RequestInit) => {
-      sentBody = JSON.parse(String(init?.body));
-      signal = init?.signal as AbortSignal | undefined;
-      return new Response(JSON.stringify({
-        choices: [{ message: { content: "Jawaban dari NVIDIA DeepSeek" } }],
-      }), { status: 200 });
-    };
-
-    await expect(nvidiaText("analisa", {
-      apiKey: "nvapi.valid",
-      model: "deepseek-ai/deepseek-v4-pro",
-      thinking: true,
-      fetchImpl: fetchImpl as typeof fetch,
-    })).resolves.toBe("Jawaban dari NVIDIA DeepSeek");
-
-    expect(signal).toBeDefined();
-    expect(sentBody).toEqual({
-      model: "deepseek-ai/deepseek-v4-pro",
-      messages: [{ role: "user", content: "analisa" }],
-      temperature: 1,
-      max_tokens: 1536,
-      chat_template_kwargs: { thinking: true },
-    });
-  });
-
-  it("lets Solace NVIDIA DeepSeek Pro think up to one hour without retrying in non-thinking mode", async () => {
-    let callCount = 0;
-    let sentBody: unknown = null;
-    let signal: AbortSignal | undefined;
-    const originalSetTimeout = globalThis.setTimeout;
-    const originalClearTimeout = globalThis.clearTimeout;
-    const timeoutDelays: number[] = [];
-
-    globalThis.setTimeout = ((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
-      timeoutDelays.push(Number(timeout));
-      return originalSetTimeout(handler, 0, ...args);
-    }) as typeof setTimeout;
-    globalThis.clearTimeout = ((id: ReturnType<typeof setTimeout>) => {
-      return originalClearTimeout(id);
-    }) as typeof clearTimeout;
-
-    const fetchImpl = async (_url: string | URL | Request, init?: RequestInit) => {
-      callCount += 1;
-      signal = init?.signal as AbortSignal | undefined;
-      sentBody = JSON.parse(String(init?.body));
-      return new Response(JSON.stringify({
-        choices: [{ message: { content: "Jawaban setelah thinking panjang" } }],
-      }), { status: 200 });
-    };
-
-    try {
-      await expect(nvidiaText("analisa panjang", {
-        apiKey: "nvapi.valid",
-        model: "deepseek-ai/deepseek-v4-pro",
-        thinking: true,
-        fetchImpl: fetchImpl as typeof fetch,
-      })).resolves.toBe("Jawaban setelah thinking panjang");
-    } finally {
-      globalThis.setTimeout = originalSetTimeout;
-      globalThis.clearTimeout = originalClearTimeout;
-    }
-
-    expect(callCount).toBe(1);
-    expect(timeoutDelays).toContain(3_600_000);
-    expect(signal).toBeDefined();
-    expect(sentBody).toMatchObject({
-      model: "deepseek-ai/deepseek-v4-pro",
-      chat_template_kwargs: { thinking: true },
-    });
-  });
-
-  it("calls DeepSeek flash with thinking disabled for quick chat", async () => {
-    let sentUrl = "";
-    let sentAuth = "";
-    let sentBody: unknown = null;
-    const fetchImpl = async (url: string | URL | Request, init?: RequestInit) => {
-      sentUrl = String(url);
-      sentAuth = String((init?.headers as Record<string, string>).Authorization);
-      sentBody = JSON.parse(String(init?.body));
-      return new Response(JSON.stringify({
-        choices: [{ message: { content: "Jawaban dari DeepSeek" } }],
-      }), { status: 200 });
-    };
-
-    await expect(deepseekText("halo", {
-      apiKey: "  sk.valid  ",
-      model: "deepseek-v4-flash",
-      fetchImpl: fetchImpl as typeof fetch,
-    })).resolves.toBe("Jawaban dari DeepSeek");
-
-    expect(sentUrl).toBe("https://api.deepseek.com/chat/completions");
-    expect(sentAuth).toBe("Bearer sk.valid");
-    expect(sentBody).toEqual({
-      model: "deepseek-v4-flash",
-      messages: [{ role: "user", content: "halo" }],
-      thinking: { type: "disabled" },
-      temperature: 0.2,
-    });
-  });
-
-  it("calls DeepSeek pro with thinking enabled for Solace", async () => {
-    let sentBody: unknown = null;
-    const fetchImpl = async (_url: string | URL | Request, init?: RequestInit) => {
-      sentBody = JSON.parse(String(init?.body));
-      return new Response(JSON.stringify({
-        choices: [{ message: { content: "Jawaban mendalam dari Solace" } }],
-      }), { status: 200 });
-    };
-
-    await expect(deepseekText("analisa", {
-      apiKey: "sk.valid",
-      model: "deepseek-v4-pro",
-      thinking: true,
-      reasoningEffort: "high",
-      userId: "paax-command-room",
-      fetchImpl: fetchImpl as typeof fetch,
-    })).resolves.toBe("Jawaban mendalam dari Solace");
-
-    expect(sentBody).toEqual({
-      model: "deepseek-v4-pro",
-      messages: [{ role: "user", content: "analisa" }],
-      user_id: "paax-command-room",
-      thinking: { type: "enabled" },
-      reasoning_effort: "high",
-    });
-  });
 });

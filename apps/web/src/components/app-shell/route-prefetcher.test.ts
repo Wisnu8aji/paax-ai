@@ -15,7 +15,6 @@ describe("dashboard route prefetch list", () => {
     expect(routes).toContain("/database-ahsp");
     expect(routes).toContain("/proyek/p-1/rab");
     expect(routes).toContain("/proyek/p-1/schedule");
-    expect(routes).toContain("/proyek/p-2/chat");
     expect(new Set(routes).size).toBe(routes.length);
   });
 });

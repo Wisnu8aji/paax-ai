@@ -51,14 +51,14 @@ const NAV_ITEMS: RailItem[] = [
     href: '/proyek',
     isActive: (p) =>
       p === '/proyek' ||
-      (p.startsWith('/proyek/') && !p.includes('/site-agent') && !p.includes('/chat')),
+      (p.startsWith('/proyek/') && !p.includes('/site-agent')),
   },
   {
     key: 'command',
     label: 'Command Room',
     icon: MessagesSquare,
     href: '/command-room',
-    isActive: (p) => p.startsWith('/command-room') || /^\/proyek\/[^/]+\/chat/.test(p),
+    isActive: (p) => p.startsWith('/command-room'),
   },
   {
     key: 'site-agent',

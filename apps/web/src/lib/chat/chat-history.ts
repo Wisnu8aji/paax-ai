@@ -1,10 +1,10 @@
 /**
- * Riwayat Engineering Chat per proyek — disimpan lokal di peramban.
+ * Riwayat percakapan Command Room — disimpan lokal di peramban.
  *
  * Ini murni STATE TAMPILAN (riwayat & pengelompokan percakapan), bukan jalur
- * angka: jawaban AI tetap datang dari /api/ai/chat dan angka dari Core Engine.
- * Skema: percakapan bisa berdiri sendiri atau dikelompokkan ke "Project
- * Percakapan" (folder) — pola yang sama dengan ChatGPT/Saya Projects.
+ * angka: jawaban AI tetap datang dari /api/command-room/chat dan angka dari
+ * Core Engine. Skema: percakapan bisa berdiri sendiri atau dikelompokkan ke
+ * "Project Percakapan" (folder) — pola yang sama dengan ChatGPT/Saya Projects.
  */
 
 export interface StoredChatMessage {
