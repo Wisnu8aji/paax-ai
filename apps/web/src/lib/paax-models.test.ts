@@ -51,7 +51,7 @@ describe("paax-models", () => {
   });
 
   it("builds a readable composer badge", () => {
-    expect(composerBadge("lucent", "on", "high")).toBe("Lucent · Thinking On · High");
-    expect(composerBadge("noir", "off", "max")).toBe("Noir · Thinking Off · Max");
+    expect(composerBadge("lucent", "on", "high")).toBe("Lucent · Ultra · High");
+    expect(composerBadge("noir", "off", "max")).toBe("Noir · Standard · Max");
   });
 });

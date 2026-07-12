@@ -35,7 +35,6 @@ import {
   Pin,
   Plus,
   RotateCcw,
-  Sparkles,
   Search,
   TrendingUp,
   Trash2,
@@ -289,6 +288,7 @@ export default function CommandRoomPage() {
       setShowScrollToBottom(scrolledUp);
     };
     el.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
     return () => el.removeEventListener('scroll', onScroll);
   }, [activeId]);
 
@@ -984,17 +984,17 @@ export default function CommandRoomPage() {
             />
           </div>
 
-          {/* Ultra / Standard — thinking on/off, ganti slot "Full access" */}
+          {/* Thinking mode */}
           <button
             type="button"
             onClick={() => setThinking((t) => (t === 'on' ? 'off' : 'on'))}
             disabled={!activeModelDef.supportsThinking}
-            className="pax-cr-hover pax-press"
+            className="pax-cr-hover pax-press cr-thinking-toggle"
             title={resolvedThinking === 'on' ? 'Ultra — thinking aktif, jawaban lebih dalam' : 'Standard — respons lebih cepat'}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, height: 32, padding: '0 10px', borderRadius: 9, border: 'none', background: 'transparent', color: resolvedThinking === 'on' ? 'var(--cr-orange)' : 'var(--cr-text3)', fontSize: 12, fontWeight: 600, cursor: activeModelDef.supportsThinking ? 'pointer' : 'default' }}
+            style={{ display: 'flex', alignItems: 'center', height: 32, padding: '0 10px', borderRadius: 9, border: 'none', background: 'transparent', color: resolvedThinking === 'on' ? 'var(--cr-orange)' : 'var(--cr-text3)', fontSize: 12, fontWeight: 600, cursor: activeModelDef.supportsThinking ? 'pointer' : 'default' }}
           >
-            <Sparkles size={13} />
-            {resolvedThinking === 'on' ? 'Ultra' : 'Standard'}
+            <span className="cr-thinking-prefix" aria-hidden="true">Thinking</span>
+            <span className="cr-thinking-value">{resolvedThinking === 'on' ? 'Ultra' : 'Standard'}</span>
           </button>
 
           <div style={{ flex: 1 }} />
@@ -1075,8 +1075,8 @@ export default function CommandRoomPage() {
           <button type="button" onClick={() => showNote('Mode voice hadir di rilis berikutnya.')} aria-label="Mode voice" className="pax-cr-hover pax-press cr-icon-button cr-voice-button" style={{ width: 40, height: 40, borderRadius: 12, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <AudioLines size={15} />
           </button>
-          <button type="submit" aria-label="Kirim" disabled={isBusy || !draft.trim()} className="pax-press cr-send-button" style={{ width: 40, height: 40, borderRadius: '50%', background: '#a9a9a9', color: '#1c1c1c', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isBusy ? 'wait' : 'pointer', opacity: isBusy || !draft.trim() ? 0.45 : 1, transition: 'opacity .2s var(--ease), transform .16s var(--ease)' }}>
-            {isBusy ? <Loader2 size={15} className="animate-spin" /> : <ArrowUp size={15} strokeWidth={2.4} />}
+          <button type="submit" aria-label="Kirim" disabled={isBusy || !draft.trim()} className="pax-press cr-send-button" style={{ width: 32, height: 32, borderRadius: '50%', background: '#a9a9a9', color: '#1c1c1c', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isBusy ? 'wait' : 'pointer', opacity: isBusy || !draft.trim() ? 0.45 : 1, transition: 'opacity .2s var(--ease), transform .16s var(--ease)' }}>
+            {isBusy ? <Loader2 size={14} className="animate-spin" /> : <ArrowUp size={14} strokeWidth={2.4} />}
           </button>
         </div>
       </form>
@@ -1129,6 +1129,8 @@ export default function CommandRoomPage() {
           aria-label="Tutup navigasi"
         />
       )}
+
+      <div className="cr-sidebar-edge" aria-hidden="true" />
 
       {/* ══ SIDEBAR ══ */}
       <div
@@ -1598,7 +1600,7 @@ export default function CommandRoomPage() {
                   className="pax-cr-hover pax-press pax-cr-float-btn pax-fade"
                   aria-label="AI sedang menjawab — turun ke jawaban"
                   title="AI sedang menjawab — turun ke jawaban"
-                  style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 7, padding: '7px 14px', borderRadius: 999, border: 'none', background: 'var(--cr-panel2)', color: 'var(--cr-orange)', fontSize: 12, fontWeight: 600, cursor: 'pointer', boxShadow: '0 10px 26px rgba(0,0,0,0.35)', zIndex: 20 }}
+                  style={{ position: 'absolute', top: 14, right: 18, display: 'flex', alignItems: 'center', gap: 7, padding: '7px 14px', borderRadius: 999, border: 'none', background: 'var(--cr-panel2)', color: 'var(--cr-orange)', fontSize: 12, fontWeight: 600, cursor: 'pointer', boxShadow: '0 10px 26px rgba(0,0,0,0.35)', zIndex: 20 }}
                 >
                   <span aria-hidden="true" style={{ display: 'flex', animation: 'paxpulse 1.4s ease-in-out infinite', letterSpacing: 1 }}>•••</span>
                   Generating…
@@ -1610,7 +1612,7 @@ export default function CommandRoomPage() {
                   className="pax-cr-hover pax-press pax-cr-float-btn pax-fade"
                   aria-label="Scroll ke bawah"
                   title="Scroll ke bawah"
-                  style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', width: 34, height: 34, borderRadius: '50%', border: 'none', background: 'var(--cr-panel2)', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 10px 26px rgba(0,0,0,0.35)', zIndex: 20 }}
+                  style={{ position: 'absolute', top: 14, right: 18, width: 34, height: 34, borderRadius: '50%', border: 'none', background: 'var(--cr-panel2)', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 10px 26px rgba(0,0,0,0.35)', zIndex: 20 }}
                 >
                   <ChevronDown size={16} />
                 </button>
@@ -1626,8 +1628,12 @@ export default function CommandRoomPage() {
             </div>
           </>
         ) : (
-          /* ── HERO AWAL: logo + wisnu returns! + composer di tengah ── */
+          /* ── HERO AWAL ── */
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '22px 22px 96px' }}>
+            <div className="cr-empty-hero pax-rise">
+              <h1>Hello World!</h1>
+              <p>What are we solving?</p>
+            </div>
             <div className="pax-rise cr-new-task-panel" style={{ width: '100%' }}>
               {composer}
             </div>

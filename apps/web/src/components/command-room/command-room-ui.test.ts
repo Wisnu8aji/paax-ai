@@ -9,6 +9,7 @@ import {
   COMMAND_THINKING_OPTIONS,
   getDefaultCommandModelSettings,
 } from './command-room-ui';
+import { composerBadge } from '@/lib/paax-models';
 
 describe('Command Room presentation contracts', () => {
   it('clamps the adjustable composer between 64 and 240 pixels', () => {
@@ -47,5 +48,10 @@ describe('Command Room presentation contracts', () => {
     expect(COMMAND_EFFORT_OPTIONS).toEqual(['high', 'max']);
     expect(COMMAND_THINKING_OPTIONS).toEqual(['on', 'off']);
     expect(COMMAND_HEADER_ICON_SIZE).toBe(32);
+  });
+
+  it('uses the active thinking mode label in the composer badge', () => {
+    expect(composerBadge('lucent', 'on', 'high')).toBe('Lucent · Ultra · High');
+    expect(composerBadge('lucent', 'off', 'max')).toBe('Lucent · Standard · Max');
   });
 });
