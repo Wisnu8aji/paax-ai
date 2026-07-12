@@ -7,6 +7,7 @@ import {
   Calculator,
   CalendarClock,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   Cloud,
   Copy,
@@ -28,6 +29,7 @@ import {
   Mic,
   MoreVertical,
   Paperclip,
+  PanelLeft,
   PanelRight,
   Pencil,
   Pin,
@@ -74,6 +76,16 @@ import type { Project } from '@/lib/projects/types';
 import { chatRunStore } from '@/lib/chat/chat-run-store';
 import { useActiveChatRuns, useChatRuns } from '@/lib/chat/use-chat-runs';
 import { RunStatus } from '@/components/command-room/RunStatus';
+import {
+  clampComposerHeight,
+  COMMAND_COMPOSER_MAX_HEIGHT,
+  COMMAND_CONNECTORS,
+  COMMAND_EFFORT_OPTIONS,
+  COMMAND_HEADER_ICON_SIZE,
+  COMMAND_MODEL_MENU_ROWS,
+  COMMAND_THINKING_OPTIONS,
+  getDefaultCommandModelSettings,
+} from '@/components/command-room/command-room-ui';
 import { buildProjectContextPack } from '@/lib/ai/project-context';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -178,6 +190,7 @@ export default function CommandRoomPage() {
   const [reasoningEffort, setReasoningEffort] = useState<ReasoningEffort>(DEFAULT_REASONING_EFFORT);
   const [thinking, setThinking] = useState<ThinkingMode>(DEFAULT_THINKING);
   const [modelOpen, setModelOpen] = useState(false);
+  const [modelMenuSection, setModelMenuSection] = useState<'model' | 'effort' | 'thinking'>('model');
   const [plusOpen, setPlusOpen] = useState(false);
   const [addToOpen, setAddToOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -187,6 +200,7 @@ export default function CommandRoomPage() {
   const [composerTall, setComposerTall] = useState(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sidePanelTab, setSidePanelTab] = useState<'task' | 'summary'>('task');
   const [summaryTargetId, setSummaryTargetId] = useState<string | null>(null);
   const [titleMenuOpen, setTitleMenuOpen] = useState(false);
@@ -209,6 +223,7 @@ export default function CommandRoomPage() {
   const [connectorsOpen, setConnectorsOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const composerTextAreaRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const userScrolledUpRef = useRef(false);
   const plusRef = useRef<HTMLDivElement>(null);
@@ -303,6 +318,15 @@ export default function CommandRoomPage() {
     return () => document.removeEventListener('mousedown', onDown);
   }, []);
 
+  useEffect(() => {
+    if (!mobileSidebarOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileSidebarOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [mobileSidebarOpen]);
+
   function showNote(text: string) {
     setNote(text);
     window.setTimeout(() => setNote(null), 4200);
@@ -335,7 +359,7 @@ export default function CommandRoomPage() {
         onClick={() => copyMessageText(id, text)}
         aria-label="Salin pesan"
         title="Salin"
-        className="pax-cr-hover"
+        className="pax-cr-hover cr-message-action"
         style={{ width: 22, height: 22, borderRadius: 6, border: 'none', background: 'transparent', color: 'var(--cr-text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
       >
         {copiedMessageId === id ? <Check size={12} /> : <Copy size={12} />}
@@ -345,7 +369,7 @@ export default function CommandRoomPage() {
         onClick={() => exportMessageText(text, role)}
         aria-label="Ekspor ke .txt"
         title="Ekspor .txt"
-        className="pax-cr-hover"
+        className="pax-cr-hover cr-message-action"
         style={{ width: 22, height: 22, borderRadius: 6, border: 'none', background: 'transparent', color: 'var(--cr-text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
       >
         <Download size={12} />
@@ -462,6 +486,7 @@ export default function CommandRoomPage() {
     };
     saveConversation(next);
     setDraft('');
+    if (composerTextAreaRef.current) composerTextAreaRef.current.style.height = '64px';
     setAttachments([]);
     refresh(next.id);
 
@@ -473,7 +498,7 @@ export default function CommandRoomPage() {
     // Connector aktif (Gambar Kerja/RAB) + project di-attach → sisipkan
     // konteks terstruktur di giliran terakhir saja (bubble tetap bersih).
     const connectors = next.connectors;
-    if (next.folderId && (connectors.gambarKerja || connectors.rab)) {
+    if (next.folderId && (connectors.gambarKerja || connectors.rab || connectors.jadwal)) {
       try {
         const contextPack = await buildProjectContextPack(next.folderId);
         if (contextPack) {
@@ -618,7 +643,13 @@ export default function CommandRoomPage() {
   /* ── Connector: sumber data proyek yang diikutkan sebagai konteks ── */
   const activeConnectors: ConversationConnectors = active?.connectors ?? { gambarKerja: false, rab: false, jadwal: false };
 
-  function toggleConnector(key: 'gambarKerja' | 'rab') {
+  const connectorIcons: Record<keyof ConversationConnectors, React.ReactNode> = {
+    gambarKerja: <FileImage size={13} />,
+    rab: <Calculator size={13} />,
+    jadwal: <CalendarClock size={13} />,
+  };
+
+  function toggleConnector(key: keyof ConversationConnectors) {
     let conv = active;
     if (!conv) {
       conv = createConversation(SCOPE, null);
@@ -629,12 +660,13 @@ export default function CommandRoomPage() {
     refresh(conv.id);
   }
 
-  const connectorChip = (key: 'gambarKerja' | 'rab', icon: React.ReactNode, label: string) => (
+  const connectorChip = (key: keyof ConversationConnectors, icon: React.ReactNode, label: string) => (
     <button
       key={key}
       type="button"
       onClick={() => toggleConnector(key)}
-      className="pax-cr-hover pax-press"
+      className="pax-cr-hover pax-press cr-connector-chip"
+      data-active={activeConnectors[key] ? 'true' : undefined}
       title={activeConnectors[key] ? `${label} aktif — konteks proyek diikutkan ke AI` : `Sertakan konteks ${label} dari project yang di-attach`}
       style={{
         display: 'flex', alignItems: 'center', gap: 5, height: 26, padding: '0 10px', borderRadius: 999,
@@ -661,7 +693,7 @@ export default function CommandRoomPage() {
   }
 
   const sidePanel = (
-    <div className="pax-cr-panel-slide" style={{ width: 272, flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--cr-panel)' }}>
+    <div className="pax-cr-panel-slide cr-side-panel" style={{ width: 312, flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--cr-panel)' }}>
       <div style={{ padding: '14px 14px 10px' }}>
         <div style={{ display: 'flex', background: 'var(--cr-bg)', borderRadius: 11, padding: 3 }}>
           {(['task', 'summary'] as const).map((t) => (
@@ -730,16 +762,18 @@ export default function CommandRoomPage() {
 
   /* ── Composer (dipakai di hero & mode chat) ── */
   const composer = (
-    <div style={{ width: '100%', maxWidth: 760, margin: '0 auto' }}>
+    <div className="cr-composer-shell" style={{ width: '100%', maxWidth: 820, margin: '0 auto' }}>
       {/* Project chip (kiri) + connector aktif (kanan) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+      <div className="cr-connector-row">
         <div ref={addToRef} style={{ position: 'relative' }}>
           <button
             type="button"
             onClick={() => setAddToOpen((v) => !v)}
             aria-expanded={addToOpen}
+            aria-haspopup="menu"
             aria-label="Pilih atau buat project"
-            className="pax-cr-hover pax-press"
+            className="pax-cr-hover pax-press cr-project-chip"
+            data-active={active?.folderId ? 'true' : undefined}
             style={{ display: 'flex', alignItems: 'center', gap: 7, height: 28, padding: '0 12px', borderRadius: 999, border: 'none', background: 'var(--cr-panel2)', color: active?.folderId ? 'var(--cr-orange)' : 'var(--cr-text2)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
           >
             <FolderPlus size={13} />
@@ -790,19 +824,10 @@ export default function CommandRoomPage() {
           )}
         </div>
 
-        <div style={{ flex: 1 }} />
-
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {connectorChip('gambarKerja', <FileImage size={12} />, 'Gambar Kerja')}
-          {connectorChip('rab', <Calculator size={12} />, 'RAB')}
-          <button
-            type="button"
-            onClick={() => showNote('Konektor Jadwal hadir di rilis berikutnya.')}
-            className="pax-cr-hover"
-            style={{ display: 'flex', alignItems: 'center', gap: 5, height: 26, padding: '0 10px', borderRadius: 999, border: 'none', background: 'var(--cr-panel2)', color: 'var(--cr-text3)', fontSize: 11, fontWeight: 600, cursor: 'pointer', opacity: 0.55 }}
-          >
-            <CalendarClock size={12} /> Jadwal
-          </button>
+        <div className="cr-connector-group">
+          {COMMAND_CONNECTORS.map((connector) =>
+            connectorChip(connector.id, connectorIcons[connector.id], connector.label),
+          )}
         </div>
       </div>
 
@@ -860,6 +885,7 @@ export default function CommandRoomPage() {
 
       <form
         onSubmit={handleSubmit}
+        className="cr-composer"
         style={{
           background: 'var(--cr-elev)',
           border: 'none',
@@ -870,8 +896,13 @@ export default function CommandRoomPage() {
       >
         <div style={{ position: 'relative' }}>
           <textarea
+            ref={composerTextAreaRef}
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              e.currentTarget.style.height = 'auto';
+              e.currentTarget.style.height = `${clampComposerHeight(e.currentTarget.scrollHeight)}px`;
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -882,18 +913,18 @@ export default function CommandRoomPage() {
             aria-label="Pesan"
             rows={chatStarted ? 1 : 2}
             disabled={isBusy}
-            className="pax-cr-textarea"
+            className="pax-cr-textarea cr-composer-textarea"
             style={{
               width: '100%',
-              resize: 'none',
+              resize: 'vertical',
               border: 'none',
               outline: 'none',
               background: 'transparent',
               color: 'var(--cr-text)',
-              fontSize: 13.5,
+              fontSize: 15,
               lineHeight: 1.55,
-              minHeight: chatStarted ? 24 : 46,
-              maxHeight: composerTall ? 420 : 150,
+              minHeight: composerTall ? 220 : 64,
+              maxHeight: COMMAND_COMPOSER_MAX_HEIGHT,
               caretColor: 'var(--cr-orange)',
             }}
           />
@@ -910,7 +941,7 @@ export default function CommandRoomPage() {
             </button>
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 9 }}>
+        <div className="cr-composer-controls" style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 9 }}>
           {/* + lampiran/konektor */}
           <div ref={plusRef} style={{ position: 'relative' }}>
             <button
@@ -918,7 +949,9 @@ export default function CommandRoomPage() {
               onClick={() => setPlusOpen((v) => !v)}
               aria-label="Tambahkan konten"
               aria-expanded={plusOpen}
-              className="pax-cr-hover pax-press"
+              aria-haspopup="menu"
+              className="pax-cr-hover pax-press cr-plus-button"
+              data-open={plusOpen ? 'true' : undefined}
               style={{ width: 32, height: 32, borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform .2s var(--ease)', transform: plusOpen ? 'rotate(45deg)' : 'none' }}
             >
               <Plus size={16} />
@@ -967,7 +1000,7 @@ export default function CommandRoomPage() {
           <div style={{ flex: 1 }} />
 
           {/* Badge: model · thinking · effort */}
-          <span title={badgeLabel} style={{ fontSize: 11, color: 'var(--cr-text3)', background: 'var(--cr-panel2)', border: 'none', borderRadius: 7, padding: '3px 8px', whiteSpace: 'nowrap', fontWeight: 600 }}>
+          <span className="cr-model-badge" title={badgeLabel} style={{ fontSize: 12, color: 'var(--cr-text3)', background: 'var(--cr-panel2)', border: 'none', borderRadius: 7, padding: '3px 8px', whiteSpace: 'nowrap', fontWeight: 600 }}>
             {badgeLabel}
           </span>
 
@@ -980,73 +1013,69 @@ export default function CommandRoomPage() {
               aria-expanded={modelOpen}
               aria-haspopup="menu"
               aria-label="Pilih model AI"
-              className="pax-cr-hover"
+              className="pax-cr-hover cr-model-button"
               style={{ display: 'flex', alignItems: 'center', gap: 6, height: 32, padding: '0 9px', borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
             >
               {activeModelDef.displayName}
               <ChevronDown size={13} style={{ transition: 'transform .2s var(--ease)', transform: modelOpen ? 'rotate(180deg)' : 'none' }} />
             </button>
             {modelOpen && (
-              <div className="pax-scale-in" role="menu" style={{ position: 'absolute', bottom: 42, right: 0, width: 240, borderRadius: 13, background: 'var(--cr-panel2)', border: 'none', boxShadow: '0 18px 44px rgba(0,0,0,0.5)', padding: 5, zIndex: 40 }}>
-                {(Object.values(PAAX_MODELS) as (typeof PAAX_MODELS)[keyof typeof PAAX_MODELS][]).map((m) => (
+              <div className="cr-model-menu-wrap" data-menu-order={COMMAND_MODEL_MENU_ROWS.join('-')}>
+                <div className="pax-scale-in cr-model-menu" role="menu">
+                  <button type="button" role="menuitem" className="cr-model-menu-row" onMouseEnter={() => setModelMenuSection('model')} onClick={() => setModelMenuSection('model')}>
+                    <span>Model</span><span className="cr-model-menu-value">{activeModelDef.displayName}</span><ChevronRight size={14} />
+                  </button>
+                  <button type="button" role="menuitem" className="cr-model-menu-row" onMouseEnter={() => setModelMenuSection('effort')} onClick={() => setModelMenuSection('effort')}>
+                    <span>Effort</span><span className="cr-model-menu-value">{reasoningEffort === 'high' ? 'High' : 'Max'}</span><ChevronRight size={14} />
+                  </button>
+                  <button type="button" role="menuitem" className="cr-model-menu-row" onMouseEnter={() => setModelMenuSection('thinking')} onClick={() => setModelMenuSection('thinking')}>
+                    <span>Thinking</span><span className="cr-model-menu-value">{resolvedThinking === 'on' ? 'On' : 'Off'}</span><ChevronRight size={14} />
+                  </button>
+                  <div className="cr-model-menu-divider" />
                   <button
-                    key={m.id}
                     type="button"
                     role="menuitem"
-                    onClick={() => { setModelAlias(m.id); setThinking(m.defaultThinking); setModelOpen(false); }}
-                    className="pax-cr-hover"
-                    style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3, padding: '9px 10px', borderRadius: 9, border: 'none', background: modelAlias === m.id ? 'rgba(255,255,255,0.08)' : 'transparent', color: 'var(--cr-text)', cursor: 'pointer', textAlign: 'left' }}
+                    onClick={() => {
+                      const defaults = getDefaultCommandModelSettings();
+                      setModelAlias(defaults.modelAlias);
+                      setReasoningEffort(defaults.reasoningEffort);
+                      setThinking(defaults.thinking);
+                      setModelOpen(false);
+                    }}
+                    className="cr-model-menu-row cr-model-menu-reset"
                   >
-                    <span style={{ fontSize: 12.5, fontWeight: 700 }}>{m.displayName}</span>
-                    <span style={{ fontSize: 11, color: 'var(--cr-text3)' }}>{m.description}</span>
+                    <RotateCcw size={14} /><span>Reset to default</span>
                   </button>
-                ))}
-                <div style={{ height: 1, background: 'var(--cr-border)', margin: '4px 8px' }} />
-                <div style={{ padding: '7px 10px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--cr-text3)', marginBottom: 6 }}>Thinking</div>
-                  <div style={{ display: 'flex', gap: 5 }}>
-                    {(['off', 'on'] as ThinkingMode[]).map((t) => (
-                      <button key={t} type="button" onClick={() => setThinking(t)} style={{ flex: 1, padding: '5px 0', borderRadius: 7, border: 'none', background: resolvedThinking === t ? 'var(--cr-orange-soft)' : 'transparent', color: resolvedThinking === t ? 'var(--cr-orange)' : 'var(--cr-text2)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>
-                        {t === 'on' ? 'On' : 'Off'}
-                      </button>
-                    ))}
-                  </div>
                 </div>
-                <div style={{ padding: '7px 10px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--cr-text3)', marginBottom: 6 }}>Reasoning Effort</div>
-                  <div style={{ display: 'flex', gap: 5 }}>
-                    {(['high', 'max'] as ReasoningEffort[]).map((e) => (
-                      <button key={e} type="button" onClick={() => setReasoningEffort(e)} style={{ flex: 1, padding: '5px 0', borderRadius: 7, border: 'none', background: reasoningEffort === e ? 'rgba(255,255,255,0.1)' : 'transparent', color: reasoningEffort === e ? 'var(--cr-text)' : 'var(--cr-text2)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>
-                        {e === 'high' ? 'High' : 'Max'}
-                      </button>
-                    ))}
-                  </div>
+
+                <div className="pax-scale-in cr-model-submenu" role="menu" aria-label={`${modelMenuSection} options`}>
+                  {modelMenuSection === 'model' && (Object.values(PAAX_MODELS) as (typeof PAAX_MODELS)[keyof typeof PAAX_MODELS][]).map((model) => (
+                    <button key={model.id} type="button" role="menuitemradio" aria-checked={modelAlias === model.id} className="cr-model-submenu-row" onClick={() => { setModelAlias(model.id); setThinking(model.defaultThinking); setReasoningEffort(model.defaultReasoningEffort); setModelOpen(false); }}>
+                      <span>{model.displayName}</span>{modelAlias === model.id && <Check size={15} />}
+                    </button>
+                  ))}
+                  {modelMenuSection === 'effort' && COMMAND_EFFORT_OPTIONS.map((effort) => (
+                    <button key={effort} type="button" role="menuitemradio" aria-checked={reasoningEffort === effort} className="cr-model-submenu-row" onClick={() => { setReasoningEffort(effort); setModelOpen(false); }}>
+                      <span>{effort === 'high' ? 'High' : 'Max'}</span>{reasoningEffort === effort && <Check size={15} />}
+                    </button>
+                  ))}
+                  {modelMenuSection === 'thinking' && COMMAND_THINKING_OPTIONS.map((mode) => (
+                    <button key={mode} type="button" role="menuitemradio" aria-checked={resolvedThinking === mode} className="cr-model-submenu-row" onClick={() => { setThinking(mode); setModelOpen(false); }}>
+                      <span>{mode === 'on' ? 'On' : 'Off'}</span>{resolvedThinking === mode && <Check size={15} />}
+                    </button>
+                  ))}
                 </div>
-                <div style={{ height: 1, background: 'var(--cr-border)', margin: '4px 8px' }} />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModelAlias(DEFAULT_MODEL_ALIAS);
-                    setReasoningEffort(DEFAULT_REASONING_EFFORT);
-                    setThinking(DEFAULT_THINKING);
-                    setModelOpen(false);
-                  }}
-                  className="pax-cr-hover"
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text3)', fontSize: 12, fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
-                >
-                  <RotateCcw size={13} /> Reset to default
-                </button>
               </div>
             )}
           </div>
 
-          <button type="button" onClick={() => showNote('Input suara hadir di rilis berikutnya.')} aria-label="Input suara (mic)" className="pax-cr-hover pax-press" style={{ width: 32, height: 32, borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <button type="button" onClick={() => showNote('Input suara hadir di rilis berikutnya.')} aria-label="Input suara (mic)" className="pax-cr-hover pax-press cr-icon-button cr-mic-button" style={{ width: 40, height: 40, borderRadius: 12, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <Mic size={15} />
           </button>
-          <button type="button" onClick={() => showNote('Mode voice hadir di rilis berikutnya.')} aria-label="Mode voice" className="pax-cr-hover pax-press" style={{ width: 32, height: 32, borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <button type="button" onClick={() => showNote('Mode voice hadir di rilis berikutnya.')} aria-label="Mode voice" className="pax-cr-hover pax-press cr-icon-button cr-voice-button" style={{ width: 40, height: 40, borderRadius: 12, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <AudioLines size={15} />
           </button>
-          <button type="submit" aria-label="Kirim" disabled={isBusy || !draft.trim()} className="pax-press" style={{ width: 32, height: 32, borderRadius: 9, background: 'var(--cr-orange)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isBusy ? 'wait' : 'pointer', opacity: isBusy || !draft.trim() ? 0.45 : 1, transition: 'opacity .2s var(--ease), transform .16s var(--ease)' }}>
+          <button type="submit" aria-label="Kirim" disabled={isBusy || !draft.trim()} className="pax-press cr-send-button" style={{ width: 40, height: 40, borderRadius: '50%', background: '#a9a9a9', color: '#1c1c1c', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isBusy ? 'wait' : 'pointer', opacity: isBusy || !draft.trim() ? 0.45 : 1, transition: 'opacity .2s var(--ease), transform .16s var(--ease)' }}>
             {isBusy ? <Loader2 size={15} className="animate-spin" /> : <ArrowUp size={15} strokeWidth={2.4} />}
           </button>
         </div>
@@ -1083,8 +1112,28 @@ export default function CommandRoomPage() {
   return (
     <div className="pax-command" style={{ display: 'flex', flex: 1, minHeight: 0, height: '100%', borderRadius: 0, overflow: 'hidden' }}>
 
+      <button
+        type="button"
+        className="cr-mobile-nav-toggle pax-cr-hover pax-press"
+        onClick={() => setMobileSidebarOpen((open) => !open)}
+        aria-label={mobileSidebarOpen ? 'Tutup navigasi' : 'Buka navigasi'}
+        aria-expanded={mobileSidebarOpen}
+      >
+        {mobileSidebarOpen ? <X size={18} /> : <PanelLeft size={18} />}
+      </button>
+      {mobileSidebarOpen && (
+        <button
+          type="button"
+          className="cr-mobile-backdrop"
+          onClick={() => setMobileSidebarOpen(false)}
+          aria-label="Tutup navigasi"
+        />
+      )}
+
       {/* ══ SIDEBAR ══ */}
       <div
+        className="cr-sidebar"
+        data-mobile-open={mobileSidebarOpen ? 'true' : undefined}
         style={{
           width: 268,
           flexShrink: 0,
@@ -1095,7 +1144,7 @@ export default function CommandRoomPage() {
         }}
       >
         {/* Segmented Home / Project */}
-        <div style={{ padding: '14px 12px 10px' }}>
+        <div className="cr-sidebar-nav" style={{ padding: '14px 12px 10px' }}>
           <div style={{ display: 'flex', background: 'var(--cr-bg)', borderRadius: 11, padding: 3, border: 'none' }}>
             {(['home', 'project'] as SideTab[]).map((t) => (
               <button
@@ -1168,6 +1217,7 @@ export default function CommandRoomPage() {
                 onClick={() => setFilterOpen((v) => !v)}
                 aria-label="Filter percakapan"
                 aria-expanded={filterOpen}
+                aria-haspopup="menu"
                 title={`Filter: ${filterLabels[filterMode]}`}
                 className="pax-cr-hover"
                 style={{ width: 22, height: 22, borderRadius: 6, border: 'none', background: 'transparent', color: filterMode !== 'recent' ? 'var(--cr-orange)' : 'var(--cr-text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
@@ -1204,6 +1254,7 @@ export default function CommandRoomPage() {
           <button
             onClick={() => setProfileOpen((v) => !v)}
             aria-expanded={profileOpen}
+            aria-haspopup="menu"
             aria-label="Menu akun"
             className="pax-cr-hover"
             style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '7px 9px', borderRadius: 10, border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left' }}
@@ -1404,7 +1455,7 @@ export default function CommandRoomPage() {
         ) : chatStarted ? (
           /* ── CHAT BERJALAN: pesan di atas, composer turun ke bawah ── */
           <>
-            <div style={{ padding: '13px 22px', display: 'flex', alignItems: 'center', gap: 9 }}>
+            <div className="cr-header" style={{ padding: '13px 22px', display: 'flex', alignItems: 'center', gap: 9 }}>
               <span style={{ color: 'var(--cr-orange)', display: 'flex' }}><PaaxMark size={14} /></span>
               {renaming ? (
                 <input
@@ -1417,7 +1468,7 @@ export default function CommandRoomPage() {
                   style={{ fontSize: 13, fontWeight: 700, color: 'var(--cr-text)', background: 'var(--cr-panel2)', border: 'none', borderRadius: 7, padding: '3px 8px', outline: 'none', minWidth: 160 }}
                 />
               ) : (
-                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cr-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span className="cr-header-title" style={{ fontSize: 14, fontWeight: 600, color: 'var(--cr-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {active?.title ?? 'Percakapan'}
                 </span>
               )}
@@ -1427,8 +1478,9 @@ export default function CommandRoomPage() {
                   onClick={() => { setTitleMenuOpen((v) => !v); setMoveSubOpen(false); }}
                   aria-label="Menu percakapan"
                   aria-expanded={titleMenuOpen}
-                  className="pax-cr-hover pax-press"
-                  style={{ width: 24, height: 24, borderRadius: 7, border: 'none', background: 'transparent', color: 'var(--cr-text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  aria-haspopup="menu"
+                  className="pax-cr-hover pax-press cr-header-icon-button"
+                  style={{ width: COMMAND_HEADER_ICON_SIZE, height: COMMAND_HEADER_ICON_SIZE, borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                 >
                   <MoreVertical size={14} />
                 </button>
@@ -1481,24 +1533,24 @@ export default function CommandRoomPage() {
                 aria-label="Toggle side panel"
                 aria-expanded={sidePanelOpen}
                 title="Task & Summary panel"
-                className="pax-cr-hover pax-press"
-                style={{ width: 26, height: 26, borderRadius: 7, border: 'none', background: sidePanelOpen ? 'var(--cr-orange-soft)' : 'transparent', color: sidePanelOpen ? 'var(--cr-orange)' : 'var(--cr-text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                className="pax-cr-hover pax-press cr-header-icon-button"
+                style={{ width: COMMAND_HEADER_ICON_SIZE, height: COMMAND_HEADER_ICON_SIZE, borderRadius: 9, border: 'none', background: sidePanelOpen ? 'var(--cr-orange-soft)' : 'transparent', color: sidePanelOpen ? 'var(--cr-orange)' : 'var(--cr-text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
               >
                 <PanelRight size={15} />
               </button>
             </div>
             <div style={{ flex: 1, minHeight: 0, position: 'relative', display: 'flex' }}>
-            <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '26px 0' }}>
-              <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 22px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div ref={scrollRef} className="cr-message-scroll" style={{ flex: 1, overflowY: 'auto', padding: '32px 0' }}>
+              <div className="cr-message-list" style={{ maxWidth: 820, margin: '0 auto', padding: '0 28px', display: 'flex', flexDirection: 'column', gap: 28 }}>
                 {messages.map((m) =>
                   m.role === 'user' ? (
                     <div key={m.id} className="pax-rise pax-msg-row" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                      <div style={{ maxWidth: '82%', background: 'var(--cr-elev)', border: 'none', borderRadius: 15, padding: '11px 15px', fontSize: 13.5, lineHeight: 1.6, color: 'var(--cr-text)', whiteSpace: 'pre-wrap', fontFamily: "'Times New Roman', Times, serif" }}>
+                      <div className="cr-user-message" style={{ maxWidth: '82%', background: 'var(--cr-elev)', border: 'none', borderRadius: 18, padding: '12px 16px', fontSize: 15, lineHeight: 1.62, color: 'var(--cr-text)', whiteSpace: 'pre-wrap' }}>
                         {m.text}
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div className="cr-message-meta" style={{ width: 'min(82%, 680px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <span className="pax-msg-time pax-mono" style={{ fontSize: 12, color: 'var(--cr-text3)' }}>{m.time}</span>
                         {messageActions(m.id, m.text, 'user')}
-                        <span className="pax-msg-time pax-mono" style={{ fontSize: 10, color: 'var(--cr-text3)' }}>{m.time}</span>
                       </div>
                     </div>
                   ) : (
@@ -1507,13 +1559,13 @@ export default function CommandRoomPage() {
                         <span style={{ color: 'var(--cr-orange)', display: 'flex' }}><PaaxMark size={13} /></span>
                         <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--cr-text2)' }}>PAAX · {activeModelDef.displayName}</span>
                       </div>
-                      <div className="cr-markdown" style={{ fontSize: 13.5, lineHeight: 1.7, color: 'var(--cr-text)' }}>
+                      <div className="cr-markdown" style={{ fontSize: 15, lineHeight: 1.68, color: 'var(--cr-text)' }}>
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.text}</ReactMarkdown>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div className="cr-message-meta" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {messageActions(m.id, m.text, 'assistant')}
                         <span style={{ flex: 1 }} />
-                        <span className="pax-msg-time pax-mono" style={{ fontSize: 10, color: 'var(--cr-text3)' }}>{m.time}</span>
+                        <span className="pax-msg-time pax-mono" style={{ fontSize: 12, color: 'var(--cr-text3)' }}>{m.time}</span>
                       </div>
                     </div>
                   ),
@@ -1526,7 +1578,7 @@ export default function CommandRoomPage() {
                     </div>
 
                     {run.answerBuffer && (
-                      <div className="cr-markdown" style={{ fontSize: 13.5, lineHeight: 1.7, color: 'var(--cr-text)' }}>
+                      <div className="cr-markdown" style={{ fontSize: 15, lineHeight: 1.68, color: 'var(--cr-text)' }}>
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{run.answerBuffer}</ReactMarkdown>
                       </div>
                     )}
@@ -1566,7 +1618,7 @@ export default function CommandRoomPage() {
             )}
             {sidePanelOpen && sidePanel}
             </div>
-            <div className="pax-rise" style={{ padding: '10px 22px 18px' }}>
+            <div className="pax-rise cr-composer-wrap" style={{ padding: '10px 22px 18px' }}>
               {composer}
               <div style={{ textAlign: 'center', fontSize: 10.5, color: 'var(--cr-text3)', marginTop: 8 }}>
                 PAAX menjelaskan — angka final selalu dihitung Core Engine, bukan AI.
@@ -1575,20 +1627,9 @@ export default function CommandRoomPage() {
           </>
         ) : (
           /* ── HERO AWAL: logo + wisnu returns! + composer di tengah ── */
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '22px 22px 60px' }}>
-            <div className="pax-rise" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 30 }}>
-              <span style={{ color: 'var(--cr-orange)', display: 'flex' }}>
-                <PaaxMark size={30} />
-              </span>
-              <span className="pax-serif" style={{ fontSize: 38, fontWeight: 500, color: 'var(--cr-text)', letterSpacing: '-0.01em' }}>
-                {currentUser.name} returns!
-              </span>
-            </div>
-            <div className="pax-rise" style={{ width: '100%', animationDelay: '80ms' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '22px 22px 96px' }}>
+            <div className="pax-rise cr-new-task-panel" style={{ width: '100%' }}>
               {composer}
-            </div>
-            <div className="pax-rise" style={{ width: '100%', animationDelay: '150ms' }}>
-              {quickActions}
             </div>
           </div>
         )}
