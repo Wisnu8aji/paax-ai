@@ -115,7 +115,7 @@ export function composerBadge(
   effort: ReasoningEffort,
 ): string {
   const model = getModel(alias);
-  const thinkingLabel = thinking === "on" ? "Thinking On" : "Thinking Off";
+  const thinkingLabel = thinking === "on" ? "Ultra" : "Standard";
   const effortLabel = effort === "max" ? "Max" : "High";
   return `${model.displayName} · ${thinkingLabel} · ${effortLabel}`;
 }
