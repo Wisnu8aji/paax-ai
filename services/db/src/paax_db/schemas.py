@@ -144,5 +144,78 @@ class ProjectMemberCreate(ProjectMemberBase):
 
 class ProjectMemberResponse(ProjectMemberCreate):
     added_at: datetime
-    
+
+    model_config = ConfigDict(from_attributes=True)
+
+# ─── Command Room memory layer (Fase 4, PLAN.md §5/§9) ─────────────────────
+
+class ConversationCreate(BaseModel):
+    project_id: Optional[str] = None
+    model_alias: str
+    title: Optional[str] = None
+
+class ConversationUpdate(BaseModel):
+    title: Optional[str] = None
+    archived: Optional[bool] = None
+    pinned: Optional[bool] = None
+    model_alias: Optional[str] = None
+
+class ConversationResponse(BaseModel):
+    id: uuid.UUID
+    project_id: Optional[str] = None
+    user_id: str
+    model_alias: str
+    title: Optional[str] = None
+    archived: bool
+    pinned: bool
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+class MessageCreate(BaseModel):
+    role: str
+    content: str
+    sequence: int
+
+class MessageResponse(BaseModel):
+    id: uuid.UUID
+    conversation_id: uuid.UUID
+    role: str
+    content: str
+    sequence: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+DURABLE_MEMORY_SCOPES = {"global_user", "organization", "project", "module", "conversation", "temporary_run"}
+DURABLE_MEMORY_TYPES = {"decision", "preference", "constraint", "correction", "fact", "open_task", "artifact_reference"}
+
+class DurableMemoryCreate(BaseModel):
+    scope: str
+    scope_ref_id: Optional[str] = None
+    type: str
+    content: str
+    entities: List[str] = Field(default_factory=list)
+    importance: float = 0.5
+    confidence: float = 1.0
+    source_type: str
+    source_id: Optional[str] = None
+    supersedes: Optional[uuid.UUID] = None
+
+class DurableMemoryResponse(BaseModel):
+    id: uuid.UUID
+    scope: str
+    scope_ref_id: Optional[str] = None
+    type: str
+    content: str
+    entities: List[str]
+    importance: float
+    confidence: float
+    status: str
+    source_type: str
+    source_id: Optional[str] = None
+    supersedes: Optional[uuid.UUID] = None
+    created_at: datetime
+
     model_config = ConfigDict(from_attributes=True)

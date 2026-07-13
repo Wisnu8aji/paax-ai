@@ -133,8 +133,64 @@ class KnowledgeChunk(Base):
 
 class ProjectMember(Base):
     __tablename__ = "project_members"
-    
+
     project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True)
     user_id = Column(String, primary_key=True)
     role = Column(String, nullable=False) # 'estimator' | 'pm' | 'lapangan' | 'owner'
     added_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+# ─── Command Room memory layer (Fase 4, PLAN.md §5/§9) ─────────────────────
+# Source of truth server-side untuk chat Command Room. localStorage
+# (apps/web/src/lib/chat/chat-history.ts) tetap ada sbg cache/offline fallback
+# selama migrasi dua-arah (PLAN.md §8.3) -- tabel ini TIDAK menggantikannya
+# secara langsung/otomatis.
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    project_id = Column(String, index=True, nullable=True)
+    user_id = Column(String, index=True, nullable=False)
+    model_alias = Column(String, nullable=False)  # 'lucent' | 'arete' | 'noir'
+    title = Column(String, nullable=True)
+    archived = Column(Boolean, default=False, nullable=False)
+    pinned = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    conversation_id = Column(GUID(), ForeignKey("conversations.id", ondelete="CASCADE"), index=True, nullable=False)
+    role = Column(String, nullable=False)  # 'user' | 'assistant' | 'system'
+    content = Column(String, nullable=False)
+    sequence = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+# scope/type: enum blueprint §9.2/§9.3 disimpan sbg String (bukan Postgres ENUM)
+# -- lihat catatan yg sama di alembic/versions/0007_command_room_memory.py.
+class DurableMemory(Base):
+    __tablename__ = "durable_memories"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    scope = Column(String, index=True, nullable=False)  # global_user|organization|project|module|conversation|temporary_run
+    scope_ref_id = Column(String, index=True, nullable=True)
+    type = Column(String, nullable=False)  # decision|preference|constraint|correction|fact|open_task|artifact_reference
+    content = Column(String, nullable=False)
+    entities = Column(JSON_DOCUMENT, nullable=False, default=list)
+    importance = Column(Numeric, nullable=False, default=0.5)
+    confidence = Column(Numeric, nullable=False, default=1.0)
+    status = Column(String, index=True, nullable=False, default="active")
+    source_type = Column(String, nullable=False)
+    source_id = Column(String, nullable=True)
+    supersedes = Column(GUID(), ForeignKey("durable_memories.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+class MemoryGraphMap(Base):
+    __tablename__ = "memory_graph_map"
+
+    memory_id = Column(GUID(), ForeignKey("durable_memories.id", ondelete="CASCADE"), primary_key=True)
+    graph_node_id = Column(String, primary_key=True)
+    graph_version = Column(String, nullable=True)
+    indexed_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

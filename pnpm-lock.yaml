@@ -38,6 +38,9 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.111.0
         version: 0.111.0(zod@3.25.76)
+      '@paax/ai-orchestrator':
+        specifier: workspace:*
+        version: link:../../services/ai-orchestrator
       '@paax/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas

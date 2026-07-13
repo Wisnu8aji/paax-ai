@@ -9,6 +9,7 @@ import Topbar from '@/components/app-shell/topbar';
 import { WorkspaceOverlays } from '@/components/app-shell/overlays';
 import { RoutePrefetcher } from '@/components/app-shell/route-prefetcher';
 import { ProjectsProvider } from '@/lib/projects/projects-context';
+import { getDashboardShellMode } from '@/components/app-shell/dashboard-shell-mode';
 
 /**
  * Shell rombak 2026-07-07 (referensi G:\Dashboard\dashboard utama):
@@ -31,7 +32,8 @@ function Shell({ children }: { children: React.ReactNode }) {
   }, []);
   const toggleNav = useCallback(() => setNavCollapsed((c) => !c), []);
 
-  const isCommandRoom = pathname.startsWith('/command-room');
+  const shellMode = getDashboardShellMode(pathname);
+  const { isCommandRoom } = shellMode;
 
   return (
     <ShellContext.Provider
@@ -57,21 +59,21 @@ function Shell({ children }: { children: React.ReactNode }) {
             transition: 'background .3s var(--ease)',
           }}
         >
-          <SideRail />
+          {shellMode.showOuterRail && <SideRail />}
           <main
             className="pax-shell-main"
             data-command-room={isCommandRoom ? 'true' : undefined}
             style={{
               flex: 1,
               minWidth: 0,
-              margin: '18px 28px 0 0',
+              margin: shellMode.mainMargin,
               display: 'flex',
               flexDirection: 'column',
               gap: isCommandRoom ? 0 : 14,
-              height: 'calc(100vh - 18px)',
+              height: shellMode.mainHeight,
               padding: isCommandRoom ? 0 : '16px 22px 28px',
-              background: isCommandRoom ? '#0A1118' : 'var(--panel)',
-              borderRadius: '34px 34px 0 0',
+              background: shellMode.mainBackground,
+              borderRadius: shellMode.mainRadius,
               boxShadow: isCommandRoom ? 'none' : 'var(--shadow-shell-panel)',
               overflow: 'hidden',
             }}

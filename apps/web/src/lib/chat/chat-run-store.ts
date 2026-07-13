@@ -23,30 +23,81 @@ function getPreReasoningStatusLabel(elapsedMs: number) {
   return PRE_REASONING_STATUS_LABELS[index];
 }
 
-// Status berdasarkan konteks reasoning — bukan teks reasoning mentah. User
-// tidak ingin isi reasoning ditampilkan; ia ingin ringkasan "AI sedang
-// ngapain", diperbarui pelan (lihat startTimer, max 1x/detik) agar tidak
-// berkedip-kedip.
-function getReasoningContextStatus(reasoningContent: string): string {
-  const latest = reasoningContent.slice(-1000).toLowerCase();
+// Fase kognitif yang dideteksi dari POLA KALIMAT reasoning (bukan domain
+// proyek seperti "schedule"/"cost"/"structural" pada versi lama) -- lebih
+// dekat ke pengalaman AI coding modern: status mencerminkan APA yang
+// sedang dilakukan model (memahami, menganalisis, merencanakan, membandingkan,
+// menyimpulkan, menulis), bukan topik teknis yang sedang dibahas. Urutan array
+// = urutan prioritas pengecekan -- pola yang lebih spesifik/akhir-proses
+// dicek duluan supaya tidak keburu ketangkap pola generik "menganalisis".
+type PhasePattern = { label: string; patterns: RegExp[] };
 
-  if (latest.includes("schedule") || latest.includes("timeline") || latest.includes("jadwal") || latest.includes("durasi") || latest.includes("waktu")) {
-    return "Evaluating schedule risks...";
-  }
-  if (latest.includes("cost") || latest.includes("budget") || latest.includes("biaya") || latest.includes("anggaran")) {
-    return "Reviewing cost impact...";
-  }
-  if (latest.includes("structure") || latest.includes("concrete") || latest.includes("reinforcement") || latest.includes("struktur") || latest.includes("beton") || latest.includes("tulangan")) {
-    return "Analyzing structural constraints...";
-  }
-  if (latest.includes("contract") || latest.includes("owner") || latest.includes("variation order") || latest.includes("kontrak") || latest.includes("pemilik") || latest.includes("vo")) {
-    return "Checking contractual implications...";
-  }
-  if (latest.includes("option") || latest.includes("scenario") || latest.includes("skenario") || latest.includes("opsi")) {
-    return "Comparing possible scenarios...";
-  }
-  if (latest.includes("recommendation") || latest.includes("conclusion") || latest.includes("rekomendasi") || latest.includes("kesimpulan")) {
-    return "Forming the recommendation...";
+const REASONING_PHASE_PATTERNS: PhasePattern[] = [
+  {
+    // Menulis/menyusun jawaban akhir -- biasanya muncul di ekor reasoning,
+    // menandakan model sudah mendekati selesai berpikir.
+    label: "Drafting the answer...",
+    patterns: [
+      /\b(i'll write|i will write|let me write|now i'll|now i will|writing the|drafting|final answer|let me draft|i should present|i'll present|i'll summarize|let me summarize)\b/i,
+      /\b(saya akan menulis|mari saya tulis|saya akan menyajikan|saya akan merangkum|jawaban akhir)\b/i,
+    ],
+  },
+  {
+    // Menyimpulkan / memutuskan di antara opsi.
+    label: "Weighing the conclusion...",
+    patterns: [
+      /\b(therefore|so the best|the better (option|choice)|i conclude|in conclusion|the answer is|this means that|so i (should|will) recommend)\b/i,
+      /\b(jadi|oleh karena itu|kesimpulannya|dengan demikian|maka|sebaiknya)\b/i,
+    ],
+  },
+  {
+    // Membandingkan beberapa opsi/skenario secara eksplisit.
+    label: "Weighing the options...",
+    patterns: [
+      /\b(compare|comparing|on one hand|on the other hand|alternatively|versus|option a|option b|trade-?off)\b/i,
+      /\b(dibandingkan|di sisi lain|sebagai alternatif|atau bisa juga|trade-?off)\b/i,
+    ],
+  },
+  {
+    // Menyusun rencana/langkah kerja.
+    label: "Planning the approach...",
+    patterns: [
+      /\b(i need to|i'll need to|first,? i|the plan is|steps? (are|would be)|i should (first|start by)|next,? i)\b/i,
+      /\b(saya perlu|langkah pertama|rencananya|saya akan mulai dengan|selanjutnya saya)\b/i,
+    ],
+  },
+  {
+    // Mendalami/menggali detail teks atau data yang diberikan user.
+    label: "Digging into the details...",
+    patterns: [
+      /\b(looking at|examining|the data shows|according to the|based on the (result|data|tool)|let me check|checking the)\b/i,
+      /\b(melihat|memeriksa|berdasarkan (data|hasil|tool)|mari saya cek|mengecek)\b/i,
+    ],
+  },
+  {
+    // Memahami permintaan/pertanyaan user -- fase paling awal reasoning.
+    label: "Understanding the request...",
+    patterns: [
+      /\b(the user (wants|is asking|needs)|what (they're|is being) asking|let me understand|to answer this)\b/i,
+      /\b(pengguna (ingin|bertanya|meminta)|untuk menjawab ini|memahami permintaan)\b/i,
+    ],
+  },
+];
+
+// Status berdasarkan FASE PROSES reasoning (bukan domain/topik, bukan teks
+// reasoning mentah). User tidak ingin isi reasoning ditampilkan untuk
+// Lucent/Arete; ia ingin ringkasan "AI sedang ngapain" yang benar-benar
+// mencerminkan tahap kognitif, diperbarui pelan (lihat startTimer, max
+// 1x/detik) agar tidak berkedip-kedip. TIDAK dipakai untuk Noir -- Noir
+// menampilkan reasoning penuh apa adanya (lihat RunStatus.tsx), bukan label
+// ringkasan.
+function getReasoningContextStatus(reasoningContent: string): string {
+  const latest = reasoningContent.slice(-1200);
+
+  for (const { label, patterns } of REASONING_PHASE_PATTERNS) {
+    if (patterns.some((re) => re.test(latest))) {
+      return label;
+    }
   }
 
   return "Reasoning through the problem...";
@@ -201,13 +252,20 @@ class ChatRunStore {
         // Belum ada reasoning sama sekali — label generik yang berputar
         // sambil menunggu token pertama dari model.
         this.updateRun(runId, { elapsedMs, statusLabel: getPreReasoningStatusLabel(elapsedMs) });
-      } else if (run.phase === "receiving_reasoning") {
+      } else if (run.phase === "receiving_reasoning" && run.modelName !== "Noir") {
         // Status diperbarui MAX 1x/detik di sini (timer ini), bukan langsung
         // di setiap delta reasoning — delta bisa masuk puluhan kali/detik,
         // kalau statusLabel ikut berubah tiap delta jadinya berkedip-kedip.
-        // Isinya ringkasan konteks, BUKAN teks reasoning mentah — user tidak
-        // ingin isi reasoning ditampilkan langsung.
+        // Isinya ringkasan FASE PROSES, BUKAN teks reasoning mentah -- Lucent/
+        // Arete TIDAK menampilkan isi reasoning langsung.
+        // Noir SENGAJA dikecualikan dari klasifikasi label ini -- Noir
+        // menampilkan reasoningContent penuh apa adanya (lihat RunStatus.tsx),
+        // jadi statusLabel-nya cukup generik, tidak perlu diringkas jadi fase.
         this.updateRun(runId, { elapsedMs, statusLabel: getReasoningContextStatus(run.reasoningContent) });
+      } else if (run.phase === "receiving_reasoning") {
+        // Noir: status tetap statis/generik selama reasoning berlangsung --
+        // konten reasoning penuhnya ditampilkan terpisah di UI, bukan diringkas.
+        this.updateRun(runId, { elapsedMs, statusLabel: "Reasoning (shown live below)..." });
       } else {
         this.updateRun(runId, { elapsedMs });
       }

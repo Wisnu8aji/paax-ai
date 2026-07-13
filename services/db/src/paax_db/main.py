@@ -340,6 +340,122 @@ async def list_morning_reports(project_id: str, limit: int = 10, db: AsyncSessio
     result = await db.execute(query)
     return result.scalars().all()
 
+# ─── Command Room memory layer (Fase 4, PLAN.md §5/§9) ─────────────────────
+# Source of truth server-side untuk conversations/messages/durable_memories.
+# apps/web/src/lib/chat/chat-history.ts (localStorage) tetap dipertahankan
+# sbg cache/offline fallback selama migrasi dua-arah (PLAN.md §8.3) -- endpoint
+# ini TIDAK otomatis menggantikannya, itu keputusan sinkronisasi terpisah.
+
+@app.post("/conversations", response_model=schemas.ConversationResponse, dependencies=[Depends(get_current_user)])
+async def create_conversation(conv: schemas.ConversationCreate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    db_conv = models.Conversation(
+        project_id=conv.project_id,
+        user_id=user.uid,
+        model_alias=conv.model_alias,
+        title=conv.title,
+    )
+    db.add(db_conv)
+    await db.commit()
+    await db.refresh(db_conv)
+    return db_conv
+
+@app.get("/conversations", response_model=List[schemas.ConversationResponse], dependencies=[Depends(get_current_user)])
+async def list_conversations(project_id: str | None = None, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    query = select(models.Conversation).where(models.Conversation.user_id == user.uid)
+    if project_id:
+        query = query.where(models.Conversation.project_id == project_id)
+    query = query.order_by(models.Conversation.updated_at.desc())
+    result = await db.execute(query)
+    return result.scalars().all()
+
+@app.get("/conversations/{id}", response_model=schemas.ConversationResponse, dependencies=[Depends(get_current_user)])
+async def get_conversation(id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.Conversation).where(models.Conversation.id == id))
+    conv = result.scalars().first()
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return conv
+
+@app.put("/conversations/{id}", response_model=schemas.ConversationResponse, dependencies=[Depends(get_current_user)])
+async def update_conversation(id: str, update: schemas.ConversationUpdate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.Conversation).where(models.Conversation.id == id))
+    conv = result.scalars().first()
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    for key, value in update.model_dump(exclude_unset=True).items():
+        setattr(conv, key, value)
+    await db.commit()
+    await db.refresh(conv)
+    return conv
+
+@app.delete("/conversations/{id}", dependencies=[Depends(get_current_user)])
+async def delete_conversation(id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.Conversation).where(models.Conversation.id == id))
+    conv = result.scalars().first()
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    await db.delete(conv)
+    await db.commit()
+    return {"status": "success"}
+
+@app.post("/conversations/{id}/messages", response_model=schemas.MessageResponse, dependencies=[Depends(get_current_user)])
+async def append_message(id: str, message: schemas.MessageCreate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.Conversation).where(models.Conversation.id == id))
+    conv = result.scalars().first()
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    db_message = models.Message(conversation_id=id, **message.model_dump())
+    db.add(db_message)
+    conv.updated_at = _utc_now()
+    await db.commit()
+    await db.refresh(db_message)
+    return db_message
+
+@app.get("/conversations/{id}/messages", response_model=List[schemas.MessageResponse], dependencies=[Depends(get_current_user)])
+async def list_messages(id: str, db: AsyncSession = Depends(get_db)):
+    query = select(models.Message).where(models.Message.conversation_id == id).order_by(models.Message.sequence.asc())
+    result = await db.execute(query)
+    return result.scalars().all()
+
+@app.post("/memory/durable", response_model=schemas.DurableMemoryResponse, dependencies=[Depends(get_current_user)])
+async def create_durable_memory(memory: schemas.DurableMemoryCreate, db: AsyncSession = Depends(get_db)):
+    if memory.scope not in schemas.DURABLE_MEMORY_SCOPES:
+        raise HTTPException(status_code=400, detail=f"scope tidak valid: {memory.scope}")
+    if memory.type not in schemas.DURABLE_MEMORY_TYPES:
+        raise HTTPException(status_code=400, detail=f"type tidak valid: {memory.type}")
+
+    # Kalau memory ini menggantikan memory lama (supersedes), tandai yang lama
+    # superseded -- jangan pernah diam-diam menimpa tanpa jejak (blueprint §9.5).
+    if memory.supersedes:
+        old_result = await db.execute(select(models.DurableMemory).where(models.DurableMemory.id == memory.supersedes))
+        old_memory = old_result.scalars().first()
+        if old_memory:
+            old_memory.status = "superseded"
+
+    db_memory = models.DurableMemory(**memory.model_dump())
+    db.add(db_memory)
+    await db.commit()
+    await db.refresh(db_memory)
+    return db_memory
+
+@app.get("/memory/durable", response_model=List[schemas.DurableMemoryResponse], dependencies=[Depends(get_current_user)])
+async def list_durable_memories(
+    scope: str | None = None,
+    scope_ref_id: str | None = None,
+    status: str = "active",
+    db: AsyncSession = Depends(get_db),
+):
+    query = select(models.DurableMemory)
+    if scope:
+        query = query.where(models.DurableMemory.scope == scope)
+    if scope_ref_id:
+        query = query.where(models.DurableMemory.scope_ref_id == scope_ref_id)
+    if status:
+        query = query.where(models.DurableMemory.status == status)
+    query = query.order_by(models.DurableMemory.created_at.desc())
+    result = await db.execute(query)
+    return result.scalars().all()
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8001))

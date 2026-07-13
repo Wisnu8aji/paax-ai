@@ -1,8 +1,12 @@
 {
-  "name": "ai-orchestrator",
+  "name": "@paax/ai-orchestrator",
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./tools": "./src/tools-entry.ts",
+    "./router": "./src/router-entry.ts"
+  },
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc --noEmit",

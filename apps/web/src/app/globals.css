@@ -209,9 +209,7 @@
    ========================================================================== */
 .pax-siderail {
   width: 72px;
-  transition: width 320ms var(--ease);
 }
-.pax-siderail:hover { width: 118px; }
 
 .pax-side-item {
   position: relative;
@@ -466,7 +464,7 @@
 .pax-cr-float-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0,0,0,0.35); }
 
 /* Markdown inside Command Room */
-.cr-markdown { font-family: 'Times New Roman', Times, serif; }
+.cr-markdown { font-family: var(--font-sans); }
 .cr-markdown p { margin-bottom: 0.8em; }
 .cr-markdown p:last-child { margin-bottom: 0; }
 .cr-markdown strong { font-weight: 700; color: #FFF; }
@@ -521,7 +519,6 @@
   .pax-grid-hero, .pax-grid-4, .pax-grid-3, .pax-grid-2 { grid-template-columns: 1fr !important; }
   .pax-grid-hero > * { grid-row: auto !important; grid-column: auto !important; }
   .pax-siderail { width: 72px; }
-  .pax-siderail:hover { width: 72px; }
   .pax-shell-main {
     margin: 12px 12px 0 0 !important;
     border-radius: 24px 24px 0 0 !important;

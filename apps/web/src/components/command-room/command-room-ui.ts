@@ -1,4 +1,4 @@
-export const COMMAND_COMPOSER_MIN_HEIGHT = 64;
+export const COMMAND_COMPOSER_MIN_HEIGHT = 22;
 export const COMMAND_COMPOSER_MAX_HEIGHT = 240;
 
 export function clampComposerHeight(value: number): number {

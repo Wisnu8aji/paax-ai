@@ -12,14 +12,26 @@ export function createRunScenarioTool(options: RunScenarioOptions): ToolDefiniti
   return {
     declaration: {
       name: "run_scenario",
-      description: "Jalankan simulasi skenario waktu-biaya via core-engine deterministik.",
+      description: "Jalankan simulasi skenario waktu-biaya via core-engine deterministik. SATU PANGGILAN sudah menghasilkan SEMUA kandidat sekaligus (baseline, tambah_crew, lembur, paralel) -- JANGAN memanggil tool ini berkali-kali untuk membandingkan skenario, cukup panggil sekali dengan lines yang sesuai dan baca seluruh field 'candidates' di hasilnya.",
       parameters: {
         type: "OBJECT",
         properties: {
-          lines: { type: "ARRAY", description: "Daftar item AHSP dan volume" },
-          region_code: { type: "STRING" },
-          ppn_rate: { type: "NUMBER" },
-          crew_factor: { type: "NUMBER" },
+          lines: {
+            type: "ARRAY",
+            description: "Daftar item AHSP dan volume yang akan disimulasikan.",
+            items: {
+              type: "OBJECT",
+              properties: {
+                ahsp_code: { type: "STRING", description: "Kode AHSP persis dari lookup_ahsp, mis. '1.3.1.1'" },
+                volume: { type: "NUMBER", description: "Volume pekerjaan sesuai satuan AHSP" },
+                workers: { type: "NUMBER", description: "Jumlah pekerja efektif untuk item ini, default 4" },
+              },
+              required: ["ahsp_code", "volume"],
+            },
+          },
+          region_code: { type: "STRING", description: "Kode wilayah harga: 'jateng', 'semarang', atau 'surakarta'" },
+          ppn_rate: { type: "NUMBER", description: "Tarif PPN, default 0.11" },
+          crew_factor: { type: "NUMBER", description: "Pengali jumlah crew untuk skenario tambah-crew, default 2.0" },
         },
         required: ["lines"],
       },

@@ -4,7 +4,7 @@
  * Ini murni STATE TAMPILAN (riwayat & pengelompokan percakapan), bukan jalur
  * angka: jawaban AI tetap datang dari /api/command-room/chat dan angka dari
  * Core Engine. Skema: percakapan bisa berdiri sendiri atau dikelompokkan ke
- * "Project Percakapan" (folder) — pola yang sama dengan ChatGPT/Saya Projects.
+ * "Project Percakapan" (folder) — pola yang sama dengan workspace percakapan.
  */
 
 export interface StoredChatMessage {
@@ -35,6 +35,8 @@ export interface ChatConversation {
   updatedAt: string;
   /** Sumber data proyek yang diikutsertakan sebagai konteks percakapan ini. */
   connectors: ConversationConnectors;
+  /** Diisi kalau percakapan ini adalah hasil "Open new branch" dari percakapan lain. */
+  branchedFrom?: { sourceTitle: string; atMessageId: string } | null;
 }
 
 export interface ChatFolder {
@@ -68,6 +70,7 @@ function normalizeConversation(raw: Partial<ChatConversation>): ChatConversation
     createdAt: raw.createdAt ?? now,
     updatedAt: raw.updatedAt ?? raw.createdAt ?? now,
     connectors: { ...EMPTY_CONNECTORS, ...raw.connectors },
+    branchedFrom: raw.branchedFrom ?? null,
   };
 }
 
@@ -201,6 +204,7 @@ export function branchConversation(id: string): ChatConversation | null {
   const source = state.conversations.find((c) => c.id === id);
   if (!source) return null;
   const now = new Date().toISOString();
+  const lastMessage = source.messages[source.messages.length - 1];
   const branch: ChatConversation = {
     ...source,
     id: newId('conv'),
@@ -211,6 +215,7 @@ export function branchConversation(id: string): ChatConversation | null {
     archived: false,
     createdAt: now,
     updatedAt: now,
+    branchedFrom: lastMessage ? { sourceTitle: source.title, atMessageId: lastMessage.id } : null,
   };
   state.conversations.push(branch);
   save(state);

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono, Lora, Outfit } from 'next/font/google';
 import './globals.css';
+import '@/components/command-room/command-room.css';
 
 const inter = Inter({
   subsets: ['latin'],

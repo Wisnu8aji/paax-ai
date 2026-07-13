@@ -201,7 +201,9 @@ export default function CommandRoomPage() {
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sidePanelTab, setSidePanelTab] = useState<'task' | 'summary'>('task');
-  const [summaryTargetId, setSummaryTargetId] = useState<string | null>(null);
+  const [summaryCache, setSummaryCache] = useState<Record<string, string>>({});
+  const [summaryLoadingId, setSummaryLoadingId] = useState<string | null>(null);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
   const [titleMenuOpen, setTitleMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [renameDraft, setRenameDraft] = useState('');
@@ -486,7 +488,7 @@ export default function CommandRoomPage() {
     };
     saveConversation(next);
     setDraft('');
-    if (composerTextAreaRef.current) composerTextAreaRef.current.style.height = '64px';
+    if (composerTextAreaRef.current) composerTextAreaRef.current.style.height = '22px';
     setAttachments([]);
     refresh(next.id);
 
@@ -523,7 +525,13 @@ export default function CommandRoomPage() {
     });
   }
 
+  const sidebarScopeFolderId = openProjectId; // null = Home (percakapan tanpa project), string = percakapan project ini saja
+  // Tab segmented Home/Project tetap menunjuk "Project" selama masih di dalam
+  // sebuah project (openProjectId terisi) — walau `tab` sempat di-set 'home'
+  // untuk memindahkan area utama ke tampilan chat (lihat openProject chat list).
+  const effectiveTab: SideTab = openProjectId ? 'project' : tab;
   const visibleConvs = conversations.filter((c) => {
+    if (c.folderId !== sidebarScopeFolderId) return false;
     if (sidebarSearch && !c.title.toLowerCase().includes(sidebarSearch.toLowerCase())) return false;
     if (filterMode === 'archived') return c.archived;
     if (filterMode === 'recent') return !c.archived;
@@ -564,7 +572,7 @@ export default function CommandRoomPage() {
         display: 'flex',
         alignItems: 'center',
         gap: 8,
-        padding: '7px 9px',
+        padding: '5px 9px',
         borderRadius: 9,
         cursor: 'pointer',
         color: activeId === c.id ? 'var(--cr-text)' : 'var(--cr-text2)',
@@ -624,7 +632,7 @@ export default function CommandRoomPage() {
         alignItems: 'center',
         gap: 10,
         width: '100%',
-        padding: '8px 10px',
+        padding: '5px 10px',
         borderRadius: 9,
         border: 'none',
         background: 'transparent',
@@ -680,17 +688,35 @@ export default function CommandRoomPage() {
     </button>
   );
 
-  function summarizeConversation(conv: ChatConversation): string {
-    if (conv.messages.length === 0) return 'Belum ada pesan di percakapan ini.';
-    const firstUser = conv.messages.find((m) => m.role === 'user');
-    const lastMsg = conv.messages[conv.messages.length - 1];
-    const topic = firstUser ? titleFromMessage(firstUser.text) : conv.title;
-    return [
-      `Topik: ${topic}`,
-      `${conv.messages.length} pesan · mulai ${new Date(conv.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} · terakhir aktif ${updatedLabel(conv.updatedAt)}`,
-      `Pesan terakhir (${lastMsg.role === 'user' ? 'Anda' : 'PAAX'}): ${lastMsg.text.slice(0, 160)}${lastMsg.text.length > 160 ? '…' : ''}`,
-    ].join('\n');
+  async function fetchConversationSummary(conv: ChatConversation) {
+    setSummaryLoadingId(conv.id);
+    setSummaryError(null);
+    try {
+      const res = await fetch('/api/command-room/summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: conv.title,
+          messages: conv.messages.map((m) => ({ role: m.role, text: m.text })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal membuat ringkasan.');
+      setSummaryCache((prev) => ({ ...prev, [conv.id]: data.summary }));
+    } catch (err) {
+      setSummaryError(err instanceof Error ? err.message : 'Gagal membuat ringkasan.');
+    } finally {
+      setSummaryLoadingId((cur) => (cur === conv.id ? null : cur));
+    }
   }
+
+  useEffect(() => {
+    if (sidePanelTab !== 'summary' || !active) return;
+    if (active.messages.length === 0) return;
+    if (summaryCache[active.id]) return;
+    void fetchConversationSummary(active);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sidePanelTab, active?.id, active?.messages.length]);
 
   const sidePanel = (
     <div className="pax-cr-panel-slide cr-side-panel" style={{ width: 312, flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--cr-panel)' }}>
@@ -727,34 +753,52 @@ export default function CommandRoomPage() {
               </button>
             ))
           )
+        ) : !active ? (
+          <div style={{ padding: '14px 8px', fontSize: 11.5, color: 'var(--cr-text3)', lineHeight: 1.5 }}>
+            Pilih percakapan untuk melihat ringkasannya.
+          </div>
+        ) : active.messages.length === 0 ? (
+          <div style={{ padding: '14px 8px', fontSize: 11.5, color: 'var(--cr-text3)', lineHeight: 1.5 }}>
+            Belum ada pesan di percakapan ini.
+          </div>
         ) : (
-          <>
-            <select
-              value={summaryTargetId ?? ''}
-              onChange={(e) => setSummaryTargetId(e.target.value || null)}
-              aria-label="Pilih percakapan untuk diringkas"
-              style={{ width: '100%', background: 'var(--cr-bg)', border: 'none', borderRadius: 9, padding: '8px 10px', fontSize: 12, color: 'var(--cr-text)', outline: 'none', marginBottom: 10 }}
-            >
-              <option value="">Pilih percakapan…</option>
-              {conversations.map((c) => (
-                <option key={c.id} value={c.id}>{c.title}</option>
-              ))}
-            </select>
-            {summaryTargetId ? (
-              (() => {
-                const target = conversations.find((c) => c.id === summaryTargetId);
-                return target ? (
-                  <div style={{ background: 'var(--cr-elev)', borderRadius: 11, padding: '11px 12px', fontSize: 11.5, lineHeight: 1.6, color: 'var(--cr-text2)', whiteSpace: 'pre-wrap' }}>
-                    {summarizeConversation(target)}
+          (() => {
+            const isLoading = summaryLoadingId === active.id;
+            const cached = summaryCache[active.id];
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => void fetchConversationSummary(active)}
+                    disabled={isLoading}
+                    aria-label="Buat ulang ringkasan"
+                    title="Buat ulang ringkasan"
+                    className="pax-cr-hover"
+                    style={{ width: 20, height: 20, borderRadius: 6, border: 'none', background: 'transparent', color: 'var(--cr-text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isLoading ? 'wait' : 'pointer' }}
+                  >
+                    <RotateCcw size={11} />
+                  </button>
+                </div>
+                {isLoading && !cached && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 12px', background: 'var(--cr-elev)', borderRadius: 11, fontSize: 11.5, color: 'var(--cr-text2)' }}>
+                    <Loader2 size={13} className="animate-spin" /> Meringkas percakapan…
                   </div>
-                ) : null;
-              })()
-            ) : (
-              <div style={{ padding: '4px 2px', fontSize: 11.5, color: 'var(--cr-text3)', lineHeight: 1.5 }}>
-                Pilih percakapan di atas untuk melihat ringkasannya.
+                )}
+                {!isLoading && summaryError && !cached && (
+                  <div style={{ padding: '11px 12px', background: 'var(--cr-elev)', borderRadius: 11, fontSize: 11.5, lineHeight: 1.6, color: 'var(--cr-orange)' }}>
+                    {summaryError}
+                  </div>
+                )}
+                {cached && (
+                  <div className="cr-markdown cr-summary-markdown" style={{ background: 'var(--cr-elev)', borderRadius: 11, padding: '11px 12px', fontSize: 11.5, lineHeight: 1.6, color: 'var(--cr-text2)' }}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{cached}</ReactMarkdown>
+                    {isLoading && <span style={{ opacity: 0.6 }}> (memperbarui…)</span>}
+                  </div>
+                )}
               </div>
-            )}
-          </>
+            );
+          })()
         )}
       </div>
     </div>
@@ -890,7 +934,7 @@ export default function CommandRoomPage() {
           background: 'var(--cr-elev)',
           border: 'none',
           borderRadius: usageDismissed && attachments.length === 0 ? 16 : '0 0 16px 16px',
-          padding: '13px 14px 11px',
+          padding: '8px 10px 6px',
           boxShadow: '0 18px 44px rgba(0,0,0,0.3)',
         }}
       >
@@ -911,19 +955,19 @@ export default function CommandRoomPage() {
             }}
             placeholder="Bring the problem. I'll break it down."
             aria-label="Pesan"
-            rows={chatStarted ? 1 : 2}
+            rows={1}
             disabled={isBusy}
             className="pax-cr-textarea cr-composer-textarea"
             style={{
               width: '100%',
-              resize: 'vertical',
+              resize: 'none',
               border: 'none',
               outline: 'none',
               background: 'transparent',
               color: 'var(--cr-text)',
               fontSize: 15,
-              lineHeight: 1.55,
-              minHeight: composerTall ? 220 : 64,
+              lineHeight: 1.4,
+              minHeight: composerTall ? 220 : 22,
               maxHeight: COMMAND_COMPOSER_MAX_HEIGHT,
               caretColor: 'var(--cr-orange)',
             }}
@@ -935,13 +979,13 @@ export default function CommandRoomPage() {
               aria-label={composerTall ? 'Perkecil area ketik' : 'Perbesar area ketik'}
               title={composerTall ? 'Perkecil area ketik' : 'Perbesar area ketik'}
               className="pax-cr-hover pax-press pax-fade"
-              style={{ position: 'absolute', top: -6, right: -2, width: 22, height: 22, borderRadius: 6, border: 'none', background: 'var(--cr-panel2)', color: 'var(--cr-text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              style={{ position: 'absolute', top: 0, right: 0, width: 22, height: 22, borderRadius: 6, border: 'none', background: 'var(--cr-panel2)', color: 'var(--cr-text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2 }}
             >
               {composerTall ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
             </button>
           )}
         </div>
-        <div className="cr-composer-controls" style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 9 }}>
+        <div className="cr-composer-controls" style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
           {/* + lampiran/konektor */}
           <div ref={plusRef} style={{ position: 'relative' }}>
             <button
@@ -952,9 +996,9 @@ export default function CommandRoomPage() {
               aria-haspopup="menu"
               className="pax-cr-hover pax-press cr-plus-button"
               data-open={plusOpen ? 'true' : undefined}
-              style={{ width: 32, height: 32, borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform .2s var(--ease)', transform: plusOpen ? 'rotate(45deg)' : 'none' }}
+              style={{ width: 26, height: 26, borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform .2s var(--ease)', transform: plusOpen ? 'rotate(45deg)' : 'none' }}
             >
-              <Plus size={16} />
+              <Plus size={14} />
             </button>
             {plusOpen && (
               <div className="pax-scale-in" role="menu" style={{ position: 'absolute', bottom: 40, left: 0, width: 224, borderRadius: 13, background: 'var(--cr-panel2)', border: 'none', boxShadow: '0 18px 44px rgba(0,0,0,0.5)', padding: 5, zIndex: 40 }}>
@@ -991,7 +1035,7 @@ export default function CommandRoomPage() {
             disabled={!activeModelDef.supportsThinking}
             className="pax-cr-hover pax-press cr-thinking-toggle"
             title={resolvedThinking === 'on' ? 'Ultra — thinking aktif, jawaban lebih dalam' : 'Standard — respons lebih cepat'}
-            style={{ display: 'flex', alignItems: 'center', height: 32, padding: '0 10px', borderRadius: 9, border: 'none', background: 'transparent', color: resolvedThinking === 'on' ? 'var(--cr-orange)' : 'var(--cr-text3)', fontSize: 12, fontWeight: 600, cursor: activeModelDef.supportsThinking ? 'pointer' : 'default' }}
+            style={{ display: 'flex', alignItems: 'center', height: 26, padding: '0 8px', borderRadius: 8, border: 'none', background: 'transparent', color: resolvedThinking === 'on' ? 'var(--cr-orange)' : 'var(--cr-text3)', fontSize: 11.5, fontWeight: 600, cursor: activeModelDef.supportsThinking ? 'pointer' : 'default' }}
           >
             <span className="cr-thinking-prefix" aria-hidden="true">Thinking</span>
             <span className="cr-thinking-value">{resolvedThinking === 'on' ? 'Ultra' : 'Standard'}</span>
@@ -1014,7 +1058,7 @@ export default function CommandRoomPage() {
               aria-haspopup="menu"
               aria-label="Pilih model AI"
               className="pax-cr-hover cr-model-button"
-              style={{ display: 'flex', alignItems: 'center', gap: 6, height: 32, padding: '0 9px', borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, height: 26, padding: '0 8px', borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--cr-text)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
             >
               {activeModelDef.displayName}
               <ChevronDown size={13} style={{ transition: 'transform .2s var(--ease)', transform: modelOpen ? 'rotate(180deg)' : 'none' }} />
@@ -1069,14 +1113,14 @@ export default function CommandRoomPage() {
             )}
           </div>
 
-          <button type="button" onClick={() => showNote('Input suara hadir di rilis berikutnya.')} aria-label="Input suara (mic)" className="pax-cr-hover pax-press cr-icon-button cr-mic-button" style={{ width: 40, height: 40, borderRadius: 12, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <Mic size={15} />
+          <button type="button" onClick={() => showNote('Input suara hadir di rilis berikutnya.')} aria-label="Input suara (mic)" className="pax-cr-hover pax-press cr-icon-button cr-mic-button" style={{ width: 26, height: 26, borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <Mic size={14} />
           </button>
-          <button type="button" onClick={() => showNote('Mode voice hadir di rilis berikutnya.')} aria-label="Mode voice" className="pax-cr-hover pax-press cr-icon-button cr-voice-button" style={{ width: 40, height: 40, borderRadius: 12, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <AudioLines size={15} />
+          <button type="button" onClick={() => showNote('Mode voice hadir di rilis berikutnya.')} aria-label="Mode voice" className="pax-cr-hover pax-press cr-icon-button cr-voice-button" style={{ width: 26, height: 26, borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <AudioLines size={14} />
           </button>
-          <button type="submit" aria-label="Kirim" disabled={isBusy || !draft.trim()} className="pax-press cr-send-button" style={{ width: 32, height: 32, borderRadius: '50%', background: '#a9a9a9', color: '#1c1c1c', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isBusy ? 'wait' : 'pointer', opacity: isBusy || !draft.trim() ? 0.45 : 1, transition: 'opacity .2s var(--ease), transform .16s var(--ease)' }}>
-            {isBusy ? <Loader2 size={14} className="animate-spin" /> : <ArrowUp size={14} strokeWidth={2.4} />}
+          <button type="submit" aria-label="Kirim" disabled={isBusy || !draft.trim()} className="pax-press cr-send-button" style={{ width: 28, height: 28, borderRadius: '50%', background: '#a9a9a9', color: '#1c1c1c', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isBusy ? 'wait' : 'pointer', opacity: isBusy || !draft.trim() ? 0.45 : 1, transition: 'opacity .2s var(--ease), transform .16s var(--ease)' }}>
+            {isBusy ? <Loader2 size={13} className="animate-spin" /> : <ArrowUp size={13} strokeWidth={2.4} />}
           </button>
         </div>
       </form>
@@ -1130,8 +1174,6 @@ export default function CommandRoomPage() {
         />
       )}
 
-      <div className="cr-sidebar-edge" aria-hidden="true" />
-
       {/* ══ SIDEBAR ══ */}
       <div
         className="cr-sidebar"
@@ -1146,14 +1188,14 @@ export default function CommandRoomPage() {
         }}
       >
         {/* Segmented Home / Project */}
-        <div className="cr-sidebar-nav" style={{ padding: '14px 12px 10px' }}>
+        <div className="cr-sidebar-nav" style={{ padding: '6px 8px 1px' }}>
           <div style={{ display: 'flex', background: 'var(--cr-bg)', borderRadius: 11, padding: 3, border: 'none' }}>
             {(['home', 'project'] as SideTab[]).map((t) => (
               <button
                 key={t}
-                onClick={() => setTab(t)}
+                onClick={() => { setTab(t); if (t === 'home') setOpenProjectId(null); }}
                 role="tab"
-                aria-selected={tab === t}
+                aria-selected={effectiveTab === t}
                 style={{
                   flex: 1,
                   display: 'flex',
@@ -1163,8 +1205,8 @@ export default function CommandRoomPage() {
                   height: 30,
                   borderRadius: 8,
                   border: 'none',
-                  background: tab === t ? 'var(--cr-elev)' : 'transparent',
-                  color: tab === t ? 'var(--cr-text)' : 'var(--cr-text3)',
+                  background: effectiveTab === t ? 'var(--cr-elev)' : 'transparent',
+                  color: effectiveTab === t ? 'var(--cr-text)' : 'var(--cr-text3)',
                   fontSize: 12,
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -1179,8 +1221,8 @@ export default function CommandRoomPage() {
         </div>
 
         {/* Aksi utama */}
-        <div style={{ padding: '0 8px' }}>
-          {sideBtn(<Plus size={15} />, 'New Chat', () => newChat())}
+        <div style={{ padding: '1px 8px 0', display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {sideBtn(<Plus size={15} />, 'New Chat', () => newChat(openProjectId))}
           {sideBtn(<Search size={15} />, 'Search', () => setSearchOpen((v) => !v))}
           {searchOpen && (
             <div className="pax-fade" style={{ padding: '2px 10px 6px' }}>
@@ -1200,8 +1242,8 @@ export default function CommandRoomPage() {
 
         {/* Pinned */}
         {pinnedConvs.length > 0 && (
-          <div style={{ padding: '12px 8px 0' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--cr-text3)', padding: '0 10px 5px' }}>
+          <div style={{ padding: '1px 8px 0' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--cr-text3)', padding: '0 10px 1px' }}>
               Pinned
             </div>
             {pinnedConvs.map((c) => convRow(c))}
@@ -1209,8 +1251,8 @@ export default function CommandRoomPage() {
         )}
 
         {/* Conversation + filter */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 8px 8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', padding: '0 10px 5px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '1px 8px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '0 10px 1px' }}>
             <span style={{ flex: 1, fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--cr-text3)' }}>
               Conversation
             </span>
@@ -1531,7 +1573,7 @@ export default function CommandRoomPage() {
               <span className="pax-mono" style={{ fontSize: 11, color: 'var(--cr-text3)' }}>PAAX · {activeModelDef.displayName}</span>
               <button
                 type="button"
-                onClick={() => { setSidePanelOpen((v) => !v); setSummaryTargetId(active?.id ?? null); }}
+                onClick={() => setSidePanelOpen((v) => !v)}
                 aria-label="Toggle side panel"
                 aria-expanded={sidePanelOpen}
                 title="Task & Summary panel"
@@ -1572,6 +1614,15 @@ export default function CommandRoomPage() {
                     </div>
                   ),
                 )}
+                {active?.branchedFrom && messages.length > 0 && messages[messages.length - 1].id === active.branchedFrom.atMessageId && (
+                  <div className="pax-fade" style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0' }}>
+                    <span style={{ flex: 1, height: 1, background: 'var(--cr-border)' }} />
+                    <span style={{ fontSize: 11, color: 'var(--cr-text3)', whiteSpace: 'nowrap' }}>
+                      You&apos;re now in a new branch from &ldquo;{active.branchedFrom.sourceTitle}&rdquo;
+                    </span>
+                    <span style={{ flex: 1, height: 1, background: 'var(--cr-border)' }} />
+                  </div>
+                )}
                 {pendingRuns.map((run) => (
                   <div key={run.runId} className="pax-rise" style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -1600,7 +1651,7 @@ export default function CommandRoomPage() {
                   className="pax-cr-hover pax-press pax-cr-float-btn pax-fade"
                   aria-label="AI sedang menjawab — turun ke jawaban"
                   title="AI sedang menjawab — turun ke jawaban"
-                  style={{ position: 'absolute', top: 14, right: 18, display: 'flex', alignItems: 'center', gap: 7, padding: '7px 14px', borderRadius: 999, border: 'none', background: 'var(--cr-panel2)', color: 'var(--cr-orange)', fontSize: 12, fontWeight: 600, cursor: 'pointer', boxShadow: '0 10px 26px rgba(0,0,0,0.35)', zIndex: 20 }}
+                  style={{ position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 7, padding: '7px 14px', borderRadius: 999, border: 'none', background: 'var(--cr-panel2)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', boxShadow: '0 10px 26px rgba(0,0,0,0.35)', zIndex: 20 }}
                 >
                   <span aria-hidden="true" style={{ display: 'flex', animation: 'paxpulse 1.4s ease-in-out infinite', letterSpacing: 1 }}>•••</span>
                   Generating…
@@ -1612,7 +1663,7 @@ export default function CommandRoomPage() {
                   className="pax-cr-hover pax-press pax-cr-float-btn pax-fade"
                   aria-label="Scroll ke bawah"
                   title="Scroll ke bawah"
-                  style={{ position: 'absolute', top: 14, right: 18, width: 34, height: 34, borderRadius: '50%', border: 'none', background: 'var(--cr-panel2)', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 10px 26px rgba(0,0,0,0.35)', zIndex: 20 }}
+                  style={{ position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)', width: 34, height: 34, borderRadius: '50%', border: 'none', background: 'var(--cr-panel2)', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 10px 26px rgba(0,0,0,0.35)', zIndex: 20 }}
                 >
                   <ChevronDown size={16} />
                 </button>
