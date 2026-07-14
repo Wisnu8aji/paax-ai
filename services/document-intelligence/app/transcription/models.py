@@ -145,6 +145,27 @@ class DrawingEvidenceSheet(BaseModel):
     completion: SheetCompletion
 
 
+class DemModelOutput(BaseModel):
+    """Subset dari DrawingEvidenceSheet yang benar-benar perlu 'dibaca dari
+    gambar' oleh model vision. run_id/document_id/project_id/source/generation
+    SENGAJA tidak masuk sini -- itu metadata teknis yang sudah diketahui kode
+    Python (hash file, ukuran render, dst), meminta model menebaknya cuma
+    menambah risiko salah tanpa manfaat (keputusan 2026-07-15, dikonfirmasi
+    setelah uji manual pertama menunjukkan model mengarang struktur sendiri
+    saat promptnya cuma menyebut nama skema tanpa skema JSON konkret).
+
+    page_loop.py menggabungkan output ini dengan metadata yang sudah ada
+    menjadi DrawingEvidenceSheet penuh setelah respons model diterima."""
+    sheet_identity: SheetIdentity
+    views: list[SheetView] = Field(default_factory=list)
+    observations: DemObservations = Field(default_factory=DemObservations)
+    evidence: list[EvidenceItem] = Field(default_factory=list)
+    ambiguities: list[str] = Field(default_factory=list)
+    conflicts: list[str] = Field(default_factory=list)
+    unclassified: list[str] = Field(default_factory=list)
+    completion: SheetCompletion
+
+
 class PageManifestEntry(BaseModel):
     """Status satu halaman dalam page-loop (§7.3 state machine spec).
     input_hash membuat idempotency key (§7.6) - kalau document_hash+page_index+

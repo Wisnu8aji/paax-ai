@@ -28,8 +28,20 @@ async def process_document(
     prompt_version: str,
     concurrency: int = DEFAULT_CONCURRENCY,
     resume: bool = False,
+    project_id: str | None = None,
+    file_name: str = "unknown.pdf",
 ) -> None:
-    run = {"id": run_id, "document_id": document_id, "document_hash": document_hash}
+    # run carries every metadata field DrawingEvidenceSheet needs that the
+    # vision model itself never sees (2026-07-15: model output is scoped to
+    # DemModelOutput -- sheet_identity/observations/etc -- page_loop.py fills
+    # in the rest from this dict after the model responds).
+    run = {
+        "id": run_id,
+        "document_id": document_id,
+        "document_hash": document_hash,
+        "project_id": project_id,
+        "file_name": file_name,
+    }
     existing_by_index: dict[int, dict] = {}
     if resume:
         status = await db_client.get_run_status(run_id)

@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 import hashlib
+import uuid
+from datetime import datetime, timezone
 
 from app.transcription.db_client import DemDbClient
 from app.transcription.failure_classification import DemProviderError
-from app.transcription.page_renderer import render_page_to_png
+from app.transcription.models import DemGeneration, DemSource, DrawingEvidenceSheet
+from app.transcription.page_renderer import render_page
 from app.transcription.parser import parse_and_validate
 from app.transcription.providers.base import DemVisionProvider, PageContext
 
@@ -31,16 +34,17 @@ async def process_page(
         return
 
     await db_client.update_page(page_id, status="rendering")
-    image_bytes = render_page_to_png(pdf_bytes, page_index)
+    rendered = render_page(pdf_bytes, page_index)
     await db_client.update_page(page_id, status="calling_model", input_hash=input_hash)
     context = PageContext(
         document_id=run["document_id"],
         page_index=page_index,
         page_number=page_index + 1,
     )
+    started_at = datetime.now(timezone.utc).isoformat()
     try:
-        raw_json = provider.extract_page(image_bytes, context, prompt_version)
-        sheet = parse_and_validate(raw_json, provider, image_bytes, context, prompt_version)
+        raw_json = provider.extract_page(rendered.png_bytes, context, prompt_version)
+        model_output = parse_and_validate(raw_json, provider, rendered.png_bytes, context, prompt_version)
     except DemProviderError as exc:
         current_attempts = (existing_page or {}).get("attempt_count", 0)
         if exc.kind == "transient" and current_attempts + 1 < MAX_TRANSIENT_ATTEMPTS:
@@ -49,6 +53,39 @@ async def process_page(
         next_attempts = current_attempts if exc.kind == "permanent" else current_attempts + 1
         await db_client.update_page(page_id, status="failed", failure_kind=exc.kind, error=str(exc), attempt_count=next_attempts)
         return
+
+    # Assemble the full DrawingEvidenceSheet here -- run-level metadata the
+    # vision model was never asked to produce (2026-07-15 redesign) plus the
+    # model's own observations (model_output).
+    sheet = DrawingEvidenceSheet(
+        run_id=run["id"],
+        document_id=run["document_id"],
+        project_id=run.get("project_id") or run["document_id"],
+        source=DemSource(
+            document_hash=run["document_hash"],
+            file_name=run.get("file_name", "unknown.pdf"),
+            page_index=page_index,
+            page_number=page_index + 1,
+            render_uri=f"inline://{run['id']}/page-{page_index:04d}.png",
+            width_px=rendered.width_px,
+            height_px=rendered.height_px,
+        ),
+        generation=DemGeneration(
+            provider="qwen",
+            model_alias="qwen3.7-plus",
+            prompt_version=prompt_version,
+            started_at=started_at,
+            completed_at=datetime.now(timezone.utc).isoformat(),
+        ),
+        sheet_identity=model_output.sheet_identity,
+        views=model_output.views,
+        observations=model_output.observations,
+        evidence=model_output.evidence,
+        ambiguities=model_output.ambiguities,
+        conflicts=model_output.conflicts,
+        unclassified=model_output.unclassified,
+        completion=model_output.completion,
+    )
 
     await db_client.update_page(
         page_id,
