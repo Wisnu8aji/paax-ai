@@ -1428,11 +1428,11 @@ export const DemStatusEnum = z.enum([
 export const DemSourceSchema = z.object({
   document_hash: z.string(),
   file_name: z.string(),
-  page_index: z.number().int().nonnegative(),
-  page_number: z.number().int().positive(),
+  page_index: z.number().int(),
+  page_number: z.number().int(),
   render_uri: z.string(),
-  width_px: z.number().int().positive(),
-  height_px: z.number().int().positive(),
+  width_px: z.number().int(),
+  height_px: z.number().int(),
 });
 
 export const DemGenerationSchema = z.object({
@@ -1520,7 +1520,7 @@ export const SheetCompletionSchema = z.object({
   sections_expected: z.number().int(),
   sections_completed: z.number().int(),
   is_complete: z.boolean(),
-  next_cursor: z.string().nullable(),
+  next_cursor: z.string().nullish(),
 });
 
 export const DrawingEvidenceSheetSchema = z.object({
