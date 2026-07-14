@@ -1569,6 +1569,54 @@ export const ContinuationPatchSchema = z.object({
 });
 export type ContinuationPatch = z.infer<typeof ContinuationPatchSchema>;
 
+// PCKM - Project Construction Knowledge Model graph (selaras
+// app/project_graph/models.py)
+//
+// Skema per docs/plans/drawing intelligence/
+// PAAX_DEM_PCKM_GRAPH_COMMAND_ROOM_PLAN_2026-07-14.md Section 11. PCKM adalah
+// model kanonik PROYEK - node/edge dibangun dari normalisasi DEM, tidak pernah
+// menyimpan angka hasil kalkulasi baru (Aturan Emas, CLAUDE.md Section 1).
+
+export const NodeTypeEnum = z.enum([
+  "project", "document", "sheet", "view", "drawing_zone", "revision",
+  "site", "building", "wing", "level", "zone", "grid_axis", "grid_intersection",
+  "space", "room", "external_area",
+  "system", "discipline", "element_type", "element_occurrence", "assembly",
+  "material", "finish", "opening", "equipment", "fixture",
+  "dimension", "specification", "note", "schedule_table", "detail_reference",
+  "drawing_reference", "assumption", "conflict", "missing_information",
+]);
+
+export const VerificationStatusEnum = z.enum([
+  "extracted", "ai_interpreted", "cross_sheet_inferred", "human_verified", "conflicting", "ambiguous",
+]);
+
+export const NodePropertySchema = z.object({
+  value: z.union([z.string(), z.number(), z.boolean()]),
+  value_source: z.enum(["extracted", "ai_interpreted", "cross_sheet_inferred"]).default("extracted"),
+  evidence_refs: z.array(z.string()).default([]),
+});
+
+export const NodeSourceRefSchema = z.object({
+  document_id: z.string(),
+  page_index: z.number().int().nonnegative(),
+  sheet_id: z.string(),
+  evidence_refs: z.array(z.string()).default([]),
+});
+
+export const ProjectGraphNodeSchema = z.object({
+  node_id: z.string(),
+  type: NodeTypeEnum,
+  canonical_name: z.string(),
+  aliases: z.array(z.string()).default([]),
+  properties: z.record(NodePropertySchema).default({}),
+  discipline: z.string(),
+  verification_status: VerificationStatusEnum,
+  confidence: z.number().min(0).max(1),
+  source_refs: z.array(NodeSourceRefSchema).default([]),
+});
+export type ProjectGraphNode = z.infer<typeof ProjectGraphNodeSchema>;
+
 export const TkgIssueSchema = z.object({
   code: z.string(),
   severity: z.enum(["error", "warning"]),
