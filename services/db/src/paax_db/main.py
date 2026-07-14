@@ -475,6 +475,20 @@ async def get_dem_run(id: str, db: AsyncSession = Depends(get_db)):
     return run
 
 
+@app.put("/dem/runs/{id}", response_model=schemas.DemRunResponse, dependencies=[Depends(get_current_user)])
+async def update_dem_run(id: str, update: dict, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.DemRun).where(models.DemRun.id == id))
+    run = result.scalars().first()
+    if not run:
+        raise HTTPException(status_code=404, detail="DEM run not found")
+    for key, value in update.items():
+        if hasattr(run, key):
+            setattr(run, key, value)
+    await db.commit()
+    await db.refresh(run)
+    return run
+
+
 @app.get("/dem/runs/{id}/status", response_model=schemas.DemRunStatusResponse, dependencies=[Depends(get_current_user)])
 async def get_dem_run_status(id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(models.DemRun).where(models.DemRun.id == id))
