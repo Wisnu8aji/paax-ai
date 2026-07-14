@@ -16,6 +16,7 @@ import {
   SchedulePlanResult,
   AiKudaKudaSuggestionSchema,
   AiArsitekturAreaSuggestionSchema,
+  DrawingEvidenceSheetSchema,
   DrawingWorkItemsResultSchema,
 } from "../index";
 
@@ -395,5 +396,97 @@ describe("RABLineInput schema", () => {
       volume: 50
     });
     expect(input.duration_days).toBeUndefined();
+  });
+});
+
+// Contoh payload sama persis dengan test_drawing_evidence_sheet_accepts_minimal_valid_payload
+// di services/document-intelligence/tests/test_transcription_models.py - parity dijaga
+// dengan menjaga kedua contoh ini identik, bukan generator otomatis.
+const mockDrawingEvidenceSheet = {
+  schema_version: "paax.dem.sheet.v1",
+  run_id: "DEMRUN-20260714-001",
+  document_id: "DOC-PLHUT-001",
+  project_id: "PRJ-001",
+  source: {
+    document_hash: "sha256:abc123",
+    file_name: "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    page_index: 5,
+    page_number: 6,
+    render_uri: "object://renders/doc-plhut-001/page-006.png",
+    width_px: 4096,
+    height_px: 2896,
+  },
+  generation: {
+    provider: "qwen",
+    model_alias: "qwen-3.7-plus",
+    prompt_version: "dem-extraction-v1.0.0",
+    started_at: "2026-07-14T10:00:00Z",
+    completed_at: "2026-07-14T10:00:12Z",
+    continuation_count: 0,
+    temperature: 0.0,
+    status: "complete",
+  },
+  sheet_identity: {
+    sheet_number: { value: "A-06", raw: "A-06", confidence: 0.98, evidence_refs: ["EV-P006-001"] },
+    title: { value: "Rencana Paving", raw: "RENCANA PAVING", confidence: 0.99, evidence_refs: ["EV-P006-002"] },
+    discipline: { value: "architecture", confidence: 0.88, status: "ai_interpreted" },
+    scale_candidates: [{ raw: "1 : 100", normalized: "1:100", confidence: 0.94, evidence_refs: ["EV-P006-003"] }],
+  },
+  views: [{ view_id: "VIEW-P006-01", type: "site_plan", title: "Rencana Paving", bbox: [0.08, 0.12, 0.84, 0.91], confidence: 0.91 }],
+  observations: {
+    texts: [{ raw: "R.PLHUT", normalized: "Ruang PLHUT", confidence: 0.9, evidence_refs: ["EV-P006-004"] }],
+    dimensions: [{ raw: "20400", normalized: "20400", numeric_value: 20400.0, unit: "mm", confidence: 0.86, evidence_refs: ["EV-P006-005"] }],
+  },
+  evidence: [
+    { evidence_id: "EV-P006-001", kind: "visible_text", raw: "A-06", bbox: [0.91, 0.88, 0.96, 0.92], confidence: 0.98 },
+  ],
+  completion: { sections_expected: 13, sections_completed: 13, is_complete: true, next_cursor: null },
+};
+
+describe("DrawingEvidenceSheetSchema", () => {
+  it("parses a real DEM page payload matching the Pydantic model", () => {
+    const result = DrawingEvidenceSheetSchema.parse(mockDrawingEvidenceSheet);
+    expect(result.source.page_number).toBe(6);
+    expect(result.sheet_identity.discipline.status).toBe("ai_interpreted");
+    expect(result.observations.dimensions[0].numeric_value).toBe(20400.0);
+    expect(result.completion.is_complete).toBe(true);
+  });
+
+  it("defaults empty observation lists when omitted", () => {
+    const minimal = {
+      schema_version: "paax.dem.sheet.v1",
+      run_id: "DEMRUN-20260714-002",
+      document_id: "DOC-PLHUT-001",
+      project_id: "PRJ-001",
+      source: {
+        document_hash: "sha256:abc123",
+        file_name: "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+        page_index: 0,
+        page_number: 1,
+        render_uri: "object://renders/doc-plhut-001/page-001.png",
+        width_px: 4096,
+        height_px: 2896,
+      },
+      generation: {
+        provider: "qwen",
+        model_alias: "qwen-3.7-plus",
+        prompt_version: "dem-extraction-v1.0.0",
+        started_at: "2026-07-14T10:00:00Z",
+        continuation_count: 0,
+        temperature: 0.0,
+        status: "complete",
+      },
+      sheet_identity: {
+        sheet_number: { value: "", confidence: 0.0 },
+        title: { value: "GAMBAR KERJA", confidence: 0.95 },
+        discipline: { value: "cover", confidence: 0.9, status: "ai_interpreted" },
+      },
+      completion: { sections_expected: 13, sections_completed: 13, is_complete: true, next_cursor: null },
+    };
+
+    const result = DrawingEvidenceSheetSchema.parse(minimal);
+    expect(result.observations.texts).toEqual([]);
+    expect(result.views).toEqual([]);
+    expect(result.evidence).toEqual([]);
   });
 });

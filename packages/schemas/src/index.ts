@@ -1413,6 +1413,134 @@ export const TkgDocumentSchema = z.object({
 });
 export type TkgDocument = z.infer<typeof TkgDocumentSchema>;
 
+// ─── DEM — Drawing Evidence Model (selaras app/transcription/models.py) ──────
+//
+// Skema per docs/plans/drawing intelligence/
+// PAAX_DEM_PCKM_GRAPH_COMMAND_ROOM_PLAN_2026-07-14.md §6.
+// DEM adalah transkrip evidence PER HALAMAN — tidak ada angka hasil kalkulasi
+// di sini (Aturan Emas, CLAUDE.md §1). Setiap fakta wajib punya confidence +
+// evidence_refs + status.
+
+export const DemStatusEnum = z.enum([
+  "extracted", "ai_interpreted", "ambiguous", "conflicting", "missing", "human_verified",
+]);
+
+export const DemSourceSchema = z.object({
+  document_hash: z.string(),
+  file_name: z.string(),
+  page_index: z.number().int().nonnegative(),
+  page_number: z.number().int().positive(),
+  render_uri: z.string(),
+  width_px: z.number().int().positive(),
+  height_px: z.number().int().positive(),
+});
+
+export const DemGenerationSchema = z.object({
+  provider: z.string(),
+  model_alias: z.string(),
+  prompt_version: z.string(),
+  started_at: z.string(),
+  completed_at: z.string().nullish(),
+  continuation_count: z.number().int().nonnegative().default(0),
+  temperature: z.number().default(0),
+  status: z.enum(["complete", "partial", "failed"]).default("complete"),
+});
+
+export const ValueWithEvidenceSchema = z.object({
+  value: z.string(),
+  raw: z.string().nullish(),
+  confidence: z.number().min(0).max(1),
+  evidence_refs: z.array(z.string()).default([]),
+});
+
+export const InterpretedValueSchema = z.object({
+  value: z.string(),
+  confidence: z.number().min(0).max(1),
+  status: DemStatusEnum.default("extracted"),
+});
+
+export const ScaleCandidateSchema = z.object({
+  raw: z.string(),
+  normalized: z.string(),
+  confidence: z.number().min(0).max(1),
+  evidence_refs: z.array(z.string()).default([]),
+});
+
+export const SheetIdentitySchema = z.object({
+  sheet_number: ValueWithEvidenceSchema,
+  title: ValueWithEvidenceSchema,
+  discipline: InterpretedValueSchema,
+  scale_candidates: z.array(ScaleCandidateSchema).default([]),
+});
+
+export const SheetViewSchema = z.object({
+  view_id: z.string(),
+  type: z.string(),
+  title: z.string(),
+  bbox: z.tuple([z.number(), z.number(), z.number(), z.number()]),
+  confidence: z.number().min(0).max(1),
+});
+
+export const ObservationValueSchema = z.object({
+  raw: z.string(),
+  normalized: z.string().nullish(),
+  numeric_value: z.number().nullish(),
+  unit: z.string().nullish(),
+  bbox: z.tuple([z.number(), z.number(), z.number(), z.number()]).nullish(),
+  confidence: z.number().min(0).max(1),
+  status: DemStatusEnum.default("extracted"),
+  evidence_refs: z.array(z.string()).default([]),
+});
+
+export const DemObservationsSchema = z.object({
+  texts: z.array(ObservationValueSchema).default([]),
+  dimensions: z.array(ObservationValueSchema).default([]),
+  grids: z.array(ObservationValueSchema).default([]),
+  levels: z.array(ObservationValueSchema).default([]),
+  spaces: z.array(ObservationValueSchema).default([]),
+  element_labels: z.array(ObservationValueSchema).default([]),
+  symbols: z.array(ObservationValueSchema).default([]),
+  tables: z.array(ObservationValueSchema).default([]),
+  materials: z.array(ObservationValueSchema).default([]),
+  notes: z.array(ObservationValueSchema).default([]),
+  references: z.array(ObservationValueSchema).default([]),
+  patterns: z.array(ObservationValueSchema).default([]),
+  geometry_descriptions: z.array(ObservationValueSchema).default([]),
+});
+
+export const EvidenceItemSchema = z.object({
+  evidence_id: z.string(),
+  kind: z.string(),
+  raw: z.string(),
+  bbox: z.tuple([z.number(), z.number(), z.number(), z.number()]).nullish(),
+  confidence: z.number().min(0).max(1),
+});
+
+export const SheetCompletionSchema = z.object({
+  sections_expected: z.number().int(),
+  sections_completed: z.number().int(),
+  is_complete: z.boolean(),
+  next_cursor: z.string().nullable(),
+});
+
+export const DrawingEvidenceSheetSchema = z.object({
+  schema_version: z.literal("paax.dem.sheet.v1").default("paax.dem.sheet.v1"),
+  run_id: z.string(),
+  document_id: z.string(),
+  project_id: z.string(),
+  source: DemSourceSchema,
+  generation: DemGenerationSchema,
+  sheet_identity: SheetIdentitySchema,
+  views: z.array(SheetViewSchema).default([]),
+  observations: DemObservationsSchema.default({}),
+  evidence: z.array(EvidenceItemSchema).default([]),
+  ambiguities: z.array(z.string()).default([]),
+  conflicts: z.array(z.string()).default([]),
+  unclassified: z.array(z.string()).default([]),
+  completion: SheetCompletionSchema,
+});
+export type DrawingEvidenceSheet = z.infer<typeof DrawingEvidenceSheetSchema>;
+
 export const TkgIssueSchema = z.object({
   code: z.string(),
   severity: z.enum(["error", "warning"]),
