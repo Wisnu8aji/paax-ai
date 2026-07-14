@@ -20,6 +20,7 @@ import {
   DrawingEvidenceSheetSchema,
   DocumentManifestSchema,
   DrawingWorkItemsResultSchema,
+  ProjectGraphNodeSchema,
 } from "../index";
 
 // Contoh response aktual dari POST /rab/calculate engine
@@ -527,5 +528,44 @@ describe("ContinuationPatchSchema", () => {
 
     expect(patch.base_result_hash).toBe("sha256:previousresulthash");
     expect(patch.is_complete).toBe(false);
+  });
+});
+
+describe("ProjectGraphNodeSchema", () => {
+  it("parses an element_type node with typed properties", () => {
+    const node = ProjectGraphNodeSchema.parse({
+      node_id: "ELTYPE-COLUMN-K1",
+      type: "element_type",
+      canonical_name: "Kolom K1",
+      aliases: ["K1", "Kol. K1"],
+      properties: {
+        shape: { value: "rectangular", value_source: "extracted", evidence_refs: [] },
+        b_mm: { value: 300, value_source: "extracted", evidence_refs: ["EV-P049-121"] },
+        h_mm: { value: 500, value_source: "extracted", evidence_refs: ["EV-P049-122"] },
+      },
+      discipline: "structure",
+      verification_status: "ai_interpreted",
+      confidence: 0.92,
+      source_refs: [
+        { document_id: "DOC-PLHUT-001", page_index: 48, sheet_id: "S-49", evidence_refs: ["EV-P049-121", "EV-P049-122"] },
+      ],
+    });
+
+    expect(node.properties.b_mm.value).toBe(300);
+    expect(node.verification_status).toBe("ai_interpreted");
+  });
+
+  it("defaults empty aliases and properties", () => {
+    const node = ProjectGraphNodeSchema.parse({
+      node_id: "LEVEL-01",
+      type: "level",
+      canonical_name: "Lantai 1",
+      discipline: "general",
+      verification_status: "extracted",
+      confidence: 0.99,
+    });
+
+    expect(node.aliases).toEqual([]);
+    expect(node.properties).toEqual({});
   });
 });
