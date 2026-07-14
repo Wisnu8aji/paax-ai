@@ -1663,6 +1663,58 @@ export const ProjectGraphSnapshotSchema = z.object({
 });
 export type ProjectGraphSnapshot = z.infer<typeof ProjectGraphSnapshotSchema>;
 
+export const QueryIntentEnum = z.enum([
+  "GENERAL_CHAT", "PROJECT_OVERVIEW", "DIRECT_FACT", "LIST_FILTER", "NODE_EXPLAIN",
+  "RELATIONSHIP", "PATH_QUERY", "SHEET_LOOKUP", "SPACE_LOOKUP", "ELEMENT_LOOKUP",
+  "MATERIAL_LOOKUP", "CONFLICT_LOOKUP", "MISSING_DATA", "NUMERIC_STORED_FACT",
+  "CALCULATION_REQUIRED", "RAB_QUERY", "SCHEDULE_QUERY",
+]);
+
+export const QueryEntitySchema = z.object({
+  type: z.string(),
+  value: z.string(),
+});
+
+export const GraphQueryPlanSchema = z.object({
+  intent: QueryIntentEnum,
+  project_id: z.string(),
+  entities: z.array(QueryEntitySchema).default([]),
+  filters: z.record(z.string().nullable()).default({}),
+  relations: z.array(z.string()).default([]),
+  traversal_mode: z.enum(["bfs", "dfs", "shortest_path", "direct_lookup"]).default("bfs"),
+  traversal_depth: z.number().int().nonnegative().default(2),
+  budget_tokens: z.number().int().positive().default(1400),
+});
+export type GraphQueryPlan = z.infer<typeof GraphQueryPlanSchema>;
+
+export const CitationSchema = z.object({
+  citation_id: z.string(),
+  document_id: z.string(),
+  sheet_id: z.string(),
+  page_number: z.number().int().positive(),
+  title: z.string(),
+  evidence_ids: z.array(z.string()).default([]),
+});
+
+export const RetrievalTraceSchema = z.object({
+  intent: QueryIntentEnum,
+  seed_node_ids: z.array(z.string()).default([]),
+  node_count: z.number().int().nonnegative().default(0),
+  edge_count: z.number().int().nonnegative().default(0),
+  context_token_estimate: z.number().int().nonnegative().default(0),
+});
+
+export const GroundedAnswerSchema = z.object({
+  answer: z.string(),
+  citations: z.array(CitationSchema).default([]),
+  data_status: z.enum(["grounded", "partial", "ungrounded", "not_ready"]).default("grounded"),
+  confidence: z.number().min(0).max(1),
+  missing_data: z.array(z.string()).default([]),
+  conflicts: z.array(z.string()).default([]),
+  retrieval_trace: RetrievalTraceSchema,
+});
+export type GroundedAnswer = z.infer<typeof GroundedAnswerSchema>;
+
 export const TkgIssueSchema = z.object({
   code: z.string(),
   severity: z.enum(["error", "warning"]),
