@@ -8,12 +8,23 @@ real DrawingEvidenceSheet structure). The schema sent to the model is
 generated directly from DemModelOutput (app.transcription.models) -- one
 source of truth, never hand-duplicated here.
 
-Thinking mode is explicitly disabled (enable_thinking=false via extra_body):
-DashScope/OpenRouter do not support structured/json_schema output while a
-Qwen model is in thinking mode (confirmed 2026-07-15 against Alibaba Cloud's
-own docs). For a transcription task (read text/dimensions/labels off a
-drawing, not multi-step reasoning), non-thinking + guaranteed-valid JSON
-beats thinking + free-form JSON that may not parse.
+Thinking/reasoning is explicitly disabled via the top-level OpenRouter
+"reasoning": {"enabled": false} field -- NOT extra_body.enable_thinking,
+which was tried first and silently ignored (confirmed by inspecting
+usage.completion_tokens_details.reasoning_tokens: it stayed non-zero with
+extra_body, and dropped to exactly 0 once switched to the top-level
+"reasoning" field -- OpenRouter's own parameter, not a passthrough to
+DashScope, which is what actually gets honored end to end).
+
+Reasoning was A/B tested against two fresh, cache-cold PLHUT pages
+(2026-07-15) before this decision: reasoning ON cost ~2.5x more tokens per
+call and, more importantly, extracted MUCH LESS -- ~76 evidence items /
+4 views without reasoning vs ~20 evidence items / 2 views with reasoning on
+the same page. finish_reason was "stop" and completion.is_complete was true
+in both cases (not a truncation artifact) -- the model spends its reasoning
+tokens summarizing/filtering its own observations before writing the final
+JSON, which actively hurts a task whose whole point is exhaustive transcription,
+not judgment about what's "important" to keep.
 """
 from __future__ import annotations
 
@@ -90,10 +101,14 @@ class QwenDemAdapter:
         image_b64 = base64.b64encode(image_bytes).decode("ascii")
         payload = {
             "model": self.model,
-            # enable_thinking=false: required for json_schema structured
-            # output to work at all on Qwen3.7-Plus (thinking mode and
-            # structured output are mutually exclusive on this model family).
-            "extra_body": {"enable_thinking": False},
+            # reasoning.enabled=false (top-level, OpenRouter-native field --
+            # NOT extra_body.enable_thinking, which is silently ignored by
+            # this provider route; see module docstring for the A/B test
+            # that found this). Required for json_schema structured output
+            # to work at all on Qwen3.7-Plus (thinking mode and structured
+            # output are mutually exclusive on this model family), and also
+            # the cheaper + more-complete option for pure transcription.
+            "reasoning": {"enabled": False},
             "response_format": {
                 "type": "json_schema",
                 "json_schema": {

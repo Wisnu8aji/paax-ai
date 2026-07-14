@@ -62,6 +62,16 @@ def test_qwen_adapter_extract_page_sends_json_schema_and_disables_thinking(monke
     # thinking mode (Qwen3.7-Plus does not support structured output while
     # thinking is on). This test locks in both request-shape requirements so
     # a future edit can't silently regress back to free-form JSON.
+    #
+    # The "reasoning" field (not "extra_body.enable_thinking") is what
+    # actually disables thinking on this provider route -- confirmed by an
+    # A/B test against two fresh PLHUT pages: extra_body.enable_thinking was
+    # silently ignored (reasoning_tokens stayed non-zero), while the
+    # top-level "reasoning": {"enabled": false} field genuinely zeroed it
+    # out. The same A/B test found reasoning ON extracts ~2.5x fewer
+    # evidence items at ~2.5x the cost for this task (transcription, not
+    # multi-step judgment) -- so this is a deliberate choice, not just a
+    # workaround for the API's thinking/json_schema exclusivity.
     captured = {}
 
     def fake_urlopen(req, timeout=None):
@@ -96,7 +106,8 @@ def test_qwen_adapter_extract_page_sends_json_schema_and_disables_thinking(monke
 
     assert result["sheet_identity"]["title"]["value"] == "Denah"
     payload = captured["payload"]
-    assert payload["extra_body"]["enable_thinking"] is False
+    assert payload["reasoning"]["enabled"] is False
+    assert "extra_body" not in payload
     assert payload["response_format"]["type"] == "json_schema"
     assert payload["response_format"]["json_schema"]["strict"] is True
     # The schema sent to the model must be derived from DemModelOutput --
