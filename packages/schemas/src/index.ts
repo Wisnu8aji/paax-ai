@@ -1647,6 +1647,22 @@ export const ProjectGraphEdgeSchema = z.object({
 });
 export type ProjectGraphEdge = z.infer<typeof ProjectGraphEdgeSchema>;
 
+export const ProjectGraphSnapshotSchema = z.object({
+  schema_version: z.literal("paax.pckm.graph.v1").default("paax.pckm.graph.v1"),
+  project_id: z.string(),
+  snapshot_id: z.string(),
+  document_ids: z.array(z.string()).default([]),
+  dem_run_ids: z.array(z.string()).default([]),
+  page_count: z.number().int().nonnegative().default(0),
+  nodes: z.array(ProjectGraphNodeSchema).default([]),
+  edges: z.array(ProjectGraphEdgeSchema).default([]),
+  communities: z.array(z.string()).default([]),
+  aliases: z.array(z.string()).default([]),
+  conflicts: z.array(z.string()).default([]),
+  missing_information: z.array(z.string()).default([]),
+});
+export type ProjectGraphSnapshot = z.infer<typeof ProjectGraphSnapshotSchema>;
+
 export const TkgIssueSchema = z.object({
   code: z.string(),
   severity: z.enum(["error", "warning"]),
