@@ -183,16 +183,72 @@ class QwenDemAdapter:
 # can cache this (and the schema-derived instructions folded into
 # response_format, where supported) instead of re-billing the same ~9KB of
 # schema-describing text on every one of 88 page calls per document.
+#
+# 2026-07-15 rewrite: json_schema (response_format) forces the SHAPE of the
+# output but not its COVERAGE -- a schema-valid response can still leave
+# every observations.* array empty if the model decides nothing in a
+# category is "worth" reporting. A manual test on the real PLHUT fixture
+# (page 4, a legend/notation sheet) showed exactly this: header/title-block
+# text was extracted perfectly, but the entire left-hand legend (20+
+# material finish entries, symbol notations, floor elevation table) was
+# skipped -- the model wasn't told those categories exist, so it never
+# looked for them. Fixed by naming DemObservations' 13 categories
+# explicitly as a checklist (adapted from a prior working raw-extraction
+# prompt, docs/plans/drawing intelligence/ -- deepseek_text_20260709), not
+# just describing the task in the abstract. Also fixed: the same test showed
+# bbox coordinates that looked plausible but didn't match the element's real
+# on-page position (the model was inventing coordinates instead of reading
+# them) -- the instruction below now explicitly allows "coordinate uncertain"
+# as a valid, low-confidence answer instead of implicitly pressuring the
+# model to always produce a bbox.
 _STATIC_INSTRUCTIONS = (
-    "Anda membaca satu halaman gambar kerja konstruksi. Kembalikan HANYA JSON "
-    "sesuai schema yang diberikan (dipaksa oleh response_format, jangan tambah "
-    "field di luar itu). Setiap fakta bertekstual WAJIB punya confidence "
-    "(0.0-1.0) + evidence_refs + status (extracted|ai_interpreted|ambiguous|"
-    "conflicting|missing). JANGAN PERNAH menghitung nilai turunan (luas dari "
-    "dimensi, dst) -- hanya transkrip apa yang tertulis/tergambar apa adanya. "
-    "Kalau output akan terpotong karena batas token, isi completion."
-    "is_complete=false dan completion.next_cursor menunjuk section yang belum "
-    "selesai, jangan memotong JSON di tengah struktur."
+    "Anda membaca satu halaman gambar kerja konstruksi (arsitektur/struktur/MEP). "
+    "Kembalikan HANYA JSON sesuai schema yang diberikan (dipaksa oleh response_format, "
+    "jangan tambah field di luar itu).\n\n"
+    "CAKUPAN WAJIB -- periksa SETIAP kategori berikut secara aktif sebelum "
+    "menganggap halaman ini selesai (array kosong [] HANYA valid kalau kategori "
+    "itu benar-benar tidak ada di halaman, bukan karena belum diperiksa):\n"
+    "- observations.texts: judul, sub-judul, catatan bebas, teks title block\n"
+    "- observations.dimensions: SEMUA angka ukuran/jarak/ketebalan yang tertulis\n"
+    "- observations.grids: label as/grid (mis. A, B, 1, 2) dan jarak antar-as\n"
+    "- observations.levels: elevasi lantai/atap (mis. +4.00, +8.00, ±0.00)\n"
+    "- observations.spaces: label ruang/area\n"
+    "- observations.element_labels: kode elemen (kolom, balok, pintu, jendela, dst -- ambil PERSIS seperti tertulis, mis. K-01, C1, COL-A, P1, D-01)\n"
+    "- observations.symbols: notasi simbol dan artinya (notasi pintu, jendela, dinding, material lantai/plafond, dst)\n"
+    "- observations.tables: SETIAP tabel teknis (jadwal, spesifikasi, daftar tipe)\n"
+    "- observations.materials: SETIAP baris legenda/daftar material finishing (dinding, lantai, plafond, dst) -- ini sering berupa daftar panjang, jangan berhenti di beberapa item pertama\n"
+    "- observations.notes: catatan teknis/spesifikasi tertulis\n"
+    "- observations.references: rujukan ke detail/halaman/tabel lain (tandai sebagai referensi, JANGAN sambungkan isinya)\n"
+    "- observations.patterns: pola arsir/hatch dan artinya\n"
+    "- observations.geometry_descriptions: bentuk/layout yang dideskripsikan tapi bukan dimensi angka\n\n"
+    "ATURAN:\n"
+    "1. JANGAN PERNAH mengarang informasi yang tidak terlihat, dan JANGAN PERNAH "
+    "menghitung nilai turunan (luas dari dimensi, dst) -- hanya transkrip apa "
+    "adanya. Kode elemen/material diambil PERSIS seperti tertulis, jangan "
+    "dinormalisasi ke format lain.\n"
+    "2. Setiap fakta bertekstual WAJIB punya confidence (0.0-1.0) + evidence_refs "
+    "+ status (extracted|ai_interpreted|ambiguous|conflicting|missing).\n"
+    "3. Kalau bbox tidak bisa ditentukan presisi, tetap isi perkiraan tapi turunkan "
+    "confidence -- JANGAN mengosongkan bbox atau menebak koordinat asal tanpa "
+    "dasar dari posisi elemen yang sebenarnya di gambar.\n"
+    "4. Jangan hanya meringkas halaman -- ekstrak SEBANYAK MUNGKIN item nyata yang "
+    "terlihat, terutama daftar panjang (legenda material, tabel notasi) yang "
+    "sering ada belasan hingga puluhan baris.\n"
+    "5. Kalau output akan terpotong karena batas token, isi completion.is_complete="
+    "false dan completion.next_cursor menunjuk section yang belum selesai, jangan "
+    "memotong JSON di tengah struktur.\n\n"
+    "CONTOH TINGKAT DETAIL YANG DIHARAPKAN (bukan isi sungguhan, hanya kalibrasi "
+    "format -- kategori yang sering terlewat di uji sebelumnya):\n"
+    "- observations.materials, satu baris legenda material = satu item, contoh: "
+    '{"raw": "L1 = GRANITE TILE", "normalized": "L1: Granite Tile", "confidence": 0.95, '
+    '"status": "extracted", "evidence_refs": ["ev-legend-l1"]} -- kalau legenda punya 20 '
+    "baris (L1 sampai L10, P1 sampai P7, dst), buat 20 item terpisah, jangan digabung jadi satu teks panjang.\n"
+    "- observations.symbols, satu notasi = satu item, contoh: "
+    '{"raw": "NOTASI PINTU: X = TYPE DAN JENIS BAHAN", "normalized": "Notasi pintu: kode X menunjukkan tipe dan bahan", '
+    '"confidence": 0.9, "status": "extracted", "evidence_refs": ["ev-notasi-pintu"]}\n'
+    "- observations.levels, satu elevasi = satu item dengan numeric_value diisi angkanya, contoh: "
+    '{"raw": "Lantai-2 P +8.00", "normalized": "Lantai 2", "numeric_value": 8.00, "unit": "m", '
+    '"confidence": 0.95, "status": "extracted", "evidence_refs": ["ev-elev-lt2"]}'
 )
 
 
