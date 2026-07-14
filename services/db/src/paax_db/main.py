@@ -456,6 +456,65 @@ async def list_durable_memories(
     result = await db.execute(query)
     return result.scalars().all()
 
+
+@app.post("/dem/runs", response_model=schemas.DemRunResponse, dependencies=[Depends(get_current_user)])
+async def create_dem_run(run: schemas.DemRunCreate, db: AsyncSession = Depends(get_db)):
+    db_run = models.DemRun(**run.model_dump())
+    db.add(db_run)
+    await db.commit()
+    await db.refresh(db_run)
+    return db_run
+
+
+@app.get("/dem/runs/{id}", response_model=schemas.DemRunResponse, dependencies=[Depends(get_current_user)])
+async def get_dem_run(id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.DemRun).where(models.DemRun.id == id))
+    run = result.scalars().first()
+    if not run:
+        raise HTTPException(status_code=404, detail="DEM run not found")
+    return run
+
+
+@app.get("/dem/runs/{id}/status", response_model=schemas.DemRunStatusResponse, dependencies=[Depends(get_current_user)])
+async def get_dem_run_status(id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.DemRun).where(models.DemRun.id == id))
+    run = result.scalars().first()
+    if not run:
+        raise HTTPException(status_code=404, detail="DEM run not found")
+    pages_result = await db.execute(
+        select(models.DemPage).where(models.DemPage.run_id == id).order_by(models.DemPage.page_index)
+    )
+    pages = pages_result.scalars().all()
+    return schemas.DemRunStatusResponse(
+        id=run.id,
+        status=run.status,
+        total_pages=run.total_pages,
+        pages=pages,
+    )
+
+
+@app.post("/dem/pages", response_model=schemas.DemPageResponse, dependencies=[Depends(get_current_user)])
+async def create_dem_page(run_id: str, page_index: int, db: AsyncSession = Depends(get_db)):
+    db_page = models.DemPage(run_id=run_id, page_index=page_index)
+    db.add(db_page)
+    await db.commit()
+    await db.refresh(db_page)
+    return db_page
+
+
+@app.put("/dem/pages/{id}", response_model=schemas.DemPageResponse, dependencies=[Depends(get_current_user)])
+async def update_dem_page(id: str, update: dict, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.DemPage).where(models.DemPage.id == id))
+    page = result.scalars().first()
+    if not page:
+        raise HTTPException(status_code=404, detail="DEM page not found")
+    for key, value in update.items():
+        if hasattr(page, key):
+            setattr(page, key, value)
+    await db.commit()
+    await db.refresh(page)
+    return page
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8001))

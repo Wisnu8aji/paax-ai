@@ -194,3 +194,38 @@ class MemoryGraphMap(Base):
     graph_node_id = Column(String, primary_key=True)
     graph_version = Column(String, nullable=True)
     indexed_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+# DEM Phase 2 job orchestrator. Status remains String rather than a database
+# enum so new lifecycle variants do not require a separate enum migration.
+class DemRun(Base):
+    __tablename__ = "dem_runs"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    project_id = Column(String, index=True, nullable=True)
+    document_id = Column(String, nullable=False)
+    document_hash = Column(String, index=True, nullable=False)
+    file_name = Column(String, nullable=False)
+    total_pages = Column(Integer, nullable=False)
+    status = Column(String, nullable=False, default="created")
+    provider = Column(String, nullable=False)
+    prompt_version = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class DemPage(Base):
+    __tablename__ = "dem_pages"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    run_id = Column(GUID(), ForeignKey("dem_runs.id", ondelete="CASCADE"), index=True, nullable=False)
+    page_index = Column(Integer, nullable=False)
+    status = Column(String, nullable=False, default="queued")
+    attempt_count = Column(Integer, nullable=False, default=0)
+    failure_kind = Column(String, nullable=True)
+    error = Column(String, nullable=True)
+    input_hash = Column(String, nullable=True)
+    result = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

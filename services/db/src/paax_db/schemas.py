@@ -219,3 +219,53 @@ class DurableMemoryResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DemRunCreate(BaseModel):
+    project_id: Optional[str] = None
+    document_id: str
+    document_hash: str
+    file_name: str
+    total_pages: int
+    provider: str
+    prompt_version: str
+
+
+class DemRunResponse(BaseModel):
+    id: uuid.UUID
+    project_id: Optional[str] = None
+    document_id: str
+    document_hash: str
+    file_name: str
+    total_pages: int
+    status: str
+    provider: str
+    prompt_version: str
+    created_at: datetime
+    updated_at: datetime
+    completed_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DemPageResponse(BaseModel):
+    id: uuid.UUID
+    run_id: uuid.UUID
+    page_index: int
+    status: str
+    attempt_count: int
+    failure_kind: Optional[str] = None
+    error: Optional[str] = None
+    input_hash: Optional[str] = None
+    result: Optional[dict] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DemRunStatusResponse(BaseModel):
+    id: uuid.UUID
+    status: str
+    total_pages: int
+    pages: list[DemPageResponse]
