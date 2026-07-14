@@ -9,7 +9,7 @@ from app.main import app
 # raise_server_exceptions=False → exception tak tertangani di engine menjadi response 500
 # (seperti server HTTP sungguhan), bukan dilempar ulang ke test. Dibutuhkan untuk menguji
 # input invalid (mis. mode Kurva S salah) tanpa mengubah app/ (lihat aturan emas).
-client = TestClient(app, raise_server_exceptions=False)
+client = TestClient(app, headers={"X-Internal-Key": "test-internal-key"}, raise_server_exceptions=False)
 
 
 class TestHealth:

@@ -5,7 +5,7 @@ from app.main import app
 from app.rab.schedule import CPMRequest, TaskInput, compute_cpm
 
 
-client = TestClient(app, raise_server_exceptions=False)
+client = TestClient(app, headers={"X-Internal-Key": "test-internal-key"}, raise_server_exceptions=False)
 
 
 REFERENCE_TASKS = [

@@ -10,7 +10,7 @@ from app.scenario.models import ScenarioConfig, ScenarioLineInput, ScenarioParam
 from app.scenario.simulate import compute_scenarios
 
 
-client = TestClient(app, raise_server_exceptions=False)
+client = TestClient(app, headers={"X-Internal-Key": "test-internal-key"}, raise_server_exceptions=False)
 REPO_ROOT = Path(__file__).resolve().parents[3]
 STORE = load_data(REPO_ROOT / "data")
 BOOK = STORE.price_book("jateng")

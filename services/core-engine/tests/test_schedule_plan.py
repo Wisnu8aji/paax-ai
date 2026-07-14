@@ -9,7 +9,7 @@ from app.rab.schedule import (
 )
 
 
-client = TestClient(app, raise_server_exceptions=False)
+client = TestClient(app, headers={"X-Internal-Key": "test-internal-key"}, raise_server_exceptions=False)
 
 
 def by_id(result):
