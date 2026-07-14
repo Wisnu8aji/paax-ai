@@ -4,11 +4,15 @@ import pytest
 from pydantic import ValidationError
 
 from app.project_graph.models import (
+    Citation,
+    GraphQueryPlan,
+    GroundedAnswer,
     NodeProperty,
     NodeSourceRef,
     ProjectGraphEdge,
     ProjectGraphNode,
     ProjectGraphSnapshot,
+    RetrievalTrace,
     assert_single_located_on,
 )
 
@@ -129,3 +133,41 @@ def test_project_graph_snapshot_rejects_duplicate_located_on():
 
     with pytest.raises(ValidationError, match="active LOCATED_ON edges"):
         ProjectGraphSnapshot(**kwargs)
+
+
+def test_graph_query_plan_accepts_element_lookup_intent():
+    plan = GraphQueryPlan(
+        intent="ELEMENT_LOOKUP",
+        project_id="PRJ-001",
+        entities=[{"type": "element_type", "value": "K1"}],
+        filters={"level": None, "discipline": "structure"},
+        relations=["INSTANCE_OF", "LOCATED_ON", "DEFINED_BY", "DEPICTED_IN"],
+        traversal_mode="bfs",
+        traversal_depth=2,
+        budget_tokens=1400,
+    )
+
+    assert plan.intent == "ELEMENT_LOOKUP"
+    assert plan.traversal_mode == "bfs"
+    assert "INSTANCE_OF" in plan.relations
+
+
+def test_grounded_answer_carries_citations_and_retrieval_trace():
+    answer = GroundedAnswer(
+        answer="Kolom K1 ditemukan di lantai 1, grid B3.",
+        citations=[
+            Citation(citation_id="C1", document_id="DOC-PLHUT-001", sheet_id="S-49", page_number=49, title="Detail Kolom", evidence_ids=["EV-P049-121"]),
+        ],
+        data_status="grounded",
+        confidence=0.91,
+        missing_data=[],
+        conflicts=[],
+        retrieval_trace=RetrievalTrace(intent="ELEMENT_LOOKUP", seed_node_ids=["ELTYPE-COLUMN-K1"], node_count=8, edge_count=11, context_token_estimate=1120),
+    )
+
+    assert answer.data_status == "grounded"
+    assert answer.citations[0].page_number == 49
+    assert answer.retrieval_trace.context_token_estimate == 1120
+    # Golden Rule: GroundedAnswer never carries a computed RAB/volume number -
+    # only text, citations, and a confidence score about the retrieval itself.
+    assert not hasattr(answer, "computed_volume_m3")

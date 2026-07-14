@@ -142,3 +142,60 @@ class ProjectGraphSnapshot(BaseModel):
     def _check_located_on_invariant(self) -> "ProjectGraphSnapshot":
         assert_single_located_on(self.edges)
         return self
+
+
+QueryIntent = Literal[
+    "GENERAL_CHAT", "PROJECT_OVERVIEW", "DIRECT_FACT", "LIST_FILTER", "NODE_EXPLAIN",
+    "RELATIONSHIP", "PATH_QUERY", "SHEET_LOOKUP", "SPACE_LOOKUP", "ELEMENT_LOOKUP",
+    "MATERIAL_LOOKUP", "CONFLICT_LOOKUP", "MISSING_DATA", "NUMERIC_STORED_FACT",
+    "CALCULATION_REQUIRED", "RAB_QUERY", "SCHEDULE_QUERY",
+]
+
+
+class QueryEntity(BaseModel):
+    type: str
+    value: str
+
+
+class GraphQueryPlan(BaseModel):
+    """Section 16.4 structured query plan. traversal_mode/depth diisi query expansion
+    (Phase 4, belum dibangun) - Phase 1 hanya mendefinisikan bentuknya."""
+    intent: QueryIntent
+    project_id: str
+    entities: list[QueryEntity] = Field(default_factory=list)
+    filters: dict[str, Optional[str]] = Field(default_factory=dict)
+    relations: list[str] = Field(default_factory=list)
+    traversal_mode: Literal["bfs", "dfs", "shortest_path", "direct_lookup"] = "bfs"
+    traversal_depth: int = 2
+    budget_tokens: int = 1400
+
+
+class Citation(BaseModel):
+    citation_id: str
+    document_id: str
+    sheet_id: str
+    page_number: int
+    title: str
+    evidence_ids: list[str] = Field(default_factory=list)
+
+
+class RetrievalTrace(BaseModel):
+    intent: QueryIntent
+    seed_node_ids: list[str] = Field(default_factory=list)
+    node_count: int = 0
+    edge_count: int = 0
+    context_token_estimate: int = 0
+
+
+class GroundedAnswer(BaseModel):
+    """Section 18 answer contract. Command Room (Phase 5, belum dibangun) mengisi ini
+    dari hasil retrieval - LLM tidak pernah menulis angka RAB/volume ke sini,
+    hanya teks jawaban + citation + confidence tentang KUALITAS RETRIEVAL-nya
+    sendiri (bukan kepastian angka teknis)."""
+    answer: str
+    citations: list[Citation] = Field(default_factory=list)
+    data_status: Literal["grounded", "partial", "ungrounded", "not_ready"] = "grounded"
+    confidence: float = Field(ge=0.0, le=1.0)
+    missing_data: list[str] = Field(default_factory=list)
+    conflicts: list[str] = Field(default_factory=list)
+    retrieval_trace: RetrievalTrace

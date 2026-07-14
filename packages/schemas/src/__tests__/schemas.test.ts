@@ -20,6 +20,8 @@ import {
   DrawingEvidenceSheetSchema,
   DocumentManifestSchema,
   DrawingWorkItemsResultSchema,
+  GraphQueryPlanSchema,
+  GroundedAnswerSchema,
   ProjectGraphEdgeSchema,
   ProjectGraphNodeSchema,
   ProjectGraphSnapshotSchema,
@@ -643,5 +645,42 @@ describe("ProjectGraphSnapshotSchema", () => {
     };
 
     expect(() => ProjectGraphSnapshotSchema.parse(withDuplicateLocatedOn)).not.toThrow();
+  });
+});
+
+describe("GraphQueryPlanSchema", () => {
+  it("parses an ELEMENT_LOOKUP intent with BFS traversal", () => {
+    const plan = GraphQueryPlanSchema.parse({
+      intent: "ELEMENT_LOOKUP",
+      project_id: "PRJ-001",
+      entities: [{ type: "element_type", value: "K1" }],
+      filters: { level: null, discipline: "structure" },
+      relations: ["INSTANCE_OF", "LOCATED_ON", "DEFINED_BY", "DEPICTED_IN"],
+      traversal_mode: "bfs",
+      traversal_depth: 2,
+      budget_tokens: 1400,
+    });
+
+    expect(plan.intent).toBe("ELEMENT_LOOKUP");
+    expect(plan.relations).toContain("INSTANCE_OF");
+  });
+});
+
+describe("GroundedAnswerSchema", () => {
+  it("carries citations and a retrieval trace", () => {
+    const answer = GroundedAnswerSchema.parse({
+      answer: "Kolom K1 ditemukan di lantai 1, grid B3.",
+      citations: [
+        { citation_id: "C1", document_id: "DOC-PLHUT-001", sheet_id: "S-49", page_number: 49, title: "Detail Kolom", evidence_ids: ["EV-P049-121"] },
+      ],
+      data_status: "grounded",
+      confidence: 0.91,
+      missing_data: [],
+      conflicts: [],
+      retrieval_trace: { intent: "ELEMENT_LOOKUP", seed_node_ids: ["ELTYPE-COLUMN-K1"], node_count: 8, edge_count: 11, context_token_estimate: 1120 },
+    });
+
+    expect(answer.data_status).toBe("grounded");
+    expect(answer.citations[0].page_number).toBe(49);
   });
 });
