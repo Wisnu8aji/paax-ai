@@ -1541,6 +1541,34 @@ export const DrawingEvidenceSheetSchema = z.object({
 });
 export type DrawingEvidenceSheet = z.infer<typeof DrawingEvidenceSheetSchema>;
 
+export const PageManifestEntrySchema = z.object({
+  page_index: z.number().int().nonnegative(),
+  status: z.enum(["queued", "rendering", "calling_model", "complete", "retry_wait", "failed"]),
+  attempt_count: z.number().int().nonnegative().default(0),
+  input_hash: z.string().nullish(),
+  error: z.string().nullish(),
+});
+
+export const DocumentManifestSchema = z.object({
+  document_id: z.string(),
+  document_hash: z.string(),
+  total_pages: z.number().int().positive(),
+  pages: z.array(PageManifestEntrySchema).default([]),
+});
+export type DocumentManifest = z.infer<typeof DocumentManifestSchema>;
+
+export const ContinuationPatchSchema = z.object({
+  schema_version: z.literal("paax.dem.patch.v1").default("paax.dem.patch.v1"),
+  run_id: z.string(),
+  page_index: z.number().int().nonnegative(),
+  base_result_hash: z.string(),
+  cursor: z.string(),
+  append: z.record(z.array(z.unknown())).default({}),
+  is_complete: z.boolean(),
+  next_cursor: z.string().nullish(),
+});
+export type ContinuationPatch = z.infer<typeof ContinuationPatchSchema>;
+
 export const TkgIssueSchema = z.object({
   code: z.string(),
   severity: z.enum(["error", "warning"]),

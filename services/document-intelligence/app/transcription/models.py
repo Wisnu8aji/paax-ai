@@ -143,3 +143,40 @@ class DrawingEvidenceSheet(BaseModel):
     conflicts: list[str] = Field(default_factory=list)
     unclassified: list[str] = Field(default_factory=list)
     completion: SheetCompletion
+
+
+class PageManifestEntry(BaseModel):
+    """Status satu halaman dalam page-loop (§7.3 state machine spec).
+    input_hash membuat idempotency key (§7.6) - kalau document_hash+page_index+
+    input_hash+prompt_version+model_alias sama dan result valid sudah ada,
+    jangan panggil model ulang."""
+    page_index: int
+    status: Literal["queued", "rendering", "calling_model", "complete", "retry_wait", "failed"]
+    attempt_count: int = 0
+    input_hash: Optional[str] = None
+    error: Optional[str] = None
+
+
+class DocumentManifest(BaseModel):
+    """Manifest per-dokumen untuk resume (§7.7) - page 1-46 complete, page 47
+    failed/interrupted, page 48-88 queued: resume mulai dari task non-terminal,
+    TIDAK mengulang halaman complete."""
+    document_id: str
+    document_hash: str
+    total_pages: int
+    pages: list[PageManifestEntry] = Field(default_factory=list)
+
+
+class ContinuationPatch(BaseModel):
+    """Hasil continuation ketika satu halaman kehabisan token di tengah section
+    (§8.3). base_result_hash mencegah patch diterapkan ke versi salah - server
+    menggabungkan patch secara deterministik, TIDAK PERNAH mengirim seluruh
+    JSON sebelumnya kecuali untuk validasi ID (§8.2)."""
+    schema_version: Literal["paax.dem.patch.v1"] = "paax.dem.patch.v1"
+    run_id: str
+    page_index: int
+    base_result_hash: str
+    cursor: str
+    append: dict[str, list] = Field(default_factory=dict)
+    is_complete: bool
+    next_cursor: Optional[str] = None
