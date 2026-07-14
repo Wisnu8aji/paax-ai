@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import pytest
+from pydantic import ValidationError
 
 from app.project_graph.models import (
     NodeProperty,
     NodeSourceRef,
     ProjectGraphEdge,
     ProjectGraphNode,
+    ProjectGraphSnapshot,
     assert_single_located_on,
 )
 
@@ -89,3 +91,41 @@ def test_assert_single_located_on_raises_when_occurrence_has_two_locations():
 
     with pytest.raises(ValueError, match="ELOC-K1-L1-B2 has 2 active LOCATED_ON edges"):
         assert_single_located_on(edges)
+
+
+def _make_valid_snapshot_kwargs() -> dict:
+    return dict(
+        schema_version="paax.pckm.graph.v1",
+        project_id="PRJ-001",
+        snapshot_id="PGS-001",
+        document_ids=["DOC-PLHUT-001"],
+        dem_run_ids=["DEMRUN-20260714-001"],
+        page_count=88,
+        nodes=[
+            ProjectGraphNode(node_id="ELTYPE-COLUMN-K1", type="element_type", canonical_name="Kolom K1", discipline="structure", verification_status="extracted", confidence=0.9),
+            ProjectGraphNode(node_id="LEVEL-01", type="level", canonical_name="Lantai 1", discipline="general", verification_status="extracted", confidence=0.99),
+        ],
+        edges=[
+            ProjectGraphEdge(edge_id="E1", source="ELTYPE-COLUMN-K1", target="LEVEL-01", relation="LOCATED_ON", confidence_class="EXTRACTED", confidence=0.9),
+        ],
+    )
+
+
+def test_project_graph_snapshot_accepts_valid_graph():
+    snapshot = ProjectGraphSnapshot(**_make_valid_snapshot_kwargs())
+
+    assert snapshot.snapshot_id == "PGS-001"
+    assert len(snapshot.nodes) == 2
+    assert snapshot.aliases == []
+    assert snapshot.conflicts == []
+
+
+def test_project_graph_snapshot_rejects_duplicate_located_on():
+    kwargs = _make_valid_snapshot_kwargs()
+    kwargs["edges"] = [
+        ProjectGraphEdge(edge_id="E1", source="ELTYPE-COLUMN-K1", target="LEVEL-01", relation="LOCATED_ON", confidence_class="EXTRACTED", confidence=0.9),
+        ProjectGraphEdge(edge_id="E2", source="ELTYPE-COLUMN-K1", target="LEVEL-02", relation="LOCATED_ON", confidence_class="AMBIGUOUS", confidence=0.3),
+    ]
+
+    with pytest.raises(ValidationError, match="active LOCATED_ON edges"):
+        ProjectGraphSnapshot(**kwargs)

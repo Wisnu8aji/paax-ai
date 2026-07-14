@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from typing import Literal, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 NodeType = Literal[
     # Project/document nodes
@@ -117,3 +117,28 @@ def assert_single_located_on(edges: list[ProjectGraphEdge]) -> None:
     for node_id, count in located_on_count.items():
         if count > 1:
             raise ValueError(f"{node_id} has {count} active LOCATED_ON edges")
+
+
+class ProjectGraphSnapshot(BaseModel):
+    """Top-level PCKM (Section 11.2 schema utama). project_summary/communities/aliases/
+    conflicts/missing_information/indexes/quality tetap sebagai field-field
+    terpisah (belum semua diisi di Phase 1 - schema-only, lihat exit criteria
+    plan Phase 1: 'no provider integration yet'), tapi dideklarasikan sekarang
+    supaya Phase 3 (synthesis engine) tidak perlu migrasi schema lagi nanti."""
+    schema_version: Literal["paax.pckm.graph.v1"] = "paax.pckm.graph.v1"
+    project_id: str
+    snapshot_id: str
+    document_ids: list[str] = Field(default_factory=list)
+    dem_run_ids: list[str] = Field(default_factory=list)
+    page_count: int = 0
+    nodes: list[ProjectGraphNode] = Field(default_factory=list)
+    edges: list[ProjectGraphEdge] = Field(default_factory=list)
+    communities: list[str] = Field(default_factory=list)
+    aliases: list[str] = Field(default_factory=list)
+    conflicts: list[str] = Field(default_factory=list)
+    missing_information: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _check_located_on_invariant(self) -> "ProjectGraphSnapshot":
+        assert_single_located_on(self.edges)
+        return self
