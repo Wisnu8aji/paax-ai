@@ -20,9 +20,18 @@ async def process_document(
     db_client: DemDbClient,
     prompt_version: str,
     concurrency: int = DEFAULT_CONCURRENCY,
+    resume: bool = False,
 ) -> None:
     run = {"id": run_id, "document_id": document_id, "document_hash": document_hash}
-    page_rows = [await db_client.create_page(run_id, page_index) for page_index in range(total_pages)]
+    existing_by_index: dict[int, dict] = {}
+    if resume:
+        status = await db_client.get_run_status(run_id)
+        existing_by_index = {page["page_index"]: page for page in status["pages"]}
+
+    page_rows: list[dict] = []
+    for page_index in range(total_pages):
+        existing = existing_by_index.get(page_index)
+        page_rows.append(existing if existing is not None else await db_client.create_page(run_id, page_index))
     semaphore = asyncio.Semaphore(concurrency)
 
     async def bounded_process(page_index: int, page_id: str) -> None:
@@ -35,6 +44,7 @@ async def process_document(
                 provider=provider,
                 db_client=db_client,
                 prompt_version=prompt_version,
+                existing_page=existing_by_index.get(page_index),
             )
 
     await asyncio.gather(*(bounded_process(index, page_rows[index]["id"]) for index in range(total_pages)))
