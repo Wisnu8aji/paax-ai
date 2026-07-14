@@ -20,6 +20,7 @@ import {
   DrawingEvidenceSheetSchema,
   DocumentManifestSchema,
   DrawingWorkItemsResultSchema,
+  ProjectGraphEdgeSchema,
   ProjectGraphNodeSchema,
 } from "../index";
 
@@ -567,5 +568,36 @@ describe("ProjectGraphNodeSchema", () => {
 
     expect(node.aliases).toEqual([]);
     expect(node.properties).toEqual({});
+  });
+});
+
+describe("ProjectGraphEdgeSchema", () => {
+  it("parses an INSTANCE_OF relation with cross-sheet-inferred confidence", () => {
+    const edge = ProjectGraphEdgeSchema.parse({
+      edge_id: "EDGE-001",
+      source: "ELOC-K1-L1-B2",
+      target: "ELTYPE-COLUMN-K1",
+      relation: "INSTANCE_OF",
+      confidence_class: "CROSS_SHEET_INFERRED",
+      confidence: 0.89,
+      evidence_refs: ["EV-P032-017", "EV-P049-121"],
+    });
+
+    expect(edge.relation).toBe("INSTANCE_OF");
+    expect(edge.confidence_class).toBe("CROSS_SHEET_INFERRED");
+  });
+
+  it("accepts the two-step opening pattern relations", () => {
+    const voids = ProjectGraphEdgeSchema.parse({
+      edge_id: "EDGE-010", source: "WALL-01", target: "OPENING-01",
+      relation: "HAS_OPENING", confidence_class: "EXTRACTED", confidence: 0.9,
+    });
+    const fills = ProjectGraphEdgeSchema.parse({
+      edge_id: "EDGE-011", source: "OPENING-01", target: "DOOR-P1",
+      relation: "FILLED_BY", confidence_class: "EXTRACTED", confidence: 0.9,
+    });
+
+    expect(voids.relation).toBe("HAS_OPENING");
+    expect(fills.relation).toBe("FILLED_BY");
   });
 });
