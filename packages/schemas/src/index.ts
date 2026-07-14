@@ -1617,6 +1617,36 @@ export const ProjectGraphNodeSchema = z.object({
 });
 export type ProjectGraphNode = z.infer<typeof ProjectGraphNodeSchema>;
 
+export const EdgeRelationEnum = z.enum([
+  "CONTAINS", "PART_OF", "LOCATED_ON", "LOCATED_IN", "ALIGNED_TO", "DEFINED_BY",
+  "DEPICTED_IN", "REFERENCES", "SAME_AS", "POSSIBLY_SAME_AS", "USES_MATERIAL",
+  "HAS_FINISH", "HAS_DIMENSION", "HAS_TYPE", "INSTANCE_OF", "SERVES",
+  "CONNECTED_TO", "SUPPORTED_BY", "SUPPORTS", "ADJACENT_TO", "OPENS_TO",
+  "CONFLICTS_WITH", "HAS_EVIDENCE", "DERIVED_FROM", "SUPERSEDES",
+  "HAS_OPENING", "FILLED_BY",
+]);
+
+export const ConfidenceClassEnum = z.enum([
+  "EXTRACTED", "AI_INTERPRETED", "CROSS_SHEET_INFERRED", "HUMAN_VERIFIED", "CONFLICTING", "AMBIGUOUS",
+]);
+
+export const EdgeResolverSchema = z.object({
+  method: z.string(),
+  model: z.string().nullish(),
+});
+
+export const ProjectGraphEdgeSchema = z.object({
+  edge_id: z.string(),
+  source: z.string(),
+  target: z.string(),
+  relation: EdgeRelationEnum,
+  confidence_class: ConfidenceClassEnum,
+  confidence: z.number().min(0).max(1),
+  evidence_refs: z.array(z.string()).default([]),
+  resolver: EdgeResolverSchema.nullish(),
+});
+export type ProjectGraphEdge = z.infer<typeof ProjectGraphEdgeSchema>;
+
 export const TkgIssueSchema = z.object({
   code: z.string(),
   severity: z.enum(["error", "warning"]),
