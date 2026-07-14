@@ -29,6 +29,7 @@ not judgment about what's "important" to keep.
 from __future__ import annotations
 
 import base64
+import http.client
 import json
 import os
 from dataclasses import dataclass
@@ -159,6 +160,16 @@ class QwenDemAdapter:
             ) from exc
         except error.URLError as exc:
             raise DemProviderError(f"Qwen network error: {exc.reason}", kind="transient") from exc
+        except (http.client.HTTPException, ConnectionError, TimeoutError) as exc:
+            # http.client.IncompleteRead (and its siblings) are NOT caught by
+            # URLError/HTTPError -- observed live during the 88-page PLHUT run
+            # (page 50, 4-way concurrent HTTP requests): a chunked response
+            # got cut off mid-stream. This is exactly the class of failure
+            # transient retry exists for (a fresh request has every chance of
+            # succeeding), not a real invalid_output -- treating it as
+            # invalid_output would burn a repair-pass call for no reason and
+            # never actually retry the request itself.
+            raise DemProviderError(f"Qwen connection error: {exc}", kind="transient") from exc
 
         try:
             content = body["choices"][0]["message"]["content"]
