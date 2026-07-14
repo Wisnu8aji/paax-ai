@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 from app.transcription.models import (
+    ContinuationPatch,
     DemGeneration,
     DemObservations,
     DemSource,
+    DocumentManifest,
     DrawingEvidenceSheet,
     EvidenceItem,
     InterpretedValue,
     ObservationValue,
+    PageManifestEntry,
     ScaleCandidate,
     SheetCompletion,
     SheetIdentity,
@@ -106,3 +109,40 @@ def test_drawing_evidence_sheet_defaults_empty_observation_lists():
     assert sheet.ambiguities == []
     assert sheet.conflicts == []
     assert sheet.unclassified == []
+
+
+def test_document_manifest_tracks_page_status_and_resume_state():
+    manifest = DocumentManifest(
+        document_id="DOC-PLHUT-001",
+        document_hash="sha256:abc123",
+        total_pages=88,
+        pages=[
+            PageManifestEntry(page_index=0, status="complete", attempt_count=1, input_hash="sha256:page0hash"),
+            PageManifestEntry(page_index=1, status="complete", attempt_count=1, input_hash="sha256:page1hash"),
+            PageManifestEntry(page_index=46, status="failed", attempt_count=3, input_hash="sha256:page46hash", error="timeout after 30s"),
+            PageManifestEntry(page_index=47, status="queued", attempt_count=0, input_hash=None),
+        ],
+    )
+
+    complete_pages = [p for p in manifest.pages if p.status == "complete"]
+    assert len(complete_pages) == 2
+    failed = next(p for p in manifest.pages if p.page_index == 46)
+    assert failed.error == "timeout after 30s"
+    assert failed.attempt_count == 3
+
+
+def test_continuation_patch_carries_base_hash_and_cursor():
+    patch = ContinuationPatch(
+        schema_version="paax.dem.patch.v1",
+        run_id="DEMRUN-20260714-001",
+        page_index=5,
+        base_result_hash="sha256:previousresulthash",
+        cursor="grids:0",
+        append={"grids": [], "levels": [], "spaces": []},
+        is_complete=False,
+        next_cursor="element_labels:0",
+    )
+
+    assert patch.base_result_hash == "sha256:previousresulthash"
+    assert patch.is_complete is False
+    assert patch.next_cursor == "element_labels:0"

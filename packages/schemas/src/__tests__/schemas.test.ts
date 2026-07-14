@@ -16,7 +16,9 @@ import {
   SchedulePlanResult,
   AiKudaKudaSuggestionSchema,
   AiArsitekturAreaSuggestionSchema,
+  ContinuationPatchSchema,
   DrawingEvidenceSheetSchema,
+  DocumentManifestSchema,
   DrawingWorkItemsResultSchema,
 } from "../index";
 
@@ -488,5 +490,42 @@ describe("DrawingEvidenceSheetSchema", () => {
     expect(result.observations.texts).toEqual([]);
     expect(result.views).toEqual([]);
     expect(result.evidence).toEqual([]);
+  });
+});
+
+describe("DocumentManifestSchema", () => {
+  it("tracks page status and resume state", () => {
+    const manifest = DocumentManifestSchema.parse({
+      document_id: "DOC-PLHUT-001",
+      document_hash: "sha256:abc123",
+      total_pages: 88,
+      pages: [
+        { page_index: 0, status: "complete", attempt_count: 1, input_hash: "sha256:page0hash" },
+        { page_index: 46, status: "failed", attempt_count: 3, input_hash: "sha256:page46hash", error: "timeout after 30s" },
+        { page_index: 47, status: "queued", attempt_count: 0, input_hash: null },
+      ],
+    });
+
+    const failed = manifest.pages.find((p) => p.page_index === 46);
+    expect(failed?.error).toBe("timeout after 30s");
+    expect(failed?.attempt_count).toBe(3);
+  });
+});
+
+describe("ContinuationPatchSchema", () => {
+  it("carries base hash and cursor for deterministic merge", () => {
+    const patch = ContinuationPatchSchema.parse({
+      schema_version: "paax.dem.patch.v1",
+      run_id: "DEMRUN-20260714-001",
+      page_index: 5,
+      base_result_hash: "sha256:previousresulthash",
+      cursor: "grids:0",
+      append: { grids: [], levels: [], spaces: [] },
+      is_complete: false,
+      next_cursor: "element_labels:0",
+    });
+
+    expect(patch.base_result_hash).toBe("sha256:previousresulthash");
+    expect(patch.is_complete).toBe(false);
   });
 });
