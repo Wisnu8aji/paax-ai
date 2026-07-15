@@ -9,7 +9,7 @@ DEM adalah transkrip evidence PER HALAMAN. Tidak menyimpulkan bentuk bangunan
 global, tidak menggabungkan kode antar halaman, tidak menghitung volume/BOQ/RAB.
 Setiap fakta penting WAJIB punya evidence_refs + confidence + status - angka
 hasil kalkulasi (mis. luas dari dimensi) TIDAK PERNAH muncul di sini, itu
-tugas services/core-engine (Aturan Emas, CLAUDE.md §1).
+tugas services/core-engine (Aturan Emas proyek).
 """
 from __future__ import annotations
 
