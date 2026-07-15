@@ -1418,7 +1418,7 @@ export type TkgDocument = z.infer<typeof TkgDocumentSchema>;
 // Skema per docs/plans/drawing intelligence/
 // PAAX_DEM_PCKM_GRAPH_COMMAND_ROOM_PLAN_2026-07-14.md §6.
 // DEM adalah transkrip evidence PER HALAMAN — tidak ada angka hasil kalkulasi
-// di sini (Aturan Emas, CLAUDE.md §1). Setiap fakta wajib punya confidence +
+// di sini (Aturan Emas, AGENTS.md §1). Setiap fakta wajib punya confidence +
 // evidence_refs + status.
 
 export const DemStatusEnum = z.enum([
@@ -1575,7 +1575,7 @@ export type ContinuationPatch = z.infer<typeof ContinuationPatchSchema>;
 // Skema per docs/plans/drawing intelligence/
 // PAAX_DEM_PCKM_GRAPH_COMMAND_ROOM_PLAN_2026-07-14.md Section 11. PCKM adalah
 // model kanonik PROYEK - node/edge dibangun dari normalisasi DEM, tidak pernah
-// menyimpan angka hasil kalkulasi baru (Aturan Emas, CLAUDE.md Section 1).
+// menyimpan angka hasil kalkulasi baru (Aturan Emas, AGENTS.md Section 1).
 
 export const NodeTypeEnum = z.enum([
   "project", "document", "sheet", "view", "drawing_zone", "revision",
@@ -1660,6 +1660,20 @@ export const ProjectGraphSnapshotSchema = z.object({
   aliases: z.array(z.string()).default([]),
   conflicts: z.array(z.string()).default([]),
   missing_information: z.array(z.string()).default([]),
+}).superRefine((snapshot, context) => {
+  const locatedOnBySource = new Map<string, number>();
+  for (const edge of snapshot.edges) {
+    if (edge.relation !== "LOCATED_ON") continue;
+    const count = (locatedOnBySource.get(edge.source) ?? 0) + 1;
+    locatedOnBySource.set(edge.source, count);
+    if (count > 1) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `${edge.source} has ${count} active LOCATED_ON edges`,
+        path: ["edges"],
+      });
+    }
+  }
 });
 export type ProjectGraphSnapshot = z.infer<typeof ProjectGraphSnapshotSchema>;
 
@@ -1680,7 +1694,7 @@ export const GraphQueryPlanSchema = z.object({
   project_id: z.string(),
   entities: z.array(QueryEntitySchema).default([]),
   filters: z.record(z.string().nullable()).default({}),
-  relations: z.array(z.string()).default([]),
+  relations: z.array(EdgeRelationEnum).default([]),
   traversal_mode: z.enum(["bfs", "dfs", "shortest_path", "direct_lookup"]).default("bfs"),
   traversal_depth: z.number().int().nonnegative().default(2),
   budget_tokens: z.number().int().positive().default(1400),
