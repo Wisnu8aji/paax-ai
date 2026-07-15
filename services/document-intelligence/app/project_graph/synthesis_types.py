@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Protocol
+from typing import Any, Literal, Optional, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -31,7 +31,17 @@ class PckmProviderResult(BaseModel):
     payload: dict
     usage: ModelUsage
     model: str
+    prompt_version: str = "unknown"
     latency_ms: int = Field(ge=0)
+
+
+class PckmResolutionProposal(BaseModel):
+    """Strict, auditable provider output for a bounded review candidate."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    decision: Literal["merge", "keep_separate", "possibly_same", "requires_review"]
+    rationale: str = Field(min_length=1, max_length=2_000)
 
 
 class PckmSynthesisProvider(Protocol):

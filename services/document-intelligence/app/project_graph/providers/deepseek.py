@@ -7,12 +7,19 @@ import time
 from typing import Any, Callable
 from urllib import error, request
 
-from app.project_graph.synthesis_types import ModelUsage, PckmProviderResult, PckmSynthesisProvider, ResolutionCandidate
+from app.project_graph.synthesis_types import (
+    ModelUsage,
+    PckmProviderResult,
+    PckmResolutionProposal,
+    PckmSynthesisProvider,
+    ResolutionCandidate,
+)
 
 from .base import PckmProviderError
 
 DEFAULT_API_URL = "https://api.deepseek.com/chat/completions"
 SUPPORTED_MODEL_ALIASES = frozenset({"deepseek-v4-flash", "deepseek-v4-pro"})
+PROMPT_VERSION = "pckm-resolution-v1"
 
 
 def _as_non_negative_int(value: Any) -> int:
@@ -137,8 +144,12 @@ class DeepSeekPckmProvider(PckmSynthesisProvider):
                 {
                     "role": "system",
                     "content": (
-                        "Resolve the supplied construction knowledge candidate. "
-                        "Return only a JSON object with the proposed resolution."
+                        "Review the supplied construction knowledge candidate. "
+                        "Return only this JSON object, with no additional fields: "
+                        '{"decision":"merge|keep_separate|possibly_same|requires_review",'
+                        '"rationale":"brief evidence-grounded explanation"}. '
+                        "This is an auditable proposal only; do not calculate values or "
+                        "assert unprovided facts."
                     ),
                 },
                 {
@@ -162,13 +173,18 @@ class DeepSeekPckmProvider(PckmSynthesisProvider):
 
         response_payload = self._request_with_retry(req)
         result_payload = _content_payload(response_payload)
+        try:
+            proposal = PckmResolutionProposal.model_validate(result_payload)
+        except Exception as exc:
+            raise PckmProviderError("provider proposal contract was invalid") from exc
         elapsed_ms = max(0, int(round((self._clock() - started) * 1000)))
         response_model = response_payload.get("model")
         resolved_model = response_model.strip() if isinstance(response_model, str) and response_model.strip() else self.model_alias
         return PckmProviderResult(
-            payload=result_payload,
+            payload=proposal.model_dump(mode="json"),
             usage=_usage_from_response(response_payload),
             model=resolved_model,
+            prompt_version=PROMPT_VERSION,
             latency_ms=elapsed_ms,
         )
 
@@ -228,5 +244,6 @@ class DeepSeekPckmProvider(PckmSynthesisProvider):
 __all__ = [
     "DEFAULT_API_URL",
     "DeepSeekPckmProvider",
+    "PROMPT_VERSION",
     "SUPPORTED_MODEL_ALIASES",
 ]
