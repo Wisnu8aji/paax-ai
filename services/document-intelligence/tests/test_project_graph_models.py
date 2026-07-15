@@ -152,6 +152,15 @@ def test_graph_query_plan_accepts_element_lookup_intent():
     assert "INSTANCE_OF" in plan.relations
 
 
+def test_graph_query_plan_rejects_unknown_relation():
+    with pytest.raises(ValidationError):
+        GraphQueryPlan(
+            intent="SPACE_LOOKUP",
+            project_id="PRJ-001",
+            relations=["SERVED_BY"],
+        )
+
+
 def test_grounded_answer_carries_citations_and_retrieval_trace():
     answer = GroundedAnswer(
         answer="Kolom K1 ditemukan di lantai 1, grid B3.",

@@ -9,7 +9,7 @@ Knowledge Model graph").
 PCKM adalah model kanonik PROYEK (bukan per-halaman seperti DEM) - dibangun
 dengan MENORMALISASI dan MENGHUBUNGKAN DEM records, bukan menyimpan hasil
 kalkulasi baru. Setiap node/edge tetap membawa evidence_refs balik ke DEM
-asalnya (Aturan Emas, CLAUDE.md Section 1 - PCKM tidak pernah menghitung).
+asalnya (Aturan Emas, AGENTS.md Section 1 - PCKM tidak pernah menghitung).
 
 Taksonomi node_type/edge relation divalidasi terhadap skema industri IFC
 (IfcOpenShell, dipelajari sbg referensi taksonomi, bukan dependency) - pola
@@ -164,7 +164,7 @@ class GraphQueryPlan(BaseModel):
     project_id: str
     entities: list[QueryEntity] = Field(default_factory=list)
     filters: dict[str, Optional[str]] = Field(default_factory=dict)
-    relations: list[str] = Field(default_factory=list)
+    relations: list[EdgeRelation] = Field(default_factory=list)
     traversal_mode: Literal["bfs", "dfs", "shortest_path", "direct_lookup"] = "bfs"
     traversal_depth: int = 2
     budget_tokens: int = 1400

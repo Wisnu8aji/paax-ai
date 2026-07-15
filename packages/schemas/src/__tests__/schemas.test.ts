@@ -628,14 +628,7 @@ describe("ProjectGraphSnapshotSchema", () => {
     expect(snapshot.nodes).toHaveLength(2);
   });
 
-  // Note: unlike the Pydantic side (Task 6 Step 3), Zod's base .object() does not
-  // itself enforce the LOCATED_ON containment invariant - Zod has no direct
-  // equivalent of Pydantic's cross-field model_validator without a .superRefine()
-  // call, and this phase intentionally keeps the Zod schema a pure shape check.
-  // The invariant is enforced authoritatively on the Python/backend side (Task 6),
-  // which is where snapshots are actually constructed; the TS side only ever reads
-  // already-validated snapshots. Documented here, not silently skipped.
-  it("does NOT enforce the LOCATED_ON invariant on the TS side (documented asymmetry)", () => {
+  it("rejects more than one active LOCATED_ON edge for a source", () => {
     const withDuplicateLocatedOn = {
       ...validSnapshot,
       edges: [
@@ -644,7 +637,7 @@ describe("ProjectGraphSnapshotSchema", () => {
       ],
     };
 
-    expect(() => ProjectGraphSnapshotSchema.parse(withDuplicateLocatedOn)).not.toThrow();
+    expect(() => ProjectGraphSnapshotSchema.parse(withDuplicateLocatedOn)).toThrow();
   });
 });
 
@@ -663,6 +656,14 @@ describe("GraphQueryPlanSchema", () => {
 
     expect(plan.intent).toBe("ELEMENT_LOOKUP");
     expect(plan.relations).toContain("INSTANCE_OF");
+  });
+
+  it("rejects relations outside the graph relation vocabulary", () => {
+    expect(() => GraphQueryPlanSchema.parse({
+      intent: "SPACE_LOOKUP",
+      project_id: "PRJ-001",
+      relations: ["SERVED_BY"],
+    })).toThrow();
   });
 });
 
