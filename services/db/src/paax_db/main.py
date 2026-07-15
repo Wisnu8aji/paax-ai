@@ -196,6 +196,7 @@ async def retrieve_active_project_graph(
     result = await retrieve_project_graph(
         db, project_id=id, query=request.query, depth=request.depth,
         budget_tokens=request.budget_tokens, relations=set(request.relations),
+        traversal_mode=request.traversal_mode, target_node_id=request.target_node_id,
     )
     await db.commit()
     return {

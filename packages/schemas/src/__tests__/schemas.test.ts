@@ -685,6 +685,10 @@ describe("Project graph metrics transport schema", () => {
   it("parses scoped retrieval metrics", () => {
     expect(ProjectGraphMetricsResponseSchema.parse({ project_id: "PRJ-1", query_count: 2, success_count: 2, not_ready_count: 0, average_context_tokens: 640 })).toMatchObject({ query_count: 2 });
   });
+
+  it("accepts deterministic DFS and shortest-path modes", () => {
+    expect(ProjectGraphRetrievalRequestSchema.parse({ query: "Start", traversal_mode: "shortest_path", target_node_id: "C" })).toMatchObject({ traversal_mode: "shortest_path", target_node_id: "C" });
+  });
 });
 
 describe("GraphQueryPlanSchema", () => {

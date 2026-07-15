@@ -175,6 +175,8 @@ class ProjectGraphRetrievalRequest(BaseModel):
     depth: int = Field(default=2, ge=0, le=5)
     budget_tokens: int = Field(default=1400, ge=100, le=5000)
     relations: List[str] = Field(default_factory=list)
+    traversal_mode: str = Field(default="bfs", pattern="^(bfs|dfs|shortest_path|direct_lookup)$")
+    target_node_id: Optional[str] = None
 
 
 class ProjectGraphRetrievalResponse(BaseModel):

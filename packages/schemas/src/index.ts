@@ -1708,6 +1708,8 @@ export const ProjectGraphRetrievalRequestSchema = z.object({
   depth: z.number().int().min(0).max(5).default(2),
   budget_tokens: z.number().int().min(100).max(5000).default(1400),
   relations: z.array(z.string()).default([]),
+  traversal_mode: z.enum(["bfs", "dfs", "shortest_path", "direct_lookup"]).default("bfs"),
+  target_node_id: z.string().nullable().default(null),
 });
 export type ProjectGraphRetrievalRequest = z.infer<typeof ProjectGraphRetrievalRequestSchema>;
 
