@@ -1677,6 +1677,32 @@ export const ProjectGraphSnapshotSchema = z.object({
 });
 export type ProjectGraphSnapshot = z.infer<typeof ProjectGraphSnapshotSchema>;
 
+// Transport contract for the database snapshot activation boundary. Record
+// contents are normalized by document intelligence before this API is called.
+export const ProjectGraphSnapshotBuildRequestSchema = z.object({
+  snapshot_id: z.string(),
+  schema_version: z.string(),
+  source_manifest_hash: z.string(),
+  generation_metadata: z.record(z.unknown()),
+  nodes: z.array(z.record(z.unknown())).default([]),
+  edges: z.array(z.record(z.unknown())).default([]),
+  evidence: z.array(z.record(z.unknown())).default([]),
+  node_evidence: z.array(z.record(z.unknown())).default([]),
+  edge_evidence: z.array(z.record(z.unknown())).default([]),
+  aliases: z.array(z.record(z.unknown())).default([]),
+  communities: z.array(z.record(z.unknown())).default([]),
+});
+export type ProjectGraphSnapshotBuildRequest = z.infer<typeof ProjectGraphSnapshotBuildRequestSchema>;
+
+export const ProjectGraphSnapshotResponseSchema = z.object({
+  snapshot_id: z.string(),
+  project_id: z.string(),
+  schema_version: z.string(),
+  status: z.string(),
+  source_manifest_hash: z.string(),
+});
+export type ProjectGraphSnapshotResponse = z.infer<typeof ProjectGraphSnapshotResponseSchema>;
+
 export const QueryIntentEnum = z.enum([
   "GENERAL_CHAT", "PROJECT_OVERVIEW", "DIRECT_FACT", "LIST_FILTER", "NODE_EXPLAIN",
   "RELATIONSHIP", "PATH_QUERY", "SHEET_LOOKUP", "SPACE_LOOKUP", "ELEMENT_LOOKUP",

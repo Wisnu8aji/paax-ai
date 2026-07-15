@@ -25,6 +25,8 @@ import {
   ProjectGraphEdgeSchema,
   ProjectGraphNodeSchema,
   ProjectGraphSnapshotSchema,
+  ProjectGraphSnapshotBuildRequestSchema,
+  ProjectGraphSnapshotResponseSchema,
 } from "../index";
 
 // Contoh response aktual dari POST /rab/calculate engine
@@ -638,6 +640,31 @@ describe("ProjectGraphSnapshotSchema", () => {
     };
 
     expect(() => ProjectGraphSnapshotSchema.parse(withDuplicateLocatedOn)).toThrow();
+  });
+});
+
+describe("Project graph snapshot transport schemas", () => {
+  it("parses a persistence build request without calculated output", () => {
+    const request = ProjectGraphSnapshotBuildRequestSchema.parse({
+      snapshot_id: "PGS-002",
+      schema_version: "paax.pckm.graph.v1",
+      source_manifest_hash: "manifest-hash",
+      generation_metadata: { source: "document-intelligence" },
+      nodes: [{ node_id: "LEVEL-01" }],
+    });
+
+    expect(request.edges).toEqual([]);
+    expect(request.nodes).toHaveLength(1);
+  });
+
+  it("parses the active snapshot response", () => {
+    expect(ProjectGraphSnapshotResponseSchema.parse({
+      snapshot_id: "PGS-002",
+      project_id: "PRJ-001",
+      schema_version: "paax.pckm.graph.v1",
+      status: "active",
+      source_manifest_hash: "manifest-hash",
+    }).status).toBe("active");
   });
 });
 
