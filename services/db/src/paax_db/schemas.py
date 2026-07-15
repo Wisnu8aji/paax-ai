@@ -146,3 +146,25 @@ class ProjectMemberResponse(ProjectMemberCreate):
     added_at: datetime
     
     model_config = ConfigDict(from_attributes=True)
+
+
+class ProjectGraphSnapshotBuildRequest(BaseModel):
+    snapshot_id: str
+    schema_version: str
+    source_manifest_hash: str
+    generation_metadata: Dict[str, Any]
+    nodes: List[Dict[str, Any]] = Field(default_factory=list)
+    edges: List[Dict[str, Any]] = Field(default_factory=list)
+    evidence: List[Dict[str, Any]] = Field(default_factory=list)
+    node_evidence: List[Dict[str, Any]] = Field(default_factory=list)
+    edge_evidence: List[Dict[str, Any]] = Field(default_factory=list)
+    aliases: List[Dict[str, Any]] = Field(default_factory=list)
+    communities: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class ProjectGraphSnapshotResponse(BaseModel):
+    snapshot_id: str
+    project_id: str
+    schema_version: str
+    status: str
+    source_manifest_hash: str

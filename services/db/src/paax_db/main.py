@@ -9,6 +9,7 @@ from sqlalchemy.future import select
 from . import models, schemas
 from .database import get_db
 from .auth import get_current_user, RoleChecker, User
+from .project_graph_repository import build_and_activate_snapshot, get_active_snapshot
 
 app = FastAPI(title="PAAX DB API", description="Server-side persistent storage for PAAX AI")
 
@@ -129,6 +130,50 @@ async def save_tkg(id: str, tkg_data: schemas.TkgPayload, db: AsyncSession = Dep
         
     await db.commit()
     return {"status": "success"}
+
+
+@app.post(
+    "/projects/{id}/project-graph/snapshots",
+    response_model=schemas.ProjectGraphSnapshotResponse,
+    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+)
+async def build_project_graph_snapshot(
+    id: str,
+    request: schemas.ProjectGraphSnapshotBuildRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    project = (await db.execute(select(models.Project).where(models.Project.id == id))).scalars().first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    snapshot = await build_and_activate_snapshot(
+        db,
+        project_id=id,
+        snapshot_id=request.snapshot_id,
+        schema_version=request.schema_version,
+        source_manifest_hash=request.source_manifest_hash,
+        generation_metadata=request.generation_metadata,
+        nodes=request.nodes,
+        edges=request.edges,
+        evidence=request.evidence,
+        node_evidence=request.node_evidence,
+        edge_evidence=request.edge_evidence,
+        aliases=request.aliases,
+        communities=request.communities,
+    )
+    await db.commit()
+    return snapshot
+
+
+@app.get(
+    "/projects/{id}/project-graph/snapshot",
+    response_model=schemas.ProjectGraphSnapshotResponse,
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def read_active_project_graph_snapshot(id: str, db: AsyncSession = Depends(get_db)):
+    snapshot = await get_active_snapshot(db, id)
+    if snapshot is None:
+        raise HTTPException(status_code=404, detail="Project graph is not ready")
+    return snapshot
 
 @app.post("/audit/tool-call", response_model=schemas.ToolCallAuditResponse, dependencies=[Depends(get_current_user)])
 async def create_tool_call_audit(audit: schemas.ToolCallAuditCreate, db: AsyncSession = Depends(get_db)):
