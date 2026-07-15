@@ -258,3 +258,20 @@ class ProjectGraphQueryLog(Base):
     latency_ms = Column(Integer, nullable=True)
     outcome = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ProjectGraphCorrection(Base):
+    __tablename__ = "project_graph_corrections"
+
+    id = Column(String, primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), nullable=False, index=True)
+    target_type = Column(String, nullable=False)
+    target_id = Column(String, nullable=False)
+    correction_type = Column(String, nullable=False)
+    proposed_value = Column(JSON_DOCUMENT, nullable=False)
+    rationale = Column(Text, nullable=False)
+    status = Column(String, nullable=False, default="pending", index=True)
+    resolution_note = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    resolved_at = Column(DateTime(timezone=True), nullable=True)

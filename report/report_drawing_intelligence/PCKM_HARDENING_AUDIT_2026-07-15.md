@@ -11,11 +11,13 @@ Tanggal: 2026-07-15
 - Rate limit retrieval memakai query log database per proyek dan window satu menit; konfigurasi `PCKM_RETRIEVAL_LIMIT_PER_MINUTE` berlaku lintas instance yang memakai database yang sama.
 - Command Room melakukan retrieval server-side; browser tidak menerima graph lengkap.
 - Bridge RAB tidak memproduksi nilai perhitungan dan membutuhkan approval manusia.
+- Koreksi graph manusia tersimpan sebagai proposal immutable per project/snapshot; status dapat diselesaikan atau ditolak tanpa mengubah snapshot aktif.
 
 ## Observability
 
 - `GET /projects/{id}/project-graph/metrics` menyediakan jumlah query, hasil sukses, status graph belum siap, serta rata-rata token context.
 - Endpoint metrics diverifikasi tidak mencampur log antar proyek.
+- Workflow koreksi diverifikasi hanya mencatat review dan mempertahankan node snapshot aktif tanpa perubahan.
 
 ## Batas operasional
 
@@ -24,6 +26,6 @@ Tanggal: 2026-07-15
 
 ## Verifikasi
 
-- Database: `18 passed, 1 skipped`.
-- Shared schema: `32 passed`.
+- Database: `23 passed, 1 skipped`.
+- Shared schema: `34 passed`.
 - Shared schema typecheck: lulus.

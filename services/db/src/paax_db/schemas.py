@@ -194,3 +194,24 @@ class ProjectGraphMetricsResponse(BaseModel):
     success_count: int
     not_ready_count: int
     average_context_tokens: float
+
+
+class ProjectGraphCorrectionCreate(BaseModel):
+    id: str
+    snapshot_id: str
+    target_type: str
+    target_id: str
+    correction_type: str
+    proposed_value: Dict[str, Any]
+    rationale: str = Field(min_length=1, max_length=4000)
+
+
+class ProjectGraphCorrectionResolve(BaseModel):
+    status: str = Field(pattern="^(resolved|rejected)$")
+    resolution_note: str = Field(min_length=1, max_length=4000)
+
+
+class ProjectGraphCorrectionResponse(ProjectGraphCorrectionCreate):
+    project_id: str
+    status: str
+    resolution_note: Optional[str] = None

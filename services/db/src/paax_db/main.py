@@ -231,6 +231,45 @@ async def get_project_graph_metrics(id: str, db: AsyncSession = Depends(get_db))
         "average_context_tokens": (sum(log.context_token_estimate for log in logs) / count) if count else 0.0,
     }
 
+
+@app.post(
+    "/projects/{id}/project-graph/corrections",
+    response_model=schemas.ProjectGraphCorrectionResponse,
+    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+)
+async def create_project_graph_correction(
+    id: str, request: schemas.ProjectGraphCorrectionCreate, db: AsyncSession = Depends(get_db)
+):
+    snapshot = await get_active_snapshot(db, id)
+    if snapshot is None or snapshot.snapshot_id != request.snapshot_id:
+        raise HTTPException(status_code=409, detail="Correction must target the active project graph snapshot")
+    correction = models.ProjectGraphCorrection(project_id=id, status="pending", **request.model_dump())
+    db.add(correction)
+    await db.commit()
+    return correction
+
+
+@app.post(
+    "/projects/{id}/project-graph/corrections/{correction_id}/resolve",
+    response_model=schemas.ProjectGraphCorrectionResponse,
+    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+)
+async def resolve_project_graph_correction(
+    id: str, correction_id: str, request: schemas.ProjectGraphCorrectionResolve, db: AsyncSession = Depends(get_db)
+):
+    correction = (await db.execute(select(models.ProjectGraphCorrection).where(
+        models.ProjectGraphCorrection.id == correction_id,
+        models.ProjectGraphCorrection.project_id == id,
+        models.ProjectGraphCorrection.status == "pending",
+    ))).scalars().first()
+    if correction is None:
+        raise HTTPException(status_code=404, detail="Pending graph correction not found")
+    correction.status = request.status
+    correction.resolution_note = request.resolution_note
+    correction.resolved_at = _utc_now()
+    await db.commit()
+    return correction
+
 @app.post("/audit/tool-call", response_model=schemas.ToolCallAuditResponse, dependencies=[Depends(get_current_user)])
 async def create_tool_call_audit(audit: schemas.ToolCallAuditCreate, db: AsyncSession = Depends(get_db)):
     db_audit = models.ToolCallAudit(**audit.model_dump())

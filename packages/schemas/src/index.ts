@@ -1732,6 +1732,17 @@ export const ProjectGraphMetricsResponseSchema = z.object({
 });
 export type ProjectGraphMetricsResponse = z.infer<typeof ProjectGraphMetricsResponseSchema>;
 
+export const ProjectGraphCorrectionCreateSchema = z.object({
+  id: z.string(), snapshot_id: z.string(), target_type: z.string(), target_id: z.string(),
+  correction_type: z.string(), proposed_value: z.record(z.unknown()), rationale: z.string().min(1).max(4000),
+});
+export const ProjectGraphCorrectionResolveSchema = z.object({
+  status: z.enum(["resolved", "rejected"]), resolution_note: z.string().min(1).max(4000),
+});
+export const ProjectGraphCorrectionResponseSchema = ProjectGraphCorrectionCreateSchema.extend({
+  project_id: z.string(), status: z.string(), resolution_note: z.string().nullable().default(null),
+});
+
 export const QueryIntentEnum = z.enum([
   "GENERAL_CHAT", "PROJECT_OVERVIEW", "DIRECT_FACT", "LIST_FILTER", "NODE_EXPLAIN",
   "RELATIONSHIP", "PATH_QUERY", "SHEET_LOOKUP", "SPACE_LOOKUP", "ELEMENT_LOOKUP",
