@@ -34,10 +34,15 @@ class FakeClock:
         return next(self._values)
 
 
-def _response(*, usage: dict | None = None, model: str = "deepseek-v4-flash") -> FakeResponse:
+def _response(
+    *,
+    usage: dict | None = None,
+    model: str = "deepseek-v4-flash",
+    content: str = '{"decision":"requires_review","rationale":"Evidence remains ambiguous."}',
+) -> FakeResponse:
     payload = {
         "model": model,
-        "choices": [{"message": {"content": '{"accepted": true}'}}],
+        "choices": [{"message": {"content": content}}],
     }
     if usage is not None:
         payload["usage"] = usage
@@ -81,7 +86,11 @@ def test_resolve_captures_all_usage_fields_and_latency_from_injected_clock():
 
     result = provider.resolve({"candidate_id": "C-1", "kind": "alias"})
 
-    assert result.payload == {"accepted": True}
+    assert result.payload == {
+        "decision": "requires_review",
+        "rationale": "Evidence remains ambiguous.",
+    }
+    assert result.prompt_version == "pckm-resolution-v1"
     assert result.model == "provider-flash-2026"
     assert result.latency_ms == 125
     assert result.usage.prompt_tokens == 11
@@ -135,7 +144,7 @@ def test_resolve_retries_rate_limit_with_bounded_exponential_backoff():
 
     result = provider.resolve({"candidate_id": "C-3"})
 
-    assert result.payload == {"accepted": True}
+    assert result.payload["decision"] == "requires_review"
     assert sleeps == [0.25, 0.3]
     assert calls == 3
 
@@ -187,7 +196,7 @@ def test_resolve_retries_server_error_then_succeeds():
         max_retries=2,
     )
 
-    assert provider.resolve({"candidate_id": "C-4"}).payload == {"accepted": True}
+    assert provider.resolve({"candidate_id": "C-4"}).payload["decision"] == "requires_review"
     assert calls == 2
 
 
@@ -246,3 +255,14 @@ def test_resolve_classifies_invalid_message_content_json():
         provider.resolve({"candidate_id": "C-7"})
 
     assert exc_info.value.retryable is False
+
+
+def test_resolve_rejects_a_payload_outside_the_pckm_proposal_contract():
+    provider = DeepSeekPckmProvider(
+        api_key="test-key",
+        urlopen=lambda request, timeout: _response(content='{"decision":"merge"}'),
+        clock=FakeClock(22.0, 22.001),
+    )
+
+    with pytest.raises(PckmProviderError, match="proposal contract"):
+        provider.resolve({"candidate_id": "C-8"})
