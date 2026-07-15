@@ -46,6 +46,11 @@ EXPECTED_DISCIPLINE_MAPPING = {
     "struktur": "structure",
 }
 
+pytestmark = pytest.mark.skipif(
+    not any(FIXTURE_DIR.glob("page-*.json")),
+    reason="stored 88-page drawing fixture is not available in this checkout",
+)
+
 
 def _modules():
     normalizer = importlib.import_module("app.project_graph.normalizer")

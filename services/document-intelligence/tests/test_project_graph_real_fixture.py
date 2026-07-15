@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from app.transcription.models import DrawingEvidenceSheet
 
 
@@ -12,6 +14,11 @@ FIXTURE_DIR = (
     / "report_drawing_intelligence"
     / "dem_extraction_88pages"
     / "pages"
+)
+
+pytestmark = pytest.mark.skipif(
+    not any(FIXTURE_DIR.glob("page-*.json")),
+    reason="stored 88-page drawing fixture is not available in this checkout",
 )
 
 

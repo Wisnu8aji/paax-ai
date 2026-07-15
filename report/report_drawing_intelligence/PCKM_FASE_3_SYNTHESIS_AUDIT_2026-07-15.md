@@ -52,3 +52,7 @@ The zero physical-occurrence merge count is intentional. No repeated label had s
 - Graph refresh: `graphify update . --force` completed successfully (`5,599` nodes, `10,786` edges, `385` communities).
 
 The full suite emitted two dependency warnings: the Starlette TestClient deprecation and the absence of ccache for Paddle extension compilation.
+
+## Fixture Availability
+
+The 88-page source dataset is an intentionally local audit artifact and is not tracked by Git. The fixture-audit and real-fixture benchmark modules therefore skip only when `dem_extraction_88pages/pages/page-0000.json` is unavailable in a checkout. In a workspace that contains the dataset, their full anchor assertions run and must pass; the local verification recorded above used all 88 pages.
