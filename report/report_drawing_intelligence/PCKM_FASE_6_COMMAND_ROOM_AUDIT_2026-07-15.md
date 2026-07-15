@@ -25,3 +25,9 @@ Tanggal: 2026-07-15
 ## Kelanjutan fase
 
 Fase berikutnya menambah hardening: rate limit, cache retrieval, security checks, telemetry, dan benchmark context sebelum bridge RAB yang hanya mempersiapkan handoff ke Core Engine.
+
+## Addendum conversation context
+
+- Conversation menyimpan summary deterministik dari enam pesan terbaru.
+- Summary dibawa sebagai data context bounded ke route chat; ia tidak diperlakukan sebagai instruksi.
+- History penuh tidak lagi menjadi satu-satunya context lintas turn.

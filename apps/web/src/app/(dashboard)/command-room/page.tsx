@@ -358,6 +358,7 @@ export default function CommandRoomPage() {
       effort: reasoningEffort,
       thinking: resolvedThinking,
       projectId: conversation.folderId,
+      conversationSummary: conversation.summary,
     });
   }
 

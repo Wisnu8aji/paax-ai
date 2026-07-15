@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createConversation,
   listConversations,
+  summarizeConversation,
   toggleArchived,
   togglePinned,
 } from "./chat-history";
@@ -30,6 +31,13 @@ describe("chat history conversation flags", () => {
 
     expect(conversation.pinned).toBe(false);
     expect(conversation.archived).toBe(false);
+  });
+
+  it("creates a bounded deterministic summary from recent messages", () => {
+    expect(summarizeConversation([
+      { id: "1", role: "user", text: "Pertanyaan J2", time: "10:00" },
+      { id: "2", role: "assistant", text: "Ada di A-21", time: "10:01" },
+    ])).toContain("Pengguna: Pertanyaan J2");
   });
 
   it("toggles pinned and archived flags in storage", () => {
