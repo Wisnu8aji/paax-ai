@@ -29,6 +29,9 @@ import {
   ProjectGraphSnapshotResponseSchema,
   ProjectGraphRetrievalRequestSchema,
   ProjectGraphRetrievalResponseSchema,
+  ProjectGraphMetricsResponseSchema,
+  ProjectGraphCorrectionCreateSchema,
+  ProjectGraphCorrectionResolveSchema,
 } from "../index";
 
 // Contoh response aktual dari POST /rab/calculate engine
@@ -677,6 +680,23 @@ describe("Project graph retrieval transport schemas", () => {
 
   it("parses a graph-not-ready response", () => {
     expect(ProjectGraphRetrievalResponseSchema.parse({ status: "not_ready" }).nodes).toEqual([]);
+  });
+});
+
+describe("Project graph metrics transport schema", () => {
+  it("parses scoped retrieval metrics", () => {
+    expect(ProjectGraphMetricsResponseSchema.parse({ project_id: "PRJ-1", query_count: 2, success_count: 2, not_ready_count: 0, average_context_tokens: 640 })).toMatchObject({ query_count: 2 });
+  });
+
+  it("accepts deterministic DFS and shortest-path modes", () => {
+    expect(ProjectGraphRetrievalRequestSchema.parse({ query: "Start", traversal_mode: "shortest_path", target_node_id: "C" })).toMatchObject({ traversal_mode: "shortest_path", target_node_id: "C" });
+  });
+});
+
+describe("Project graph correction transport schemas", () => {
+  it("requires an explicit human correction and resolution", () => {
+    expect(ProjectGraphCorrectionCreateSchema.parse({ id: "C1", snapshot_id: "S1", target_type: "node", target_id: "N1", correction_type: "rename", proposed_value: { canonical_name: "J2" }, rationale: "Sheet label" }).target_id).toBe("N1");
+    expect(ProjectGraphCorrectionResolveSchema.parse({ status: "resolved", resolution_note: "Approved" }).status).toBe("resolved");
   });
 });
 

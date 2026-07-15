@@ -175,6 +175,8 @@ class ProjectGraphRetrievalRequest(BaseModel):
     depth: int = Field(default=2, ge=0, le=5)
     budget_tokens: int = Field(default=1400, ge=100, le=5000)
     relations: List[str] = Field(default_factory=list)
+    traversal_mode: str = Field(default="bfs", pattern="^(bfs|dfs|shortest_path|direct_lookup)$")
+    target_node_id: Optional[str] = None
 
 
 class ProjectGraphRetrievalResponse(BaseModel):
@@ -184,3 +186,32 @@ class ProjectGraphRetrievalResponse(BaseModel):
     edges: List[Dict[str, Any]] = Field(default_factory=list)
     evidence: List[Dict[str, Any]] = Field(default_factory=list)
     context_token_estimate: int = 0
+
+
+class ProjectGraphMetricsResponse(BaseModel):
+    project_id: str
+    query_count: int
+    success_count: int
+    not_ready_count: int
+    average_context_tokens: float
+
+
+class ProjectGraphCorrectionCreate(BaseModel):
+    id: str
+    snapshot_id: str
+    target_type: str
+    target_id: str
+    correction_type: str
+    proposed_value: Dict[str, Any]
+    rationale: str = Field(min_length=1, max_length=4000)
+
+
+class ProjectGraphCorrectionResolve(BaseModel):
+    status: str = Field(pattern="^(resolved|rejected)$")
+    resolution_note: str = Field(min_length=1, max_length=4000)
+
+
+class ProjectGraphCorrectionResponse(ProjectGraphCorrectionCreate):
+    project_id: str
+    status: str
+    resolution_note: Optional[str] = None

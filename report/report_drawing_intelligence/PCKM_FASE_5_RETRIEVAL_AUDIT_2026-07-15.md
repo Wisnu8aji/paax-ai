@@ -24,3 +24,11 @@ Tanggal: 2026-07-15
 ## Kelanjutan fase
 
 Fase berikutnya menghubungkan endpoint retrieval ini ke Command Room, memakai context terbatas dan sitasi evidence untuk jawaban faktual.
+
+## Addendum penyelesaian retrieval
+
+- Vocabulary proyek dibangun dari canonical name dan alias pada snapshot aktif.
+- Seed diberi urutan deterministik: exact alias, exact name, prefix, substring, lalu coverage token.
+- Query plan audit sekarang mencatat intent, traversal mode, target path, relasi, depth, dan kecocokan vocabulary.
+- Traversal mendukung BFS, DFS, direct lookup, dan shortest path.
+- Benchmark fixture memverifikasi expected seed/evidence serta budget context tanpa model generatif.

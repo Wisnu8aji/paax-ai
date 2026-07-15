@@ -1,4 +1,4 @@
-import { saveConversation, listConversations } from "./chat-history";
+import { saveConversation, listConversations, summarizeConversation } from "./chat-history";
 import type { RunPhase, CommandRoomStreamEvent } from "./chat-stream-events";
 import { formatRunDuration } from "./format-run-duration";
 
@@ -113,6 +113,7 @@ export type StartChatRunInput = {
   effort?: "low" | "medium" | "high" | "max";
   thinking?: "on" | "off";
   projectId?: string | null;
+  conversationSummary?: string;
 };
 
 type Listener = () => void;
@@ -278,6 +279,7 @@ class ChatRunStore {
           reasoningEffort: input.effort,
           thinking: input.thinking,
           projectId: input.projectId,
+          conversationSummary: input.conversationSummary,
         }),
         signal: controller.signal,
       });
@@ -445,6 +447,7 @@ class ChatRunStore {
     conv = {
       ...conv,
       messages: [...conv.messages, newMsg],
+      summary: summarizeConversation([...conv.messages, newMsg]),
     };
     saveConversation(conv);
     this.updateRun(runId, { phase: "updating_conversation", assistantMessageId: newMsg.id });

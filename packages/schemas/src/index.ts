@@ -1708,6 +1708,8 @@ export const ProjectGraphRetrievalRequestSchema = z.object({
   depth: z.number().int().min(0).max(5).default(2),
   budget_tokens: z.number().int().min(100).max(5000).default(1400),
   relations: z.array(z.string()).default([]),
+  traversal_mode: z.enum(["bfs", "dfs", "shortest_path", "direct_lookup"]).default("bfs"),
+  target_node_id: z.string().nullable().default(null),
 });
 export type ProjectGraphRetrievalRequest = z.infer<typeof ProjectGraphRetrievalRequestSchema>;
 
@@ -1720,6 +1722,26 @@ export const ProjectGraphRetrievalResponseSchema = z.object({
   context_token_estimate: z.number().int().nonnegative().default(0),
 });
 export type ProjectGraphRetrievalResponse = z.infer<typeof ProjectGraphRetrievalResponseSchema>;
+
+export const ProjectGraphMetricsResponseSchema = z.object({
+  project_id: z.string(),
+  query_count: z.number().int().nonnegative(),
+  success_count: z.number().int().nonnegative(),
+  not_ready_count: z.number().int().nonnegative(),
+  average_context_tokens: z.number().nonnegative(),
+});
+export type ProjectGraphMetricsResponse = z.infer<typeof ProjectGraphMetricsResponseSchema>;
+
+export const ProjectGraphCorrectionCreateSchema = z.object({
+  id: z.string(), snapshot_id: z.string(), target_type: z.string(), target_id: z.string(),
+  correction_type: z.string(), proposed_value: z.record(z.unknown()), rationale: z.string().min(1).max(4000),
+});
+export const ProjectGraphCorrectionResolveSchema = z.object({
+  status: z.enum(["resolved", "rejected"]), resolution_note: z.string().min(1).max(4000),
+});
+export const ProjectGraphCorrectionResponseSchema = ProjectGraphCorrectionCreateSchema.extend({
+  project_id: z.string(), status: z.string(), resolution_note: z.string().nullable().default(null),
+});
 
 export const QueryIntentEnum = z.enum([
   "GENERAL_CHAT", "PROJECT_OVERVIEW", "DIRECT_FACT", "LIST_FILTER", "NODE_EXPLAIN",

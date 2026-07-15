@@ -1,5 +1,7 @@
 import os
 import datetime
+import hashlib
+import json
 from typing import List, Dict, Any
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -185,12 +187,26 @@ async def read_active_project_graph_snapshot(id: str, db: AsyncSession = Depends
 async def retrieve_active_project_graph(
     id: str, request: schemas.ProjectGraphRetrievalRequest, db: AsyncSession = Depends(get_db)
 ):
+    limit = int(os.getenv("PCKM_RETRIEVAL_LIMIT_PER_MINUTE", "60"))
+    window_start = _utc_now() - datetime.timedelta(minutes=1)
+    recent_queries = (await db.execute(select(models.ProjectGraphQueryLog.id).where(
+        models.ProjectGraphQueryLog.project_id == id,
+        models.ProjectGraphQueryLog.created_at >= window_start,
+    ))).all()
+    if len(recent_queries) >= limit:
+        raise HTTPException(status_code=429, detail="Project graph retrieval rate limit exceeded")
+    snapshot = await get_active_snapshot(db, id)
+    cache_key = hashlib.sha256(json.dumps({"project": id, "snapshot": snapshot.snapshot_id if snapshot else None, "request": request.model_dump()}, sort_keys=True).encode()).hexdigest()
+    cached = await db.get(models.ProjectGraphRetrievalCache, cache_key)
+    if cached and _as_aware_utc(cached.expires_at) > _utc_now():
+        return cached.payload
     result = await retrieve_project_graph(
         db, project_id=id, query=request.query, depth=request.depth,
         budget_tokens=request.budget_tokens, relations=set(request.relations),
+        traversal_mode=request.traversal_mode, target_node_id=request.target_node_id,
     )
     await db.commit()
-    return {
+    response = {
         "status": result.status,
         "snapshot_id": result.snapshot_id,
         "nodes": [{"node_id": node.node_id, "type": node.node_type, "name": node.canonical_name,
@@ -202,6 +218,68 @@ async def retrieve_active_project_graph(
                      for item in result.evidence],
         "context_token_estimate": result.context_token_estimate,
     }
+    if result.snapshot_id:
+        await db.merge(models.ProjectGraphRetrievalCache(cache_key=cache_key, project_id=id, snapshot_id=result.snapshot_id, payload=response, expires_at=_utc_now() + datetime.timedelta(seconds=int(os.getenv("PCKM_RETRIEVAL_CACHE_SECONDS", "300")))))
+        await db.commit()
+    return response
+
+
+@app.get(
+    "/projects/{id}/project-graph/metrics",
+    response_model=schemas.ProjectGraphMetricsResponse,
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def get_project_graph_metrics(id: str, db: AsyncSession = Depends(get_db)):
+    logs = (await db.execute(select(models.ProjectGraphQueryLog).where(
+        models.ProjectGraphQueryLog.project_id == id,
+    ))).scalars().all()
+    count = len(logs)
+    return {
+        "project_id": id,
+        "query_count": count,
+        "success_count": sum(log.outcome == "success" for log in logs),
+        "not_ready_count": sum(log.outcome == "not_ready" for log in logs),
+        "average_context_tokens": (sum(log.context_token_estimate for log in logs) / count) if count else 0.0,
+    }
+
+
+@app.post(
+    "/projects/{id}/project-graph/corrections",
+    response_model=schemas.ProjectGraphCorrectionResponse,
+    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+)
+async def create_project_graph_correction(
+    id: str, request: schemas.ProjectGraphCorrectionCreate, db: AsyncSession = Depends(get_db)
+):
+    snapshot = await get_active_snapshot(db, id)
+    if snapshot is None or snapshot.snapshot_id != request.snapshot_id:
+        raise HTTPException(status_code=409, detail="Correction must target the active project graph snapshot")
+    correction = models.ProjectGraphCorrection(project_id=id, status="pending", **request.model_dump())
+    db.add(correction)
+    await db.commit()
+    return correction
+
+
+@app.post(
+    "/projects/{id}/project-graph/corrections/{correction_id}/resolve",
+    response_model=schemas.ProjectGraphCorrectionResponse,
+    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+)
+async def resolve_project_graph_correction(
+    id: str, correction_id: str, request: schemas.ProjectGraphCorrectionResolve, db: AsyncSession = Depends(get_db)
+):
+    correction = (await db.execute(select(models.ProjectGraphCorrection).where(
+        models.ProjectGraphCorrection.id == correction_id,
+        models.ProjectGraphCorrection.project_id == id,
+        models.ProjectGraphCorrection.status == "pending",
+    ))).scalars().first()
+    if correction is None:
+        raise HTTPException(status_code=404, detail="Pending graph correction not found")
+    correction.status = request.status
+    correction.resolution_note = request.resolution_note
+    correction.resolved_at = _utc_now()
+    await db.commit()
+    return correction
 
 @app.post("/audit/tool-call", response_model=schemas.ToolCallAuditResponse, dependencies=[Depends(get_current_user)])
 async def create_tool_call_audit(audit: schemas.ToolCallAuditCreate, db: AsyncSession = Depends(get_db)):

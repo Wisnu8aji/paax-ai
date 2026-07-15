@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from paax_db import models
 from paax_db.project_graph_repository import build_and_activate_snapshot
-from paax_db.project_graph_retrieval import retrieve_project_graph
+from paax_db.project_graph_retrieval import build_project_vocabulary, retrieve_project_graph
 from paax_db.main import app
 
 
@@ -82,3 +82,122 @@ async def test_retrieval_api_returns_scoped_context_and_not_ready_status():
 
     assert response.status_code == 200
     assert response.json() == {"status": "not_ready", "snapshot_id": None, "nodes": [], "edges": [], "evidence": [], "context_token_estimate": 0}
+
+
+@pytest.mark.asyncio
+async def test_metrics_api_only_aggregates_query_logs_for_the_requested_project():
+    headers = {"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A"}
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post("/projects", json={"id": "PROJECT-A", "owner_id": "ignored", "name": "Project A"}, headers=headers)
+        await client.post("/projects/PROJECT-A/project-graph/snapshots", json={"snapshot_id": "SNAP-A", "schema_version": "paax.pckm.graph.v1", "source_manifest_hash": "a", "generation_metadata": {}, "nodes": [], "edges": [], "evidence": [], "node_evidence": [], "edge_evidence": [], "aliases": [], "communities": []}, headers=headers)
+        await client.post("/projects/PROJECT-A/project-graph/retrieve", json={"query": "J2"}, headers=headers)
+        response = await client.get("/projects/PROJECT-A/project-graph/metrics", headers=headers)
+
+    assert response.status_code == 200
+    assert response.json() == {"project_id": "PROJECT-A", "query_count": 1, "success_count": 1, "not_ready_count": 0, "average_context_tokens": 0.0}
+
+
+@pytest.mark.asyncio
+async def test_retrieval_api_enforces_database_backed_per_project_rate_limit(monkeypatch):
+    monkeypatch.setenv("PCKM_RETRIEVAL_LIMIT_PER_MINUTE", "1")
+    headers = {"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A"}
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post("/projects", json={"id": "PROJECT-A", "owner_id": "ignored", "name": "Project A"}, headers=headers)
+        await client.post("/projects/PROJECT-A/project-graph/snapshots", json={"snapshot_id": "SNAP-A", "schema_version": "paax.pckm.graph.v1", "source_manifest_hash": "a", "generation_metadata": {}, "nodes": [], "edges": [], "evidence": [], "node_evidence": [], "edge_evidence": [], "aliases": [], "communities": []}, headers=headers)
+        assert (await client.post("/projects/PROJECT-A/project-graph/retrieve", json={"query": "J2"}, headers=headers)).status_code == 200
+        response = await client.post("/projects/PROJECT-A/project-graph/retrieve", json={"query": "J2"}, headers=headers)
+
+    assert response.status_code == 429
+
+
+@pytest.mark.asyncio
+async def test_retrieval_supports_dfs_and_shortest_path_within_active_snapshot():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        session.add(models.Project(id="PROJECT-A", owner_id="OWNER-A", name="Project A"))
+        await session.commit()
+        await build_and_activate_snapshot(
+            session, project_id="PROJECT-A", snapshot_id="SNAP-A", schema_version="paax.pckm.graph.v1",
+            source_manifest_hash="a", generation_metadata={},
+            nodes=[
+                {"node_id": "A", "node_type": "space", "canonical_name": "Start", "normalized_name": "start", "discipline": "architecture", "verification_status": "extracted", "confidence": 1},
+                {"node_id": "B", "node_type": "space", "canonical_name": "Middle", "normalized_name": "middle", "discipline": "architecture", "verification_status": "extracted", "confidence": 1},
+                {"node_id": "C", "node_type": "space", "canonical_name": "Target", "normalized_name": "target", "discipline": "architecture", "verification_status": "extracted", "confidence": 1},
+            ],
+            edges=[
+                {"edge_id": "A-B", "source_node_id": "A", "target_node_id": "B", "relation": "CONNECTED_TO", "confidence_class": "EXTRACTED", "confidence": 1},
+                {"edge_id": "B-C", "source_node_id": "B", "target_node_id": "C", "relation": "CONNECTED_TO", "confidence_class": "EXTRACTED", "confidence": 1},
+            ], evidence=[], node_evidence=[], edge_evidence=[], aliases=[], communities=[],
+        )
+        shortest = await retrieve_project_graph(session, project_id="PROJECT-A", query="Start", traversal_mode="shortest_path", target_node_id="C")
+        depth_first = await retrieve_project_graph(session, project_id="PROJECT-A", query="Start", traversal_mode="dfs", depth=2)
+
+    assert [edge.edge_id for edge in shortest.edges] == ["A-B", "B-C"]
+    assert {node.node_id for node in shortest.nodes} == {"A", "B", "C"}
+    assert {node.node_id for node in depth_first.nodes} == {"A", "B", "C"}
+
+
+@pytest.mark.asyncio
+async def test_retrieval_benchmark_fixture_keeps_expected_seed_and_context_budget():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        session.add(models.Project(id="PROJECT-A", owner_id="OWNER-A", name="Project A"))
+        await session.commit()
+        await build_and_activate_snapshot(
+            session, project_id="PROJECT-A", snapshot_id="SNAP-A", schema_version="paax.pckm.graph.v1",
+            source_manifest_hash="a", generation_metadata={},
+            nodes=[{"node_id": "J2", "node_type": "element_type", "canonical_name": "Jendela J2", "normalized_name": "jendela j2", "discipline": "architecture", "verification_status": "extracted", "confidence": 1, "search_text": "jendela aluminium"}],
+            edges=[], evidence=[{"evidence_id": "EV-J2", "document_id": "DOC", "page_index": 20, "sheet_id": "A-21", "kind": "text", "raw_text": "J2"}],
+            node_evidence=[{"node_id": "J2", "evidence_id": "EV-J2", "role": "source"}], edge_evidence=[], aliases=[{"alias_normalized": "j2", "alias_raw": "J2", "node_id": "J2", "alias_type": "drawing_mark", "confidence": 1}], communities=[],
+        )
+        result = await retrieve_project_graph(session, project_id="PROJECT-A", query="J2", budget_tokens=100)
+
+    assert [node.node_id for node in result.nodes] == ["J2"]
+    assert [item.evidence_id for item in result.evidence] == ["EV-J2"]
+    assert result.context_token_estimate <= 100
+
+
+@pytest.mark.asyncio
+async def test_vocabulary_and_seed_scoring_prefer_exact_alias_deterministically():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        session.add(models.Project(id="PROJECT-A", owner_id="OWNER-A", name="Project A"))
+        await session.commit()
+        await build_and_activate_snapshot(
+            session, project_id="PROJECT-A", snapshot_id="SNAP-A", schema_version="paax.pckm.graph.v1", source_manifest_hash="a", generation_metadata={},
+            nodes=[
+                {"node_id": "EXACT", "node_type": "element_type", "canonical_name": "J2", "normalized_name": "j2", "discipline": "architecture", "verification_status": "extracted", "confidence": 1},
+                {"node_id": "PARTIAL", "node_type": "element_type", "canonical_name": "J20", "normalized_name": "j20", "discipline": "architecture", "verification_status": "extracted", "confidence": 1},
+            ], edges=[], evidence=[], node_evidence=[], edge_evidence=[], aliases=[{"alias_normalized": "j2", "alias_raw": "J2", "node_id": "EXACT", "alias_type": "drawing_mark", "confidence": 1}], communities=[],
+        )
+        vocabulary = await build_project_vocabulary(session, project_id="PROJECT-A", snapshot_id="SNAP-A")
+        result = await retrieve_project_graph(session, project_id="PROJECT-A", query="J2", traversal_mode="direct_lookup")
+
+    assert vocabulary == {"j2", "j20"}
+    assert [node.node_id for node in result.nodes] == ["EXACT", "PARTIAL"]
+
+
+@pytest.mark.asyncio
+async def test_retrieval_api_uses_snapshot_scoped_shared_cache():
+    from .conftest import TestSession
+
+    headers = {"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A"}
+    transport = ASGITransport(app=app)
+    snapshot = {"snapshot_id": "SNAP-A", "schema_version": "paax.pckm.graph.v1", "source_manifest_hash": "a", "generation_metadata": {}, "nodes": [], "edges": [], "evidence": [], "node_evidence": [], "edge_evidence": [], "aliases": [], "communities": []}
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post("/projects", json={"id": "PROJECT-A", "owner_id": "ignored", "name": "Project A"}, headers=headers)
+        await client.post("/projects/PROJECT-A/project-graph/snapshots", json=snapshot, headers=headers)
+        first = await client.post("/projects/PROJECT-A/project-graph/retrieve", json={"query": "J2"}, headers=headers)
+        second = await client.post("/projects/PROJECT-A/project-graph/retrieve", json={"query": "J2"}, headers=headers)
+
+    async with TestSession() as session:
+        cache_rows = (await session.execute(select(models.ProjectGraphRetrievalCache))).scalars().all()
+        logs = (await session.execute(select(models.ProjectGraphQueryLog))).scalars().all()
+    assert first.json() == second.json()
+    assert len(cache_rows) == 1
+    assert len(logs) == 1

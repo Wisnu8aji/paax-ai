@@ -4,7 +4,7 @@
  * Ini murni STATE TAMPILAN (riwayat & pengelompokan percakapan), bukan jalur
  * angka: jawaban AI tetap datang dari /api/ai/chat dan angka dari Core Engine.
  * Skema: percakapan bisa berdiri sendiri atau dikelompokkan ke "Project
- * Percakapan" (folder) — pola yang sama dengan ChatGPT/Saya Projects.
+ * Percakapan" (folder) untuk mengelompokkan riwayat berdasarkan proyek.
  */
 
 export interface StoredChatMessage {
@@ -21,10 +21,19 @@ export interface ChatConversation {
   folderId: string | null;
   title: string;
   messages: StoredChatMessage[];
+  summary?: string;
   pinned: boolean;
   archived: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export function summarizeConversation(messages: StoredChatMessage[]): string | undefined {
+  const recent = messages.slice(-6).map((message) => {
+    const compact = message.text.replace(/\s+/g, " ").trim();
+    return `${message.role === "user" ? "Pengguna" : "PAAX"}: ${compact.slice(0, 240)}`;
+  }).filter(Boolean);
+  return recent.length ? recent.join("\n") : undefined;
 }
 
 export interface ChatFolder {
@@ -53,6 +62,7 @@ function normalizeConversation(raw: Partial<ChatConversation>): ChatConversation
     folderId: raw.folderId ?? null,
     title: raw.title ?? 'Percakapan baru',
     messages: Array.isArray(raw.messages) ? raw.messages : [],
+    summary: typeof raw.summary === "string" ? raw.summary : undefined,
     pinned: raw.pinned ?? false,
     archived: raw.archived ?? false,
     createdAt: raw.createdAt ?? now,
