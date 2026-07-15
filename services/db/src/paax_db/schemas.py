@@ -168,3 +168,19 @@ class ProjectGraphSnapshotResponse(BaseModel):
     schema_version: str
     status: str
     source_manifest_hash: str
+
+
+class ProjectGraphRetrievalRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=2000)
+    depth: int = Field(default=2, ge=0, le=5)
+    budget_tokens: int = Field(default=1400, ge=100, le=5000)
+    relations: List[str] = Field(default_factory=list)
+
+
+class ProjectGraphRetrievalResponse(BaseModel):
+    status: str
+    snapshot_id: Optional[str] = None
+    nodes: List[Dict[str, Any]] = Field(default_factory=list)
+    edges: List[Dict[str, Any]] = Field(default_factory=list)
+    evidence: List[Dict[str, Any]] = Field(default_factory=list)
+    context_token_estimate: int = 0
