@@ -29,6 +29,7 @@ import {
   ProjectGraphSnapshotResponseSchema,
   ProjectGraphRetrievalRequestSchema,
   ProjectGraphRetrievalResponseSchema,
+  ProjectGraphMetricsResponseSchema,
 } from "../index";
 
 // Contoh response aktual dari POST /rab/calculate engine
@@ -677,6 +678,12 @@ describe("Project graph retrieval transport schemas", () => {
 
   it("parses a graph-not-ready response", () => {
     expect(ProjectGraphRetrievalResponseSchema.parse({ status: "not_ready" }).nodes).toEqual([]);
+  });
+});
+
+describe("Project graph metrics transport schema", () => {
+  it("parses scoped retrieval metrics", () => {
+    expect(ProjectGraphMetricsResponseSchema.parse({ project_id: "PRJ-1", query_count: 2, success_count: 2, not_ready_count: 0, average_context_tokens: 640 })).toMatchObject({ query_count: 2 });
   });
 });
 

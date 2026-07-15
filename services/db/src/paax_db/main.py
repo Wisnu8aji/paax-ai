@@ -203,6 +203,25 @@ async def retrieve_active_project_graph(
         "context_token_estimate": result.context_token_estimate,
     }
 
+
+@app.get(
+    "/projects/{id}/project-graph/metrics",
+    response_model=schemas.ProjectGraphMetricsResponse,
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def get_project_graph_metrics(id: str, db: AsyncSession = Depends(get_db)):
+    logs = (await db.execute(select(models.ProjectGraphQueryLog).where(
+        models.ProjectGraphQueryLog.project_id == id,
+    ))).scalars().all()
+    count = len(logs)
+    return {
+        "project_id": id,
+        "query_count": count,
+        "success_count": sum(log.outcome == "success" for log in logs),
+        "not_ready_count": sum(log.outcome == "not_ready" for log in logs),
+        "average_context_tokens": (sum(log.context_token_estimate for log in logs) / count) if count else 0.0,
+    }
+
 @app.post("/audit/tool-call", response_model=schemas.ToolCallAuditResponse, dependencies=[Depends(get_current_user)])
 async def create_tool_call_audit(audit: schemas.ToolCallAuditCreate, db: AsyncSession = Depends(get_db)):
     db_audit = models.ToolCallAudit(**audit.model_dump())

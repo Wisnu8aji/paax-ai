@@ -1721,6 +1721,15 @@ export const ProjectGraphRetrievalResponseSchema = z.object({
 });
 export type ProjectGraphRetrievalResponse = z.infer<typeof ProjectGraphRetrievalResponseSchema>;
 
+export const ProjectGraphMetricsResponseSchema = z.object({
+  project_id: z.string(),
+  query_count: z.number().int().nonnegative(),
+  success_count: z.number().int().nonnegative(),
+  not_ready_count: z.number().int().nonnegative(),
+  average_context_tokens: z.number().nonnegative(),
+});
+export type ProjectGraphMetricsResponse = z.infer<typeof ProjectGraphMetricsResponseSchema>;
+
 export const QueryIntentEnum = z.enum([
   "GENERAL_CHAT", "PROJECT_OVERVIEW", "DIRECT_FACT", "LIST_FILTER", "NODE_EXPLAIN",
   "RELATIONSHIP", "PATH_QUERY", "SHEET_LOOKUP", "SPACE_LOOKUP", "ELEMENT_LOOKUP",

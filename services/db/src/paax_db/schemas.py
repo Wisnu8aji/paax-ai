@@ -184,3 +184,11 @@ class ProjectGraphRetrievalResponse(BaseModel):
     edges: List[Dict[str, Any]] = Field(default_factory=list)
     evidence: List[Dict[str, Any]] = Field(default_factory=list)
     context_token_estimate: int = 0
+
+
+class ProjectGraphMetricsResponse(BaseModel):
+    project_id: str
+    query_count: int
+    success_count: int
+    not_ready_count: int
+    average_context_tokens: float
