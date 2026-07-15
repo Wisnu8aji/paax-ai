@@ -27,6 +27,8 @@ import {
   ProjectGraphSnapshotSchema,
   ProjectGraphSnapshotBuildRequestSchema,
   ProjectGraphSnapshotResponseSchema,
+  ProjectGraphRetrievalRequestSchema,
+  ProjectGraphRetrievalResponseSchema,
 } from "../index";
 
 // Contoh response aktual dari POST /rab/calculate engine
@@ -665,6 +667,16 @@ describe("Project graph snapshot transport schemas", () => {
       status: "active",
       source_manifest_hash: "manifest-hash",
     }).status).toBe("active");
+  });
+});
+
+describe("Project graph retrieval transport schemas", () => {
+  it("bounds a deterministic retrieval request", () => {
+    expect(ProjectGraphRetrievalRequestSchema.parse({ query: "J2" })).toMatchObject({ depth: 2, budget_tokens: 1400 });
+  });
+
+  it("parses a graph-not-ready response", () => {
+    expect(ProjectGraphRetrievalResponseSchema.parse({ status: "not_ready" }).nodes).toEqual([]);
   });
 });
 

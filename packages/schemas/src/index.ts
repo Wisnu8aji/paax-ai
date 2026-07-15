@@ -1703,6 +1703,24 @@ export const ProjectGraphSnapshotResponseSchema = z.object({
 });
 export type ProjectGraphSnapshotResponse = z.infer<typeof ProjectGraphSnapshotResponseSchema>;
 
+export const ProjectGraphRetrievalRequestSchema = z.object({
+  query: z.string().min(1).max(2000),
+  depth: z.number().int().min(0).max(5).default(2),
+  budget_tokens: z.number().int().min(100).max(5000).default(1400),
+  relations: z.array(z.string()).default([]),
+});
+export type ProjectGraphRetrievalRequest = z.infer<typeof ProjectGraphRetrievalRequestSchema>;
+
+export const ProjectGraphRetrievalResponseSchema = z.object({
+  status: z.string(),
+  snapshot_id: z.string().nullable().default(null),
+  nodes: z.array(z.record(z.unknown())).default([]),
+  edges: z.array(z.record(z.unknown())).default([]),
+  evidence: z.array(z.record(z.unknown())).default([]),
+  context_token_estimate: z.number().int().nonnegative().default(0),
+});
+export type ProjectGraphRetrievalResponse = z.infer<typeof ProjectGraphRetrievalResponseSchema>;
+
 export const QueryIntentEnum = z.enum([
   "GENERAL_CHAT", "PROJECT_OVERVIEW", "DIRECT_FACT", "LIST_FILTER", "NODE_EXPLAIN",
   "RELATIONSHIP", "PATH_QUERY", "SHEET_LOOKUP", "SPACE_LOOKUP", "ELEMENT_LOOKUP",

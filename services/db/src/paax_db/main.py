@@ -10,6 +10,7 @@ from . import models, schemas
 from .database import get_db
 from .auth import get_current_user, RoleChecker, User
 from .project_graph_repository import build_and_activate_snapshot, get_active_snapshot
+from .project_graph_retrieval import retrieve_project_graph
 
 app = FastAPI(title="PAAX DB API", description="Server-side persistent storage for PAAX AI")
 
@@ -174,6 +175,33 @@ async def read_active_project_graph_snapshot(id: str, db: AsyncSession = Depends
     if snapshot is None:
         raise HTTPException(status_code=404, detail="Project graph is not ready")
     return snapshot
+
+
+@app.post(
+    "/projects/{id}/project-graph/retrieve",
+    response_model=schemas.ProjectGraphRetrievalResponse,
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def retrieve_active_project_graph(
+    id: str, request: schemas.ProjectGraphRetrievalRequest, db: AsyncSession = Depends(get_db)
+):
+    result = await retrieve_project_graph(
+        db, project_id=id, query=request.query, depth=request.depth,
+        budget_tokens=request.budget_tokens, relations=set(request.relations),
+    )
+    await db.commit()
+    return {
+        "status": result.status,
+        "snapshot_id": result.snapshot_id,
+        "nodes": [{"node_id": node.node_id, "type": node.node_type, "name": node.canonical_name,
+                   "discipline": node.discipline, "confidence": float(node.confidence)} for node in result.nodes],
+        "edges": [{"edge_id": edge.edge_id, "source": edge.source_node_id, "target": edge.target_node_id,
+                   "relation": edge.relation, "confidence": float(edge.confidence)} for edge in result.edges],
+        "evidence": [{"evidence_id": item.evidence_id, "document_id": item.document_id,
+                      "sheet_id": item.sheet_id, "page_index": item.page_index, "raw_text": item.raw_text}
+                     for item in result.evidence],
+        "context_token_estimate": result.context_token_estimate,
+    }
 
 @app.post("/audit/tool-call", response_model=schemas.ToolCallAuditResponse, dependencies=[Depends(get_current_user)])
 async def create_tool_call_audit(audit: schemas.ToolCallAuditCreate, db: AsyncSession = Depends(get_db)):
