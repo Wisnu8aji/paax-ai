@@ -9,7 +9,7 @@ packages = [{ include = "app" }]
 python = "^3.10"
 fastapi = "*"
 uvicorn = "*"
-pydantic = "*"
+pydantic = ">=2,<3"
 python-multipart = "*"
 pymupdf = "^1.23.0"
 firebase-admin = ">=6.5.0"

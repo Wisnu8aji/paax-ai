@@ -46,7 +46,7 @@ EXPECTED_DISCIPLINE_MAPPING = {
     "struktur": "structure",
 }
 
-pytestmark = pytest.mark.skipif(
+requires_stored_fixture = pytest.mark.skipif(
     not any(FIXTURE_DIR.glob("page-*.json")),
     reason="stored 88-page drawing fixture is not available in this checkout",
 )
@@ -62,6 +62,7 @@ def _fixture_paths() -> list[Path]:
     return sorted(FIXTURE_DIR.glob("page-*.json"))
 
 
+@requires_stored_fixture
 def test_all_88_observed_discipline_values_are_normalized_or_unresolved():
     _, fixture_audit = _modules()
 
@@ -97,6 +98,7 @@ def test_known_element_codes_normalize_to_one_canonical_form(raw: str, expected:
     assert normalizer.normalize_element_code(raw) == expected
 
 
+@requires_stored_fixture
 def test_fixture_audit_reproduces_dangling_reference_anchor_by_top_level_section():
     _, fixture_audit = _modules()
 
@@ -111,6 +113,7 @@ def test_fixture_audit_reproduces_dangling_reference_anchor_by_top_level_section
     assert audit.references_by_section["observations"].dangling == 775
 
 
+@requires_stored_fixture
 def test_fixture_audit_reports_observation_category_distribution():
     _, fixture_audit = _modules()
 
@@ -352,6 +355,7 @@ def test_resolution_risk_enforces_every_explicit_escalation_gate(
     assert expected_reason in risk.escalation_reasons
 
 
+@requires_stored_fixture
 def test_fixture_audit_finds_known_cross_page_merge_candidates():
     _, fixture_audit = _modules()
 
@@ -371,6 +375,7 @@ def test_fixture_audit_finds_known_cross_page_merge_candidates():
     assert 0.0 <= audit.escalation_percentage <= 100.0
 
 
+@requires_stored_fixture
 def test_committed_audit_report_is_reproducible_and_explains_calibration():
     _, fixture_audit = _modules()
     audit = fixture_audit.audit_fixture(_fixture_paths())
