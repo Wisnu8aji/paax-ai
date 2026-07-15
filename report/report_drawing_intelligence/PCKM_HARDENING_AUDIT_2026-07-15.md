@@ -8,6 +8,7 @@ Tanggal: 2026-07-15
 - Retrieval membatasi depth dan budget melalui schema API.
 - Query log menyimpan project, snapshot, plan, seed, traversal, budget, dan outcome.
 - Endpoint metrics hanya mengagregasi log proyek pada path yang berwenang.
+- Rate limit retrieval memakai query log database per proyek dan window satu menit; konfigurasi `PCKM_RETRIEVAL_LIMIT_PER_MINUTE` berlaku lintas instance yang memakai database yang sama.
 - Command Room melakukan retrieval server-side; browser tidak menerima graph lengkap.
 - Bridge RAB tidak memproduksi nilai perhitungan dan membutuhkan approval manusia.
 
@@ -18,8 +19,8 @@ Tanggal: 2026-07-15
 
 ## Batas operasional
 
-- Rate limit dan cache lintas instance belum diimplementasikan sebagai cache proses lokal karena tidak aman atau konsisten pada deployment multi-instance.
-- Untuk production, keduanya harus memakai shared infrastructure yang dikelola deployment, misalnya gateway rate limit dan cache terdistribusi; query log yang ada adalah dasar telemetry untuk konfigurasi itu.
+- Cache lintas instance belum diimplementasikan sebagai cache proses lokal karena tidak aman atau konsisten pada deployment multi-instance.
+- Untuk production, cache harus memakai shared infrastructure yang dikelola deployment; query log dan metrics yang ada adalah dasar telemetry untuk konfigurasi itu.
 
 ## Verifikasi
 

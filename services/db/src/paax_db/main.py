@@ -185,6 +185,14 @@ async def read_active_project_graph_snapshot(id: str, db: AsyncSession = Depends
 async def retrieve_active_project_graph(
     id: str, request: schemas.ProjectGraphRetrievalRequest, db: AsyncSession = Depends(get_db)
 ):
+    limit = int(os.getenv("PCKM_RETRIEVAL_LIMIT_PER_MINUTE", "60"))
+    window_start = _utc_now() - datetime.timedelta(minutes=1)
+    recent_queries = (await db.execute(select(models.ProjectGraphQueryLog.id).where(
+        models.ProjectGraphQueryLog.project_id == id,
+        models.ProjectGraphQueryLog.created_at >= window_start,
+    ))).all()
+    if len(recent_queries) >= limit:
+        raise HTTPException(status_code=429, detail="Project graph retrieval rate limit exceeded")
     result = await retrieve_project_graph(
         db, project_id=id, query=request.query, depth=request.depth,
         budget_tokens=request.budget_tokens, relations=set(request.relations),

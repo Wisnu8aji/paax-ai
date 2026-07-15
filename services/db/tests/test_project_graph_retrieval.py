@@ -96,3 +96,17 @@ async def test_metrics_api_only_aggregates_query_logs_for_the_requested_project(
 
     assert response.status_code == 200
     assert response.json() == {"project_id": "PROJECT-A", "query_count": 1, "success_count": 1, "not_ready_count": 0, "average_context_tokens": 0.0}
+
+
+@pytest.mark.asyncio
+async def test_retrieval_api_enforces_database_backed_per_project_rate_limit(monkeypatch):
+    monkeypatch.setenv("PCKM_RETRIEVAL_LIMIT_PER_MINUTE", "1")
+    headers = {"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A"}
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post("/projects", json={"id": "PROJECT-A", "owner_id": "ignored", "name": "Project A"}, headers=headers)
+        await client.post("/projects/PROJECT-A/project-graph/snapshots", json={"snapshot_id": "SNAP-A", "schema_version": "paax.pckm.graph.v1", "source_manifest_hash": "a", "generation_metadata": {}, "nodes": [], "edges": [], "evidence": [], "node_evidence": [], "edge_evidence": [], "aliases": [], "communities": []}, headers=headers)
+        assert (await client.post("/projects/PROJECT-A/project-graph/retrieve", json={"query": "J2"}, headers=headers)).status_code == 200
+        response = await client.post("/projects/PROJECT-A/project-graph/retrieve", json={"query": "J2"}, headers=headers)
+
+    assert response.status_code == 429
