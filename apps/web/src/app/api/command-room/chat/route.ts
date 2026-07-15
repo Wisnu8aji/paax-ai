@@ -16,6 +16,7 @@ import {
   resolveThinking,
   PAAX_MODELS,
 } from "@/lib/paax-models";
+import { buildProjectGraphSystemContext, type GraphRetrievalResponse } from "@/lib/ai/project-graph-context";
 
 export const runtime = "nodejs";
 export const maxDuration = 600; // 10 menit
@@ -25,6 +26,7 @@ export const maxDuration = 600; // 10 menit
 const CommandRoomChatSchema = z.object({
   runId: z.string().optional(),
   conversationId: z.string().optional(),
+  projectId: z.string().min(1).max(200).optional(),
   messages: z
     .array(
       z.object({
@@ -40,6 +42,19 @@ const CommandRoomChatSchema = z.object({
 });
 
 type CommandRoomChatBody = z.infer<typeof CommandRoomChatSchema>;
+
+async function retrieveProjectContext(projectId: string, query: string): Promise<string | null> {
+  const baseUrl = process.env.PAAX_DB_URL?.trim().replace(/\/$/, "") || "http://localhost:8001";
+  const key = process.env.INTERNAL_SERVICE_KEY?.trim();
+  try {
+    const response = await fetch(`${baseUrl}/projects/${encodeURIComponent(projectId)}/project-graph/retrieve`, {
+      method: "POST", headers: { "Content-Type": "application/json", ...(key ? { "X-Internal-Key": key } : {}) },
+      body: JSON.stringify({ query, depth: 2, budget_tokens: 1400 }),
+    });
+    if (!response.ok) return null;
+    return buildProjectGraphSystemContext(await response.json() as GraphRetrievalResponse);
+  } catch { return null; }
+}
 
 // ─── Helper: baca env ──────────
 
@@ -169,7 +184,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { runId, conversationId, messages, modelAlias, reasoningEffort, thinking } = parsed.data;
+  const { runId, conversationId, projectId, messages, modelAlias, reasoningEffort, thinking } = parsed.data;
   const apiKey = getDeepSeekKey();
   if (!apiKey) {
     return NextResponse.json(
@@ -183,7 +198,9 @@ export async function POST(req: NextRequest) {
   const configUrl = getDeepSeekBaseUrl();
   const baseUrl = resolveBaseUrl(apiKey, configUrl);
   
-  const payload = buildPayload(messages, modelAlias, resolvedThinking, reasoningEffort as ReasoningEffort, apiKey);
+  const userQuery = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
+  const graphContext = projectId ? await retrieveProjectContext(projectId, userQuery) : null;
+  const payload = buildPayload(graphContext ? [{ role: "system", content: graphContext }, ...messages] : messages, modelAlias, resolvedThinking, reasoningEffort as ReasoningEffort, apiKey);
   
   const controller = new AbortController();
   req.signal.addEventListener("abort", () => controller.abort());
@@ -198,6 +215,18 @@ export async function POST(req: NextRequest) {
           data.sequence = sequenceCounter++;
           controller.enqueue(encoder.encode(`event: message\ndata: ${JSON.stringify(data)}\n\n`));
         };
+
+        if (projectId) {
+          sendEvent("message", {
+            type: "status",
+            runId,
+            conversationId,
+            phase: "retrieving_project_context",
+            statusLabel: graphContext
+              ? "Konteks proyek dan evidence ditemukan."
+              : "Graph proyek belum siap; melanjutkan dengan konteks chat yang tersedia.",
+          });
+        }
 
         const MAX_CONTINUATIONS = 5;
         let currentMessages = [...payload.messages];

@@ -357,6 +357,7 @@ export default function CommandRoomPage() {
       modelName: activeModelDef.displayName as 'Lucent' | 'Solace',
       effort: reasoningEffort,
       thinking: resolvedThinking,
+      projectId: conversation.folderId,
     });
   }
 

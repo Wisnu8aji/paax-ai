@@ -112,6 +112,7 @@ export type StartChatRunInput = {
   modelName: "Lucent" | "Solace";
   effort?: "low" | "medium" | "high" | "max";
   thinking?: "on" | "off";
+  projectId?: string | null;
 };
 
 type Listener = () => void;
@@ -276,6 +277,7 @@ class ChatRunStore {
           modelAlias: input.modelId,
           reasoningEffort: input.effort,
           thinking: input.thinking,
+          projectId: input.projectId,
         }),
         signal: controller.signal,
       });

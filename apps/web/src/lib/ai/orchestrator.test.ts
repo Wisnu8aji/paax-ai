@@ -211,7 +211,7 @@ describe("AI orchestrator", () => {
       model: "deepseek-ai/deepseek-v4-pro",
       messages: [{ role: "user", content: "analisa" }],
       temperature: 1,
-      max_tokens: 1536,
+      max_tokens: 16384,
       chat_template_kwargs: { thinking: true },
     });
   });

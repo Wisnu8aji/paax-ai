@@ -3,6 +3,7 @@ export type RunPhase =
   | "receiving_message"
   | "loading_conversation"
   | "loading_project_context"
+  | "retrieving_project_context"
   | "preparing_prompt"
   | "calling_model"
   | "waiting_for_model"
