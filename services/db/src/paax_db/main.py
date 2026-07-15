@@ -1,5 +1,7 @@
 import os
 import datetime
+import hashlib
+import json
 from typing import List, Dict, Any
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -193,13 +195,18 @@ async def retrieve_active_project_graph(
     ))).all()
     if len(recent_queries) >= limit:
         raise HTTPException(status_code=429, detail="Project graph retrieval rate limit exceeded")
+    snapshot = await get_active_snapshot(db, id)
+    cache_key = hashlib.sha256(json.dumps({"project": id, "snapshot": snapshot.snapshot_id if snapshot else None, "request": request.model_dump()}, sort_keys=True).encode()).hexdigest()
+    cached = await db.get(models.ProjectGraphRetrievalCache, cache_key)
+    if cached and _as_aware_utc(cached.expires_at) > _utc_now():
+        return cached.payload
     result = await retrieve_project_graph(
         db, project_id=id, query=request.query, depth=request.depth,
         budget_tokens=request.budget_tokens, relations=set(request.relations),
         traversal_mode=request.traversal_mode, target_node_id=request.target_node_id,
     )
     await db.commit()
-    return {
+    response = {
         "status": result.status,
         "snapshot_id": result.snapshot_id,
         "nodes": [{"node_id": node.node_id, "type": node.node_type, "name": node.canonical_name,
@@ -211,6 +218,10 @@ async def retrieve_active_project_graph(
                      for item in result.evidence],
         "context_token_estimate": result.context_token_estimate,
     }
+    if result.snapshot_id:
+        await db.merge(models.ProjectGraphRetrievalCache(cache_key=cache_key, project_id=id, snapshot_id=result.snapshot_id, payload=response, expires_at=_utc_now() + datetime.timedelta(seconds=int(os.getenv("PCKM_RETRIEVAL_CACHE_SECONDS", "300")))))
+        await db.commit()
+    return response
 
 
 @app.get(

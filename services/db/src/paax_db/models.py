@@ -275,3 +275,13 @@ class ProjectGraphCorrection(Base):
     resolution_note = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class ProjectGraphRetrievalCache(Base):
+    __tablename__ = "project_graph_retrieval_cache"
+
+    cache_key = Column(String, primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), nullable=False, index=True)
+    payload = Column(JSON_DOCUMENT, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False, index=True)

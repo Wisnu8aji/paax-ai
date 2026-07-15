@@ -9,6 +9,7 @@ Tanggal: 2026-07-15
 - Query log menyimpan project, snapshot, plan, seed, traversal, budget, dan outcome.
 - Endpoint metrics hanya mengagregasi log proyek pada path yang berwenang.
 - Rate limit retrieval memakai query log database per proyek dan window satu menit; konfigurasi `PCKM_RETRIEVAL_LIMIT_PER_MINUTE` berlaku lintas instance yang memakai database yang sama.
+- Cache retrieval memakai database dengan key project/snapshot/request dan TTL `PCKM_RETRIEVAL_CACHE_SECONDS`; cache hit tidak menjalankan traversal kedua.
 - Command Room melakukan retrieval server-side; browser tidak menerima graph lengkap.
 - Bridge RAB tidak memproduksi nilai perhitungan dan membutuhkan approval manusia.
 - Koreksi graph manusia tersimpan sebagai proposal immutable per project/snapshot; status dapat diselesaikan atau ditolak tanpa mengubah snapshot aktif.
@@ -21,11 +22,10 @@ Tanggal: 2026-07-15
 
 ## Batas operasional
 
-- Cache lintas instance belum diimplementasikan sebagai cache proses lokal karena tidak aman atau konsisten pada deployment multi-instance.
-- Untuk production, cache harus memakai shared infrastructure yang dikelola deployment; query log dan metrics yang ada adalah dasar telemetry untuk konfigurasi itu.
+- Cache tidak pernah dipakai lintas project atau snapshot; snapshot baru otomatis menghasilkan key baru.
 
 ## Verifikasi
 
-- Database: `23 passed, 1 skipped`.
+- Database: `23 passed, 1 skipped` sebelum cache; test cache tambahan `9 passed` pada suite retrieval.
 - Shared schema: `34 passed`.
 - Shared schema typecheck: lulus.

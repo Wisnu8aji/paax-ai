@@ -180,3 +180,24 @@ async def test_vocabulary_and_seed_scoring_prefer_exact_alias_deterministically(
 
     assert vocabulary == {"j2", "j20"}
     assert [node.node_id for node in result.nodes] == ["EXACT", "PARTIAL"]
+
+
+@pytest.mark.asyncio
+async def test_retrieval_api_uses_snapshot_scoped_shared_cache():
+    from .conftest import TestSession
+
+    headers = {"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A"}
+    transport = ASGITransport(app=app)
+    snapshot = {"snapshot_id": "SNAP-A", "schema_version": "paax.pckm.graph.v1", "source_manifest_hash": "a", "generation_metadata": {}, "nodes": [], "edges": [], "evidence": [], "node_evidence": [], "edge_evidence": [], "aliases": [], "communities": []}
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post("/projects", json={"id": "PROJECT-A", "owner_id": "ignored", "name": "Project A"}, headers=headers)
+        await client.post("/projects/PROJECT-A/project-graph/snapshots", json=snapshot, headers=headers)
+        first = await client.post("/projects/PROJECT-A/project-graph/retrieve", json={"query": "J2"}, headers=headers)
+        second = await client.post("/projects/PROJECT-A/project-graph/retrieve", json={"query": "J2"}, headers=headers)
+
+    async with TestSession() as session:
+        cache_rows = (await session.execute(select(models.ProjectGraphRetrievalCache))).scalars().all()
+        logs = (await session.execute(select(models.ProjectGraphQueryLog))).scalars().all()
+    assert first.json() == second.json()
+    assert len(cache_rows) == 1
+    assert len(logs) == 1
