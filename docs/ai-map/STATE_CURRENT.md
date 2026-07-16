@@ -1,14 +1,31 @@
 # 📍 PAAX — STATE_CURRENT (status aktif, ringkas)
 
-> Update terakhir: **2026-07-14**. Riwayat lengkap sebelum tanggal ini ada di
+> Update terakhir: **2026-07-16**. Riwayat lengkap sebelum 2026-07-14 ada di
 > `docs/history/STATE_ARCHIVE_2026-06_2026-07.md`. File ini HANYA status
 > aktif — jangan tambah narasi panjang di sini, tulis laporan detail ke
 > `report/` lalu ringkas 1-2 baris di sini.
 
+## Mandat strategis Drawing Intelligence (2026-07-16, AKTIF)
+- Master Plan diratifikasi + Amendemen 1:
+  `docs/plans/drawing intelligence/PAAX_DRAWING_INTELLIGENCE_MASTER_PLAN_2026-07-16.md`
+  (arsitektur L0-L4, Decision Register D1-D13, roadmap Gelombang A/B/C + spec eksekusi).
+- 3 akar masalah terbukti kuantitatif + diperbaiki bertahap: gerbang occurrence
+  membunuh struktur (79 tipe→1 occ) → FIXED A2; pseudo-level ±18% salah tempel →
+  FIXED A3 (5 level kanonis ber-elevasi, +16.20 tetap ambigu); intent/serving absen →
+  B4 parser DONE, B5 retrieve v2 in-flight; integritas DEM (98,6% bbox out-of-contract,
+  839 dangling refs) → A4 in-flight.
+- Benchmark GT 18 pertanyaan + runner (`services/db/tests/run_pckm_benchmark.py`):
+  baseline **1/8 → 3/8 pasca-A2 → 8/8 klaim sementara pasca-A3+B5-parsial**
+  (angka final dikunci setelah semua wave selesai + verifikasi Fable).
+- Laporan kunci di `report/report_drawing_intelligence/`: FABLE_R1, SOL_R1 (audit
+  integritas), TERRA_REPORT_WAVE_A2/A3, LUNA_REPORT_WAVE_B4, scorecard.
+
 ## Branch & PR aktif
-- Branch kerja: `feat/command-room-model-overhaul` (belum di-PR/merge), commit terbaru `fa7a01d`.
-- PR historis #29-#40 semua sudah merge ke `main` (bridging non-struktur,
-  X1/X1B/X2 AI-assist, packaging schemas).
+- Branch kerja mandat: `feat/pckm-phase3-synthesis` (garis terlengkap, 36+ commit di
+  depan main; banyak pekerjaan wave A/B masih uncommitted di working tree).
+- PR draft #42-#47 (stacked review/pckm-*) = kemasan lama, tertinggal dari HEAD —
+  keputusan D1: supersede dengan satu PR segar (menunggu keputusan owner).
+- PR historis #29-#40 sudah merge ke `main`.
 
 ## Yang sudah nyata jalan di `main` (terverifikasi lewat kode + git log, bukan laporan)
 - **Command Room** — chat AI utama baru (`apps/web/src/app/(dashboard)/command-room/`),
