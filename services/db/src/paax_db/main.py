@@ -583,6 +583,7 @@ async def read_active_project_graph_snapshot(id: str, db: AsyncSession = Depends
 @app.post(
     "/projects/{id}/project-graph/retrieve",
     response_model=schemas.ProjectGraphRetrievalResponse,
+    response_model_exclude_unset=True,
     dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
 )
 async def retrieve_active_project_graph(
@@ -605,6 +606,7 @@ async def retrieve_active_project_graph(
         db, project_id=id, query=request.query, depth=request.depth,
         budget_tokens=request.budget_tokens, relations=set(request.relations),
         traversal_mode=request.traversal_mode, target_node_id=request.target_node_id,
+        use_intent=request.use_intent,
     )
     await db.commit()
     response = {
@@ -619,6 +621,17 @@ async def retrieve_active_project_graph(
                      for item in result.evidence],
         "context_token_estimate": result.context_token_estimate,
     }
+    if request.use_intent and result.intent is not None:
+        response.update({
+            "intent": result.intent,
+            "applied_filters": result.applied_filters,
+            "data_status": result.data_status,
+            "notes": result.notes,
+            "summary_view": result.summary_view,
+            "guidance": result.guidance,
+            "rab_bridge_available": result.rab_bridge_available,
+            "missing_information": result.missing_information,
+        })
     if result.snapshot_id:
         await db.merge(models.ProjectGraphRetrievalCache(cache_key=cache_key, project_id=id, snapshot_id=result.snapshot_id, payload=response, expires_at=_utc_now() + datetime.timedelta(seconds=int(os.getenv("PCKM_RETRIEVAL_CACHE_SECONDS", "300")))))
         await db.commit()

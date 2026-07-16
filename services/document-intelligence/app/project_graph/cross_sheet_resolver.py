@@ -46,6 +46,9 @@ class _FactValue:
     confidence: float
     evidence_refs: tuple[str, ...]
     bbox: tuple[float, float, float, float] | None
+    aliases: tuple[str, ...] = ()
+    properties: tuple[tuple[str, str], ...] = ()
+    requires_review: bool = False
 
 
 @dataclass(frozen=True)
@@ -55,6 +58,8 @@ class _TypeSource:
     source_ref: NodeSourceRef
     level: _FactValue | None
     space: _FactValue | None
+    grid: _FactValue | None = None
+    level_requires_review: bool = False
 
 
 _CODE_BOUNDARY = re.compile(r"(?<![A-Z0-9]){code}(?![A-Z0-9])")
@@ -63,6 +68,8 @@ _CODE_BOUNDARY = re.compile(r"(?<![A-Z0-9]){code}(?![A-Z0-9])")
 # space-only pattern and fell back to unspecified_level despite an
 # unambiguous level marker being right there in the title.
 _TITLE_LEVEL = re.compile(r"\b(?:LT\.?|LANTAI)[\s\-]*(\d+|ATAP|ROOF|DASAR)\b", re.IGNORECASE)
+_TITLE_SCHEDULE = re.compile(r"\b(?:TABEL|SCHEDULE)\b", re.IGNORECASE)
+_TITLE_SECTION = re.compile(r"\b(?:POTONGAN|TAMPAK|SECTION|ELEVATION)\b", re.IGNORECASE)
 
 
 def _stable_id(prefix: str, *parts: object) -> str:
@@ -108,6 +115,12 @@ def _fact_values(patch: SheetKnowledgePatch, category: str) -> tuple[_FactValue,
     for fact in patch.facts:
         if fact.category != category:
             continue
+        if (
+            category == "levels"
+            and fact.attributes.get("level_classification")
+            in {"NUMBER_NOISE", "ELEVATION_AMBIGUOUS"}
+        ):
+            continue
         display = (fact.normalized or fact.raw).strip()
         if not display:
             continue
@@ -120,6 +133,21 @@ def _fact_values(patch: SheetKnowledgePatch, category: str) -> tuple[_FactValue,
             confidence=fact.confidence,
             evidence_refs=tuple(sorted(set(fact.evidence_refs))),
             bbox=fact.bbox,
+            aliases=tuple(
+                alias for alias in fact.attributes.get("level_aliases", "").split(" | ") if alias
+            ),
+            properties=tuple(
+                (key, value)
+                for key, value in (
+                    ("merged_from", fact.attributes.get("level_merged_from")),
+                )
+                if value
+            ),
+            requires_review=fact.attributes.get("level_classification") in {
+                "FLOOR_NAME_AMBIGUOUS",
+                "ELEVATION_AMBIGUOUS",
+                "NUMBER_NOISE",
+            },
         )
         existing = values.get(key)
         if existing is None:
@@ -247,6 +275,22 @@ def _reference_fact_node_id(patch: SheetKnowledgePatch, raw_reference: str) -> t
     return node_id, fact.confidence, tuple(sorted(set(fact.evidence_refs)))
 
 
+def _sheet_title(patch: SheetKnowledgePatch) -> str:
+    identity = next((fact for fact in patch.facts if fact.category == "sheet_identity"), None)
+    return "" if identity is None else identity.attributes.get("title", "")
+
+
+def _is_occurrence_excluded_sheet(patch: SheetKnowledgePatch) -> bool:
+    """Schedules define types and sections/elevations span levels, so neither
+    creates a located occurrence. Their drawing references remain intact."""
+    title = _sheet_title(patch)
+    return (
+        _TITLE_SCHEDULE.search(title) is not None
+        or _TITLE_SECTION.search(title) is not None
+        or any(fact.category == "tables" for fact in patch.facts)
+    )
+
+
 def _title_level(patch: SheetKnowledgePatch) -> _FactValue | None:
     identity = next((fact for fact in patch.facts if fact.category == "sheet_identity"), None)
     if identity is None:
@@ -328,7 +372,8 @@ def _source_context(
     patch: SheetKnowledgePatch,
     code: str,
     source_ref: NodeSourceRef,
-) -> tuple[_FactValue | None, _FactValue | None]:
+    discipline: str,
+) -> tuple[_FactValue | None, _FactValue | None, _FactValue | None, bool]:
     source_bbox = _element_bbox(patch, code, source_ref)
     levels = _fact_values(patch, "levels")
     spaces = _fact_values(patch, "spaces")
@@ -336,7 +381,15 @@ def _source_context(
     if level is None:
         level = _nearest_value(source_bbox, levels)
     space = _nearest_value(source_bbox, spaces)
-    return level, space
+    grid = _nearest_value(source_bbox, _fact_values(patch, "grids")) if discipline == "structure" else None
+    requires_review = level is not None and level.requires_review
+    if level is None:
+        requires_review = any(
+            fact.category == "levels"
+            and fact.attributes.get("level_classification") in {"NUMBER_NOISE", "ELEVATION_AMBIGUOUS"}
+            for fact in patch.facts
+        )
+    return level, space, grid, requires_review
 
 
 def _context_missing_reason(source: _TypeSource) -> str:
@@ -384,8 +437,13 @@ def _level_node(
         node_id=_stable_id("LEVEL", project_id, level.key),
         type="level",
         canonical_name=level.display,
+        aliases=list(level.aliases),
         properties={
-            "normalized_key": NodeProperty(value=level.key, evidence_refs=list(level.evidence_refs))
+            "normalized_key": NodeProperty(value=level.key, evidence_refs=list(level.evidence_refs)),
+            **{
+                key: NodeProperty(value=value, evidence_refs=list(level.evidence_refs))
+                for key, value in level.properties
+            },
         },
         discipline="general",
         verification_status="extracted",
@@ -415,11 +473,33 @@ def _space_node(
     )
 
 
+def _grid_node(
+    project_id: str,
+    discipline: str,
+    level_node: ProjectGraphNode,
+    grid: _FactValue,
+    source_refs: Iterable[NodeSourceRef],
+) -> ProjectGraphNode:
+    return ProjectGraphNode(
+        node_id=_stable_id("GRIDLOC", project_id, discipline, level_node.node_id, grid.key),
+        type="grid_axis",
+        canonical_name=grid.display,
+        properties={"normalized_key": NodeProperty(value=grid.key, evidence_refs=list(grid.evidence_refs))},
+        discipline=discipline,
+        verification_status="extracted",
+        confidence=grid.confidence,
+        source_refs=_merge_source_refs(source_refs),
+    )
+
+
 def _occurrence_node(
     type_node: ProjectGraphNode,
     level_node: ProjectGraphNode,
-    space_node: ProjectGraphNode,
+    space_node: ProjectGraphNode | None,
     sources: Sequence[_TypeSource],
+    *,
+    grid_node: ProjectGraphNode | None = None,
+    verification_status: str = "cross_sheet_inferred",
 ) -> ProjectGraphNode:
     source_refs = _merge_source_refs(source.source_ref for source in sources)
     label_evidence_refs = sorted(
@@ -455,29 +535,43 @@ def _occurrence_node(
     else:
         confidence = base_confidence
 
+    if verification_status == "ambiguous":
+        confidence = round(confidence * 0.7, 4)
+
+    locator_node = space_node or grid_node
+    node_id_parts = [type_node.node_id, level_node.node_id]
+    node_id_parts.append(locator_node.node_id if locator_node is not None else sources[0].source_ref.sheet_id)
+    canonical_name = f"{type_node.canonical_name} @ {level_node.canonical_name}"
+    if locator_node is not None:
+        canonical_name += f" / {locator_node.canonical_name}"
+    properties = {
+        "element_type_id": NodeProperty(value=type_node.node_id, evidence_refs=label_evidence_refs),
+        "level": NodeProperty(value=level_node.canonical_name, evidence_refs=level_evidence_refs),
+        # Count comes only from the distinct extracted label sources grouped
+        # into this deterministic context; it is never a quantity takeoff.
+        "label_count": NodeProperty(value=len(sources), evidence_refs=label_evidence_refs),
+    }
+    if space_node is not None:
+        properties["space"] = NodeProperty(value=space_node.canonical_name, evidence_refs=space_evidence_refs)
+    if grid_node is not None:
+        properties["grid"] = NodeProperty(
+            value=grid_node.canonical_name,
+            evidence_refs=sorted(
+                {
+                    evidence_ref
+                    for source in sources
+                    if source.grid is not None
+                    for evidence_ref in source.grid.evidence_refs
+                }
+            ),
+        )
     return ProjectGraphNode(
-        node_id=_stable_id("ELOCC", type_node.node_id, level_node.node_id, space_node.node_id),
+        node_id=_stable_id("ELOCC", *node_id_parts),
         type="element_occurrence",
-        canonical_name=(
-            f"{type_node.canonical_name} @ {level_node.canonical_name} / "
-            f"{space_node.canonical_name}"
-        ),
-        properties={
-            "element_type_id": NodeProperty(
-                value=type_node.node_id,
-                evidence_refs=label_evidence_refs,
-            ),
-            "level": NodeProperty(
-                value=level_node.canonical_name,
-                evidence_refs=level_evidence_refs,
-            ),
-            "space": NodeProperty(
-                value=space_node.canonical_name,
-                evidence_refs=space_evidence_refs,
-            ),
-        },
+        canonical_name=canonical_name,
+        properties=properties,
         discipline=type_node.discipline,
-        verification_status="cross_sheet_inferred",
+        verification_status=verification_status,
         confidence=confidence,
         source_refs=source_refs,
     )
@@ -598,7 +692,9 @@ def resolve_cross_sheet(
                     sheet_id=patch.sheet_id,
                     evidence_refs=sorted(set(fact.evidence_refs)),
                 )
-                level, space = _source_context(patch, type_node.canonical_name, source_ref)
+                level, space, grid, level_requires_review = _source_context(
+                    patch, type_node.canonical_name, source_ref, type_node.discipline
+                )
                 sources_by_type.setdefault(type_node.node_id, []).append(
                     _TypeSource(
                         type_node=type_node,
@@ -606,6 +702,8 @@ def resolve_cross_sheet(
                         source_ref=source_ref,
                         level=level,
                         space=space,
+                        grid=grid,
+                        level_requires_review=level_requires_review,
                     )
                 )
 
@@ -618,7 +716,14 @@ def resolve_cross_sheet(
         type_node = sources[0].type_node
         reference_ids: list[str] = []
         contexts: dict[tuple[str, str], list[_TypeSource]] = {}
-        has_contextual = any(s.level is not None and s.space is not None for s in sources)
+        occurrence_sources = [
+            source for source in sources if not _is_occurrence_excluded_sheet(source.patch)
+        ]
+        has_contextual = any(
+            source.level is not None
+            and (source.space is not None or type_node.discipline != "architecture")
+            for source in occurrence_sources
+        )
 
 
         for source in sources:
@@ -678,8 +783,23 @@ def resolve_cross_sheet(
                         )
                     )
 
+            if _is_occurrence_excluded_sheet(source.patch):
+                continue
+
+            if source.level is not None and source.space is None and type_node.discipline == "structure":
+                locator = (
+                    f"grid:{source.grid.key}" if source.grid is not None
+                    else f"sheet:{source.source_ref.sheet_id}"
+                )
+                contexts.setdefault((source.level.key, locator), []).append(source)
+                continue
+
+            if source.level is not None and source.space is None and type_node.discipline == "mep":
+                contexts.setdefault((source.level.key, f"sheet:{source.source_ref.sheet_id}"), []).append(source)
+                continue
+
             if source.level is None or source.space is None:
-                if not has_contextual:
+                if not has_contextual and not source.level_requires_review:
                     missing_information.append(
                         f"{type_node.canonical_name} on {source.source_ref.sheet_id} page "
                         f"{source.source_ref.page_index + 1} requires {_context_missing_reason(source)} "
@@ -720,37 +840,111 @@ def resolve_cross_sheet(
                     source_ref=source.source_ref,
                     level=fallback_level,
                     space=fallback_space,
+                    level_requires_review=source.level_requires_review,
                 )
-                contexts.setdefault((fallback_level.key, fallback_space.key), []).append(generic_source)
+                contexts.setdefault(
+                    (fallback_level.key, f"space:{fallback_space.key}"), []
+                ).append(generic_source)
             else:
-                contexts.setdefault((source.level.key, source.space.key), []).append(source)
+                contexts.setdefault((source.level.key, f"space:{source.space.key}"), []).append(source)
 
         occurrence_ids: list[str] = []
         for context_key, context_sources in sorted(contexts.items()):
+            _, locator_token = context_key
+            locator_kind, _, _ = locator_token.partition(":")
             level = context_sources[0].level
-            space = context_sources[0].space
-            assert level is not None and space is not None
+            assert level is not None
             level_refs = [
                 _source_ref_with_evidence(source.source_ref, source.level.evidence_refs)
                 for source in context_sources
                 if source.level is not None
             ]
-            space_refs = [
-                _source_ref_with_evidence(source.source_ref, source.space.evidence_refs)
-                for source in context_sources
-                if source.space is not None
-            ]
             level_node = _level_node(aliases.project_id, level, level_refs)
-            space_node = _space_node(
-                aliases.project_id,
-                type_node.discipline,
-                level_node,
-                space,
-                space_refs,
+            space_node: ProjectGraphNode | None = None
+            grid_node: ProjectGraphNode | None = None
+            verification_status = (
+                "ambiguous" if any(source.level_requires_review for source in context_sources)
+                else "cross_sheet_inferred"
             )
-            occurrence = _occurrence_node(type_node, level_node, space_node, context_sources)
-            nodes.extend((level_node, space_node, occurrence))
+            if locator_kind == "space":
+                space = context_sources[0].space
+                assert space is not None
+                space_refs = [
+                    _source_ref_with_evidence(source.source_ref, source.space.evidence_refs)
+                    for source in context_sources
+                    if source.space is not None
+                ]
+                space_node = _space_node(
+                    aliases.project_id, type_node.discipline, level_node, space, space_refs
+                )
+            elif locator_kind == "grid":
+                grid = context_sources[0].grid
+                assert grid is not None
+                grid_refs = [
+                    _source_ref_with_evidence(source.source_ref, source.grid.evidence_refs)
+                    for source in context_sources
+                    if source.grid is not None
+                ]
+                grid_node = _grid_node(
+                    aliases.project_id, type_node.discipline, level_node, grid, grid_refs
+                )
+            elif locator_kind == "sheet":
+                # The schema has no "needs_review" status; "ambiguous" is
+                # the valid signal that a level+sheet locator needs review.
+                verification_status = "ambiguous"
+            else:  # pragma: no cover - locator tokens above are exhaustive
+                raise AssertionError(f"unexpected occurrence locator {locator_kind!r}")
+
+            occurrence = _occurrence_node(
+                type_node,
+                level_node,
+                space_node,
+                context_sources,
+                grid_node=grid_node,
+                verification_status=verification_status,
+            )
+            nodes.append(level_node)
+            if space_node is not None:
+                nodes.append(space_node)
+            if grid_node is not None:
+                nodes.append(grid_node)
+            nodes.append(occurrence)
             occurrence_ids.append(occurrence.node_id)
+            locator_edges: list[ProjectGraphEdge] = []
+            if space_node is not None:
+                locator_edges.append(
+                    ProjectGraphEdge(
+                        edge_id=_stable_id("EDGE", occurrence.node_id, space_node.node_id, "LOCATED_IN"),
+                        source=occurrence.node_id,
+                        target=space_node.node_id,
+                        relation="LOCATED_IN",
+                        confidence_class="CROSS_SHEET_INFERRED",
+                        confidence=occurrence.confidence,
+                        evidence_refs=sorted(
+                            evidence_ref
+                            for source_ref in space_node.source_refs
+                            for evidence_ref in source_ref.evidence_refs
+                        ),
+                        resolver=EdgeResolver(method="deterministic_occurrence_context"),
+                    )
+                )
+            if grid_node is not None:
+                locator_edges.append(
+                    ProjectGraphEdge(
+                        edge_id=_stable_id("EDGE", occurrence.node_id, grid_node.node_id, "ALIGNED_TO"),
+                        source=occurrence.node_id,
+                        target=grid_node.node_id,
+                        relation="ALIGNED_TO",
+                        confidence_class="CROSS_SHEET_INFERRED",
+                        confidence=occurrence.confidence,
+                        evidence_refs=sorted(
+                            evidence_ref
+                            for source_ref in grid_node.source_refs
+                            for evidence_ref in source_ref.evidence_refs
+                        ),
+                        resolver=EdgeResolver(method="deterministic_occurrence_context"),
+                    )
+                )
             edges.extend(
                 (
                     ProjectGraphEdge(
@@ -785,22 +979,7 @@ def resolve_cross_sheet(
                         ),
                         resolver=EdgeResolver(method="deterministic_occurrence_context"),
                     ),
-                    ProjectGraphEdge(
-                        edge_id=_stable_id("EDGE", occurrence.node_id, space_node.node_id, "LOCATED_IN"),
-                        source=occurrence.node_id,
-                        target=space_node.node_id,
-                        relation="LOCATED_IN",
-                        confidence_class="CROSS_SHEET_INFERRED",
-                        confidence=occurrence.confidence,
-                        evidence_refs=sorted(
-                            {
-                                evidence_ref
-                                for source_ref in space_node.source_refs
-                                for evidence_ref in source_ref.evidence_refs
-                            }
-                        ),
-                        resolver=EdgeResolver(method="deterministic_occurrence_context"),
-                    ),
+                    *locator_edges,
                 )
             )
 
@@ -828,15 +1007,22 @@ def resolve_cross_sheet(
                 )
             )
 
-        candidate_count = max(1, len(contexts) + sum(source.level is None or source.space is None for source in sources))
+        candidate_count = max(
+            1,
+            len(contexts) + sum(
+                source.level is None
+                or (source.space is None and type_node.discipline == "architecture")
+                for source in occurrence_sources
+            ),
+        )
         request = _escalation_request(
             aliases.project_id,
             type_node,
-            sources,
+            occurrence_sources,
             occurrence_ids,
             reference_ids,
             candidate_count,
-        )
+        ) if occurrence_sources else None
         if request is not None:
             escalation_requests.append(request)
 

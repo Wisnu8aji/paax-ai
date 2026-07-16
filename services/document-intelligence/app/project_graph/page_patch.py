@@ -6,7 +6,7 @@ from typing import Iterable
 from app.project_graph.models import EdgeResolver, NodeProperty, NodeSourceRef, ProjectGraphEdge, ProjectGraphNode
 from app.project_graph.normalizer import normalize_discipline, normalize_element_code
 from app.project_graph.synthesis_types import SheetCompletionState, SheetFact, SheetKnowledgePatch
-from app.transcription.models import DrawingEvidenceSheet, ObservationValue
+from app.transcription.models import DemIntegrityReport, DrawingEvidenceSheet, ObservationValue
 
 
 _OBSERVATION_NODE_TYPES = {
@@ -111,7 +111,10 @@ def _observation_name(category: str, observation: ObservationValue) -> str:
     return value.strip() or observation.raw
 
 
-def build_sheet_patch(sheet: DrawingEvidenceSheet) -> SheetKnowledgePatch:
+def build_sheet_patch(
+    sheet: DrawingEvidenceSheet,
+    integrity_report: DemIntegrityReport | None = None,
+) -> SheetKnowledgePatch:
     """Convert one stored sheet into deterministic graph facts without inference."""
 
     present_ids = {item.evidence_id for item in sheet.evidence}
@@ -219,13 +222,26 @@ def build_sheet_patch(sheet: DrawingEvidenceSheet) -> SheetKnowledgePatch:
     aliases = _unique([sheet_id, sheet.sheet_identity.title.value])
     dangling_refs = list(missing_identity_refs)
     unresolved_references: list[str] = []
+    quarantined_keys = {
+        (item.category, item.raw, frozenset(item.evidence_refs))
+        for item in (integrity_report.quarantined_observations if integrity_report else [])
+    }
+    flagged_keys = {
+        (item.category, item.raw, frozenset(item.evidence_refs))
+        for item in (integrity_report.flagged_observations if integrity_report else [])
+    }
 
     for category, node_type in _OBSERVATION_NODE_TYPES.items():
         for position, observation in enumerate(getattr(sheet.observations, category)):
             valid_refs, missing_refs = _split_evidence_refs(observation.evidence_refs, present_ids)
+            observation_key = (category, observation.raw, frozenset(missing_refs))
+            dangling_refs.extend(missing_refs)
+            if observation_key in quarantined_keys:
+                continue
             canonical_name = _observation_name(category, observation)
             node_id = _stable_id("NODE", sheet_node_id, category, position, canonical_name)
-            status = _STATUS_TO_VERIFICATION[observation.status]
+            effective_status = "ambiguous" if observation_key in flagged_keys else observation.status
+            status = _STATUS_TO_VERIFICATION[effective_status]
             fact = SheetFact(
                 fact_id=_stable_id("FACT", node_id),
                 category=category,
@@ -235,7 +251,7 @@ def build_sheet_patch(sheet: DrawingEvidenceSheet) -> SheetKnowledgePatch:
                 unit=observation.unit,
                 bbox=observation.bbox,
                 confidence=observation.confidence,
-                status=observation.status,
+                status=effective_status,
                 evidence_refs=valid_refs,
                 missing_evidence_refs=missing_refs,
                 # node_id back-reference lets downstream resolvers (e.g.
@@ -270,14 +286,13 @@ def build_sheet_patch(sheet: DrawingEvidenceSheet) -> SheetKnowledgePatch:
                     source=sheet_node_id,
                     target=node_id,
                     relation="CONTAINS",
-                    confidence_class=_STATUS_TO_CONFIDENCE[observation.status],
+                    confidence_class=_STATUS_TO_CONFIDENCE[effective_status],
                     confidence=observation.confidence,
                     evidence_refs=valid_refs,
                     resolver=EdgeResolver(method="deterministic_page_patch"),
                 )
             )
             aliases.extend([observation.raw, observation.normalized or ""])
-            dangling_refs.extend(missing_refs)
             if category == "references":
                 unresolved_references.append(observation.raw)
 

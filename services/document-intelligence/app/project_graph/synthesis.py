@@ -11,6 +11,7 @@ from app.project_graph.alias_resolver import resolve_aliases
 from app.project_graph.community_builder import GraphCommunity, build_graph_communities
 from app.project_graph.conflict_resolver import resolve_conflicts
 from app.project_graph.cross_sheet_resolver import resolve_cross_sheet
+from app.project_graph.level_canonicalizer import LevelCanonicalization, canonicalize_levels
 from app.project_graph.models import (
     EdgeResolver,
     NodeProperty,
@@ -29,7 +30,8 @@ from app.project_graph.synthesis_types import (
     SheetKnowledgePatch,
 )
 from app.project_graph.validator import assert_valid_project_graph
-from app.transcription.models import DrawingEvidenceSheet
+from app.transcription.integrity import build_integrity_report
+from app.transcription.models import DemIntegrityReport, DrawingEvidenceSheet
 
 
 _ALLOWED_PROVIDER_DECISIONS = frozenset(
@@ -331,12 +333,104 @@ def _provider_review_edges(
     return edges
 
 
+def _canonical_level_review_edges(
+    canonicalization: LevelCanonicalization,
+    nodes: Sequence[ProjectGraphNode],
+) -> list[ProjectGraphEdge]:
+    levels_by_name = {
+        node.canonical_name: node
+        for node in nodes
+        if node.type == "level"
+    }
+    edges: list[ProjectGraphEdge] = []
+    for pair in canonicalization.possibly_same:
+        left = levels_by_name.get(pair.left)
+        right = levels_by_name.get(pair.right)
+        if left is None or right is None:
+            continue
+        edges.append(
+            ProjectGraphEdge(
+                edge_id=_stable_id("EDGE", left.node_id, right.node_id, "POSSIBLY_SAME_AS"),
+                source=left.node_id,
+                target=right.node_id,
+                relation="POSSIBLY_SAME_AS",
+                confidence_class="AMBIGUOUS",
+                confidence=0.5,
+                evidence_refs=list(pair.evidence_refs),
+                resolver=EdgeResolver(method="deterministic_level_review"),
+            )
+        )
+    return edges
+
+
+def _canonical_level_nodes(
+    project_id: str,
+    canonicalization: LevelCanonicalization,
+) -> list[ProjectGraphNode]:
+    """Materialize every accepted canonical level, even when no label creates
+    an occurrence on that sheet. Elevation remains auditable node metadata."""
+
+    nodes: list[ProjectGraphNode] = []
+    for level in canonicalization.levels:
+        properties = {
+            "normalized_key": NodeProperty(
+                value=_canonical_text_key(level.canonical_name),
+                evidence_refs=[
+                    evidence_ref
+                    for source_ref in level.source_refs
+                    for evidence_ref in source_ref.evidence_refs
+                ],
+            ),
+            "merged_from": NodeProperty(
+                value=level.merged_from,
+                evidence_refs=[
+                    evidence_ref
+                    for source_ref in level.source_refs
+                    for evidence_ref in source_ref.evidence_refs
+                ],
+            ),
+        }
+        if level.elevation is not None:
+            properties["elevation"] = NodeProperty(
+                value=level.elevation,
+                evidence_refs=[
+                    evidence_ref
+                    for source_ref in level.source_refs
+                    for evidence_ref in source_ref.evidence_refs
+                ],
+            )
+        nodes.append(
+            ProjectGraphNode(
+                node_id=_stable_id("LEVEL", project_id, _canonical_text_key(level.canonical_name)),
+                type="level",
+                canonical_name=level.canonical_name,
+                aliases=list(level.aliases),
+                properties=properties,
+                discipline="general",
+                verification_status="ambiguous" if level.requires_review else "extracted",
+                confidence=0.5 if level.requires_review else 0.9,
+                source_refs=list(level.source_refs),
+            )
+        )
+    return nodes
+
+
 def _patch_missing_information(patches: Sequence[SheetKnowledgePatch]) -> list[str]:
     values: list[str] = []
     for patch in patches:
         for ambiguity in patch.ambiguities:
             values.append(f"{patch.sheet_id} page {patch.page_index + 1}: ambiguity {ambiguity}")
     return values
+
+
+def _integrity_missing_information(reports: Sequence[DemIntegrityReport]) -> list[str]:
+    return [
+        f"{report.sheet_id} page {report.page_index + 1}: {item.reason} "
+        f"(observation_index={position}; {item.category}: {item.raw}; "
+        f"dangling_refs={','.join(item.evidence_refs)})"
+        for report in reports
+        for position, item in enumerate(report.quarantined_observations)
+    ]
 
 
 def _snapshot_id(
@@ -388,7 +482,16 @@ def synthesize_project_graph(
     if len(project_ids) != 1:
         raise ValueError("all drawing evidence sheets must belong to one project")
     project_id = next(iter(project_ids))
-    patches = sorted((build_sheet_patch(sheet) for sheet in sheets), key=_patch_key)
+    integrity_reports = [build_integrity_report(sheet) for sheet in sheets]
+    raw_patches = sorted(
+        (
+            build_sheet_patch(sheet, report)
+            for sheet, report in zip(sheets, integrity_reports)
+        ),
+        key=_patch_key,
+    )
+    canonicalization = canonicalize_levels(raw_patches)
+    patches = canonicalization.patches
 
     alias_resolution = resolve_aliases(patches)
     if alias_resolution.project_id != project_id:
@@ -420,6 +523,7 @@ def synthesize_project_graph(
     candidate_nodes = [
         *base_nodes,
         *alias_resolution.nodes,
+        *_canonical_level_nodes(project_id, canonicalization),
         *cross_sheet.nodes,
         *conflicts.nodes,
     ]
@@ -432,15 +536,20 @@ def synthesize_project_graph(
         if edge.source in node_ids and edge.target in node_ids
     ]
     provider_edges = _provider_review_edges(proposals, [*candidate_nodes])
-    edges = _merge_edges([*base_edges, *cross_sheet.edges, *conflicts.edges, *provider_edges])
+    level_review_edges = _canonical_level_review_edges(canonicalization, nodes)
+    edges = _merge_edges(
+        [*base_edges, *cross_sheet.edges, *conflicts.edges, *provider_edges, *level_review_edges]
+    )
     assert_valid_project_graph(nodes, edges)
 
     missing_information = sorted(
         set(
             [
                 *cross_sheet.missing_information,
+                *canonicalization.missing_information,
                 *provider_missing_information,
                 *_patch_missing_information(patches),
+                *_integrity_missing_information(integrity_reports),
             ]
         )
     )

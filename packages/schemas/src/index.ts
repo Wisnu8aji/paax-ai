@@ -1523,6 +1523,33 @@ export const SheetCompletionSchema = z.object({
   next_cursor: z.string().nullish(),
 });
 
+export const DemIntegrityObservationSchema = z.object({
+  category: z.string(),
+  raw: z.string(),
+  reason: z.string(),
+  evidence_refs: z.array(z.string()).default([]),
+});
+
+export const DemIntegrityCountsSchema = z.object({
+  total_bbox: z.number().int().nonnegative(),
+  out_of_contract_bbox: z.number().int().nonnegative(),
+  dangling_refs: z.number().int().nonnegative(),
+  duplicate_evidence_ids: z.number().int().nonnegative(),
+  quarantined_observation_count: z.number().int().nonnegative(),
+});
+
+export const DemIntegrityReportSchema = z.object({
+  page_index: z.number().int(),
+  sheet_id: z.string(),
+  coordinate_space: z.enum(["normalized", "pixel_like", "mixed"]),
+  counts: DemIntegrityCountsSchema,
+  quarantined_observations: z.array(DemIntegrityObservationSchema).default([]),
+  flagged_observations: z.array(DemIntegrityObservationSchema).default([]),
+  completion_consistent: z.boolean(),
+  notes: z.array(z.string()).default([]),
+});
+export type DemIntegrityReport = z.infer<typeof DemIntegrityReportSchema>;
+
 export const DrawingEvidenceSheetSchema = z.object({
   schema_version: z.literal("paax.dem.sheet.v1").default("paax.dem.sheet.v1"),
   run_id: z.string(),
@@ -1701,6 +1728,17 @@ export const GraphQueryPlanSchema = z.object({
 });
 export type GraphQueryPlan = z.infer<typeof GraphQueryPlanSchema>;
 
+export const ProjectGraphRetrievalRequestSchema = z.object({
+  query: z.string().min(1).max(2000),
+  use_intent: z.boolean().default(true),
+  depth: z.number().int().min(0).max(5).default(2),
+  budget_tokens: z.number().int().min(100).max(5000).default(1400),
+  relations: z.array(z.string()).default([]),
+  traversal_mode: z.enum(["bfs", "dfs", "shortest_path", "direct_lookup"]).default("bfs"),
+  target_node_id: z.string().nullish(),
+});
+export type ProjectGraphRetrievalRequest = z.infer<typeof ProjectGraphRetrievalRequestSchema>;
+
 export const CitationSchema = z.object({
   citation_id: z.string(),
   document_id: z.string(),
@@ -1793,6 +1831,24 @@ export const ProjectGraphSummaryViewSchema = z.object({
   provenance: ProvenancePayloadSchema,
 });
 export type ProjectGraphSummaryView = z.infer<typeof ProjectGraphSummaryViewSchema>;
+
+export const ProjectGraphRetrievalResponseSchema = z.object({
+  status: z.string(),
+  snapshot_id: z.string().nullish(),
+  nodes: z.array(z.record(z.unknown())).default([]),
+  edges: z.array(z.record(z.unknown())).default([]),
+  evidence: z.array(z.record(z.unknown())).default([]),
+  context_token_estimate: z.number().int().nonnegative().default(0),
+  intent: QueryIntentEnum.nullish(),
+  applied_filters: z.record(z.string().nullable()).default({}),
+  data_status: z.enum(["grounded", "empty", "calculation_required", "unknown_level"]).nullish(),
+  notes: z.array(z.string()).default([]),
+  summary_view: ProjectGraphSummaryViewSchema.nullish(),
+  guidance: z.string().nullish(),
+  rab_bridge_available: z.boolean().nullish(),
+  missing_information: z.array(z.string()).default([]),
+});
+export type ProjectGraphRetrievalResponse = z.infer<typeof ProjectGraphRetrievalResponseSchema>;
 
 export const TkgIssueSchema = z.object({
   code: z.string(),

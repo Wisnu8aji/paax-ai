@@ -128,6 +128,32 @@ class SheetCompletion(BaseModel):
     next_cursor: Optional[str] = None
 
 
+class DemIntegrityObservation(BaseModel):
+    category: str
+    raw: str
+    reason: str
+    evidence_refs: list[str] = Field(default_factory=list)
+
+
+class DemIntegrityCounts(BaseModel):
+    total_bbox: int = Field(ge=0)
+    out_of_contract_bbox: int = Field(ge=0)
+    dangling_refs: int = Field(ge=0)
+    duplicate_evidence_ids: int = Field(ge=0)
+    quarantined_observation_count: int = Field(ge=0)
+
+
+class DemIntegrityReport(BaseModel):
+    page_index: int
+    sheet_id: str
+    coordinate_space: Literal["normalized", "pixel_like", "mixed"]
+    counts: DemIntegrityCounts
+    quarantined_observations: list[DemIntegrityObservation] = Field(default_factory=list)
+    flagged_observations: list[DemIntegrityObservation] = Field(default_factory=list)
+    completion_consistent: bool
+    notes: list[str] = Field(default_factory=list)
+
+
 class DrawingEvidenceSheet(BaseModel):
     schema_version: Literal["paax.dem.sheet.v1"] = "paax.dem.sheet.v1"
     run_id: str

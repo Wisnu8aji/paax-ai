@@ -24,7 +24,11 @@ def _sheet(
     level: str | None = None,
     space: str | None = None,
     title: str = "Synthetic sheet",
+    discipline: str = "Arsitektur",
+    grids: list[tuple[str, tuple[float, float, float, float]]] | None = None,
+    has_table: bool = False,
     dimensions: list[tuple[str, tuple[float, float, float, float]]] | None = None,
+    texts: list[str] | None = None,
 ) -> DrawingEvidenceSheet:
     observations: dict[str, list[ObservationValue]] = {
         "element_labels": [
@@ -47,6 +51,16 @@ def _sheet(
             )
             for index, (value, bbox) in enumerate(dimensions)
         ]
+    if texts:
+        observations["texts"] = [
+            ObservationValue(
+                raw=value,
+                normalized=value,
+                confidence=0.99,
+                evidence_refs=[f"EV-{page_index}-TEXT-{index}"],
+            )
+            for index, value in enumerate(texts)
+        ]
     if level is not None:
         observations["levels"] = [
             ObservationValue(
@@ -65,10 +79,36 @@ def _sheet(
                 evidence_refs=[f"EV-{page_index}-SPACE"],
             )
         ]
+    if grids:
+        observations["grids"] = [
+            ObservationValue(
+                raw=value,
+                normalized=value,
+                bbox=bbox,
+                confidence=0.9,
+                evidence_refs=[f"EV-{page_index}-GRID-{index}"],
+            )
+            for index, (value, bbox) in enumerate(grids)
+        ]
+    if has_table:
+        observations["tables"] = [
+            ObservationValue(
+                raw="Schedule",
+                normalized="Schedule",
+                confidence=0.9,
+                evidence_refs=[f"EV-{page_index}-TABLE"],
+            )
+        ]
 
     evidence_ids = [f"EV-{page_index}-LABEL", f"EV-{page_index}-LEVEL", f"EV-{page_index}-SPACE"]
+    if grids:
+        evidence_ids.extend(f"EV-{page_index}-GRID-{index}" for index in range(len(grids)))
+    if has_table:
+        evidence_ids.append(f"EV-{page_index}-TABLE")
     if dimensions:
         evidence_ids.extend(f"EV-{page_index}-DIM-{index}" for index in range(len(dimensions)))
+    if texts:
+        evidence_ids.extend(f"EV-{page_index}-TEXT-{index}" for index in range(len(texts)))
     evidence = [
         EvidenceItem(
             evidence_id=evidence_id,
@@ -104,7 +144,7 @@ def _sheet(
             ),
             title=ValueWithEvidence(value=title, confidence=0.9),
             discipline=InterpretedValue(
-                value="Arsitektur",
+                value=discipline,
                 confidence=0.9,
                 status="extracted",
             ),
@@ -130,6 +170,50 @@ def _node(snapshot_nodes: list[ProjectGraphNode], node_type: str, name: str) -> 
 def _position_context(sheet: DrawingEvidenceSheet) -> None:
     sheet.observations.element_labels[0].bbox = (10.0, 10.0, 20.0, 20.0)
     sheet.observations.spaces[0].bbox = (24.0, 10.0, 34.0, 20.0)
+
+
+def test_synthesis_canonicalizes_explicit_elevations_aliases_and_review_levels():
+    """Manual anchor: explicit EL text is project evidence, so datums become
+    canonical levels while a distinct roof elevation remains review-only."""
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    mapping_text = "EL. ±0.000 LANTAI 1; EL. +4.400 LANTAI 2; EL. +8.300 LANTAI ATAP"
+    sheets = [
+        _sheet(1, "D1", level="Elevasi ±0.000", space="Ruang A", texts=[mapping_text]),
+        _sheet(2, "D2", level="+4.400", space="Ruang B"),
+        _sheet(3, "D3", level="+8.300", space="Ruang C"),
+        _sheet(4, "D4", level="-1.300", space="Ruang D"),
+        _sheet(5, "D5", level="Main Floor", space="Ruang E"),
+        _sheet(6, "D6", level="Lantai Atap P +16.20", space="Ruang F"),
+        _sheet(7, "D7", level="3000", space="Ruang G"),
+    ]
+    for sheet in sheets:
+        _position_context(sheet)
+        sheet.observations.levels[0].bbox = (24.0, 30.0, 34.0, 40.0)
+
+    result = synthesize_project_graph(sheets)
+    levels = {node.canonical_name: node for node in result.snapshot.nodes if node.type == "level"}
+    occurrences = {
+        node.canonical_name: node
+        for node in result.snapshot.nodes
+        if node.type == "element_occurrence"
+    }
+
+    assert {"Lantai 1", "Lantai 2", "Atap", "Substruktur", "Lantai Atap P +16.20"} <= set(levels)
+    assert "3000" not in levels
+    assert occurrences["D1 @ Lantai 1 / Ruang A"].properties["level"].value == "Lantai 1"
+    assert occurrences["D5 @ Lantai 1 / Ruang E"].properties["level"].value == "Lantai 1"
+    assert levels["Lantai 1"].properties["elevation"].value == "±0.000"
+    assert "Elevasi ±0.000" in levels["Lantai 1"].aliases
+    assert levels["Lantai 2"].properties["elevation"].value == "+4.400"
+    assert levels["Atap"].properties["elevation"].value == "+8.300"
+    assert occurrences["D7 @ Lantai Tidak Terpetakan / Ruang G"].verification_status == "ambiguous"
+    assert any("3000" in item and "NUMBER_NOISE" in item for item in result.snapshot.missing_information)
+    roof_ids = {levels["Atap"].node_id, levels["Lantai Atap P +16.20"].node_id}
+    assert any(
+        edge.relation == "POSSIBLY_SAME_AS" and {edge.source, edge.target} == roof_ids
+        for edge in result.snapshot.edges
+    )
 
 
 def test_synthesis_merges_one_type_and_one_fully_contextual_occurrence():
@@ -179,6 +263,27 @@ def test_synthesis_merges_one_type_and_one_fully_contextual_occurrence():
     ) == 1
     assert not any("J2" in item and "context" in item.lower() for item in result.snapshot.missing_information)
     assert all(edge.resolver is not None for edge in result.snapshot.edges)
+
+
+def test_level_canonicalizer_harvests_actual_plus_minus_el_mapping():
+    """The stored fixture uses U+00B1, so this guards the real EL syntax
+    rather than a visually similar character from a terminal encoding."""
+    from app.project_graph.level_canonicalizer import canonicalize_levels
+    from app.project_graph.page_patch import build_sheet_patch
+
+    plus_minus = chr(177)
+    sheet = _sheet(
+        1,
+        "D1",
+        level=f"Elevasi {plus_minus}0.000",
+        texts=[f"EL. {plus_minus}0.000 LANTAI 1"],
+    )
+    result = canonicalize_levels([build_sheet_patch(sheet)])
+    level_fact = next(fact for fact in result.patches[0].facts if fact.category == "levels")
+
+    assert level_fact.normalized == "Lantai 1"
+    assert level_fact.attributes["level_elevation"] == f"{plus_minus}0.000"
+    assert "Elevasi" in level_fact.attributes["level_merged_from"]
 
 
 class _RecordingProvider:
@@ -335,6 +440,141 @@ def test_synthesis_does_not_associate_an_unpositioned_label_with_the_only_space(
 
     assert not [node for node in result.snapshot.nodes if node.type == "element_occurrence"]
     assert any("J2" in item and "spatial context" in item for item in result.snapshot.missing_information)
+
+
+def test_synthesis_locates_structure_without_spaces_by_nearest_grid_axis():
+    """Anchor manual: two K1A labels on a Lantai 2 structural plan lie
+    nearer to grid A than grid B, so they form one distinct (level, grid)
+    occurrence rather than being rejected for lacking an architectural space."""
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    sheet = _sheet(
+        42,
+        "K1A",
+        title="DENAH KOLOM LANTAI 2",
+        discipline="Struktur",
+        grids=[
+            ("A", (24.0, 10.0, 34.0, 20.0)),
+            ("B", (200.0, 10.0, 210.0, 20.0)),
+        ],
+    )
+    sheet.observations.element_labels[0].bbox = (10.0, 10.0, 20.0, 20.0)
+    sheet.observations.element_labels.append(
+        ObservationValue(
+            raw="K1A",
+            normalized="K1A",
+            bbox=(12.0, 30.0, 22.0, 40.0),
+            confidence=0.95,
+            evidence_refs=["EV-42-LABEL-SECOND"],
+        )
+    )
+    sheet.evidence.append(
+        EvidenceItem(
+            evidence_id="EV-42-LABEL-SECOND", kind="text", raw="EV-42-LABEL-SECOND", confidence=1.0
+        )
+    )
+
+    result = synthesize_project_graph([sheet])
+
+    occurrences = [node for node in result.snapshot.nodes if node.type == "element_occurrence"]
+    assert len(occurrences) == 1
+    occurrence = occurrences[0]
+    assert occurrence.canonical_name == "K1A @ Lantai 2 / A"
+    assert "space" not in occurrence.properties
+    assert occurrence.properties["grid"].value == "A"
+    assert occurrence.properties["label_count"].value == 2
+    assert {source_ref.page_index for source_ref in occurrence.source_refs} == {42}
+    assert any(
+        edge.source == occurrence.node_id and edge.relation == "ALIGNED_TO"
+        for edge in result.snapshot.edges
+    )
+
+
+def test_synthesis_skips_schedule_labels_but_keeps_their_dimension_reference():
+    """A table is definitional: its BV1 label must create no occurrence even
+    when its title supplies a level and its nearest space would otherwise make
+    the old universal level+space gate accept it."""
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    sheet = _sheet(50, "BV1", level="Lantai 1", space="Ruang A", title="TABEL BALOK")
+    _position_context(sheet)
+
+    result = synthesize_project_graph([sheet])
+
+    assert not [node for node in result.snapshot.nodes if node.type == "element_occurrence"]
+    assert [node for node in result.snapshot.nodes if node.type == "drawing_reference"]
+
+
+def test_synthesis_skips_table_fact_when_title_is_not_schedule():
+    """The facts category is an independent schedule signal: a generic title
+    must not turn a definitional table label into an occurrence."""
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    sheet = _sheet(
+        50, "BV1", level="Lantai 1", space="Ruang A", title="DETAIL BALOK", has_table=True
+    )
+    _position_context(sheet)
+
+    result = synthesize_project_graph([sheet])
+
+    assert not [node for node in result.snapshot.nodes if node.type == "element_occurrence"]
+
+
+def test_synthesis_skips_section_labels_even_when_a_plan_has_the_same_type():
+    """POTONGAN is cross-level. Its nearby elevation is not a new occurrence
+    context; the only K1A occurrence below must remain the Lantai 2 plan."""
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    plan = _sheet(
+        42,
+        "K1A",
+        title="DENAH KOLOM LANTAI 2",
+        discipline="Struktur",
+        space="Ruang A",
+        grids=[("A", (24.0, 10.0, 34.0, 20.0))],
+    )
+    plan.observations.element_labels[0].bbox = (10.0, 10.0, 20.0, 20.0)
+    plan.observations.spaces[0].bbox = (24.0, 30.0, 34.0, 40.0)
+    section = _sheet(53, "K1A", level="Elevasi +3.500", title="POTONGAN - B", discipline="Struktur")
+    section.observations.element_labels[0].bbox = (10.0, 10.0, 20.0, 20.0)
+    section.observations.levels[0].bbox = (24.0, 10.0, 34.0, 20.0)
+
+    result = synthesize_project_graph([plan, section])
+
+    occurrences = [node for node in result.snapshot.nodes if node.type == "element_occurrence"]
+    assert len(occurrences) == 1
+    assert {source_ref.page_index for source_ref in occurrences[0].source_refs} == {42}
+
+
+def test_synthesis_allows_mep_without_space_using_sheet_context():
+    """SPEC A2 requires space only for architecture. A MEP plan with a title
+    level but no room label must still preserve one occurrence."""
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    result = synthesize_project_graph(
+        [_sheet(30, "AC1", title="DENAH MEP LANTAI 2", discipline="MEP")]
+    )
+
+    occurrences = [node for node in result.snapshot.nodes if node.type == "element_occurrence"]
+    assert len(occurrences) == 1
+    assert occurrences[0].canonical_name == "AC1 @ Lantai 2"
+    assert "space" not in occurrences[0].properties
+
+
+def test_synthesis_marks_structure_without_grid_as_ambiguous_sheet_context():
+    """Without a space or grid, a structural plan remains usable at its known
+    level but is explicitly marked for review with the legal ambiguous status."""
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    sheet = _sheet(42, "K1A", title="DENAH KOLOM LANTAI 2", discipline="Struktur")
+    sheet.observations.element_labels[0].bbox = (10.0, 10.0, 20.0, 20.0)
+
+    result = synthesize_project_graph([sheet])
+
+    occurrence = next(node for node in result.snapshot.nodes if node.type == "element_occurrence")
+    assert occurrence.canonical_name == "K1A @ Lantai 2"
+    assert occurrence.verification_status == "ambiguous"
+    assert "grid" not in occurrence.properties
 
 
 class _InvalidDecisionProvider:

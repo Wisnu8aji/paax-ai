@@ -4,7 +4,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 
-from paax_db import models
+from paax_db import models, schemas
 from paax_db.project_graph_repository import build_and_activate_snapshot
 from paax_db.project_graph_retrieval import build_project_vocabulary, retrieve_project_graph
 from paax_db.main import app
@@ -49,6 +49,7 @@ async def test_retrieval_scopes_alias_bfs_evidence_budget_and_audit_to_active_pr
     assert result.context_token_estimate <= 30
     assert len(logs) == 1
     assert (logs[0].project_id, logs[0].snapshot_id, logs[0].outcome) == ("PROJECT-A", "SNAP-A", "success")
+    assert logs[0].selected_seed_ids == ["J2"]
 
 
 @pytest.mark.asyncio
@@ -259,6 +260,199 @@ async def test_retrieval_budget_pruning_survives_multiple_pop_iterations():
     remaining_node_ids = {node.node_id for node in result.nodes}
     for item in result.evidence:
         assert item.evidence_id.replace("EV", "N") in remaining_node_ids
+    assert all(
+        edge.source_node_id in remaining_node_ids and edge.target_node_id in remaining_node_ids
+        for edge in result.edges
+    )
+
+
+async def _seed_intent_retrieval_fixture(session, *, summary_views=()):
+    session.add(models.Project(id="PROJECT-V2", owner_id="OWNER-A", name="Project V2"))
+    await session.commit()
+    await build_and_activate_snapshot(
+        session,
+        project_id="PROJECT-V2",
+        snapshot_id="SNAP-V2",
+        schema_version="paax.pckm.graph.v1",
+        source_manifest_hash="v2",
+        generation_metadata={},
+        nodes=[
+            {"node_id": "L2", "node_type": "level", "canonical_name": "Lantai 2", "normalized_name": "lantai 2", "discipline": "general", "verification_status": "extracted", "confidence": 1},
+            {"node_id": "TYPE-K1", "node_type": "element_type", "canonical_name": "K1", "normalized_name": "k1", "discipline": "structure", "verification_status": "extracted", "confidence": 1},
+            {"node_id": "OCC-K1", "node_type": "element_occurrence", "canonical_name": "K1 @ Lantai 2", "normalized_name": "k1 @ lantai 2", "discipline": "structure", "verification_status": "cross_sheet_inferred", "confidence": 1},
+            {"node_id": "OCC-W1", "node_type": "element_occurrence", "canonical_name": "Jendela @ Lantai 2", "normalized_name": "jendela @ lantai 2", "discipline": "architecture", "verification_status": "extracted", "confidence": 1},
+            {"node_id": "DIM-K1", "node_type": "dimension", "canonical_name": "400x400 mm", "normalized_name": "400x400 mm", "discipline": "structure", "verification_status": "extracted", "confidence": 1, "search_text": "400x400 mm"},
+            {"node_id": "CONFLICT-1", "node_type": "conflict", "canonical_name": "Total horizontal atas 20250 != bawah 20000", "normalized_name": "total horizontal atas 20250 != bawah 20000", "discipline": "general", "verification_status": "conflicting", "confidence": 1},
+        ],
+        edges=[
+            {"edge_id": "K1-L2", "source_node_id": "OCC-K1", "target_node_id": "L2", "relation": "LOCATED_ON", "confidence_class": "EXTRACTED", "confidence": 1},
+            {"edge_id": "W1-L2", "source_node_id": "OCC-W1", "target_node_id": "L2", "relation": "LOCATED_ON", "confidence_class": "EXTRACTED", "confidence": 1},
+            {"edge_id": "K1-TYPE", "source_node_id": "OCC-K1", "target_node_id": "TYPE-K1", "relation": "INSTANCE_OF", "confidence_class": "EXTRACTED", "confidence": 1},
+            {"edge_id": "K1-DIM", "source_node_id": "OCC-K1", "target_node_id": "DIM-K1", "relation": "HAS_DIMENSION", "confidence_class": "EXTRACTED", "confidence": 1},
+            {"edge_id": "CONFLICT-EV", "source_node_id": "CONFLICT-1", "target_node_id": "DIM-K1", "relation": "HAS_EVIDENCE", "confidence_class": "EXTRACTED", "confidence": 1},
+        ],
+        evidence=[{"evidence_id": "EV-50", "document_id": "DOC-A", "page_index": 49, "sheet_id": "S-50", "kind": "text", "raw_text": "TABEL KOLOM K1 400x400 mm"}],
+        node_evidence=[{"node_id": "DIM-K1", "evidence_id": "EV-50", "role": "source"}],
+        edge_evidence=[],
+        aliases=[{"alias_normalized": "k1", "alias_raw": "K1", "node_id": "TYPE-K1", "alias_type": "drawing_mark", "confidence": 1}],
+        communities=[],
+        summary_views=summary_views,
+    )
+
+
+@pytest.mark.asyncio
+async def test_intent_list_filter_uses_level_summary_and_discipline_scope():
+    from .conftest import TestSession
+
+    summary = {
+        "schema_version": "paax.pckm.summary-view.v1",
+        "project_id": "PROJECT-V2",
+        "snapshot_id": "SNAP-V2",
+        "view_kind": "LEVEL_OVERVIEW",
+        "grain": {"level_id": "L2"},
+        "summary": {"level_name": "Lantai 2", "element_type_index": [{"element_type_id": "TYPE-K1", "name": "K1", "occurrence_count": 1}], "discipline_counts": [{"discipline": "structure", "occurrence_count": 1}], "stored_measurement_facts": []},
+        "quality": {"confirmed_count": 1, "ambiguous_binding_count": 0, "conflict_count": 0},
+        "provenance": {"source_document_ids": ["DOC-A"], "evidence_ids": ["EV-50"], "summary_builder_version": "test"},
+    }
+    async with TestSession() as session:
+        await _seed_intent_retrieval_fixture(session, summary_views=[summary])
+        result = await retrieve_project_graph(session, project_id="PROJECT-V2", query="struktur lantai 2", use_intent=True)
+
+    assert result.intent == "LIST_FILTER"
+    assert result.data_status == "grounded"
+    assert result.summary_view["summary"]["element_type_index"][0]["name"] == "K1"
+    assert {node.node_id for node in result.nodes} == {"L2", "OCC-K1"}
+    assert all(node.discipline in {"general", "structure"} for node in result.nodes)
+
+
+@pytest.mark.asyncio
+async def test_intent_list_filter_falls_back_to_scoped_bfs_when_summary_is_missing():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        await _seed_intent_retrieval_fixture(session)
+        result = await retrieve_project_graph(session, project_id="PROJECT-V2", query="struktur lantai 2", use_intent=True)
+
+    assert result.data_status == "grounded"
+    assert result.summary_view is None
+    assert {node.node_id for node in result.nodes} == {"L2", "OCC-K1", "TYPE-K1", "DIM-K1"}
+    assert all(node.discipline in {"general", "structure"} for node in result.nodes)
+
+
+@pytest.mark.asyncio
+async def test_numeric_stored_fact_keeps_dimension_and_its_evidence():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        await _seed_intent_retrieval_fixture(session)
+        result = await retrieve_project_graph(session, project_id="PROJECT-V2", query="dimensi K1", use_intent=True)
+
+    assert result.intent == "NUMERIC_STORED_FACT"
+    assert any(node.canonical_name == "400x400 mm" for node in result.nodes)
+    assert {item.evidence_id for item in result.evidence} == {"EV-50"}
+
+
+@pytest.mark.asyncio
+async def test_element_lookup_entity_seed_can_reach_dimension_for_short_benchmark_query():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        await _seed_intent_retrieval_fixture(session)
+        result = await retrieve_project_graph(session, project_id="PROJECT-V2", query="K1", use_intent=True)
+
+    assert result.intent == "ELEMENT_LOOKUP"
+    assert any(node.canonical_name == "400x400 mm" for node in result.nodes)
+
+
+@pytest.mark.asyncio
+async def test_conflict_word_wins_when_numeric_word_is_only_part_of_conflict_query():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        await _seed_intent_retrieval_fixture(session)
+        result = await retrieve_project_graph(session, project_id="PROJECT-V2", query="konflik dimensi", use_intent=True)
+
+    assert result.intent == "CONFLICT_LOOKUP"
+    assert any(node.node_type == "conflict" for node in result.nodes)
+
+
+@pytest.mark.asyncio
+async def test_missing_data_lookup_always_returns_honest_missing_information_summary():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        await _seed_intent_retrieval_fixture(session)
+        result = await retrieve_project_graph(session, project_id="PROJECT-V2", query="data kurang", use_intent=True)
+
+    assert result.intent == "MISSING_DATA"
+    assert result.missing_information
+
+
+@pytest.mark.asyncio
+async def test_calculation_required_refuses_retrieval_and_points_to_core_engine():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        await _seed_intent_retrieval_fixture(session)
+        result = await retrieve_project_graph(session, project_id="PROJECT-V2", query="berapa volume beton lantai 2", use_intent=True)
+
+    assert result.status == "calculation_required"
+    assert result.data_status == "calculation_required"
+    assert result.nodes == []
+    assert "Core Engine" in (result.guidance or "")
+    assert result.rab_bridge_available is True
+
+
+@pytest.mark.asyncio
+async def test_conflict_lookup_seeds_conflict_nodes_and_unknown_level_is_honest_empty():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        await _seed_intent_retrieval_fixture(session)
+        conflict = await retrieve_project_graph(session, project_id="PROJECT-V2", query="ada konflik apa", use_intent=True)
+        unknown = await retrieve_project_graph(session, project_id="PROJECT-V2", query="Lantai 3 ada apa saja", use_intent=True)
+
+    assert conflict.intent == "CONFLICT_LOOKUP"
+    assert any(node.node_type == "conflict" for node in conflict.nodes)
+    assert unknown.data_status == "unknown_level"
+    assert unknown.nodes == []
+    assert any("level tak dikenal" in note for note in unknown.notes)
+
+
+def test_retrieval_v2_schemas_expose_request_and_response_contract():
+    request = schemas.ProjectGraphRetrievalRequest(query="dimensi K1", use_intent=True)
+    response = schemas.ProjectGraphRetrievalResponse(
+        status="success", intent="NUMERIC_STORED_FACT", applied_filters={"level": None, "discipline": None},
+        data_status="grounded", notes=[], summary_view=None, guidance=None,
+        rab_bridge_available=None, missing_information=[],
+    )
+
+    assert request.use_intent is True
+    assert response.intent == "NUMERIC_STORED_FACT"
+    assert response.data_status == "grounded"
+
+
+@pytest.mark.asyncio
+async def test_retrieval_api_returns_v2_fields_when_intent_mode_is_requested():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        await _seed_intent_retrieval_fixture(session)
+
+    headers = {"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A"}
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/projects/PROJECT-V2/project-graph/retrieve",
+            json={"query": "dimensi K1", "use_intent": True},
+            headers=headers,
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["intent"] == "NUMERIC_STORED_FACT"
+    assert body["data_status"] == "grounded"
+    assert any(node["name"] == "400x400 mm" for node in body["nodes"])
 
 
 @pytest.mark.asyncio

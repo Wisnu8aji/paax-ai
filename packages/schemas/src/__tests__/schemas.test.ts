@@ -17,6 +17,7 @@ import {
   AiKudaKudaSuggestionSchema,
   AiArsitekturAreaSuggestionSchema,
   ContinuationPatchSchema,
+  DemIntegrityReportSchema,
   DrawingEvidenceSheetSchema,
   DocumentManifestSchema,
   DrawingWorkItemsResultSchema,
@@ -495,6 +496,37 @@ describe("DrawingEvidenceSheetSchema", () => {
     expect(result.observations.texts).toEqual([]);
     expect(result.views).toEqual([]);
     expect(result.evidence).toEqual([]);
+  });
+});
+
+describe("DemIntegrityReportSchema", () => {
+  it("parses the A4 evidence-integrity report contract", () => {
+    const report = DemIntegrityReportSchema.parse({
+      page_index: 41,
+      sheet_id: "A-42",
+      coordinate_space: "pixel_like",
+      counts: {
+        total_bbox: 80,
+        out_of_contract_bbox: 79,
+        dangling_refs: 12,
+        duplicate_evidence_ids: 1,
+        quarantined_observation_count: 3,
+      },
+      quarantined_observations: [
+        {
+          category: "dimensions",
+          raw: "400",
+          reason: "integrity: dangling evidence",
+          evidence_refs: ["EV-MISSING"],
+        },
+      ],
+      flagged_observations: [],
+      completion_consistent: false,
+      notes: ["completion inconsistent"],
+    });
+
+    expect(report.counts.quarantined_observation_count).toBe(3);
+    expect(report.quarantined_observations[0].reason).toBe("integrity: dangling evidence");
   });
 });
 

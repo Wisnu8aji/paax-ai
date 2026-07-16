@@ -1,7 +1,77 @@
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, Any, Dict, List
+from enum import Enum
+from typing import Optional, Any, Dict, List, Literal
 from datetime import datetime
 import uuid
+
+
+class QueryIntentEnum(str, Enum):
+    GENERAL_CHAT = "GENERAL_CHAT"
+    PROJECT_OVERVIEW = "PROJECT_OVERVIEW"
+    DIRECT_FACT = "DIRECT_FACT"
+    LIST_FILTER = "LIST_FILTER"
+    NODE_EXPLAIN = "NODE_EXPLAIN"
+    RELATIONSHIP = "RELATIONSHIP"
+    PATH_QUERY = "PATH_QUERY"
+    SHEET_LOOKUP = "SHEET_LOOKUP"
+    SPACE_LOOKUP = "SPACE_LOOKUP"
+    ELEMENT_LOOKUP = "ELEMENT_LOOKUP"
+    MATERIAL_LOOKUP = "MATERIAL_LOOKUP"
+    CONFLICT_LOOKUP = "CONFLICT_LOOKUP"
+    MISSING_DATA = "MISSING_DATA"
+    NUMERIC_STORED_FACT = "NUMERIC_STORED_FACT"
+    CALCULATION_REQUIRED = "CALCULATION_REQUIRED"
+    RAB_QUERY = "RAB_QUERY"
+    SCHEDULE_QUERY = "SCHEDULE_QUERY"
+
+
+class EdgeRelationEnum(str, Enum):
+    CONTAINS = "CONTAINS"
+    PART_OF = "PART_OF"
+    LOCATED_ON = "LOCATED_ON"
+    LOCATED_IN = "LOCATED_IN"
+    ALIGNED_TO = "ALIGNED_TO"
+    DEFINED_BY = "DEFINED_BY"
+    DEPICTED_IN = "DEPICTED_IN"
+    REFERENCES = "REFERENCES"
+    SAME_AS = "SAME_AS"
+    POSSIBLY_SAME_AS = "POSSIBLY_SAME_AS"
+    USES_MATERIAL = "USES_MATERIAL"
+    HAS_FINISH = "HAS_FINISH"
+    HAS_DIMENSION = "HAS_DIMENSION"
+    HAS_TYPE = "HAS_TYPE"
+    INSTANCE_OF = "INSTANCE_OF"
+    SERVES = "SERVES"
+    CONNECTED_TO = "CONNECTED_TO"
+    SUPPORTED_BY = "SUPPORTED_BY"
+    SUPPORTS = "SUPPORTS"
+    ADJACENT_TO = "ADJACENT_TO"
+    OPENS_TO = "OPENS_TO"
+    CONFLICTS_WITH = "CONFLICTS_WITH"
+    HAS_EVIDENCE = "HAS_EVIDENCE"
+    DERIVED_FROM = "DERIVED_FROM"
+    SUPERSEDES = "SUPERSEDES"
+    HAS_OPENING = "HAS_OPENING"
+    FILLED_BY = "FILLED_BY"
+
+
+class QueryEntity(BaseModel):
+    type: str
+    value: str
+
+
+class GraphQueryPlan(BaseModel):
+    intent: QueryIntentEnum
+    project_id: str
+    entities: List[QueryEntity] = Field(default_factory=list)
+    filters: Dict[str, Optional[str]] = Field(default_factory=dict)
+    relations: List[EdgeRelationEnum] = Field(default_factory=list)
+    traversal_mode: Literal["bfs", "dfs", "shortest_path", "direct_lookup"] = "bfs"
+    traversal_depth: int = Field(default=2, ge=0)
+    budget_tokens: int = Field(default=1400, gt=0)
+
+
+QueryPlan = GraphQueryPlan
 
 class ProjectBase(BaseModel):
     owner_id: str
@@ -297,6 +367,7 @@ class ProjectGraphSnapshotResponse(BaseModel):
 
 class ProjectGraphRetrievalRequest(BaseModel):
     query: str = Field(min_length=1, max_length=2000)
+    use_intent: bool = True
     depth: int = Field(default=2, ge=0, le=5)
     budget_tokens: int = Field(default=1400, ge=100, le=5000)
     relations: List[str] = Field(default_factory=list)
@@ -311,6 +382,14 @@ class ProjectGraphRetrievalResponse(BaseModel):
     edges: List[Dict[str, Any]] = Field(default_factory=list)
     evidence: List[Dict[str, Any]] = Field(default_factory=list)
     context_token_estimate: int = 0
+    intent: Optional[QueryIntentEnum] = None
+    applied_filters: Dict[str, Optional[str]] = Field(default_factory=dict)
+    data_status: Optional[Literal["grounded", "empty", "calculation_required", "unknown_level"]] = None
+    notes: List[str] = Field(default_factory=list)
+    summary_view: Optional[Dict[str, Any]] = None
+    guidance: Optional[str] = None
+    rab_bridge_available: Optional[bool] = None
+    missing_information: List[str] = Field(default_factory=list)
 
 
 class ProjectGraphMetricsResponse(BaseModel):
@@ -362,5 +441,3 @@ class ProjectGraphSummaryViewResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-
-

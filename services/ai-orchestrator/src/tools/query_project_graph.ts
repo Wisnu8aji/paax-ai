@@ -3,6 +3,43 @@ import type { ChatContext, ToolDefinition } from "./types";
 const MISSING_GRAPH_MESSAGE =
   "Data gambar kerja (project graph) belum tersedia untuk proyek ini -- belum ada snapshot yang disintesis, atau query tidak menemukan elemen yang cocok.";
 
+/**
+ * Backend retrieve v2 (services/db, SPEC B5) memahami filter lokasi/disiplin/jenis
+ * elemen HANYA lewat parser intent rule-based yang membaca teks `query` -- endpoint
+ * POST /project-graph/retrieve TIDAK punya field body terpisah untuk level/discipline/
+ * node_types (lihat services/db/src/paax_db/schemas.py ProjectGraphRetrievalRequest:
+ * query, use_intent, depth, budget_tokens, relations, traversal_mode, target_node_id
+ * -- tidak lebih). Karena itu param opsional level/discipline/node_types di declaration
+ * tool ini (§B6 SPEC_WAVE_B_QUERY_UNDERSTANDING) dilipat sebagai klausa tambahan ke
+ * dalam teks query yang benar-benar dikirim -- itulah satu-satunya jalur yang memengaruhi
+ * parser B4 di backend. Mengirimnya sebagai field body terpisah akan diam-diam diabaikan
+ * Pydantic (silent no-op) dan menyesatkan pemanggil tool.
+ */
+function buildEnrichedQuery(baseQuery: string, args: Record<string, unknown>): string {
+  const extras: string[] = [];
+  if (typeof args.level === "string" && args.level.trim()) extras.push(args.level.trim());
+  if (typeof args.discipline === "string" && args.discipline.trim()) extras.push(args.discipline.trim());
+  if (Array.isArray(args.node_types)) {
+    for (const item of args.node_types) {
+      if (typeof item === "string" && item.trim()) extras.push(item.trim());
+    }
+  }
+  if (extras.length === 0) return baseQuery;
+  return `${baseQuery} ${extras.join(" ")}`.trim();
+}
+
+/**
+ * `limit` tidak punya padanan di endpoint retrieve (tidak ada node-count cap di backend,
+ * hanya budget_tokens yang unitnya token -- bukan jumlah node, jadi memetakan limit ke
+ * budget_tokens akan salah satuan dan menyesatkan). Dipotong di sisi tool ini saja
+ * sesudah backend menjawab -- murni slicing array, bukan perhitungan/agregasi, jadi
+ * tidak melanggar Aturan Emas.
+ */
+function applyLimit<T>(items: T[], limit: unknown): T[] {
+  if (typeof limit !== "number" || !Number.isFinite(limit) || limit <= 0) return items;
+  return items.slice(0, Math.floor(limit));
+}
+
 async function executeQueryProjectGraph(
   args: Record<string, unknown>,
   context?: ChatContext,
@@ -15,26 +52,79 @@ async function executeQueryProjectGraph(
     return { available: false, message: MISSING_GRAPH_MESSAGE };
   }
 
+  const enrichedQuery = buildEnrichedQuery(query, args);
+
   try {
     const res = await fetch(`${dbUrl}/projects/${projectId}/project-graph/retrieve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        query,
-        depth: typeof args.depth === "number" ? args.depth : 2,
-        traversal_mode: typeof args.traversal_mode === "string" ? args.traversal_mode : "bfs",
+        query: enrichedQuery,
+        use_intent: true,
       }),
     });
     if (!res.ok) {
       return { available: false, message: MISSING_GRAPH_MESSAGE };
     }
     const data = await res.json();
-    if (data.status !== "success" || !Array.isArray(data.nodes) || data.nodes.length === 0) {
+    if (data.status !== "success") {
       return { available: false, message: MISSING_GRAPH_MESSAGE };
     }
+
+    const dataStatus = typeof data.data_status === "string" ? data.data_status : null;
+
+    // CALCULATION_REQUIRED (Aturan Emas): tool TIDAK PERNAH menghitung angka RAB/volume
+    // sendiri -- backend menolak mencari-cari dan sudah menyiapkan guidance siap-pakai.
+    // Diteruskan apa adanya, model wajib menyampaikan arahan ini ke user, bukan menghitung.
+    if (dataStatus === "calculation_required") {
+      return {
+        available: true,
+        data_status: dataStatus,
+        intent: data.intent ?? null,
+        guidance:
+          typeof data.guidance === "string"
+            ? data.guidance
+            : "Angka final (volume/biaya/material) harus dihitung lewat Core Engine dan menunggu approval -- tool ini tidak menghitung.",
+        rab_bridge_available: data.rab_bridge_available ?? null,
+        notes: Array.isArray(data.notes) ? data.notes : [],
+        note:
+          "JANGAN menghitung angka apa pun sendiri. Sampaikan guidance ini ke user apa adanya, " +
+          "dan arahkan ke fitur RAB/Core Engine (dengan approval) untuk angka final.",
+      };
+    }
+
+    // unknown_level: backend tidak mengenali nama lantai yang disebut -- jujur kosong,
+    // bukan ditutupi dengan tebakan.
+    if (dataStatus === "unknown_level") {
+      return {
+        available: false,
+        data_status: dataStatus,
+        intent: data.intent ?? null,
+        notes: Array.isArray(data.notes) ? data.notes : [],
+        message:
+          "Level/lantai yang disebut tidak dikenali di gambar kerja proyek ini. Katakan ke user " +
+          "bahwa level tersebut tidak ditemukan -- jangan menebak lantai mana yang dimaksud.",
+      };
+    }
+
+    const rawNodes: Record<string, unknown>[] = Array.isArray(data.nodes) ? data.nodes : [];
+    const nodes = applyLimit(rawNodes, args.limit);
+    if (nodes.length === 0 && !data.summary_view) {
+      return {
+        available: false,
+        data_status: dataStatus ?? "empty",
+        intent: data.intent ?? null,
+        notes: Array.isArray(data.notes) ? data.notes : [],
+        message: MISSING_GRAPH_MESSAGE,
+      };
+    }
+
     return {
       available: true,
-      nodes: data.nodes.map((node: Record<string, unknown>) => ({
+      data_status: dataStatus ?? "grounded",
+      intent: data.intent ?? null,
+      applied_filters: data.applied_filters ?? {},
+      nodes: nodes.map((node: Record<string, unknown>) => ({
         node_id: node.node_id,
         name: node.name,
         type: node.type,
@@ -49,6 +139,12 @@ async function executeQueryProjectGraph(
         raw_text: item.raw_text,
         evidence_id: item.evidence_id,
       })),
+      // Ringkasan per-level (element_type_index, discipline_counts, fakta ukuran tertulis)
+      // saat backend menjawab dari project_graph_summary_views -- hanya ada bila intent
+      // LIST_FILTER/ELEMENT_LOOKUP dengan filter level cocok view yang tersedia.
+      summary_view: data.summary_view ?? null,
+      notes: Array.isArray(data.notes) ? data.notes : [],
+      missing_information: Array.isArray(data.missing_information) ? data.missing_information : [],
       note:
         "Jawab hanya dari data ini. Sertakan sitasi [sheet_id p.halaman] untuk setiap klaim. " +
         "Jika elemen yang ditanya tidak ada di sini, katakan tidak ditemukan -- jangan menebak.",
@@ -63,12 +159,15 @@ export const queryProjectGraphTool: ToolDefinition = {
   declaration: {
     name: "query_project_graph",
     description:
-      "Cari fakta tentang elemen/komponen di gambar kerja proyek (pintu, jendela, instalasi listrik, dst) dari graf pengetahuan yang sudah disintesis dari hasil analisis gambar. Setiap hasil membawa sitasi sumber (sheet + halaman) -- WAJIB dikutip di jawaban. Gunakan ini untuk pertanyaan tentang isi gambar kerja, BUKAN untuk RAB/HSP/volume/durasi (pakai query_rab/query_schedule untuk itu). PENTING untuk pertanyaan yang menyebut lokasi/lantai (mis. \"struktur di lantai 2\", \"kolom lantai 1\"): kirim HANYA nama lantainya persis (contoh: query=\"Lantai 2\", BUKAN query=\"struktur lantai 2\") -- query berisi nama lantai persis akan mengembalikan SEMUA elemen di lantai itu secara akurat (traversal khusus lokasi). Kalau perlu mempersempit ke jenis elemen tertentu (mis. hanya kolom), panggil tool ini SEKALI LAGI dengan query nama elemen itu (mis. query=\"kolom\") dan bandingkan hasilnya -- jangan gabungkan dua kata kunci berbeda jenis (nama lantai + jenis elemen) dalam satu query string karena itu tidak akan cocok apa pun.",
+      "Cari fakta tentang elemen/komponen di gambar kerja proyek (pintu, jendela, kolom, instalasi listrik, dst) dari graf pengetahuan yang sudah disintesis dari hasil analisis gambar. Kirim pertanyaan user apa adanya dalam bahasa natural (mis. \"struktur di lantai 2\", \"dimensi kolom K1\", \"ada konflik apa\") -- backend memahami maksudnya sendiri (lokasi, disiplin, jenis kalkulasi) lewat parser intent, jadi TIDAK perlu memecah atau menyederhanakan frasa. Setiap hasil membawa sitasi sumber (sheet + halaman) -- WAJIB dikutip di jawaban. Gunakan ini untuk pertanyaan tentang isi gambar kerja, BUKAN untuk RAB/HSP/durasi (pakai query_rab/query_schedule untuk itu). Jika hasil membawa data_status=\"calculation_required\" (mis. pertanyaan volume/biaya/kebutuhan material): JANGAN menghitung sendiri -- sampaikan guidance yang tool berikan ke user apa adanya dan arahkan ke fitur RAB/Core Engine dengan approval untuk angka final. Jika data_status=\"unknown_level\": katakan ke user level/lantai yang disebut tidak dikenali di gambar kerja, jangan menebak.",
     parameters: {
       type: "OBJECT",
       properties: {
-        query: { type: "STRING", description: "SATU kata kunci per panggilan: kode elemen (P2, J2), nama elemen (pintu, kolom, stop kontak), ATAU nama lantai persis (Lantai 1, Lantai 2) -- jangan gabungkan nama lantai dengan jenis elemen dalam satu string" },
-        depth: { type: "NUMBER", description: "Kedalaman penelusuran graf, default 2" },
+        query: { type: "STRING", description: "Pertanyaan user dalam bahasa natural, apa adanya (mis. \"kolom di lantai 2\", \"dimensi K1\", \"berapa volume beton lantai 2\", \"ada konflik apa\")" },
+        level: { type: "STRING", description: "Opsional -- nama lantai/level bila sudah diketahui pasti dari konteks percakapan (mis. \"Lantai 2\"), untuk memperkuat filter lokasi" },
+        discipline: { type: "STRING", description: "Opsional -- disiplin bila sudah diketahui pasti (structure/architecture/mep), untuk memperkuat filter disiplin" },
+        node_types: { type: "ARRAY", description: "Opsional -- jenis elemen yang ingin ditekankan (mis. [\"kolom\", \"balok\"])", items: { type: "STRING" } },
+        limit: { type: "NUMBER", description: "Opsional -- batas jumlah elemen yang dikembalikan (pemotongan sisi tool, bukan backend)" },
       },
       required: ["query"],
     },
@@ -76,6 +175,7 @@ export const queryProjectGraphTool: ToolDefinition = {
   execute: async (args, params) => executeQueryProjectGraph(args, params?.context),
   summarize: (result) => {
     if (result.available === false) return "data gambar kerja tidak tersedia untuk query ini";
+    if (result.data_status === "calculation_required") return "kalkulasi diperlukan -- guidance RAB/Core Engine diteruskan (tool tidak menghitung)";
     const nodeCount = Array.isArray(result.nodes) ? result.nodes.length : 0;
     return `${nodeCount} elemen ditemukan di gambar kerja`;
   },
