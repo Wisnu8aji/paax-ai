@@ -86,11 +86,11 @@ class QwenDemAdapter:
 
     @classmethod
     def from_env(cls) -> "QwenDemAdapter | None":
-        api_key = os.getenv("DEM_EXTRACTION_API_KEY", "").strip()
+        api_key = os.getenv("DRAWING_INTELLIGENCE_API_KEY", "").strip()
         if not api_key:
             return None
-        base_url = os.getenv("DEM_EXTRACTION_BASE_URL", "").strip() or _DEFAULT_BASE_URL
-        model = os.getenv("DEM_EXTRACTION_MODEL", "").strip() or _DEFAULT_MODEL
+        base_url = os.getenv("DRAWING_INTELLIGENCE_BASE_URL", "").strip() or _DEFAULT_BASE_URL
+        model = os.getenv("DRAWING_INTELLIGENCE_QWEN_MODEL", "").strip() or _DEFAULT_MODEL
         return cls(api_key=api_key, base_url=base_url, model=model)
 
     def extract_page(

@@ -1,0 +1,531 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 52,
+    "page_number": 53,
+    "render_uri": "local://plhut-88pg-run-1/page-0052.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T22:11:30.092482+00:00",
+    "completed_at": "2026-07-14T22:11:30.092513+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "53",
+      "raw": "53",
+      "confidence": 0.95,
+      "evidence_refs": [
+        "EVD-SHT-NO-001"
+      ]
+    },
+    "title": {
+      "value": "TABEL PELAT",
+      "raw": "TABEL PELAT",
+      "confidence": 0.98,
+      "evidence_refs": [
+        "EVD-SHT-TITLE-001"
+      ]
+    },
+    "discipline": {
+      "value": "Struktur",
+      "confidence": 0.85,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "NTS",
+        "normalized": "Not To Scale",
+        "confidence": 1.0,
+        "evidence_refs": [
+          "EVD-SCALE-001"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "VIEW-S1-001",
+      "type": "Detail",
+      "title": "Detail Pelat S1",
+      "bbox": [
+        100.0,
+        500.0,
+        480.0,
+        850.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "view_id": "VIEW-S2-002",
+      "type": "Detail",
+      "title": "Detail Pelat S2",
+      "bbox": [
+        550.0,
+        500.0,
+        930.0,
+        850.0
+      ],
+      "confidence": 0.97
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KEMENTERIAN AGAMA RI",
+        "normalized": "Kementerian Agama RI",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1450.0,
+          150.0,
+          1650.0,
+          170.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "EVD-TXT-001"
+        ]
+      },
+      {
+        "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+        "normalized": "Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1450.0,
+          250.0,
+          1700.0,
+          300.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "EVD-TXT-002"
+        ]
+      },
+      {
+        "raw": "JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+        "normalized": "Jalan Ki Mangun Sarkoro No.115 Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1450.0,
+          320.0,
+          1650.0,
+          340.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "EVD-TXT-003"
+        ]
+      },
+      {
+        "raw": "SKALA : NTS",
+        "normalized": "Skala: Not To Scale",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          950.0,
+          500.0,
+          980.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "EVD-TXT-004"
+        ]
+      },
+      {
+        "raw": "(Sisi Pendek)",
+        "normalized": "Sisi Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          50.0,
+          600.0,
+          120.0,
+          800.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "EVD-TXT-005"
+        ]
+      },
+      {
+        "raw": "(Sisi Panjang)",
+        "normalized": "Sisi Panjang",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          880.0,
+          400.0,
+          910.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "EVD-TXT-006"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "t=130",
+        "normalized": "Tebal = 130",
+        "numeric_value": 130.0,
+        "unit": "mm",
+        "bbox": [
+          280.0,
+          650.0,
+          360.0,
+          680.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "EVD-DIM-001"
+        ]
+      },
+      {
+        "raw": "t=120",
+        "normalized": "Tebal = 120",
+        "numeric_value": 120.0,
+        "unit": "mm",
+        "bbox": [
+          730.0,
+          650.0,
+          810.0,
+          680.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "EVD-DIM-002"
+        ]
+      }
+    ],
+    "grids": [],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [
+      {
+        "raw": "S1",
+        "normalized": "S1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          280.0,
+          720.0,
+          360.0,
+          770.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "EVD-EL-001"
+        ]
+      },
+      {
+        "raw": "S2",
+        "normalized": "S2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          730.0,
+          720.0,
+          810.0,
+          770.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "EVD-EL-002"
+        ]
+      },
+      {
+        "raw": "D10-150",
+        "normalized": "Tulangan D10-150",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          180.0,
+          600.0,
+          240.0,
+          850.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "EVD-EL-003"
+        ]
+      },
+      {
+        "raw": "D10-200",
+        "normalized": "Tulangan D10-200",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          630.0,
+          600.0,
+          690.0,
+          850.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "EVD-EL-004"
+        ]
+      }
+    ],
+    "symbols": [
+      {
+        "raw": "Garisan spiral (tulangan)",
+        "normalized": "Simbol tulangan arah melintang (spiral)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          520.0,
+          400.0,
+          900.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "EVD-SYM-001"
+        ]
+      },
+      {
+        "raw": "Segitiga hitam (tanda lipat/bengkok)",
+        "normalized": "Simbol bengkok tulangan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          280.0,
+          690.0,
+          360.0,
+          710.0
+        ],
+        "confidence": 0.92,
+        "status": "extracted",
+        "evidence_refs": [
+          "EVD-SYM-002"
+        ]
+      }
+    ],
+    "tables": [],
+    "materials": [],
+    "notes": [],
+    "references": [],
+    "patterns": [],
+    "geometry_descriptions": [
+      {
+        "raw": "Denah tulangan pelat kotak dengan penulangan dua arah",
+        "normalized": "Layout tulangan pelat persegi dengan tulangan arah LY dan LX",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          500.0,
+          480.0,
+          850.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "EVD-GEOM-001"
+        ]
+      },
+      {
+        "raw": "Denah tulangan pelat kotak dengan penulangan dua arah",
+        "normalized": "Layout tulangan pelat persegi dengan tulangan arah LY dan LX",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          500.0,
+          930.0,
+          850.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "EVD-GEOM-002"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "EVD-SHT-NO-001",
+      "kind": "text",
+      "raw": "53",
+      "bbox": [
+        1750.0,
+        1150.0,
+        1780.0,
+        1170.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "EVD-SHT-TITLE-001",
+      "kind": "text",
+      "raw": "TABEL PELAT",
+      "bbox": [
+        250.0,
+        950.0,
+        550.0,
+        990.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "EVD-SCALE-001",
+      "kind": "text",
+      "raw": "NTS",
+      "bbox": [
+        400.0,
+        950.0,
+        450.0,
+        980.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "EVD-TXT-001",
+      "kind": "text",
+      "raw": "KEMENTERIAN AGAMA RI",
+      "bbox": [
+        1450.0,
+        150.0,
+        1650.0,
+        170.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "EVD-TXT-002",
+      "kind": "text",
+      "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+      "bbox": [
+        1450.0,
+        250.0,
+        1700.0,
+        300.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "EVD-TXT-003",
+      "kind": "text",
+      "raw": "JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+      "bbox": [
+        1450.0,
+        320.0,
+        1650.0,
+        340.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "EVD-DIM-001",
+      "kind": "text",
+      "raw": "t=130",
+      "bbox": [
+        280.0,
+        650.0,
+        360.0,
+        680.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "EVD-DIM-002",
+      "kind": "text",
+      "raw": "t=120",
+      "bbox": [
+        730.0,
+        650.0,
+        810.0,
+        680.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "EVD-EL-001",
+      "kind": "text",
+      "raw": "S1",
+      "bbox": [
+        280.0,
+        720.0,
+        360.0,
+        770.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "EVD-EL-002",
+      "kind": "text",
+      "raw": "S2",
+      "bbox": [
+        730.0,
+        720.0,
+        810.0,
+        770.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "EVD-GEOM-001",
+      "kind": "drawing",
+      "raw": "Detail Pelat S1",
+      "bbox": [
+        100.0,
+        500.0,
+        480.0,
+        850.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "EVD-GEOM-002",
+      "kind": "drawing",
+      "raw": "Detail Pelat S2",
+      "bbox": [
+        550.0,
+        500.0,
+        930.0,
+        850.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 1,
+    "sections_completed": 1,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

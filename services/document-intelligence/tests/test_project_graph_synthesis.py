@@ -24,6 +24,7 @@ def _sheet(
     level: str | None = None,
     space: str | None = None,
     title: str = "Synthetic sheet",
+    dimensions: list[tuple[str, tuple[float, float, float, float]]] | None = None,
 ) -> DrawingEvidenceSheet:
     observations: dict[str, list[ObservationValue]] = {
         "element_labels": [
@@ -35,6 +36,17 @@ def _sheet(
             )
         ]
     }
+    if dimensions:
+        observations["dimensions"] = [
+            ObservationValue(
+                raw=value,
+                normalized=value,
+                bbox=bbox,
+                confidence=0.99,
+                evidence_refs=[f"EV-{page_index}-DIM-{index}"],
+            )
+            for index, (value, bbox) in enumerate(dimensions)
+        ]
     if level is not None:
         observations["levels"] = [
             ObservationValue(
@@ -54,6 +66,9 @@ def _sheet(
             )
         ]
 
+    evidence_ids = [f"EV-{page_index}-LABEL", f"EV-{page_index}-LEVEL", f"EV-{page_index}-SPACE"]
+    if dimensions:
+        evidence_ids.extend(f"EV-{page_index}-DIM-{index}" for index in range(len(dimensions)))
     evidence = [
         EvidenceItem(
             evidence_id=evidence_id,
@@ -61,11 +76,7 @@ def _sheet(
             raw=evidence_id,
             confidence=1.0,
         )
-        for evidence_id in (
-            f"EV-{page_index}-LABEL",
-            f"EV-{page_index}-LEVEL",
-            f"EV-{page_index}-SPACE",
-        )
+        for evidence_id in evidence_ids
     ]
     return DrawingEvidenceSheet(
         run_id="RUN-TEST",
@@ -140,7 +151,7 @@ def test_synthesis_merges_one_type_and_one_fully_contextual_occurrence():
         if node.type == "element_occurrence" and node.canonical_name.startswith("J2 @")
     ]
     assert [source_ref.page_index for source_ref in type_node.source_refs] == [20, 21, 26]
-    assert len(occurrences) == 1
+    assert len(occurrences) == 2
     assert any(edge.relation == "SAME_AS" for edge in result.snapshot.edges)
     reference_node = next(
         node
@@ -166,7 +177,7 @@ def test_synthesis_merges_one_type_and_one_fully_contextual_occurrence():
         edge.source == occurrences[0].node_id and edge.relation == "LOCATED_ON"
         for edge in result.snapshot.edges
     ) == 1
-    assert any("J2" in item and "context" in item.lower() for item in result.snapshot.missing_information)
+    assert not any("J2" in item and "context" in item.lower() for item in result.snapshot.missing_information)
     assert all(edge.resolver is not None for edge in result.snapshot.edges)
 
 
@@ -488,3 +499,254 @@ def test_synthesis_uses_no_network_when_a_provider_is_not_explicitly_supplied(mo
     result = synthesize_project_graph([sheet])
 
     assert result.provider_proposals == ()
+
+
+def test_synthesis_groups_context_deficient_occurrence_when_contextual_exists_cross_sheet():
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    sheets = [
+        _sheet(0, "J2", level="Lantai 1", space="Ruang A", title="DENAH LANTAI 1"),
+        _sheet(1, "J2"),
+    ]
+    _position_context(sheets[0])
+    result = synthesize_project_graph(sheets)
+
+    occurrences = [
+        node
+        for node in result.snapshot.nodes
+        if node.type == "element_occurrence" and node.canonical_name.startswith("J2 @")
+    ]
+    assert len(occurrences) == 2
+
+    occ_real = next(o for o in occurrences if "Lantai 1" in o.canonical_name)
+    occ_generic = next(o for o in occurrences if "Lantai Tidak Terpetakan" in o.canonical_name)
+
+    assert occ_real.confidence == 0.95
+    assert occ_generic.confidence == 0.475
+    assert occ_generic.properties["level"].value == "Lantai Tidak Terpetakan (S-02 hal. 2)"
+    assert occ_generic.properties["space"].value == "Ruang Tidak Terpetakan (S-02 hal. 2)"
+
+    assert any(
+        (edge.source == occ_real.node_id and edge.target == occ_generic.node_id and edge.relation == "POSSIBLY_SAME_AS") or
+        (edge.source == occ_generic.node_id and edge.target == occ_real.node_id and edge.relation == "POSSIBLY_SAME_AS")
+        for edge in result.snapshot.edges
+    )
+    assert not any("J2" in item and "context" in item.lower() for item in result.snapshot.missing_information)
+
+
+def test_synthesis_groups_partially_contextual_occurrence_with_fallback_space():
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    sheets = [
+        _sheet(0, "J2", level="Lantai 1", space="Ruang A", title="DENAH LANTAI 1"),
+        _sheet(1, "J2", level="Lantai 1", title="DENAH LANTAI 1"),
+    ]
+    _position_context(sheets[0])
+    result = synthesize_project_graph(sheets)
+
+    occurrences = [
+        node
+        for node in result.snapshot.nodes
+        if node.type == "element_occurrence" and node.canonical_name.startswith("J2 @")
+    ]
+    assert len(occurrences) == 2
+
+    occ_real = next(o for o in occurrences if "Ruang A" in o.canonical_name)
+    occ_generic = next(o for o in occurrences if "Ruang Tidak Terpetakan" in o.canonical_name)
+
+    assert occ_real.confidence == 0.95
+    assert occ_generic.confidence == 0.665
+    assert occ_generic.properties["level"].value == "Lantai 1"
+    assert occ_generic.properties["space"].value == "Ruang Tidak Terpetakan"
+
+    assert any(
+        (edge.source == occ_real.node_id and edge.target == occ_generic.node_id and edge.relation == "POSSIBLY_SAME_AS") or
+        (edge.source == occ_generic.node_id and edge.target == occ_real.node_id and edge.relation == "POSSIBLY_SAME_AS")
+        for edge in result.snapshot.edges
+    )
+
+
+def test_synthesis_does_not_merge_unmapped_occurrences_across_different_sheets():
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    sheets = [
+        _sheet(0, "J2", level="Lantai 1", space="Ruang A", title="DENAH LANTAI 1"),
+        _sheet(1, "J2"),
+        _sheet(2, "J2"),
+    ]
+    _position_context(sheets[0])
+    result = synthesize_project_graph(sheets)
+
+    occurrences = [
+        node
+        for node in result.snapshot.nodes
+        if node.type == "element_occurrence" and node.canonical_name.startswith("J2 @")
+    ]
+    assert len(occurrences) == 3
+
+    occ_names = {o.canonical_name for o in occurrences}
+    assert "J2 @ Lantai 1 / Ruang A" in occ_names
+    assert "J2 @ Lantai Tidak Terpetakan (S-02 hal. 2) / Ruang Tidak Terpetakan (S-02 hal. 2)" in occ_names
+    assert "J2 @ Lantai Tidak Terpetakan (S-03 hal. 3) / Ruang Tidak Terpetakan (S-03 hal. 3)" in occ_names
+
+
+
+
+def test_synthesis_links_unambiguous_nearest_dimension_to_element_reference():
+    """Anchor case computed manually from the real 88-page PLHUT fixture,
+    page 20: dimension "1500" at [455,135,490,150] sits 37.5 units from the
+    aligned BV1 label at [455,170,490,190] and 83.85 units from a different
+    -column BV1 at [530,170,565,190] -- both real distances from the fixture
+    JSON, not invented. The aligned one must win; the other must not."""
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    sheet = _sheet(
+        20,
+        "BV1",
+        dimensions=[("1500", (455.0, 135.0, 490.0, 150.0))],
+    )
+    sheet.observations.element_labels[0].bbox = (455.0, 170.0, 490.0, 190.0)
+
+    result = synthesize_project_graph([sheet])
+
+    reference_node = next(
+        node for node in result.snapshot.nodes if node.type == "drawing_reference"
+    )
+    dimension_node = next(
+        node for node in result.snapshot.nodes if node.type == "dimension"
+    )
+    has_dimension_edges = [
+        edge for edge in result.snapshot.edges if edge.relation == "HAS_DIMENSION"
+    ]
+    assert len(has_dimension_edges) == 1
+    assert has_dimension_edges[0].source == reference_node.node_id
+    assert has_dimension_edges[0].target == dimension_node.node_id
+    assert dimension_node.canonical_name == "1500"
+
+
+def test_synthesis_does_not_link_a_dimension_when_two_elements_are_equidistant():
+    """Conservative tie-break: if the nearest dimension is exactly equidistant
+    from two dimension facts (or from ambiguous element placement), no
+    HAS_DIMENSION edge is created -- matches _nearest_value's tie behavior
+    elsewhere in this resolver."""
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    sheet = _sheet(
+        20,
+        "BV1",
+        dimensions=[
+            ("1500", (400.0, 100.0, 435.0, 115.0)),
+            ("1625", (400.0, 240.0, 435.0, 255.0)),
+        ],
+    )
+    # Elemen tepat di tengah dua dimensi -- jarak identik ke keduanya (tie).
+    sheet.observations.element_labels[0].bbox = (400.0, 170.0, 435.0, 185.0)
+
+    result = synthesize_project_graph([sheet])
+
+    has_dimension_edges = [
+        edge for edge in result.snapshot.edges if edge.relation == "HAS_DIMENSION"
+    ]
+    assert has_dimension_edges == []
+
+
+def test_synthesis_does_not_link_a_dimension_farther_than_the_page_scale_cutoff():
+    """A lone dimension elsewhere on the sheet must never be claimed as
+    "nearest" just because it's the only candidate -- distance must also be
+    within a page-scale-derived cutoff (matches the real fixture's page 20
+    coordinate range of roughly 1400x600 units, where genuinely related
+    element/dimension pairs sit tens of units apart, not hundreds)."""
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    sheet = _sheet(
+        20,
+        "BV1",
+        dimensions=[("1500", (1600.0, 600.0, 1635.0, 615.0))],
+    )
+    sheet.observations.element_labels[0].bbox = (400.0, 170.0, 435.0, 185.0)
+
+    result = synthesize_project_graph([sheet])
+
+    has_dimension_edges = [
+        edge for edge in result.snapshot.edges if edge.relation == "HAS_DIMENSION"
+    ]
+    assert has_dimension_edges == []
+
+
+def test_synthesis_links_a_reference_callout_to_the_exact_matching_sheet_title():
+    """Cross-page detail/section callouts (e.g. "POTONGAN A" printed on one
+    sheet, pointing at a different sheet actually titled "POTONGAN A") should
+    resolve to a REFERENCES edge -- exact title match only, never a guess."""
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    referencing_sheet = _sheet(10, "J2", title="DENAH LANTAI 1")
+    referencing_sheet.observations.references = [
+        ObservationValue(raw="POTONGAN A", normalized="POTONGAN A", confidence=1.0, evidence_refs=["EV-10-REF"]),
+    ]
+    referencing_sheet.evidence.append(
+        EvidenceItem(evidence_id="EV-10-REF", kind="text", raw="EV-10-REF", confidence=1.0)
+    )
+    target_sheet = _sheet(11, "BV1", title="POTONGAN A")
+
+    result = synthesize_project_graph([referencing_sheet, target_sheet])
+
+    reference_edges = [edge for edge in result.snapshot.edges if edge.relation == "REFERENCES"]
+    assert len(reference_edges) == 1
+    target_sheet_node = next(
+        node for node in result.snapshot.nodes if node.type == "sheet" and node.canonical_name == "S-12"
+    )
+    assert reference_edges[0].target == target_sheet_node.node_id
+    assert not any(
+        "unresolved reference POTONGAN A" in item for item in result.snapshot.missing_information
+    )
+
+
+def test_synthesis_does_not_link_a_reference_that_only_names_its_own_sheet():
+    """Real fixture behavior (page 14 of the 88-page PLHUT set): a sheet
+    titled "POTONGAN A" that also lists "POTONGAN A" in its own unresolved
+    references is a self-annotation (e.g. a section-cut callout label on the
+    same drawing), not a cross-page reference -- must NOT self-link."""
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    sheet = _sheet(13, "BV1", title="POTONGAN A")
+    sheet.observations.references = [
+        ObservationValue(raw="POTONGAN A", normalized="POTONGAN A", confidence=1.0, evidence_refs=["EV-13-REF"]),
+    ]
+    sheet.evidence.append(EvidenceItem(evidence_id="EV-13-REF", kind="text", raw="EV-13-REF", confidence=1.0))
+
+    result = synthesize_project_graph([sheet])
+
+    reference_edges = [edge for edge in result.snapshot.edges if edge.relation == "REFERENCES"]
+    assert reference_edges == []
+    assert any(
+        "unresolved reference POTONGAN A" in item for item in result.snapshot.missing_information
+    )
+
+
+def test_synthesis_excludes_raw_per_page_level_nodes_keeping_only_the_deduplicated_one():
+    """Regression test for a real accuracy gap on the 88-page PLHUT fixture:
+    every page mentioning a level observation produced its own "level" node
+    (id prefix NODE-), even when unrelated to the actual floor (the "levels"
+    observation category also captures ramp/roof/elevation markers). Measured
+    156 such raw nodes for a project with only 12 genuinely distinct levels.
+    None of them ever got a LOCATED_ON edge from an occurrence -- only
+    cross_sheet_resolver's deduplicated _level_node() (id prefix LEVEL-) does.
+    Raw level nodes must be excluded from synthesis output the same way
+    element_type raw nodes already are."""
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    sheets = [
+        _sheet(20, "J2", level="Lantai 1", space="Ruang A", title="DENAH LANTAI 1"),
+        _sheet(21, "J2", level="Lantai 1", space="Ruang A", title="DENAH LANTAI 1"),
+    ]
+    for sheet in sheets:
+        _position_context(sheet)
+
+    result = synthesize_project_graph(sheets)
+
+    level_nodes = [node for node in result.snapshot.nodes if node.type == "level"]
+    # Exactly one deduplicated level node for "Lantai 1", not two raw
+    # per-page mentions.
+    assert len(level_nodes) == 1
+    assert level_nodes[0].canonical_name == "Lantai 1"
+    assert level_nodes[0].node_id.startswith("LEVEL-")

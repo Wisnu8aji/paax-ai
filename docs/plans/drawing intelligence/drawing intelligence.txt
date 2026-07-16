@@ -1,0 +1,782 @@
+konsep 1:
+## Konsep inti Drawing Intelligence PAAX
+
+Drawing Intelligence adalah sistem yang mengubah gambar kerja dari sekadar PDF visual menjadi **model data bangunan yang dapat dicari, dipahami, dihubungkan, dan nantinya dihitung**.
+
+Bukan hanya:
+
+```text
+PDF → AI membaca → ringkasan
+```
+
+Melainkan:
+
+```text
+PDF gambar kerja
+↓
+ekstraksi setiap halaman
+↓
+deteksi teks, garis, grid, simbol, tabel, dan dimensi
+↓
+JSON-1: bukti mentah per halaman
+↓
+analisis dan penyambungan antarhalaman
+↓
+JSON-2: model bangunan lengkap
+↓
+Command Room / Quantity Takeoff / RAB
+```
+
+Tujuan akhirnya bukan sekadar mengetahui bahwa “ada kolom K1A”, tetapi memahami:
+
+```text
+K1A itu elemen apa
+ada di lantai mana
+terletak pada grid mana
+jumlahnya berapa
+dimensinya berapa
+detail tulangannya dari halaman mana
+berhubungan dengan balok atau pondasi apa
+siap dihitung atau belum
+```
+
+---
+
+# 1. Peran AI dalam Drawing Intelligence
+
+AI tidak bekerja sendirian. Sistem dibagi menjadi beberapa mesin dengan fungsi berbeda.
+
+## A. Vision AI
+
+Vision AI melihat halaman gambar sebagai gambar.
+
+Tugasnya:
+
+* mengenali jenis halaman;
+* membedakan denah, tampak, potongan, tabel, dan detail;
+* mengenali area gambar utama dan title block;
+* memahami konteks halaman;
+* mengenali simbol dan elemen visual;
+* membantu membaca hubungan visual yang sulit diproses OCR biasa.
+
+Contoh:
+
+```text
+Halaman 42 adalah denah kolom lantai 1.
+Terdapat kode K1, K1A, K2, dan K3.
+Terdapat grid A–F dan 1–4.
+```
+
+Vision AI bagus untuk konteks, tetapi tidak selalu presisi dalam koordinat dan perhitungan.
+
+---
+
+## B. OCR
+
+OCR membaca teks yang terdapat di gambar.
+
+Contoh teks:
+
+```text
+K1A
+P1
+J2
+R. PLHUT
+4000
+D16-150
+1:100
++4.400
+```
+
+OCR harus mengembalikan bukan hanya teks, tetapi juga lokasinya:
+
+```json
+{
+  "text": "K1A",
+  "bbox_px": [520, 410, 560, 440],
+  "confidence": 0.93
+}
+```
+
+Bounding box sangat penting karena dari sana sistem mengetahui posisi teks pada halaman.
+
+---
+
+## C. OpenCV / Geometry Engine
+
+OpenCV membaca struktur geometris gambar:
+
+* garis grid;
+* garis dimensi;
+* dinding;
+* garis potongan;
+* route pipa;
+* jalur kabel;
+* polygon ruang;
+* titik perpotongan grid.
+
+Contoh:
+
+```json
+{
+  "grid": "B3",
+  "pixel_coordinate": [535, 420]
+}
+```
+
+OpenCV bukan AI generatif. Ia lebih deterministik dan cocok untuk mengukur serta mendeteksi garis.
+
+---
+
+## D. Spatial Parser
+
+Spatial parser menghubungkan hasil OCR dan geometry engine.
+
+Misalnya:
+
+```text
+Teks K1A berada dekat simbol kolom.
+Simbol kolom berada dekat titik grid B3.
+Maka objek tersebut adalah kolom K1A pada grid B3.
+```
+
+Outputnya:
+
+```json
+{
+  "element_type": "column",
+  "type_code": "K1A",
+  "grid_location": "B3",
+  "source_page": 42
+}
+```
+
+Ini yang membuat sistem memahami kata **“di mana”**.
+
+---
+
+## E. LLM Reasoning
+
+LLM seperti Lucent atau Solace tidak bertugas mengukur garis secara langsung.
+
+Tugasnya:
+
+* membersihkan hasil OCR;
+* menormalisasi istilah teknis;
+* mengklasifikasikan halaman;
+* membaca tabel;
+* menyambungkan informasi antarhalaman;
+* membangun relasi;
+* menjawab pertanyaan user;
+* mendeteksi konflik data;
+* menjelaskan hasil kepada user.
+
+Contoh:
+
+```text
+Kode K1A pada halaman 42 mengacu pada tipe kolom K1A dalam tabel kolom halaman 50.
+```
+
+---
+
+# 2. JSON-1: transkrip mentah setiap halaman
+
+JSON-1 adalah hasil ekstraksi langsung dari gambar kerja.
+
+Sifatnya:
+
+```text
+lengkap
+per halaman
+berbasis bukti
+belum terlalu banyak kesimpulan
+selalu menyimpan sumber dan posisi
+```
+
+JSON-1 menjawab:
+
+```text
+Apa yang terlihat pada halaman ini?
+Di posisi pixel mana?
+Teks apa yang terbaca?
+Garis apa yang ditemukan?
+Simbol apa yang ditemukan?
+Seberapa yakin sistem?
+```
+
+Contoh sederhana JSON-1 halaman 42:
+
+```json
+{
+  "page_number": 42,
+  "sheet_title": "DENAH KOLOM LANTAI 1",
+  "discipline": "STRUCTURE",
+  "drawing_type": "denah_kolom",
+  "scale": "1:100",
+  "ocr_blocks": [
+    {
+      "text": "K1A",
+      "role": "structure_code",
+      "bbox_px": [520, 410, 560, 440],
+      "confidence": 0.93
+    }
+  ],
+  "grid_detection": {
+    "x_axes": ["A", "B", "C", "D", "E", "F"],
+    "y_axes": ["1", "2", "3", "4"],
+    "intersections": [
+      {
+        "grid_id": "B3",
+        "pixel_xy": [535, 420]
+      }
+    ]
+  },
+  "detected_symbols": [
+    {
+      "symbol_type": "column",
+      "nearby_text": "K1A",
+      "nearest_grid": "B3",
+      "bbox_px": [515, 405, 565, 445]
+    }
+  ]
+}
+```
+
+JSON-1 adalah **lapisan bukti**.
+
+---
+
+# 3. JSON-2: model bangunan yang telah dipahami
+
+JSON-2 dibuat setelah seluruh JSON-1 selesai.
+
+JSON-2 tidak lagi berpikir per halaman. Ia berpikir sebagai **satu bangunan utuh**.
+
+JSON-2 menyimpan:
+
+* lantai;
+* elevasi;
+* grid bangunan;
+* ruang;
+* kolom;
+* balok;
+* pelat;
+* pondasi;
+* pintu;
+* jendela;
+* material;
+* sistem MEP;
+* relasi antarhalaman;
+* jumlah elemen;
+* kesiapan quantity takeoff.
+
+Contoh:
+
+```json
+{
+  "element_id": "COL-L1-K1A-001",
+  "element_type": "column",
+  "type_code": "K1A",
+  "level": "Lantai 1",
+  "grid_location": "B3",
+  "dimensions_mm": {
+    "b": 400,
+    "h": 400
+  },
+  "height_m": 4.4,
+  "placement_source_page": 42,
+  "specification_source_page": 50,
+  "quantity_status": {
+    "count": 1,
+    "unit": "unit",
+    "qto_ready": true
+  }
+}
+```
+
+JSON-2 adalah **lapisan pemahaman**.
+
+---
+
+# 4. Cara menyambungkan antarhalaman
+
+Ini bagian terpenting.
+
+## Contoh struktur
+
+Halaman 42:
+
+```text
+Denah kolom
+Menunjukkan posisi K1A
+```
+
+Halaman 50:
+
+```text
+Tabel kolom
+Menunjukkan dimensi dan pembesian K1A
+```
+
+Sistem membuat relasi:
+
+```json
+{
+  "relationship_type": "placement_to_specification",
+  "from": {
+    "type_code": "K1A",
+    "source_page": 42
+  },
+  "to": {
+    "type_code": "K1A",
+    "source_page": 50
+  }
+}
+```
+
+Hasilnya:
+
+```text
+K1A berada di grid B3 pada lantai 1.
+Dimensinya mengacu pada tabel kolom halaman 50.
+```
+
+## Contoh arsitektur
+
+```text
+Halaman 21 → posisi dan jumlah P1
+Halaman 25 → detail dan material P1
+```
+
+Hasil JSON-2:
+
+```text
+Pintu P1 lantai 1 terdapat pada posisi tertentu.
+Detail kusen dan materialnya berasal dari halaman 25.
+```
+
+## Contoh finishing
+
+```text
+Halaman 17 → kode lantai L1
+Halaman 4 → arti kode L1
+```
+
+Hasil:
+
+```text
+Area berkode L1 menggunakan homogeneous tile 60×60.
+```
+
+---
+
+# 5. Bagaimana AI memahami bentuk bangunan?
+
+AI memahami bangunan melalui gabungan beberapa konteks.
+
+## Konteks vertikal
+
+Dari tampak dan potongan:
+
+```text
+Lantai 1 = +0.000
+Lantai 2 = +4.400
+Dak beton = +8.300
+Nok atap = +11.097
+```
+
+Sistem memperoleh tinggi antar lantai dan hubungan vertikal.
+
+## Konteks horizontal
+
+Dari grid:
+
+```text
+A–F
+1–4
+```
+
+Sistem memperoleh posisi relatif elemen.
+
+## Konteks ruang
+
+Dari denah:
+
+```text
+R. PLHUT
+R. Staff
+R. Dokumen
+Toilet
+Mushola
+Hall
+```
+
+Sistem mengetahui pembagian ruang dan keterkaitannya.
+
+## Konteks elemen
+
+Dari detail dan tabel:
+
+```text
+K1A = kolom
+P1 = pintu
+J2 = jendela
+PC1 = pondasi
+G1 = balok
+```
+
+## Konteks sistem
+
+Dari gambar MEP:
+
+```text
+rute air bersih
+rute air kotor
+titik lampu
+stop kontak
+AC
+APAR
+penangkal petir
+```
+
+Ketika seluruh konteks itu digabung, AI memperoleh representasi bangunan yang jauh lebih lengkap.
+
+---
+
+# 6. Peran Lucent dan Solace
+
+## Lucent
+
+Lucent digunakan untuk interaksi cepat dengan data yang sudah tersedia.
+
+Contoh:
+
+```text
+Halaman berapa denah kolom?
+Apa saja tipe pintu lantai 1?
+Tampilkan elemen di grid B3.
+Ringkas pekerjaan struktur.
+```
+
+Lucent membaca index dan bagian JSON-2 yang relevan.
+
+Lucent tidak perlu memproses seluruh 88 halaman setiap kali user bertanya.
+
+## Solace
+
+Solace digunakan untuk pekerjaan yang lebih kompleks:
+
+```text
+Audit relasi antarhalaman.
+Bangun ulang JSON-2.
+Periksa konflik spesifikasi.
+Analisis kesiapan quantity takeoff.
+Hubungkan denah struktur dengan tabel struktur.
+```
+
+Solace membaca bagian JSON-1 dan JSON-2 yang lebih luas.
+
+---
+
+# 7. Cara Command Room menjawab
+
+User bertanya:
+
+> Di mana posisi kolom K1A lantai 1?
+
+Command Room melakukan:
+
+```text
+Cari index type_code = K1A
+↓
+Filter level = Lantai 1
+↓
+Ambil grid_location
+↓
+Ambil sumber halaman
+↓
+Ambil confidence
+↓
+Susun jawaban
+```
+
+Jawaban ideal:
+
+```text
+Kolom K1A lantai 1 terdeteksi pada grid B3, C3, D3, dan E3.
+
+Sumber posisi:
+Denah Kolom Lantai 1, halaman 42.
+
+Sumber spesifikasi:
+Tabel Kolom, halaman 50.
+
+Confidence posisi:
+82%.
+
+Beberapa titik masih memerlukan verifikasi manual karena simbol berdekatan dengan garis grid.
+```
+
+AI tidak menjawab berdasarkan tebakan. Ia menjawab berdasarkan model data dan evidence.
+
+---
+
+# 8. Status data yang harus diketahui sistem
+
+Tidak semua data langsung siap dihitung.
+
+Setiap elemen harus punya status:
+
+```text
+detected
+classified
+spatially_located
+linked_to_spec
+counted
+qto_candidate
+qto_ready
+manual_review_required
+```
+
+Contoh:
+
+```json
+{
+  "element_id": "PIPE-L1-AIR-KOTOR-001",
+  "status": {
+    "detected": true,
+    "classified": true,
+    "spatially_located": true,
+    "linked_to_spec": true,
+    "counted": false,
+    "qto_ready": false
+  },
+  "missing_inputs": [
+    "route polyline belum lengkap",
+    "panjang pipa belum dapat dihitung"
+  ]
+}
+```
+
+Ini mencegah AI mengarang volume.
+
+---
+
+# 9. Pembagian tugas sistem
+
+| Komponen       | Tugas                                         |
+| -------------- | --------------------------------------------- |
+| Vision AI      | Memahami konteks visual halaman               |
+| OCR            | Membaca teks dan kode                         |
+| OpenCV         | Membaca garis, grid, dimensi, dan route       |
+| Spatial parser | Menentukan posisi dan hubungan geometris      |
+| LLM            | Menormalisasi, menghubungkan, dan menjelaskan |
+| JSON-1         | Menyimpan bukti mentah tiap halaman           |
+| JSON-2         | Menyimpan model bangunan                      |
+| Command Room   | Menjawab pertanyaan berdasarkan JSON-2        |
+| QTO engine     | Menghitung kuantitas secara deterministik     |
+| RAB engine     | Menghubungkan kuantitas ke AHSP dan harga     |
+
+---
+
+# 10. Batas penting
+
+Drawing Intelligence tidak boleh langsung menganggap semua hasil benar.
+
+Sistem harus bisa mengatakan:
+
+```text
+unclear
+not detected
+inferred
+manual review required
+conflicting information
+```
+
+Contoh:
+
+```json
+{
+  "value": "K1A",
+  "confidence": 0.64,
+  "status": "manual_review_required",
+  "reason": "Teks OCR berimpit dengan garis grid."
+}
+```
+
+PAAX harus lebih baik mengatakan “belum yakin” daripada memberi jawaban teknis yang salah.
+
+---
+
+# Kesimpulan
+
+Konsep Drawing Intelligence PAAX adalah:
+
+```text
+AI vision melihat gambar.
+OCR membaca teks.
+OpenCV membaca geometri.
+Spatial parser menentukan lokasi.
+LLM menghubungkan antarhalaman.
+JSON-1 menyimpan seluruh bukti mentah.
+JSON-2 menyimpan pemahaman bangunan.
+Command Room menggunakan JSON-2 untuk menjawab.
+QTO dan RAB memakai data yang telah tervalidasi.
+```
+
+Kalimat paling sederhananya:
+
+> **JSON-1 menjelaskan apa yang terlihat pada setiap halaman. JSON-2 menjelaskan bagaimana seluruh halaman tersebut membentuk satu bangunan yang utuh.**
+
+Dengan konsep ini, PAAX tidak sekadar mengetahui isi dokumen, tetapi bisa memahami **objek, posisi, hubungan, spesifikasi, jumlah, dan kesiapan perhitungan** dari gambar kerja.
+
+konsep 2:
+Baik, saya akan merangkum **Rencana Besar (Blueprint) Sistem Drawing Intelligence PAAX** secara utuh, terstruktur, dan menyeluruh berdasarkan seluruh diskusi kita. Ini adalah peta jalan strategis yang menyatukan arsitektur data, teknologi AI, biaya, dan logika pemrosesan.
+
+---
+
+# Rencana Besar Sistem Drawing Intelligence PAAX (Arsitektur Dua-Lapis)
+
+## 1. Tujuan Utama & Target Akhir
+Membangun sebuah **AI Engine** yang mampu membaca gambar kerja (PDF AutoCAD), memahaminya hingga tingkat **spasial dan material**, lalu menyajikannya dalam bentuk **Model Bangunan Digital**.
+**Output akhir yang dituju:**
+*   **Command Room:** AI bisa menjawab pertanyaan lokasi dan logika (misal: *"Dimana kolom K1A di lantai 1? Berapa jumlahnya?"*).
+*   **RAB Otomatis:** Sistem secara otomatis menghitung volume beton, berat besi, dan panjang pipa tanpa campur tangan manusia.
+
+---
+
+## 2. Arsitektur Data Dua-Lapis (Inti Sistem)
+
+Sistem ini membagi pemahaman gambar menjadi **dua lapisan JSON** yang terpisah namun saling terhubung:
+
+### A. JSON-1: The Raw Container (Lapisan Bukti Mentah)
+*   **Fungsi:** Menyimpan **data mentah apa adanya** dari setiap halaman gambar. Tidak ada interpretasi, tidak ada penyederhanaan. Ini adalah "sumber kebenaran" digital dari gambar asli.
+*   **Isi:**
+    *   Koordinat *bounding box* (posisi teks/simbol di layar).
+    *   Deteksi garis grid dan sumbu (A-F, 1-4).
+    *   Teks OCR mentah (`K1A`, `D16-150`, `4000`).
+    *   Tabel spesifikasi mentah (dari halaman 50, 51, 52).
+    *   Daftar simbol terdeteksi (kolom, pondasi, lampu).
+    *   Skala dan elevasi per halaman.
+*   **Karakteristik:** **Sangat besar dan detail**, berbasis halaman (*flat*), tidak ada korelasi antar halaman.
+
+### B. JSON-2: The Building Graph (Model Kecerdasan Bangunan)
+*   **Fungsi:** Menyusun data mentah dari JSON-1 menjadi **model logika bangunan yang terhubung**. Ini adalah "otak" yang dipakai oleh AI Command Room.
+*   **Isi:**
+    *   Objek bangunan nyata (bukan teks): `{"id": "COL-L1-K1A-001", "type": "kolom", "located_grid": "B3", ...}`.
+    *   Menghubungkan kode elemen (`K1A`) dengan spesifikasinya (dari tabel halaman 50).
+    *   Menghitung jumlah elemen secara pasti (misal: total `K1A` = 8 buah).
+    *   Lokasi spasial: Menempelkan elemen ke grid sumbu (misal: `K1A` di titik potong B-3).
+*   **Karakteristik:** **Model Graph (terhubung)**, berbasis objek, siap untuk perhitungan kuantitatif dan tanya jawab spasial.
+
+---
+
+## 3. Alur Teknis (Pipeline) Pemrosesan
+
+```mermaid
+graph TD
+    A[File PDF / DWG] --> B[Preprocessing: Konversi PDF ke Gambar PNG (300 DPI) via PyMuPDF]
+    B --> C[Looping per Halaman (Chunking)]
+    C --> D[Kirim 1 Gambar ke AI Vision (Qwen3 VL / Gemini)]
+    D --> E[AI Vision mengembalikan JSON-1 per Halaman]
+    E --> F[Gabungkan Semua JSON-1 Halaman menjadi JSON-1 Utuh]
+    F --> G[Proses Post-Processing (Kode Python/Logic Binding)]
+    G --> H[Generate JSON-2: Model Bangunan Digital]
+    H --> I[AI Command Room / RAB Engine]
+```
+
+**Penjelasan Alur:**
+1.  **Preprocessing:** Karena AI Vision (seperti Qwen3 VL) memiliki batas konteks, PDF dipecah menjadi gambar PNG per halaman dengan resolusi tinggi (300 DPI) agar teks kecil (seperti `Ø12mm`) terbaca jelas.
+2.  **Ekstraksi JSON-1:** Kirim gambar per halaman ke API AI Vision menggunakan **Prompt Sistem Khusus** (System Prompt) yang sudah dirancang. Model akan mengembalikan JSON-1 yang sangat detail per halaman.
+3.  **Post-Processing (Logika Binding):** Ini adalah tahapan paling kritis dan **dilakukan oleh kode Python**, bukan AI. Kode Python membaca JSON-1, lalu melakukan:
+    *   **Grid Binding:** Menghitung jarak *bounding box* teks ke *titik potong grid* terdekat untuk menentukan posisi pasti (misal: `K1A` ada di grid `B3`).
+    *   **Counting & Aggregation:** Menghitung total jumlah elemen per tipe per lantai (misal: ada 8 `K1A`, 4 `K1`, dst).
+    *   **Table Join:** Mencocokkan kode elemen dengan spesifikasi di tabel (misal: `K1A` dihubungkan dengan `400x400mm, 12 D16` dari halaman 50).
+4.  **Generate JSON-2:** Gabungkan semua hasil perhitungan di atas menjadi JSON-2 yang siap dipakai oleh Command Room.
+
+---
+
+## 4. Stack Teknologi & Model AI (Biaya Sangat Rendah)
+
+Untuk menekan biaya hingga **$0.18 - $0.50 per proyek**, berikut kombinasi model terbaik:
+
+| Tahapan | Model AI / Alat | Provider | Biaya Estimasi | Keterangan |
+| :--- | :--- | :--- | :--- | :--- |
+| **Ekstraksi JSON-1 (Vision)** | **Qwen3 VL 32B Instruct** | DashScope (Alibaba) / OpenRouter | ~$0.18 / proyek (88 halaman) | Paling hemat. Harus menggunakan *looping per halaman*. |
+| **Ekstraksi JSON-1 (Vision)** | **Gemini 1.5 Pro** | Google AI Studio | ~$0.50 / proyek (88 halaman) | Paling praktis. Bisa kirim 1 file PDF sekaligus (2M token). |
+| **Generate JSON-2 (Logic)** | **DeepSeek V4 Pro (Solace)** | DeepSeek Official API | ~$0.05 / generate | Model berpikir berat untuk binding dan logika join. |
+| **Command Room (Cepat)** | **DeepSeek V3 (Lucent)** | DeepSeek Official API | ~$0.002 / percakapan | Untuk jawaban cepat (pencarian posisi/hitungan). |
+| **Command Room (Pintar)** | **DeepSeek V4 Pro (Solace)** | DeepSeek Official API | ~$0.026 / percakapan | Untuk analisis mendalam (cross-check RAB/dampak struktur). |
+| **Pemrosesan PDF ke Gambar** | **PyMuPDF (fitz)** | Library Python | **Gratis (CPU)** | Mengubah PDF ke PNG 300 DPI. |
+| **Logika Binding/Join** | **Python (Pandas, NumPy)** | Custom Code | **Gratis (CPU)** | Menghitung jarak grid dan join tabel. |
+
+**Anggaran Bulanan (Contoh untuk 100 Proyek):**
+*   **Ekstraksi Gambar (100 proyek):** 100 x $0.18 = **$18**.
+*   **Generate JSON-2 (100 proyek):** 100 x $0.05 = **$5**.
+*   **Command Room (10.000 percakapan):** 10.000 x $0.002 = **$20**.
+*   **Total Bulanan:** **~ $43 (Rp 700.000)**.
+
+---
+
+## 5. Strategi & Peta Jalan Implementasi
+
+Berikut tahapan implementasi yang harus dilakukan oleh tim Anda:
+
+**Fase 1 - Persiapan Infrastruktur (1 Minggu)**
+*   Daftar dan dapatkan API Key untuk **DashScope (Qwen)**, **DeepSeek Official API**, dan akun **Google AI Studio** (sebagai cadangan).
+*   Setup lingkungan Python: install `pymupdf`, `requests`, `pillow`.
+*   Validasi sistem *chunking* per halaman (mampu memecah PDF 88 halaman jadi 88 gambar PNG).
+
+**Fase 2 - Prototype JSON-1 (2 Minggu)**
+*   Buat *System Prompt* final (sudah kita susun di pembahasan sebelumnya).
+*   Tulis script Python yang mengirim 1-3 halaman pertama ke Qwen3 VL API, lalu simpan output JSON-nya.
+*   Validasi akurasi bounding box, grid, dan tabel yang dihasilkan.
+
+**Fase 3 - Development Post-Processing Engine (2 Bulan)**
+*   Bangun modul **Grid Binding** di Python: Menghitung jarak *bounding box* ke *grid anchor* terdekat.
+*   Bangun modul **Counting & Table Join**: Menghitung total elemen dan menarik spesifikasi dari tabel halaman 50-52.
+*   Buat skema **JSON-2** yang baku (seperti template yang sudah didiskusikan).
+*   Uji coba pada proyek PLHUT yang Anda miliki (88 halaman).
+
+**Fase 4 - Integrasi Command Room & RAB (1 Bulan)**
+*   Bangun API backend yang menyajikan JSON-2.
+*   Integrasikan dengan DeepSeek V3 (Lucent) dan V4 Pro (Solace).
+*   Buat dashboard sederhana untuk menampilkan posisi elemen pada grid.
+*   Lakukan *testing* dengan pertanyaan-pertanyaan yang sudah disepakati (misal: *"Tampilkan semua kolom K1A di lantai 1"*, *"Total volume beton lantai 1"*).
+
+---
+
+## 6. Daftar Periksa Persiapan Tim (To-Do List Segera)
+
+1.  **Akun API:** Daftar ke DashScope (Alibaba) untuk Qwen3 VL, dan DeepSeek Official API.
+2.  **Kode Dasar:** Siapkan skrip Python yang menggunakan `pymupdf` untuk konversi PDF → PNG.
+3.  **System Prompt:** Siapkan file teks berisi *System Prompt* final yang sudah disempurnakan (dari jawaban sebelumnya).
+4.  **Repository:** Siapkan struktur folder untuk menyimpan data:
+    *   `/input/` (PDF mentah)
+    *   `/images/` (Hasil PNG per halaman)
+    *   `/raw_json/` (JSON-1 per halaman & gabungan)
+    *   `/model_json/` (JSON-2 final)
+5.  **Tim:** Libatkan 1-2 *backend engineer* yang paham Python (OpenCV/CV logic) dan *AI prompt engineer*.
+
+---
+
+## 7. Catatan Kritis (Edge Cases yang Wajib Diketahui)
+
+| Kasus | Solusi |
+| :--- | :--- |
+| **Skala Tidak Terbaca (NTS)** | Isi `scale_numeric: null` dan `unit_assumption: "mm"` di JSON-1. Di JSON-2, tandai item sebagai `manual_review: true`. |
+| **Simbol Tidak Dikenali** | Di JSON-1, isi `symbol_class: "unclear_symbol"`. Di JSON-2, AI akan melewatkan simbol ini (tidak dihitung). |
+| **Model Qwen Halusinasi (Format JSON Rusak)** | Pastikan parameter API `response_format: {"type": "json_object"}` aktif. Dan di kode Python, tangkap error JSON dengan `try-except` untuk mencegah sistem crash. |
+| **Biaya Overflow** | Atur *rate limit* API dan gunakan *caching*. Jika sudah memproses JSON-1 untuk satu proyek, simpan di database agar tidak perlu memproses ulang. |
+
+---
+
+## 8. Kesimpulan Akhir
+Dengan rencana besar ini, Anda telah memiliki **fondasi arsitektur yang 100% matang**:
+1.  **Pemahaman mendalam** tentang perbedaan antara JSON-1 (mentah) dan JSON-2 (pintar).
+2.  **Solusi teknis** untuk mengatasi batasan konteks AI Vision (menggunakan PyMuPDF dan *looping*).
+3.  **Rencana biaya** yang sangat efisien (kurang dari Rp 1 juta per bulan untuk skala 100 proyek).
+
+**Langkah selanjutnya:** Mulailah dari **Fase 1** (Persiapan API dan kode Python ekstraksi per halaman). Setelah itu, **Fase 2** (membuat skrip untuk menghasilkan JSON-1). Segera setelah itu, kita bisa masuk ke **Fase 3** (membangun modul Binding Grid dan Join Tabel).
+
+Saya siap membantu Anda merancang kode Python untuk modul-modul tersebut jika Anda sudah siap memasuki tahapan implementasi.

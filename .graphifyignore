@@ -21,9 +21,15 @@ venv/
 # Graphify's own output — avoid self-referential re-indexing
 graphify-out/
 
-# Bundled third-party skill projects (e.g. ui-main ships a full shadcn/ui
-# monorepo as reference material) — not PAAX's own source code
-.claude/skills/
+# Local AI tool directories contain packaged skills and task scaffolding,
+# not application source. Excluding the whole directory also prevents nested
+# third-party ignore rules from affecting the repository scan.
+.claude/
+
+.agents/
+.codex/
+.gemini/
+.superpowers/
 
 # Old cleanup archive left inside graphify-out/ by a curated-graph backup
 graphify-out/2026-07-10/

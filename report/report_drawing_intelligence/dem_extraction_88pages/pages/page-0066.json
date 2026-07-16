@@ -1,0 +1,774 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 66,
+    "page_number": 67,
+    "render_uri": "local://plhut-88pg-run-1/page-0066.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T22:20:32.531347+00:00",
+    "completed_at": "2026-07-14T22:20:32.531377+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "67",
+      "raw": "67",
+      "confidence": 0.95,
+      "evidence_refs": [
+        "ev-sheet-num-67"
+      ]
+    },
+    "title": {
+      "value": "TAMPAK INSTALASI PENANGKAL PETIR",
+      "raw": "TAMPAK INSTALASI PENANGKAL PETIR",
+      "confidence": 0.95,
+      "evidence_refs": [
+        "ev-title-block"
+      ]
+    },
+    "discipline": {
+      "value": "MEP",
+      "confidence": 0.85,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "SKALA 1 : 100",
+        "normalized": "1:100",
+        "confidence": 0.95,
+        "evidence_refs": [
+          "ev-scale-1-100"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-tampak-instalasi-penangkal-petir",
+      "type": "elevation",
+      "title": "Tampak Instalasi Penangkal Petir",
+      "bbox": [
+        100.0,
+        200.0,
+        1400.0,
+        900.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "AIR TERMINAL",
+        "normalized": "Air Terminal",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          250.0,
+          230.0,
+          359.0,
+          240.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-air-terminal-top"
+        ]
+      },
+      {
+        "raw": "GROUNDING MIN.2 OHM",
+        "normalized": "Grounding Min.2 Ohm",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          840.0,
+          400.0,
+          860.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-grounding-left"
+        ]
+      },
+      {
+        "raw": "GROUNDING MIN.2 OHM",
+        "normalized": "Grounding Min.2 Ohm",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1200.0,
+          840.0,
+          1500.0,
+          860.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-grounding-right"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "4000",
+        "normalized": "4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          290.0,
+          840.0,
+          350.0,
+          860.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-4000-1"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          490.0,
+          840.0,
+          550.0,
+          860.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-4000-2"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          690.0,
+          840.0,
+          750.0,
+          860.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-4000-3"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          890.0,
+          840.0,
+          950.0,
+          860.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-4000-4"
+        ]
+      },
+      {
+        "raw": "20000",
+        "normalized": "20000",
+        "numeric_value": 20000.0,
+        "unit": "mm",
+        "bbox": [
+          610.0,
+          870.0,
+          710.0,
+          890.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-20000-total"
+        ]
+      },
+      {
+        "raw": "4400",
+        "normalized": "4400",
+        "numeric_value": 4400.0,
+        "unit": "mm",
+        "bbox": [
+          220.0,
+          650.0,
+          270.0,
+          670.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-4400"
+        ]
+      },
+      {
+        "raw": "3900",
+        "normalized": "3900",
+        "numeric_value": 3900.0,
+        "unit": "mm",
+        "bbox": [
+          220.0,
+          500.0,
+          270.0,
+          520.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-3900"
+        ]
+      },
+      {
+        "raw": "2797",
+        "normalized": "2797",
+        "numeric_value": 2797.0,
+        "unit": "mm",
+        "bbox": [
+          220.0,
+          350.0,
+          270.0,
+          370.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-2797"
+        ]
+      },
+      {
+        "raw": "BC 1x50mm",
+        "normalized": "BC 1x50mm",
+        "numeric_value": 50.0,
+        "unit": "mm",
+        "bbox": [
+          100.0,
+          570.0,
+          400.0,
+          590.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-bc-1x50mm"
+        ]
+      }
+    ],
+    "grids": [
+      {
+        "raw": "A",
+        "normalized": "Grid A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          290.0,
+          880.0,
+          330.0,
+          910.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-A"
+        ]
+      },
+      {
+        "raw": "B",
+        "normalized": "Grid B",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          490.0,
+          880.0,
+          530.0,
+          910.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-B"
+        ]
+      },
+      {
+        "raw": "C",
+        "normalized": "Grid C",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          690.0,
+          880.0,
+          730.0,
+          910.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-C"
+        ]
+      },
+      {
+        "raw": "D",
+        "normalized": "Grid D",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          890.0,
+          880.0,
+          930.0,
+          910.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-D"
+        ]
+      },
+      {
+        "raw": "E",
+        "normalized": "Grid E",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1090.0,
+          880.0,
+          1130.0,
+          910.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-E"
+        ]
+      },
+      {
+        "raw": "F",
+        "normalized": "Grid F",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1290.0,
+          880.0,
+          1330.0,
+          910.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-F"
+        ]
+      }
+    ],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [],
+    "symbols": [
+      {
+        "raw": "",
+        "normalized": "Grounding Symbol",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          230.0,
+          840.0,
+          260.0,
+          860.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-grounding-left"
+        ]
+      },
+      {
+        "raw": "⏚",
+        "normalized": "Grounding Symbol",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1300.0,
+          840.0,
+          1330.0,
+          860.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-grounding-right"
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "raw": "KETERANGAN\n\nKEMENTERIAN AGAMA RI\nDIREKTORAT JENDERAL\nPENYELENGGARAAN HAJI DAN UMRAH\nTAHUN ANGGARAN 2024\nJUDUL PROYEK:\nGEDUNG PUSAT LAYANAN\nHAJI DAN UMRAH TERPADU\nKOTA SURAKARTA\nLOKASI:\nJALAN KI MANGUN SARKORO NO.115\nKOTA SURAKARTA\nMENYETUJUI\nKEPALA KANTOR WILAYAH JAWA TENGAH\nSELAKU KUASA PENGGUNA ANGGARAN\nMENGETAHUI/MENYETUJUI\nPEJABAT PEMBUAT KOMITMEN\nKONSULTAN PERENCANA\nTEAM LEADER\nNAMA TANDA TANGAN\nSIPIL DIGAMBAR\nJUDUL GAMBAR SKALA\nTAMPAK INSTALASI\nPENANGKAL PETIR 1:100\nTANGGAL: JANUARI 2024\nSKALA GBR KODE GBR NO. GBR",
+        "normalized": "Title Block Table containing project info, approvals, consultant, team, drawing title and scale etc.",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1450.0,
+          100.0,
+          1900.0,
+          900.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-table-title-block"
+        ]
+      }
+    ],
+    "materials": [],
+    "notes": [],
+    "references": [],
+    "patterns": [
+      {
+        "raw": "Vertical hatch pattern on roof",
+        "normalized": "Roof Hatch Pattern",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          280.0,
+          1200.0,
+          460.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-roof"
+        ]
+      }
+    ],
+    "geometry_descriptions": [
+      {
+        "raw": "Two vertical lightning protection cables connected to rooftop air terminals",
+        "normalized": "Lightning protection installation layout showing vertical cables and grounding",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          230.0,
+          1500.0,
+          860.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geom-lightning-protection"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-text-air-terminal-top",
+      "kind": "text",
+      "raw": "AIR TERMINAL",
+      "bbox": [
+        250.0,
+        230.0,
+        359.0,
+        240.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-text-grounding-left",
+      "kind": "text",
+      "raw": "GROUNDING MIN.2 OHM",
+      "bbox": [
+        100.0,
+        840.0,
+        400.0,
+        860.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-text-grounding-right",
+      "kind": "text",
+      "raw": "GROUNDING MIN.2 OHM",
+      "bbox": [
+        1200.0,
+        840.0,
+        1500.0,
+        860.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-4000-1",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        290.0,
+        840.0,
+        350.0,
+        860.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-4000-2",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        490.0,
+        840.0,
+        550.0,
+        860.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-4000-3",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        690.0,
+        840.0,
+        750.0,
+        860.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-4000-4",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        890.0,
+        840.0,
+        950.0,
+        860.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-20000-total",
+      "kind": "dimension",
+      "raw": "20000",
+      "bbox": [
+        610.0,
+        870.0,
+        710.0,
+        890.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-4400",
+      "kind": "dimension",
+      "raw": "4400",
+      "bbox": [
+        220.0,
+        650.0,
+        270.0,
+        670.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-3900",
+      "kind": "dimension",
+      "raw": "3900",
+      "bbox": [
+        220.0,
+        500.0,
+        270.0,
+        520.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-2797",
+      "kind": "dimension",
+      "raw": "2797",
+      "bbox": [
+        220.0,
+        350.0,
+        270.0,
+        370.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-bc-1x50mm",
+      "kind": "dimension",
+      "raw": "BC 1x50mm",
+      "bbox": [
+        100.0,
+        570.0,
+        400.0,
+        590.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-A",
+      "kind": "grid",
+      "raw": "A",
+      "bbox": [
+        290.0,
+        880.0,
+        330.0,
+        910.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-B",
+      "kind": "grid",
+      "raw": "B",
+      "bbox": [
+        490.0,
+        880.0,
+        530.0,
+        910.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-C",
+      "kind": "grid",
+      "raw": "C",
+      "bbox": [
+        690.0,
+        880.0,
+        730.0,
+        910.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-D",
+      "kind": "grid",
+      "raw": "D",
+      "bbox": [
+        890.0,
+        880.0,
+        930.0,
+        910.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-E",
+      "kind": "grid",
+      "raw": "E",
+      "bbox": [
+        1090.0,
+        880.0,
+        1130.0,
+        910.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-F",
+      "kind": "grid",
+      "raw": "F",
+      "bbox": [
+        1290.0,
+        880.0,
+        1330.0,
+        910.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-symbol-grounding-left",
+      "kind": "symbol",
+      "raw": "⏚",
+      "bbox": [
+        230.0,
+        840.0,
+        260.0,
+        860.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-symbol-grounding-right",
+      "kind": "symbol",
+      "raw": "⏚",
+      "bbox": [
+        1300.0,
+        840.0,
+        1330.0,
+        860.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-table-title-block",
+      "kind": "table",
+      "raw": "KETERANGAN...",
+      "bbox": [
+        1450.0,
+        100.0,
+        1900.0,
+        900.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-pattern-roof",
+      "kind": "pattern",
+      "raw": "Vertical hatch pattern on roof",
+      "bbox": [
+        300.0,
+        280.0,
+        1200.0,
+        460.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-geom-lightning-protection",
+      "kind": "geometry_description",
+      "raw": "Two vertical lightning protection cables connected to rooftop air terminals",
+      "bbox": [
+        100.0,
+        230.0,
+        1500.0,
+        860.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [
+    "COAXIAL CABLE IN CONDUIT"
+  ],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

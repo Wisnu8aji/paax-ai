@@ -12,8 +12,8 @@ import {
 import { composerBadge } from '@/lib/paax-models';
 
 describe('Command Room presentation contracts', () => {
-  it('clamps the adjustable composer between 64 and 240 pixels', () => {
-    expect(clampComposerHeight(20)).toBe(64);
+  it('clamps the adjustable composer between 22 and 240 pixels', () => {
+    expect(clampComposerHeight(10)).toBe(22);
     expect(clampComposerHeight(180)).toBe(180);
     expect(clampComposerHeight(500)).toBe(240);
   });

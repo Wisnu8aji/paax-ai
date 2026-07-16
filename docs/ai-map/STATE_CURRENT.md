@@ -1,36 +1,34 @@
 # 📍 PAAX — STATE_CURRENT (status aktif, ringkas)
 
-> Update terakhir: **2026-07-10**. Riwayat lengkap sebelum tanggal ini ada di
+> Update terakhir: **2026-07-14**. Riwayat lengkap sebelum tanggal ini ada di
 > `docs/history/STATE_ARCHIVE_2026-06_2026-07.md`. File ini HANYA status
 > aktif — jangan tambah narasi panjang di sini, tulis laporan detail ke
 > `report/` lalu ringkas 1-2 baris di sini.
 
 ## Branch & PR aktif
-- Branch kerja: `feat/command-room-updates` (belum di-PR/merge).
+- Branch kerja: `feat/command-room-model-overhaul` (belum di-PR/merge), commit terbaru `fa7a01d`.
 - PR historis #29-#40 semua sudah merge ke `main` (bridging non-struktur,
   X1/X1B/X2 AI-assist, packaging schemas).
 
 ## Yang sudah nyata jalan di `main` (terverifikasi lewat kode + git log, bukan laporan)
 - **Command Room** — chat AI utama baru (`apps/web/src/app/(dashboard)/command-room/`),
   terpisah dari chat lama per-proyek (`proyek/[projectId]/chat/`, masih ada,
-  belum dihapus). Model routing Lucent (NVIDIA Kimi/DeepSeek-chat) & Solace
-  (NVIDIA DeepSeek-reasoner) via `lib/paax-models.ts` + `lib/ai/orchestrator.ts`.
-  **Masih churn aktif** (3 rewrite besar dalam 4 hari) — belum dianggap stabil.
-- **Drawing Intelligence** — sekarang pakai NVIDIA (bukan cuma Gemini) untuk
-  OCR/reasoning gambar kerja: `nvidia_vision_extractor.py` + `ai_assist/client.py`.
-  Diuji nyata ke PLHUT 88 halaman: 42 work item (33 perlu review, 9 belum
-  didukung rumus) — AI membantu ringkasan, tidak pernah mengarang volume RAB.
-- **R2-R14 (backend non-UI, semua sudah merge)**: job store persisten +
-  cache analisis (R2/R3), golden-anchor test harness (R4), deteksi geometri
-  dinding/simbol (R5), service `services/db` (Alembic + CRUD + RAG/pgvector,
-  R6/R8), `services/ai-orchestrator` tool-calling + SSE + audit log (R7),
-  Auth/RBAC lintas service (R10), metering + laporan pagi (R11/R12), price
-  book versioning per region (R13), `services/site-agent` scaffold (R14).
-- **Audit independen R2-R14** (`report/remote/AUDIT_MASTER_R2_R14_ANTIGRAVITY_2026-07-07.md`)
-  menemukan & memperbaiki bug nyata (bukan cuma verifikasi bersih): ai-orchestrator
-  sempat gagal build (CommonJS vs ESM), test DB awalnya butuh Postgres lokal
-  (sekarang ada fallback SQLite utk test), site-agent awalnya linear-fallback-only
-  (diupgrade manggil db-api RAB + core-engine `/schedule/s-curve` nyata).
+  belum dihapus). Model routing 3 model: **Lucent**=DeepSeek V4 Pro,
+  **Arete**=Qwen3.7-Plus (DashScope), **Noir**=Claude Sonnet 5 (Anthropic) via
+  `lib/paax-models.ts`. `projectId` sudah opsional di request chat
+  (`app/api/command-room/chat/route.ts:42-49`, "Fase 10 PLAN.md §9"), belum
+  dipakai untuk retrieval terstruktur. Masih churn aktif — belum dianggap stabil.
+- **Drawing Intelligence** — pakai NVIDIA + Gemini untuk OCR/reasoning gambar
+  kerja: `app/perception/ocr/nvidia_vision_extractor.py` +
+  `app/perception/ai_assist/client.py` (`GeminiAiAssistClient`,
+  `NvidiaAiAssistClient`, `NullAiAssistClient` — belum ada varian
+  Qwen/Anthropic vision). `is_raster_sheet()` gate
+  (`app/perception/ingest/raster_detector.py`) masih memblokir vision untuk
+  PDF vector-native — DEM extraction pipeline (Phase 2+ rencana ini) akan
+  melepas gerbang itu.
+- **DEM/PCKM plan** — `docs/plans/drawing intelligence/PAAX_DEM_PCKM_GRAPH_COMMAND_ROOM_PLAN_2026-07-14.md`
+  disetujui sebagai arsitektur target (2026-07-14). Implementation plan Phase
+  0+1 (dokumen ini) di `docs/superpowers/plans/`.
 
 ## Blocker / catatan jujur yang masih berlaku
 - **Deploy Cloud Run (R9) belum pernah dry-run** — Dockerfile & workflow ada,

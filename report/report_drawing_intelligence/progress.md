@@ -1,0 +1,8 @@
+Task 1: complete (no commit - uncommitted per user rule, review clean: 0 Critical, 0 Important, 1 Minor)
+Task 2: complete (commits fa7a01d..05ed95a - 6b18bb2 initial + 05ed95a fix for 2 Important parity findings, tests green, no deep audit yet - deferred to final review)
+Task 3: complete (commit 931893b, 4 pytest + 18 jest passed, DONE_WITH_CONCERNS re: graphify hook timeout self-resolved by Codex - accepted without deep verification per lean-workflow)
+Task 4: complete (commit 80e2a63, 2 pytest + 20 jest passed, local commit only)
+Task 5: complete (commit d5dc2f9, 5 pytest + 22 jest passed, local commit only)
+Task 6: complete (commit cbbb525, 7 pytest + 24 jest passed, local commit only)
+Task 7: complete (commit ab4ea90, 9 pytest + full doc-intel 309 passed/5 skipped + 26 jest + schemas typecheck passed, local commit only)
+Task 8: complete (commits 018d450 test auth prerequisite + 00b07fc package wiring, root pnpm test passed: core 281 passed; doc-intel 309 passed/5 skipped; schemas 26 passed, local commits only)

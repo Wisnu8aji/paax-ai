@@ -1,0 +1,347 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 0,
+    "page_number": 1,
+    "render_uri": "local://plhut-88pg-run-1/page-0000.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T20:17:21.374533+00:00",
+    "completed_at": "2026-07-14T20:17:21.374595+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "1",
+      "raw": "1",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-page-number"
+      ]
+    },
+    "title": {
+      "value": "GAMBAR KERJA - GEDUNG PUSAT PELAYANAN HAJI DAN UMRAH TERPADU KANTOR KEMENTERIAN AGAMA KOTA SURAKARTA TAHUN ANGGARAN 2024",
+      "raw": "GAMBAR KERJA\nGEDUNG PUSAT PELAYANAN HAJI DAN UMRAH TERPADU\nKANTOR KEMENTERIAN AGAMA KOTA SURAKARTA\nTAHUN ANGGARAN 2024",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-title-block"
+      ]
+    },
+    "discipline": {
+      "value": "Architecture",
+      "confidence": 0.95,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": []
+  },
+  "views": [
+    {
+      "view_id": "view-rendering-01",
+      "type": "perspective_rendering",
+      "title": "Tampak Depan Gedung",
+      "bbox": [
+        0.3,
+        0.55,
+        0.67,
+        0.85
+      ],
+      "confidence": 0.98
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KEMENTERIAN AGAMA RI",
+        "normalized": "Kementerian Agama RI",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          0.35,
+          0.18,
+          0.65,
+          0.22
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-header-1"
+        ]
+      },
+      {
+        "raw": "DIREKTORAT JENDERAL",
+        "normalized": "Direktorat Jenderal",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          0.37,
+          0.22,
+          0.63,
+          0.25
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-header-2"
+        ]
+      },
+      {
+        "raw": "PENYELENGGARAAN HAJI DAN UMRAH",
+        "normalized": "Penyelenggaraan Haji dan Umrah",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          0.29,
+          0.25,
+          0.71,
+          0.29
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-header-3"
+        ]
+      },
+      {
+        "raw": "GAMBAR KERJA",
+        "normalized": "Gambar Kerja",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          0.33,
+          0.32,
+          0.67,
+          0.39
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-title"
+        ]
+      },
+      {
+        "raw": "GEDUNG PUSAT PELAYANAN HAJI DAN UMRAH TERPADU",
+        "normalized": "Gedung Pusat Pelayanan Haji dan Umrah Terpadu",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          0.18,
+          0.42,
+          0.82,
+          0.46
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-project-name"
+        ]
+      },
+      {
+        "raw": "KANTOR KEMENTERIAN AGAMA KOTA SURAKARTA",
+        "normalized": "Kantor Kementerian Agama Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          0.22,
+          0.46,
+          0.78,
+          0.5
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-location"
+        ]
+      },
+      {
+        "raw": "TAHUN ANGGARAN 2024",
+        "normalized": "Tahun Anggaran 2024",
+        "numeric_value": 2024.0,
+        "unit": "year",
+        "bbox": [
+          0.36,
+          0.5,
+          0.64,
+          0.54
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-year"
+        ]
+      }
+    ],
+    "dimensions": [],
+    "grids": [],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [],
+    "symbols": [],
+    "tables": [],
+    "materials": [],
+    "notes": [],
+    "references": [],
+    "patterns": [],
+    "geometry_descriptions": [
+      {
+        "raw": "Bangunan dua lantai dengan fasad modern, kombinasi dinding abu-abu gelap dan ornamen panel motif geometris kuning/emas. area depan terdapat tangga masuk dan ramp akses.",
+        "normalized": "Tampak depan showing 2-story building with dark grey walls and yellow geometric ornament panels. Entrance includes stairs and ramp.",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          0.3,
+          0.55,
+          0.67,
+          0.85
+        ],
+        "confidence": 0.9,
+        "status": "ai_interpreted",
+        "evidence_refs": [
+          "view-rendering-01"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-page-number",
+      "kind": "text",
+      "raw": "1",
+      "bbox": [
+        0.02,
+        0.02,
+        0.05,
+        0.05
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-title-block",
+      "kind": "text",
+      "raw": "GAMBAR KERJA\nGEDUNG PUSAT PELAYANAN HAJI DAN UMRAH TERPADU\nKANTOR KEMENTERIAN AGAMA KOTA SURAKARTA\nTAHUN ANGGARAN 2024",
+      "bbox": [
+        0.15,
+        0.3,
+        0.85,
+        0.55
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-header-1",
+      "kind": "text",
+      "raw": "KEMENTERIAN AGAMA RI",
+      "bbox": [
+        0.35,
+        0.18,
+        0.65,
+        0.22
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-header-2",
+      "kind": "text",
+      "raw": "DIREKTORAT JENDERAL",
+      "bbox": [
+        0.37,
+        0.22,
+        0.63,
+        0.25
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-header-3",
+      "kind": "text",
+      "raw": "PENYELENGGARAAN HAJI DAN UMRAH",
+      "bbox": [
+        0.29,
+        0.25,
+        0.71,
+        0.29
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-title",
+      "kind": "text",
+      "raw": "GAMBAR KERJA",
+      "bbox": [
+        0.33,
+        0.32,
+        0.67,
+        0.39
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-project-name",
+      "kind": "text",
+      "raw": "GEDUNG PUSAT PELAYANAN HAJI DAN UMRAH TERPADU",
+      "bbox": [
+        0.18,
+        0.42,
+        0.82,
+        0.46
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-location",
+      "kind": "text",
+      "raw": "KANTOR KEMENTERIAN AGAMA KOTA SURAKARTA",
+      "bbox": [
+        0.22,
+        0.46,
+        0.78,
+        0.5
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-year",
+      "kind": "text",
+      "raw": "TAHUN ANGGARAN 2024",
+      "bbox": [
+        0.36,
+        0.5,
+        0.64,
+        0.54
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "view-rendering-01",
+      "kind": "image_region",
+      "raw": "Tampak Depan Gedung",
+      "bbox": [
+        0.3,
+        0.55,
+        0.67,
+        0.85
+      ],
+      "confidence": 0.98
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

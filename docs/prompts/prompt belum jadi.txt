@@ -1,0 +1,5076 @@
+kalau ingin menggunakan ocr ini harus melakukan training besar,k dan butuh waktu lama tentunya ada kondep menggunakan yolo atau detr dalam opencv
+sehingga saya menggunakna ai dalam vision pertam akali
+dan tkg yang sudah kita buat itu hanya mengambil teks dan logic saja, permasalahanya dalam gambar kerja terdapat banyak grid, garis shape, megenali huruf dan maknanya.
+kemudian jarak ukuran jika hanya ditinjau dari posisi A-f sebagai garis vertikal dan 1-6 aalah garis horizontal garis itu biasanya hanya mmeposisikan pada as struktur, as kolom, as tembok, as pile cap, ukuran sampai ujung tidak terlihat
+coba anda bayankan bagaimana cara anda gpt saya beri gambar 88 halaman itukan anda paham pasti gambar tersebut anda ekstrak dan masih menyimpan memori kan? nah memori hasil ekstrak gambar ituah yang saya butuhkan
+kemudian bayangkan kembali seprti gambar kerja dari pdf lalu saya masukkan ke autocad dengan format dwg, autocad mampu mengekstrak dari gambar lalu menjadi dwg mampu mengenali mana garis text dll
+jika opencv yolo atau detr itu bisa tapi butuh waktu dan spek pc yagn sangat tinggi untuk training
+
+dan peermasalahan utam aadalah data json 1 menciptakan Ukuran	Hasil
+Jumlah karakter	13.322.050 karakter
+Ukuran file	13.322.343 bytes
+Jumlah kata versi split spasi/whitespace	764.135 kata
+Jumlah baris/line ke bawah	496.841 baris
+Baris kosong	0 baris
+Panjang baris terpanjang	1.633 karakter
+
+Catatan kecil: secara teknis wc -l membaca 496.840 newline, tetapi karena file tidak diakhiri newline terakhir, jumlah baris yang tampil di editor adalah 496.841 baris.
+
+Kalau dihitung sebagai “kata natural” yang memecah tanda underscore, titik, koma, dan simbol JSON, jumlahnya lebih besar: sekitar 1.069.179 potongan kata/angka. Tapi untuk ukuran praktis dokumen, angka paling relevan adalah:
+
+JSON-1 = ±764 ribu kata dan ±497 ribu baris.
+
+contoh judul dan untuk page 6 gambar hasil ekstraksi json 1 seprti ini:
+{
+  "schema_version": "paax.drawing_extraction_raw.v1",
+  "document": {
+    "document_id": "PLHUT-SURAKARTA-2024-GAMBAR-KERJA",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1)(3).pdf",
+    "document_type": "construction_drawing",
+    "project_name": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU",
+    "project_alias": "PLHUT Surakarta",
+    "location": "JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+    "owner": "KEMENTERIAN AGAMA RI - DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH",
+    "consultant": "KONSULTAN PERENCANA",
+    "contractor": "",
+    "fiscal_year_or_project_year": "TAHUN ANGGARAN 2024",
+    "total_pages_detected": 88,
+    "source_language": "id",
+    "unit_system": "metric_or_imperial_or_mixed_or_unclear",
+    "default_length_unit": "mm",
+    "notes": [
+      "Generated from uploaded PDF using embedded PDF text extraction and lightweight vector/path parsing; visual symbols and routing are not fully CAD-semantic.",
+      "JSON-1 only; no volume, RAB, BOQ, or final cross-sheet building model."
+    ]
+  },
+  "processing_assumptions": {
+    "json_layer": "JSON-1 raw extraction only",
+    "bbox_format": "normalized_xyxy_0_1",
+    "bbox_note": "bbox may be approximate if exact coordinates cannot be calculated",
+    "unknown_bbox_policy": "use empty array and bbox_accuracy unclear",
+    "no_volume_calculation": true,
+    "no_rab_calculation": true,
+    "no_final_cross_sheet_linking": true,
+    "unclear_policy": "write unclear instead of guessing",
+    "field_policy": "keep all fields; use [] for empty arrays, empty string for unavailable text, and null for unavailable numeric values"
+  },
+  "pages": [
+    {
+"page_number": 6,
+      "page_id": "PAGE-006",
+      "sheet_identity": {
+        "sheet_main_title": "RENCANA PAVING",
+        "title_block_title": "RENCANA PAVING",
+        "sheet_number": "",
+        "drawing_code": "",
+        "revision": "",
+        "scale_text": "1:100",
+        "scale_numeric": 100,
+        "date_text": "JANUARI 2024",
+        "discipline_from_title_block": "SIPIL",
+        "floor_or_level_context": "",
+        "zone_or_area_context": "",
+        "title_conflict_warning": false,
+        "source_bbox_norm": {
+          "main_title": [
+            0.675164,
+            0.907465,
+            0.751284,
+            0.920923
+          ],
+          "title_block": [
+            0.886348,
+            0.869613,
+            0.972369,
+            0.879126
+          ]
+        }
+      },
+      "classification": {
+        "primary_discipline": "LANDSCAPE_HARDSCAPE",
+        "secondary_discipline": [],
+        "drawing_type": "rencana_paving",
+        "subtype": "RENCANA PAVING",
+        "is_reference_sheet": false,
+        "is_detail_sheet": false,
+        "is_schedule_or_table_sheet": false,
+        "is_qto_candidate": true,
+        "confidence": {
+          "discipline": 80,
+          "drawing_type": 78,
+          "floor_or_level_context": 30
+        }
+      },
+      "ocr_blocks": [
+        {
+          "text_id": "TXT-0001",
+          "raw_text": "RENCANA PAVING",
+          "normalized_text": "RENCANA PAVING",
+          "role": "sheet_title",
+          "bbox_norm": [
+            0.675164,
+            0.907465,
+            0.751284,
+            0.920923
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0002",
+          "raw_text": "1",
+          "normalized_text": "1",
+          "role": "grid_label",
+          "bbox_norm": [
+            0.146599,
+            0.394341,
+            0.151035,
+            0.406958
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": 1.0,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0003",
+          "raw_text": "3",
+          "normalized_text": "3",
+          "role": "grid_label",
+          "bbox_norm": [
+            0.146599,
+            0.158616,
+            0.151035,
+            0.171233
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": 3.0,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0004",
+          "raw_text": "4",
+          "normalized_text": "4",
+          "role": "grid_label",
+          "bbox_norm": [
+            0.146599,
+            0.057714,
+            0.151035,
+            0.070331
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": 4.0,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0005",
+          "raw_text": "2",
+          "normalized_text": "2",
+          "role": "grid_label",
+          "bbox_norm": [
+            0.146599,
+            0.226027,
+            0.151035,
+            0.238644
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": 2.0,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0006",
+          "raw_text": "A B C D E F",
+          "normalized_text": "A B C D E F",
+          "role": "grid_label",
+          "bbox_norm": [
+            0.235768,
+            0.591586,
+            0.716914,
+            0.604202
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0007",
+          "raw_text": "0",
+          "normalized_text": "0",
+          "role": "grid_label",
+          "bbox_norm": [
+            0.155164,
+            0.76446,
+            0.159599,
+            0.777076
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": 0.0,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0008",
+          "raw_text": "DETAIL PAVING",
+          "normalized_text": "DETAIL PAVING",
+          "role": "sheet_title",
+          "bbox_norm": [
+            0.442519,
+            0.932405,
+            0.506829,
+            0.945863
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0009",
+          "raw_text": "TANGGAL : JANUARI 2024",
+          "normalized_text": "TANGGAL : JANUARI 2024",
+          "role": "date_text",
+          "bbox_norm": [
+            0.88665,
+            0.912314,
+            0.94089,
+            0.918239
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": 2024.0,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0010",
+          "raw_text": "SKALA GBR KODE GBR NO. GBR",
+          "normalized_text": "SKALA GBR KODE GBR NO. GBR",
+          "role": "scale_text",
+          "bbox_norm": [
+            0.887456,
+            0.928561,
+            0.97376,
+            0.934486
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0011",
+          "raw_text": "KEMENTERIAN AGAMA RI",
+          "normalized_text": "KEMENTERIAN AGAMA RI",
+          "role": "title_block_text",
+          "bbox_norm": [
+            0.894509,
+            0.194119,
+            0.967839,
+            0.202308
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0012",
+          "raw_text": "DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH",
+          "normalized_text": "DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH",
+          "role": "title_block_text",
+          "bbox_norm": [
+            0.883123,
+            0.205716,
+            0.980163,
+            0.222427
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0013",
+          "raw_text": "TAHUN ANGGARAN 2024",
+          "normalized_text": "TAHUN ANGGARAN 2024",
+          "role": "title_block_text",
+          "bbox_norm": [
+            0.903577,
+            0.22654,
+            0.954294,
+            0.232436
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": 2024.0,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0014",
+          "raw_text": "JUDUL PROYEK :",
+          "normalized_text": "JUDUL PROYEK :",
+          "role": "title_block_text",
+          "bbox_norm": [
+            0.911637,
+            0.242718,
+            0.95925,
+            0.250907
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0015",
+          "raw_text": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU",
+          "normalized_text": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU",
+          "role": "general_note",
+          "bbox_norm": [
+            0.88937,
+            0.262774,
+            0.97174,
+            0.283026
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0016",
+          "raw_text": "KEPALA KANTOR WILAYAH JAWA TENGAH",
+          "normalized_text": "KEPALA KANTOR WILAYAH JAWA TENGAH",
+          "role": "general_note",
+          "bbox_norm": [
+            0.884433,
+            0.380576,
+            0.976624,
+            0.386689
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0017",
+          "raw_text": "MENYETUJUI",
+          "normalized_text": "MENYETUJUI",
+          "role": "approval_info",
+          "bbox_norm": [
+            0.911637,
+            0.362575,
+            0.948627,
+            0.370765
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0018",
+          "raw_text": "KONSULTAN PERENCANA",
+          "normalized_text": "KONSULTAN PERENCANA",
+          "role": "consultant_info",
+          "bbox_norm": [
+            0.895819,
+            0.637492,
+            0.968842,
+            0.645681
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0019",
+          "raw_text": "KETERANGAN",
+          "normalized_text": "KETERANGAN",
+          "role": "legend_key",
+          "bbox_norm": [
+            0.911637,
+            0.036352,
+            0.951527,
+            0.044541
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0020",
+          "raw_text": "JUDUL GAMBAR SKALA",
+          "normalized_text": "JUDUL GAMBAR SKALA",
+          "role": "scale_text",
+          "bbox_norm": [
+            0.888464,
+            0.853122,
+            0.975441,
+            0.861311
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0021",
+          "raw_text": "KOTA SURAKARTA",
+          "normalized_text": "KOTA SURAKARTA",
+          "role": "general_note",
+          "bbox_norm": [
+            0.902267,
+            0.286432,
+            0.9585,
+            0.294855
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0022",
+          "raw_text": "SELAKU KUASA PENGGUNA ANGGARAN",
+          "normalized_text": "SELAKU KUASA PENGGUNA ANGGARAN",
+          "role": "general_note",
+          "bbox_norm": [
+            0.886448,
+            0.390838,
+            0.9736,
+            0.396951
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0023",
+          "raw_text": "JALAN KI MANGUN SARKORO NO.115",
+          "normalized_text": "JALAN KI MANGUN SARKORO NO.115",
+          "role": "general_note",
+          "bbox_norm": [
+            0.884232,
+            0.332839,
+            0.97609,
+            0.339862
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": 115.0,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0024",
+          "raw_text": "KOTA SURAKARTA",
+          "normalized_text": "KOTA SURAKARTA",
+          "role": "general_note",
+          "bbox_norm": [
+            0.907003,
+            0.343385,
+            0.953887,
+            0.350408
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0025",
+          "raw_text": "PEJABAT PEMBUAT KOMITMEN",
+          "normalized_text": "PEJABAT PEMBUAT KOMITMEN",
+          "role": "approval_info",
+          "bbox_norm": [
+            0.89471,
+            0.532768,
+            0.972555,
+            0.539821
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0026",
+          "raw_text": "MENGETAHUI / MENYETUJUI",
+          "normalized_text": "MENGETAHUI / MENYETUJUI",
+          "role": "approval_info",
+          "bbox_norm": [
+            0.892191,
+            0.514927,
+            0.972608,
+            0.523116
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0027",
+          "raw_text": "TEAM LEADER",
+          "normalized_text": "TEAM LEADER",
+          "role": "consultant_info",
+          "bbox_norm": [
+            0.915869,
+            0.746588,
+            0.945973,
+            0.752484
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0028",
+          "raw_text": "KETUA TIM",
+          "normalized_text": "KETUA TIM",
+          "role": "general_note",
+          "bbox_norm": [
+            0.925542,
+            0.782474,
+            0.938221,
+            0.785836
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0029",
+          "raw_text": "NAMA TANDA TANGAN",
+          "normalized_text": "NAMA TANDA TANGAN",
+          "role": "approval_info",
+          "bbox_norm": [
+            0.910227,
+            0.796542,
+            0.979662,
+            0.804731
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0030",
+          "raw_text": "SIPIL",
+          "normalized_text": "SIPIL",
+          "role": "general_note",
+          "bbox_norm": [
+            0.883224,
+            0.813228,
+            0.892915,
+            0.818832
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0031",
+          "raw_text": "DIGAMBAR",
+          "normalized_text": "DIGAMBAR",
+          "role": "general_note",
+          "bbox_norm": [
+            0.883224,
+            0.832753,
+            0.904356,
+            0.838357
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0032",
+          "raw_text": "LOKASI :",
+          "normalized_text": "LOKASI :",
+          "role": "title_block_text",
+          "bbox_norm": [
+            0.914761,
+            0.311751,
+            0.943942,
+            0.321155
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": null,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        },
+        {
+          "text_id": "TXT-0033",
+          "raw_text": "1:100 RENCANA PAVING",
+          "normalized_text": "1:100 RENCANA PAVING",
+          "role": "sheet_title",
+          "bbox_norm": [
+            0.886348,
+            0.869613,
+            0.972369,
+            0.879126
+          ],
+          "bbox_accuracy": "exact",
+          "orientation_deg": 0,
+          "value": 1.0,
+          "unit": "",
+          "unit_assumption": "",
+          "confidence": 88,
+          "manual_review": false
+        }
+      ],
+      "grid_detection": {
+        "has_grid": true,
+        "grid_system_type": "orthogonal_or_radial_or_mixed_or_unclear",
+        "grid_labels_detected": {
+          "x_axes": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F"
+          ],
+          "y_axes": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "other_axes": []
+        },
+        "x_axes": [
+          {
+            "axis_id": "X-A",
+            "label": "A",
+            "axis_type": "vertical_or_unclear",
+            "line_bbox_norm": [],
+            "label_bbox_norm": [
+              0.235768,
+              0.591586,
+              0.716914,
+              0.604202
+            ],
+            "confidence": 75
+          },
+          {
+            "axis_id": "X-B",
+            "label": "B",
+            "axis_type": "vertical_or_unclear",
+            "line_bbox_norm": [],
+            "label_bbox_norm": [
+              0.235768,
+              0.591586,
+              0.716914,
+              0.604202
+            ],
+            "confidence": 75
+          },
+          {
+            "axis_id": "X-C",
+            "label": "C",
+            "axis_type": "vertical_or_unclear",
+            "line_bbox_norm": [],
+            "label_bbox_norm": [
+              0.235768,
+              0.591586,
+              0.716914,
+              0.604202
+            ],
+            "confidence": 75
+          },
+          {
+            "axis_id": "X-D",
+            "label": "D",
+            "axis_type": "vertical_or_unclear",
+            "line_bbox_norm": [],
+            "label_bbox_norm": [
+              0.235768,
+              0.591586,
+              0.716914,
+              0.604202
+            ],
+            "confidence": 75
+          },
+          {
+            "axis_id": "X-E",
+            "label": "E",
+            "axis_type": "vertical_or_unclear",
+            "line_bbox_norm": [],
+            "label_bbox_norm": [
+              0.235768,
+              0.591586,
+              0.716914,
+              0.604202
+            ],
+            "confidence": 75
+          },
+          {
+            "axis_id": "X-F",
+            "label": "F",
+            "axis_type": "vertical_or_unclear",
+            "line_bbox_norm": [],
+            "label_bbox_norm": [
+              0.235768,
+              0.591586,
+              0.716914,
+              0.604202
+            ],
+            "confidence": 75
+          }
+        ],
+        "y_axes": [
+          {
+            "axis_id": "Y-1",
+            "label": "1",
+            "axis_type": "horizontal_or_unclear",
+            "line_bbox_norm": [],
+            "label_bbox_norm": [
+              0.146599,
+              0.394341,
+              0.151035,
+              0.406958
+            ],
+            "confidence": 65
+          },
+          {
+            "axis_id": "Y-3",
+            "label": "3",
+            "axis_type": "horizontal_or_unclear",
+            "line_bbox_norm": [],
+            "label_bbox_norm": [
+              0.146599,
+              0.158616,
+              0.151035,
+              0.171233
+            ],
+            "confidence": 65
+          },
+          {
+            "axis_id": "Y-4",
+            "label": "4",
+            "axis_type": "horizontal_or_unclear",
+            "line_bbox_norm": [],
+            "label_bbox_norm": [
+              0.146599,
+              0.057714,
+              0.151035,
+              0.070331
+            ],
+            "confidence": 65
+          },
+          {
+            "axis_id": "Y-2",
+            "label": "2",
+            "axis_type": "horizontal_or_unclear",
+            "line_bbox_norm": [],
+            "label_bbox_norm": [
+              0.146599,
+              0.226027,
+              0.151035,
+              0.238644
+            ],
+            "confidence": 65
+          },
+          {
+            "axis_id": "Y-0",
+            "label": "0",
+            "axis_type": "horizontal_or_unclear",
+            "line_bbox_norm": [],
+            "label_bbox_norm": [
+              0.155164,
+              0.76446,
+              0.159599,
+              0.777076
+            ],
+            "confidence": 65
+          }
+        ],
+        "grid_intersections": [
+          {
+            "grid_ref": "A-0",
+            "x_axis": "A",
+            "y_axis": "0",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "A-1",
+            "x_axis": "A",
+            "y_axis": "1",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "A-2",
+            "x_axis": "A",
+            "y_axis": "2",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "A-3",
+            "x_axis": "A",
+            "y_axis": "3",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "A-4",
+            "x_axis": "A",
+            "y_axis": "4",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "B-0",
+            "x_axis": "B",
+            "y_axis": "0",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "B-1",
+            "x_axis": "B",
+            "y_axis": "1",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "B-2",
+            "x_axis": "B",
+            "y_axis": "2",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "B-3",
+            "x_axis": "B",
+            "y_axis": "3",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "B-4",
+            "x_axis": "B",
+            "y_axis": "4",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "C-0",
+            "x_axis": "C",
+            "y_axis": "0",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "C-1",
+            "x_axis": "C",
+            "y_axis": "1",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "C-2",
+            "x_axis": "C",
+            "y_axis": "2",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "C-3",
+            "x_axis": "C",
+            "y_axis": "3",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "C-4",
+            "x_axis": "C",
+            "y_axis": "4",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "D-0",
+            "x_axis": "D",
+            "y_axis": "0",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "D-1",
+            "x_axis": "D",
+            "y_axis": "1",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "D-2",
+            "x_axis": "D",
+            "y_axis": "2",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "D-3",
+            "x_axis": "D",
+            "y_axis": "3",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "D-4",
+            "x_axis": "D",
+            "y_axis": "4",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "E-0",
+            "x_axis": "E",
+            "y_axis": "0",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "E-1",
+            "x_axis": "E",
+            "y_axis": "1",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "E-2",
+            "x_axis": "E",
+            "y_axis": "2",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "E-3",
+            "x_axis": "E",
+            "y_axis": "3",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "E-4",
+            "x_axis": "E",
+            "y_axis": "4",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "F-0",
+            "x_axis": "F",
+            "y_axis": "0",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "F-1",
+            "x_axis": "F",
+            "y_axis": "1",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "F-2",
+            "x_axis": "F",
+            "y_axis": "2",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "F-3",
+            "x_axis": "F",
+            "y_axis": "3",
+            "point_norm": [],
+            "confidence": 30
+          },
+          {
+            "grid_ref": "F-4",
+            "x_axis": "F",
+            "y_axis": "4",
+            "point_norm": [],
+            "confidence": 30
+          }
+        ],
+        "spacing_detected": [],
+        "warnings": []
+      },
+      "line_detection": {
+        "detected_line_types": [
+          "line"
+        ],
+        "lines": [
+          {
+            "line_id": "LINE-0001",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.699144,
+              0.926461
+            ],
+            "end_norm": [
+              0.698841,
+              0.925891
+            ],
+            "bbox_norm": [
+              0.698841,
+              0.925891,
+              0.699144,
+              0.926461
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0002",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.698841,
+              0.925891
+            ],
+            "end_norm": [
+              0.698438,
+              0.925606
+            ],
+            "bbox_norm": [
+              0.698438,
+              0.925606,
+              0.698841,
+              0.925891
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0003",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.698438,
+              0.925606
+            ],
+            "end_norm": [
+              0.697834,
+              0.925606
+            ],
+            "bbox_norm": [
+              0.697834,
+              0.925606,
+              0.698438,
+              0.925606
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0004",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.697834,
+              0.925606
+            ],
+            "end_norm": [
+              0.697431,
+              0.925891
+            ],
+            "bbox_norm": [
+              0.697431,
+              0.925606,
+              0.697834,
+              0.925891
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0005",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.697431,
+              0.925891
+            ],
+            "end_norm": [
+              0.697128,
+              0.926461
+            ],
+            "bbox_norm": [
+              0.697128,
+              0.925891,
+              0.697431,
+              0.926461
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0006",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.697128,
+              0.926461
+            ],
+            "end_norm": [
+              0.697128,
+              0.927031
+            ],
+            "bbox_norm": [
+              0.697128,
+              0.926461,
+              0.697128,
+              0.927031
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0007",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.697128,
+              0.927031
+            ],
+            "end_norm": [
+              0.697229,
+              0.927601
+            ],
+            "bbox_norm": [
+              0.697128,
+              0.927031,
+              0.697229,
+              0.927601
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0008",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.697229,
+              0.927601
+            ],
+            "end_norm": [
+              0.697431,
+              0.927886
+            ],
+            "bbox_norm": [
+              0.697229,
+              0.927601,
+              0.697431,
+              0.927886
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0009",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.697431,
+              0.927886
+            ],
+            "end_norm": [
+              0.697733,
+              0.928171
+            ],
+            "bbox_norm": [
+              0.697431,
+              0.927886,
+              0.697733,
+              0.928171
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0010",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.697733,
+              0.928171
+            ],
+            "end_norm": [
+              0.698539,
+              0.928741
+            ],
+            "bbox_norm": [
+              0.697733,
+              0.928171,
+              0.698539,
+              0.928741
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0011",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.698539,
+              0.928741
+            ],
+            "end_norm": [
+              0.698841,
+              0.929026
+            ],
+            "bbox_norm": [
+              0.698539,
+              0.928741,
+              0.698841,
+              0.929026
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0012",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.698841,
+              0.929026
+            ],
+            "end_norm": [
+              0.698942,
+              0.929311
+            ],
+            "bbox_norm": [
+              0.698841,
+              0.929026,
+              0.698942,
+              0.929311
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0013",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.698942,
+              0.929311
+            ],
+            "end_norm": [
+              0.699144,
+              0.929881
+            ],
+            "bbox_norm": [
+              0.698942,
+              0.929311,
+              0.699144,
+              0.929881
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0014",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.699144,
+              0.929881
+            ],
+            "end_norm": [
+              0.699144,
+              0.930736
+            ],
+            "bbox_norm": [
+              0.699144,
+              0.929881,
+              0.699144,
+              0.930736
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0015",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.699144,
+              0.930736
+            ],
+            "end_norm": [
+              0.698841,
+              0.931306
+            ],
+            "bbox_norm": [
+              0.698841,
+              0.930736,
+              0.699144,
+              0.931306
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0016",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.698841,
+              0.931306
+            ],
+            "end_norm": [
+              0.698438,
+              0.931591
+            ],
+            "bbox_norm": [
+              0.698438,
+              0.931306,
+              0.698841,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0017",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.698438,
+              0.931591
+            ],
+            "end_norm": [
+              0.697834,
+              0.931591
+            ],
+            "bbox_norm": [
+              0.697834,
+              0.931591,
+              0.698438,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0018",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.697834,
+              0.931591
+            ],
+            "end_norm": [
+              0.697431,
+              0.931306
+            ],
+            "bbox_norm": [
+              0.697431,
+              0.931306,
+              0.697834,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0019",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.697431,
+              0.931306
+            ],
+            "end_norm": [
+              0.697128,
+              0.930736
+            ],
+            "bbox_norm": [
+              0.697128,
+              0.930736,
+              0.697431,
+              0.931306
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0020",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.700151,
+              0.925606
+            ],
+            "end_norm": [
+              0.700151,
+              0.931591
+            ],
+            "bbox_norm": [
+              0.700151,
+              0.925606,
+              0.700151,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0021",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.702065,
+              0.925606
+            ],
+            "end_norm": [
+              0.700151,
+              0.929596
+            ],
+            "bbox_norm": [
+              0.700151,
+              0.925606,
+              0.702065,
+              0.929596
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0022",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.700856,
+              0.928171
+            ],
+            "end_norm": [
+              0.702065,
+              0.931591
+            ],
+            "bbox_norm": [
+              0.700856,
+              0.928171,
+              0.702065,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0023",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.70267,
+              0.931591
+            ],
+            "end_norm": [
+              0.703778,
+              0.925606
+            ],
+            "bbox_norm": [
+              0.70267,
+              0.925606,
+              0.703778,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0024",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.703778,
+              0.925606
+            ],
+            "end_norm": [
+              0.704987,
+              0.931591
+            ],
+            "bbox_norm": [
+              0.703778,
+              0.925606,
+              0.704987,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0025",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.703073,
+              0.929596
+            ],
+            "end_norm": [
+              0.704584,
+              0.929596
+            ],
+            "bbox_norm": [
+              0.703073,
+              0.929596,
+              0.704584,
+              0.929596
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0026",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.705693,
+              0.925606
+            ],
+            "end_norm": [
+              0.705693,
+              0.931591
+            ],
+            "bbox_norm": [
+              0.705693,
+              0.925606,
+              0.705693,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0027",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.705693,
+              0.931591
+            ],
+            "end_norm": [
+              0.707406,
+              0.931591
+            ],
+            "bbox_norm": [
+              0.705693,
+              0.931591,
+              0.707406,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0028",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.707708,
+              0.931591
+            ],
+            "end_norm": [
+              0.708816,
+              0.925606
+            ],
+            "bbox_norm": [
+              0.707708,
+              0.925606,
+              0.708816,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0029",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.708816,
+              0.925606
+            ],
+            "end_norm": [
+              0.709924,
+              0.931591
+            ],
+            "bbox_norm": [
+              0.708816,
+              0.925606,
+              0.709924,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0030",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.708111,
+              0.929596
+            ],
+            "end_norm": [
+              0.709521,
+              0.929596
+            ],
+            "bbox_norm": [
+              0.708111,
+              0.929596,
+              0.709521,
+              0.929596
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0031",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.779144,
+              0.921045
+            ],
+            "end_norm": [
+              0.751033,
+              0.921045
+            ],
+            "bbox_norm": [
+              0.751033,
+              0.921045,
+              0.779144,
+              0.921045
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0032",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.675164,
+              0.921045
+            ],
+            "end_norm": [
+              0.751335,
+              0.921045
+            ],
+            "bbox_norm": [
+              0.675164,
+              0.921045,
+              0.751335,
+              0.921045
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0033",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.732393,
+              0.927316
+            ],
+            "end_norm": [
+              0.732594,
+              0.927031
+            ],
+            "bbox_norm": [
+              0.732393,
+              0.927031,
+              0.732594,
+              0.927316
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0034",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.732594,
+              0.927031
+            ],
+            "end_norm": [
+              0.732997,
+              0.926318
+            ],
+            "bbox_norm": [
+              0.732594,
+              0.926318,
+              0.732997,
+              0.927031
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0035",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.732997,
+              0.926318
+            ],
+            "end_norm": [
+              0.732997,
+              0.931591
+            ],
+            "bbox_norm": [
+              0.732997,
+              0.926318,
+              0.732997,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0036",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.741562,
+              0.927316
+            ],
+            "end_norm": [
+              0.741763,
+              0.927031
+            ],
+            "bbox_norm": [
+              0.741562,
+              0.927031,
+              0.741763,
+              0.927316
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0037",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.741763,
+              0.927031
+            ],
+            "end_norm": [
+              0.742166,
+              0.926318
+            ],
+            "bbox_norm": [
+              0.741763,
+              0.926318,
+              0.742166,
+              0.927031
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0038",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.742166,
+              0.926318
+            ],
+            "end_norm": [
+              0.742166,
+              0.931591
+            ],
+            "bbox_norm": [
+              0.742166,
+              0.926318,
+              0.742166,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0039",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.744484,
+              0.926318
+            ],
+            "end_norm": [
+              0.744081,
+              0.926461
+            ],
+            "bbox_norm": [
+              0.744081,
+              0.926318,
+              0.744484,
+              0.926461
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0040",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.744081,
+              0.926461
+            ],
+            "end_norm": [
+              0.743778,
+              0.927316
+            ],
+            "bbox_norm": [
+              0.743778,
+              0.926461,
+              0.744081,
+              0.927316
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0041",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.743778,
+              0.927316
+            ],
+            "end_norm": [
+              0.743678,
+              0.928599
+            ],
+            "bbox_norm": [
+              0.743678,
+              0.927316,
+              0.743778,
+              0.928599
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0042",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.743678,
+              0.928599
+            ],
+            "end_norm": [
+              0.743678,
+              0.929311
+            ],
+            "bbox_norm": [
+              0.743678,
+              0.928599,
+              0.743678,
+              0.929311
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0043",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.743678,
+              0.929311
+            ],
+            "end_norm": [
+              0.743778,
+              0.930594
+            ],
+            "bbox_norm": [
+              0.743678,
+              0.929311,
+              0.743778,
+              0.930594
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0044",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.743778,
+              0.930594
+            ],
+            "end_norm": [
+              0.744081,
+              0.931449
+            ],
+            "bbox_norm": [
+              0.743778,
+              0.930594,
+              0.744081,
+              0.931449
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0045",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.744081,
+              0.931449
+            ],
+            "end_norm": [
+              0.744484,
+              0.931591
+            ],
+            "bbox_norm": [
+              0.744081,
+              0.931449,
+              0.744484,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0046",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.744484,
+              0.931591
+            ],
+            "end_norm": [
+              0.744685,
+              0.931591
+            ],
+            "bbox_norm": [
+              0.744484,
+              0.931591,
+              0.744685,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0047",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.744685,
+              0.931591
+            ],
+            "end_norm": [
+              0.745088,
+              0.931449
+            ],
+            "bbox_norm": [
+              0.744685,
+              0.931449,
+              0.745088,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0048",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.745088,
+              0.931449
+            ],
+            "end_norm": [
+              0.74529,
+              0.930594
+            ],
+            "bbox_norm": [
+              0.745088,
+              0.930594,
+              0.74529,
+              0.931449
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0049",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.74529,
+              0.930594
+            ],
+            "end_norm": [
+              0.745491,
+              0.929311
+            ],
+            "bbox_norm": [
+              0.74529,
+              0.929311,
+              0.745491,
+              0.930594
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0050",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.745491,
+              0.929311
+            ],
+            "end_norm": [
+              0.745491,
+              0.928599
+            ],
+            "bbox_norm": [
+              0.745491,
+              0.928599,
+              0.745491,
+              0.929311
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0051",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.745491,
+              0.928599
+            ],
+            "end_norm": [
+              0.74529,
+              0.927316
+            ],
+            "bbox_norm": [
+              0.74529,
+              0.927316,
+              0.745491,
+              0.928599
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0052",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.74529,
+              0.927316
+            ],
+            "end_norm": [
+              0.745088,
+              0.926461
+            ],
+            "bbox_norm": [
+              0.745088,
+              0.926461,
+              0.74529,
+              0.927316
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0053",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.745088,
+              0.926461
+            ],
+            "end_norm": [
+              0.744685,
+              0.926318
+            ],
+            "bbox_norm": [
+              0.744685,
+              0.926318,
+              0.745088,
+              0.926461
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0054",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.744685,
+              0.926318
+            ],
+            "end_norm": [
+              0.744484,
+              0.926318
+            ],
+            "bbox_norm": [
+              0.744484,
+              0.926318,
+              0.744685,
+              0.926318
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0055",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.747003,
+              0.926318
+            ],
+            "end_norm": [
+              0.746599,
+              0.926461
+            ],
+            "bbox_norm": [
+              0.746599,
+              0.926318,
+              0.747003,
+              0.926461
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0056",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.746599,
+              0.926461
+            ],
+            "end_norm": [
+              0.746297,
+              0.927316
+            ],
+            "bbox_norm": [
+              0.746297,
+              0.926461,
+              0.746599,
+              0.927316
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0057",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.746297,
+              0.927316
+            ],
+            "end_norm": [
+              0.746196,
+              0.928599
+            ],
+            "bbox_norm": [
+              0.746196,
+              0.927316,
+              0.746297,
+              0.928599
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0058",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.746196,
+              0.928599
+            ],
+            "end_norm": [
+              0.746196,
+              0.929311
+            ],
+            "bbox_norm": [
+              0.746196,
+              0.928599,
+              0.746196,
+              0.929311
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0059",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.746196,
+              0.929311
+            ],
+            "end_norm": [
+              0.746297,
+              0.930594
+            ],
+            "bbox_norm": [
+              0.746196,
+              0.929311,
+              0.746297,
+              0.930594
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0060",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.746297,
+              0.930594
+            ],
+            "end_norm": [
+              0.746599,
+              0.931449
+            ],
+            "bbox_norm": [
+              0.746297,
+              0.930594,
+              0.746599,
+              0.931449
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0061",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.746599,
+              0.931449
+            ],
+            "end_norm": [
+              0.747003,
+              0.931591
+            ],
+            "bbox_norm": [
+              0.746599,
+              0.931449,
+              0.747003,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0062",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.747003,
+              0.931591
+            ],
+            "end_norm": [
+              0.747204,
+              0.931591
+            ],
+            "bbox_norm": [
+              0.747003,
+              0.931591,
+              0.747204,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0063",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.747204,
+              0.931591
+            ],
+            "end_norm": [
+              0.747607,
+              0.931449
+            ],
+            "bbox_norm": [
+              0.747204,
+              0.931449,
+              0.747607,
+              0.931591
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0064",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.747607,
+              0.931449
+            ],
+            "end_norm": [
+              0.747909,
+              0.930594
+            ],
+            "bbox_norm": [
+              0.747607,
+              0.930594,
+              0.747909,
+              0.931449
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0065",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.747909,
+              0.930594
+            ],
+            "end_norm": [
+              0.74801,
+              0.929311
+            ],
+            "bbox_norm": [
+              0.747909,
+              0.929311,
+              0.74801,
+              0.930594
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0066",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.74801,
+              0.929311
+            ],
+            "end_norm": [
+              0.74801,
+              0.928599
+            ],
+            "bbox_norm": [
+              0.74801,
+              0.928599,
+              0.74801,
+              0.929311
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0067",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.74801,
+              0.928599
+            ],
+            "end_norm": [
+              0.747909,
+              0.927316
+            ],
+            "bbox_norm": [
+              0.747909,
+              0.927316,
+              0.74801,
+              0.928599
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0068",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.747909,
+              0.927316
+            ],
+            "end_norm": [
+              0.747607,
+              0.926461
+            ],
+            "bbox_norm": [
+              0.747607,
+              0.926461,
+              0.747909,
+              0.927316
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0069",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.747607,
+              0.926461
+            ],
+            "end_norm": [
+              0.747204,
+              0.926318
+            ],
+            "bbox_norm": [
+              0.747204,
+              0.926318,
+              0.747607,
+              0.926461
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0070",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.747204,
+              0.926318
+            ],
+            "end_norm": [
+              0.747003,
+              0.926318
+            ],
+            "bbox_norm": [
+              0.747003,
+              0.926318,
+              0.747204,
+              0.926318
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0071",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.719093,
+              0.231686
+            ],
+            "end_norm": [
+              0.620957,
+              0.231686
+            ],
+            "bbox_norm": [
+              0.620957,
+              0.231686,
+              0.719093,
+              0.231686
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0072",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.719093,
+              0.230404
+            ],
+            "end_norm": [
+              0.620957,
+              0.230404
+            ],
+            "bbox_norm": [
+              0.620957,
+              0.230404,
+              0.719093,
+              0.230404
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0073",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.719093,
+              0.229121
+            ],
+            "end_norm": [
+              0.620957,
+              0.229121
+            ],
+            "bbox_norm": [
+              0.620957,
+              0.229121,
+              0.719093,
+              0.229121
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0074",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.526751,
+              0.405986
+            ],
+            "end_norm": [
+              0.526751,
+              0.455724
+            ],
+            "bbox_norm": [
+              0.526751,
+              0.405986,
+              0.526751,
+              0.455724
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0075",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.526751,
+              0.455724
+            ],
+            "end_norm": [
+              0.476776,
+              0.455724
+            ],
+            "bbox_norm": [
+              0.476776,
+              0.455724,
+              0.526751,
+              0.455724
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0076",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.475869,
+              0.455724
+            ],
+            "end_norm": [
+              0.42398,
+              0.455724
+            ],
+            "bbox_norm": [
+              0.42398,
+              0.455724,
+              0.475869,
+              0.455724
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0077",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.42398,
+              0.455724
+            ],
+            "end_norm": [
+              0.42398,
+              0.405273
+            ],
+            "bbox_norm": [
+              0.42398,
+              0.405273,
+              0.42398,
+              0.455724
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0078",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.528665,
+              0.465843
+            ],
+            "end_norm": [
+              0.476776,
+              0.465843
+            ],
+            "bbox_norm": [
+              0.476776,
+              0.465843,
+              0.528665,
+              0.465843
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0079",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.475869,
+              0.465843
+            ],
+            "end_norm": [
+              0.416826,
+              0.465843
+            ],
+            "bbox_norm": [
+              0.416826,
+              0.465843,
+              0.475869,
+              0.465843
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0080",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.416826,
+              0.465843
+            ],
+            "end_norm": [
+              0.416826,
+              0.465131
+            ],
+            "bbox_norm": [
+              0.416826,
+              0.465131,
+              0.416826,
+              0.465843
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0081",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.416826,
+              0.465843
+            ],
+            "end_norm": [
+              0.416826,
+              0.405273
+            ],
+            "bbox_norm": [
+              0.416826,
+              0.405273,
+              0.416826,
+              0.465843
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0082",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.528665,
+              0.475962
+            ],
+            "end_norm": [
+              0.476776,
+              0.475962
+            ],
+            "bbox_norm": [
+              0.476776,
+              0.475962,
+              0.528665,
+              0.475962
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0083",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.475869,
+              0.475962
+            ],
+            "end_norm": [
+              0.409673,
+              0.475962
+            ],
+            "bbox_norm": [
+              0.409673,
+              0.475962,
+              0.475869,
+              0.475962
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0084",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.409673,
+              0.475962
+            ],
+            "end_norm": [
+              0.409673,
+              0.475249
+            ],
+            "bbox_norm": [
+              0.409673,
+              0.475249,
+              0.409673,
+              0.475962
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0085",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.409673,
+              0.475962
+            ],
+            "end_norm": [
+              0.409673,
+              0.405273
+            ],
+            "bbox_norm": [
+              0.409673,
+              0.405273,
+              0.409673,
+              0.475962
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0086",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.528665,
+              0.486081
+            ],
+            "end_norm": [
+              0.476776,
+              0.486081
+            ],
+            "bbox_norm": [
+              0.476776,
+              0.486081,
+              0.528665,
+              0.486081
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0087",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.475869,
+              0.486081
+            ],
+            "end_norm": [
+              0.402519,
+              0.486081
+            ],
+            "bbox_norm": [
+              0.402519,
+              0.486081,
+              0.475869,
+              0.486081
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0088",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.402519,
+              0.486081
+            ],
+            "end_norm": [
+              0.402519,
+              0.485368
+            ],
+            "bbox_norm": [
+              0.402519,
+              0.485368,
+              0.402519,
+              0.486081
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0089",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.402519,
+              0.486081
+            ],
+            "end_norm": [
+              0.402519,
+              0.405273
+            ],
+            "bbox_norm": [
+              0.402519,
+              0.405273,
+              0.402519,
+              0.486081
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0090",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.528665,
+              0.4962
+            ],
+            "end_norm": [
+              0.476776,
+              0.4962
+            ],
+            "bbox_norm": [
+              0.476776,
+              0.4962,
+              0.528665,
+              0.4962
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0091",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.475869,
+              0.4962
+            ],
+            "end_norm": [
+              0.395365,
+              0.4962
+            ],
+            "bbox_norm": [
+              0.395365,
+              0.4962,
+              0.475869,
+              0.4962
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0092",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.395365,
+              0.4962
+            ],
+            "end_norm": [
+              0.395365,
+              0.495487
+            ],
+            "bbox_norm": [
+              0.395365,
+              0.495487,
+              0.395365,
+              0.4962
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0093",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.395365,
+              0.4962
+            ],
+            "end_norm": [
+              0.395365,
+              0.405273
+            ],
+            "bbox_norm": [
+              0.395365,
+              0.405273,
+              0.395365,
+              0.4962
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0094",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.528665,
+              0.506318
+            ],
+            "end_norm": [
+              0.388212,
+              0.506318
+            ],
+            "bbox_norm": [
+              0.388212,
+              0.506318,
+              0.528665,
+              0.506318
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0095",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.388212,
+              0.506318
+            ],
+            "end_norm": [
+              0.388212,
+              0.405273
+            ],
+            "bbox_norm": [
+              0.388212,
+              0.405273,
+              0.388212,
+              0.506318
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0096",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.526348,
+              0.449026
+            ],
+            "end_norm": [
+              0.519194,
+              0.449026
+            ],
+            "bbox_norm": [
+              0.519194,
+              0.449026,
+              0.526348,
+              0.449026
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0097",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.519194,
+              0.449026
+            ],
+            "end_norm": [
+              0.526348,
+              0.455724
+            ],
+            "bbox_norm": [
+              0.519194,
+              0.449026,
+              0.526348,
+              0.455724
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0098",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.526348,
+              0.455724
+            ],
+            "end_norm": [
+              0.526348,
+              0.449026
+            ],
+            "bbox_norm": [
+              0.526348,
+              0.449026,
+              0.526348,
+              0.455724
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0099",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.519194,
+              0.449026
+            ],
+            "end_norm": [
+              0.526348,
+              0.455724
+            ],
+            "bbox_norm": [
+              0.519194,
+              0.449026,
+              0.526348,
+              0.455724
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0100",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.526348,
+              0.455724
+            ],
+            "end_norm": [
+              0.519194,
+              0.455724
+            ],
+            "bbox_norm": [
+              0.519194,
+              0.455724,
+              0.526348,
+              0.455724
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0101",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.519194,
+              0.455724
+            ],
+            "end_norm": [
+              0.519194,
+              0.449026
+            ],
+            "bbox_norm": [
+              0.519194,
+              0.449026,
+              0.519194,
+              0.455724
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0102",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.400201,
+              0.168551
+            ],
+            "end_norm": [
+              0.311537,
+              0.168551
+            ],
+            "bbox_norm": [
+              0.311537,
+              0.168551,
+              0.400201,
+              0.168551
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0103",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.400201,
+              0.167268
+            ],
+            "end_norm": [
+              0.311537,
+              0.167268
+            ],
+            "bbox_norm": [
+              0.311537,
+              0.167268,
+              0.400201,
+              0.167268
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0104",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.400201,
+              0.166128
+            ],
+            "end_norm": [
+              0.311537,
+              0.166128
+            ],
+            "bbox_norm": [
+              0.311537,
+              0.166128,
+              0.400201,
+              0.166128
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0105",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.400201,
+              0.165986
+            ],
+            "end_norm": [
+              0.311537,
+              0.165986
+            ],
+            "bbox_norm": [
+              0.311537,
+              0.165986,
+              0.400201,
+              0.165986
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0106",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.311537,
+              0.165986
+            ],
+            "end_norm": [
+              0.311537,
+              0.169691
+            ],
+            "bbox_norm": [
+              0.311537,
+              0.165986,
+              0.311537,
+              0.169691
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0107",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.311537,
+              0.169691
+            ],
+            "end_norm": [
+              0.400201,
+              0.169691
+            ],
+            "bbox_norm": [
+              0.311537,
+              0.169691,
+              0.400201,
+              0.169691
+            ],
+            "thickness_class": "medium",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0108",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.709622,
+              0.392447
+            ],
+            "end_norm": [
+              0.719093,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.709622,
+              0.392447,
+              0.719093,
+              0.392447
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0109",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.719093,
+              0.392447
+            ],
+            "end_norm": [
+              0.709622,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.709622,
+              0.392447,
+              0.719093,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0110",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.709622,
+              0.405986
+            ],
+            "end_norm": [
+              0.709622,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.709622,
+              0.392447,
+              0.709622,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0111",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.719093,
+              0.392447
+            ],
+            "end_norm": [
+              0.709622,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.709622,
+              0.392447,
+              0.719093,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0112",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.709622,
+              0.405986
+            ],
+            "end_norm": [
+              0.719093,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.709622,
+              0.405986,
+              0.719093,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0113",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.719093,
+              0.405986
+            ],
+            "end_norm": [
+              0.719093,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.719093,
+              0.392447,
+              0.719093,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0114",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.614408,
+              0.392447
+            ],
+            "end_norm": [
+              0.623879,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.614408,
+              0.392447,
+              0.623879,
+              0.392447
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0115",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.623879,
+              0.392447
+            ],
+            "end_norm": [
+              0.614408,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.614408,
+              0.392447,
+              0.623879,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0116",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.614408,
+              0.405986
+            ],
+            "end_norm": [
+              0.614408,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.614408,
+              0.392447,
+              0.614408,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0117",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.623879,
+              0.392447
+            ],
+            "end_norm": [
+              0.614408,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.614408,
+              0.392447,
+              0.623879,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0118",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.614408,
+              0.405986
+            ],
+            "end_norm": [
+              0.623879,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.614408,
+              0.405986,
+              0.623879,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0119",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.623879,
+              0.405986
+            ],
+            "end_norm": [
+              0.623879,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.623879,
+              0.392447,
+              0.623879,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0120",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.519194,
+              0.392447
+            ],
+            "end_norm": [
+              0.528665,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.519194,
+              0.392447,
+              0.528665,
+              0.392447
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0121",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.528665,
+              0.392447
+            ],
+            "end_norm": [
+              0.519194,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.519194,
+              0.392447,
+              0.528665,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0122",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.519194,
+              0.405986
+            ],
+            "end_norm": [
+              0.519194,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.519194,
+              0.392447,
+              0.519194,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0123",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.528665,
+              0.392447
+            ],
+            "end_norm": [
+              0.519194,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.519194,
+              0.392447,
+              0.528665,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0124",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.519194,
+              0.405986
+            ],
+            "end_norm": [
+              0.528665,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.519194,
+              0.405986,
+              0.528665,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0125",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.528665,
+              0.405986
+            ],
+            "end_norm": [
+              0.528665,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.528665,
+              0.392447,
+              0.528665,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0126",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.42398,
+              0.156865
+            ],
+            "end_norm": [
+              0.433451,
+              0.156865
+            ],
+            "bbox_norm": [
+              0.42398,
+              0.156865,
+              0.433451,
+              0.156865
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0127",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.433451,
+              0.156865
+            ],
+            "end_norm": [
+              0.42398,
+              0.170261
+            ],
+            "bbox_norm": [
+              0.42398,
+              0.156865,
+              0.433451,
+              0.170261
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0128",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.42398,
+              0.170261
+            ],
+            "end_norm": [
+              0.42398,
+              0.156865
+            ],
+            "bbox_norm": [
+              0.42398,
+              0.156865,
+              0.42398,
+              0.170261
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0129",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.433451,
+              0.156865
+            ],
+            "end_norm": [
+              0.42398,
+              0.170261
+            ],
+            "bbox_norm": [
+              0.42398,
+              0.156865,
+              0.433451,
+              0.170261
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0130",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.42398,
+              0.170261
+            ],
+            "end_norm": [
+              0.433451,
+              0.170261
+            ],
+            "bbox_norm": [
+              0.42398,
+              0.170261,
+              0.433451,
+              0.170261
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0131",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.433451,
+              0.170261
+            ],
+            "end_norm": [
+              0.433451,
+              0.156865
+            ],
+            "bbox_norm": [
+              0.433451,
+              0.156865,
+              0.433451,
+              0.170261
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0132",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.42398,
+              0.392447
+            ],
+            "end_norm": [
+              0.433451,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.42398,
+              0.392447,
+              0.433451,
+              0.392447
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0133",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.433451,
+              0.392447
+            ],
+            "end_norm": [
+              0.42398,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.42398,
+              0.392447,
+              0.433451,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0134",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.42398,
+              0.405986
+            ],
+            "end_norm": [
+              0.42398,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.42398,
+              0.392447,
+              0.42398,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0135",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.433451,
+              0.392447
+            ],
+            "end_norm": [
+              0.42398,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.42398,
+              0.392447,
+              0.433451,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0136",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.42398,
+              0.405986
+            ],
+            "end_norm": [
+              0.433451,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.42398,
+              0.405986,
+              0.433451,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0137",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.433451,
+              0.405986
+            ],
+            "end_norm": [
+              0.433451,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.433451,
+              0.392447,
+              0.433451,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0138",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.328766,
+              0.156865
+            ],
+            "end_norm": [
+              0.338237,
+              0.156865
+            ],
+            "bbox_norm": [
+              0.328766,
+              0.156865,
+              0.338237,
+              0.156865
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0139",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.338237,
+              0.156865
+            ],
+            "end_norm": [
+              0.328766,
+              0.170261
+            ],
+            "bbox_norm": [
+              0.328766,
+              0.156865,
+              0.338237,
+              0.170261
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0140",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.328766,
+              0.170261
+            ],
+            "end_norm": [
+              0.328766,
+              0.156865
+            ],
+            "bbox_norm": [
+              0.328766,
+              0.156865,
+              0.328766,
+              0.170261
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0141",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.338237,
+              0.156865
+            ],
+            "end_norm": [
+              0.328766,
+              0.170261
+            ],
+            "bbox_norm": [
+              0.328766,
+              0.156865,
+              0.338237,
+              0.170261
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0142",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.328766,
+              0.170261
+            ],
+            "end_norm": [
+              0.338237,
+              0.170261
+            ],
+            "bbox_norm": [
+              0.328766,
+              0.170261,
+              0.338237,
+              0.170261
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0143",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.338237,
+              0.170261
+            ],
+            "end_norm": [
+              0.338237,
+              0.156865
+            ],
+            "bbox_norm": [
+              0.338237,
+              0.156865,
+              0.338237,
+              0.170261
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0144",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.328766,
+              0.392447
+            ],
+            "end_norm": [
+              0.338237,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.328766,
+              0.392447,
+              0.338237,
+              0.392447
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0145",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.338237,
+              0.392447
+            ],
+            "end_norm": [
+              0.328766,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.328766,
+              0.392447,
+              0.338237,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0146",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.328766,
+              0.405986
+            ],
+            "end_norm": [
+              0.328766,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.328766,
+              0.392447,
+              0.328766,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0147",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.338237,
+              0.392447
+            ],
+            "end_norm": [
+              0.328766,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.328766,
+              0.392447,
+              0.338237,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0148",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.328766,
+              0.405986
+            ],
+            "end_norm": [
+              0.338237,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.328766,
+              0.405986,
+              0.338237,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0149",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.338237,
+              0.405986
+            ],
+            "end_norm": [
+              0.338237,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.338237,
+              0.392447,
+              0.338237,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0150",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.233552,
+              0.156865
+            ],
+            "end_norm": [
+              0.243023,
+              0.156865
+            ],
+            "bbox_norm": [
+              0.233552,
+              0.156865,
+              0.243023,
+              0.156865
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0151",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.243023,
+              0.156865
+            ],
+            "end_norm": [
+              0.233552,
+              0.170261
+            ],
+            "bbox_norm": [
+              0.233552,
+              0.156865,
+              0.243023,
+              0.170261
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0152",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.233552,
+              0.170261
+            ],
+            "end_norm": [
+              0.233552,
+              0.156865
+            ],
+            "bbox_norm": [
+              0.233552,
+              0.156865,
+              0.233552,
+              0.170261
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0153",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.243023,
+              0.156865
+            ],
+            "end_norm": [
+              0.233552,
+              0.170261
+            ],
+            "bbox_norm": [
+              0.233552,
+              0.156865,
+              0.243023,
+              0.170261
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0154",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.233552,
+              0.170261
+            ],
+            "end_norm": [
+              0.243023,
+              0.170261
+            ],
+            "bbox_norm": [
+              0.233552,
+              0.170261,
+              0.243023,
+              0.170261
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0155",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.243023,
+              0.170261
+            ],
+            "end_norm": [
+              0.243023,
+              0.156865
+            ],
+            "bbox_norm": [
+              0.243023,
+              0.156865,
+              0.243023,
+              0.170261
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0156",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.233552,
+              0.392447
+            ],
+            "end_norm": [
+              0.243023,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.233552,
+              0.392447,
+              0.243023,
+              0.392447
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0157",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.243023,
+              0.392447
+            ],
+            "end_norm": [
+              0.233552,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.233552,
+              0.392447,
+              0.243023,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0158",
+            "line_type": "line",
+            "orientation": "vertical",
+            "start_norm": [
+              0.233552,
+              0.405986
+            ],
+            "end_norm": [
+              0.233552,
+              0.392447
+            ],
+            "bbox_norm": [
+              0.233552,
+              0.392447,
+              0.233552,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0159",
+            "line_type": "line",
+            "orientation": "diagonal",
+            "start_norm": [
+              0.243023,
+              0.392447
+            ],
+            "end_norm": [
+              0.233552,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.233552,
+              0.392447,
+              0.243023,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          },
+          {
+            "line_id": "LINE-0160",
+            "line_type": "line",
+            "orientation": "horizontal",
+            "start_norm": [
+              0.233552,
+              0.405986
+            ],
+            "end_norm": [
+              0.243023,
+              0.405986
+            ],
+            "bbox_norm": [
+              0.233552,
+              0.405986,
+              0.243023,
+              0.405986
+            ],
+            "thickness_class": "thin_or_medium_or_thick_or_unclear",
+            "linetype": "solid_or_dashed_or_dotted_or_unclear",
+            "confidence": 65
+          }
+        ],
+        "warnings": [
+          "Line extraction dibatasi 160 entri dari sekitar 32209 vector/path items agar file JSON tetap praktis; gunakan mode vector_full untuk audit garis lengkap."
+        ]
+      },
+      "dimension_detection": [],
+      "elevation_markers": [],
+      "symbol_detection": [
+        {
+          "symbol_id": "SYM-0001",
+          "symbol_class": "grid_axis",
+          "detected_by": "ocr_or_spatial_rule",
+          "text_code": "1",
+          "nearby_text_ids": [
+            "TXT-0002"
+          ],
+          "bbox_norm": [
+            0.146599,
+            0.394341,
+            0.151035,
+            0.406958
+          ],
+          "center_norm": [
+            0.148817,
+            0.400649
+          ],
+          "nearest_grid": {
+            "grid_ref": "",
+            "distance_note": "",
+            "confidence": 0
+          },
+          "nearest_room_or_area_label": "",
+          "confidence": {
+            "visual": 30,
+            "text_binding": 70,
+            "grid_binding": 0,
+            "overall": 55
+          },
+          "manual_review": false
+        },
+        {
+          "symbol_id": "SYM-0002",
+          "symbol_class": "grid_axis",
+          "detected_by": "ocr_or_spatial_rule",
+          "text_code": "3",
+          "nearby_text_ids": [
+            "TXT-0003"
+          ],
+          "bbox_norm": [
+            0.146599,
+            0.158616,
+            0.151035,
+            0.171233
+          ],
+          "center_norm": [
+            0.148817,
+            0.164925
+          ],
+          "nearest_grid": {
+            "grid_ref": "",
+            "distance_note": "",
+            "confidence": 0
+          },
+          "nearest_room_or_area_label": "",
+          "confidence": {
+            "visual": 30,
+            "text_binding": 70,
+            "grid_binding": 0,
+            "overall": 55
+          },
+          "manual_review": false
+        },
+        {
+          "symbol_id": "SYM-0003",
+          "symbol_class": "grid_axis",
+          "detected_by": "ocr_or_spatial_rule",
+          "text_code": "4",
+          "nearby_text_ids": [
+            "TXT-0004"
+          ],
+          "bbox_norm": [
+            0.146599,
+            0.057714,
+            0.151035,
+            0.070331
+          ],
+          "center_norm": [
+            0.148817,
+            0.064023
+          ],
+          "nearest_grid": {
+            "grid_ref": "",
+            "distance_note": "",
+            "confidence": 0
+          },
+          "nearest_room_or_area_label": "",
+          "confidence": {
+            "visual": 30,
+            "text_binding": 70,
+            "grid_binding": 0,
+            "overall": 55
+          },
+          "manual_review": false
+        },
+        {
+          "symbol_id": "SYM-0004",
+          "symbol_class": "grid_axis",
+          "detected_by": "ocr_or_spatial_rule",
+          "text_code": "2",
+          "nearby_text_ids": [
+            "TXT-0005"
+          ],
+          "bbox_norm": [
+            0.146599,
+            0.226027,
+            0.151035,
+            0.238644
+          ],
+          "center_norm": [
+            0.148817,
+            0.232336
+          ],
+          "nearest_grid": {
+            "grid_ref": "",
+            "distance_note": "",
+            "confidence": 0
+          },
+          "nearest_room_or_area_label": "",
+          "confidence": {
+            "visual": 30,
+            "text_binding": 70,
+            "grid_binding": 0,
+            "overall": 55
+          },
+          "manual_review": false
+        },
+        {
+          "symbol_id": "SYM-0005",
+          "symbol_class": "grid_axis",
+          "detected_by": "ocr_or_spatial_rule",
+          "text_code": "A B C D E F",
+          "nearby_text_ids": [
+            "TXT-0006"
+          ],
+          "bbox_norm": [
+            0.235768,
+            0.591586,
+            0.716914,
+            0.604202
+          ],
+          "center_norm": [
+            0.476341,
+            0.597894
+          ],
+          "nearest_grid": {
+            "grid_ref": "",
+            "distance_note": "",
+            "confidence": 0
+          },
+          "nearest_room_or_area_label": "",
+          "confidence": {
+            "visual": 30,
+            "text_binding": 70,
+            "grid_binding": 0,
+            "overall": 55
+          },
+          "manual_review": false
+        },
+        {
+          "symbol_id": "SYM-0006",
+          "symbol_class": "grid_axis",
+          "detected_by": "ocr_or_spatial_rule",
+          "text_code": "0",
+          "nearby_text_ids": [
+            "TXT-0007"
+          ],
+          "bbox_norm": [
+            0.155164,
+            0.76446,
+            0.159599,
+            0.777076
+          ],
+          "center_norm": [
+            0.157382,
+            0.770768
+          ],
+          "nearest_grid": {
+            "grid_ref": "",
+            "distance_note": "",
+            "confidence": 0
+          },
+          "nearest_room_or_area_label": "",
+          "confidence": {
+            "visual": 30,
+            "text_binding": 70,
+            "grid_binding": 0,
+            "overall": 55
+          },
+          "manual_review": false
+        },
+        {
+          "symbol_id": "SYM-0007",
+          "symbol_class": "detail_marker",
+          "detected_by": "ocr_or_spatial_rule",
+          "text_code": "DETAIL PAVING",
+          "nearby_text_ids": [
+            "TXT-0008"
+          ],
+          "bbox_norm": [
+            0.442519,
+            0.932405,
+            0.506829,
+            0.945863
+          ],
+          "center_norm": [
+            0.474674,
+            0.939134
+          ],
+          "nearest_grid": {
+            "grid_ref": "",
+            "distance_note": "",
+            "confidence": 0
+          },
+          "nearest_room_or_area_label": "",
+          "confidence": {
+            "visual": 30,
+            "text_binding": 70,
+            "grid_binding": 0,
+            "overall": 55
+          },
+          "manual_review": false
+        },
+        {
+          "symbol_id": "SYM-0008",
+          "symbol_class": "stair_symbol",
+          "detected_by": "ocr_or_spatial_rule",
+          "text_code": "TANGGAL : JANUARI 2024",
+          "nearby_text_ids": [
+            "TXT-0009"
+          ],
+          "bbox_norm": [
+            0.88665,
+            0.912314,
+            0.94089,
+            0.918239
+          ],
+          "center_norm": [
+            0.91377,
+            0.915277
+          ],
+          "nearest_grid": {
+            "grid_ref": "",
+            "distance_note": "",
+            "confidence": 0
+          },
+          "nearest_room_or_area_label": "",
+          "confidence": {
+            "visual": 30,
+            "text_binding": 70,
+            "grid_binding": 0,
+            "overall": 55
+          },
+          "manual_review": false
+        }
+      ],
+      "room_or_space_labels": [],
+      "structure_codes_raw": [],
+      "architecture_codes_raw": [],
+      "mep_objects_raw": [],
+      "table_extraction": [],
+      "legend_extraction": [],
+      "detected_elements_raw": [
+        {
+          "element_raw_id": "ELEM-0001",
+          "element_name": "1",
+          "element_category": "grid_axis",
+          "evidence_type": "text",
+          "evidence_text": "1",
+          "bbox_norm": [
+            0.146599,
+            0.394341,
+            0.151035,
+            0.406958
+          ],
+          "confidence": 60
+        },
+        {
+          "element_raw_id": "ELEM-0002",
+          "element_name": "3",
+          "element_category": "grid_axis",
+          "evidence_type": "text",
+          "evidence_text": "3",
+          "bbox_norm": [
+            0.146599,
+            0.158616,
+            0.151035,
+            0.171233
+          ],
+          "confidence": 60
+        },
+        {
+          "element_raw_id": "ELEM-0003",
+          "element_name": "4",
+          "element_category": "grid_axis",
+          "evidence_type": "text",
+          "evidence_text": "4",
+          "bbox_norm": [
+            0.146599,
+            0.057714,
+            0.151035,
+            0.070331
+          ],
+          "confidence": 60
+        },
+        {
+          "element_raw_id": "ELEM-0004",
+          "element_name": "2",
+          "element_category": "grid_axis",
+          "evidence_type": "text",
+          "evidence_text": "2",
+          "bbox_norm": [
+            0.146599,
+            0.226027,
+            0.151035,
+            0.238644
+          ],
+          "confidence": 60
+        },
+        {
+          "element_raw_id": "ELEM-0005",
+          "element_name": "A B C D E F",
+          "element_category": "grid_axis",
+          "evidence_type": "text",
+          "evidence_text": "A B C D E F",
+          "bbox_norm": [
+            0.235768,
+            0.591586,
+            0.716914,
+            0.604202
+          ],
+          "confidence": 60
+        },
+        {
+          "element_raw_id": "ELEM-0006",
+          "element_name": "0",
+          "element_category": "grid_axis",
+          "evidence_type": "text",
+          "evidence_text": "0",
+          "bbox_norm": [
+            0.155164,
+            0.76446,
+            0.159599,
+            0.777076
+          ],
+          "confidence": 60
+        },
+        {
+          "element_raw_id": "ELEM-0007",
+          "element_name": "DETAIL PAVING",
+          "element_category": "detail_marker",
+          "evidence_type": "text",
+          "evidence_text": "DETAIL PAVING",
+          "bbox_norm": [
+            0.442519,
+            0.932405,
+            0.506829,
+            0.945863
+          ],
+          "confidence": 60
+        },
+        {
+          "element_raw_id": "ELEM-0008",
+          "element_name": "TANGGAL : JANUARI 2024",
+          "element_category": "stair_symbol",
+          "evidence_type": "text",
+          "evidence_text": "TANGGAL : JANUARI 2024",
+          "bbox_norm": [
+            0.88665,
+            0.912314,
+            0.94089,
+            0.918239
+          ],
+          "confidence": 60
+        }
+      ],
+      "candidate_work_items_raw": [
+        {
+          "candidate_id": "CAND-001",
+          "work_division": "pekerjaan_paving_halaman",
+          "item_name": "Pekerjaan paving halaman",
+          "evidence_from_drawing": "RENCANA PAVING",
+          "source_evidence_type": "explicit_text",
+          "source_refs": [
+            "TXT-0001",
+            "TXT-0033"
+          ],
+          "qto_ready": false,
+          "reason_not_qto_ready": "Raw JSON-1 only; quantity boundary/dimensi final belum divalidasi lintas sheet.",
+          "confidence": 70
+        }
+      ],
+      "possible_references": [
+        {
+          "reference_id": "REF-0001",
+          "from_this_page_text": "DETAIL PAVING",
+          "possible_target_sheet_or_detail": "",
+          "reference_type": "detail_reference_or_table_reference_or_section_reference_or_legend_reference_or_unclear",
+          "status": "possible_only_not_final_link",
+          "confidence": 55
+        }
+      ],
+      "quality_flags": [
+        {
+          "severity": "medium",
+          "issue_type": "line_extraction_limited",
+          "message": "Vector/path line extraction dibatasi.",
+          "affected_fields": [
+            "line_detection"
+          ],
+          "manual_review_required": false
+        }
+      ],
+      "page_confidence": {
+        "ocr_overall": 82,
+        "classification_overall": 80,
+        "grid_detection_overall": 70,
+        "dimension_detection_overall": 15,
+        "symbol_detection_overall": 55,
+        "table_extraction_overall": 10,
+        "legend_extraction_overall": 10,
+        "page_overall": 61.8
+      }
+    },
+    {
+
+ini untuk 1 halaman ekstraksi sepanjang ini, hal ini bisa memberikan 

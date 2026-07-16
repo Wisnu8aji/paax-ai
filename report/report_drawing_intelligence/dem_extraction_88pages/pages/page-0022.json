@@ -1,0 +1,1155 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 22,
+    "page_number": 23,
+    "render_uri": "local://plhut-88pg-run-1/page-0022.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T21:13:54.670652+00:00",
+    "completed_at": "2026-07-14T21:13:54.670681+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "LT.1",
+      "raw": "LT.1",
+      "confidence": 0.98,
+      "evidence_refs": [
+        "ev-title-block-lt1"
+      ]
+    },
+    "title": {
+      "value": "DENAH DIN.PASRTISI LANTAI 1",
+      "raw": "DENAH DIN.PASRTISI LANTAI 1",
+      "confidence": 0.95,
+      "evidence_refs": [
+        "ev-title-block-denah"
+      ]
+    },
+    "discipline": {
+      "value": "ARSITEKTUR",
+      "confidence": 0.9,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1:100",
+        "normalized": "1:100",
+        "confidence": 0.95,
+        "evidence_refs": [
+          "ev-scale-100"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "v-denah-lt1",
+      "type": "floor_plan",
+      "title": "DENAH DIN.PASRTISI LANTAI 1",
+      "bbox": [
+        100.0,
+        100.0,
+        1800.0,
+        700.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KETERANGAN:",
+        "normalized": "Keterangan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          720.0,
+          500.0,
+          740.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-keterangan"
+        ]
+      },
+      {
+        "raw": "D1 = PASANGAN BATA MERAH",
+        "normalized": "D1: Pasangan bata merah",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          740.0,
+          600.0,
+          760.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-d1"
+        ]
+      },
+      {
+        "raw": "D2 = PARTISI RANGKA BAJA RINGAN / METAL STUD FIN. GYPSUM 9MM 2 MUKA",
+        "normalized": "D2: Partisi rangka baja ringan / metal stud fin. gypsum 9mm 2 muka",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          760.0,
+          700.0,
+          780.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-d2"
+        ]
+      },
+      {
+        "raw": "D3 = PARTISI KACA RYBEN 5MM",
+        "normalized": "D3: Partisi kaca ryben 5mm",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          780.0,
+          600.0,
+          800.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-d3"
+        ]
+      },
+      {
+        "raw": "RANGKA ALUMUNIUM 4*WARNA HITAM",
+        "normalized": "Rangka alumunium 4*warna hitam",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          800.0,
+          650.0,
+          820.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-rangka"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "1625",
+        "normalized": "1625 mm",
+        "numeric_value": 1625.0,
+        "unit": "mm",
+        "bbox": [
+          200.0,
+          180.0,
+          250.0,
+          200.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-1625"
+        ]
+      },
+      {
+        "raw": "1500",
+        "normalized": "1500 mm",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          250.0,
+          180.0,
+          300.0,
+          200.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-1500"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": "2000 mm",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          180.0,
+          350.0,
+          200.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-2000"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          350.0,
+          180.0,
+          400.0,
+          200.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-4000"
+        ]
+      },
+      {
+        "raw": "4125",
+        "normalized": "4125 mm",
+        "numeric_value": 4125.0,
+        "unit": "mm",
+        "bbox": [
+          400.0,
+          180.0,
+          450.0,
+          200.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-4125"
+        ]
+      },
+      {
+        "raw": "3000",
+        "normalized": "3000 mm",
+        "numeric_value": 3000.0,
+        "unit": "mm",
+        "bbox": [
+          180.0,
+          200.0,
+          200.0,
+          300.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-3000"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": "2000 mm",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          180.0,
+          300.0,
+          200.0,
+          400.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-2000-vert"
+        ]
+      },
+      {
+        "raw": "5000",
+        "normalized": "5000 mm",
+        "numeric_value": 5000.0,
+        "unit": "mm",
+        "bbox": [
+          180.0,
+          400.0,
+          200.0,
+          500.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-5000"
+        ]
+      },
+      {
+        "raw": "20250",
+        "normalized": "20250 mm",
+        "numeric_value": 20250.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          160.0,
+          600.0,
+          170.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-total-hor"
+        ]
+      },
+      {
+        "raw": "10200",
+        "normalized": "10200 mm",
+        "numeric_value": 10200.0,
+        "unit": "mm",
+        "bbox": [
+          650.0,
+          200.0,
+          680.0,
+          500.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-total-ver"
+        ]
+      }
+    ],
+    "grids": [
+      {
+        "raw": "A",
+        "normalized": "Grid A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          750.0,
+          170.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-A"
+        ]
+      },
+      {
+        "raw": "B",
+        "normalized": "Grid B",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          350.0,
+          750.0,
+          370.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-B"
+        ]
+      },
+      {
+        "raw": "C",
+        "normalized": "Grid C",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          500.0,
+          750.0,
+          520.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-C"
+        ]
+      },
+      {
+        "raw": "D",
+        "normalized": "Grid D",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          750.0,
+          670.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-D"
+        ]
+      },
+      {
+        "raw": "E",
+        "normalized": "Grid E",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          800.0,
+          750.0,
+          820.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-E"
+        ]
+      },
+      {
+        "raw": "F",
+        "normalized": "Grid F",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          950.0,
+          750.0,
+          970.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-F"
+        ]
+      },
+      {
+        "raw": "1",
+        "normalized": "Grid 1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          550.0,
+          170.0,
+          570.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-1"
+        ]
+      },
+      {
+        "raw": "2",
+        "normalized": "Grid 2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          400.0,
+          170.0,
+          420.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-2"
+        ]
+      },
+      {
+        "raw": "3",
+        "normalized": "Grid 3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          250.0,
+          170.0,
+          270.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-3"
+        ]
+      },
+      {
+        "raw": "4",
+        "normalized": "Grid 4",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          100.0,
+          170.0,
+          120.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-4"
+        ]
+      }
+    ],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [
+      {
+        "raw": "BV1",
+        "normalized": "BV1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          220.0,
+          200.0,
+          240.0,
+          220.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-bv1-1"
+        ]
+      },
+      {
+        "raw": "BV1",
+        "normalized": "BV1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          270.0,
+          200.0,
+          290.0,
+          220.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-bv1-2"
+        ]
+      },
+      {
+        "raw": "BV1",
+        "normalized": "BV1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          320.0,
+          200.0,
+          340.0,
+          220.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-bv1-3"
+        ]
+      },
+      {
+        "raw": "J3",
+        "normalized": "J3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          420.0,
+          200.0,
+          440.0,
+          220.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-j3"
+        ]
+      },
+      {
+        "raw": "D1",
+        "normalized": "D1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          450.0,
+          300.0,
+          470.0,
+          320.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-d1"
+        ]
+      },
+      {
+        "raw": "D2",
+        "normalized": "D2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          500.0,
+          300.0,
+          520.0,
+          320.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-d2"
+        ]
+      },
+      {
+        "raw": "D3",
+        "normalized": "D3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          300.0,
+          570.0,
+          320.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-d3"
+        ]
+      },
+      {
+        "raw": "J5",
+        "normalized": "J5",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          700.0,
+          320.0,
+          720.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-j5"
+        ]
+      }
+    ],
+    "symbols": [
+      {
+        "raw": "NOTASI PINTU: X = TYPE DAN JENIS BAHAN",
+        "normalized": "Notasi pintu: kode X menunjukkan tipe dan bahan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          820.0,
+          700.0,
+          840.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-notasi-pintu"
+        ]
+      }
+    ],
+    "tables": [],
+    "materials": [],
+    "notes": [],
+    "references": [],
+    "patterns": [
+      {
+        "raw": "HATCH BATA MERAH",
+        "normalized": "Arsir bata merah",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          200.0,
+          700.0,
+          500.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-bata"
+        ]
+      }
+    ],
+    "geometry_descriptions": []
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-title-block-lt1",
+      "kind": "text",
+      "raw": "LT.1",
+      "bbox": [
+        1700.0,
+        850.0,
+        1750.0,
+        860.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-title-block-denah",
+      "kind": "text",
+      "raw": "DENAH DIN.PASRTISI LANTAI 1",
+      "bbox": [
+        1700.0,
+        830.0,
+        1900.0,
+        840.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-scale-100",
+      "kind": "text",
+      "raw": "1:100",
+      "bbox": [
+        1800.0,
+        860.0,
+        1850.0,
+        870.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-text-keterangan",
+      "kind": "text",
+      "raw": "KETERANGAN:",
+      "bbox": [
+        400.0,
+        720.0,
+        500.0,
+        740.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-text-d1",
+      "kind": "text",
+      "raw": "D1 = PASANGAN BATA MERAH",
+      "bbox": [
+        400.0,
+        740.0,
+        600.0,
+        760.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-text-d2",
+      "kind": "text",
+      "raw": "D2 = PARTISI RANGKA BAJA RINGAN / METAL STUD FIN. GYPSUM 9MM 2 MUKA",
+      "bbox": [
+        400.0,
+        760.0,
+        700.0,
+        780.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-text-d3",
+      "kind": "text",
+      "raw": "D3 = PARTISI KACA RYBEN 5MM",
+      "bbox": [
+        400.0,
+        780.0,
+        600.0,
+        800.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-text-rangka",
+      "kind": "text",
+      "raw": "RANGKA ALUMUNIUM 4*WARNA HITAM",
+      "bbox": [
+        400.0,
+        800.0,
+        650.0,
+        820.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-1625",
+      "kind": "dimension",
+      "raw": "1625",
+      "bbox": [
+        200.0,
+        180.0,
+        250.0,
+        200.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-1500",
+      "kind": "dimension",
+      "raw": "1500",
+      "bbox": [
+        250.0,
+        180.0,
+        300.0,
+        200.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-2000",
+      "kind": "dimension",
+      "raw": "2000",
+      "bbox": [
+        300.0,
+        180.0,
+        350.0,
+        200.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-4000",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        350.0,
+        180.0,
+        400.0,
+        200.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-4125",
+      "kind": "dimension",
+      "raw": "4125",
+      "bbox": [
+        400.0,
+        180.0,
+        450.0,
+        200.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-3000",
+      "kind": "dimension",
+      "raw": "3000",
+      "bbox": [
+        180.0,
+        200.0,
+        200.0,
+        300.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-2000-vert",
+      "kind": "dimension",
+      "raw": "2000",
+      "bbox": [
+        180.0,
+        300.0,
+        200.0,
+        400.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-5000",
+      "kind": "dimension",
+      "raw": "5000",
+      "bbox": [
+        180.0,
+        400.0,
+        200.0,
+        500.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-total-hor",
+      "kind": "dimension",
+      "raw": "20250",
+      "bbox": [
+        300.0,
+        160.0,
+        600.0,
+        170.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-total-ver",
+      "kind": "dimension",
+      "raw": "10200",
+      "bbox": [
+        650.0,
+        200.0,
+        680.0,
+        500.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-A",
+      "kind": "grid",
+      "raw": "A",
+      "bbox": [
+        150.0,
+        750.0,
+        170.0,
+        770.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-B",
+      "kind": "grid",
+      "raw": "B",
+      "bbox": [
+        350.0,
+        750.0,
+        370.0,
+        770.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-C",
+      "kind": "grid",
+      "raw": "C",
+      "bbox": [
+        500.0,
+        750.0,
+        520.0,
+        770.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-D",
+      "kind": "grid",
+      "raw": "D",
+      "bbox": [
+        650.0,
+        750.0,
+        670.0,
+        770.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-E",
+      "kind": "grid",
+      "raw": "E",
+      "bbox": [
+        800.0,
+        750.0,
+        820.0,
+        770.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-F",
+      "kind": "grid",
+      "raw": "F",
+      "bbox": [
+        950.0,
+        750.0,
+        970.0,
+        770.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-1",
+      "kind": "grid",
+      "raw": "1",
+      "bbox": [
+        150.0,
+        550.0,
+        170.0,
+        570.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-2",
+      "kind": "grid",
+      "raw": "2",
+      "bbox": [
+        150.0,
+        400.0,
+        170.0,
+        420.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-3",
+      "kind": "grid",
+      "raw": "3",
+      "bbox": [
+        150.0,
+        250.0,
+        170.0,
+        270.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-4",
+      "kind": "grid",
+      "raw": "4",
+      "bbox": [
+        150.0,
+        100.0,
+        170.0,
+        120.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-label-bv1-1",
+      "kind": "label",
+      "raw": "BV1",
+      "bbox": [
+        220.0,
+        200.0,
+        240.0,
+        220.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-label-bv1-2",
+      "kind": "label",
+      "raw": "BV1",
+      "bbox": [
+        270.0,
+        200.0,
+        290.0,
+        220.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-label-bv1-3",
+      "kind": "label",
+      "raw": "BV1",
+      "bbox": [
+        320.0,
+        200.0,
+        340.0,
+        220.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-label-j3",
+      "kind": "label",
+      "raw": "J3",
+      "bbox": [
+        420.0,
+        200.0,
+        440.0,
+        220.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-label-d1",
+      "kind": "label",
+      "raw": "D1",
+      "bbox": [
+        450.0,
+        300.0,
+        470.0,
+        320.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-label-d2",
+      "kind": "label",
+      "raw": "D2",
+      "bbox": [
+        500.0,
+        300.0,
+        520.0,
+        320.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-label-d3",
+      "kind": "label",
+      "raw": "D3",
+      "bbox": [
+        550.0,
+        300.0,
+        570.0,
+        320.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-label-j5",
+      "kind": "label",
+      "raw": "J5",
+      "bbox": [
+        300.0,
+        700.0,
+        320.0,
+        720.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-notasi-pintu",
+      "kind": "symbol",
+      "raw": "NOTASI PINTU: X = TYPE DAN JENIS BAHAN",
+      "bbox": [
+        400.0,
+        820.0,
+        700.0,
+        840.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-pattern-bata",
+      "kind": "pattern",
+      "raw": "HATCH BATA MERAH",
+      "bbox": [
+        200.0,
+        200.0,
+        700.0,
+        500.0
+      ],
+      "confidence": 0.9
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 10,
+    "sections_completed": 10,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

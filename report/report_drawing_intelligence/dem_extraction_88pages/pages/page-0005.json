@@ -1,0 +1,1861 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 5,
+    "page_number": 6,
+    "render_uri": "local://plhut-88pg-run-1/page-0005.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T20:31:12.174390+00:00",
+    "completed_at": "2026-07-14T20:31:12.174427+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "6",
+      "raw": "6",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-title-block"
+      ]
+    },
+    "title": {
+      "value": "RENCANA PAVING",
+      "raw": "RENCANA PAVING",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-title-block-title"
+      ]
+    },
+    "discipline": {
+      "value": "Arsitektur",
+      "confidence": 0.9,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1:100",
+        "normalized": "1:100",
+        "confidence": 1.0,
+        "evidence_refs": [
+          "ev-scale-block"
+        ]
+      }
+    ]
+  },
+  "views": [],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KEMENTERIAN AGAMA RI\nDIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH\nTAHUN ANGGARAN 2024",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          7231.0,
+          164.0,
+          8410.0,
+          346.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-institution"
+        ]
+      },
+      {
+        "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          7231.0,
+          420.0,
+          8410.0,
+          540.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-project-name"
+        ]
+      },
+      {
+        "raw": "JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          7350.0,
+          650.0,
+          8290.0,
+          690.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-address"
+        ]
+      },
+      {
+        "raw": "MENYETUJUI",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          7480.0,
+          770.0,
+          8150.0,
+          830.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-approval"
+        ]
+      },
+      {
+        "raw": "RENCANA PAVING",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          7160.0,
+          2800.0,
+          8250.0,
+          2860.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-view-title"
+        ]
+      },
+      {
+        "raw": "DETAIL PAVING\nSKALA\t1 : 20",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          4170.0,
+          2950.0,
+          5690.0,
+          3070.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-detail-block-title"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "800",
+        "normalized": null,
+        "numeric_value": 800.0,
+        "unit": "mm",
+        "bbox": [
+          2280.0,
+          3030.0,
+          2650.0,
+          3090.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-1"
+        ]
+      },
+      {
+        "raw": "9400",
+        "normalized": null,
+        "numeric_value": 9400.0,
+        "unit": "mm",
+        "bbox": [
+          3200.0,
+          3030.0,
+          3620.0,
+          3090.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-2"
+        ]
+      },
+      {
+        "raw": "20400",
+        "normalized": null,
+        "numeric_value": 20400.0,
+        "unit": "mm",
+        "bbox": [
+          4120.0,
+          3140.0,
+          4660.0,
+          3200.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-3"
+        ]
+      },
+      {
+        "raw": "800",
+        "normalized": null,
+        "numeric_value": 800.0,
+        "unit": "mm",
+        "bbox": [
+          5200.0,
+          3030.0,
+          5570.0,
+          3090.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-4"
+        ]
+      },
+      {
+        "raw": "1700",
+        "normalized": null,
+        "numeric_value": 1700.0,
+        "unit": "mm",
+        "bbox": [
+          6210.0,
+          2330.0,
+          6570.0,
+          2390.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-5"
+        ]
+      },
+      {
+        "raw": "2988",
+        "normalized": null,
+        "numeric_value": 2988.0,
+        "unit": "mm",
+        "bbox": [
+          6210.0,
+          2670.0,
+          6570.0,
+          2730.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-6"
+        ]
+      },
+      {
+        "raw": "800",
+        "normalized": null,
+        "numeric_value": 800.0,
+        "unit": "mm",
+        "bbox": [
+          5200.0,
+          1200.0,
+          5570.0,
+          1260.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-7"
+        ]
+      },
+      {
+        "raw": "10200",
+        "normalized": null,
+        "numeric_value": 10200.0,
+        "unit": "mm",
+        "bbox": [
+          6210.0,
+          460.0,
+          6570.0,
+          520.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-8"
+        ]
+      },
+      {
+        "raw": "-0.050",
+        "normalized": null,
+        "numeric_value": -0.05,
+        "unit": "m",
+        "bbox": [
+          1850.0,
+          390.0,
+          2140.0,
+          430.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-elev-wc-1"
+        ]
+      },
+      {
+        "raw": "-0.030",
+        "normalized": null,
+        "numeric_value": -0.03,
+        "unit": "m",
+        "bbox": [
+          4180.0,
+          1050.0,
+          4520.0,
+          1090.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-elev-terrace"
+        ]
+      },
+      {
+        "raw": "±0.000",
+        "normalized": null,
+        "numeric_value": 0.0,
+        "unit": "m",
+        "bbox": [
+          3190.0,
+          340.0,
+          3510.0,
+          380.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-plhut"
+        ]
+      },
+      {
+        "raw": "10 CM",
+        "normalized": null,
+        "numeric_value": 10.0,
+        "unit": "cm",
+        "bbox": [
+          4220.0,
+          2960.0,
+          4560.0,
+          3000.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-detail-1"
+        ]
+      },
+      {
+        "raw": "5 CM",
+        "normalized": null,
+        "numeric_value": 5.0,
+        "unit": "cm",
+        "bbox": [
+          4240.0,
+          3010.0,
+          4540.0,
+          3050.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-detail-2"
+        ]
+      },
+      {
+        "raw": "15 CM",
+        "normalized": null,
+        "numeric_value": 15.0,
+        "unit": "cm",
+        "bbox": [
+          4840.0,
+          3060.0,
+          5170.0,
+          3100.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-detail-3"
+        ]
+      }
+    ],
+    "grids": [
+      {
+        "raw": "1",
+        "normalized": null,
+        "numeric_value": 1.0,
+        "unit": null,
+        "bbox": [
+          1050.0,
+          1730.0,
+          1130.0,
+          1810.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-1"
+        ]
+      },
+      {
+        "raw": "2",
+        "normalized": null,
+        "numeric_value": 2.0,
+        "unit": null,
+        "bbox": [
+          1050.0,
+          890.0,
+          1130.0,
+          970.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-2"
+        ]
+      },
+      {
+        "raw": "3",
+        "normalized": null,
+        "numeric_value": 3.0,
+        "unit": null,
+        "bbox": [
+          1050.0,
+          440.0,
+          1130.0,
+          520.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-3"
+        ]
+      },
+      {
+        "raw": "4",
+        "normalized": null,
+        "numeric_value": 4.0,
+        "unit": null,
+        "bbox": [
+          1050.0,
+          190.0,
+          1130.0,
+          270.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-4"
+        ]
+      }
+    ],
+    "levels": [
+      {
+        "raw": "TERAS\n-0.030",
+        "normalized": null,
+        "numeric_value": -0.03,
+        "unit": "m",
+        "bbox": [
+          4180.0,
+          1050.0,
+          4610.0,
+          1130.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-paving"
+        ]
+      },
+      {
+        "raw": "3000",
+        "normalized": null,
+        "numeric_value": 3000.0,
+        "unit": "mm",
+        "bbox": [
+          1480.0,
+          190.0,
+          1580.0,
+          270.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-level-1"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": null,
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          1480.0,
+          890.0,
+          1580.0,
+          970.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-level-2"
+        ]
+      },
+      {
+        "raw": "5000",
+        "normalized": null,
+        "numeric_value": 5000.0,
+        "unit": "mm",
+        "bbox": [
+          1480.0,
+          1640.0,
+          1580.0,
+          1720.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-level-3"
+        ]
+      },
+      {
+        "raw": "3200",
+        "normalized": null,
+        "numeric_value": 3200.0,
+        "unit": "mm",
+        "bbox": [
+          6040.0,
+          190.0,
+          6140.0,
+          270.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-level-4"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": null,
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          6040.0,
+          840.0,
+          6140.0,
+          920.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-level-5"
+        ]
+      },
+      {
+        "raw": "5000",
+        "normalized": null,
+        "numeric_value": 5000.0,
+        "unit": "mm",
+        "bbox": [
+          6040.0,
+          1590.0,
+          6140.0,
+          1670.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-level-6"
+        ]
+      }
+    ],
+    "spaces": [
+      {
+        "raw": "R.PLHUT",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          3120.0,
+          340.0,
+          3640.0,
+          380.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-rplhut"
+        ]
+      },
+      {
+        "raw": "R.STAFF",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          3860.0,
+          340.0,
+          4310.0,
+          380.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-rstaff"
+        ]
+      },
+      {
+        "raw": "R.FOTO SIDIK JARI",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          4600.0,
+          340.0,
+          5360.0,
+          380.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-rfotostaf"
+        ]
+      },
+      {
+        "raw": "R.DOKUMEN",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          5650.0,
+          340.0,
+          6250.0,
+          380.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-rdokumen"
+        ]
+      },
+      {
+        "raw": "R.LAKTASI",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1850.0,
+          1360.0,
+          2400.0,
+          1400.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-rlaktasi"
+        ]
+      },
+      {
+        "raw": "R.TUNGGU",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          4260.0,
+          1470.0,
+          4840.0,
+          1510.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-rtunggu"
+        ]
+      },
+      {
+        "raw": "R.PENDATAAN HAJI REGULER",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          3700.0,
+          560.0,
+          5520.0,
+          600.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-rpendaftaran"
+        ]
+      },
+      {
+        "raw": "PERBANKAN SYARIAH",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          4950.0,
+          820.0,
+          5970.0,
+          860.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-perbankansyariah1"
+        ]
+      },
+      {
+        "raw": "PERBANKAN SYARIAH",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          4950.0,
+          1100.0,
+          5970.0,
+          1140.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-perbankansyariah2"
+        ]
+      },
+      {
+        "raw": "TERAS",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          4230.0,
+          1020.0,
+          4630.0,
+          1050.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-terrace"
+        ]
+      },
+      {
+        "raw": "RAMP",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          4990.0,
+          1030.0,
+          5330.0,
+          1060.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-ramp"
+        ]
+      }
+    ],
+    "element_labels": [
+      {
+        "raw": "WC",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1780.0,
+          340.0,
+          1900.0,
+          370.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-wc-1"
+        ]
+      },
+      {
+        "raw": "WC",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          2050.0,
+          340.0,
+          2170.0,
+          370.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-wc-2"
+        ]
+      },
+      {
+        "raw": "WC",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          2310.0,
+          340.0,
+          2430.0,
+          370.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-wc-3"
+        ]
+      },
+      {
+        "raw": "WC",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1780.0,
+          880.0,
+          1900.0,
+          910.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-wc-4"
+        ]
+      }
+    ],
+    "symbols": [
+      {
+        "raw": "NOTASI TANGGA: 11 10 9 8 7 6 5 4 3 2 1",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1530.0,
+          1640.0,
+          2400.0,
+          1760.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-stairs"
+        ]
+      },
+      {
+        "raw": "-0.200\n-0.370\n-0.540\n-0.710\n-0.880",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": "m",
+        "bbox": [
+          4700.0,
+          1000.0,
+          5100.0,
+          1190.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-stairs"
+        ]
+      },
+      {
+        "raw": "PAVING HEXAGONAL 10 CM",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          3750.0,
+          2960.0,
+          4770.0,
+          3000.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-paving"
+        ]
+      },
+      {
+        "raw": "PASIR URUG 5 CM",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          3750.0,
+          3010.0,
+          4560.0,
+          3050.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-sand"
+        ]
+      },
+      {
+        "raw": "TANAH URUG 15 CM",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          4390.0,
+          3070.0,
+          5420.0,
+          3110.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-sand-compaction"
+        ]
+      },
+      {
+        "raw": "COR BETON",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          4950.0,
+          3010.0,
+          5370.0,
+          3050.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-concrete-core"
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "raw": "KETERANGAN\nMENYETUJUI\nMENGETAHUI / MENYETUJUI\nPEJABAT PEMBUAT KOMITMEN\nKONSULTAN PERENCANA\nTEAM LEADER\nNAMA TANDA TANGAN\nSIPIL\nDIGAMBAR\nJUDUL GAMBAR\tSKALA\nRENCANA PAVING\t1:100\nTANGGAL : JANUARI 2024\nSKALA GBR\tKODE GBR\tNO. GBR",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          7090.0,
+          100.0,
+          8710.0,
+          3280.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-table-title-block"
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "raw": "PAVING HEXAGONAL 10 CM",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          3750.0,
+          2960.0,
+          4770.0,
+          3000.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-paving"
+        ]
+      },
+      {
+        "raw": "PASIR URUG 5 CM",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          3750.0,
+          3010.0,
+          4560.0,
+          3050.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-sand"
+        ]
+      },
+      {
+        "raw": "TANAH URUG 15 CM",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          4390.0,
+          3070.0,
+          5420.0,
+          3110.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-soil"
+        ]
+      },
+      {
+        "raw": "COR BETON",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          4950.0,
+          3010.0,
+          5370.0,
+          3050.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-concrete"
+        ]
+      }
+    ],
+    "notes": [],
+    "references": [
+      {
+        "raw": "DETAIL PAVING",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          4270.0,
+          3070.0,
+          5170.0,
+          3110.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-reference-detail"
+        ]
+      }
+    ],
+    "patterns": [
+      {
+        "raw": "ARSIR TEGEL HEXAGONAL",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          2430.0,
+          1780.0,
+          5840.0,
+          2780.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-tiles"
+        ]
+      }
+    ],
+    "geometry_descriptions": [
+      {
+        "raw": "Layout Teras dengan Paving Hexagonal dan Ramp",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1480.0,
+          1690.0,
+          6470.0,
+          3070.0
+        ],
+        "confidence": 0.95,
+        "status": "ai_interpreted",
+        "evidence_refs": [
+          "ev-geom-layout-terrace"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-title-block",
+      "kind": "text",
+      "raw": "6",
+      "bbox": [
+        7600.0,
+        3120.0,
+        7830.0,
+        3180.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-title-block-title",
+      "kind": "text",
+      "raw": "RENCANA PAVING",
+      "bbox": [
+        7160.0,
+        2800.0,
+        8250.0,
+        2860.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-title-block-institution",
+      "kind": "text",
+      "raw": "KEMENTERIAN AGAMA RI\nDIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH\nTAHUN ANGGARAN 2024",
+      "bbox": [
+        7231.0,
+        164.0,
+        8410.0,
+        346.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-title-block-project-name",
+      "kind": "text",
+      "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+      "bbox": [
+        7231.0,
+        420.0,
+        8410.0,
+        540.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-title-block-address",
+      "kind": "text",
+      "raw": "JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+      "bbox": [
+        7350.0,
+        650.0,
+        8290.0,
+        690.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-title-block-approval",
+      "kind": "text",
+      "raw": "MENYETUJUI",
+      "bbox": [
+        7480.0,
+        770.0,
+        8150.0,
+        830.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-view-title",
+      "kind": "text",
+      "raw": "RENCANA PAVING",
+      "bbox": [
+        7160.0,
+        2800.0,
+        8250.0,
+        2860.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-detail-block-title",
+      "kind": "text",
+      "raw": "DETAIL PAVING\nSKALA\t1 : 20",
+      "bbox": [
+        4170.0,
+        2950.0,
+        5690.0,
+        3070.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-1",
+      "kind": "dimension",
+      "raw": "800",
+      "bbox": [
+        2280.0,
+        3030.0,
+        2650.0,
+        3090.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-2",
+      "kind": "dimension",
+      "raw": "9400",
+      "bbox": [
+        3200.0,
+        3030.0,
+        3620.0,
+        3090.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-3",
+      "kind": "dimension",
+      "raw": "20400",
+      "bbox": [
+        4120.0,
+        3140.0,
+        4660.0,
+        3200.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-4",
+      "kind": "dimension",
+      "raw": "800",
+      "bbox": [
+        5200.0,
+        3030.0,
+        5570.0,
+        3090.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-5",
+      "kind": "dimension",
+      "raw": "1700",
+      "bbox": [
+        6210.0,
+        2330.0,
+        6570.0,
+        2390.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-6",
+      "kind": "dimension",
+      "raw": "2988",
+      "bbox": [
+        6210.0,
+        2670.0,
+        6570.0,
+        2730.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-7",
+      "kind": "dimension",
+      "raw": "800",
+      "bbox": [
+        5200.0,
+        1200.0,
+        5570.0,
+        1260.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-8",
+      "kind": "dimension",
+      "raw": "10200",
+      "bbox": [
+        6210.0,
+        460.0,
+        6570.0,
+        520.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-elev-wc-1",
+      "kind": "dimension",
+      "raw": "-0.050",
+      "bbox": [
+        1850.0,
+        390.0,
+        2140.0,
+        430.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-elev-terrace",
+      "kind": "dimension",
+      "raw": "-0.030",
+      "bbox": [
+        4180.0,
+        1050.0,
+        4520.0,
+        1090.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-level-plhut",
+      "kind": "dimension",
+      "raw": "±0.000",
+      "bbox": [
+        3190.0,
+        340.0,
+        3510.0,
+        380.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-detail-1",
+      "kind": "dimension",
+      "raw": "10 CM",
+      "bbox": [
+        4220.0,
+        2960.0,
+        4560.0,
+        3000.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-detail-2",
+      "kind": "dimension",
+      "raw": "5 CM",
+      "bbox": [
+        4240.0,
+        3010.0,
+        4540.0,
+        3050.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-detail-3",
+      "kind": "dimension",
+      "raw": "15 CM",
+      "bbox": [
+        4840.0,
+        3060.0,
+        5170.0,
+        3100.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-1",
+      "kind": "grid",
+      "raw": "1",
+      "bbox": [
+        1050.0,
+        1730.0,
+        1130.0,
+        1810.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-2",
+      "kind": "grid",
+      "raw": "2",
+      "bbox": [
+        1050.0,
+        890.0,
+        1130.0,
+        970.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-3",
+      "kind": "grid",
+      "raw": "3",
+      "bbox": [
+        1050.0,
+        440.0,
+        1130.0,
+        520.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-4",
+      "kind": "grid",
+      "raw": "4",
+      "bbox": [
+        1050.0,
+        190.0,
+        1130.0,
+        270.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-level-paving",
+      "kind": "level",
+      "raw": "TERAS\n-0.030",
+      "bbox": [
+        4180.0,
+        1050.0,
+        4610.0,
+        1130.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-level-1",
+      "kind": "dimension",
+      "raw": "3000",
+      "bbox": [
+        1480.0,
+        190.0,
+        1580.0,
+        270.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-level-2",
+      "kind": "dimension",
+      "raw": "2000",
+      "bbox": [
+        1480.0,
+        890.0,
+        1580.0,
+        970.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-level-3",
+      "kind": "dimension",
+      "raw": "5000",
+      "bbox": [
+        1480.0,
+        1640.0,
+        1580.0,
+        1720.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-level-4",
+      "kind": "dimension",
+      "raw": "3200",
+      "bbox": [
+        6040.0,
+        190.0,
+        6140.0,
+        270.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-level-5",
+      "kind": "dimension",
+      "raw": "2000",
+      "bbox": [
+        6040.0,
+        840.0,
+        6140.0,
+        920.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-level-6",
+      "kind": "dimension",
+      "raw": "5000",
+      "bbox": [
+        6040.0,
+        1590.0,
+        6140.0,
+        1670.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-space-rplhut",
+      "kind": "space",
+      "raw": "R.PLHUT",
+      "bbox": [
+        3120.0,
+        340.0,
+        3640.0,
+        380.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-space-rstaff",
+      "kind": "space",
+      "raw": "R.STAFF",
+      "bbox": [
+        3860.0,
+        340.0,
+        4310.0,
+        380.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-space-rfotostaf",
+      "kind": "space",
+      "raw": "R.FOTO SIDIK JARI",
+      "bbox": [
+        4600.0,
+        340.0,
+        5360.0,
+        380.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-space-rdokumen",
+      "kind": "space",
+      "raw": "R.DOKUMEN",
+      "bbox": [
+        5650.0,
+        340.0,
+        6250.0,
+        380.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-space-rlaktasi",
+      "kind": "space",
+      "raw": "R.LAKTASI",
+      "bbox": [
+        1850.0,
+        1360.0,
+        2400.0,
+        1400.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-space-rtunggu",
+      "kind": "space",
+      "raw": "R.TUNGGU",
+      "bbox": [
+        4260.0,
+        1470.0,
+        4840.0,
+        1510.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-space-rpendaftaran",
+      "kind": "space",
+      "raw": "R.PENDATAAN HAJI REGULER",
+      "bbox": [
+        3700.0,
+        560.0,
+        5520.0,
+        600.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-space-perbankansyariah1",
+      "kind": "space",
+      "raw": "PERBANKAN SYARIAH",
+      "bbox": [
+        4950.0,
+        820.0,
+        5970.0,
+        860.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-space-perbankansyariah2",
+      "kind": "space",
+      "raw": "PERBANKAN SYARIAH",
+      "bbox": [
+        4950.0,
+        1100.0,
+        5970.0,
+        1140.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-space-terrace",
+      "kind": "space",
+      "raw": "TERAS",
+      "bbox": [
+        4230.0,
+        1020.0,
+        4630.0,
+        1050.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-space-ramp",
+      "kind": "space",
+      "raw": "RAMP",
+      "bbox": [
+        4990.0,
+        1030.0,
+        5330.0,
+        1060.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-wc-1",
+      "kind": "element_label",
+      "raw": "WC",
+      "bbox": [
+        1780.0,
+        340.0,
+        1900.0,
+        370.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-wc-2",
+      "kind": "element_label",
+      "raw": "WC",
+      "bbox": [
+        2050.0,
+        340.0,
+        2170.0,
+        370.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-wc-3",
+      "kind": "element_label",
+      "raw": "WC",
+      "bbox": [
+        2310.0,
+        340.0,
+        2430.0,
+        370.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-wc-4",
+      "kind": "element_label",
+      "raw": "WC",
+      "bbox": [
+        1780.0,
+        880.0,
+        1900.0,
+        910.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-symbol-stairs",
+      "kind": "symbol",
+      "raw": "NOTASI TANGGA: 11 10 9 8 7 6 5 4 3 2 1",
+      "bbox": [
+        1530.0,
+        1640.0,
+        2400.0,
+        1760.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimension-stairs",
+      "kind": "dimension",
+      "raw": "-0.200\n-0.370\n-0.540\n-0.710\n-0.880",
+      "bbox": [
+        4700.0,
+        1000.0,
+        5100.0,
+        1190.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-symbol-paving",
+      "kind": "symbol",
+      "raw": "PAVING HEXAGONAL 10 CM",
+      "bbox": [
+        3750.0,
+        2960.0,
+        4770.0,
+        3000.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-symbol-sand",
+      "kind": "symbol",
+      "raw": "PASIR URUG 5 CM",
+      "bbox": [
+        3750.0,
+        3010.0,
+        4560.0,
+        3050.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-symbol-sand-compaction",
+      "kind": "symbol",
+      "raw": "TANAH URUG 15 CM",
+      "bbox": [
+        4390.0,
+        3070.0,
+        5420.0,
+        3110.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-symbol-concrete-core",
+      "kind": "symbol",
+      "raw": "COR BETON",
+      "bbox": [
+        4950.0,
+        3010.0,
+        5370.0,
+        3050.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-table-title-block",
+      "kind": "table",
+      "raw": "KETERANGAN\nMENYETUJUI\nMENGETAHUI / MENYETUJUI\nPEJABAT PEMBUAT KOMITMEN\nKONSULTAN PERENCANA\nTEAM LEADER\nNAMA TANDA TANGAN\nSIPIL\nDIGAMBAR\nJUDUL GAMBAR\tSKALA\nRENCANA PAVING\t1:100\nTANGGAL : JANUARI 2024\nSKALA GBR\tKODE GBR\tNO. GBR",
+      "bbox": [
+        7090.0,
+        100.0,
+        8710.0,
+        3280.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-material-paving",
+      "kind": "material",
+      "raw": "PAVING HEXAGONAL 10 CM",
+      "bbox": [
+        3750.0,
+        2960.0,
+        4770.0,
+        3000.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-material-sand",
+      "kind": "material",
+      "raw": "PASIR URUG 5 CM",
+      "bbox": [
+        3750.0,
+        3010.0,
+        4560.0,
+        3050.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-material-soil",
+      "kind": "material",
+      "raw": "TANAH URUG 15 CM",
+      "bbox": [
+        4390.0,
+        3070.0,
+        5420.0,
+        3110.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-material-concrete",
+      "kind": "material",
+      "raw": "COR BETON",
+      "bbox": [
+        4950.0,
+        3010.0,
+        5370.0,
+        3050.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-reference-detail",
+      "kind": "reference",
+      "raw": "DETAIL PAVING",
+      "bbox": [
+        4270.0,
+        3070.0,
+        5170.0,
+        3110.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-pattern-tiles",
+      "kind": "pattern",
+      "raw": "ARSIR TEGEL HEXAGONAL",
+      "bbox": [
+        2430.0,
+        1780.0,
+        5840.0,
+        2780.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-geom-layout-terrace",
+      "kind": "geometry_description",
+      "raw": "Layout Teras dengan Paving Hexagonal dan Ramp",
+      "bbox": [
+        1480.0,
+        1690.0,
+        6470.0,
+        3070.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

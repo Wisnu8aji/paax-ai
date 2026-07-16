@@ -36,18 +36,18 @@ def test_mock_adapter_raises_configured_error():
 
 
 def test_qwen_adapter_from_env_returns_none_when_key_missing(monkeypatch):
-    monkeypatch.delenv("DEM_EXTRACTION_API_KEY", raising=False)
+    monkeypatch.delenv("DRAWING_INTELLIGENCE_API_KEY", raising=False)
 
     assert QwenDemAdapter.from_env() is None
 
 
 def test_qwen_adapter_from_env_builds_when_key_present(monkeypatch):
-    monkeypatch.setenv("DEM_EXTRACTION_API_KEY", "test-key-123")
+    monkeypatch.setenv("DRAWING_INTELLIGENCE_API_KEY", "test-key-123")
     monkeypatch.setenv(
-        "DEM_EXTRACTION_BASE_URL",
+        "DRAWING_INTELLIGENCE_BASE_URL",
         "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
     )
-    monkeypatch.setenv("DEM_EXTRACTION_MODEL", "qwen3.7-plus")
+    monkeypatch.setenv("DRAWING_INTELLIGENCE_QWEN_MODEL", "qwen3.7-plus")
 
     adapter = QwenDemAdapter.from_env()
 

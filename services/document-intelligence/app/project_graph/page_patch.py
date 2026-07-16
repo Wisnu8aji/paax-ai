@@ -238,6 +238,11 @@ def build_sheet_patch(sheet: DrawingEvidenceSheet) -> SheetKnowledgePatch:
                 status=observation.status,
                 evidence_refs=valid_refs,
                 missing_evidence_refs=missing_refs,
+                # node_id back-reference lets downstream resolvers (e.g.
+                # cross_sheet_resolver's dimension-to-element linking) target the
+                # exact ProjectGraphNode this fact produced, without recomputing
+                # _stable_id's position-dependent formula and risking a mismatch.
+                attributes={"node_id": node_id},
             )
             facts.append(fact)
             properties = _node_properties(observation, valid_refs)

@@ -1,0 +1,2078 @@
+Qwen3.7 Plus
+
+{
+"schema_version": "paax.drawing_extraction_raw.v1",
+"document": {
+"document_id": "DOC-001",
+"file_name": "drawing_set.pdf",
+"document_type": "construction_drawing",
+"project_name": "GEDUNG PUSAT PELAYANAN HAJI DAN UMRAH TERPADU KANTOR KEMENTERIAN AGAMA KOTA SURAKARTA",
+"project_alias": "PPHU Surakarta",
+"location": "JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+"owner": "KEMENTERIAN AGAMA RI",
+"consultant": "",
+"contractor": "",
+"fiscal_year_or_project_year": "2024",
+"total_pages_detected": 2,
+"source_language": "id",
+"unit_system": "metric",
+"default_length_unit": "mm",
+"notes": [
+"Document contains cover page and site/paving plan."
+]
+},
+"processing_assumptions": {
+"json_layer": "JSON-1 raw extraction only",
+"bbox_format": "normalized_xyxy_0_1",
+"bbox_note": "bbox may be approximate if exact coordinates cannot be calculated",
+"unknown_bbox_policy": "use empty array and bbox_accuracy unclear",
+"no_volume_calculation": true,
+"no_rab_calculation": true,
+"no_final_cross_sheet_linking": true,
+"unclear_policy": "write unclear instead of guessing",
+"field_policy": "keep all fields; use [] for empty arrays, empty string for unavailable text, and null for unavailable numeric values"
+},
+"pages": [
+{
+"page_number": 1,
+"page_id": "PAGE-001",
+"sheet_identity": {
+"sheet_main_title": "GAMBAR KERJA",
+"title_block_title": "KEMENTRIAN AGAMA RI DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH",
+"sheet_number": "",
+"drawing_code": "",
+"revision": "",
+"scale_text": "",
+"scale_numeric": null,
+"date_text": "TAHUN ANGGARAN 2024",
+"discipline_from_title_block": "GENERAL",
+"floor_or_level_context": "",
+"zone_or_area_context": "",
+"title_conflict_warning": false,
+"source_bbox_norm": {
+"main_title": [
+0.3,
+0.3,
+0.7,
+0.4
+],
+"title_block": [
+0.1,
+0.1,
+0.9,
+0.3
+]
+}
+},
+"classification": {
+"primary_discipline": "COVER",
+"secondary_discipline": [],
+"drawing_type": "cover",
+"subtype": "project_cover",
+"is_reference_sheet": false,
+"is_detail_sheet": false,
+"is_schedule_or_table_sheet": false,
+"is_qto_candidate": false,
+"confidence": {
+"discipline": 95,
+"drawing_type": 95,
+"floor_or_level_context": 0
+}
+},
+"ocr_blocks": [
+{
+"text_id": "OCR-P1-01",
+"raw_text": "KEMENTRIAN AGAMA RI",
+"normalized_text": "KEMENTERIAN AGAMA RI",
+"role": "project_info",
+"bbox_norm": [
+0.25,
+0.18,
+0.75,
+0.22
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": null,
+"unit": "",
+"unit_assumption": "",
+"confidence": 98,
+"manual_review": false
+},
+{
+"text_id": "OCR-P1-02",
+"raw_text": "DIREKTORAT JENDERAL",
+"normalized_text": "DIREKTORAT JENDERAL",
+"role": "project_info",
+"bbox_norm": [
+0.25,
+0.22,
+0.75,
+0.25
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": null,
+"unit": "",
+"unit_assumption": "",
+"confidence": 98,
+"manual_review": false
+},
+{
+"text_id": "OCR-P1-03",
+"raw_text": "PENYELENGGARAAN HAJI DAN UMRAH",
+"normalized_text": "PENYELENGGARAAN HAJI DAN UMRAH",
+"role": "project_info",
+"bbox_norm": [
+0.2,
+0.25,
+0.8,
+0.29
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": null,
+"unit": "",
+"unit_assumption": "",
+"confidence": 98,
+"manual_review": false
+},
+{
+"text_id": "OCR-P1-04",
+"raw_text": "GAMBAR KERJA",
+"normalized_text": "GAMBAR KERJA",
+"role": "sheet_title",
+"bbox_norm": [
+0.3,
+0.32,
+0.7,
+0.4
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": null,
+"unit": "",
+"unit_assumption": "",
+"confidence": 99,
+"manual_review": false
+},
+{
+"text_id": "OCR-P1-05",
+"raw_text": "GEDUNG PUSAT PELAYANAN HAJI DAN UMRAH TERPADU",
+"normalized_text": "GEDUNG PUSAT PELAYANAN HAJI DAN UMRAH TERPADU",
+"role": "project_info",
+"bbox_norm": [
+0.15,
+0.42,
+0.85,
+0.46
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": null,
+"unit": "",
+"unit_assumption": "",
+"confidence": 98,
+"manual_review": false
+},
+{
+"text_id": "OCR-P1-06",
+"raw_text": "KANTOR KEMENTERIAN AGAMA KOTA SURAKARTA",
+"normalized_text": "KANTOR KEMENTERIAN AGAMA KOTA SURAKARTA",
+"role": "project_info",
+"bbox_norm": [
+0.2,
+0.46,
+0.8,
+0.5
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": null,
+"unit": "",
+"unit_assumption": "",
+"confidence": 98,
+"manual_review": false
+},
+{
+"text_id": "OCR-P1-07",
+"raw_text": "TAHUN ANGGARAN 2024",
+"normalized_text": "TAHUN ANGGARAN 2024",
+"role": "date_text",
+"bbox_norm": [
+0.3,
+0.5,
+0.7,
+0.54
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 2024,
+"unit": "year",
+"unit_assumption": "",
+"confidence": 99,
+"manual_review": false
+}
+],
+"grid_detection": {
+"has_grid": false,
+"grid_system_type": "unclear",
+"grid_labels_detected": {
+"x_axes": [],
+"y_axes": [],
+"other_axes": []
+},
+"x_axes": [],
+"y_axes": [],
+"grid_intersections": [],
+"spacing_detected": [],
+"warnings": []
+},
+"line_detection": {
+"detected_line_types": [
+"border"
+],
+"lines": [
+{
+"line_id": "LINE-P1-01",
+"line_type": "border",
+"orientation": "horizontal",
+"start_norm": [
+0.02,
+0.02
+],
+"end_norm": [
+0.98,
+0.02
+],
+"bbox_norm": [
+0.02,
+0.02,
+0.98,
+0.03
+],
+"thickness_class": "thick",
+"linetype": "solid",
+"confidence": 90
+}
+],
+"warnings": []
+},
+"dimension_detection": [],
+"elevation_markers": [],
+"symbol_detection": [
+{
+"symbol_id": "SYM-P1-01",
+"symbol_class": "signage_element",
+"detected_by": "visual",
+"text_code": "Logo Kemenag",
+"nearby_text_ids": [
+"OCR-P1-01"
+],
+"bbox_norm": [
+0.45,
+0.05,
+0.55,
+0.15
+],
+"center_norm": [
+0.5,
+0.1
+],
+"nearest_grid": {
+"grid_ref": "",
+"distance_note": "",
+"confidence": 0
+},
+"nearest_room_or_area_label": "",
+"confidence": {
+"visual": 95,
+"text_binding": 90,
+"grid_binding": 0,
+"overall": 90
+},
+"manual_review": false
+},
+{
+"symbol_id": "SYM-P1-02",
+"symbol_class": "furniture_or_equipment",
+"detected_by": "visual",
+"text_code": "3D Render Building",
+"nearby_text_ids": [],
+"bbox_norm": [
+0.3,
+0.55,
+0.7,
+0.85
+],
+"center_norm": [
+0.5,
+0.7
+],
+"nearest_grid": {
+"grid_ref": "",
+"distance_note": "",
+"confidence": 0
+},
+"nearest_room_or_area_label": "",
+"confidence": {
+"visual": 99,
+"text_binding": 0,
+"grid_binding": 0,
+"overall": 90
+},
+"manual_review": false
+}
+],
+"room_or_space_labels": [],
+"structure_codes_raw": [],
+"architecture_codes_raw": [],
+"mep_objects_raw": [],
+"table_extraction": [],
+"legend_extraction": [],
+"detected_elements_raw": [],
+"candidate_work_items_raw": [],
+"possible_references": [],
+"quality_flags": [],
+"page_confidence": {
+"ocr_overall": 98,
+"classification_overall": 95,
+"grid_detection_overall": 0,
+"dimension_detection_overall": 0,
+"symbol_detection_overall": 90,
+"table_extraction_overall": 0,
+"legend_extraction_overall": 0,
+"page_overall": 95
+}
+},
+{
+"page_number": 2,
+"page_id": "PAGE-002",
+"sheet_identity": {
+"sheet_main_title": "RENCANA PAVING",
+"title_block_title": "RENCANA PAVING",
+"sheet_number": "",
+"drawing_code": "",
+"revision": "",
+"scale_text": "1:100",
+"scale_numeric": 100,
+"date_text": "JANUARI 2024",
+"discipline_from_title_block": "ARCHITECTURE",
+"floor_or_level_context": "GROUND FLOOR",
+"zone_or_area_context": "SITE",
+"title_conflict_warning": false,
+"source_bbox_norm": {
+"main_title": [
+0.75,
+0.85,
+0.95,
+0.88
+],
+"title_block": [
+0.85,
+0.02,
+0.98,
+0.98
+]
+}
+},
+"classification": {
+"primary_discipline": "ARCHITECTURE",
+"secondary_discipline": [
+"CIVIL_SITEWORK"
+],
+"drawing_type": "rencana_paving",
+"subtype": "site_plan_with_ground_floor",
+"is_reference_sheet": false,
+"is_detail_sheet": false,
+"is_schedule_or_table_sheet": false,
+"is_qto_candidate": true,
+"confidence": {
+"discipline": 90,
+"drawing_type": 95,
+"floor_or_level_context": 90
+}
+},
+"ocr_blocks": [
+{
+"text_id": "OCR-P2-01",
+"raw_text": "KETERANGAN",
+"normalized_text": "KETERANGAN",
+"role": "sheet_title",
+"bbox_norm": [
+0.88,
+0.03,
+0.95,
+0.05
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": null,
+"unit": "",
+"unit_assumption": "",
+"confidence": 95,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-02",
+"raw_text": "KEMENTERIAN AGAMA RI DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH TAHUN ANGGARAN 2024",
+"normalized_text": "KEMENTERIAN AGAMA RI DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH TAHUN ANGGARAN 2024",
+"role": "project_info",
+"bbox_norm": [
+0.86,
+0.15,
+0.97,
+0.22
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": null,
+"unit": "",
+"unit_assumption": "",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-03",
+"raw_text": "JUDUL PROYEK : GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+"normalized_text": "JUDUL PROYEK GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+"role": "project_info",
+"bbox_norm": [
+0.86,
+0.23,
+0.97,
+0.28
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": null,
+"unit": "",
+"unit_assumption": "",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-04",
+"raw_text": "LOKASI : JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+"normalized_text": "LOKASI JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+"role": "project_info",
+"bbox_norm": [
+0.86,
+0.29,
+0.97,
+0.33
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": null,
+"unit": "",
+"unit_assumption": "",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-05",
+"raw_text": "JUDUL GAMBAR RENCANA PAVING",
+"normalized_text": "JUDUL GAMBAR RENCANA PAVING",
+"role": "sheet_title",
+"bbox_norm": [
+0.86,
+0.82,
+0.92,
+0.86
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": null,
+"unit": "",
+"unit_assumption": "",
+"confidence": 95,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-06",
+"raw_text": "SKALA 1:100",
+"normalized_text": "SKALA 1:100",
+"role": "scale_text",
+"bbox_norm": [
+0.93,
+0.84,
+0.97,
+0.86
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 100,
+"unit": "ratio",
+"unit_assumption": "",
+"confidence": 95,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-07",
+"raw_text": "TANGGAL : JANUARI 2024",
+"normalized_text": "TANGGAL JANUARI 2024",
+"role": "date_text",
+"bbox_norm": [
+0.86,
+0.87,
+0.97,
+0.89
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": null,
+"unit": "",
+"unit_assumption": "",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-08",
+"raw_text": "R.PLHUT ±0.000",
+"normalized_text": "R.PLHUT 0.000",
+"role": "room_label",
+"bbox_norm": [
+0.35,
+0.15,
+0.42,
+0.18
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 0,
+"unit": "m",
+"unit_assumption": "m",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-09",
+"raw_text": "R.STAFF ±0.000",
+"normalized_text": "R.STAFF 0.000",
+"role": "room_label",
+"bbox_norm": [
+0.42,
+0.15,
+0.48,
+0.18
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 0,
+"unit": "m",
+"unit_assumption": "m",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-10",
+"raw_text": "R.FOTO SIDIK JARI ±0.000",
+"normalized_text": "R.FOTO SIDIK JARI 0.000",
+"role": "room_label",
+"bbox_norm": [
+0.55,
+0.15,
+0.62,
+0.18
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 0,
+"unit": "m",
+"unit_assumption": "m",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-11",
+"raw_text": "R.DOKUMEN ±0.000",
+"normalized_text": "R.DOKUMEN 0.000",
+"role": "room_label",
+"bbox_norm": [
+0.75,
+0.15,
+0.82,
+0.18
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 0,
+"unit": "m",
+"unit_assumption": "m",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-12",
+"raw_text": "R.PENDAFTARAN HAJI REGULER ±0.000",
+"normalized_text": "R.PENDAFTARAN HAJI REGULER 0.000",
+"role": "room_label",
+"bbox_norm": [
+0.4,
+0.25,
+0.55,
+0.28
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 0,
+"unit": "m",
+"unit_assumption": "m",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-13",
+"raw_text": "R.LAKTASI ±0.000",
+"normalized_text": "R.LAKTASI 0.000",
+"role": "room_label",
+"bbox_norm": [
+0.25,
+0.35,
+0.32,
+0.38
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 0,
+"unit": "m",
+"unit_assumption": "m",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-14",
+"raw_text": "R.TUNGGU ±0.000",
+"normalized_text": "R.TUNGGU 0.000",
+"role": "room_label",
+"bbox_norm": [
+0.45,
+0.4,
+0.52,
+0.43
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 0,
+"unit": "m",
+"unit_assumption": "m",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-15",
+"raw_text": "PERBANKAN SYARIAH ±0.000",
+"normalized_text": "PERBANKAN SYARIAH 0.000",
+"role": "room_label",
+"bbox_norm": [
+0.7,
+0.35,
+0.78,
+0.38
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 0,
+"unit": "m",
+"unit_assumption": "m",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-16",
+"raw_text": "TERAS -0.030",
+"normalized_text": "TERAS -0.030",
+"role": "room_label",
+"bbox_norm": [
+0.45,
+0.48,
+0.5,
+0.51
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": -0.03,
+"unit": "m",
+"unit_assumption": "m",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-17",
+"raw_text": "WC -0.050",
+"normalized_text": "WC -0.050",
+"role": "room_label",
+"bbox_norm": [
+0.25,
+0.1,
+0.3,
+0.12
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": -0.05,
+"unit": "m",
+"unit_assumption": "m",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-18",
+"raw_text": "PAVING HEXAGONAL 10 CM",
+"normalized_text": "PAVING HEXAGONAL 10 CM",
+"role": "material_note",
+"bbox_norm": [
+0.2,
+0.82,
+0.35,
+0.84
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 10,
+"unit": "cm",
+"unit_assumption": "",
+"confidence": 95,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-19",
+"raw_text": "PASIR URUG 5 CM",
+"normalized_text": "PASIR URUG 5 CM",
+"role": "material_note",
+"bbox_norm": [
+0.2,
+0.84,
+0.3,
+0.86
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 5,
+"unit": "cm",
+"unit_assumption": "",
+"confidence": 95,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-20",
+"raw_text": "TANAH URUG 15 CM",
+"normalized_text": "TANAH URUG 15 CM",
+"role": "material_note",
+"bbox_norm": [
+0.35,
+0.86,
+0.45,
+0.88
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 15,
+"unit": "cm",
+"unit_assumption": "",
+"confidence": 95,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-21",
+"raw_text": "COR BETON",
+"normalized_text": "COR BETON",
+"role": "material_note",
+"bbox_norm": [
+0.45,
+0.84,
+0.5,
+0.86
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": null,
+"unit": "",
+"unit_assumption": "",
+"confidence": 95,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-22",
+"raw_text": "DETAIL PAVING",
+"normalized_text": "DETAIL PAVING",
+"role": "sheet_title",
+"bbox_norm": [
+0.35,
+0.9,
+0.45,
+0.92
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": null,
+"unit": "",
+"unit_assumption": "",
+"confidence": 95,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-23",
+"raw_text": "SKALA 1 : 20",
+"normalized_text": "SKALA 1:20",
+"role": "scale_text",
+"bbox_norm": [
+0.4,
+0.92,
+0.45,
+0.94
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 20,
+"unit": "ratio",
+"unit_assumption": "",
+"confidence": 95,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-24",
+"raw_text": "3000",
+"normalized_text": "3000",
+"role": "dimension_text",
+"bbox_norm": [
+0.12,
+0.1,
+0.14,
+0.15
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 90,
+"value": 3000,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-25",
+"raw_text": "2000",
+"normalized_text": "2000",
+"role": "dimension_text",
+"bbox_norm": [
+0.12,
+0.18,
+0.14,
+0.22
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 90,
+"value": 2000,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-26",
+"raw_text": "5000",
+"normalized_text": "5000",
+"role": "dimension_text",
+"bbox_norm": [
+0.12,
+0.25,
+0.14,
+0.32
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 90,
+"value": 5000,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-27",
+"raw_text": "10000",
+"normalized_text": "10000",
+"role": "dimension_text",
+"bbox_norm": [
+0.1,
+0.1,
+0.12,
+0.35
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 90,
+"value": 10000,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-28",
+"raw_text": "11000",
+"normalized_text": "11000",
+"role": "dimension_text",
+"bbox_norm": [
+0.08,
+0.35,
+0.1,
+0.65
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 90,
+"value": 11000,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-29",
+"raw_text": "800",
+"normalized_text": "800",
+"role": "dimension_text",
+"bbox_norm": [
+0.15,
+0.75,
+0.18,
+0.77
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 800,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-30",
+"raw_text": "9400",
+"normalized_text": "9400",
+"role": "dimension_text",
+"bbox_norm": [
+0.25,
+0.75,
+0.3,
+0.77
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 9400,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-31",
+"raw_text": "9400",
+"normalized_text": "9400",
+"role": "dimension_text",
+"bbox_norm": [
+0.55,
+0.75,
+0.6,
+0.77
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 9400,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-32",
+"raw_text": "800",
+"normalized_text": "800",
+"role": "dimension_text",
+"bbox_norm": [
+0.75,
+0.75,
+0.78,
+0.77
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 800,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-33",
+"raw_text": "20400",
+"normalized_text": "20400",
+"role": "dimension_text",
+"bbox_norm": [
+0.4,
+0.77,
+0.45,
+0.79
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 0,
+"value": 20400,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-34",
+"raw_text": "1700",
+"normalized_text": "1700",
+"role": "dimension_text",
+"bbox_norm": [
+0.82,
+0.5,
+0.84,
+0.55
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 90,
+"value": 1700,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-35",
+"raw_text": "2988",
+"normalized_text": "2988",
+"role": "dimension_text",
+"bbox_norm": [
+0.82,
+0.55,
+0.84,
+0.62
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 90,
+"value": 2988,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-36",
+"raw_text": "2132",
+"normalized_text": "2132",
+"role": "dimension_text",
+"bbox_norm": [
+0.82,
+0.62,
+0.84,
+0.68
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 90,
+"value": 2132,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-37",
+"raw_text": "3200",
+"normalized_text": "3200",
+"role": "dimension_text",
+"bbox_norm": [
+0.85,
+0.1,
+0.87,
+0.15
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 90,
+"value": 3200,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-38",
+"raw_text": "2000",
+"normalized_text": "2000",
+"role": "dimension_text",
+"bbox_norm": [
+0.85,
+0.18,
+0.87,
+0.22
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 90,
+"value": 2000,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-39",
+"raw_text": "5000",
+"normalized_text": "5000",
+"role": "dimension_text",
+"bbox_norm": [
+0.85,
+0.25,
+0.87,
+0.32
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 90,
+"value": 5000,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+},
+{
+"text_id": "OCR-P2-40",
+"raw_text": "10200",
+"normalized_text": "10200",
+"role": "dimension_text",
+"bbox_norm": [
+0.83,
+0.1,
+0.85,
+0.35
+],
+"bbox_accuracy": "approximate",
+"orientation_deg": 90,
+"value": 10200,
+"unit": "mm",
+"unit_assumption": "mm",
+"confidence": 90,
+"manual_review": false
+}
+],
+"grid_detection": {
+"has_grid": true,
+"grid_system_type": "orthogonal",
+"grid_labels_detected": {
+"x_axes": [],
+"y_axes": [
+"0",
+"1",
+"2",
+"3",
+"4"
+],
+"other_axes": []
+},
+"x_axes": [],
+"y_axes": [
+{
+"axis_id": "Y-0",
+"label": "0",
+"axis_type": "horizontal",
+"line_bbox_norm": [
+0.15,
+0.75,
+0.85,
+0.76
+],
+"label_bbox_norm": [
+0.12,
+0.74,
+0.14,
+0.77
+],
+"confidence": 90
+},
+{
+"axis_id": "Y-1",
+"label": "1",
+"axis_type": "horizontal",
+"line_bbox_norm": [
+0.15,
+0.48,
+0.85,
+0.49
+],
+"label_bbox_norm": [
+0.12,
+0.47,
+0.14,
+0.5
+],
+"confidence": 90
+},
+{
+"axis_id": "Y-2",
+"label": "2",
+"axis_type": "horizontal",
+"line_bbox_norm": [
+0.15,
+0.25,
+0.85,
+0.26
+],
+"label_bbox_norm": [
+0.12,
+0.24,
+0.14,
+0.27
+],
+"confidence": 90
+},
+{
+"axis_id": "Y-3",
+"label": "3",
+"axis_type": "horizontal",
+"line_bbox_norm": [
+0.15,
+0.18,
+0.85,
+0.19
+],
+"label_bbox_norm": [
+0.12,
+0.17,
+0.14,
+0.2
+],
+"confidence": 90
+},
+{
+"axis_id": "Y-4",
+"label": "4",
+"axis_type": "horizontal",
+"line_bbox_norm": [
+0.15,
+0.1,
+0.85,
+0.11
+],
+"label_bbox_norm": [
+0.12,
+0.09,
+0.14,
+0.12
+],
+"confidence": 90
+}
+],
+"grid_intersections": [],
+"spacing_detected": [
+{
+"from_axis": "0",
+"to_axis": "1",
+"dimension_text": "11000",
+"distance_value": 11000,
+"distance_unit": "mm",
+"source_text_id": "OCR-P2-28",
+"confidence": 80
+},
+{
+"from_axis": "1",
+"to_axis": "2",
+"dimension_text": "5000",
+"distance_value": 5000,
+"distance_unit": "mm",
+"source_text_id": "OCR-P2-26",
+"confidence": 90
+},
+{
+"from_axis": "2",
+"to_axis": "3",
+"dimension_text": "2000",
+"distance_value": 2000,
+"distance_unit": "mm",
+"source_text_id": "OCR-P2-25",
+"confidence": 90
+},
+{
+"from_axis": "3",
+"to_axis": "4",
+"dimension_text": "3000",
+"distance_value": 3000,
+"distance_unit": "mm",
+"source_text_id": "OCR-P2-24",
+"confidence": 90
+}
+],
+"warnings": []
+},
+"line_detection": {
+"detected_line_types": [
+"wall",
+"dimension",
+"paving_pattern"
+],
+"lines": [
+{
+"line_id": "LINE-P2-01",
+"line_type": "wall",
+"orientation": "mixed",
+"start_norm": [
+0.2,
+0.1
+],
+"end_norm": [
+0.8,
+0.5
+],
+"bbox_norm": [
+0.2,
+0.1,
+0.8,
+0.5
+],
+"thickness_class": "thick",
+"linetype": "solid",
+"confidence": 95
+}
+],
+"warnings": []
+},
+"dimension_detection": [
+{
+"dimension_id": "DIM-P2-01",
+"raw_text": "20400",
+"value": 20400,
+"unit": "mm",
+"unit_assumption": "mm",
+"dimension_text_id": "OCR-P2-33",
+"dimension_line_ref": "LINE-P2-DIM-BOT",
+"applies_to": {
+"type": "object_size",
+"from_ref": "grid_0_left",
+"to_ref": "grid_0_right"
+},
+"bbox_norm": [
+0.4,
+0.77,
+0.6,
+0.79
+],
+"confidence": {
+"ocr": 90,
+"line_binding": 80,
+"overall": 85
+}
+},
+{
+"dimension_id": "DIM-P2-02",
+"raw_text": "10000",
+"value": 10000,
+"unit": "mm",
+"unit_assumption": "mm",
+"dimension_text_id": "OCR-P2-27",
+"dimension_line_ref": "LINE-P2-DIM-LEFT",
+"applies_to": {
+"type": "object_size",
+"from_ref": "grid_1",
+"to_ref": "grid_4"
+},
+"bbox_norm": [
+0.1,
+0.1,
+0.12,
+0.35
+],
+"confidence": {
+"ocr": 90,
+"line_binding": 80,
+"overall": 85
+}
+}
+],
+"elevation_markers": [
+{
+"elevation_id": "EL-P2-01",
+"raw_text": "±0.000",
+"level_name": "Main Floor",
+"elevation_value": 0,
+"elevation_unit": "m",
+"bbox_norm": [
+0.4,
+0.2,
+0.5,
+0.25
+],
+"confidence": 95
+},
+{
+"elevation_id": "EL-P2-02",
+"raw_text": "-0.050",
+"level_name": "WC Floor",
+"elevation_value": -0.05,
+"elevation_unit": "m",
+"bbox_norm": [
+0.25,
+0.1,
+0.3,
+0.12
+],
+"confidence": 95
+},
+{
+"elevation_id": "EL-P2-03",
+"raw_text": "-0.030",
+"level_name": "Teras",
+"elevation_value": -0.03,
+"elevation_unit": "m",
+"bbox_norm": [
+0.45,
+0.48,
+0.5,
+0.51
+],
+"confidence": 95
+},
+{
+"elevation_id": "EL-P2-04",
+"raw_text": "-0.200",
+"level_name": "Stair 1",
+"elevation_value": -0.2,
+"elevation_unit": "m",
+"bbox_norm": [
+0.48,
+0.52,
+0.52,
+0.54
+],
+"confidence": 90
+},
+{
+"elevation_id": "EL-P2-05",
+"raw_text": "-0.370",
+"level_name": "Stair 2",
+"elevation_value": -0.37,
+"elevation_unit": "m",
+"bbox_norm": [
+0.48,
+0.54,
+0.52,
+0.56
+],
+"confidence": 90
+},
+{
+"elevation_id": "EL-P2-06",
+"raw_text": "-0.540",
+"level_name": "Stair 3",
+"elevation_value": -0.54,
+"elevation_unit": "m",
+"bbox_norm": [
+0.48,
+0.56,
+0.52,
+0.58
+],
+"confidence": 90
+},
+{
+"elevation_id": "EL-P2-07",
+"raw_text": "-0.710",
+"level_name": "Stair 4",
+"elevation_value": -0.71,
+"elevation_unit": "m",
+"bbox_norm": [
+0.48,
+0.58,
+0.52,
+0.6
+],
+"confidence": 90
+},
+{
+"elevation_id": "EL-P2-08",
+"raw_text": "-0.880",
+"level_name": "Stair 5",
+"elevation_value": -0.88,
+"elevation_unit": "m",
+"bbox_norm": [
+0.48,
+0.6,
+0.52,
+0.62
+],
+"confidence": 90
+}
+],
+"symbol_detection": [
+{
+"symbol_id": "SYM-P2-01",
+"symbol_class": "door_symbol",
+"detected_by": "visual",
+"text_code": "",
+"nearby_text_ids": [],
+"bbox_norm": [
+0.3,
+0.2,
+0.35,
+0.25
+],
+"center_norm": [
+0.325,
+0.225
+],
+"nearest_grid": {
+"grid_ref": "2-3",
+"distance_note": "near grid 2",
+"confidence": 70
+},
+"nearest_room_or_area_label": "R.LAKTASI",
+"confidence": {
+"visual": 95,
+"text_binding": 60,
+"grid_binding": 50,
+"overall": 70
+},
+"manual_review": false
+},
+{
+"symbol_id": "SYM-P2-02",
+"symbol_class": "toilet_fixture",
+"detected_by": "visual",
+"text_code": "WC",
+"nearby_text_ids": [
+"OCR-P2-17"
+],
+"bbox_norm": [
+0.25,
+0.1,
+0.3,
+0.15
+],
+"center_norm": [
+0.275,
+0.125
+],
+"nearest_grid": {
+"grid_ref": "3-4",
+"distance_note": "",
+"confidence": 80
+},
+"nearest_room_or_area_label": "WC",
+"confidence": {
+"visual": 99,
+"text_binding": 95,
+"grid_binding": 80,
+"overall": 95
+},
+"manual_review": false
+},
+{
+"symbol_id": "SYM-P2-03",
+"symbol_class": "stair_symbol",
+"detected_by": "visual",
+"text_code": "NK",
+"nearby_text_ids": [],
+"bbox_norm": [
+0.3,
+0.4,
+0.4,
+0.48
+],
+"center_norm": [
+0.35,
+0.44
+],
+"nearest_grid": {
+"grid_ref": "1-2",
+"distance_note": "",
+"confidence": 80
+},
+"nearest_room_or_area_label": "R.TUNGGU",
+"confidence": {
+"visual": 95,
+"text_binding": 80,
+"grid_binding": 70,
+"overall": 85
+},
+"manual_review": false
+},
+{
+"symbol_id": "SYM-P2-04",
+"symbol_class": "ramp_symbol",
+"detected_by": "visual",
+"text_code": "RAMP",
+"nearby_text_ids": [],
+"bbox_norm": [
+0.55,
+0.5,
+0.65,
+0.55
+],
+"center_norm": [
+0.6,
+0.525
+],
+"nearest_grid": {
+"grid_ref": "0-1",
+"distance_note": "",
+"confidence": 80
+},
+"nearest_room_or_area_label": "TERAS",
+"confidence": {
+"visual": 95,
+"text_binding": 90,
+"grid_binding": 70,
+"overall": 85
+},
+"manual_review": false
+},
+{
+"symbol_id": "SYM-P2-05",
+"symbol_class": "floor_finish_marker",
+"detected_by": "visual",
+"text_code": "PAVING",
+"nearby_text_ids": [
+"OCR-P2-18"
+],
+"bbox_norm": [
+0.2,
+0.55,
+0.8,
+0.75
+],
+"center_norm": [
+0.5,
+0.65
+],
+"nearest_grid": {
+"grid_ref": "0",
+"distance_note": "ground level",
+"confidence": 90
+},
+"nearest_room_or_area_label": "SITE",
+"confidence": {
+"visual": 99,
+"text_binding": 95,
+"grid_binding": 80,
+"overall": 95
+},
+"manual_review": false
+}
+],
+"room_or_space_labels": [
+{
+"space_raw_id": "ROOM-01",
+"space_name": "R.PLHUT",
+"level_context": "±0.000",
+"bbox_norm": [
+0.35,
+0.15,
+0.42,
+0.22
+],
+"nearby_grid_range": "3-4",
+"visible_boundary_status": "clear",
+"confidence": 90
+},
+{
+"space_raw_id": "ROOM-02",
+"space_name": "R.STAFF",
+"level_context": "±0.000",
+"bbox_norm": [
+0.42,
+0.15,
+0.48,
+0.22
+],
+"nearby_grid_range": "3-4",
+"visible_boundary_status": "clear",
+"confidence": 90
+},
+{
+"space_raw_id": "ROOM-03",
+"space_name": "R.FOTO SIDIK JARI",
+"level_context": "±0.000",
+"bbox_norm": [
+0.55,
+0.15,
+0.65,
+0.22
+],
+"nearby_grid_range": "3-4",
+"visible_boundary_status": "clear",
+"confidence": 90
+},
+{
+"space_raw_id": "ROOM-04",
+"space_name": "R.DOKUMEN",
+"level_context": "±0.000",
+"bbox_norm": [
+0.75,
+0.15,
+0.82,
+0.22
+],
+"nearby_grid_range": "3-4",
+"visible_boundary_status": "clear",
+"confidence": 90
+},
+{
+"space_raw_id": "ROOM-05",
+"space_name": "R.PENDAFTARAN HAJI REGULER",
+"level_context": "±0.000",
+"bbox_norm": [
+0.4,
+0.25,
+0.6,
+0.35
+],
+"nearby_grid_range": "2-3",
+"visible_boundary_status": "clear",
+"confidence": 90
+},
+{
+"space_raw_id": "ROOM-06",
+"space_name": "R.LAKTASI",
+"level_context": "±0.000",
+"bbox_norm": [
+0.25,
+0.35,
+0.35,
+0.45
+],
+"nearby_grid_range": "1-2",
+"visible_boundary_status": "clear",
+"confidence": 90
+},
+{
+"space_raw_id": "ROOM-07",
+"space_name": "R.TUNGGU",
+"level_context": "±0.000",
+"bbox_norm": [
+0.45,
+0.4,
+0.6,
+0.48
+],
+"nearby_grid_range": "1-2",
+"visible_boundary_status": "clear",
+"confidence": 90
+},
+{
+"space_raw_id": "ROOM-08",
+"space_name": "PERBANKAN SYARIAH",
+"level_context": "±0.000",
+"bbox_norm": [
+0.7,
+0.35,
+0.8,
+0.45
+],
+"nearby_grid_range": "1-2",
+"visible_boundary_status": "clear",
+"confidence": 90
+},
+{
+"space_raw_id": "ROOM-09",
+"space_name": "TERAS",
+"level_context": "-0.030",
+"bbox_norm": [
+0.4,
+0.48,
+0.6,
+0.55
+],
+"nearby_grid_range": "0-1",
+"visible_boundary_status": "clear",
+"confidence": 90
+}
+],
+"structure_codes_raw": [],
+"architecture_codes_raw": [],
+"mep_objects_raw": [],
+"table_extraction": [
+{
+"table_id": "TBL-P2-01",
+"table_type": "title_block",
+"title": "KETERANGAN",
+"bbox_norm": [
+0.85,
+0.02,
+0.98,
+0.98
+],
+"extraction_quality": "good",
+"columns": [
+"Field",
+"Value"
+],
+"rows": [
+{
+"row_id": "1",
+"cells": {
+"Field": "JUDUL PROYEK",
+"Value": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA"
+}
+},
+{
+"row_id": "2",
+"cells": {
+"Field": "LOKASI",
+"Value": "JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA"
+}
+},
+{
+"row_id": "3",
+"cells": {
+"Field": "JUDUL GAMBAR",
+"Value": "RENCANA PAVING"
+}
+},
+{
+"row_id": "4",
+"cells": {
+"Field": "SKALA",
+"Value": "1:100"
+}
+},
+{
+"row_id": "5",
+"cells": {
+"Field": "TANGGAL",
+"Value": "JANUARI 2024"
+}
+}
+],
+"raw_text": "KETERANGAN KEMENTERIAN AGAMA RI... JUDUL PROYEK... LOKASI... JUDUL GAMBAR RENCANA PAVING SKALA 1:100 TANGGAL JANUARI 2024",
+"warnings": [],
+"confidence": 90
+}
+],
+"legend_extraction": [
+{
+"legend_id": "LEG-P2-01",
+"legend_type": "material_spec",
+"bbox_norm": [
+0.2,
+0.82,
+0.5,
+0.94
+],
+"entries": [
+{
+"code": "PAVING",
+"category": "finish",
+"raw_value": "PAVING HEXAGONAL 10 CM",
+"normalized_value": "Paving Hexagonal thickness 10cm",
+"size_or_spec": "10 CM",
+"unit": "cm",
+"source_text_ids": [
+"OCR-P2-18"
+],
+"confidence": 95
+},
+{
+"code": "PASIR",
+"category": "base",
+"raw_value": "PASIR URUG 5 CM",
+"normalized_value": "Sand fill thickness 5cm",
+"size_or_spec": "5 CM",
+"unit": "cm",
+"source_text_ids": [
+"OCR-P2-19"
+],
+"confidence": 95
+},
+{
+"code": "TANAH",
+"category": "base",
+"raw_value": "TANAH URUG 15 CM",
+"normalized_value": "Soil fill thickness 15cm",
+"size_or_spec": "15 CM",
+"unit": "cm",
+"source_text_ids": [
+"OCR-P2-20"
+],
+"confidence": 95
+},
+{
+"code": "COR",
+"category": "structure",
+"raw_value": "COR BETON",
+"normalized_value": "Concrete",
+"size_or_spec": "",
+"unit": "",
+"source_text_ids": [
+"OCR-P2-21"
+],
+"confidence": 95
+}
+],
+"warnings": []
+}
+],
+"detected_elements_raw": [
+{
+"element_raw_id": "EL-P2-01",
+"element_name": "Paving Area",
+"element_category": "site_work",
+"evidence_type": "visual",
+"evidence_text": "Hexagonal pattern with diamond shapes",
+"bbox_norm": [
+0.2,
+0.55,
+0.8,
+0.75
+],
+"confidence": 95
+},
+{
+"element_raw_id": "EL-P2-02",
+"element_name": "Ramp",
+"element_category": "accessibility",
+"evidence_type": "visual",
+"evidence_text": "RAMP label and slope lines",
+"bbox_norm": [
+0.55,
+0.5,
+0.65,
+0.55
+],
+"confidence": 90
+},
+{
+"element_raw_id": "EL-P2-03",
+"element_name": "Stair",
+"element_category": "circulation",
+"evidence_type": "visual",
+"evidence_text": "Stair treads and NK arrow",
+"bbox_norm": [
+0.3,
+0.4,
+0.4,
+0.48
+],
+"confidence": 90
+}
+],
+"candidate_work_items_raw": [
+{
+"candidate_id": "CWI-P2-01",
+"work_division": "pekerjaan_paving_halaman",
+"item_name": "Pemasangan Paving Hexagonal",
+"evidence_from_drawing": "PAVING HEXAGONAL 10 CM",
+"source_evidence_type": "explicit_text",
+"source_refs": [
+"OCR-P2-18",
+"LEG-P2-01"
+],
+"qto_ready": true,
+"reason_not_qto_ready": "",
+"confidence": 95
+},
+{
+"candidate_id": "CWI-P2-02",
+"work_division": "pekerjaan_tanah",
+"item_name": "Urugan Pasir",
+"evidence_from_drawing": "PASIR URUG 5 CM",
+"source_evidence_type": "explicit_text",
+"source_refs": [
+"OCR-P2-19",
+"LEG-P2-01"
+],
+"qto_ready": true,
+"reason_not_qto_ready": "",
+"confidence": 95
+},
+{
+"candidate_id": "CWI-P2-03",
+"work_division": "pekerjaan_tanah",
+"item_name": "Urugan Tanah",
+"evidence_from_drawing": "TANAH URUG 15 CM",
+"source_evidence_type": "explicit_text",
+"source_refs": [
+"OCR-P2-20",
+"LEG-P2-01"
+],
+"qto_ready": true,
+"reason_not_qto_ready": "",
+"confidence": 95
+},
+{
+"candidate_id": "CWI-P2-04",
+"work_division": "pekerjaan_beton",
+"item_name": "Cor Beton Lantai",
+"evidence_from_drawing": "COR BETON",
+"source_evidence_type": "explicit_text",
+"source_refs": [
+"OCR-P2-21",
+"LEG-P2-01"
+],
+"qto_ready": false,
+"reason_not_qto_ready": "Thickness not specified in text, need structural dwg",
+"confidence": 80
+}
+],
+"possible_references": [
+{
+"reference_id": "REF-P2-01",
+"from_this_page_text": "DETAIL PAVING",
+"possible_target_sheet_or_detail": "Detail drawing on same sheet",
+"reference_type": "detail_reference",
+"status": "possible_only_not_final_link",
+"confidence": 90
+}
+],
+"quality_flags": [
+{
+"severity": "low",
+"issue_type": "dimension_clarity",
+"message": "Some dimension lines overlap with grid lines",
+"affected_fields": [
+"dimension_detection"
+],
+"manual_review_required": false
+}
+],
+"page_confidence": {
+"ocr_overall": 92,
+"classification_overall": 95,
+"grid_detection_overall": 90,
+"dimension_detection_overall": 85,
+"symbol_detection_overall": 90,
+"table_extraction_overall": 90,
+"legend_extraction_overall": 95,
+"page_overall": 90
+}
+}
+],
+"document_level_raw_summary": {
+"detected_disciplines": [
+"COVER",
+"ARCHITECTURE"
+],
+"detected_drawing_types": [
+"cover",
+"rencana_paving"
+],
+"pages_with_grid": [
+2
+],
+"pages_with_tables": [
+2
+],
+"pages_with_legends": [
+2
+],
+"pages_with_mep_routes": [],
+"pages_with_unclear_parts": [],
+"high_priority_manual_review_pages": [],
+"raw_candidate_work_divisions": [
+"pekerjaan_paving_halaman",
+"pekerjaan_tanah",
+"pekerjaan_beton"
+],
+"notes": [
+"Page 1 is a cover page with project identity.",
+"Page 2 contains ground floor plan integrated with site paving plan."
+]
+}
+}

@@ -230,6 +230,43 @@ def test_provider_rejects_unsupported_system_alias():
         DeepSeekPckmProvider(api_key="test-key", model_alias="deepseek-v3")
 
 
+def test_from_env_returns_none_when_drawing_intelligence_key_missing(monkeypatch):
+    monkeypatch.delenv("DRAWING_INTELLIGENCE_API_KEY", raising=False)
+
+    assert DeepSeekPckmProvider.from_env() is None
+
+
+def test_from_env_reads_drawing_intelligence_key_not_command_room_key(monkeypatch):
+    # PCKM synthesis spend must never mix with Command Room (Lucent/Arete/Noir)
+    # spend, so from_env() must read DRAWING_INTELLIGENCE_* only. Pin every
+    # optional var explicitly -- a real .env.local can set DRAWING_INTELLIGENCE_
+    # BASE_URL/DEEPSEEK_MODEL to project-specific values, which must not leak
+    # into this test's assertions about from_env()'s own defaults.
+    monkeypatch.setenv("DRAWING_INTELLIGENCE_API_KEY", "drawing-key-123")
+    monkeypatch.delenv("DRAWING_INTELLIGENCE_DEEPSEEK_MODEL", raising=False)
+    monkeypatch.delenv("DRAWING_INTELLIGENCE_BASE_URL", raising=False)
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "command-room-key-should-be-ignored")
+
+    provider = DeepSeekPckmProvider.from_env()
+
+    assert provider is not None
+    assert provider.api_key == "drawing-key-123"
+    assert provider.model_alias == "deepseek-v4-flash"
+    assert provider.api_url == "https://api.deepseek.com/chat/completions"
+
+
+def test_from_env_honors_optional_model_and_url_overrides(monkeypatch):
+    monkeypatch.setenv("DRAWING_INTELLIGENCE_API_KEY", "drawing-key-123")
+    monkeypatch.setenv("DRAWING_INTELLIGENCE_DEEPSEEK_MODEL", "deepseek-v4-pro")
+    monkeypatch.setenv("DRAWING_INTELLIGENCE_BASE_URL", "https://example.test/chat/completions")
+
+    provider = DeepSeekPckmProvider.from_env()
+
+    assert provider is not None
+    assert provider.model_alias == "deepseek-v4-pro"
+    assert provider.api_url == "https://example.test/chat/completions"
+
+
 def test_resolve_classifies_invalid_transport_json():
     provider = DeepSeekPckmProvider(
         api_key="test-key",

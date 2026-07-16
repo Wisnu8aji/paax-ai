@@ -128,11 +128,14 @@ class DeepSeekPckmProvider(PckmSynthesisProvider):
 
     @classmethod
     def from_env(cls) -> "DeepSeekPckmProvider | None":
-        api_key = os.getenv("DEEPSEEK_API_KEY", "").strip()
+        # Drawing Intelligence has its own key, separate from Command Room's
+        # DEEPSEEK_API_KEY (Lucent/Arete/Noir), so PCKM synthesis spend never
+        # mixes with Command Room chat spend.
+        api_key = os.getenv("DRAWING_INTELLIGENCE_API_KEY", "").strip()
         if not api_key:
             return None
-        model_alias = os.getenv("DEEPSEEK_MODEL", "deepseek-v4-flash").strip() or "deepseek-v4-flash"
-        api_url = os.getenv("DEEPSEEK_API_URL", DEFAULT_API_URL).strip() or DEFAULT_API_URL
+        model_alias = os.getenv("DRAWING_INTELLIGENCE_DEEPSEEK_MODEL", "deepseek-v4-flash").strip() or "deepseek-v4-flash"
+        api_url = os.getenv("DRAWING_INTELLIGENCE_BASE_URL", DEFAULT_API_URL).strip() or DEFAULT_API_URL
         return cls(api_key=api_key, model_alias=model_alias, api_url=api_url)
 
     def resolve(self, candidate: ResolutionCandidate) -> PckmProviderResult:

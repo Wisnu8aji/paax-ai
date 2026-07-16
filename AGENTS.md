@@ -107,3 +107,32 @@ Repo ini punya knowledge graph di `graphify-out/` (node/edge/community lintas
   repo berubah besar — jangan rebuild ulang tiap sesi/chat.
 - Baca `graphify-out/GRAPH_REPORT.md` hanya untuk overview arsitektur luas saat
   query/path/explain tidak cukup.
+
+**WAJIB, bukan opsional.** Untuk setiap task yang menyentuh kode/arsitektur/dependency
+di repo ini: jalankan `graphify query "<pertanyaan>"` (atau `graphify path`/
+`graphify explain`) **sebelum** Glob/Grep/Read buta — bukan hanya "kalau graph
+belum cukup", tapi sebagai langkah pertama secara default.
+
+### 7.1 User Memory: Always Use Graphify For This Repo
+
+User preference for `G:\paax-ai-main`: for any prompt or task involving this
+repo, use the Graphify skill/workflow first to locate relevant files, symbols,
+dependencies, and architecture context before broad source browsing. Prefer
+`graphify query`, `graphify path`, or `graphify explain` as the first navigation
+step so work is faster, more accurate, and uses fewer tokens.
+
+This is mandatory project memory. Do not skip it unless the user explicitly says
+not to use Graphify for that task, or the task is purely outside the repo/codebase.
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

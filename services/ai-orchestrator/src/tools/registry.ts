@@ -4,6 +4,7 @@ import { createLookupAhspTool } from "./lookup_ahsp";
 import { projectDiagnosticsTool } from "./project_diagnostics";
 import { queryMaterialsTool } from "./query_materials";
 import { queryProgressTool } from "./query_progress";
+import { queryProjectGraphTool } from "./query_project_graph";
 import { queryRabTool } from "./query_rab";
 import { queryScheduleTool } from "./query_schedule";
 import { createRunScenarioTool } from "./run_scenario";
@@ -24,6 +25,7 @@ export function createToolRegistry(params: {
     queryScheduleTool,
     queryProgressTool,
     queryMaterialsTool,
+    queryProjectGraphTool,
     projectDiagnosticsTool,
     createExportRabXlsxTool(params),
   ];

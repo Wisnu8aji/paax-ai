@@ -1,0 +1,3012 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 3,
+    "page_number": 4,
+    "render_uri": "local://plhut-88pg-run-1/page-0003.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T20:26:40.994569+00:00",
+    "completed_at": "2026-07-14T20:26:40.994622+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "Halaman 4",
+      "raw": "Halaman ke-4 (index 3)",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-sheet-number"
+      ]
+    },
+    "title": {
+      "value": "DAFTAR SINGKATAN DAN NOTASI GAMBAR",
+      "raw": "DAFTAR SINGKATAN DAN NOTASI GAMBAR PEKERJAAN JASA KONSULTANSI PERENCANAAN PEMBANGUNAN GEDUNG KELAS",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-title"
+      ]
+    },
+    "discipline": {
+      "value": "Arsitektur/MEP",
+      "confidence": 0.95,
+      "status": "extracted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "SKALA 1 : 400",
+        "normalized": "1:400",
+        "confidence": 0.95,
+        "evidence_refs": [
+          "ev-scale-400"
+        ]
+      },
+      {
+        "raw": "JUDUL GAMBAR SKALA NTS",
+        "normalized": "NTS",
+        "confidence": 1.0,
+        "evidence_refs": [
+          "ev-scale-nts"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-legend-legend-legend",
+      "type": "legend_section",
+      "title": "Material Finishing",
+      "bbox": [
+        650.0,
+        350.0,
+        1050.0,
+        1000.0
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "DAFTAR SINGKATAN DAN NOTASI GAMBAR",
+        "normalized": "Daftar Singkatan dan Notasi Gambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          50.0,
+          800.0,
+          100.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-main"
+        ]
+      },
+      {
+        "raw": "PEKERJAAN JASA KONSULTANSI PERENCANAAN PEMBANGUNAN GEDUNG KELAS",
+        "normalized": "Pekerjaan Jasa Konsultansi Perencanaan Pembangunan Gedung Kelas",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          110.0,
+          800.0,
+          150.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-sub"
+        ]
+      },
+      {
+        "raw": "KEMENTERIAN AGAMA RI DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH TAHUN ANGGARAN 2024",
+        "normalized": "Kementerian Agama RI Direktorat Jenderal Penyelenggaraan Haji dan Umrah Tahun Anggaran 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          20.0,
+          1100.0,
+          120.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-agama-ri"
+        ]
+      },
+      {
+        "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+        "normalized": "Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          130.0,
+          1100.0,
+          180.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-gedung-surakarta"
+        ]
+      },
+      {
+        "raw": "Lokasi: Jalan KI Mangun Sarkoro No.115 Kota Surakarta",
+        "normalized": "Lokasi: Jalan KI Mangun Sarkoro No.115 Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          190.0,
+          1100.0,
+          230.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-lokasi-surakarta"
+        ]
+      },
+      {
+        "raw": "MENGETAHUI / MENYETUJUI",
+        "normalized": "Mengetahui / Menyetujui",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          240.0,
+          1100.0,
+          270.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-mengetahui"
+        ]
+      },
+      {
+        "raw": "PEJABAT PEMBUAT KOMITMEN",
+        "normalized": "Pejabat Pembuat Komitmen",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          280.0,
+          1100.0,
+          300.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pembuat-komitmen"
+        ]
+      },
+      {
+        "raw": "KONSULTAN PERENCANA",
+        "normalized": "Konsultan Perencana",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          310.0,
+          1100.0,
+          330.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-konsultan-perencana"
+        ]
+      },
+      {
+        "raw": "TEAM LEADER",
+        "normalized": "Team Leader",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          340.0,
+          1100.0,
+          360.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-team-leader"
+        ]
+      },
+      {
+        "raw": "NAMA TANDA TANGAN",
+        "normalized": "Nama Tanda Tangan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          370.0,
+          1100.0,
+          390.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-nama-tanda-tangan"
+        ]
+      },
+      {
+        "raw": "TANGGAL : JANUARI 2024",
+        "normalized": "Tanggal: Januari 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          400.0,
+          1100.0,
+          420.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-tanggal-januari"
+        ]
+      },
+      {
+        "raw": "SKALA GBR KODE GBR NO. GBR",
+        "normalized": "Skala Gambar Kode Gambar Nomor Gambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          430.0,
+          1100.0,
+          450.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-skala-gbr"
+        ]
+      },
+      {
+        "raw": "Lantai Dasar P +0.00",
+        "normalized": "Lantai Dasar P +0.00",
+        "numeric_value": 0.0,
+        "unit": "m",
+        "bbox": [
+          700.0,
+          800.0,
+          800.0,
+          820.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-lantai-dasar"
+        ]
+      },
+      {
+        "raw": "Lantai-1 P +4.00",
+        "normalized": "Lantai 1 P +4.00",
+        "numeric_value": 4.0,
+        "unit": "m",
+        "bbox": [
+          700.0,
+          700.0,
+          800.0,
+          720.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-lantai-1"
+        ]
+      },
+      {
+        "raw": "Lantai-2 P +8.00",
+        "normalized": "Lantai 2 P +8.00",
+        "numeric_value": 8.0,
+        "unit": "m",
+        "bbox": [
+          700.0,
+          600.0,
+          800.0,
+          620.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-lantai-2"
+        ]
+      },
+      {
+        "raw": "Lantai-Atap P +16.20",
+        "normalized": "Lantai Atap P +16.20",
+        "numeric_value": 16.2,
+        "unit": "m",
+        "bbox": [
+          700.0,
+          500.0,
+          800.0,
+          520.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-lantai-atap"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "1 : 400",
+        "normalized": "1:400",
+        "numeric_value": 400.0,
+        "unit": "ratio",
+        "bbox": [
+          200.0,
+          1000.0,
+          250.0,
+          1020.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-skala-400"
+        ]
+      }
+    ],
+    "grids": [
+      {
+        "raw": "A",
+        "normalized": "A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          350.0,
+          120.0,
+          370.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-a"
+        ]
+      },
+      {
+        "raw": "B",
+        "normalized": "B",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          200.0,
+          120.0,
+          220.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-b"
+        ]
+      },
+      {
+        "raw": "1",
+        "normalized": "1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          400.0,
+          170.0,
+          420.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-1"
+        ]
+      },
+      {
+        "raw": "2",
+        "normalized": "2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          400.0,
+          320.0,
+          420.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-2"
+        ]
+      }
+    ],
+    "levels": [
+      {
+        "raw": "Lantai Dasar P +0.00",
+        "normalized": "Lantai Dasar P +0.00",
+        "numeric_value": 0.0,
+        "unit": "m",
+        "bbox": [
+          700.0,
+          800.0,
+          800.0,
+          820.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-dasar"
+        ]
+      },
+      {
+        "raw": "Lantai-1 P +4.00",
+        "normalized": "Lantai 1 P +4.00",
+        "numeric_value": 4.0,
+        "unit": "m",
+        "bbox": [
+          700.0,
+          700.0,
+          800.0,
+          720.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-1"
+        ]
+      },
+      {
+        "raw": "Lantai-2 P +8.00",
+        "normalized": "Lantai 2 P +8.00",
+        "numeric_value": 8.0,
+        "unit": "m",
+        "bbox": [
+          700.0,
+          600.0,
+          800.0,
+          620.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-2"
+        ]
+      },
+      {
+        "raw": "Lantai-Atap P +16.20",
+        "normalized": "Lantai Atap P +16.20",
+        "numeric_value": 16.2,
+        "unit": "m",
+        "bbox": [
+          700.0,
+          500.0,
+          800.0,
+          520.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-atap"
+        ]
+      }
+    ],
+    "spaces": [
+      {
+        "raw": "Smoking Area 20:00",
+        "normalized": "Smoking Area",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          500.0,
+          650.0,
+          550.0,
+          680.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-smoking"
+        ]
+      }
+    ],
+    "element_labels": [
+      {
+        "raw": "P1",
+        "normalized": "P1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          350.0,
+          500.0,
+          370.0,
+          520.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-p1"
+        ]
+      },
+      {
+        "raw": "P2",
+        "normalized": "P2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          450.0,
+          500.0,
+          470.0,
+          520.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-p2"
+        ]
+      }
+    ],
+    "symbols": [
+      {
+        "raw": "Notasi Material Lantai Dan Plafond: L: Jenis Bahan Lantai, P: Jenis Bahan Plafond",
+        "normalized": "Notasi Material Lantai Dan Plafond: L untuk Jenis Bahan Lantai, P untuk Jenis Bahan Plafond",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          750.0,
+          200.0,
+          850.0,
+          230.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-material-lantai-plafond"
+        ]
+      },
+      {
+        "raw": "Notasi Pintu: X: Type Dan Jenis Bahan",
+        "normalized": "Notasi Pintu: X untuk Type dan Jenis Bahan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          750.0,
+          240.0,
+          850.0,
+          260.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-pintu"
+        ]
+      },
+      {
+        "raw": "Notasi Jendela: X: Type Dan Jenis Bahan",
+        "normalized": "Notasi Jendela: X untuk Type dan Jenis Bahan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          750.0,
+          270.0,
+          850.0,
+          290.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-jendela"
+        ]
+      },
+      {
+        "raw": "Notasi Partisi: X: Type Dan Jenis Bahan",
+        "normalized": "Notasi Partisi: X untuk Type dan Jenis Bahan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          750.0,
+          300.0,
+          850.0,
+          320.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-partisi"
+        ]
+      },
+      {
+        "raw": "Notasi Dinding: X: Jenis Bahan",
+        "normalized": "Notasi Dinding: X untuk Jenis Bahan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          750.0,
+          330.0,
+          850.0,
+          350.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-dinding"
+        ]
+      },
+      {
+        "raw": "Notasi Plafond: X: Jenis Bahan",
+        "normalized": "Notasi Plafond: X untuk Jenis Bahan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          750.0,
+          360.0,
+          850.0,
+          380.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-plafond"
+        ]
+      },
+      {
+        "raw": "Notasi Lantai: X: Jenis Bahan",
+        "normalized": "Notasi Lantai: X untuk Jenis Bahan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          750.0,
+          390.0,
+          850.0,
+          410.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-lantai"
+        ]
+      },
+      {
+        "raw": "Notasi Atap: X: Jenis Bahan",
+        "normalized": "Notasi Atap: X untuk Jenis Bahan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          750.0,
+          420.0,
+          850.0,
+          440.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-atap"
+        ]
+      },
+      {
+        "raw": "Notasi Base / Plint: X: Jenis Bahan",
+        "normalized": "Notasi Base / Plint: X untuk Jenis Bahan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          750.0,
+          450.0,
+          850.0,
+          470.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-base-plint"
+        ]
+      },
+      {
+        "raw": "Notasi Soffit/Lisplang: X: Jenis Bahan",
+        "normalized": "Notasi Soffit/Lisplang: X untuk Jenis Bahan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          750.0,
+          480.0,
+          850.0,
+          500.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-soffit-lisplang"
+        ]
+      }
+    ],
+    "tables": [],
+    "materials": [
+      {
+        "raw": "L1: = GRANITE TILE",
+        "normalized": "L1: Granite Tile",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          600.0,
+          650.0,
+          620.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-l1"
+        ]
+      },
+      {
+        "raw": "L2: = MARMER",
+        "normalized": "L2: Marmer",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          625.0,
+          650.0,
+          645.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-l2"
+        ]
+      },
+      {
+        "raw": "L3: = GRANITO",
+        "normalized": "L3: Granito",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          650.0,
+          650.0,
+          670.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-l3"
+        ]
+      },
+      {
+        "raw": "L4: = HOMOGENIOUS TILE 60X60",
+        "normalized": "L4: Homogeneous Tile 60x60",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          675.0,
+          650.0,
+          695.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-l4"
+        ]
+      },
+      {
+        "raw": "L5: = KERAMIK 40X40 ROMAN, SETARA",
+        "normalized": "L5: Keramik 40x40 Roman, Setara",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          700.0,
+          650.0,
+          720.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-l5"
+        ]
+      },
+      {
+        "raw": "L6: = KERAMIK 30X30 ROMAN, SETARA",
+        "normalized": "L6: Keramik 30x30 Roman, Setara",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          725.0,
+          650.0,
+          745.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-l6"
+        ]
+      },
+      {
+        "raw": "L7: = KERAMIK 20X20 ROMAN, SETARA",
+        "normalized": "L7: Keramik 20x20 Roman, Setara",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          750.0,
+          650.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-l7"
+        ]
+      },
+      {
+        "raw": "L8: = BATU ALAM",
+        "normalized": "L8: Batu Alam",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          775.0,
+          650.0,
+          795.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-l8"
+        ]
+      },
+      {
+        "raw": "L9: = RABAT BETON",
+        "normalized": "L9: Rabat Beton",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          800.0,
+          650.0,
+          820.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-l9"
+        ]
+      },
+      {
+        "raw": "L10: = FLOOR HARDENNER",
+        "normalized": "L10: Floor Hardene",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          825.0,
+          650.0,
+          845.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-l10"
+        ]
+      },
+      {
+        "raw": "L11: = DAK BETON FIN.WF",
+        "normalized": "L11: Dak Beton Fin.WF",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          850.0,
+          650.0,
+          870.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-l11"
+        ]
+      },
+      {
+        "raw": "D1: = ALUMINIUM PANEL",
+        "normalized": "D1: Aluminium Panel",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          875.0,
+          650.0,
+          895.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d1"
+        ]
+      },
+      {
+        "raw": "D2: = GYPSUM",
+        "normalized": "D2: Gypsum",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          900.0,
+          650.0,
+          920.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d2"
+        ]
+      },
+      {
+        "raw": "D3: = GYPSUM TILE",
+        "normalized": "D3: Gypsum Tile",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          925.0,
+          650.0,
+          945.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d3"
+        ]
+      },
+      {
+        "raw": "D4: = COMPOSITE PANEL",
+        "normalized": "D4: Composite Panel",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          950.0,
+          650.0,
+          970.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d4"
+        ]
+      },
+      {
+        "raw": "D5: = GRC BOARD",
+        "normalized": "D5: GRC Board",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          975.0,
+          650.0,
+          995.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d5"
+        ]
+      },
+      {
+        "raw": "D6: = TRIPLIK 6mm",
+        "normalized": "D6: Triplika 6mm",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          1000.0,
+          650.0,
+          1020.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d6"
+        ]
+      },
+      {
+        "raw": "D7: = BETON EKSP",
+        "normalized": "D7: Beton Exp",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          1025.0,
+          650.0,
+          1045.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d7"
+        ]
+      },
+      {
+        "raw": "D8: = DINDING PLESTER FIN. CAT",
+        "normalized": "D8: Dinding Plester Fin. Cat",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          1050.0,
+          650.0,
+          1070.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d8"
+        ]
+      },
+      {
+        "raw": "D9: = DINDING PLESTER FIN. WALL PAPER",
+        "normalized": "D9: Dinding Plester Fin. Wall Paper",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          1075.0,
+          650.0,
+          1095.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d9"
+        ]
+      },
+      {
+        "raw": "D10: = BETON PLESTER FIN. CAT",
+        "normalized": "D10: Beton Plester Fin. Cat",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          1100.0,
+          650.0,
+          1120.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d10"
+        ]
+      },
+      {
+        "raw": "D11: = FAIR FACE FINISH",
+        "normalized": "D11: Fair Face Finish",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          1125.0,
+          650.0,
+          1145.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d11"
+        ]
+      },
+      {
+        "raw": "D12: = PARTISI GYPSUM 9 MM FIN. CAT",
+        "normalized": "D12: Partisi Gypsum 9mm Fin. Cat",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          1150.0,
+          650.0,
+          1170.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d12"
+        ]
+      },
+      {
+        "raw": "D13: = PARTISI GYPSUM 9 MM FIN. WALL PAPER",
+        "normalized": "D13: Partisi Gypsum 9mm Fin. Wall Paper",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          1175.0,
+          650.0,
+          1195.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d13"
+        ]
+      },
+      {
+        "raw": "D14: = RAILING STAINLESS STEEL",
+        "normalized": "D14: Railing Stainless Steel",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          1200.0,
+          650.0,
+          1220.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d14"
+        ]
+      },
+      {
+        "raw": "D15: = PARAPET PARTISI GYPSUM 9 MM FIN. CAT",
+        "normalized": "D15: Parapet Partisi Gypsum 9mm Fin. Cat",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          1225.0,
+          650.0,
+          1245.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d15"
+        ]
+      },
+      {
+        "raw": "D16: = PARAPET PARTISI GYPSUM 9 MM FIN. WALL PAPER",
+        "normalized": "D16: Parapet Partisi Gypsum 9mm Fin. Wall Paper",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          1250.0,
+          650.0,
+          1270.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d16"
+        ]
+      },
+      {
+        "raw": "D17: = PARTISI + KAIN ATETJA",
+        "normalized": "D17: Partisi + Kain Attetja",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          1275.0,
+          650.0,
+          1295.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d17"
+        ]
+      },
+      {
+        "raw": "D18: = FIN, HPL",
+        "normalized": "D18: Fin, HPL",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          1300.0,
+          650.0,
+          1320.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d18"
+        ]
+      },
+      {
+        "raw": "D19: = PLYWOOD FIN. DUCCO",
+        "normalized": "D19: Plywood Fin. Ducco",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          1325.0,
+          650.0,
+          1345.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-d19"
+        ]
+      },
+      {
+        "raw": "A = ALUMINIUM COMPOSITE PANEL MERK ALOPCOPAN TIPE ALCOPA WARNA VIVO BLUE XX 51147 RANGKA YKK, SETARA",
+        "normalized": "A: Aluminium Composite Panel Merk Alocopan Tipe Alcopa Warna Vivo Blue XX 51147 Rangka YKK, Setara",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          300.0,
+          650.0,
+          330.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-a"
+        ]
+      },
+      {
+        "raw": "A = ALUMINIUM COMPOSITE PANEL MERK ALOPCOPAN TIPE ALCOPA WARNA SILVER METALIC X1 64116 RANGKA YKK, SETARA",
+        "normalized": "A: Aluminium Composite Panel Merk Alocopan Tipe Alcopa Warna Silver Metallic X1 64116 Rangka YKK, Setara",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          335.0,
+          650.0,
+          365.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-a-silver"
+        ]
+      },
+      {
+        "raw": "A = BALOK SRBP ALLUMINIUM COMPOSITE PANEL MERK ALOCOPAN TIPE ALCOPA WARNA VIVO ORANGE XX 51149 RANGKA YKK, SETARA",
+        "normalized": "A: Balok SRBP Aluminium Composite Panel Merk Alocopan Tipe Alcopa Warna Vivo Orange XX 51149 Rangka YKK, Setara",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          370.0,
+          650.0,
+          400.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-a-orange"
+        ]
+      },
+      {
+        "raw": "A = DINDING KACA DARK BLUE ONE WAY 10 MM NO TEMPERED LAPIS KACA FILM",
+        "normalized": "A: Dinding Kaca Dark Blue One Way 10mm No Tempered Lapia Kaca Film",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          405.0,
+          650.0,
+          430.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-dark-blue-glass"
+        ]
+      },
+      {
+        "raw": "A = DINDING KACA CLEASR 10 MM ASAHIMAS TEMPERED LENGKAP",
+        "normalized": "A: Dinding Kaca Clear 10mm Asahimas Tempered Lengkap",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          435.0,
+          650.0,
+          460.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-clear-glass"
+        ]
+      },
+      {
+        "raw": "A = DINDING KACA CLEASR 12 MM ASAHIMAS NON TEMPERED LENGKAP",
+        "normalized": "A: Dinding Kaca Clear 12mm Asahimas Non Tempered Lengkap",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          465.0,
+          650.0,
+          490.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-clear-glass-12"
+        ]
+      },
+      {
+        "raw": "A = PORTAL PINTU UTAMA 1.8X2.1 (PLYWOOD RANGKA HOLLOW FIN.DUCCO UK.20X25+ACRYLIC PLT/H DOOF UK.18X25+STICKER BIRU+LAMPU)",
+        "normalized": "A: Portal Pintu Utama 1.8x2.1 (Plywood Rangka Hollow Fin.Ducco UK.20x25+Acrylic PLT/H DOOF UK.18x25+Sticker Biru+Lampu)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          495.0,
+          650.0,
+          530.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-pintu-utama"
+        ]
+      },
+      {
+        "raw": "A = PINTU UTAMA 1.8X2.1 FRAMELESS 12 MM DOUBLE TEMPERED + ACC EX DORMA",
+        "normalized": "A: Pintu Utama 1.8x2.1 Frameless 12mm Double Tempered + ACC Ex Dorma",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          535.0,
+          650.0,
+          565.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-pintu-frameless"
+        ]
+      },
+      {
+        "raw": "A = PINTU ATM 0.8X2.1 FRAMELESS 12 MM SINGLE TEMPERED + ACC EX DORMA",
+        "normalized": "A: Pintu ATM 0.8x2.1 Frameless 12mm Single Tempered + ACC Ex DORMA",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          570.0,
+          650.0,
+          600.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-pintu-atm"
+        ]
+      },
+      {
+        "raw": "A = PASANGAN BATU ALAM, CANDI, SUKABUMI, ANDESIT",
+        "normalized": "A: Pasangan Batu Alam, Candi, Sukabumi, Andesit",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          605.0,
+          650.0,
+          635.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-batu-alam"
+        ]
+      },
+      {
+        "raw": "A = GRANITE",
+        "normalized": "A: Granite",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          640.0,
+          650.0,
+          660.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-granite"
+        ]
+      },
+      {
+        "raw": "A = MARMER",
+        "normalized": "A: Marmer",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          665.0,
+          650.0,
+          685.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-marmer"
+        ]
+      },
+      {
+        "raw": "A = GRANTITO",
+        "normalized": "A: Granito",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          690.0,
+          650.0,
+          710.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-granito"
+        ]
+      },
+      {
+        "raw": "A = KERAMIK 20X20 ROMAN, SETARA",
+        "normalized": "A: Keramik 20x20 Roman, Setara",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          715.0,
+          650.0,
+          735.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-keramik-20x20"
+        ]
+      },
+      {
+        "raw": "A = DINDING PLESTER FIN. CAT",
+        "normalized": "A: Dinding Plester Fin. Cat",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          740.0,
+          650.0,
+          760.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-dinding-plester-cat"
+        ]
+      },
+      {
+        "raw": "A = DINDING PLESTER FIN. WALL PAPER",
+        "normalized": "A: Dinding Plester Fin. Wall Paper",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          765.0,
+          650.0,
+          785.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-dinding-plester-wall-paper"
+        ]
+      },
+      {
+        "raw": "A = BETON PLESTER FIN. CAT",
+        "normalized": "A: Beton Plester Fin. Cat",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          790.0,
+          650.0,
+          810.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-beton-plester-cat"
+        ]
+      },
+      {
+        "raw": "A = FAIR FACE FINISH",
+        "normalized": "A: Fair Face Finish",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          815.0,
+          650.0,
+          835.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-fair-face-finish"
+        ]
+      },
+      {
+        "raw": "A = PARTISI GYPSUM 6 MM FIN. CAT",
+        "normalized": "A: Partisi Gypsum 6mm Fin. Cat",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          840.0,
+          650.0,
+          860.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-partisi-gypsum-cat"
+        ]
+      },
+      {
+        "raw": "A = PARTISI GYPSUM 9 MM FIN. WALL PAPER",
+        "normalized": "A: Partisis Gypsum 9mm Fin. Wall Paper",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          865.0,
+          650.0,
+          885.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-partisi-gypsum-wall-paper"
+        ]
+      },
+      {
+        "raw": "A = RAILING STAINLESS STEEL",
+        "normalized": "A: Railing Stainless Steel",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          890.0,
+          650.0,
+          910.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-railing-stainless"
+        ]
+      },
+      {
+        "raw": "A = PARAPET PARTISI GYPSUM 9 MM FIN. CAT",
+        "normalized": "A: Parapet Partisi Gypsum 9mm Fin. Cat",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          915.0,
+          650.0,
+          935.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-parapet-partisi-gypsum-cat"
+        ]
+      },
+      {
+        "raw": "A = PARAPET PARTISI GYPSUM 9 MM FIN. WALL PAPER",
+        "normalized": "A: Parapet Partisi Gypsum 9mm Fin. Wall Paper",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          940.0,
+          650.0,
+          960.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-parapet-partisi-gypsum-wall-paper"
+        ]
+      },
+      {
+        "raw": "A = PARTISI + KAIN ATEJA",
+        "normalized": "A: Partisi + Kain Ateja",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          965.0,
+          650.0,
+          985.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-partisi-kain-ateja"
+        ]
+      },
+      {
+        "raw": "A = FIN, HPL",
+        "normalized": "A: Fin, HPL",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          990.0,
+          650.0,
+          1010.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-fin-hpl"
+        ]
+      },
+      {
+        "raw": "A = PLYWOOD FIN. DUCCO",
+        "normalized": "A: Plywood Fin. Ducco",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          1015.0,
+          650.0,
+          1035.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-plywood-ducco"
+        ]
+      }
+    ],
+    "notes": [
+      {
+        "raw": "PLAFOND: PLAFOND SMOKING AREA 20:00",
+        "normalized": "Plafond: Plafond Smoking Area 20:00",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          470.0,
+          620.0,
+          530.0,
+          650.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-plafond-smoking"
+        ]
+      },
+      {
+        "raw": "JUDUL JUDUL1 JUDUL2 JUDUL3 ALTERNATIF 1 SKALA 1 : 400",
+        "normalized": "Judul Judul1 Judul2 Judul3 Alternatif 1 Skala 1:400",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          900.0,
+          300.0,
+          1100.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-judul-skala"
+        ]
+      },
+      {
+        "raw": "TEXT - TEXT 400 TEXT 400",
+        "normalized": "Text - Text 400 Text 400",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          250.0,
+          550.0,
+          350.0,
+          600.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-text-400"
+        ]
+      }
+    ],
+    "references": [],
+    "patterns": [
+      {
+        "raw": "Pola garis untuk dinding",
+        "normalized": "Pola Garis Untuk Dinding",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          250.0,
+          800.0,
+          270.0
+        ],
+        "confidence": 0.8,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-dinding"
+        ]
+      },
+      {
+        "raw": "Pola arsiran untuk lantai granit",
+        "normalized": "Pola Arsiran Untuk Lantai Granit",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          100.0,
+          750.0,
+          120.0
+        ],
+        "confidence": 0.8,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-lantai-granit"
+        ]
+      }
+    ],
+    "geometry_descriptions": [
+      {
+        "raw": "Layout ruangan berbentuk persegi panjang",
+        "normalized": "Layout Ruangan Berbentuk Persegi Panjang",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          400.0,
+          500.0,
+          450.0
+        ],
+        "confidence": 0.8,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geometry-ruangan"
+        ]
+      },
+      {
+        "raw": "Denah bangunan dengan grid A-B dan 1-2",
+        "normalized": "Denah Bangunan Dengan Grid A-B Dan 1-2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          150.0,
+          350.0,
+          450.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geometry-denah"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-title",
+      "kind": "title",
+      "raw": "DAFTAR SINGKATAN DAN NOTASI GAMBR PEKERJAAN JASA KONSULTANSI PERENCANAAN PEMBANGUNAN GEDUNG KELAS",
+      "bbox": [
+        200.0,
+        50.0,
+        800.0,
+        150.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-title-sub",
+      "kind": "subtitle",
+      "raw": "PEKERJAAN JASA KONSULTANSI PERENCANAAN PEMBANGUNAN GEDUNG KELAS",
+      "bbox": [
+        200.0,
+        110.0,
+        800.0,
+        150.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-agama-ri",
+      "kind": "header",
+      "raw": "KEMENTERIAN AGAMA RI DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH TAHUN ANGGARAN 2024",
+      "bbox": [
+        900.0,
+        20.0,
+        1100.0,
+        120.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-gedung-surakarta",
+      "kind": "header",
+      "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+      "bbox": [
+        900.0,
+        130.0,
+        1100.0,
+        180.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-lokasi-surakarta",
+      "kind": "location",
+      "raw": "Jalan KI Mangun Sarkoro No.115 Kota Surakarta",
+      "bbox": [
+        900.0,
+        190.0,
+        1100.0,
+        230.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-mengetahui",
+      "kind": "signature_block",
+      "raw": "MENGETAHUI / MENYETUJUI",
+      "bbox": [
+        900.0,
+        240.0,
+        1100.0,
+        270.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-pembuat-komitmen",
+      "kind": "signature_block",
+      "raw": "PEJABAT PEMBUAT KOMITMEN",
+      "bbox": [
+        900.0,
+        280.0,
+        1100.0,
+        300.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-konsultan-perencana",
+      "kind": "signature_block",
+      "raw": "KONSULTAN PERENCANA",
+      "bbox": [
+        900.0,
+        310.0,
+        1100.0,
+        330.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-team-leader",
+      "kind": "signature_block",
+      "raw": "TEAM LEADER",
+      "bbox": [
+        900.0,
+        340.0,
+        1100.0,
+        360.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-nama-tanda-tangan",
+      "kind": "signature_block",
+      "raw": "NAMA TANDA TANGAN",
+      "bbox": [
+        900.0,
+        370.0,
+        1100.0,
+        390.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-tanggal-januari",
+      "kind": "date",
+      "raw": "TANGGAL : JANUARI 2024",
+      "bbox": [
+        900.0,
+        400.0,
+        1100.0,
+        420.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-skala-gbr",
+      "kind": "scale_info",
+      "raw": "SKALA GBR KODE GBR NO. GBR",
+      "bbox": [
+        900.0,
+        430.0,
+        1100.0,
+        450.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-level-dasar",
+      "kind": "level",
+      "raw": "Lantai Dasar P +0.00",
+      "bbox": [
+        700.0,
+        800.0,
+        800.0,
+        820.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-level-1",
+      "kind": "level",
+      "raw": "Lantai-1 P +4.00",
+      "bbox": [
+        700.0,
+        700.0,
+        800.0,
+        720.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-level-2",
+      "kind": "level",
+      "raw": "Lantai-2 P +8.00",
+      "bbox": [
+        700.0,
+        600.0,
+        800.0,
+        620.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-level-atap",
+      "kind": "level",
+      "raw": "Lantai-Atap P +16.20",
+      "bbox": [
+        700.0,
+        500.0,
+        800.0,
+        520.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-skala-400",
+      "kind": "scale",
+      "raw": "SKALA 1 : 400",
+      "bbox": [
+        200.0,
+        1020.0,
+        250.0,
+        1040.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-a",
+      "kind": "grid_label",
+      "raw": "A",
+      "bbox": [
+        100.0,
+        350.0,
+        120.0,
+        370.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-b",
+      "kind": "grid_label",
+      "raw": "B",
+      "bbox": [
+        100.0,
+        200.0,
+        120.0,
+        220.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-1",
+      "kind": "grid_label",
+      "raw": "1",
+      "bbox": [
+        150.0,
+        400.0,
+        170.0,
+        420.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-2",
+      "kind": "grid_label",
+      "raw": "2",
+      "bbox": [
+        300.0,
+        400.0,
+        320.0,
+        420.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-p1",
+      "kind": "element_label",
+      "raw": "P1",
+      "bbox": [
+        350.0,
+        500.0,
+        370.0,
+        520.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-element-p2",
+      "kind": "element_label",
+      "raw": "P2",
+      "bbox": [
+        450.0,
+        500.0,
+        470.0,
+        520.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-symbol-material-lantai-plafond",
+      "kind": "symbol",
+      "raw": "Notasi Material Lantai dan Plafond: L: Jenis Bahan Lantai, P: Jenis Bahan Plafond",
+      "bbox": [
+        750.0,
+        200.0,
+        850.0,
+        230.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-symbol-pintu",
+      "kind": "symbol",
+      "raw": "Notasi Pintu: X: Type dan Jenis Bahan",
+      "bbox": [
+        750.0,
+        240.0,
+        850.0,
+        260.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-symbol-jendela",
+      "kind": "symbol",
+      "raw": "Notasi Jendela: X: Type dan Jenis Bahan",
+      "bbox": [
+        750.0,
+        270.0,
+        850.0,
+        290.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-symbol-partisi",
+      "kind": "symbol",
+      "raw": "Notasi Partisi: X: Type dan Jenis Bahan",
+      "bbox": [
+        750.0,
+        300.0,
+        850.0,
+        320.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-symbol-dinding",
+      "kind": "symbol",
+      "raw": "Notasi Dinding: X: Jenis Bahan",
+      "bbox": [
+        750.0,
+        330.0,
+        850.0,
+        350.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-symbol-plafond",
+      "kind": "symbol",
+      "raw": "Notasi Plafond: X: Jenis Bahan",
+      "bbox": [
+        750.0,
+        360.0,
+        850.0,
+        380.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-symbol-lantai",
+      "kind": "symbol",
+      "raw": "Notasi Lantai: X: Jenis Bahan",
+      "bbox": [
+        750.0,
+        390.0,
+        850.0,
+        410.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-symbol-atap",
+      "kind": "symbol",
+      "raw": "Notasi Atap: X: Jenis Bahan",
+      "bbox": [
+        750.0,
+        420.0,
+        850.0,
+        440.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-symbol-base-plint",
+      "kind": "symbol",
+      "raw": "Notasi Base / Plint: X: Jenis Bahan",
+      "bbox": [
+        750.0,
+        450.0,
+        850.0,
+        470.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-symbol-soffit-lisplang",
+      "kind": "symbol",
+      "raw": "Notasi Sooffit/Lisplang: X: Jenis Bahan",
+      "bbox": [
+        750.0,
+        480.0,
+        850.0,
+        500.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-material-l1",
+      "kind": "material",
+      "raw": "L1: = GRANITE TILE",
+      "bbox": [
+        550.0,
+        600.0,
+        650.0,
+        620.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-l2",
+      "kind": "material",
+      "raw": "L2: = MARMEER",
+      "bbox": [
+        550.0,
+        625.0,
+        650.0,
+        645.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-l3",
+      "kind": "material",
+      "raw": "L3: = GRANITO",
+      "bbox": [
+        550.0,
+        650.0,
+        650.0,
+        670.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-l4",
+      "kind": "material",
+      "raw": "L4: = HOMOGENIOUS TILE 60X60",
+      "bbox": [
+        550.0,
+        675.0,
+        650.0,
+        695.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-l5",
+      "kind": "material",
+      "raw": "L5: = KERAAMIK 40X40 ROMAN, SETARARA",
+      "bbox": [
+        550.0,
+        700.0,
+        650.0,
+        720.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-l6",
+      "kind": "material",
+      "raw": "L6: = KERAMIK 33X30 ROMAN, SETARA",
+      "bbox": [
+        550.0,
+        725.0,
+        650.0,
+        745.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-l7",
+      "kind": "material",
+      "raw": "L7: = KERRAMIK 20X20 ROMAN, SETARA",
+      "bbox": [
+        550.0,
+        750.0,
+        650.0,
+        770.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-l8",
+      "kind": "material",
+      "raw": "L8: = BATU ALAM",
+      "bbox": [
+        550.0,
+        775.0,
+        650.0,
+        795.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-l9",
+      "kind": "material",
+      "raw": "L9: = RABAT BETONN",
+      "bbox": [
+        550.0,
+        800.0,
+        650.0,
+        820.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-l10",
+      "kind": "material",
+      "raw": "L10: = FLOR HARDENNERR",
+      "bbox": [
+        550.0,
+        825.0,
+        650.0,
+        845.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-l11",
+      "kind": "material",
+      "raw": "L11: = DAK BETON FIN.WFFFF",
+      "bbox": [
+        550.0,
+        850.0,
+        650.0,
+        870.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d1",
+      "kind": "material",
+      "raw": "D1: = ALUMINIUM PANNEL",
+      "bbox": [
+        550.0,
+        875.0,
+        650.0,
+        895.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d2",
+      "kind": "material",
+      "raw": "D2: = GYPSSUM",
+      "bbox": [
+        550.0,
+        900.0,
+        650.0,
+        920.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d3",
+      "kind": "material",
+      "raw": "D3: = GYPSUUM TILE",
+      "bbox": [
+        550.0,
+        925.0,
+        650.0,
+        945.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d4",
+      "kind": "material",
+      "raw": "D4: = COMPPOSITE PANEL",
+      "bbox": [
+        550.0,
+        950.0,
+        650.0,
+        970.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d5",
+      "kind": "material",
+      "raw": "D5: = GRCC BOARD",
+      "bbox": [
+        550.0,
+        975.0,
+        650.0,
+        995.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d6",
+      "kind": "material",
+      "raw": "D6: = TRIPPLIK 6mm",
+      "bbox": [
+        550.0,
+        1000.0,
+        650.0,
+        1020.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d7",
+      "kind": "material",
+      "raw": "D7: = BETON EEEKSS",
+      "bbox": [
+        550.0,
+        1025.0,
+        650.0,
+        1045.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d8",
+      "kind": "material",
+      "raw": "D8: = DINDINNNG PLESTER FIN. CAT",
+      "bbox": [
+        550.0,
+        1050.0,
+        650.0,
+        1070.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d9",
+      "kind": "material",
+      "raw": "D9: = DINDDING PLESTER FIN. WALL PAPPER",
+      "bbox": [
+        550.0,
+        1075.0,
+        650.0,
+        1095.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d10",
+      "kind": "material",
+      "raw": "D10: = BETTTON PLESTER FIN. CAT",
+      "bbox": [
+        550.0,
+        1100.0,
+        650.0,
+        1120.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d11",
+      "kind": "material",
+      "raw": "D11: = FAIRR FACE FINISH",
+      "bbox": [
+        550.0,
+        1125.0,
+        650.0,
+        1145.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d12",
+      "kind": "material",
+      "raw": "D12: = PARTISII GYPSUM 9 MM FIN. CAT",
+      "bbox": [
+        550.0,
+        1150.0,
+        650.0,
+        1170.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d13",
+      "kind": "material",
+      "raw": "D13: = PARTISI GYPSUUM 9 MM FIN. WALL PAPER",
+      "bbox": [
+        550.0,
+        1175.0,
+        650.0,
+        1195.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d14",
+      "kind": "material",
+      "raw": "D14: = RAAILING STAINLESS STEEL",
+      "bbox": [
+        550.0,
+        1200.0,
+        650.0,
+        1220.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d15",
+      "kind": "material",
+      "raw": "D15: = PARAPPEET PARTISI GYPSUM 9 MM FIN. CAT",
+      "bbox": [
+        550.0,
+        1225.0,
+        650.0,
+        1245.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d16",
+      "kind": "material",
+      "raw": "D16: = PARAPERET PARTICISI GYPSUM 9 MM FIN. WALL PAPER",
+      "bbox": [
+        550.0,
+        1250.0,
+        650.0,
+        1270.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d17",
+      "kind": "material",
+      "raw": "D17: = PARTISII + KAIN ATEJJA",
+      "bbox": [
+        550.0,
+        1275.0,
+        650.0,
+        1295.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d18",
+      "kind": "material",
+      "raw": "D18: = FIN, HPLL",
+      "bbox": [
+        550.0,
+        1300.0,
+        650.0,
+        1320.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-d19",
+      "kind": "material",
+      "raw": "D19: = PLYWOOD FIN. DUUCCO",
+      "bbox": [
+        550.0,
+        1325.0,
+        650.0,
+        1345.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-a",
+      "kind": "material",
+      "raw": "A = ALUMINIUM COMMMPOSITE PANEL MERKK ALOCCOPAN TIPE ALCOOPA WARNA VIVO BLUUE XX 51147 RANNGKA YKK, SETARARA",
+      "bbox": [
+        550.0,
+        300.0,
+        650.0,
+        330.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-a-silver",
+      "kind": "material",
+      "raw": "A = ALUMINIUM COMMMMPOSITE PANEL MERKK ALOCOPAN TIPE ALLCOPA WARNA SILVERR METALIC X1 64116 RANGKA YKYK, SETARA",
+      "bbox": [
+        550.0,
+        335.0,
+        650.0,
+        365.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-a-orange",
+      "kind": "material",
+      "raw": "A = BALOK SRRBP ALLUMINIUM COMPOSITE PANEL MERK ALOCCOPAN TIPE ALCOPA WARNA VIVO ORANGE XXX 51149 RANGKA YKYK, SETARA",
+      "bbox": [
+        550.0,
+        370.0,
+        650.0,
+        400.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-dark-blue-glass",
+      "kind": "material",
+      "raw": "A = DINDING KACAA DARK BLUE ONE WAY 10 MM NO TEMMMMPERED LAPIS KACA FILM",
+      "bbox": [
+        550.0,
+        405.0,
+        650.0,
+        430.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-clear-glass",
+      "kind": "material",
+      "raw": "A = DINDING KACAA CLEASR 10 MM ASAHIMMAS TEMPERED LENGKAP",
+      "bbox": [
+        550.0,
+        435.0,
+        650.0,
+        460.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-clear-glass-12",
+      "kind": "material",
+      "raw": "A = DINDING KACAA CLEASR 12 MM ASAAHIMAS NON TEMPERED LENGKP",
+      "bbox": [
+        550.0,
+        465.0,
+        650.0,
+        490.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-pintu-utama",
+      "kind": "material",
+      "raw": "A = PORTAL PINTTUU UTAMA 1.8X2.1 (PLYWOOD RANGKA HOLLOWW FIN.DUCO UUUK.20X25+ACRYLLIC PLT/H DOOOOF UK.18X25+SSTICKER BIRU++LAMPU)",
+      "bbox": [
+        550.0,
+        495.0,
+        650.0,
+        530.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-pintu-frameless",
+      "kind": "material",
+      "raw": "A = PINTU UTAMAA 1.8X2.1 FRAMELESSS 12 MM DOUBLE TEMMPERED + ACC EX DOORMA",
+      "bbox": [
+        550.0,
+        535.0,
+        650.0,
+        565.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-pintu-atm",
+      "kind": "material",
+      "raw": "A = PINTU ATMM 0.8X2.1 FRAMELESSS 12 MM SINGLE TTTEMPERED + ACC EX DORMAA",
+      "bbox": [
+        550.0,
+        570.0,
+        650.0,
+        600.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-batu-alam",
+      "kind": "material",
+      "raw": "A = PASANGGAN BATU ALAMMM, CANNDI, SUUKABUMI, ANDESIT",
+      "bbox": [
+        550.0,
+        605.0,
+        650.0,
+        635.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-granite",
+      "kind": "material",
+      "raw": "A = GRANNITE",
+      "bbox": [
+        550.0,
+        640.0,
+        650.0,
+        660.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-marmer",
+      "kind": "material",
+      "raw": "A = MARRMER",
+      "bbox": [
+        550.0,
+        665.0,
+        650.0,
+        685.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-granito",
+      "kind": "material",
+      "raw": "A = GRANNTO",
+      "bbox": [
+        550.0,
+        690.0,
+        650.0,
+        710.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-keramik-20x20",
+      "kind": "material",
+      "raw": "A = KERRAMIK 20XX20 ROMAN, SETARA",
+      "bbox": [
+        550.0,
+        715.0,
+        650.0,
+        735.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-dinding-plester-cat",
+      "kind": "material",
+      "raw": "A = DINDING PPLLESTER FIN. CAT",
+      "bbox": [
+        550.0,
+        740.0,
+        650.0,
+        760.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-dinding-plester-wall-paper",
+      "kind": "material",
+      "raw": "A = DINDING PPLESTER FIN. WAWALL PAPER",
+      "bbox": [
+        550.0,
+        765.0,
+        650.0,
+        785.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-beton-plester-cat",
+      "kind": "material",
+      "raw": "A = BETONN PPLESTER FIN. CAT",
+      "bbox": [
+        550.0,
+        790.0,
+        650.0,
+        810.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-fair-face-finish",
+      "kind": "material",
+      "raw": "A = FFAIR FACE FINISHH",
+      "bbox": [
+        550.0,
+        815.0,
+        650.0,
+        835.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-partisi-gypsum-cat",
+      "kind": "material",
+      "raw": "A = PARTIII GYPSUMM 6 MM FIN. CAT",
+      "bbox": [
+        550.0,
+        840.0,
+        650.0,
+        860.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-partisi-gypsum-wall-paper",
+      "kind": "material",
+      "raw": "A = PARTISS GYYYPSUM 9 MM FIIIN. WLLL PAPER",
+      "bbox": [
+        550.0,
+        865.0,
+        650.0,
+        885.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-railing-stainless",
+      "kind": "material",
+      "raw": "A = RAILINNGG SSTAAINLESS STEEL",
+      "bbox": [
+        550.0,
+        890.0,
+        650.0,
+        910.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-parapet-partisi-gypsum-cat",
+      "kind": "material",
+      "raw": "A = PARAPET PARTIS GYPSUM 9 MMM FIIIN. CAT",
+      "bbox": [
+        550.0,
+        915.0,
+        650.0,
+        935.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-parapet-partisi-gypsum-wall-paper",
+      "kind": "material",
+      "raw": "A = PARAPET PARTISI GYPSUM 9 MM FIIIN. WAALL PAPER",
+      "bbox": [
+        550.0,
+        940.0,
+        650.0,
+        960.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-partisi-kain-ateja",
+      "kind": "material",
+      "raw": "A = PARTIIISI + KAIN ATEEEJAA",
+      "bbox": [
+        550.0,
+        965.0,
+        650.0,
+        985.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-fin-hpl",
+      "kind": "material",
+      "raw": "A = FINNN, HPLL",
+      "bbox": [
+        550.0,
+        990.0,
+        650.0,
+        1010.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-plywood-duccco",
+      "kind": "material",
+      "raw": "A = PLYWOOD FINN. DUUCCCO",
+      "bbox": [
+        550.0,
+        1015.0,
+        650.0,
+        1035.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-space-smoking",
+      "kind": "space_label",
+      "raw": "Smoking Area 20:00",
+      "bbox": [
+        500.0,
+        650.0,
+        550.0,
+        680.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-note-plafond-smoking",
+      "kind": "note",
+      "raw": "PLAFOND: PLAFOND SMOKING AREA 20:00",
+      "bbox": [
+        470.0,
+        620.0,
+        530.0,
+        650.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-note-judul-skala",
+      "kind": "note",
+      "raw": "JUDUL JUDUL1 JUDUL2 JUDUL3 ALTERNATIF 1 SKALA 1 : 4000",
+      "bbox": [
+        200.0,
+        900.0,
+        300.0,
+        1100.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-note-text-400",
+      "kind": "note",
+      "raw": "TEXT - TEXT 4000 TEXT 400",
+      "bbox": [
+        250.0,
+        550.0,
+        350.0,
+        600.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-pattern-dinding",
+      "kind": "pattern",
+      "raw": "Pola garis untuk dinding",
+      "bbox": [
+        700.0,
+        250.0,
+        800.0,
+        270.0
+      ],
+      "confidence": 0.8
+    },
+    {
+      "evidence_id": "ev-pattern-lantai-granit",
+      "kind": "pattern",
+      "raw": "Pola arsiran untuk lantai granit",
+      "bbox": [
+        650.0,
+        100.0,
+        750.0,
+        120.0
+      ],
+      "confidence": 0.8
+    },
+    {
+      "evidence_id": "ev-geometry-ruangan",
+      "kind": "geometry_description",
+      "raw": "Layout ruangan berbentuk persegi panjang",
+      "bbox": [
+        400.0,
+        400.0,
+        500.0,
+        450.0
+      ],
+      "confidence": 0.8
+    },
+    {
+      "evidence_id": "ev-geometry-denah",
+      "kind": "geometry_description",
+      "raw": "Denah bangunan dengan grid A-B dan 1-2",
+      "bbox": [
+        100.0,
+        150.0,
+        350.0,
+        450.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-sheet-number",
+      "kind": "sheet_number",
+      "raw": "Halaman ke-4 (index 3)",
+      "bbox": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "ambiguities": [
+    "Beberapa label material tertulis dengan typo (mis. 'GRANTIET' seharusnya 'GRANITO', 'MARME' seharusnya 'MARMER'). Dianggap sebagai variasi penulisan, bukan ambiguitas struktural."
+  ],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

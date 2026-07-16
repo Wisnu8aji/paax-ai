@@ -199,3 +199,61 @@ class GroundedAnswer(BaseModel):
     missing_data: list[str] = Field(default_factory=list)
     conflicts: list[str] = Field(default_factory=list)
     retrieval_trace: RetrievalTrace
+
+
+class SummaryViewGrain(BaseModel):
+    building_id: Optional[str] = None
+    level_id: Optional[str] = None
+    discipline: Optional[str] = None
+    zone_id: Optional[str] = None
+
+
+class ElementTypeIndexEntry(BaseModel):
+    element_type_id: str
+    name: str
+    occurrence_count: int
+
+
+class DisciplineCountEntry(BaseModel):
+    discipline: str
+    occurrence_count: int
+
+
+class StoredMeasurementFact(BaseModel):
+    name: str
+    value: Union[str, float, int]
+    unit: str
+    evidence_refs: list[str] = Field(default_factory=list)
+
+
+class SummaryPayload(BaseModel):
+    level_name: str
+    element_type_index: list[ElementTypeIndexEntry] = Field(default_factory=list)
+    discipline_counts: list[DisciplineCountEntry] = Field(default_factory=list)
+    stored_measurement_facts: list[StoredMeasurementFact] = Field(default_factory=list)
+
+
+class QualityPayload(BaseModel):
+    confirmed_count: int
+    ambiguous_binding_count: int
+    conflict_count: int
+    ambiguous_binding_ids: list[str] = Field(default_factory=list)
+    conflict_ids: list[str] = Field(default_factory=list)
+
+
+class ProvenancePayload(BaseModel):
+    source_document_ids: list[str] = Field(default_factory=list)
+    evidence_ids: list[str] = Field(default_factory=list)
+    summary_builder_version: str
+
+
+class ProjectGraphSummaryView(BaseModel):
+    schema_version: Literal["paax.pckm.summary-view.v1"] = "paax.pckm.summary-view.v1"
+    project_id: str
+    snapshot_id: str
+    view_kind: Literal["LEVEL_OVERVIEW"] = "LEVEL_OVERVIEW"
+    grain: SummaryViewGrain
+    summary: SummaryPayload
+    quality: QualityPayload
+    provenance: ProvenancePayload
+

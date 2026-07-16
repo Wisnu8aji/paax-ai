@@ -58,7 +58,11 @@ class _TypeSource:
 
 
 _CODE_BOUNDARY = re.compile(r"(?<![A-Z0-9]){code}(?![A-Z0-9])")
-_TITLE_LEVEL = re.compile(r"\b(?:LT\.?|LANTAI)\s*(\d+|ATAP|ROOF|DASAR)\b", re.IGNORECASE)
+# [\s\-]* (not \s*) tolerates "LT-2" alongside "LT.2"/"LT 2"/"LANTAI 2" -- real
+# fixture anchor: page 47 titled "DENAH BALOK LINTEL LT-2" was missed by the
+# space-only pattern and fell back to unspecified_level despite an
+# unambiguous level marker being right there in the title.
+_TITLE_LEVEL = re.compile(r"\b(?:LT\.?|LANTAI)[\s\-]*(\d+|ATAP|ROOF|DASAR)\b", re.IGNORECASE)
 
 
 def _stable_id(prefix: str, *parts: object) -> str:
@@ -132,6 +136,115 @@ def _fact_values(patch: SheetKnowledgePatch, category: str) -> tuple[_FactValue,
     return tuple(
         value for _, value in sorted(values.items())
     )
+
+
+_MAX_DIMENSION_LINK_DISTANCE = 120.0
+
+
+def _nearest_dimension(
+    element_bbox: tuple[float, float, float, float] | None,
+    patch: SheetKnowledgePatch,
+) -> tuple[str, tuple[float, float, float, float], float, tuple[str, ...]] | None:
+    """Find the single unambiguous nearest dimension fact for an element on the
+    same page. Same conservative shape as _nearest_value: reject ties, and
+    additionally reject anything farther than a page-scale-derived cutoff so a
+    lone dimension elsewhere on the sheet is never wrongly claimed as "nearest"
+    (anchor case: services/document-intelligence, dimension "1500" on page 20
+    at [455,135,490,150] sits 37.5 units from the aligned BV1 label at
+    [455,170,490,190] and 83.85 units from a different-column BV1 at
+    [530,170,565,190] -- both real, non-tied distances measured from the fixture)."""
+    if element_bbox is None:
+        return None
+    candidates = [
+        fact
+        for fact in patch.facts
+        if fact.category == "dimensions" and fact.bbox is not None and (fact.normalized or fact.raw).strip()
+    ]
+    if not candidates:
+        return None
+    element_x = (element_bbox[0] + element_bbox[2]) / 2
+    element_y = (element_bbox[1] + element_bbox[3]) / 2
+    ranked = sorted(
+        (
+            (
+                ((element_x - ((fact.bbox[0] + fact.bbox[2]) / 2)) ** 2
+                 + (element_y - ((fact.bbox[1] + fact.bbox[3]) / 2)) ** 2) ** 0.5,
+                fact.fact_id,
+                fact,
+            )
+            for fact in candidates
+        ),
+        key=lambda item: (item[0], item[1]),
+    )
+    nearest_distance, _, nearest_fact = ranked[0]
+    if nearest_distance > _MAX_DIMENSION_LINK_DISTANCE:
+        return None
+    if len(ranked) > 1 and ranked[1][0] == nearest_distance:
+        return None
+    display = (nearest_fact.normalized or nearest_fact.raw).strip()
+    return display, nearest_fact.bbox, nearest_fact.confidence, tuple(sorted(set(nearest_fact.evidence_refs)))
+
+
+def _dimension_node_id(patch: SheetKnowledgePatch, display: str, bbox: tuple[float, float, float, float]) -> str | None:
+    """Look up the node_id page_patch.py already assigned to this dimension
+    fact via SheetFact.attributes["node_id"] (see page_patch.py) -- avoids
+    recomputing _stable_id's position-dependent formula here and risking a
+    silent mismatch against the node build_sheet_patch() actually created."""
+    fact = next(
+        (
+            fact
+            for fact in patch.facts
+            if fact.category == "dimensions"
+            and (fact.normalized or fact.raw).strip() == display
+            and fact.bbox == bbox
+        ),
+        None,
+    )
+    if fact is None:
+        return None
+    return fact.attributes.get("node_id")
+
+
+def _sheet_node_by_title(patches: Sequence[SheetKnowledgePatch]) -> dict[str, str]:
+    """Index sheet_node_id by normalized title, across all patches. Exact-match
+    only (via _text_key, no fuzzy/substring matching) -- a callout like "POTONGAN
+    A" must match a sheet titled exactly "POTONGAN A" to be linked; anything
+    less exact (most real references, e.g. "Rujukan ke Detail D1" or a room
+    name like "R.DOKUMEN") is left as missing_information rather than guessed.
+    A title claimed by more than one sheet is dropped entirely (ambiguous,
+    e.g. real fixture has both "POTONGAN B" and "POTONGAN - B" as distinct
+    titles -- those stay distinct since _text_key doesn't strip punctuation,
+    but if two sheets ever did share one exact title, linking to either would
+    be a guess)."""
+    by_title: dict[str, list[str]] = {}
+    for patch in patches:
+        sheet_node = next((node for node in patch.nodes if node.type == "sheet"), None)
+        if sheet_node is None:
+            continue
+        title_property = sheet_node.properties.get("title")
+        if title_property is None or not str(title_property.value).strip():
+            continue
+        key = _text_key(str(title_property.value))
+        if not key:
+            continue
+        by_title.setdefault(key, []).append(sheet_node.node_id)
+    return {key: node_ids[0] for key, node_ids in by_title.items() if len(node_ids) == 1}
+
+
+def _reference_fact_node_id(patch: SheetKnowledgePatch, raw_reference: str) -> tuple[str, float, tuple[str, ...]] | None:
+    """Look up the node_id + confidence + evidence_refs page_patch.py assigned
+    to this "references"-category fact, mirroring _dimension_node_id's
+    back-reference pattern via SheetFact.attributes["node_id"]."""
+    fact = next(
+        (fact for fact in patch.facts if fact.category == "references" and fact.raw == raw_reference),
+        None,
+    )
+    if fact is None:
+        return None
+    node_id = fact.attributes.get("node_id")
+    if node_id is None:
+        return None
+    return node_id, fact.confidence, tuple(sorted(set(fact.evidence_refs)))
 
 
 def _title_level(patch: SheetKnowledgePatch) -> _FactValue | None:
@@ -332,6 +445,16 @@ def _occurrence_node(
             for evidence_ref in source.space.evidence_refs
         }
     )
+    base_confidence = min(source.type_node.confidence for source in sources)
+    is_generic_level = any(s.level is not None and s.level.key.startswith("unmapped") for s in sources)
+    is_generic_space = any(s.space is not None and s.space.key.startswith("unmapped") for s in sources)
+    if is_generic_level or is_generic_space:
+        penalty_level = 0.2 if is_generic_level else 0.0
+        penalty_space = 0.3 if is_generic_space else 0.0
+        confidence = round(base_confidence * (1.0 - penalty_level - penalty_space), 4)
+    else:
+        confidence = base_confidence
+
     return ProjectGraphNode(
         node_id=_stable_id("ELOCC", type_node.node_id, level_node.node_id, space_node.node_id),
         type="element_occurrence",
@@ -355,9 +478,10 @@ def _occurrence_node(
         },
         discipline=type_node.discipline,
         verification_status="cross_sheet_inferred",
-        confidence=min(source.type_node.confidence for source in sources),
+        confidence=confidence,
         source_refs=source_refs,
     )
+
 
 
 def _escalation_request(
@@ -416,6 +540,8 @@ def resolve_cross_sheet(
 
     sources_by_type: dict[str, list[_TypeSource]] = {}
     missing_information: list[str] = []
+    reference_edges: list[ProjectGraphEdge] = []
+    sheet_node_by_title = _sheet_node_by_title(patches)
 
     for patch in sorted(patches, key=lambda item: (item.document_id, item.page_index, item.sheet_id)):
         if patch.missing_evidence_refs:
@@ -423,10 +549,34 @@ def resolve_cross_sheet(
                 f"{patch.sheet_id} page {patch.page_index + 1}: unresolved evidence refs "
                 f"{', '.join(sorted(set(patch.missing_evidence_refs)))}"
             )
+        this_patch_sheet_node_id = next(
+            (node.node_id for node in patch.nodes if node.type == "sheet"), None
+        )
         for reference in sorted(set(patch.unresolved_references)):
-            missing_information.append(
-                f"{patch.sheet_id} page {patch.page_index + 1}: unresolved reference {reference}"
-            )
+            target_sheet_node_id = sheet_node_by_title.get(_text_key(reference))
+            reference_fact = _reference_fact_node_id(patch, reference)
+            if (
+                target_sheet_node_id is not None
+                and target_sheet_node_id != this_patch_sheet_node_id
+                and reference_fact is not None
+            ):
+                reference_node_id, reference_confidence, reference_evidence_refs = reference_fact
+                reference_edges.append(
+                    ProjectGraphEdge(
+                        edge_id=_stable_id("EDGE", reference_node_id, target_sheet_node_id, "REFERENCES"),
+                        source=reference_node_id,
+                        target=target_sheet_node_id,
+                        relation="REFERENCES",
+                        confidence_class="CROSS_SHEET_INFERRED",
+                        confidence=reference_confidence,
+                        evidence_refs=list(reference_evidence_refs),
+                        resolver=EdgeResolver(method="deterministic_exact_title_match"),
+                    )
+                )
+            else:
+                missing_information.append(
+                    f"{patch.sheet_id} page {patch.page_index + 1}: unresolved reference {reference}"
+                )
         for label in sorted(set(patch.unclassified)):
             missing_information.append(
                 f"{patch.sheet_id} page {patch.page_index + 1}: unclassified {label}"
@@ -460,7 +610,7 @@ def resolve_cross_sheet(
                 )
 
     nodes: list[ProjectGraphNode] = []
-    edges: list[ProjectGraphEdge] = []
+    edges: list[ProjectGraphEdge] = list(reference_edges)
     escalation_requests: list[EscalationRequest] = []
 
     for type_node_id, sources in sorted(sources_by_type.items()):
@@ -468,6 +618,8 @@ def resolve_cross_sheet(
         type_node = sources[0].type_node
         reference_ids: list[str] = []
         contexts: dict[tuple[str, str], list[_TypeSource]] = {}
+        has_contextual = any(s.level is not None and s.space is not None for s in sources)
+
 
         for source in sources:
             reference_node = _reference_node(type_node, source.source_ref)
@@ -507,14 +659,71 @@ def resolve_cross_sheet(
                         resolver=EdgeResolver(method="deterministic_exact_code"),
                     )
                 )
+            element_bbox = _element_bbox(source.patch, type_node.canonical_name, source.source_ref)
+            nearest_dimension = _nearest_dimension(element_bbox, source.patch)
+            if nearest_dimension is not None:
+                dim_display, dim_bbox, dim_confidence, dim_evidence_refs = nearest_dimension
+                dim_node_id = _dimension_node_id(source.patch, dim_display, dim_bbox)
+                if dim_node_id is not None:
+                    edges.append(
+                        ProjectGraphEdge(
+                            edge_id=_stable_id("EDGE", reference_node.node_id, dim_node_id, "HAS_DIMENSION"),
+                            source=reference_node.node_id,
+                            target=dim_node_id,
+                            relation="HAS_DIMENSION",
+                            confidence_class="CROSS_SHEET_INFERRED",
+                            confidence=min(type_node.confidence, dim_confidence),
+                            evidence_refs=list(dim_evidence_refs),
+                            resolver=EdgeResolver(method="deterministic_nearest_bbox"),
+                        )
+                    )
+
             if source.level is None or source.space is None:
-                missing_information.append(
-                    f"{type_node.canonical_name} on {source.source_ref.sheet_id} page "
-                    f"{source.source_ref.page_index + 1} requires {_context_missing_reason(source)} "
-                    "before occurrence synthesis"
+                if not has_contextual:
+                    missing_information.append(
+                        f"{type_node.canonical_name} on {source.source_ref.sheet_id} page "
+                        f"{source.source_ref.page_index + 1} requires {_context_missing_reason(source)} "
+                        "before occurrence synthesis"
+                    )
+                    continue
+
+                if source.level is None and source.space is None:
+                    sheet_id = source.source_ref.sheet_id
+                    page_index = source.source_ref.page_index
+                    fallback_level_key = f"unmapped_{sheet_id}_p{page_index}"
+                    fallback_space_key = f"unmapped_{sheet_id}_p{page_index}"
+                    fallback_level_display = f"Lantai Tidak Terpetakan ({sheet_id} hal. {page_index + 1})"
+                    fallback_space_display = f"Ruang Tidak Terpetakan ({sheet_id} hal. {page_index + 1})"
+                else:
+                    fallback_level_key = "unmapped"
+                    fallback_space_key = "unmapped"
+                    fallback_level_display = "Lantai Tidak Terpetakan"
+                    fallback_space_display = "Ruang Tidak Terpetakan"
+
+                fallback_level = source.level or _FactValue(
+                    key=fallback_level_key,
+                    display=fallback_level_display,
+                    confidence=0.5,
+                    evidence_refs=(),
+                    bbox=None,
                 )
-                continue
-            contexts.setdefault((source.level.key, source.space.key), []).append(source)
+                fallback_space = source.space or _FactValue(
+                    key=fallback_space_key,
+                    display=fallback_space_display,
+                    confidence=0.5,
+                    evidence_refs=(),
+                    bbox=None,
+                )
+                generic_source = _TypeSource(
+                    type_node=source.type_node,
+                    patch=source.patch,
+                    source_ref=source.source_ref,
+                    level=fallback_level,
+                    space=fallback_space,
+                )
+                contexts.setdefault((fallback_level.key, fallback_space.key), []).append(generic_source)
+            else:
+                contexts.setdefault((source.level.key, source.space.key), []).append(source)
 
         occurrence_ids: list[str] = []
         for context_key, context_sources in sorted(contexts.items()):

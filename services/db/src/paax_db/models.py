@@ -1,4 +1,4 @@
-from sqlalchemy import CHAR, Column, String, Integer, Numeric, Boolean, DateTime, ForeignKey, JSON
+from sqlalchemy import CHAR, Column, String, Integer, Numeric, Boolean, DateTime, ForeignKey, JSON, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -229,3 +229,164 @@ class DemPage(Base):
     result = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+
+
+class ProjectGraphSnapshot(Base):
+    __tablename__ = "project_graph_snapshots"
+
+    snapshot_id = Column(String, primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    schema_version = Column(String, nullable=False)
+    source_manifest_hash = Column(String, nullable=False)
+    status = Column(String, nullable=False, index=True, default="building")
+    generation_metadata = Column(JSON_DOCUMENT, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    activated_at = Column(DateTime(timezone=True), nullable=True)
+    superseded_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class ProjectGraphNode(Base):
+    __tablename__ = "project_graph_nodes"
+
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), primary_key=True)
+    node_id = Column(String, primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    node_type = Column(String, nullable=False, index=True)
+    canonical_name = Column(String, nullable=False)
+    normalized_name = Column(String, nullable=False, index=True)
+    discipline = Column(String, nullable=False, index=True)
+    level_id = Column(String, nullable=True, index=True)
+    verification_status = Column(String, nullable=False)
+    confidence = Column(Numeric, nullable=False)
+    properties_json = Column("properties", JSON_DOCUMENT, nullable=False, default=dict)
+    search_text = Column(Text, nullable=False, default="")
+
+
+class ProjectGraphEdge(Base):
+    __tablename__ = "project_graph_edges"
+
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), primary_key=True)
+    edge_id = Column(String, primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    source_node_id = Column(String, nullable=False, index=True)
+    target_node_id = Column(String, nullable=False, index=True)
+    relation = Column(String, nullable=False, index=True)
+    confidence_class = Column(String, nullable=False)
+    confidence = Column(Numeric, nullable=False)
+    properties_json = Column("properties", JSON_DOCUMENT, nullable=False, default=dict)
+
+
+class ProjectGraphEvidence(Base):
+    __tablename__ = "project_graph_evidence"
+
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), primary_key=True)
+    evidence_id = Column(String, primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    document_id = Column(String, nullable=False)
+    page_index = Column(Integer, nullable=False)
+    sheet_id = Column(String, nullable=False)
+    kind = Column(String, nullable=False)
+    raw_text = Column(Text, nullable=False)
+    bbox_json = Column("bbox", JSON_DOCUMENT, nullable=True)
+    source_dem_id = Column(String, nullable=True)
+
+
+class ProjectGraphNodeEvidence(Base):
+    __tablename__ = "project_graph_node_evidence"
+
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), primary_key=True)
+    node_id = Column(String, primary_key=True)
+    evidence_id = Column(String, primary_key=True)
+    role = Column(String, nullable=False)
+
+
+class ProjectGraphEdgeEvidence(Base):
+    __tablename__ = "project_graph_edge_evidence"
+
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), primary_key=True)
+    edge_id = Column(String, primary_key=True)
+    evidence_id = Column(String, primary_key=True)
+    role = Column(String, nullable=False)
+
+
+class ProjectGraphAlias(Base):
+    __tablename__ = "project_graph_aliases"
+
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), primary_key=True)
+    alias_normalized = Column(String, primary_key=True)
+    alias_raw = Column(String, primary_key=True)
+    node_id = Column(String, primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    alias_type = Column(String, nullable=False)
+    confidence = Column(Numeric, nullable=False)
+
+
+class ProjectGraphCommunity(Base):
+    __tablename__ = "project_graph_communities"
+
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), primary_key=True)
+    community_id = Column(String, primary_key=True)
+    community_type = Column(String, nullable=False)
+    name = Column(String, nullable=False)
+    summary = Column(Text, nullable=False, default="")
+    member_count = Column(Integer, nullable=False)
+
+
+class ProjectGraphQueryLog(Base):
+    __tablename__ = "project_graph_query_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(String, nullable=True)
+    user_query = Column(Text, nullable=False)
+    query_plan = Column(JSON_DOCUMENT, nullable=False)
+    selected_seed_ids = Column(JSON_DOCUMENT, nullable=False, default=list)
+    traversed_node_ids = Column(JSON_DOCUMENT, nullable=False, default=list)
+    traversed_edge_ids = Column(JSON_DOCUMENT, nullable=False, default=list)
+    context_token_estimate = Column(Integer, nullable=False)
+    answer_model = Column(String, nullable=True)
+    latency_ms = Column(Integer, nullable=True)
+    outcome = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ProjectGraphCorrection(Base):
+    __tablename__ = "project_graph_corrections"
+
+    id = Column(String, primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), nullable=False, index=True)
+    target_type = Column(String, nullable=False)
+    target_id = Column(String, nullable=False)
+    correction_type = Column(String, nullable=False)
+    proposed_value = Column(JSON_DOCUMENT, nullable=False)
+    rationale = Column(Text, nullable=False)
+    status = Column(String, nullable=False, default="pending", index=True)
+    resolution_note = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class ProjectGraphRetrievalCache(Base):
+    __tablename__ = "project_graph_retrieval_cache"
+
+    cache_key = Column(String, primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), nullable=False, index=True)
+    payload = Column(JSON_DOCUMENT, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
+
+
+class ProjectGraphSummaryView(Base):
+    __tablename__ = "project_graph_summary_views"
+
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), primary_key=True)
+    view_id = Column(String, primary_key=True)  # stable id per (snapshot_id, view_kind, level_id)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    view_kind = Column(String, nullable=False, index=True)
+    level_id = Column(String, nullable=True, index=True)
+    payload = Column(JSON_DOCUMENT, nullable=False)  # full ProjectGraphSummaryView dict
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+

@@ -1,0 +1,795 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 35,
+    "page_number": 36,
+    "render_uri": "local://plhut-88pg-run-1/page-0035.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T21:40:25.041807+00:00",
+    "completed_at": "2026-07-14T21:40:25.041837+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "36",
+      "raw": "36",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-page-no-35"
+      ]
+    },
+    "title": {
+      "value": "DETAIL STANDARD UNTUK PEKERJAAN STRUKTUR",
+      "raw": "DETAIL STANDARD UNTUK PEKERJAAN STRUKTUR",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-title-main"
+      ]
+    },
+    "discipline": {
+      "value": "Structure",
+      "confidence": 0.99,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "NTS",
+        "normalized": "NTS = Not To Scale",
+        "confidence": 1.0,
+        "evidence_refs": [
+          "ev-scale-field"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "v-full-sheet",
+      "type": "full-sheet-structure-detail",
+      "title": "Detail Standard Pekerjaan Struktur - Sheet 36",
+      "bbox": [
+        0.0,
+        0.0,
+        1000.0,
+        1000.0
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "I. PENULANGAN UMUM",
+        "normalized": "Section Title: General Reinforcement",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          49.0,
+          132.0,
+          200.0,
+          160.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-section-title"
+        ]
+      },
+      {
+        "raw": "LINGKUP DOKUMEN",
+        "normalized": "Scope of Document",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          60.0,
+          170.0,
+          200.0,
+          190.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-section-subtitle"
+        ]
+      },
+      {
+        "raw": "PELINDUNG BETON UNTUK TULANGAN",
+        "normalized": "Concrete Cover for Reinforcement",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          60.0,
+          390.0,
+          300.0,
+          420.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-subsection-covers"
+        ]
+      },
+      {
+        "raw": "PENUMPUL TULANGAN",
+        "normalized": "Reinforcement Spacers",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          60.0,
+          620.0,
+          200.0,
+          650.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-subsection-spacers"
+        ]
+      },
+      {
+        "raw": "SIMBOL DAN KODE PADA GAMBAR",
+        "normalized": "Symbols and Codes on Drawings",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          341.0,
+          170.0,
+          700.0,
+          190.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-legends-section"
+        ]
+      },
+      {
+        "raw": "PANJANG PENJANGKARAN MIN. TUL. DGN KAIT STANDARD",
+        "normalized": "Minimum Anchoring Length for Standard Hooks",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          170.0,
+          850.0,
+          190.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-hook-anchor-section"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "20",
+        "normalized": "Cover thickness = 20 mm",
+        "numeric_value": 20.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          420.0,
+          330.0,
+          440.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-cover-plate"
+        ]
+      },
+      {
+        "raw": "40",
+        "normalized": "Cover thickness = 40 mm",
+        "numeric_value": 40.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          445.0,
+          330.0,
+          465.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-cover-beam"
+        ]
+      },
+      {
+        "raw": "50",
+        "normalized": "Cover thickness = 50 mm",
+        "numeric_value": 50.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          470.0,
+          330.0,
+          490.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-cover-contact-ground"
+        ]
+      },
+      {
+        "raw": "70",
+        "normalized": "Cover thickness = 70 mm",
+        "numeric_value": 70.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          495.0,
+          330.0,
+          515.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-cover-direct-ground"
+        ]
+      },
+      {
+        "raw": "600",
+        "normalized": "Spacing distance = 600 mm",
+        "numeric_value": 600.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          660.0,
+          330.0,
+          680.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-spacer-distance"
+        ]
+      },
+      {
+        "raw": "700",
+        "normalized": "Spacing distance = 700 mm",
+        "numeric_value": 700.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          680.0,
+          330.0,
+          700.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-spacer-distance2"
+        ]
+      },
+      {
+        "raw": "800",
+        "normalized": "Spacing distance = 800 mm",
+        "numeric_value": 800.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          700.0,
+          330.0,
+          720.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-spacer-distance3"
+        ]
+      }
+    ],
+    "grids": [],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [
+      {
+        "raw": "K-225",
+        "normalized": "Concrete Grade K-225",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          610.0,
+          300.0,
+          680.0,
+          330.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-concrete-grade"
+        ]
+      },
+      {
+        "raw": "K-250",
+        "normalized": "Concrete Grade K-250",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          690.0,
+          300.0,
+          760.0,
+          330.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-concrete-grade"
+        ]
+      },
+      {
+        "raw": "K-275",
+        "normalized": "Concrete Grade K-275",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          770.0,
+          300.0,
+          840.0,
+          330.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-concrete-grade"
+        ]
+      },
+      {
+        "raw": "BJTP-24",
+        "normalized": "Steel Grade BJTP-24",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          480.0,
+          300.0,
+          560.0,
+          330.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-steel-grade"
+        ]
+      },
+      {
+        "raw": "BJTD-40",
+        "normalized": "Steel Grade BJTD-40",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          480.0,
+          380.0,
+          560.0,
+          410.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-steel-grade2"
+        ]
+      },
+      {
+        "raw": "BJTP-50",
+        "normalized": "Steel Grade BJTP-50",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          560.0,
+          260.0,
+          650.0,
+          290.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-steel-grade3"
+        ]
+      },
+      {
+        "raw": "BJTD-50",
+        "normalized": "Steel Grade BJTD-50",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          560.0,
+          390.0,
+          650.0,
+          420.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-steel-grade4"
+        ]
+      }
+    ],
+    "symbols": [
+      {
+        "raw": "D : Indikasi untuk Besi Ulir",
+        "normalized": "D: Indicating Ribbed Steel Bar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          350.0,
+          220.0,
+          600.0,
+          250.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-rebar"
+        ]
+      },
+      {
+        "raw": "Ø : Indikasi untuk Besi Polos",
+        "normalized": "Ø: Indicating Smooth Steel Bar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          350.0,
+          260.0,
+          600.0,
+          290.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-smoothbar"
+        ]
+      },
+      {
+        "raw": "Penampang Keriting : Hook Cross Section",
+        "normalized": "Hook Cross Section",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          240.0,
+          520.0,
+          320.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-hook-cross-section-image"
+        ]
+      },
+      {
+        "raw": "Penampang Lurus : Straight Cross Section",
+        "normalized": "Straight Cross Section",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          540.0,
+          240.0,
+          640.0,
+          320.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-straight-bar-cross-section-image"
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "raw": "Table: Pelindung Beton untuk Tulangan - Pelat dan Dinding",
+        "normalized": "Concrete Cover Table for Plates and Walls",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          40.0,
+          420.0,
+          380.0,
+          520.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-table-covers"
+        ]
+      },
+      {
+        "raw": "Table: Penumpul Tulangan",
+        "normalized": "Reinforcement Spacers Table",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          40.0,
+          660.0,
+          380.0,
+          780.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-table-spacers"
+        ]
+      },
+      {
+        "raw": "Table: Sambungan Lewatan Tulangan Utama",
+        "normalized": "Main Reinforcement Lap Splice Table",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          300.0,
+          900.0,
+          500.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-table-lap-splice"
+        ]
+      },
+      {
+        "raw": "Table: Kait Standard untuk Tulangan Utama Balok",
+        "normalized": "Standard Hook Table for Main Beam Reinforcement",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          560.0,
+          900.0,
+          700.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-table-beam-hooks"
+        ]
+      },
+      {
+        "raw": "Table: Kait Standard untuk Sengkang & Pelat",
+        "normalized": "Standard Hook Table for Stirrups & Plates",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          720.0,
+          900.0,
+          860.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-table-stirrup-hooks"
+        ]
+      }
+    ],
+    "materials": [],
+    "notes": [
+      {
+        "raw": "Dokumen ini harus dipergunakan sebagai standard untuk fabrikasi dan pemasangan tulangan dari pekerjaan Struktur beton bertulang.",
+        "normalized": "This document serves as standard for fabrication and reinforcement installation for RC Structures.",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          60.0,
+          220.0,
+          380.0,
+          280.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-standard-use"
+        ]
+      },
+      {
+        "raw": "Tujuan dari dokumen ini adalah memberi petunjuk atau instruksi untuk pekerjaan yang bersifat umum, dimana pekerjaan-pekerjaan yang mempunyai kekhususan tersendiri dalam struktur harus disesuaikan dengan gambar-gambar rencana...",
+        "normalized": "Purpose: Provide general instructions; specific works must comply with design drawings.",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          60.0,
+          290.0,
+          380.0,
+          370.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-design-priority"
+        ]
+      },
+      {
+        "raw": "Bila tidak ada kesesuaian antara detail standard ini dengan gambar rencana, maka gambar rencana harus dipakai sebagai pedoman.",
+        "normalized": "In case of conflict between detail and design drawings, design drawings shall govern.",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          60.0,
+          380.0,
+          380.0,
+          410.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-conflict-resolution"
+        ]
+      }
+    ],
+    "references": [],
+    "patterns": [
+      {
+        "raw": "Concrete Hatch Pattern (Stippled)",
+        "normalized": "Standard Concrete Hatch Pattern",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          240.0,
+          520.0,
+          320.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-concrete"
+        ]
+      },
+      {
+        "raw": "Steel Bar Hatch Pattern (Crossline)",
+        "normalized": "Steel Bar Hatch Pattern",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          410.0,
+          250.0,
+          510.0,
+          310.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-steel"
+        ]
+      }
+    ],
+    "geometry_descriptions": [
+      {
+        "raw": "Diagram: Penumpul Tulangan (Reinforcement Spacer)",
+        "normalized": "Diagram showing reinforcement spacer with two orientations",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          120.0,
+          660.0,
+          320.0,
+          780.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-diagram-spacer"
+        ]
+      },
+      {
+        "raw": "Diagram: Sambungan Lewatan Tulangan Utama (Main Reinforcement Lap Splice)",
+        "normalized": "Diagram showing main reinforcement lap splice layout for beams and columns",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          610.0,
+          550.0,
+          700.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-diagram-lap-splice"
+        ]
+      },
+      {
+        "raw": "Diagram: Kait Standard (Standard Hooks) - 180°, 135°, 90°",
+        "normalized": "Standard hook diagrams at 180°, 135°, and 90° angles",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          420.0,
+          610.0,
+          850.0,
+          860.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-diagram-hooks"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-page-no-35",
+      "kind": "sheet_number",
+      "raw": "36",
+      "bbox": [
+        490.0,
+        950.0,
+        520.0,
+        980.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-title-main",
+      "kind": "text",
+      "raw": "DETAIL STANDARD UNTUK PEKERJAAN STRUKTUR",
+      "bbox": [
+        280.0,
+        100.0,
+        850.0,
+        140.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-scale-field",
+      "kind": "text",
+      "raw": "NTS",
+      "bbox": [
+        880.0,
+        920.0,
+        920.0,
+        940.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-symbol-rebar",
+      "kind": "symbol",
+      "raw": "D : Indikasi untuk Besi Ulir",
+      "bbox": [
+        350.0,
+        220.0,
+        600.0,
+        250.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-table-covers",
+      "kind": "table",
+      "raw": "Table: Pelindung Beton untuk Tulangan - Pelat dan Dinding",
+      "bbox": [
+        40.0,
+        420.0,
+        380.0,
+        520.0
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 1,
+    "sections_completed": 1,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

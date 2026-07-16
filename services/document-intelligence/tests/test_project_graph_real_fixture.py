@@ -44,14 +44,26 @@ def test_synthesis_consumes_all_stored_pages_and_preserves_real_fixture_anchors(
     assert result.audit.page_count == 88
     assert result.audit.element_type_count == 222
     assert result.audit.merged_type_count == 41
-    assert result.audit.occurrence_count == 81
+    assert result.audit.occurrence_count == 87
     assert result.audit.merged_occurrence_count == 0
-    assert result.audit.possibly_same_count == 8
+    assert result.audit.possibly_same_count == 14
     assert result.audit.escalation_count == 78
     assert result.audit.conflict_count == 1
-    assert len(snapshot.nodes) == 4365
-    assert len(snapshot.edges) == 4547
-    assert len(snapshot.missing_information) == 329
+    # -156 vs the post-dimension-linking baseline (4374): raw per-page "level"
+    # observation nodes (id prefix NODE-, one per sheet mentioning a levels
+    # fact) are now excluded from synthesis output, same as element_type
+    # already was -- they were pure noise (156 nodes for a project with only
+    # 12 genuinely distinct levels, since the "levels" category also captures
+    # ramp/roof/elevation markers). The deduplicated replacement
+    # (cross_sheet_resolver._level_node(), id prefix LEVEL-) is unaffected.
+    assert len(snapshot.nodes) == 4218
+    level_nodes = [node for node in snapshot.nodes if node.type == "level"]
+    assert len(level_nodes) == 12
+    # Each excluded level node also drops its one CONTAINS edge from its sheet.
+    assert len(snapshot.edges) == 4583
+    has_dimension_edges = [edge for edge in snapshot.edges if edge.relation == "HAS_DIMENSION"]
+    assert len(has_dimension_edges) == 168
+    assert len(snapshot.missing_information) == 323
 
     expected_pages = {
         "J2": {20, 21, 26},

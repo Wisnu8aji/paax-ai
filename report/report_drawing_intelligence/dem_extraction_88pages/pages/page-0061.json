@@ -1,0 +1,572 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 61,
+    "page_number": 62,
+    "render_uri": "local://plhut-88pg-run-1/page-0061.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T22:17:33.113952+00:00",
+    "completed_at": "2026-07-14T22:17:33.114000+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "62",
+      "raw": "62",
+      "confidence": 1.0,
+      "evidence_refs": []
+    },
+    "title": {
+      "value": "DETAIL SAKLAR",
+      "raw": "DETAIL SAKLAR",
+      "confidence": 0.95,
+      "evidence_refs": []
+    },
+    "discipline": {
+      "value": "MEP",
+      "confidence": 1.0,
+      "status": "extracted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "NTS",
+        "normalized": "NTS",
+        "confidence": 1.0,
+        "evidence_refs": []
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-detail-outlet-saklar-tunggal",
+      "type": "detail",
+      "title": "DETAIL SAKLAR TUNGGAL",
+      "bbox": [
+        50.0,
+        50.0,
+        450.0,
+        550.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "view_id": "view-detail-outlet-saklar-ganda",
+      "type": "detail",
+      "title": "DETAIL SAKLAR GANDA",
+      "bbox": [
+        550.0,
+        50.0,
+        950.0,
+        550.0
+      ],
+      "confidence": 0.98
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KEMENTERIAN AGAMA RI DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH TAHUN ANGGARAN 2024",
+        "normalized": "Kementerian Agama RI Direktorat Jenderal Penyelenggaraan Haji dan Umrah Tahun Anggaran 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          760.0,
+          30.0,
+          980.0,
+          200.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+        "normalized": "Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          760.0,
+          210.0,
+          980.0,
+          260.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+        "normalized": "Jalan Ki Mangun Sarkoro No.115 Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          760.0,
+          270.0,
+          980.0,
+          310.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "MENYETUJUI KEPALA KANTOR WILAYAH JAWA TENGAH SELAKU KUASA PENGGUNA ANGGARAN",
+        "normalized": "Menyetujui Kepala Kantor Wilayah Jawa Tengah selaku Kuasa Pengguna Anggaran",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          760.0,
+          320.0,
+          980.0,
+          370.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "MENGETAHUI / MENYETUJUI PEJABAT PEMBUAT KOMITMEN",
+        "normalized": "Mengetahui / Menyetujui Pejabat Pembuat Komitmen",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          760.0,
+          380.0,
+          980.0,
+          420.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "KONSULTAN PERENCANA",
+        "normalized": "Konsultan Perencana",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          760.0,
+          430.0,
+          980.0,
+          450.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "TEAM LEADER",
+        "normalized": "Team Leader",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          760.0,
+          460.0,
+          980.0,
+          480.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "NAMA TANDA TANGAN",
+        "normalized": "Nama Tanda Tangan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          760.0,
+          490.0,
+          980.0,
+          520.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "SIPIL DIGAMBAR",
+        "normalized": "Sipil Digambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          760.0,
+          530.0,
+          980.0,
+          560.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "JUDUL GAMBAR SKALA DETAIL SAKLAR NTS",
+        "normalized": "Judul Gambar Skala Detail Saklar NTS",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          760.0,
+          570.0,
+          980.0,
+          630.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "TANGGAL : JANUARI 2024",
+        "normalized": "Tanggal: Januari 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          760.0,
+          640.0,
+          980.0,
+          660.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "SKALA GBR KODE GBR NO. GBR",
+        "normalized": "Skala Gbr Kode Gbr No. Gbr",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          760.0,
+          670.0,
+          980.0,
+          690.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "DINDING",
+        "normalized": "Dinding",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          100.0,
+          300.0,
+          120.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "KONDUIT PVC",
+        "normalized": "Konduit PVC",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          200.0,
+          300.0,
+          220.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "ADAPTOR FEMALE THREAD",
+        "normalized": "Adaptor Female Thread",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          250.0,
+          300.0,
+          270.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "BRASS BUSH MALE",
+        "normalized": "Brass Bush Male",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          300.0,
+          300.0,
+          320.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "1500 FROM FLOOR",
+        "normalized": "1500 dari Lantai",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          180.0,
+          340.0,
+          300.0,
+          360.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "OUTLET SAKLAR TUNGGAL",
+        "normalized": "Outlet Saklar Tunggal",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          380.0,
+          300.0,
+          400.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "STEEL BOX",
+        "normalized": "Steel Box",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          420.0,
+          300.0,
+          440.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "TAMPAK DEPAN",
+        "normalized": "Tampak Depan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          50.0,
+          450.0,
+          200.0,
+          470.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "TAMPAK SAMPING",
+        "normalized": "Tampak Samping",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          250.0,
+          450.0,
+          400.0,
+          470.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "OUTLET SAKLAR GANDA",
+        "normalized": "Outlet Saklar Ganda",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          600.0,
+          380.0,
+          800.0,
+          400.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "DETAIL SAKLAR TUNGGAL",
+        "normalized": "Detail Saklar Tunggal",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          50.0,
+          620.0,
+          300.0,
+          650.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "DETAIL SAKLAR GANDA",
+        "normalized": "Detail Saklar Ganda",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          620.0,
+          800.0,
+          650.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "SKALA NTS",
+        "normalized": "Skala NTS",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          660.0,
+          250.0,
+          680.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "SKALA NTS",
+        "normalized": "Skala NTS",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          660.0,
+          750.0,
+          680.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "1500",
+        "normalized": "1500",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          180.0,
+          340.0,
+          220.0,
+          360.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "grids": [],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [],
+    "symbols": [
+      {
+        "raw": "NOTASI SAKLAR TUNGGAL: SAKLAR TUNGGAL 16A, 1Ø",
+        "normalized": "Notasi saklar tunggal: Saklar Tunggal 16A, 1Ø",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          70.0,
+          560.0,
+          300.0,
+          610.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "NOTASI SAKLAR GANDA: SAKLAR GANDA 16A, 1Ø",
+        "normalized": "Notasi saklar ganda: Saklar Ganda 16A, 1Ø",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          570.0,
+          560.0,
+          800.0,
+          610.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "tables": [
+      {
+        "raw": "TIPE SIMBOL KETERANGAN SAKLAR TUNGGAL Ø 16A, 1Ø",
+        "normalized": "Tipe Simbol Keterangan Saklar Tunggal Simbol Notasi 16A, 1Ø",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          50.0,
+          530.0,
+          350.0,
+          620.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "TIPE SIMBOL KETERANGAN SAKLAR GANDA Ø 16A, 1Ø",
+        "normalized": "Tipe Simbol Keterangan Saklar Ganda Simbol Notasi 16A, 1Ø",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          530.0,
+          850.0,
+          620.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "materials": [],
+    "notes": [],
+    "references": [],
+    "patterns": [],
+    "geometry_descriptions": []
+  },
+  "evidence": [],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 10,
+    "sections_completed": 10,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

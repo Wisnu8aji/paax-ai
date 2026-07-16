@@ -11,16 +11,16 @@
     "defaultMode": "bypassPermissions"
   },
   "enabledPlugins": {
-    "saya-code-setup@saya-plugins-official": true,
-    "saya-md-management@saya-plugins-official": true,
-    "superpowers@saya-plugins-official": true,
-    "frontend-design@saya-plugins-official": true,
-    "code-review@saya-plugins-official": true,
-    "context7@saya-plugins-official": true,
-    "playwright@saya-plugins-official": true,
-    "security-guidance@saya-plugins-official": true,
-    "code-simplifier@saya-plugins-official": true,
-    "github@saya-plugins-official": true,
-    "pyright-lsp@saya-plugins-official": true
+    "claude-code-setup@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "github@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true
   }
 }

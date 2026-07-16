@@ -1729,6 +1729,71 @@ export const GroundedAnswerSchema = z.object({
 });
 export type GroundedAnswer = z.infer<typeof GroundedAnswerSchema>;
 
+export const SummaryViewGrainSchema = z.object({
+  building_id: z.string().nullable().optional(),
+  level_id: z.string().nullable().optional(),
+  discipline: z.string().nullable().optional(),
+  zone_id: z.string().nullable().optional(),
+});
+export type SummaryViewGrain = z.infer<typeof SummaryViewGrainSchema>;
+
+export const ElementTypeIndexEntrySchema = z.object({
+  element_type_id: z.string(),
+  name: z.string(),
+  occurrence_count: z.number().int().nonnegative(),
+});
+export type ElementTypeIndexEntry = z.infer<typeof ElementTypeIndexEntrySchema>;
+
+export const DisciplineCountEntrySchema = z.object({
+  discipline: z.string(),
+  occurrence_count: z.number().int().nonnegative(),
+});
+export type DisciplineCountEntry = z.infer<typeof DisciplineCountEntrySchema>;
+
+export const StoredMeasurementFactSchema = z.object({
+  name: z.string(),
+  value: z.union([z.string(), z.number()]),
+  unit: z.string(),
+  evidence_refs: z.array(z.string()).default([]),
+});
+export type StoredMeasurementFact = z.infer<typeof StoredMeasurementFactSchema>;
+
+export const SummaryPayloadSchema = z.object({
+  level_name: z.string(),
+  element_type_index: z.array(ElementTypeIndexEntrySchema).default([]),
+  discipline_counts: z.array(DisciplineCountEntrySchema).default([]),
+  stored_measurement_facts: z.array(StoredMeasurementFactSchema).default([]),
+});
+export type SummaryPayload = z.infer<typeof SummaryPayloadSchema>;
+
+export const QualityPayloadSchema = z.object({
+  confirmed_count: z.number().int().nonnegative(),
+  ambiguous_binding_count: z.number().int().nonnegative(),
+  conflict_count: z.number().int().nonnegative(),
+  ambiguous_binding_ids: z.array(z.string()).default([]),
+  conflict_ids: z.array(z.string()).default([]),
+});
+export type QualityPayload = z.infer<typeof QualityPayloadSchema>;
+
+export const ProvenancePayloadSchema = z.object({
+  source_document_ids: z.array(z.string()).default([]),
+  evidence_ids: z.array(z.string()).default([]),
+  summary_builder_version: z.string(),
+});
+export type ProvenancePayload = z.infer<typeof ProvenancePayloadSchema>;
+
+export const ProjectGraphSummaryViewSchema = z.object({
+  schema_version: z.literal("paax.pckm.summary-view.v1").default("paax.pckm.summary-view.v1"),
+  project_id: z.string(),
+  snapshot_id: z.string(),
+  view_kind: z.literal("LEVEL_OVERVIEW").default("LEVEL_OVERVIEW"),
+  grain: SummaryViewGrainSchema,
+  summary: SummaryPayloadSchema,
+  quality: QualityPayloadSchema,
+  provenance: ProvenancePayloadSchema,
+});
+export type ProjectGraphSummaryView = z.infer<typeof ProjectGraphSummaryViewSchema>;
+
 export const TkgIssueSchema = z.object({
   code: z.string(),
   severity: z.enum(["error", "warning"]),

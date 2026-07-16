@@ -29,7 +29,7 @@ async def start_dem_run(background_tasks: BackgroundTasks, file: UploadFile = Fi
     run = await db_client.create_run(project_id=project_id, document_id=document_id, document_hash=document_hash, file_name=file.filename or "unknown.pdf", total_pages=total_pages, provider="qwen", prompt_version=PROMPT_VERSION)
     provider = QwenDemAdapter.from_env()
     if provider is None:
-        return {"run_id": run["id"], "status": "requires_review", "message": "DEM_EXTRACTION_API_KEY not configured"}
+        return {"run_id": run["id"], "status": "requires_review", "message": "DRAWING_INTELLIGENCE_API_KEY not configured"}
     background_tasks.add_task(
         process_document, pdf_bytes=pdf_bytes, run_id=run["id"], document_id=document_id,
         document_hash=document_hash, total_pages=total_pages, provider=provider, db_client=db_client,

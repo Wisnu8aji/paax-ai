@@ -1,6 +1,8 @@
 import os
 import datetime
-from typing import List, Dict, Any
+import hashlib
+import json
+from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +11,9 @@ from sqlalchemy.future import select
 from . import models, schemas
 from .database import get_db
 from .auth import get_current_user, RoleChecker, User
+from .project_graph_repository import build_and_activate_snapshot, get_active_snapshot
+from .project_graph_retrieval import retrieve_project_graph
+from .project_graph_rab_bridge import build_rab_bridge_proposal
 
 app = FastAPI(title="PAAX DB API", description="Server-side persistent storage for PAAX AI")
 
@@ -529,7 +534,198 @@ async def update_dem_page(id: str, update: dict, db: AsyncSession = Depends(get_
     await db.refresh(page)
     return page
 
+@app.post(
+    "/projects/{id}/project-graph/snapshots",
+    response_model=schemas.ProjectGraphSnapshotResponse,
+    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+)
+async def build_project_graph_snapshot(
+    id: str,
+    request: schemas.ProjectGraphSnapshotBuildRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    project = (await db.execute(select(models.Project).where(models.Project.id == id))).scalars().first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    snapshot = await build_and_activate_snapshot(
+        db,
+        project_id=id,
+        snapshot_id=request.snapshot_id,
+        schema_version=request.schema_version,
+        source_manifest_hash=request.source_manifest_hash,
+        generation_metadata=request.generation_metadata,
+        nodes=request.nodes,
+        edges=request.edges,
+        evidence=request.evidence,
+        node_evidence=request.node_evidence,
+        edge_evidence=request.edge_evidence,
+        aliases=request.aliases,
+        communities=request.communities,
+        summary_views=request.summary_views,
+    )
+    await db.commit()
+    return snapshot
+
+
+
+@app.get(
+    "/projects/{id}/project-graph/snapshot",
+    response_model=schemas.ProjectGraphSnapshotResponse,
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def read_active_project_graph_snapshot(id: str, db: AsyncSession = Depends(get_db)):
+    snapshot = await get_active_snapshot(db, id)
+    if snapshot is None:
+        raise HTTPException(status_code=404, detail="Project graph is not ready")
+    return snapshot
+
+
+@app.post(
+    "/projects/{id}/project-graph/retrieve",
+    response_model=schemas.ProjectGraphRetrievalResponse,
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def retrieve_active_project_graph(
+    id: str, request: schemas.ProjectGraphRetrievalRequest, db: AsyncSession = Depends(get_db)
+):
+    limit = int(os.getenv("PCKM_RETRIEVAL_LIMIT_PER_MINUTE", "60"))
+    window_start = _utc_now() - datetime.timedelta(minutes=1)
+    recent_queries = (await db.execute(select(models.ProjectGraphQueryLog.id).where(
+        models.ProjectGraphQueryLog.project_id == id,
+        models.ProjectGraphQueryLog.created_at >= window_start,
+    ))).all()
+    if len(recent_queries) >= limit:
+        raise HTTPException(status_code=429, detail="Project graph retrieval rate limit exceeded")
+    snapshot = await get_active_snapshot(db, id)
+    cache_key = hashlib.sha256(json.dumps({"project": id, "snapshot": snapshot.snapshot_id if snapshot else None, "request": request.model_dump()}, sort_keys=True).encode()).hexdigest()
+    cached = await db.get(models.ProjectGraphRetrievalCache, cache_key)
+    if cached and _as_aware_utc(cached.expires_at) > _utc_now():
+        return cached.payload
+    result = await retrieve_project_graph(
+        db, project_id=id, query=request.query, depth=request.depth,
+        budget_tokens=request.budget_tokens, relations=set(request.relations),
+        traversal_mode=request.traversal_mode, target_node_id=request.target_node_id,
+    )
+    await db.commit()
+    response = {
+        "status": result.status,
+        "snapshot_id": result.snapshot_id,
+        "nodes": [{"node_id": node.node_id, "type": node.node_type, "name": node.canonical_name,
+                   "discipline": node.discipline, "confidence": float(node.confidence)} for node in result.nodes],
+        "edges": [{"edge_id": edge.edge_id, "source": edge.source_node_id, "target": edge.target_node_id,
+                   "relation": edge.relation, "confidence": float(edge.confidence)} for edge in result.edges],
+        "evidence": [{"evidence_id": item.evidence_id, "document_id": item.document_id,
+                      "sheet_id": item.sheet_id, "page_index": item.page_index, "raw_text": item.raw_text}
+                     for item in result.evidence],
+        "context_token_estimate": result.context_token_estimate,
+    }
+    if result.snapshot_id:
+        await db.merge(models.ProjectGraphRetrievalCache(cache_key=cache_key, project_id=id, snapshot_id=result.snapshot_id, payload=response, expires_at=_utc_now() + datetime.timedelta(seconds=int(os.getenv("PCKM_RETRIEVAL_CACHE_SECONDS", "300")))))
+        await db.commit()
+    return response
+
+
+@app.get(
+    "/projects/{id}/project-graph/metrics",
+    response_model=schemas.ProjectGraphMetricsResponse,
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def get_project_graph_metrics(id: str, db: AsyncSession = Depends(get_db)):
+    logs = (await db.execute(select(models.ProjectGraphQueryLog).where(
+        models.ProjectGraphQueryLog.project_id == id,
+    ))).scalars().all()
+    count = len(logs)
+    return {
+        "project_id": id,
+        "query_count": count,
+        "success_count": sum(log.outcome == "success" for log in logs),
+        "not_ready_count": sum(log.outcome == "not_ready" for log in logs),
+        "average_context_tokens": (sum(log.context_token_estimate for log in logs) / count) if count else 0.0,
+    }
+
+
+@app.post(
+    "/projects/{id}/project-graph/corrections",
+    response_model=schemas.ProjectGraphCorrectionResponse,
+    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+)
+async def create_project_graph_correction(
+    id: str, request: schemas.ProjectGraphCorrectionCreate, db: AsyncSession = Depends(get_db)
+):
+    snapshot = await get_active_snapshot(db, id)
+    if snapshot is None or snapshot.snapshot_id != request.snapshot_id:
+        raise HTTPException(status_code=409, detail="Correction must target the active project graph snapshot")
+    correction = models.ProjectGraphCorrection(project_id=id, status="pending", **request.model_dump())
+    db.add(correction)
+    await db.commit()
+    return correction
+
+
+@app.post(
+    "/projects/{id}/project-graph/corrections/{correction_id}/resolve",
+    response_model=schemas.ProjectGraphCorrectionResponse,
+    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+)
+async def resolve_project_graph_correction(
+    id: str, correction_id: str, request: schemas.ProjectGraphCorrectionResolve, db: AsyncSession = Depends(get_db)
+):
+    correction = (await db.execute(select(models.ProjectGraphCorrection).where(
+        models.ProjectGraphCorrection.id == correction_id,
+        models.ProjectGraphCorrection.project_id == id,
+        models.ProjectGraphCorrection.status == "pending",
+    ))).scalars().first()
+    if correction is None:
+        raise HTTPException(status_code=404, detail="Pending graph correction not found")
+    correction.status = request.status
+    correction.resolution_note = request.resolution_note
+    correction.resolved_at = _utc_now()
+    await db.commit()
+    return correction
+
+
+@app.post(
+    "/projects/{id}/project-graph/rab-bridge",
+    response_model=schemas.RabBridgeResponse,
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def create_rab_bridge_proposal(
+    id: str, request: schemas.RabBridgeRequest, db: AsyncSession = Depends(get_db)
+):
+    proposal = await build_rab_bridge_proposal(db, project_id=id, node_ids=request.node_ids)
+    return proposal
+
+
+@app.get(
+    "/projects/{id}/project-graph/summary-views",
+    response_model=List[schemas.ProjectGraphSummaryViewResponse],
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def get_project_graph_summary_views(
+    id: str,
+    view_kind: Optional[str] = None,
+    level_id: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    snapshot = await get_active_snapshot(db, id)
+    if snapshot is None:
+        return []
+
+    query = select(models.ProjectGraphSummaryView).where(
+        models.ProjectGraphSummaryView.project_id == id,
+        models.ProjectGraphSummaryView.snapshot_id == snapshot.snapshot_id,
+    )
+    if view_kind:
+        query = query.where(models.ProjectGraphSummaryView.view_kind == view_kind)
+    if level_id:
+        query = query.where(models.ProjectGraphSummaryView.level_id == level_id)
+
+    result = await db.execute(query)
+    views = result.scalars().all()
+    return views
+
+
 if __name__ == "__main__":
+
     import uvicorn
     port = int(os.environ.get("PORT", 8001))
     uvicorn.run("paax_db.main:app", host="0.0.0.0", port=port, reload=True)

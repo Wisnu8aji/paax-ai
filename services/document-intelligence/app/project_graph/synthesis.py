@@ -400,11 +400,22 @@ def synthesize_project_graph(
         provider,
     )
 
+    # "level" is excluded here for the same reason "element_type" is: raw
+    # per-page nodes from page_patch.py (one per sheet mentioning a level
+    # observation, id prefix NODE-) are pure noise -- real 88-page fixture
+    # measurement found 156 such nodes for a project with only 12 genuinely
+    # distinct levels, because the "levels" observation category also
+    # captures ramp/roof/elevation markers that coincidentally normalize to
+    # the same text as a real floor name. The deduplicated replacement
+    # (cross_sheet_resolver._level_node(), id prefix LEVEL-, one per
+    # (project, normalized level key)) is already included via
+    # cross_sheet.nodes below and is the only kind occurrences actually
+    # attach to via LOCATED_ON.
     base_nodes = [
         node
         for patch in patches
         for node in patch.nodes
-        if node.type != "element_type"
+        if node.type not in {"element_type", "level"}
     ]
     candidate_nodes = [
         *base_nodes,
