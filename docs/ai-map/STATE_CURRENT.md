@@ -1,24 +1,28 @@
 # 📍 PAAX — STATE_CURRENT (status aktif, ringkas)
 
-> Update terakhir: **2026-07-16**. Riwayat lengkap sebelum 2026-07-14 ada di
+> Update terakhir: **2026-07-17**. Riwayat lengkap sebelum 2026-07-14 ada di
 > `docs/history/STATE_ARCHIVE_2026-06_2026-07.md`. File ini HANYA status
 > aktif — jangan tambah narasi panjang di sini, tulis laporan detail ke
 > `report/` lalu ringkas 1-2 baris di sini.
 
-## Mandat strategis Drawing Intelligence (2026-07-16, AKTIF)
+## Mandat strategis Drawing Intelligence (2026-07-17, SELESAI — siap uji terbatas)
 - Master Plan diratifikasi + Amendemen 1:
   `docs/plans/drawing intelligence/PAAX_DRAWING_INTELLIGENCE_MASTER_PLAN_2026-07-16.md`
   (arsitektur L0-L4, Decision Register D1-D13, roadmap Gelombang A/B/C + spec eksekusi).
-- 3 akar masalah terbukti kuantitatif + diperbaiki bertahap: gerbang occurrence
-  membunuh struktur (79 tipe→1 occ) → FIXED A2; pseudo-level ±18% salah tempel →
-  FIXED A3 (5 level kanonis ber-elevasi, +16.20 tetap ambigu); intent/serving absen →
-  B4 parser DONE, B5 retrieve v2 in-flight; integritas DEM (98,6% bbox out-of-contract,
-  839 dangling refs) → A4 in-flight.
-- Benchmark GT 18 pertanyaan + runner (`services/db/tests/run_pckm_benchmark.py`):
-  baseline **1/8 → 3/8 pasca-A2 → 8/8 klaim sementara pasca-A3+B5-parsial**
-  (angka final dikunci setelah semua wave selesai + verifikasi Fable).
-- Laporan kunci di `report/report_drawing_intelligence/`: FABLE_R1, SOL_R1 (audit
-  integritas), TERRA_REPORT_WAVE_A2/A3, LUNA_REPORT_WAVE_B4, scorecard.
+- Semua 3 akar masalah FIXED & diverifikasi: gerbang occurrence (A2), pseudo-level (A3),
+  intent/serving absen (B4-B6) + integritas DEM (A4). Detail lengkap + status per-item:
+  `report/report_drawing_intelligence/FINAL_READINESS_REPORT_2026-07-17.md`.
+- Benchmark ground-truth: baseline 1/8 → **14/14 PASS (skor akhir)**, termasuk fix terakhir
+  entity matching tokenized ("balok lintel" query). `BENCHMARK_SCORECARD_2026-07-17.md`.
+- **Pengujian live Command Room (Lucent + Arete) via chat sungguhan berhasil** — 5 skenario
+  golden-path (lokasi elemen, filter lintas lantai, penolakan kalkulasi/Aturan Emas, deteksi
+  konflik, kejujuran level tak dikenal) semua benar & bersitasi. 2 bug produksi ditemukan &
+  diperbaiki selama pengujian ini (RBAC identity mismatch Command Room↔services/db;
+  status-field top-level "calculation_required" disalahbaca sbg kegagalan) — lihat §5
+  laporan akhir untuk root cause lengkap.
+- 656 test otomatis hijau lintas paket (doc-intel 441, db 64, ai-orchestrator 50, web 71,
+  schemas 30) + tsc bersih. Belum di-PR ke main — menunggu keputusan pemilik (gerbang §5
+  CLAUDE.md).
 
 ## Branch & PR aktif
 - Branch kerja mandat: `feat/pckm-phase3-synthesis` (garis terlengkap, 36+ commit di
