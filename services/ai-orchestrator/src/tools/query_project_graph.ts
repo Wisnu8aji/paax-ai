@@ -42,7 +42,8 @@ function applyLimit<T>(items: T[], limit: unknown): T[] {
 
 async function executeQueryProjectGraph(
   args: Record<string, unknown>,
-  context?: ChatContext,
+  context: ChatContext | undefined,
+  fetchImpl: typeof fetch,
 ): Promise<Record<string, unknown>> {
   const dbUrl = process.env.DB_API_URL;
   const projectId = context?.project_id;
@@ -55,7 +56,7 @@ async function executeQueryProjectGraph(
   const enrichedQuery = buildEnrichedQuery(query, args);
 
   try {
-    const res = await fetch(`${dbUrl}/projects/${projectId}/project-graph/retrieve`, {
+    const res = await fetchImpl(`${dbUrl}/projects/${projectId}/project-graph/retrieve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -67,7 +68,13 @@ async function executeQueryProjectGraph(
       return { available: false, message: MISSING_GRAPH_MESSAGE };
     }
     const data = await res.json();
-    if (data.status !== "success") {
+    // Top-level `status` (services/db ProjectGraphRetrievalResponse, tipe bebas `str`)
+    // BUKAN selalu "success" walau backend menjawab valid -- retrieve_project_graph()
+    // mengembalikan status="calculation_required" langsung di top-level (bukan cuma di
+    // data_status) untuk jalur Aturan Emas fail-closed, dan status="not_ready" saat belum
+    // ada snapshot. Hanya "not_ready" yang benar-benar gagal; "calculation_required" wajib
+    // diteruskan ke cabang data_status di bawah, jangan dianggap gagal di sini.
+    if (data.status === "not_ready") {
       return { available: false, message: MISSING_GRAPH_MESSAGE };
     }
 
@@ -155,28 +162,38 @@ async function executeQueryProjectGraph(
   }
 }
 
-export const queryProjectGraphTool: ToolDefinition = {
-  declaration: {
-    name: "query_project_graph",
-    description:
-      "Cari fakta tentang elemen/komponen di gambar kerja proyek (pintu, jendela, kolom, instalasi listrik, dst) dari graf pengetahuan yang sudah disintesis dari hasil analisis gambar. Kirim pertanyaan user apa adanya dalam bahasa natural (mis. \"struktur di lantai 2\", \"dimensi kolom K1\", \"ada konflik apa\") -- backend memahami maksudnya sendiri (lokasi, disiplin, jenis kalkulasi) lewat parser intent, jadi TIDAK perlu memecah atau menyederhanakan frasa. Setiap hasil membawa sitasi sumber (sheet + halaman) -- WAJIB dikutip di jawaban. Gunakan ini untuk pertanyaan tentang isi gambar kerja, BUKAN untuk RAB/HSP/durasi (pakai query_rab/query_schedule untuk itu). Jika hasil membawa data_status=\"calculation_required\" (mis. pertanyaan volume/biaya/kebutuhan material): JANGAN menghitung sendiri -- sampaikan guidance yang tool berikan ke user apa adanya dan arahkan ke fitur RAB/Core Engine dengan approval untuk angka final. Jika data_status=\"unknown_level\": katakan ke user level/lantai yang disebut tidak dikenali di gambar kerja, jangan menebak.",
-    parameters: {
-      type: "OBJECT",
-      properties: {
-        query: { type: "STRING", description: "Pertanyaan user dalam bahasa natural, apa adanya (mis. \"kolom di lantai 2\", \"dimensi K1\", \"berapa volume beton lantai 2\", \"ada konflik apa\")" },
-        level: { type: "STRING", description: "Opsional -- nama lantai/level bila sudah diketahui pasti dari konteks percakapan (mis. \"Lantai 2\"), untuk memperkuat filter lokasi" },
-        discipline: { type: "STRING", description: "Opsional -- disiplin bila sudah diketahui pasti (structure/architecture/mep), untuk memperkuat filter disiplin" },
-        node_types: { type: "ARRAY", description: "Opsional -- jenis elemen yang ingin ditekankan (mis. [\"kolom\", \"balok\"])", items: { type: "STRING" } },
-        limit: { type: "NUMBER", description: "Opsional -- batas jumlah elemen yang dikembalikan (pemotongan sisi tool, bukan backend)" },
+/**
+ * Factory (bukan konstanta) karena butuh fetchImpl yang disuntik pemanggil --
+ * services/db/.../project-graph/retrieve mewajibkan header X-Internal-Key/X-User-Id
+ * (lihat services/db/src/paax_db/main.py auth), sama seperti core-engine. fetch
+ * global TANPA header ini selalu 401 "Missing authentication token" walau DB API
+ * hidup dan datanya benar -- pola persis createSearchKnowledgeTool/buildAuthedFetch
+ * di apps/web/src/app/api/command-room/chat/tools.ts.
+ */
+export function createQueryProjectGraphTool(params?: { fetchImpl?: typeof fetch }): ToolDefinition {
+  return {
+    declaration: {
+      name: "query_project_graph",
+      description:
+        "Cari fakta tentang elemen/komponen di gambar kerja proyek (pintu, jendela, kolom, instalasi listrik, dst) dari graf pengetahuan yang sudah disintesis dari hasil analisis gambar. Kirim pertanyaan user apa adanya dalam bahasa natural (mis. \"struktur di lantai 2\", \"dimensi kolom K1\", \"ada konflik apa\") -- backend memahami maksudnya sendiri (lokasi, disiplin, jenis kalkulasi) lewat parser intent, jadi TIDAK perlu memecah atau menyederhanakan frasa. Setiap hasil membawa sitasi sumber (sheet + halaman) -- WAJIB dikutip di jawaban. Gunakan ini untuk pertanyaan tentang isi gambar kerja, BUKAN untuk RAB/HSP/durasi (pakai query_rab/query_schedule untuk itu). Jika hasil membawa data_status=\"calculation_required\" (mis. pertanyaan volume/biaya/kebutuhan material): JANGAN menghitung sendiri -- sampaikan guidance yang tool berikan ke user apa adanya dan arahkan ke fitur RAB/Core Engine dengan approval untuk angka final. Jika data_status=\"unknown_level\": katakan ke user level/lantai yang disebut tidak dikenali di gambar kerja, jangan menebak.",
+      parameters: {
+        type: "OBJECT",
+        properties: {
+          query: { type: "STRING", description: "Pertanyaan user dalam bahasa natural, apa adanya (mis. \"kolom di lantai 2\", \"dimensi K1\", \"berapa volume beton lantai 2\", \"ada konflik apa\")" },
+          level: { type: "STRING", description: "Opsional -- nama lantai/level bila sudah diketahui pasti dari konteks percakapan (mis. \"Lantai 2\"), untuk memperkuat filter lokasi" },
+          discipline: { type: "STRING", description: "Opsional -- disiplin bila sudah diketahui pasti (structure/architecture/mep), untuk memperkuat filter disiplin" },
+          node_types: { type: "ARRAY", description: "Opsional -- jenis elemen yang ingin ditekankan (mis. [\"kolom\", \"balok\"])", items: { type: "STRING" } },
+          limit: { type: "NUMBER", description: "Opsional -- batas jumlah elemen yang dikembalikan (pemotongan sisi tool, bukan backend)" },
+        },
+        required: ["query"],
       },
-      required: ["query"],
     },
-  },
-  execute: async (args, params) => executeQueryProjectGraph(args, params?.context),
-  summarize: (result) => {
-    if (result.available === false) return "data gambar kerja tidak tersedia untuk query ini";
-    if (result.data_status === "calculation_required") return "kalkulasi diperlukan -- guidance RAB/Core Engine diteruskan (tool tidak menghitung)";
-    const nodeCount = Array.isArray(result.nodes) ? result.nodes.length : 0;
-    return `${nodeCount} elemen ditemukan di gambar kerja`;
-  },
-};
+    execute: async (args, callParams) => executeQueryProjectGraph(args, callParams?.context, params?.fetchImpl ?? fetch),
+    summarize: (result) => {
+      if (result.available === false) return "data gambar kerja tidak tersedia untuk query ini";
+      if (result.data_status === "calculation_required") return "kalkulasi diperlukan -- guidance RAB/Core Engine diteruskan (tool tidak menghitung)";
+      const nodeCount = Array.isArray(result.nodes) ? result.nodes.length : 0;
+      return `${nodeCount} elemen ditemukan di gambar kerja`;
+    },
+  };
+}

@@ -64,6 +64,14 @@ function getDocumentIntelligenceUrl(): string {
  * authentication token" walau core-engine hidup dan datanya benar. Pola persis sama
  * dgn customFetch di services/ai-orchestrator/src/routes/chat.ts -- disalin di sini
  * karena route.ts Command Room tidak lewat Express request yang sama.
+ *
+ * X-User-Id HARUS "service-account" (bukan "command-room-service") -- services/db
+ * (paax_db/auth.py RoleChecker, dipakai project-graph/retrieve dkk yang project-scoped)
+ * hanya mem-bypass RBAC project_members untuk uid literal "service-account"; uid lain
+ * yang bukan member proyek selalu 403 "Not a member of this project" walau X-Internal-Key
+ * benar. core-engine tidak kena ini (get_current_user fallback ke "service-account" kalau
+ * header kosong), makanya lookup_ahsp/run_scenario tidak pernah menampakkan bug ini --
+ * hanya endpoint services/db yang project-scoped (spt query_project_graph) yang kena.
  */
 function buildAuthedFetch(): typeof fetch {
   return async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -71,7 +79,7 @@ function buildAuthedFetch(): typeof fetch {
     const internalKey = process.env.INTERNAL_SERVICE_KEY;
     if (internalKey) {
       headers.set("X-Internal-Key", internalKey);
-      headers.set("X-User-Id", "command-room-service");
+      headers.set("X-User-Id", "service-account");
     }
     return fetch(input, { ...init, headers });
   };
@@ -149,7 +157,7 @@ function logToolCallAudit(params: {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (internalKey) {
     headers["X-Internal-Key"] = internalKey;
-    headers["X-User-Id"] = "command-room-service";
+    headers["X-User-Id"] = "service-account";
   }
   fetch(`${dbUrl.replace(/\/+$/, "")}/audit/tool-call`, {
     method: "POST",

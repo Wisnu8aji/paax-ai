@@ -1,6 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+﻿import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { queryProjectGraphTool } from "../../src/tools/query_project_graph";
+import { createQueryProjectGraphTool } from "../../src/tools/query_project_graph";
+
+const queryProjectGraphTool = createQueryProjectGraphTool();
 
 const context = { project_id: "PROJ-1" };
 
@@ -168,6 +170,31 @@ describe("query_project_graph", () => {
     expect(String(result.note)).toMatch(/JANGAN menghitung/);
   });
 
+  it("handles the real backend shape: top-level status is \"calculation_required\" itself (not \"success\") -- regression for live Command Room bug where this was misread as a hard failure", async () => {
+    vi.stubEnv("DB_API_URL", "http://test-db");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          status: "calculation_required",
+          data_status: "calculation_required",
+          intent: "CALCULATION_REQUIRED",
+          nodes: [],
+          guidance: "Angka final wajib dihitung oleh Core Engine dan menunggu approval manusia.",
+          rab_bridge_available: true,
+          notes: ["occurrence_count = jumlah kelompok konteks tercatat pada gambar, bukan jumlah fisik terpasang"],
+        }),
+      }),
+    );
+
+    const result = await queryProjectGraphTool.execute({ query: "berapa volume beton kolom lantai 2" }, { context });
+
+    expect(result.available).toBe(true);
+    expect(result.data_status).toBe("calculation_required");
+    expect(String(result.guidance)).toMatch(/Core Engine/);
+  });
+
   it("data_status=calculation_required without explicit guidance from backend still forwards a Golden-Rule-safe instruction", async () => {
     vi.stubEnv("DB_API_URL", "http://test-db");
     vi.stubGlobal(
@@ -305,3 +332,4 @@ describe("query_project_graph", () => {
     ).toBe("kalkulasi diperlukan -- guidance RAB/Core Engine diteruskan (tool tidak menghitung)");
   });
 });
+
