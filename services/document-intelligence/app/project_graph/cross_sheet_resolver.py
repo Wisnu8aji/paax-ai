@@ -63,6 +63,7 @@ class _TypeSource:
 
 
 _PHYSICAL_BASIS_CATEGORIES = frozenset({"symbols", "geometry_descriptions"})
+_LEGEND_MARKERS = re.compile(r"\b(?:legend|notasi|keterangan|simbol)\b", re.IGNORECASE)
 
 
 _CODE_BOUNDARY = re.compile(r"(?<![A-Z0-9]){code}(?![A-Z0-9])")
@@ -411,16 +412,38 @@ def _physical_basis_facts(
     gate fails closed when DEM extraction is incomplete.
     """
     label_refs = set(source_ref.evidence_refs)
+    label_bboxes = [
+        fact.bbox
+        for fact in patch.facts
+        if fact.category == "element_labels"
+        and fact.bbox is not None
+        and label_refs & set(fact.evidence_refs)
+    ]
+
+    def overlaps(left: tuple[float, float, float, float], right: tuple[float, float, float, float]) -> bool:
+        return left[0] <= right[2] and right[0] <= left[2] and left[1] <= right[3] and right[1] <= left[3]
+
+    def reasonable_basis_bbox(bbox: tuple[float, float, float, float]) -> bool:
+        if not label_bboxes:
+            return False
+        basis_area = max(0.0, bbox[2] - bbox[0]) * max(0.0, bbox[3] - bbox[1])
+        return any(
+            overlaps(bbox, label_bbox)
+            and basis_area <= max(1.0, (label_bbox[2] - label_bbox[0]) * (label_bbox[3] - label_bbox[1])) * 4
+            for label_bbox in label_bboxes
+        )
     return tuple(
         fact
         for fact in patch.facts
         if fact.category in _PHYSICAL_BASIS_CATEGORIES
         and fact.bbox is not None
         and fact.evidence_refs
-        # The symbol/geometry evidence is commonly a distinct DEM item from
-        # the text label. Presence on the same patch is the source association;
-        # requiring shared evidence would reject valid paired observations.
-        and (not label_refs or fact.evidence_refs)
+        and _LEGEND_MARKERS.search(fact.raw) is None
+        # Symbol/geometry evidence is commonly a distinct DEM item from the
+        # text label. Use deterministic bbox overlap to associate them; patch
+        # co-location alone would incorrectly bind legends and notes to every
+        # label on a sheet.
+        and reasonable_basis_bbox(fact.bbox)
     )
 
 
@@ -465,7 +488,11 @@ def _physical_candidate_node(
     return ProjectGraphNode(
         node_id=_stable_id(
             "PHYS", type_node.node_id, source.patch.document_id,
-            source.patch.page_index, basis_fact.fact_id,
+            source.patch.page_index, source.source_ref.sheet_id,
+            source.level.key,
+            source.space.key if source.space is not None else None,
+            source.grid.key if source.grid is not None else None,
+            basis_fact.fact_id,
         ),
         type="physical_element" if verified else "physical_element_candidate",
         canonical_name=f"{type_node.canonical_name} @ {source.level.display} / {locator.canonical_name}",
@@ -1137,6 +1164,12 @@ def resolve_cross_sheet(
             # details never reach this branch because occurrence_sources is
             # filtered above.
             for source in context_sources:
+                has_real_locator = (
+                    (source.space is not None and not source.space.key.startswith("unmapped"))
+                    or source.grid is not None
+                )
+                if source.level is None or not has_real_locator:
+                    continue
                 for basis_fact in _physical_basis_facts(source.patch, source.source_ref):
                     candidate = _physical_candidate_node(
                         type_node, source, level_node, space_node, grid_node, basis_fact

@@ -568,8 +568,6 @@ class ElementTypeIndexEntry(BaseModel):
     element_type_id: str
     name: str
     occurrence_count: int = Field(ge=0)
-    physical_candidate_count: int = Field(default=0, ge=0)
-    verified_physical_count: int = Field(default=0, ge=0)
     data_status: Optional[Literal["corrected"]] = None
     correction: Optional[Dict[str, Any]] = None
 
@@ -577,8 +575,6 @@ class ElementTypeIndexEntry(BaseModel):
 class DisciplineCountEntry(BaseModel):
     discipline: str
     occurrence_count: int = Field(ge=0)
-    physical_candidate_count: int = Field(default=0, ge=0)
-    verified_physical_count: int = Field(default=0, ge=0)
 
 
 class StoredMeasurementFact(BaseModel):

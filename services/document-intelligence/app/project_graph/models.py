@@ -215,15 +215,11 @@ class ElementTypeIndexEntry(BaseModel):
     element_type_id: str
     name: str
     occurrence_count: int
-    physical_candidate_count: int = Field(default=0, ge=0)
-    verified_physical_count: int = Field(default=0, ge=0)
 
 
 class DisciplineCountEntry(BaseModel):
     discipline: str
     occurrence_count: int
-    physical_candidate_count: int = Field(default=0, ge=0)
-    verified_physical_count: int = Field(default=0, ge=0)
 
 
 class StoredMeasurementFact(BaseModel):

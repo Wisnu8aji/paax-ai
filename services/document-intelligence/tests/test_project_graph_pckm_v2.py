@@ -106,4 +106,4 @@ def test_physical_count_excludes_context_groups_and_references():
     assert view.summary.physical_candidate_count == 1
     assert view.summary.verified_physical_count == 1
     assert view.summary.element_type_index[0].occurrence_count == 1
-    assert view.summary.element_type_index[0].verified_physical_count == 1
+    assert view.summary.verified_physical_count == 1

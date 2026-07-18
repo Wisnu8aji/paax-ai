@@ -254,21 +254,11 @@ def compile_level_overview(
     for t_id, count in sorted(type_counts.items()):
         t_node = nodes_by_id.get(t_id)
         t_name = t_node.canonical_name if t_node else t_id
-        candidate_count = sum(
-            1 for node in physical_nodes
-            if any(edge.source == node.node_id and edge.target == t_id and edge.relation == "INSTANCE_OF" for edge in snapshot.edges)
-        )
-        verified_count = sum(
-            1 for node in verified_physical_nodes
-            if any(edge.source == node.node_id and edge.target == t_id and edge.relation == "INSTANCE_OF" for edge in snapshot.edges)
-        )
         element_type_index.append(
             ElementTypeIndexEntry(
                 element_type_id=t_id,
                 name=t_name,
                 occurrence_count=count,
-                physical_candidate_count=candidate_count,
-                verified_physical_count=verified_count,
             )
         )
 
@@ -281,14 +271,10 @@ def compile_level_overview(
 
     discipline_counts = []
     for disp, count in sorted(discipline_counts_map.items()):
-        candidate_count = sum(node.discipline == disp for node in physical_nodes)
-        verified_count = sum(node.discipline == disp for node in verified_physical_nodes)
         discipline_counts.append(
             DisciplineCountEntry(
                 discipline=disp,
                 occurrence_count=count,
-                physical_candidate_count=candidate_count,
-                verified_physical_count=verified_count,
             )
         )
 

@@ -1792,8 +1792,6 @@ export const ElementTypeIndexEntrySchema = z.object({
   element_type_id: z.string(),
   name: z.string(),
   occurrence_count: z.number().int().nonnegative(),
-  physical_candidate_count: z.number().int().nonnegative().default(0),
-  verified_physical_count: z.number().int().nonnegative().default(0),
   data_status: z.literal("corrected").nullish(),
   correction: z.record(z.unknown()).nullish(),
 });
@@ -1802,8 +1800,6 @@ export type ElementTypeIndexEntry = z.infer<typeof ElementTypeIndexEntrySchema>;
 export const DisciplineCountEntrySchema = z.object({
   discipline: z.string(),
   occurrence_count: z.number().int().nonnegative(),
-  physical_candidate_count: z.number().int().nonnegative().default(0),
-  verified_physical_count: z.number().int().nonnegative().default(0),
 });
 export type DisciplineCountEntry = z.infer<typeof DisciplineCountEntrySchema>;
 
