@@ -1,5 +1,7 @@
 # PAAX AI — Data Model Documentation
 
+> **STATUS: HISTORICAL/SUPERSEDED** -- see [DI_SOURCE_OF_TRUTH.md](file:///G:/paax-ai-main/docs/plans/drawing%20intelligence/DI_SOURCE_OF_TRUTH.md) and [services/db/README.md](file:///G:/paax-ai-main/services/db/README.md) / [services/db/src/paax_db/models.py](file:///G:/paax-ai-main/services/db/src/paax_db/models.py) for the current PostgreSQL tables.
+
 > Dokumentasi lengkap Firestore data model untuk PAAX AI v0.3.
 > Semua koleksi, field definitions, relationships, dan indexing strategy.
 
