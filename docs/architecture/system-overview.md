@@ -20,13 +20,13 @@ graph TB
 
     subgraph Services["Service Layer"]
         Core["🔧 Core Engine\n(FastAPI / Python)\nservices/core-engine"]
-        Orch["🤖 AI Orchestrator\n(Genkit / TypeScript)\nservices/ai-orchestrator"]
-        DocIntel["📄 Document Intelligence\n(Cloud Functions)\nservices/document-intelligence"]
-        Site["🏗️ Site Agent\n(Cloud Functions)\nservices/site-agent"]
+        Orch["🤖 AI Orchestrator\n(Express / TypeScript)\nservices/ai-orchestrator"]
+        DocIntel["📄 Document Intelligence\n(FastAPI / Python service)\nservices/document-intelligence"]
+        Site["🏗️ Site Agent\n(FastAPI / Python service)\nservices/site-agent"]
     end
 
     subgraph Storage["Storage Layer"]
-        Firestore["🔥 Firestore\n(Database)"]
+        PostgresDB["🐘 PostgreSQL (services/db)"]
         GCS["☁️ Cloud Storage\n(Files)"]
         Cache["⚡ Redis / Memory\n(Cache - Future)"]
     end
@@ -42,15 +42,15 @@ graph TB
     NextAPI --> Orch
     NextAPI --> DocIntel
 
-    Core --> Firestore
+    Core --> PostgresDB
     Core --> GCS
     Orch --> Gemini
     Orch --> Core
-    Orch --> Firestore
+    Orch --> PostgresDB
     DocIntel --> GCS
     DocIntel --> Gemini
-    DocIntel --> Firestore
-    Site --> Firestore
+    DocIntel --> PostgresDB
+    Site --> PostgresDB
     Site --> Gemini
 
     style Client fill:#e8f5e9
@@ -76,12 +76,12 @@ Setiap service memiliki tanggung jawab yang jelas dan tidak overlap:
 - Handle user interactions
 - Client-side routing (/project/:id/*)
 - Form validation (client-side)
-- Real-time Firestore subscriptions (read-only)
+- Real-time PostgreSQL DB (read-only)
 - File upload to Cloud Storage (via signed URLs)
 - Call API routes for mutations
 
 ❌ DOES NOT:
-- Direct database writes (except real-time reads)
+- Direct database writes (calls services/db)
 - Business logic calculations
 - AI model calls
 - File processing
@@ -107,7 +107,7 @@ Setiap service memiliki tanggung jawab yang jelas dan tidak overlap:
 - Frontend rendering
 ```
 
-### 2.3 AI Orchestrator (Genkit) — `services/ai-orchestrator/`
+### 2.3 AI Orchestrator (Express / TypeScript) — `services/ai-orchestrator/`
 
 **Responsibility**: AI flow management, tool calling, chat
 
@@ -179,7 +179,7 @@ sequenceDiagram
     participant Core as Core Engine
     participant Orch as AI Orchestrator
     participant DI as Doc Intelligence
-    participant DB as Firestore
+    participant DB as PostgresDB
     participant GCS as Cloud Storage
 
     Note over User,GCS: Pattern 1: RAB Generation
@@ -208,7 +208,7 @@ sequenceDiagram
     User->>Web: Upload PDF
     Web->>GCS: Upload via signed URL
     Web->>DB: Create file record
-    DB->>DI: Trigger (Firestore onCreate)
+    DB->>DI: Trigger (PostgreSQL onCreate)
     DI->>GCS: Download & process
     DI->>DB: Write extraction results
     DB-->>Web: Real-time update
@@ -270,8 +270,8 @@ graph TB
 
         subgraph Firebase["Firebase"]
             Hosting["Firebase Hosting\n(Next.js SSR)"]
-            Functions["Cloud Functions\n(Doc Intel + Site Agent)"]
-            FirestoreDB["Firestore\n(Database)"]
+            Functions["FastAPI / Python service\n(Doc Intel + Site Agent)"]
+            PostgresDB["🐘 PostgreSQL (services/db)"]
             Auth["Firebase Auth\n(Authentication)"]
         end
 
@@ -292,8 +292,8 @@ graph TB
     Functions --> Storage
     Functions --> GeminiVision
     OrchDeploy --> GeminiAPI
-    CoreDeploy --> FirestoreDB
-    OrchDeploy --> FirestoreDB
+    CoreDeploy --> PostgresDB
+    OrchDeploy --> PostgresDB
     OrchDeploy --> CoreDeploy
 
     style GCP fill:#f0f0f0
@@ -317,7 +317,7 @@ graph TB
 | Styling | Tailwind CSS | 4.x | Utility-first CSS |
 | State | Zustand | 5.x | Client state management |
 | Charts | Recharts | 2.x | Data visualization |
-| Gantt | Custom | — | Schedule visualization |
+| Gantt | Custom (quantities-mode & Gantt schedules) | — | Schedule visualization |
 
 ### 6.2 Core Engine
 
@@ -327,14 +327,14 @@ graph TB
 | Language | Python | 3.12+ | Calculation logic |
 | Validation | Pydantic | 2.x | Schema validation |
 | Excel | openpyxl | 3.x | Excel generation |
-| Database | firebase-admin | 6.x | Firestore access |
+| Database | SQLAlchemy / Postgres async pg | 6.x | PostgreSQL (services/db) access |
 | Testing | pytest | 8.x | Unit/integration tests |
 
 ### 6.3 AI Orchestrator
 
 | Component | Technology | Version | Purpose |
 |-----------|-----------|---------|---------|
-| Framework | Genkit | 1.x | AI flow framework |
+| Framework | Express / TypeScript | 1.x | AI flow framework |
 | Language | TypeScript | 5.x | Type-safe flows |
 | AI Model | Gemini 2.0 Flash | latest | LLM inference |
 | Runtime | Node.js | 22.x | Server runtime |
@@ -363,14 +363,14 @@ flowchart TD
     F -->|No| G["403 Forbidden"]
     F -->|Yes| H["Service Call\nwith context"]
     H --> I["Service processes\nwith scoped data"]
-    I --> J["Firestore Security Rules\nenforce at DB level"]
+    I --> J["PostgreSQL (services/db) Security Rules\nenforce at DB level"]
 ```
 
 ### Key Security Principles:
 
 1. **Authentication**: Firebase Auth (email/password + Google OAuth)
 2. **Authorization**: Project-level RBAC (Owner, Editor, Viewer)
-3. **Data Isolation**: Firestore security rules scope queries to organization
+3. **Data Isolation**: PostgreSQL row-level security / application-level filters scope queries to organization
 4. **File Access**: Signed URLs with expiration for Cloud Storage
 5. **Secret Management**: Google Secret Manager for API keys
 6. **AI Safety**: Prompt injection mitigation in AI Orchestrator
@@ -387,7 +387,7 @@ flowchart TD
 | File Storage | 100 GB | 10 TB+ |
 | AI Requests | 1,000/day | 100,000/day |
 | Compute | Cloud Run (min instances: 0) | Cloud Run (auto-scale) |
-| Database | Firestore (free tier) | Firestore (paid tier + indexes) |
+| Database | PostgreSQL (free tier) | PostgreSQL (paid tier + indexes) |
 | Caching | None | Redis / Memorystore |
 
 ---
