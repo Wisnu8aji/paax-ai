@@ -70,78 +70,16 @@ async def start_dem_run(background_tasks: BackgroundTasks, file: UploadFile = Fi
 
 @router.get("/{run_id}/pages/{page_index}/image")
 async def get_page_image(run_id: str, page_index: int):
-    import httpx
-    from fastapi.responses import Response
-    from app.transcription.page_renderer import render_page_to_png
-    
-    cache_file = os.path.join(UPLOAD_DIR, f"cache_{run_id}_{page_index}.png")
-    if os.path.exists(cache_file):
-        with open(cache_file, "rb") as f:
-            return Response(content=f.read(), media_type="image/png")
-            
-    db_client = DemDbClient()
-    try:
-        run = await db_client.get_run(run_id)
-    except httpx.HTTPStatusError as e:
-        if e.response.status_code == 404:
-            raise HTTPException(status_code=404, detail="DEM run not found")
-        raise HTTPException(status_code=500, detail=str(e))
-        
-    pdf_path = run.get("pdf_path")
-    if not pdf_path or not os.path.exists(pdf_path):
-        raise HTTPException(status_code=404, detail="PDF file not found on disk")
-        
-    total_pages = run.get("total_pages", 0)
-    if page_index < 0 or page_index >= total_pages:
-        raise HTTPException(status_code=404, detail="Page index out of bounds")
+    """Render (or serve cached) PNG for a single page of a DEM run's source PDF.
 
-    with open(pdf_path, "rb") as f:
-        pdf_bytes = f.read()
-        
-    try:
-        png_bytes = render_page_to_png(pdf_bytes, page_index)
-        with open(cache_file, "wb") as f:
-            f.write(png_bytes)
-        return Response(content=png_bytes, media_type="image/png")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to render page: {e}")
-
-
-@router.post("/{run_id}/synthesize")
-async def trigger_synthesis(run_id: str, background_tasks: BackgroundTasks):
-    db_client = DemDbClient()
-    run_status = await db_client.get_run_status(run_id)
-    project_id = run_status.get("project_id")
-    if not project_id:
-        raise HTTPException(status_code=400, detail="Cannot synthesize: DEM run has no project_id")
-    
-    current_status = run_status.get("status")
-    if current_status in ("synthesis_in_progress", "synthesis_complete"):
-        raise HTTPException(status_code=400, detail=f"Synthesis already in progress or complete (status: {current_status})")
-
-    if current_status not in ("dem_complete", "partially_failed", "synthesis_failed"):
-        if any(p["status"] not in ("complete", "failed") for p in run_status.get("pages", [])):
-            raise HTTPException(status_code=400, detail="Cannot synthesize: Extraction is not complete")
-
-    await db_client.update_run_status(run_id, "synthesis_in_progress")
-    background_tasks.add_task(synthesize_and_post_snapshot_task, run_id, project_id, run_status, db_client)
-    
-    return {"run_id": run_id, "status": "synthesis_started"}
-
-
-@router.get("/{run_id}/status")
-async def get_dem_status(run_id: str):
-    data = await DemDbClient().get_run_status(run_id)
-    status = data.get("status")
-    if status in ("synthesis_in_progress", "synthesis_complete", "synthesis_failed"):
-        data["synthesis_status"] = status
-    else:
-        data["synthesis_status"] = "pending"
-    return data
-
-
-@router.get("/{run_id}/pages/{page_index}/image")
-async def get_page_image(run_id: str, page_index: int):
+    Note: this route previously had a duplicate definition later in this file
+    (same path, same method) that FastAPI never dispatched to because route
+    matching stops at the first registration -- the duplicate was dead code.
+    It has been removed; this implementation keeps the duplicate's broader
+    exception handling (catches generic errors from db_client.get_run and
+    from cache writes, not just httpx.HTTPStatusError) since that made it the
+    safer of the two.
+    """
     cache_path = os.path.join(UPLOAD_DIR, f"cache_{run_id}_{page_index}.png")
     if os.path.exists(cache_path):
         with open(cache_path, "rb") as f:
@@ -180,3 +118,36 @@ async def get_page_image(run_id: str, page_index: int):
         pass
 
     return Response(content=png_bytes, media_type="image/png")
+
+
+@router.post("/{run_id}/synthesize")
+async def trigger_synthesis(run_id: str, background_tasks: BackgroundTasks):
+    db_client = DemDbClient()
+    run_status = await db_client.get_run_status(run_id)
+    project_id = run_status.get("project_id")
+    if not project_id:
+        raise HTTPException(status_code=400, detail="Cannot synthesize: DEM run has no project_id")
+    
+    current_status = run_status.get("status")
+    if current_status in ("synthesis_in_progress", "synthesis_complete"):
+        raise HTTPException(status_code=400, detail=f"Synthesis already in progress or complete (status: {current_status})")
+
+    if current_status not in ("dem_complete", "partially_failed", "synthesis_failed"):
+        if any(p["status"] not in ("complete", "failed") for p in run_status.get("pages", [])):
+            raise HTTPException(status_code=400, detail="Cannot synthesize: Extraction is not complete")
+
+    await db_client.update_run_status(run_id, "synthesis_in_progress")
+    background_tasks.add_task(synthesize_and_post_snapshot_task, run_id, project_id, run_status, db_client)
+    
+    return {"run_id": run_id, "status": "synthesis_started"}
+
+
+@router.get("/{run_id}/status")
+async def get_dem_status(run_id: str):
+    data = await DemDbClient().get_run_status(run_id)
+    status = data.get("status")
+    if status in ("synthesis_in_progress", "synthesis_complete", "synthesis_failed"):
+        data["synthesis_status"] = status
+    else:
+        data["synthesis_status"] = "pending"
+    return data
