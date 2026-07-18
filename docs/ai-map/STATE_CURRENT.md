@@ -5,15 +5,15 @@
 > aktif — jangan tambah narasi panjang di sini, tulis laporan detail ke
 > `report/` lalu ringkas 1-2 baris di sini.
 
-## Mandat strategis Drawing Intelligence (2026-07-19, Fase 0 SELESAI, Fase 1 AKTIF)
+## Mandat strategis Drawing Intelligence (2026-07-19, Fase 0, 1 & 2 SELESAI)
 - Master Plan diratifikasi + Amendemen 1 + PAAX_DRAWING_INTELLIGENCE_SUPER_BIG_PLAN_REVISED.md.
-- Fase 0 (Baseline, Feature Flags, upload security, logic leakage block, review queue API confirmation, mock fallback block) SELESAI di branch `feat/drawing-intelligence-truth-rebuild`.
-- Detail lengkap Fase 0: `docs/plans/drawing intelligence/Versi 1.1/PHASE_0_COMPLETION_REPORT.md` dan `PHASE_0_BASELINE_MANIFEST.md`.
-- Fase 1 (Documentation and Active-State Reconciliation) aktif dikerjakan.
-- Semua test otomatis hijau lintas paket: Python Backend `services/document-intelligence` (521 tests passed) dan `apps/web` (86 vitest tests passed).
+- Fase 0 (Baseline, Feature Flags, upload security, logic leakage block, review queue API confirmation, mock fallback block) SELESAI di branch `feat/drawing-intelligence-truth-rebuild`. Detail: `docs/plans/drawing intelligence/Versi 1.1/PHASE_0_COMPLETION_REPORT.md`.
+- Fase 1 (Documentation and Active-State Reconciliation) SELESAI. Detail: `docs/plans/drawing intelligence/Versi 1.1/PHASE_1_COMPLETION_REPORT.md`.
+- Fase 2 (Evidence Truth Layer) SELESAI. Immutability guard, synthesis rewrite, composite foreign keys, dan citation package v2 telah diimplementasikan penuh di backend (`services/db`, `services/document-intelligence`) dan AI Orchestrator (`services/ai-orchestrator`). Detail: `docs/plans/drawing intelligence/Versi 1.1/PHASE_2_COMPLETION_REPORT.md`.
+- Semua test otomatis hijau lintas paket: Python Backend `services/db` (88 tests passed), `services/document-intelligence` (synthesis roundtrip test passed), dan `services/ai-orchestrator` (50 tests passed).
 
 ## Branch & PR aktif
-- Branch kerja mandat: `feat/drawing-intelligence-truth-rebuild` (aktif dikerjakan, Phase 0 selesai, Phase 1 sedang dikerjakan).
+- Branch kerja mandat: `feat/drawing-intelligence-truth-rebuild` (aktif dikerjakan, Phase 0, 1, dan 2 selesai).
 - PR draft lama (#42-#47 stacked review/pckm-*) ditandai legacy.
 - PR historis #29-#40 sudah merge ke `main`.
 
