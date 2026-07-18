@@ -35,10 +35,13 @@ flowchart LR
 
 ### Stage 1: Upload & Storage
 
-Ketika user upload file, frontend:
-1. Mendapatkan signed URL dari API
-2. Upload langsung ke Cloud Storage
-3. Membuat record di `projectFiles` collection
+Ketika user upload file, frontend/backend menjalankan upload security controls:
+1. **Filename Sanitization**: Membersihkan nama file untuk mencegah path traversal.
+2. **Magic-Byte Check**: Memvalidasi header file PDF (`%PDF-`) untuk mencegah upload file berbahaya terselubung.
+3. **Upload Size Limit**: Membatasi ukuran file maksimal 50MB pada router upload.
+4. Mendapatkan signed URL dari API.
+5. Upload langsung ke Cloud Storage.
+6. Membuat record di database PostgreSQL (`project_files` tabel via `services/db`).
 
 ```mermaid
 sequenceDiagram
@@ -46,7 +49,7 @@ sequenceDiagram
     participant Web as Frontend
     participant API as API Routes
     participant GCS as Cloud Storage
-    participant DB as Firestore
+    participant DB as PostgreSQL (services/db)
 
     User->>Web: Select file
     Web->>API: POST /api/files/upload-url
@@ -55,8 +58,8 @@ sequenceDiagram
     API-->>Web: { uploadUrl, storagePath }
     Web->>GCS: PUT file (direct upload)
     GCS-->>Web: 200 OK
-    Web->>DB: Create projectFile doc
-    Note over DB: onCreate trigger fires
+    Web->>DB: Create project_file record
+    Note over DB: trigger processing via API callback
 ```
 
 ### Stage 2: Page Splitting
