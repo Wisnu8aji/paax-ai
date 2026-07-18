@@ -34,17 +34,28 @@ export function HandoffConfirmModal({
     setErrorMsg(null);
   }
 
+  // WP2 guard: item dengan unit 'ref' adalah context-group (occurrence count),
+  // BUKAN Measurement Fact terverifikasi. Harus diblokir dari jalur RAB.
+  const blockedRefItems = state.quantities.filter(
+    (q) => q.status === 'verified' && q.unit === 'ref',
+  );
+  const blockedRefCount = blockedRefItems.length;
+
   async function confirmSend() {
     setLoading(true);
     setErrorMsg(null);
     try {
       const verifiedNodeIds = state.quantities
-        .filter((q) => q.status === 'verified')
+        .filter((q) => q.status === 'verified' && q.unit !== 'ref')
         .map((q) => q.id)
         .filter(Boolean);
 
       if (verifiedNodeIds.length === 0) {
-        throw new Error('Tidak ada item terverifikasi (verified) untuk dikirim ke RAB Bridge.');
+        throw new Error(
+          blockedRefCount > 0
+            ? `Semua ${blockedRefCount} item terverifikasi memiliki unit 'ref' (context-group, bukan Measurement Fact) dan diblokir dari RAB. Pastikan item memiliki satuan fisik terverifikasi sebelum handoff.`
+            : 'Tidak ada item terverifikasi (verified) untuk dikirim ke RAB Bridge.',
+        );
       }
 
       if (!state.projectId) {
@@ -109,9 +120,14 @@ export function HandoffConfirmModal({
         <h2 style={{ fontFamily: 'var(--di-font-display)', fontSize: 16, margin: 0 }}>Send verified quantities?</h2>
 
         <p style={{ fontSize: 12.5, color: 'var(--di-text2)', margin: 0 }}>
-          <strong style={{ color: 'var(--di-text)' }}>{nVerified}</strong> verified items will be transferred to Cost
+          <strong style={{ color: 'var(--di-text)' }}>{nVerified - blockedRefCount}</strong> verified items will be transferred to Cost
           &amp; Quantity.
         </p>
+        {blockedRefCount > 0 && (
+          <p style={{ fontSize: 12, color: 'var(--di-warn)', margin: '4px 0 0', fontWeight: 500 }}>
+            ⚠ {blockedRefCount} item diblokir: unit &lsquo;ref&rsquo; (context-group, bukan Measurement Fact). Tidak terkirim ke RAB.
+          </p>
+        )}
 
         <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--di-text2)' }}>
           <li>
