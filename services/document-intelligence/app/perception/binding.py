@@ -67,10 +67,34 @@ def _edge_and_direction(value: float, axis_points: dict[str, float]) -> tuple[st
     return max(axis_points, key=lambda l: axis_points[l]), "sesudah"
 
 
+def _line_intersect(p1: tuple[float, float], p2: tuple[float, float], p3: tuple[float, float], p4: tuple[float, float]) -> bool:
+    """Return True if segment p1-p2 intersects segment p3-p4."""
+    def ccw(A, B, C):
+        return (C[1]-A[1]) * (B[0]-A[0]) > (B[1]-A[1]) * (C[0]-A[0])
+    return ccw(p1,p3,p4) != ccw(p2,p3,p4) and ccw(p1,p2,p3) != ccw(p1,p2,p4)
+
+
+def _crosses_table(p1: tuple[float, float], p2: tuple[float, float], table_bboxes: list[tuple[float, float, float, float]]) -> bool:
+    for tx0, ty0, tx1, ty1 in table_bboxes:
+        # Check all 4 edges of the table bounding box
+        t_edges = [
+            ((tx0, ty0), (tx1, ty0)),
+            ((tx1, ty0), (tx1, ty1)),
+            ((tx1, ty1), (tx0, ty1)),
+            ((tx0, ty1), (tx0, ty0))
+        ]
+        for p3, p4 in t_edges:
+            if _line_intersect(p1, p2, p3, p4):
+                return True
+    return False
+
+
 def bind_alamat(
     bbox: tuple[float, float, float, float],
     axis_points_x: dict[str, float],
     axis_points_y: dict[str, float],
+    views: list[any] | None = None,
+    table_bboxes: list[tuple[float, float, float, float]] | None = None,
 ) -> tuple[str, bool]:
     """Kembalikan (alamat, needs_review)."""
     if not axis_points_x or not axis_points_y:
@@ -79,8 +103,36 @@ def bind_alamat(
     cx = (bbox[0] + bbox[2]) / 2
     cy = (bbox[1] + bbox[3]) / 2
 
-    label_x, _dx = _nearest(cx, axis_points_x)
-    label_y, _dy = _nearest(cy, axis_points_y)
+    # View Boundary Guard & Legend/Title Block isolation
+    if views:
+        elem_view = None
+        for v in views:
+            v_bbox = getattr(v, "bbox", None) or (v.get("bbox") if isinstance(v, dict) else None)
+            if v_bbox:
+                vx0, vy0, vx1, vy1 = v_bbox
+                if vx0 <= cx <= vx1 and vy0 <= cy <= vy1:
+                    elem_view = v
+                    break
+        if elem_view:
+            v_bbox = getattr(elem_view, "bbox", None) or (elem_view.get("bbox") if isinstance(elem_view, dict) else None)
+            vx0, vy0, vx1, vy1 = v_bbox
+            # Keep only axis lines that reside within this element's view bounds
+            axis_points_x = {l: val for l, val in axis_points_x.items() if vx0 <= val <= vx1}
+            axis_points_y = {l: val for l, val in axis_points_y.items() if vy0 <= val <= vy1}
+            
+            if not axis_points_x or not axis_points_y:
+                return "grid tidak tersedia di view ini", True
+
+    label_x, coord_x_diff = _nearest(cx, axis_points_x)
+    label_y, coord_y_diff = _nearest(cy, axis_points_y)
+    
+    coord_x = cx - coord_x_diff
+    coord_y = cy - coord_y_diff
+
+    # Table Boundary Guard: check if the link path crosses a table
+    if table_bboxes:
+        if _crosses_table((cx, cy), (coord_x, coord_y), table_bboxes):
+            return "tidak dapat diikat melewati tabel", True
 
     tol_x = max(_typical_spacing(axis_points_x) * _RANGE_TOLERANCE_FRACTION, _MIN_TOLERANCE_PT)
     tol_y = max(_typical_spacing(axis_points_y) * _RANGE_TOLERANCE_FRACTION, _MIN_TOLERANCE_PT)
@@ -103,3 +155,4 @@ def bind_alamat(
         return _format_offset(label_y, edge_label, arah), False
 
     return f"dekat {_format_pair(label_x, label_y)} (perlu verifikasi)", True
+

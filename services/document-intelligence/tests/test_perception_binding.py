@@ -73,3 +73,30 @@ def test_no_grid_available_returns_honest_message():
     alamat, needs_review = bind_alamat(_bbox_at(400.0, 400.0), {}, {})
     assert needs_review is True
     assert "grid tidak tersedia" in alamat
+
+
+def test_view_boundary_guard():
+    axis_x = {"1": 100.0, "3": 410.0}
+    axis_y = {"A": 100.0, "B": 200.0}
+    
+    views = [
+        {"bbox": (0.0, 0.0, 400.0, 400.0), "view_id": "view_1"},
+        {"bbox": (405.0, 0.0, 800.0, 400.0), "view_id": "view_2"}
+    ]
+    
+    # Element at x=390 is in view_1. Sumbu "3" (410) is in view_2, so it shouldn't be matched.
+    # It must fallback to Sumbu "1" (100) inside view_1.
+    alamat, needs_review = bind_alamat(_bbox_at(390.0, 100.0), axis_x, axis_y, views=views)
+    assert "1" in alamat
+    assert "3" not in alamat
+
+
+def test_table_boundary_crossing():
+    axis_x = {"1": 300.0}
+    axis_y = {"A": 150.0}
+    table_bboxes = [(200.0, 100.0, 250.0, 200.0)]
+    
+    alamat, needs_review = bind_alamat(_bbox_at(150.0, 150.0), axis_x, axis_y, table_bboxes=table_bboxes)
+    assert needs_review is True
+    assert "tidak dapat diikat melewati tabel" in alamat
+
