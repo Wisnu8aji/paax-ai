@@ -3,7 +3,7 @@
 /** Files mode: empty state intake (blueprint §7, gambar 2) + daftar file. */
 
 import { useState } from 'react';
-import { FileText, Info, MoreVertical, UploadCloud } from 'lucide-react';
+import { FileText, Info, MoreVertical, UploadCloud, AlertTriangle } from 'lucide-react';
 import { useWorkspace } from '../workspace-store';
 import { formatBytes } from '../di-types';
 
@@ -130,15 +130,45 @@ export function FilesMode() {
     setTimeout(() => setToast(null), 1500);
   };
 
+  if (state.backendSyncFailed && state.backendSyncError === 'failed') {
+    return (
+      <section style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center', maxWidth: 460 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 64, height: 64, borderRadius: '50%', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--di-err)' }}>
+            <AlertTriangle size={32} />
+          </div>
+          <h2 style={{ fontFamily: 'var(--di-font-display)', fontSize: 22, margin: 0 }}>Backend Connection Failed</h2>
+          <p style={{ fontSize: 13, color: 'var(--di-text2)', margin: 0, lineHeight: 1.6 }}>
+            Failed to synchronize workspace with the backend services for project ID: <code className="di-mono" style={{ color: 'var(--di-text1)', background: 'var(--di-surface2)', padding: '2px 4px', borderRadius: 4 }}>{state.projectId}</code>.
+            Please verify that the backend services are running and accessible.
+          </p>
+          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <button
+              className="di-btn di-btn-primary"
+              style={{ height: 38, padding: '0 18px' }}
+              onClick={() => window.location.reload()}
+            >
+              Retry Connection
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (!state.hasData) {
+    const isNotReady = state.backendSyncFailed && state.backendSyncError === 'not-ready';
     return (
       <section style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center', maxWidth: 460 }}>
           <IntakeIllustration />
-          <h2 style={{ fontFamily: 'var(--di-font-display)', fontSize: 22, margin: 0 }}>Upload drawings to begin analysis</h2>
+          <h2 style={{ fontFamily: 'var(--di-font-display)', fontSize: 22, margin: 0 }}>
+            {isNotReady ? 'No drawings found in project' : 'Upload drawings to begin analysis'}
+          </h2>
           <p style={{ fontSize: 13, color: 'var(--di-text2)', margin: 0, lineHeight: 1.6 }}>
-            Upload PDF, DWG, or image files to extract data, detect elements, and generate intelligent insights across
-            your drawings.
+            {isNotReady
+              ? 'This project does not contain any drawing graph data yet. Upload drawing files below to extract data, detect elements, and generate intelligent insights.'
+              : 'Upload PDF, DWG, or image files to extract data, detect elements, and generate intelligent insights across your drawings.'}
           </p>
           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
             <button

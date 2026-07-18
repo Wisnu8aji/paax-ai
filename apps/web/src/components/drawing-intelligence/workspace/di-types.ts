@@ -200,7 +200,7 @@ export interface DetectedElement {
   material: string | null;
   /** bbox dalam koordinat mm sheet */
   bbox: { x: number; y: number; w: number; h: number };
-  confidence: number; // 0..100 dari pipeline
+  confidence: number | null; // 0..100 dari pipeline
   verification: VerificationStatus;
   properties: ElementProperty[];
   sourcePages: { sheetCode: string; label: string }[];

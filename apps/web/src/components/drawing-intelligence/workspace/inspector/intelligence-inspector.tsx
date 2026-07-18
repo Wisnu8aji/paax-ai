@@ -471,8 +471,16 @@ export function IntelligenceInspector() {
         <Section last>
           <SectionTitle>Confidence</SectionTitle>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <ConfidenceRing value={el.confidence} size={44} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--di-ok)' }}>High Confidence</span>
+            {el.confidence !== null ? (
+              <>
+                <ConfidenceRing value={el.confidence} size={44} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: el.confidence >= 80 ? 'var(--di-ok)' : 'var(--di-warn)' }}>
+                  {el.confidence >= 80 ? 'High Confidence' : 'Review Suggested'}
+                </span>
+              </>
+            ) : (
+              <span style={{ fontSize: 12, color: 'var(--di-text3)' }}>Not available</span>
+            )}
           </div>
         </Section>
       </>

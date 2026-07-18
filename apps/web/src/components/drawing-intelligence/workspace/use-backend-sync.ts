@@ -103,6 +103,9 @@ export function useBackendSync(projectId: string | null) {
     if (!projectId) return;
     let cancelled = false;
 
+    // Reset mock data immediately for real projects to avoid showing incorrect details
+    dispatch({ type: 'clear-project-data' });
+
     (async () => {
       try {
         const [queue, readiness, sheetsData, runsData, summaryViewsData] = await Promise.all([
@@ -115,7 +118,10 @@ export function useBackendSync(projectId: string | null) {
         if (cancelled) return;
 
         const hasRealData = queue.items.length > 0 || readiness.items.length > 0 || sheetsData.length > 0 || runsData.length > 0 || summaryViewsData.length > 0;
-        if (!hasRealData) return; // backend hidup tapi proyek belum punya graph — tetap pakai mock
+        if (!hasRealData) {
+          dispatch({ type: 'backend-sync-failed', error: 'not-ready' });
+          return;
+        }
 
         dispatch({ type: 'backend-connected', connected: true });
 
@@ -246,8 +252,10 @@ export function useBackendSync(projectId: string | null) {
           type: 'set-status',
           message: `Connected to project graph — ${readiness.summary.ready} ready, ${readiness.summary.needs_review} need review`,
         });
-      } catch {
-        // Backend tidak tersedia — biarkan mock bekerja tanpa gangguan.
+      } catch (err) {
+        if (cancelled) return;
+        console.error('Failed to sync backend:', err);
+        dispatch({ type: 'backend-sync-failed', error: 'failed' });
       }
     })();
 

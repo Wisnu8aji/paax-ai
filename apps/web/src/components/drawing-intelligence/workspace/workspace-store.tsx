@@ -138,6 +138,8 @@ export interface WorkspaceState {
 
   /** koneksi backend nyata (diisi integrasi; UI tetap berfungsi tanpa ini) */
   backendConnected: boolean;
+  backendSyncFailed: boolean;
+  backendSyncError: 'failed' | 'not-ready' | null;
 
   summaryViews: ProjectGraphSummaryView[];
 }
@@ -284,6 +286,8 @@ export function initialWorkspaceState(withData: boolean): WorkspaceState {
     askPaax: { open: false, messages: [], busy: false },
     statusMessage: withData ? 'Review workspace ready' : 'Waiting for drawing files',
     backendConnected: false,
+    backendSyncFailed: false,
+    backendSyncError: null,
     summaryViews: [],
   };
 }
@@ -320,6 +324,8 @@ export type WorkspaceAction =
   | { type: 'ask-paax'; patch: Partial<WorkspaceState['askPaax']> }
   | { type: 'ask-paax-push'; message: AskPaaxMessage }
   | { type: 'backend-connected'; connected: boolean }
+  | { type: 'backend-sync-failed'; error: 'failed' | 'not-ready' | null }
+  | { type: 'clear-project-data' }
   | { type: 'replace-quantities'; quantities: QuantityItem[] }
   | { type: 'replace-review-queue'; items: ReviewQueueItem[] }
   | { type: 'replace-summary-views'; summaryViews: ProjectGraphSummaryView[] }
@@ -469,7 +475,54 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
         askPaax: { ...state.askPaax, messages: [...state.askPaax.messages, action.message] },
       };
     case 'backend-connected':
-      return { ...state, backendConnected: action.connected };
+      return {
+        ...state,
+        backendConnected: action.connected,
+        backendSyncFailed: action.connected ? false : state.backendSyncFailed,
+        backendSyncError: action.connected ? null : state.backendSyncError,
+      };
+    case 'backend-sync-failed':
+      return {
+        ...state,
+        hasData: false,
+        files: [],
+        sheets: [],
+        elements: [],
+        quantities: [],
+        reviewQueue: [],
+        activity: [],
+        activeSheetId: null,
+        selectedSheetIds: [],
+        selectedElementId: null,
+        hoveredElementId: null,
+        selectedQuantityId: null,
+        backendConnected: false,
+        backendSyncFailed: true,
+        backendSyncError: action.error,
+        statusMessage: action.error === 'not-ready'
+          ? 'Project graph is empty. Please upload drawing files.'
+          : 'Failed to connect to backend services.',
+        mode: 'files',
+      };
+    case 'clear-project-data':
+      return {
+        ...state,
+        hasData: false,
+        files: [],
+        sheets: [],
+        elements: [],
+        quantities: [],
+        reviewQueue: [],
+        activity: [],
+        activeSheetId: null,
+        selectedSheetIds: [],
+        selectedElementId: null,
+        hoveredElementId: null,
+        selectedQuantityId: null,
+        backendSyncFailed: false,
+        backendSyncError: null,
+        mode: 'files',
+      };
     case 'replace-quantities':
       return { ...state, quantities: action.quantities };
     case 'replace-review-queue':
