@@ -40,7 +40,7 @@ Berikut adalah file dan folder yang aktif di jalur produksi Drawing Intelligence
 
 ### 2.1 Frontend Workspace (Next.js)
 Semua komponen Drawing Intelligence Workspace V2 berada di:
-* **Workspace Entry**: [apps/web/src/app/(dashboard)/drawing-intelligence/page.tsx](file:///G:/paax-ai-main/apps/web/src/app/(dashboard)/drawing-intelligence/page.tsx)
+* **Workspace Entry**: [apps/web/src/app/(dashboard)/drawing-intelligence/page.tsx](file:///G:/paax-ai-main/apps/web/src/app/%28dashboard%29/drawing-intelligence/page.tsx)
 * **Workspace Components**: [apps/web/src/components/drawing-intelligence/workspace/](file:///G:/paax-ai-main/apps/web/src/components/drawing-intelligence/workspace/)
   * **Types**: [di-types.ts](file:///G:/paax-ai-main/apps/web/src/components/drawing-intelligence/workspace/di-types.ts)
   * **State Store**: [workspace-store.tsx](file:///G:/paax-ai-main/apps/web/src/components/drawing-intelligence/workspace/workspace-store.tsx)
