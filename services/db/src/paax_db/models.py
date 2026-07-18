@@ -1,4 +1,4 @@
-from sqlalchemy import CHAR, Column, String, Integer, Numeric, Boolean, DateTime, ForeignKey, JSON, Text
+from sqlalchemy import CHAR, Column, String, Integer, Numeric, Boolean, DateTime, ForeignKey, JSON, Text, UniqueConstraint, ForeignKeyConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -246,6 +246,10 @@ class ProjectGraphSnapshot(Base):
     activated_at = Column(DateTime(timezone=True), nullable=True)
     superseded_at = Column(DateTime(timezone=True), nullable=True)
 
+    __table_args__ = (
+        UniqueConstraint('snapshot_id', 'project_id', name='uq_project_graph_snapshots_id_project'),
+    )
+
 
 class ProjectGraphNode(Base):
     __tablename__ = "project_graph_nodes"
@@ -281,7 +285,7 @@ class ProjectGraphEdge(Base):
 class ProjectGraphEvidence(Base):
     __tablename__ = "project_graph_evidence"
 
-    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), primary_key=True)
+    snapshot_id = Column(String, primary_key=True)
     evidence_id = Column(String, primary_key=True)
     project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
     document_id = Column(String, nullable=False)
@@ -292,23 +296,80 @@ class ProjectGraphEvidence(Base):
     bbox_json = Column("bbox", JSON_DOCUMENT, nullable=True)
     source_dem_id = Column(String, nullable=True)
 
+    # Version 2 fields
+    revision_id = Column(String, nullable=True)
+    run_id = Column(String, nullable=True)
+    dem_page_id = Column(String, nullable=True)
+    view_id = Column(String, nullable=True)
+    zone_id = Column(String, nullable=True)
+    modality = Column(String, nullable=True)
+    raw_content = Column(Text, nullable=True)
+    normalized_content = Column(Text, nullable=True)
+    bbox_source = Column(JSON_DOCUMENT, nullable=True)
+    bbox_normalized = Column(JSON_DOCUMENT, nullable=True)
+    polygon_source = Column(JSON_DOCUMENT, nullable=True)
+    polygon_normalized = Column(JSON_DOCUMENT, nullable=True)
+    confidence = Column(Numeric, nullable=True)
+    extractor = Column(JSON_DOCUMENT, nullable=True)
+    artifact_hash = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['snapshot_id', 'project_id'],
+            ['project_graph_snapshots.snapshot_id', 'project_graph_snapshots.project_id'],
+            ondelete='CASCADE',
+            name='fk_project_graph_evidence_snapshot_project'
+        ),
+    )
+
 
 class ProjectGraphNodeEvidence(Base):
     __tablename__ = "project_graph_node_evidence"
 
-    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), primary_key=True)
+    snapshot_id = Column(String, primary_key=True)
     node_id = Column(String, primary_key=True)
     evidence_id = Column(String, primary_key=True)
     role = Column(String, nullable=False)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['snapshot_id', 'node_id'],
+            ['project_graph_nodes.snapshot_id', 'project_graph_nodes.node_id'],
+            ondelete='CASCADE',
+            name='fk_node_evidence_node'
+        ),
+        ForeignKeyConstraint(
+            ['snapshot_id', 'evidence_id'],
+            ['project_graph_evidence.snapshot_id', 'project_graph_evidence.evidence_id'],
+            ondelete='CASCADE',
+            name='fk_node_evidence_evidence'
+        ),
+    )
 
 
 class ProjectGraphEdgeEvidence(Base):
     __tablename__ = "project_graph_edge_evidence"
 
-    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), primary_key=True)
+    snapshot_id = Column(String, primary_key=True)
     edge_id = Column(String, primary_key=True)
     evidence_id = Column(String, primary_key=True)
     role = Column(String, nullable=False)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['snapshot_id', 'edge_id'],
+            ['project_graph_edges.snapshot_id', 'project_graph_edges.edge_id'],
+            ondelete='CASCADE',
+            name='fk_edge_evidence_edge'
+        ),
+        ForeignKeyConstraint(
+            ['snapshot_id', 'evidence_id'],
+            ['project_graph_evidence.snapshot_id', 'project_graph_evidence.evidence_id'],
+            ondelete='CASCADE',
+            name='fk_edge_evidence_evidence'
+        ),
+    )
 
 
 class ProjectGraphAlias(Base):
