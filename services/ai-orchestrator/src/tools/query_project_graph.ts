@@ -141,10 +141,16 @@ async function executeQueryProjectGraph(
       // evidence membawa sitasi [sheet_id p.halaman] -- model WAJIB mengutip ini
       // untuk setiap klaim faktual, sesuai TOOL_SYSTEM_SUFFIX di tools.ts (Command Room).
       evidence: (data.evidence ?? []).map((item: Record<string, unknown>) => ({
-        sheet_id: item.sheet_id,
-        page_number: typeof item.page_index === "number" ? item.page_index + 1 : null,
-        raw_text: item.raw_text,
         evidence_id: item.evidence_id,
+        sheet_id: item.sheet_id,
+        sheet: item.sheet_id,
+        page_number: typeof item.page_index === "number" ? item.page_index + 1 : null,
+        page: typeof item.page_index === "number" ? item.page_index + 1 : null,
+        bbox: item.bbox_source ?? item.bbox_json ?? item.bbox ?? null,
+        raw_text: item.raw_text,
+        raw_excerpt: item.raw_content ?? item.raw_text ?? null,
+        status: item.status ?? "extracted",
+        source_modality: item.modality ?? null,
       })),
       // Ringkasan per-level (element_type_index, discipline_counts, fakta ukuran tertulis)
       // saat backend menjawab dari project_graph_summary_views -- hanya ada bila intent

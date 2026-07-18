@@ -1,4 +1,4 @@
-﻿import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createQueryProjectGraphTool } from "../../src/tools/query_project_graph";
 
@@ -101,7 +101,18 @@ describe("query_project_graph", () => {
     // page_number harus 1-indexed (page_index 20 -> halaman 21) supaya sitasi
     // yang dikutip model cocok dengan nomor halaman yang dilihat user di PDF.
     expect(result.evidence).toEqual([
-      { sheet_id: "S-21", page_number: 21, raw_text: "P2 label", evidence_id: "EV-1" },
+      {
+        evidence_id: "EV-1",
+        sheet_id: "S-21",
+        sheet: "S-21",
+        page_number: 21,
+        page: 21,
+        bbox: null,
+        raw_text: "P2 label",
+        raw_excerpt: "P2 label",
+        status: "extracted",
+        source_modality: null,
+      },
     ]);
   });
 
