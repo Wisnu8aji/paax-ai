@@ -1,34 +1,20 @@
 # 📍 PAAX — STATE_CURRENT (status aktif, ringkas)
 
-> Update terakhir: **2026-07-17**. Riwayat lengkap sebelum 2026-07-14 ada di
+> Update terakhir: **2026-07-19**. Riwayat lengkap sebelum 2026-07-14 ada di
 > `docs/history/STATE_ARCHIVE_2026-06_2026-07.md`. File ini HANYA status
 > aktif — jangan tambah narasi panjang di sini, tulis laporan detail ke
 > `report/` lalu ringkas 1-2 baris di sini.
 
-## Mandat strategis Drawing Intelligence (2026-07-17, SELESAI — siap uji terbatas)
-- Master Plan diratifikasi + Amendemen 1:
-  `docs/plans/drawing intelligence/PAAX_DRAWING_INTELLIGENCE_MASTER_PLAN_2026-07-16.md`
-  (arsitektur L0-L4, Decision Register D1-D13, roadmap Gelombang A/B/C + spec eksekusi).
-- Semua 3 akar masalah FIXED & diverifikasi: gerbang occurrence (A2), pseudo-level (A3),
-  intent/serving absen (B4-B6) + integritas DEM (A4). Detail lengkap + status per-item:
-  `report/report_drawing_intelligence/FINAL_READINESS_REPORT_2026-07-17.md`.
-- Benchmark ground-truth: baseline 1/8 → **14/14 PASS (skor akhir)**, termasuk fix terakhir
-  entity matching tokenized ("balok lintel" query). `BENCHMARK_SCORECARD_2026-07-17.md`.
-- **Pengujian live Command Room (Lucent + Arete) via chat sungguhan berhasil** — 5 skenario
-  golden-path (lokasi elemen, filter lintas lantai, penolakan kalkulasi/Aturan Emas, deteksi
-  konflik, kejujuran level tak dikenal) semua benar & bersitasi. 2 bug produksi ditemukan &
-  diperbaiki selama pengujian ini (RBAC identity mismatch Command Room↔services/db;
-  status-field top-level "calculation_required" disalahbaca sbg kegagalan) — lihat §5
-  laporan akhir untuk root cause lengkap.
-- 656 test otomatis hijau lintas paket (doc-intel 441, db 64, ai-orchestrator 50, web 71,
-  schemas 30) + tsc bersih. Belum di-PR ke main — menunggu keputusan pemilik (gerbang §5
-  CLAUDE.md).
+## Mandat strategis Drawing Intelligence (2026-07-19, Fase 0 SELESAI, Fase 1 AKTIF)
+- Master Plan diratifikasi + Amendemen 1 + PAAX_DRAWING_INTELLIGENCE_SUPER_BIG_PLAN_REVISED.md.
+- Fase 0 (Baseline, Feature Flags, upload security, logic leakage block, review queue API confirmation, mock fallback block) SELESAI di branch `feat/drawing-intelligence-truth-rebuild`.
+- Detail lengkap Fase 0: `docs/plans/drawing intelligence/Versi 1.1/PHASE_0_COMPLETION_REPORT.md` dan `PHASE_0_BASELINE_MANIFEST.md`.
+- Fase 1 (Documentation and Active-State Reconciliation) aktif dikerjakan.
+- Semua test otomatis hijau lintas paket: Python Backend `services/document-intelligence` (521 tests passed) dan `apps/web` (86 vitest tests passed).
 
 ## Branch & PR aktif
-- Branch kerja mandat: `feat/pckm-phase3-synthesis` (garis terlengkap, 36+ commit di
-  depan main; banyak pekerjaan wave A/B masih uncommitted di working tree).
-- PR draft #42-#47 (stacked review/pckm-*) = kemasan lama, tertinggal dari HEAD —
-  keputusan D1: supersede dengan satu PR segar (menunggu keputusan owner).
+- Branch kerja mandat: `feat/drawing-intelligence-truth-rebuild` (aktif dikerjakan, Phase 0 selesai, Phase 1 sedang dikerjakan).
+- PR draft lama (#42-#47 stacked review/pckm-*) ditandai legacy.
 - PR historis #29-#40 sudah merge ke `main`.
 
 ## Yang sudah nyata jalan di `main` (terverifikasi lewat kode + git log, bukan laporan)
