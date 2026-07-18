@@ -113,22 +113,20 @@ pnpm run dev:web        # web :3000
 
 ---
 
-## Test (per workspace, 2026-07-10)
+## Test (per workspace, 2026-07-19)
 
 | Workspace | Hasil |
 | --- | --- |
 | `services/core-engine` | 246 passed, 35 failed* |
-| `services/document-intelligence` | 296 passed, 5 skipped |
+| `services/document-intelligence` | 521 passed |
 | `services/db` | 8 passed, 1 skipped |
 | `services/site-agent` | 17 passed |
 | `services/ai-orchestrator` | 32 passed |
 | `packages/schemas` | 14 passed |
-| `apps/web` | 53 passed, 1 failed* |
+| `apps/web` | 86 passed |
 
 \* Kegagalan core-engine: test lama belum kirim header auth setelah Auth/RBAC
-ditambahkan — bukan bug logika. Kegagalan web: 1 test `orchestrator.test.ts`
-(Command Room, di luar scope perbaikan dokumentasi ini) — lihat
-`docs/ai-map/STATE_CURRENT.md` untuk detail & rekomendasi.
+ditambahkan — bukan bug logika.
 
 ```bash
 cd services/core-engine && python -m pytest -q
