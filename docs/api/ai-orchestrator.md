@@ -1,9 +1,13 @@
 # PAAX AI — AI Orchestrator API Documentation
 
+> **IMPORTANT STATE NOTE**: Service `services/ai-orchestrator` (port 8082) saat ini **TIDAK/BELUM dipanggil oleh apps/web**.
+> Rute chat Command Room aktif saat ini diimplementasikan langsung di Next.js API Routes (`apps/web/src/app/api/command-room/chat/route.ts`) menggunakan routing model Lucent (DeepSeek-chat), Arete (Qwen3.7-Plus), dan Noir (Claude Sonnet 5).
+> Dokumentasi di bawah menggambarkan spesifikasi internal flow AI yang akan diintegrasikan lebih lanjut.
+
 > API reference untuk AI Orchestrator (Firebase Genkit / TypeScript).
 > Service ini mengelola semua interaksi AI: chat, advisory, dan document understanding.
 
-**Base URL**: `http://localhost:3400` (development) | `https://ai-orchestrator-xxxxx.run.app` (production)
+**Base URL**: `http://localhost:8082` (development) | `https://ai-orchestrator-xxxxx.run.app` (production)
 
 ---
 
@@ -476,8 +480,8 @@ export const calculateRabTool = defineTool(
 | `analyze_cost` | rabId, division? | breakdown by category | Core Engine |
 | `compare_benchmark` | rabId, buildingType | benchmarkData, assessment | Core Engine |
 | `search_standards` | query, category | standards[] with references | Internal DB |
-| `get_project_context` | projectId | project summary, recent activity | Firestore |
-| `get_drawing_data` | fileId, pageNumber? | extractedData, dimensions | Firestore |
+| `get_project_context` | projectId | project summary, recent activity | PostgreSQL (services/db) |
+| `get_drawing_data` | fileId, pageNumber? | extractedData, dimensions | PostgreSQL (services/db) |
 | `update_rab_item` | rabId, itemCode, changes | updatedItem, newTotal | Core Engine |
 | `calculate_area` | dimensions[] | area, perimeter | Internal |
 | `calculate_volume` | dimensions[] | volume | Internal |
@@ -540,4 +544,4 @@ KONTEKS PROYEK:
 
 ---
 
-*AI Orchestrator dikonfigurasi untuk logging semua interaksi ke `usageLogs` collection untuk audit dan improvement.*
+*AI Orchestrator dikonfigurasi untuk logging semua interaksi ke `ai_usage_log` table untuk audit dan improvement.*
