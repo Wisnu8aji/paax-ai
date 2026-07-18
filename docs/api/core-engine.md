@@ -3,7 +3,7 @@
 > API reference untuk Core Engine (FastAPI / Python).
 > Service ini menangani semua kalkulasi deterministik: RAB, jadwal, validasi, dan export.
 
-**Base URL**: `http://localhost:8000` (development) | `https://core-engine-xxxxx.run.app` (production)
+**Base URL**: `http://localhost:8081` (development) | `https://core-engine-xxxxx.run.app` (production)
 
 ---
 
@@ -55,7 +55,7 @@ GET /health
   "status": "healthy",
   "version": "0.3.0",
   "services": {
-    "firestore": "connected",
+    "db_gateway": "connected",
     "storage": "connected"
   },
   "uptime": 3600,
@@ -71,7 +71,7 @@ GET /health
 POST /rab/generate
 ```
 
-**Description**: Generate RAB baru dari data volume dan AHSP. Membuat versi baru di Firestore.
+**Description**: Generate RAB baru dari data volume dan AHSP. Membuat versi baru di database PostgreSQL via DB Gateway.
 
 **Request Body**:
 ```json
