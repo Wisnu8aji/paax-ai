@@ -113,7 +113,14 @@ async function summarizeReasoningStatus(
   if (!apiKey || !isOpenRouterKey(apiKey)) return null;
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000); // 4s budget -- jangan pernah menahan stream utama lama
+    // 4s awalnya terlalu ketat -- live-test 2026-07-18 menunjukkan hampir
+    // SEMUA panggilan Mistral timeout (AbortError) sebelum sempat selesai,
+    // sehingga label kontekstual nyaris tidak pernah sampai ke user meski
+    // request-nya tercatat di dashboard OpenRouter. 12s memberi ruang untuk
+    // model kecil yang sedang antre di provider tanpa menahan stream utama
+    // terlalu lama (dipanggil fire-and-forget, tidak pernah di-await di jalur
+    // kritis kecuali saat penutupan stream lewat pendingStatusSummaries).
+    const timeout = setTimeout(() => controller.abort(), 12000);
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
@@ -122,7 +129,7 @@ async function summarizeReasoningStatus(
         messages: [
           {
             role: "system",
-            content: "Ringkas cuplikan pemikiran AI berikut jadi SATU frasa pendek berbahasa Indonesia (maksimal 8 kata), present tense, menggambarkan APA yang sedang dipikirkan/dikerjakan -- bukan kesimpulan, bukan tanda baca akhir, bukan tanda kutip. Contoh: 'Membandingkan HSPK galian tanah dan pondasi batu kali'. Balas HANYA frasa itu, tanpa penjelasan lain.",
+            content: "Summarize the following AI reasoning excerpt into ONE short English phrase (max 8 words), present tense, describing WHAT is currently being thought about/worked on -- not a conclusion, no trailing punctuation, no quotes. Example: 'Comparing HSPK for earthwork and stone foundation'. Reply with ONLY that phrase, nothing else.",
           },
           { role: "user", content: reasoningSnippet.slice(-1500) },
         ],
@@ -134,14 +141,22 @@ async function summarizeReasoningStatus(
       signal: controller.signal,
     });
     clearTimeout(timeout);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => "");
+      console.error(`[status-summary] HTTP ${res.status}: ${errBody.slice(0, 500)}`);
+      return null;
+    }
     const data = await res.json();
     const text = data.choices?.[0]?.message?.content;
-    if (typeof text !== "string") return null;
+    if (typeof text !== "string") {
+      console.error(`[status-summary] no content in response: ${JSON.stringify(data).slice(0, 500)}`);
+      return null;
+    }
     const trimmed = text.trim().replace(/^["']|["']$/g, "");
     return trimmed.length > 0 && trimmed.length < 200 ? trimmed : null;
-  } catch {
-    return null; // timeout/error apa pun -- diamkan, caller fallback ke label lama
+  } catch (err) {
+    console.error(`[status-summary] exception:`, err); // timeout/error apa pun -- diamkan, caller fallback ke label lama
+    return null;
   }
 }
 
@@ -241,6 +256,7 @@ function resolveKeyForModel(modelAlias: ModelAlias): KeyResolution | null {
 async function consumeOpenAiCompatibleStream(
   res: Response,
   sendEvent: SendEvent,
+  pendingStatusSummaries: Promise<unknown>[],
   runId: string | undefined,
   conversationId: string | undefined,
   modelAlias?: ModelAlias,
@@ -253,11 +269,18 @@ async function consumeOpenAiCompatibleStream(
   let fullContent = "";
   let finishedOnLength = false;
 
-  // Akumulasi reasoning + throttle status-summary setiap ~3 kalimat baru
-  // (fire-and-forget, TIDAK menahan stream utama).
+  // Akumulasi reasoning + throttle status-summary setiap ~500 karakter baru
+  // (fire-and-forget, TIDAK menahan stream utama). Awalnya berbasis hitung
+  // kalimat (titik/tanda tanya), tapi reasoning model kerap berbentuk outline
+  // terstruktur ("1. **Analyze...**", "* User wants...") tanpa banyak kalimat
+  // naratif berakhiran titik+spasi -- ditemukan lewat live-test 2026-07-18:
+  // Arete 613 reasoning delta tapi 0 event reasoning_summary karena threshold
+  // kalimat tidak pernah tercapai. Hitung karakter jauh lebih andal lintas gaya
+  // reasoning (naratif maupun bullet list).
   let reasoningAccumulator = "";
-  let sentenceCountSinceLastSummary = 0;
+  let charsSinceLastSummary = 0;
   let summaryInFlight = false;
+  const SUMMARY_TRIGGER_CHARS = 500;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -286,15 +309,14 @@ async function consumeOpenAiCompatibleStream(
           // Status-summary (Mistral Small 3) HANYA untuk Lucent/Arete, BUKAN Noir.
           if (modelAlias && (modelAlias === "lucent" || modelAlias === "arete") && req) {
             reasoningAccumulator += reasoning;
-            const newSentences = (reasoning.match(/[.!?]+(\s|$)/g) || []).length;
-            sentenceCountSinceLastSummary += newSentences;
+            charsSinceLastSummary += reasoning.length;
 
-            // Trigger status-summary setiap ~3 kalimat baru, TIDAK menahan stream utama.
-            if (sentenceCountSinceLastSummary >= 3 && !summaryInFlight) {
-              sentenceCountSinceLastSummary = 0;
+            // Trigger status-summary setiap ~500 karakter baru, TIDAK menahan stream utama.
+            if (charsSinceLastSummary >= SUMMARY_TRIGGER_CHARS && !summaryInFlight) {
+              charsSinceLastSummary = 0;
               summaryInFlight = true;
               const snippet = reasoningAccumulator;
-              summarizeReasoningStatus(snippet, req)
+              const summaryPromise = summarizeReasoningStatus(snippet, req)
                 .then((label) => {
                   if (label) {
                     sendEvent("message", {
@@ -308,6 +330,7 @@ async function consumeOpenAiCompatibleStream(
                   }
                 })
                 .finally(() => { summaryInFlight = false; });
+              pendingStatusSummaries.push(summaryPromise);
             }
           }
         }
@@ -353,6 +376,7 @@ async function streamOpenRouter(
   apiKey: string,
   req: NextRequest,
   sendEvent: SendEvent,
+  pendingStatusSummaries: Promise<unknown>[],
   runId: string | undefined,
   conversationId: string | undefined,
 ): Promise<void> {
@@ -397,7 +421,7 @@ async function streamOpenRouter(
     }
 
     const res = await fetchOrThrow("https://openrouter.ai/api/v1/chat/completions", apiKey, currentPayload, req);
-    const { finishedOnLength, fullContent } = await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId, modelAlias, req);
+    const { finishedOnLength, fullContent } = await consumeOpenAiCompatibleStream(res, sendEvent, pendingStatusSummaries, runId, conversationId, modelAlias, req);
     hitLengthLimit = finishedOnLength;
 
     if (hitLengthLimit) {
@@ -446,13 +470,14 @@ async function streamDeepSeekNative(
   apiKey: string,
   req: NextRequest,
   sendEvent: SendEvent,
+  pendingStatusSummaries: Promise<unknown>[],
   runId: string | undefined,
   conversationId: string | undefined,
   modelAlias?: ModelAlias,
 ): Promise<void> {
   const payload = buildDeepSeekPayload(messages, thinking, effort);
   const res = await fetchOrThrow(`${getDeepSeekBaseUrl()}/chat/completions`, apiKey, payload, req);
-  await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId, modelAlias, req);
+  await consumeOpenAiCompatibleStream(res, sendEvent, pendingStatusSummaries, runId, conversationId, modelAlias, req);
 }
 
 // ─── Arete — Qwen3.7-Plus via DashScope native (OpenAI-compatible mode) ───────
@@ -491,13 +516,14 @@ async function streamDashScopeNative(
   apiKey: string,
   req: NextRequest,
   sendEvent: SendEvent,
+  pendingStatusSummaries: Promise<unknown>[],
   runId: string | undefined,
   conversationId: string | undefined,
   modelAlias?: ModelAlias,
 ): Promise<void> {
   const payload = buildDashScopePayload(messages, thinking, effort);
   const res = await fetchOrThrow(`${getDashScopeBaseUrl()}/chat/completions`, apiKey, payload, req);
-  await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId, modelAlias, req);
+  await consumeOpenAiCompatibleStream(res, sendEvent, pendingStatusSummaries, runId, conversationId, modelAlias, req);
 }
 
 // ─── Noir — provider native SDK resmi (native key saja) ─────────
@@ -602,13 +628,14 @@ async function resolveToolsForModel(
         rab_lines: rabLines?.map((line) => ({ ...line, duration_days: line.duration_days ?? null })),
       }
     : undefined;
+  const hasProjectContext = Boolean(toolContext);
 
   if (viaOpenRouter) {
     const { messages: resolved, usedTool } = await runOpenRouterWithTools({
       modelSlug: OPENROUTER_MODEL_SLUG[modelAlias],
       modelAlias,
       apiKey,
-      messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "") }, ...withPrompt.slice(1)],
+      messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "", hasProjectContext) }, ...withPrompt.slice(1)],
       context: toolContext,
       req, sendEvent, runId, conversationId,
     });
@@ -621,7 +648,7 @@ async function resolveToolsForModel(
       modelAlias,
       baseUrl: getDeepSeekBaseUrl(),
       apiKey,
-      messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "") }, ...withPrompt.slice(1)],
+      messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "", hasProjectContext) }, ...withPrompt.slice(1)],
       context: toolContext,
       req, sendEvent, runId, conversationId,
     });
@@ -636,7 +663,7 @@ async function resolveToolsForModel(
       modelAlias,
       baseUrl: getDashScopeBaseUrl(),
       apiKey,
-      messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "") }, ...withPrompt.slice(1)],
+      messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "", hasProjectContext) }, ...withPrompt.slice(1)],
       context: toolContext,
       req, sendEvent, runId, conversationId,
     });
@@ -649,7 +676,7 @@ async function resolveToolsForModel(
     apiModel: getModel("noir").apiModel,
     modelAlias,
     apiKey,
-    system: system ? withToolSystemPrompt(system) : withToolSystemPrompt(SYSTEM_PROMPT),
+    system: withToolSystemPrompt(system ?? SYSTEM_PROMPT, hasProjectContext),
     messages: anthropicMessages,
     context: toolContext,
     req, sendEvent, runId, conversationId,
@@ -693,6 +720,14 @@ export async function POST(req: NextRequest) {
       let sequenceCounter = 0;
       let finalContent = "";
       const toolsCalledThisTurn: string[] = [];
+      // Status-summary (Mistral) dipanggil fire-and-forget di dalam
+      // consumeOpenAiCompatibleStream -- TANPA pelacak ini, controller.close()
+      // di finally (di bawah) langsung dieksekusi begitu stream utama selesai,
+      // memutus SSE sebelum promise Mistral yang masih in-flight sempat resolve
+      // dan mengirim event-nya (root cause "Mistral kepanggil di log OpenRouter
+      // tapi label tidak pernah sampai ke UI", dilaporkan user 2026-07-18).
+      // Setiap panggilan mendaftarkan promise-nya ke sini; di-await sebelum close.
+      const pendingStatusSummaries: Promise<unknown>[] = [];
       const sendEvent: SendEvent = (_type, data) => {
         // Fase 2 Evidence Gate (PLAN.md §9 Fase 2): akumulasi konten jawaban akhir
         // + nama tool yang dipanggil, murni dengan mengamati event yang sudah lewat
@@ -771,14 +806,19 @@ export async function POST(req: NextRequest) {
         const finalThinking = resolvedThinking;
 
         if (resolved.viaOpenRouter) {
-          await streamOpenRouter(modelAlias, finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId);
+          await streamOpenRouter(modelAlias, finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, pendingStatusSummaries, runId, conversationId);
         } else if (modelAlias === "lucent") {
-          await streamDeepSeekNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId, modelAlias);
+          await streamDeepSeekNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, pendingStatusSummaries, runId, conversationId, modelAlias);
         } else if (modelAlias === "arete") {
-          await streamDashScopeNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId, modelAlias);
+          await streamDashScopeNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, pendingStatusSummaries, runId, conversationId, modelAlias);
         } else {
           await streamAnthropicNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId);
         }
+
+        // Tunggu semua panggilan status-summary (Mistral) yang masih in-flight
+        // SEBELUM controller.close() -- lihat catatan pendingStatusSummaries di
+        // atas untuk root cause kenapa ini wajib ada.
+        await Promise.allSettled(pendingStatusSummaries);
 
         // Fase 2 Evidence Gate: evaluasi heuristik non-blocking setelah jawaban akhir
         // selesai di-stream. Hasil dikirim sebagai event terpisah (bukan menahan/

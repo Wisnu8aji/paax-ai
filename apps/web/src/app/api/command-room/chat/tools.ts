@@ -85,7 +85,25 @@ function buildAuthedFetch(): typeof fetch {
   };
 }
 
-function buildToolRegistry(): ToolDefinition[] {
+// Tool yang HANYA berguna kalau ada data proyek nyata (projectId/rabLines) --
+// tanpa itu, tool ini SELALU gagal ("data tidak tersedia") tapi model (tool_choice
+// "auto") tetap sering mencobanya dulu untuk pertanyaan umum yang tidak perlu data
+// proyek sama sekali. Ditemukan lewat live-test (2026-07-18): pertanyaan teknis
+// generik (mis. "bandingkan metode galian tanah") memicu Lucent memanggil
+// lookup_ahsp/query_rab/query_schedule/project_diagnostics berkali-kali, semuanya
+// gagal, sebelum akhirnya menjawab dari pengetahuan umum -- membuang waktu &
+// token untuk manfaat nol. Difilter dari daftar tool SAMA SEKALI (bukan cuma
+// diberi tahu "akan gagal") kalau context project tidak ada, supaya model tidak
+// punya opsi untuk mencobanya.
+const PROJECT_SCOPED_TOOLS = new Set([
+  "query_rab",
+  "query_schedule",
+  "project_diagnostics",
+  "query_project_graph",
+  "export_rab_xlsx",
+]);
+
+function buildToolRegistry(context?: ChatContext): ToolDefinition[] {
   const tools = createToolRegistry({
     coreEngineUrl: getCoreEngineUrl(),
     documentIntelligenceUrl: getDocumentIntelligenceUrl(),
@@ -101,7 +119,12 @@ function buildToolRegistry(): ToolDefinition[] {
   // analisa gambar lama (ConsolidatedExtraction/perception pipeline), digantikan
   // DEM/PCKM (docs/plans/drawing intelligence/). Aktifkan lagi tool pengganti
   // setelah Fase 2-5 (job orchestrator + synthesis + query tool) selesai.
-  return tools.filter((t) => t.declaration.name !== "search_knowledge" && t.declaration.name !== "analyze_drawing");
+  const hasProjectContext = Boolean(context?.project_id || context?.rab_lines);
+  return tools.filter((t) => {
+    if (t.declaration.name === "search_knowledge" || t.declaration.name === "analyze_drawing") return false;
+    if (!hasProjectContext && PROJECT_SCOPED_TOOLS.has(t.declaration.name)) return false;
+    return true;
+  });
 }
 
 export interface ToolArtifact {
@@ -214,11 +237,27 @@ async function executeTool(
   }
 }
 
-const TOOL_SYSTEM_SUFFIX =
-  "\n\nAnda punya akses ke tool: query_rab (baca snapshot RAB proyek), query_schedule (baca snapshot jadwal proyek), lookup_ahsp (cari kode AHSP dari kata kunci), run_scenario (simulasi skenario waktu-biaya via core-engine -- SATU panggilan sudah mengembalikan SEMUA kandidat skenario sekaligus: baseline, tambah_crew, lembur, paralel; jangan memanggilnya berkali-kali untuk tiap skenario), project_diagnostics (cross-check konsistensi RAB dan jadwal dalam satu snapshot -- item RAB tanpa kode AHSP/volume, task jadwal tidak konsisten, dst; gunakan ini kalau user bertanya kenapa ada masalah/ketidaksesuaian di proyeknya, BUKAN untuk membandingkan revisi RAB dari waktu ke waktu karena data historis revisi tidak tersedia), query_project_graph (cari fakta tentang elemen/komponen di gambar kerja proyek -- pintu, jendela, kolom, instalasi listrik, dst -- dari hasil analisis gambar yang sudah tersimpan; kirim pertanyaan user apa adanya dalam bahasa natural, backend memahami sendiri maksud lokasi/disiplin/jenis kalkulasinya, JANGAN memecah atau menyederhanakan frasa jadi satu kata kunci; SETIAP hasil dari tool ini membawa sitasi sumber [sheet_id p.halaman] yang WAJIB Anda kutip persis di jawaban akhir untuk setiap klaim faktual tentang gambar kerja; jika tool bilang data tidak tersedia atau elemen yang ditanya tidak muncul di hasil, katakan tidak ditemukan ke user -- JANGAN PERNAH mengarang detail gambar kerja dari pengetahuan umum; jika hasil membawa data_status \"calculation_required\" (pertanyaan volume/biaya/kebutuhan material), JANGAN PERNAH menghitung angka itu sendiri -- sampaikan guidance yang tool berikan apa adanya dan arahkan user ke fitur RAB/Core Engine dengan approval untuk angka final; jika data_status \"unknown_level\", katakan ke user level/lantai yang disebut tidak dikenali di gambar kerja proyek ini, jangan menebak lantai mana yang dimaksud), export_rab_xlsx (buat file Excel RAB siap unduh -- HANYA panggil kalau user eksplisit minta file/export/unduh, bukan untuk sekadar melihat data). WAJIB gunakan tool ini kalau pertanyaan butuh data proyek nyata -- JANGAN PERNAH mengarang/mengira-ngira angka RAB, HSP, volume, durasi, atau hasil analisa gambar sendiri. Kalau tool mengembalikan data tidak tersedia, katakan itu apa adanya ke user -- jangan ditutupi dengan estimasi sendiri. PENTING: tool call HANYA boleh dilakukan lewat mekanisme function-calling asli yang disediakan API -- JANGAN PERNAH menuliskan niat memanggil tool sebagai teks/JSON di dalam jawaban Anda (mis. menulis blok kode berisi {\"name\": \"run_scenario\", ...}).\n\nATURAN JAWABAN AKHIR (paling penting, sering dilanggar): jawaban akhir yang Anda tulis untuk user adalah SATU-SATUNYA yang mereka lihat -- mereka TIDAK melihat reasoning/pemikiran internal Anda. Karena itu jawaban akhir WAJIB memuat ulang semua angka konkret secara eksplisit (kode AHSP, durasi hari, biaya rupiah, dst) dalam bentuk tabel atau daftar -- JANGAN PERNAH menulis kalimat seperti 'hasil di atas', 'seperti sudah dihitung', 'sesuai analisis sebelumnya', atau 'lihat data yang sudah ditampilkan' karena user tidak melihat apa pun sebelum jawaban akhir ini. Bayangkan jawaban akhir Anda adalah laporan tertulis lengkap yang berdiri sendiri, bukan kesimpulan dari sesuatu yang sudah ditunjukkan.";
+// Tool yang SELALU tersedia (tidak butuh projectId/rabLines) -- lookup_ahsp
+// murni cari kode dari kata kunci, run_scenario simulasi generik core-engine.
+const TOOL_SYSTEM_SUFFIX_BASE =
+  "\n\nAnda punya akses ke tool: lookup_ahsp (cari kode AHSP dari kata kunci), run_scenario (simulasi skenario waktu-biaya via core-engine -- SATU panggilan sudah mengembalikan SEMUA kandidat skenario sekaligus: baseline, tambah_crew, lembur, paralel; jangan memanggilnya berkali-kali untuk tiap skenario). WAJIB gunakan tool ini kalau pertanyaan butuh data proyek nyata -- JANGAN PERNAH mengarang/mengira-ngira angka RAB, HSP, volume, durasi, atau hasil analisa gambar sendiri. Kalau tool mengembalikan data tidak tersedia, katakan itu apa adanya ke user -- jangan ditutupi dengan estimasi sendiri. PENTING: tool call HANYA boleh dilakukan lewat mekanisme function-calling asli yang disediakan API -- JANGAN PERNAH menuliskan niat memanggil tool sebagai teks/JSON di dalam jawaban Anda (mis. menulis blok kode berisi {\"name\": \"run_scenario\", ...}).\n\nATURAN JAWABAN AKHIR (paling penting, sering dilanggar): jawaban akhir yang Anda tulis untuk user adalah SATU-SATUNYA yang mereka lihat -- mereka TIDAK melihat reasoning/pemikiran internal Anda. Karena itu jawaban akhir WAJIB memuat ulang semua angka konkret secara eksplisit (kode AHSP, durasi hari, biaya rupiah, dst) dalam bentuk tabel atau daftar -- JANGAN PERNAH menulis kalimat seperti 'hasil di atas', 'seperti sudah dihitung', 'sesuai analisis sebelumnya', atau 'lihat data yang sudah ditampilkan' karena user tidak melihat apa pun sebelum jawaban akhir ini. Bayangkan jawaban akhir Anda adalah laporan tertulis lengkap yang berdiri sendiri, bukan kesimpulan dari sesuatu yang sudah ditunjukkan.";
 
-export function withToolSystemPrompt(systemPrompt: string): string {
-  return `${systemPrompt}${TOOL_SYSTEM_SUFFIX}`;
+// Deskripsi tool project-scoped -- HANYA disisipkan kalau connector (Gambar
+// Kerja/RAB/Jadwal) aktif DAN project di-attach (context.project_id/rab_lines
+// terisi, lihat buildToolRegistry/PROJECT_SCOPED_TOOLS). Tanpa guard ini,
+// system prompt menyebut tool yang sudah difilter dari skema API -- model bisa
+// tetap mencoba memanggilnya (dan gagal), atau bingung kenapa tool yang
+// disebutkan tidak ada. Root cause live-test 2026-07-18: Lucent memanggil
+// query_rab/query_schedule/project_diagnostics berkali-kali untuk pertanyaan
+// umum tanpa project dibuka sama sekali, semuanya gagal, buang waktu & token.
+const TOOL_SYSTEM_SUFFIX_PROJECT =
+  " query_rab (baca snapshot RAB proyek), query_schedule (baca snapshot jadwal proyek), project_diagnostics (cross-check konsistensi RAB dan jadwal dalam satu snapshot -- item RAB tanpa kode AHSP/volume, task jadwal tidak konsisten, dst; gunakan ini kalau user bertanya kenapa ada masalah/ketidaksesuaian di proyeknya, BUKAN untuk membandingkan revisi RAB dari waktu ke waktu karena data historis revisi tidak tersedia), query_project_graph (cari fakta tentang elemen/komponen di gambar kerja proyek -- pintu, jendela, kolom, instalasi listrik, dst -- dari hasil analisis gambar yang sudah tersimpan; kirim pertanyaan user apa adanya dalam bahasa natural, backend memahami sendiri maksud lokasi/disiplin/jenis kalkulasinya, JANGAN memecah atau menyederhanakan frasa jadi satu kata kunci; SETIAP hasil dari tool ini membawa sitasi sumber [sheet_id p.halaman] yang WAJIB Anda kutip persis di jawaban akhir untuk setiap klaim faktual tentang gambar kerja; jika tool bilang data tidak tersedia atau elemen yang ditanya tidak muncul di hasil, katakan tidak ditemukan ke user -- JANGAN PERNAH mengarang detail gambar kerja dari pengetahuan umum; jika hasil membawa data_status \"calculation_required\" (pertanyaan volume/biaya/kebutuhan material), JANGAN PERNAH menghitung angka itu sendiri -- sampaikan guidance yang tool berikan apa adanya dan arahkan user ke fitur RAB/Core Engine dengan approval untuk angka final; jika data_status \"unknown_level\", katakan ke user level/lantai yang disebut tidak dikenali di gambar kerja proyek ini, jangan menebak lantai mana yang dimaksud), export_rab_xlsx (buat file Excel RAB siap unduh -- HANYA panggil kalau user eksplisit minta file/export/unduh, bukan untuk sekadar melihat data),";
+
+export function withToolSystemPrompt(systemPrompt: string, hasProjectContext: boolean): string {
+  const toolList = hasProjectContext
+    ? TOOL_SYSTEM_SUFFIX_BASE.replace("Anda punya akses ke tool:", `Anda punya akses ke tool:${TOOL_SYSTEM_SUFFIX_PROJECT}`)
+    : TOOL_SYSTEM_SUFFIX_BASE;
+  return `${systemPrompt}${toolList}`;
 }
 
 // ─── OpenRouter / DeepSeek / DashScope (OpenAI-compatible tool_calls) ─────────
@@ -243,7 +282,7 @@ async function runOpenAiCompatibleToolLoop(params: {
   runId: string | undefined;
   conversationId: string | undefined;
 }): Promise<{ finalMessages: ToolChatMessage[]; usedTool: boolean }> {
-  const tools = buildToolRegistry();
+  const tools = buildToolRegistry(params.context);
   const toolsSchema = tools.map((t) => toOpenRouterTool(t.declaration));
   let currentMessages = [...params.messages];
   let usedTool = false;
@@ -390,7 +429,7 @@ export async function runAnthropicWithTools(params: {
   conversationId: string | undefined;
 }): Promise<{ messages: { role: "user" | "assistant"; content: string }[]; usedTool: boolean }> {
   const client = new Anthropic({ apiKey: params.apiKey });
-  const tools = buildToolRegistry();
+  const tools = buildToolRegistry(params.context);
   const toolsSchema = tools.map((t) => toAnthropicTool(t.declaration));
   let currentMessages: AnthropicMsg[] = [...params.messages];
   let usedTool = false;

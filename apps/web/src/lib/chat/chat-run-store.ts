@@ -127,11 +127,12 @@ export type ActiveRun = {
 
   statusLabel: string;
   statusDetail?: string;
-  // Timestamp (ms) event reasoning_summary (status-summary Mistral Small 3) terakhir diterima --
-  // dipakai timer di startTimer() supaya label kontekstual itu sempat terlihat
-  // user beberapa detik, bukan langsung ketiban lagi oleh regex generik di
-  // tick berikutnya (timer berjalan 1x/detik, tanpa penanda ini akan menimpa
-  // statusLabel status-summary dalam < 1 detik setiap kali).
+  // Timestamp (ms) event reasoning_summary (status-summary Mistral Small 3)
+  // PERTAMA diterima untuk run ini -- dipakai timer di startTimer() sebagai
+  // flag permanen "run ini sudah mode Mistral", bukan window waktu. Begitu
+  // terisi, timer TIDAK PERNAH lagi menimpa statusLabel dengan label regex
+  // generik (getReasoningContextStatus) -- dua gaya bahasa berbeda yang
+  // bergantian terlihat bolak-balik/membingungkan (dilaporkan user 2026-07-18).
   lastStatusSummaryAt?: number;
 
   reasoningContent: string;
@@ -274,12 +275,15 @@ class ChatRunStore {
         // menampilkan reasoningContent penuh apa adanya (lihat RunStatus.tsx),
         // jadi statusLabel-nya cukup generik, tidak perlu diringkas jadi fase.
         //
-        // Kalau label kontekstual dari status-summary baru saja masuk (< 3 detik
-        // lalu), JANGAN timpa dulu dengan regex generik -- beri waktu label
-        // itu benar-benar terbaca user. Tanpa guard ini, tick 1 detik
-        // berikutnya langsung menimpa label status-summary sebelum sempat terlihat.
-        const statusSummaryFresh = run.lastStatusSummaryAt !== undefined && (Date.now() - run.lastStatusSummaryAt) < 3000;
-        if (!statusSummaryFresh) {
+        // Begitu status-summary (Mistral) pernah masuk sekali untuk run ini,
+        // JANGAN PERNAH balik ke label regex generik lagi -- dua gaya bahasa
+        // berbeda (kontekstual spesifik vs fase abstrak "Weighing the
+        // options...") yang bergantian terlihat bolak-balik dan membingungkan
+        // (dilaporkan user 2026-07-18). lastStatusSummaryAt dipakai sebagai flag
+        // permanen "sudah pernah dapat label Mistral", bukan window waktu --
+        // begitu terisi, timer berhenti menyentuh statusLabel sampai event
+        // reasoning_summary berikutnya yang mengisinya sendiri.
+        if (run.lastStatusSummaryAt === undefined) {
           this.updateRun(runId, { elapsedMs, statusLabel: getReasoningContextStatus(run.reasoningContent) });
         } else {
           this.updateRun(runId, { elapsedMs });
