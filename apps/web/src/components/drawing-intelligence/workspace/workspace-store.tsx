@@ -949,10 +949,13 @@ export function WorkspaceProvider({
                       wbsGroup: 'Superstructure / Floor 2',
                       category,
                       formulaBasis: 'Count',
-                      formula: item.occurrence_count ? `${item.occurrence_count} pcs` : '0 pcs',
+                      // WP2: occurrence_count = jumlah referensi dalam project graph —
+                      // BUKAN kuantitas fisik (pcs/ea). Label "Detected References" agar
+                      // tidak disalahartikan sebagai hasil pengukuran teknik.
+                      formula: `${item.occurrence_count ?? 0} Detected References`,
                       formulaEvidence: item.reasons.map((r: any) => r.message),
-                      unit: 'pcs',
-                      qty: String(item.occurrence_count || 0),
+                      unit: 'ref', // bukan satuan fisik — konteks group
+                      qty: String(item.occurrence_count ?? 0),
                       status: item.readiness === 'ready' ? 'verified' : item.readiness === 'needs_review' ? 'needs-review' : 'conflict',
                       source: item.reasons?.[0]?.evidence_refs?.[0] || 'Unknown',
                       sourceSheetId: null,
@@ -1070,10 +1073,13 @@ export function mapQuantityReadinessToItems(items: any[]): QuantityItem[] {
       wbsGroup: 'Unknown', // Lossy
       category: cat,
       formulaBasis: 'Count', // Lossy
-      formula: '',
+      // WP2: occurrence_count = jumlah referensi dalam project graph —
+      // BUKAN kuantitas fisik. Unit 'ref' agar tidak disalahartikan sebagai
+      // satuan teknik (pcs/ea). Jangan teruskan ke RAB tanpa Measurement Fact.
+      formula: `${item.occurrence_count ?? 0} Detected References`,
       formulaEvidence: [],
-      unit: 'ea', // Lossy
-      qty: String(item.occurrence_count || 0),
+      unit: 'ref', // bukan satuan fisik — konteks group
+      qty: String(item.occurrence_count ?? 0),
       status,
       source: 'Project Graph',
       sourceSheetId: null,
