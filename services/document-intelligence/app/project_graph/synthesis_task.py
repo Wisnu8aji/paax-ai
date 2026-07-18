@@ -111,6 +111,17 @@ async def synthesize_and_post_snapshot_task(run_id: str, project_id: str, run_st
                     "prompt_version": sheet.generation.prompt_version
                 }
                 
+                bbox_normalized = bbox
+                if bbox:
+                    transform = getattr(sheet.source, "page_transform", None)
+                    if transform is not None:
+                        # PageTransform could be a dict if loaded from JSON DB/json-serializable format.
+                        # Let's support both object and dict access:
+                        if isinstance(transform, dict):
+                            from app.perception.coordinate_transform import PageTransform
+                            transform = PageTransform(**transform)
+                        bbox_normalized = list(transform.pdf_to_normalized_bbox(tuple(bbox)))
+
                 evidence_list.append({
                     "evidence_id": ev.evidence_id,
                     "project_id": sheet.project_id,
@@ -129,7 +140,7 @@ async def synthesize_and_post_snapshot_task(run_id: str, project_id: str, run_st
                     "normalized_content": ev.raw.lower().strip() if ev.raw else "",
                     "bbox": bbox,
                     "bbox_source": bbox,
-                    "bbox_normalized": bbox,
+                    "bbox_normalized": bbox_normalized,
                     "polygon_source": [],
                     "polygon_normalized": [],
                     "confidence": float(ev.confidence),
@@ -137,6 +148,7 @@ async def synthesize_and_post_snapshot_task(run_id: str, project_id: str, run_st
                     "artifact_hash": sheet.source.document_hash,
                     "source_dem_id": dem_page_id,
                 })
+
 
         # 2. Collect all referenced evidence IDs
         referenced_evidence_ids = set()

@@ -69,6 +69,7 @@ async def process_page(
             render_uri=f"inline://{run['id']}/page-{page_index:04d}.png",
             width_px=rendered.width_px,
             height_px=rendered.height_px,
+            page_transform=rendered.page_transform,
         ),
         generation=DemGeneration(
             provider="qwen",

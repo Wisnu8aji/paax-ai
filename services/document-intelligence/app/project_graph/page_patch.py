@@ -303,6 +303,7 @@ def build_sheet_patch(
         project_id=sheet.project_id,
         run_id=sheet.run_id,
         page_index=sheet.source.page_index,
+        page_number=sheet.source.page_number,
         discipline=discipline,
         completion=SheetCompletionState(
             sections_expected=sheet.completion.sections_expected,
@@ -320,4 +321,5 @@ def build_sheet_patch(
         ambiguities=list(sheet.ambiguities),
         conflicts=list(sheet.conflicts),
         unclassified=list(sheet.unclassified),
+        page_transform=sheet.source.page_transform,
     )

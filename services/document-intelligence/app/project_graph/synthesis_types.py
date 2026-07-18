@@ -73,6 +73,9 @@ class SheetCompletionState(BaseModel):
     next_cursor: Optional[str] = None
 
 
+from app.perception.coordinate_transform import PageTransform
+
+
 class SheetKnowledgePatch(BaseModel):
     """Deterministic, page-scoped facts prepared for project synthesis."""
 
@@ -81,6 +84,7 @@ class SheetKnowledgePatch(BaseModel):
     project_id: str
     run_id: str
     page_index: int
+    page_number: Optional[int] = None
     discipline: str
     completion: SheetCompletionState
     facts: list[SheetFact] = Field(default_factory=list)
@@ -93,3 +97,4 @@ class SheetKnowledgePatch(BaseModel):
     ambiguities: list[str] = Field(default_factory=list)
     conflicts: list[str] = Field(default_factory=list)
     unclassified: list[str] = Field(default_factory=list)
+    page_transform: Optional[PageTransform] = None

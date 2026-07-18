@@ -6,11 +6,15 @@ from dataclasses import dataclass
 import fitz
 
 
+from app.perception.coordinate_transform import PageTransform, create_page_transform
+
+
 @dataclass(frozen=True)
 class RenderedPage:
     png_bytes: bytes
     width_px: int
     height_px: int
+    page_transform: PageTransform
 
 
 def render_page_to_png(pdf_bytes: bytes, page_index: int, dpi: int = 200) -> bytes:
@@ -26,10 +30,12 @@ def render_page(pdf_bytes: bytes, page_index: int, dpi: int = 200) -> RenderedPa
     try:
         page = doc[page_index]
         pixmap = page.get_pixmap(dpi=dpi)
+        transform = create_page_transform(page, dpi=dpi)
         return RenderedPage(
             png_bytes=pixmap.tobytes("png"),
             width_px=pixmap.width,
             height_px=pixmap.height,
+            page_transform=transform,
         )
     finally:
         doc.close()

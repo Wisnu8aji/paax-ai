@@ -1425,6 +1425,18 @@ export const DemStatusEnum = z.enum([
   "extracted", "ai_interpreted", "ambiguous", "conflicting", "missing", "human_verified",
 ]);
 
+export const PageTransformSchema = z.object({
+  page_width_pdf: z.number(),
+  page_height_pdf: z.number(),
+  render_width_px: z.number().int(),
+  render_height_px: z.number().int(),
+  rotation_degrees: z.number().int(),
+  crop_box_pdf: z.array(z.number()).default([]),
+  pdf_to_pixel: z.array(z.number()).default([]),
+  pixel_to_normalized: z.array(z.number()).default([]),
+  normalized_to_pdf: z.array(z.number()).default([]),
+});
+
 export const DemSourceSchema = z.object({
   document_hash: z.string(),
   file_name: z.string(),
@@ -1433,6 +1445,7 @@ export const DemSourceSchema = z.object({
   render_uri: z.string(),
   width_px: z.number().int(),
   height_px: z.number().int(),
+  page_transform: PageTransformSchema.nullish(),
 });
 
 export const DemGenerationSchema = z.object({

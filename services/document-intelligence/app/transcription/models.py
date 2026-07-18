@@ -22,6 +22,9 @@ DemStatus = Literal[
 ]
 
 
+from app.perception.coordinate_transform import PageTransform
+
+
 class DemSource(BaseModel):
     document_hash: str
     file_name: str
@@ -30,6 +33,7 @@ class DemSource(BaseModel):
     render_uri: str
     width_px: int
     height_px: int
+    page_transform: Optional[PageTransform] = None
 
 
 class DemGeneration(BaseModel):
