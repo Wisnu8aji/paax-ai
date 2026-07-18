@@ -47,5 +47,5 @@ Lalu edit file yang dihasilkan di `alembic/versions/`.
 
 ```bash
 python -m pytest -q
-# 2026-07-10: 8 passed, 1 skipped
+# 2026-07-19: 8 passed, 1 skipped
 ```
