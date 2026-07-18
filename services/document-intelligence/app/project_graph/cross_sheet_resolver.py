@@ -62,6 +62,9 @@ class _TypeSource:
     level_requires_review: bool = False
 
 
+_PHYSICAL_BASIS_CATEGORIES = frozenset({"symbols", "geometry_descriptions"})
+
+
 _CODE_BOUNDARY = re.compile(r"(?<![A-Z0-9]){code}(?![A-Z0-9])")
 # [\s\-]* (not \s*) tolerates "LT-2" alongside "LT.2"/"LT 2"/"LANTAI 2" -- real
 # fixture anchor: page 47 titled "DENAH BALOK LINTEL LT-2" was missed by the
@@ -398,6 +401,90 @@ def _element_bbox(
     return selected.bbox
 
 
+def _physical_basis_facts(
+    patch: SheetKnowledgePatch, source_ref: NodeSourceRef
+) -> tuple[object, ...]:
+    """Return symbol/geometry facts that can anchor a physical candidate.
+
+    Labels, schedules, legends, and context groups are deliberately not a
+    physical basis. A basis must have both a locator (bbox) and evidence so the
+    gate fails closed when DEM extraction is incomplete.
+    """
+    label_refs = set(source_ref.evidence_refs)
+    return tuple(
+        fact
+        for fact in patch.facts
+        if fact.category in _PHYSICAL_BASIS_CATEGORIES
+        and fact.bbox is not None
+        and fact.evidence_refs
+        # The symbol/geometry evidence is commonly a distinct DEM item from
+        # the text label. Presence on the same patch is the source association;
+        # requiring shared evidence would reject valid paired observations.
+        and (not label_refs or fact.evidence_refs)
+    )
+
+
+def _human_verified_physical_basis(
+    patch: SheetKnowledgePatch, source_ref: NodeSourceRef, basis_fact: object
+) -> bool:
+    """Promote only an explicitly human-verified, conflict-free candidate."""
+    if patch.conflicts:
+        return False
+    relevant = [
+        fact
+        for fact in patch.facts
+        if fact.category in {"element_labels", "levels", "spaces"}
+        and (
+            fact.category != "element_labels"
+            or set(fact.evidence_refs) & set(source_ref.evidence_refs)
+        )
+    ]
+    return bool(relevant) and all(
+        fact.status == "human_verified" for fact in (*relevant, basis_fact)
+    )
+
+
+def _physical_candidate_node(
+    type_node: ProjectGraphNode,
+    source: _TypeSource,
+    level_node: ProjectGraphNode,
+    space_node: ProjectGraphNode | None,
+    grid_node: ProjectGraphNode | None,
+    basis_fact: object,
+) -> ProjectGraphNode:
+    assert source.level is not None
+    locator = space_node or grid_node
+    assert locator is not None
+    evidence_refs = sorted(
+        set(source.source_ref.evidence_refs)
+        | set(basis_fact.evidence_refs)
+        | set(source.level.evidence_refs)
+    )
+    verified = _human_verified_physical_basis(source.patch, source.source_ref, basis_fact)
+    status = "human_verified" if verified else "cross_sheet_inferred"
+    return ProjectGraphNode(
+        node_id=_stable_id(
+            "PHYS", type_node.node_id, source.patch.document_id,
+            source.patch.page_index, basis_fact.fact_id,
+        ),
+        type="physical_element" if verified else "physical_element_candidate",
+        canonical_name=f"{type_node.canonical_name} @ {source.level.display} / {locator.canonical_name}",
+        properties={
+            "element_type_id": NodeProperty(value=type_node.node_id, evidence_refs=evidence_refs),
+            "view_id": NodeProperty(value=source.patch.sheet_id, evidence_refs=evidence_refs),
+            "level": NodeProperty(value=source.level.display, evidence_refs=list(source.level.evidence_refs)),
+            "spatial_locator": NodeProperty(value=locator.canonical_name, evidence_refs=evidence_refs),
+            "basis_kind": NodeProperty(value=basis_fact.category, evidence_refs=list(basis_fact.evidence_refs)),
+            "occurrence_semantics": NodeProperty(value="physical_instance", evidence_refs=evidence_refs),
+            "physical_count_eligible": NodeProperty(value=verified, evidence_refs=evidence_refs),
+        },
+        discipline=type_node.discipline,
+        verification_status=status,
+        confidence=min(type_node.confidence, source.level.confidence, basis_fact.confidence),
+        source_refs=_merge_source_refs([source.source_ref]),
+    )
+
+
 def _nearest_value(
     source_bbox: tuple[float, float, float, float] | None,
     values: Sequence[_FactValue],
@@ -607,6 +694,10 @@ def _occurrence_node(
         # Count comes only from the distinct extracted label sources grouped
         # into this deterministic context; it is never a quantity takeoff.
         "label_count": NodeProperty(value=len(sources), evidence_refs=label_evidence_refs),
+        "occurrence_semantics": NodeProperty(
+            value="context_group_not_physical", evidence_refs=label_evidence_refs
+        ),
+        "physical_count_eligible": NodeProperty(value=False, evidence_refs=label_evidence_refs),
     }
     if space_node is not None:
         properties["space"] = NodeProperty(value=space_node.canonical_name, evidence_refs=space_evidence_refs)
@@ -1039,6 +1130,55 @@ def resolve_cross_sheet(
                     *locator_edges,
                 )
             )
+
+            # A grouped label remains a reference/context group. A separate
+            # candidate is created only from a symbol/geometry basis with a
+            # real level and spatial locator on a view. Schedules, legends and
+            # details never reach this branch because occurrence_sources is
+            # filtered above.
+            for source in context_sources:
+                for basis_fact in _physical_basis_facts(source.patch, source.source_ref):
+                    candidate = _physical_candidate_node(
+                        type_node, source, level_node, space_node, grid_node, basis_fact
+                    )
+                    nodes.append(candidate)
+                    candidate_evidence = sorted(
+                        set(candidate.properties["physical_count_eligible"].evidence_refs)
+                    )
+                    edges.extend(
+                        (
+                            ProjectGraphEdge(
+                                edge_id=_stable_id("EDGE", candidate.node_id, type_node.node_id, "INSTANCE_OF"),
+                                source=candidate.node_id,
+                                target=type_node.node_id,
+                                relation="INSTANCE_OF",
+                                confidence_class="HUMAN_VERIFIED" if candidate.verification_status == "human_verified" else "CROSS_SHEET_INFERRED",
+                                confidence=candidate.confidence,
+                                evidence_refs=candidate_evidence,
+                                resolver=EdgeResolver(method="deterministic_physical_basis_gate"),
+                            ),
+                            ProjectGraphEdge(
+                                edge_id=_stable_id("EDGE", candidate.node_id, level_node.node_id, "LOCATED_ON"),
+                                source=candidate.node_id,
+                                target=level_node.node_id,
+                                relation="LOCATED_ON",
+                                confidence_class="HUMAN_VERIFIED" if candidate.verification_status == "human_verified" else "CROSS_SHEET_INFERRED",
+                                confidence=candidate.confidence,
+                                evidence_refs=candidate_evidence,
+                                resolver=EdgeResolver(method="deterministic_physical_basis_gate"),
+                            ),
+                            ProjectGraphEdge(
+                                edge_id=_stable_id("EDGE", candidate.node_id, (space_node or grid_node).node_id, "LOCATED_IN" if space_node else "ALIGNED_TO"),
+                                source=candidate.node_id,
+                                target=(space_node or grid_node).node_id,
+                                relation="LOCATED_IN" if space_node else "ALIGNED_TO",
+                                confidence_class="HUMAN_VERIFIED" if candidate.verification_status == "human_verified" else "CROSS_SHEET_INFERRED",
+                                confidence=candidate.confidence,
+                                evidence_refs=candidate_evidence,
+                                resolver=EdgeResolver(method="deterministic_physical_basis_gate"),
+                            ),
+                        )
+                    )
 
         for alternate_id in sorted(occurrence_ids)[1:]:
             primary_id = sorted(occurrence_ids)[0]

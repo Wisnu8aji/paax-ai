@@ -64,6 +64,10 @@ class SynthesisAudit:
     possibly_same_count: int
     escalation_count: int
     conflict_count: int
+    label_observation_count: int
+    context_group_count: int
+    physical_candidate_count: int
+    verified_physical_count: int
 
 
 @dataclass(frozen=True)
@@ -598,6 +602,15 @@ def synthesize_project_graph(
     summary = build_project_graph_summary(snapshot)
     type_nodes = [node for node in nodes if node.type == "element_type"]
     occurrence_nodes = [node for node in nodes if node.type == "element_occurrence"]
+    physical_candidates = [
+        node for node in nodes
+        if node.type in {"physical_element_candidate", "physical_element"}
+    ]
+    verified_physical = [
+        node for node in physical_candidates
+        if node.type == "physical_element"
+        and node.properties.get("physical_count_eligible", NodeProperty(value=False)).value is True
+    ]
     audit = SynthesisAudit(
         page_count=len(patches),
         element_type_count=len(type_nodes),
@@ -607,6 +620,12 @@ def synthesize_project_graph(
         possibly_same_count=sum(edge.relation == "POSSIBLY_SAME_AS" for edge in edges),
         escalation_count=len(cross_sheet.escalation_requests),
         conflict_count=len(snapshot.conflicts),
+        label_observation_count=sum(
+            1 for patch in patches for fact in patch.facts if fact.category == "element_labels"
+        ),
+        context_group_count=len(occurrence_nodes),
+        physical_candidate_count=len(physical_candidates),
+        verified_physical_count=len(verified_physical),
     )
     return SynthesisResult(
         snapshot=snapshot,

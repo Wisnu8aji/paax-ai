@@ -29,7 +29,10 @@ NodeType = Literal[
     "site", "building", "wing", "level", "zone", "grid_axis", "grid_intersection",
     "space", "room", "external_area",
     # Construction nodes
-    "system", "discipline", "element_type", "element_occurrence", "assembly",
+    "system", "discipline", "element_type", "element_occurrence",
+    "element_reference", "symbol_candidate", "geometry_candidate",
+    "physical_element_candidate", "physical_element", "measurement_fact",
+    "work_item_candidate", "assembly",
     "material", "finish", "opening", "equipment", "fixture",
     # Information nodes
     "dimension", "specification", "note", "schedule_table", "detail_reference",
@@ -212,11 +215,15 @@ class ElementTypeIndexEntry(BaseModel):
     element_type_id: str
     name: str
     occurrence_count: int
+    physical_candidate_count: int = Field(default=0, ge=0)
+    verified_physical_count: int = Field(default=0, ge=0)
 
 
 class DisciplineCountEntry(BaseModel):
     discipline: str
     occurrence_count: int
+    physical_candidate_count: int = Field(default=0, ge=0)
+    verified_physical_count: int = Field(default=0, ge=0)
 
 
 class StoredMeasurementFact(BaseModel):
@@ -231,6 +238,10 @@ class SummaryPayload(BaseModel):
     element_type_index: list[ElementTypeIndexEntry] = Field(default_factory=list)
     discipline_counts: list[DisciplineCountEntry] = Field(default_factory=list)
     stored_measurement_facts: list[StoredMeasurementFact] = Field(default_factory=list)
+    label_observation_count: int = Field(default=0, ge=0)
+    context_group_count: int = Field(default=0, ge=0)
+    physical_candidate_count: int = Field(default=0, ge=0)
+    verified_physical_count: int = Field(default=0, ge=0)
 
 
 class QualityPayload(BaseModel):

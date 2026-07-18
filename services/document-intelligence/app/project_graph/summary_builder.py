@@ -225,6 +225,18 @@ def compile_level_overview(
         for node in snapshot.nodes
         if node.node_id in occurrence_ids and node.type == "element_occurrence"
     ]
+    physical_nodes = [
+        node
+        for node in snapshot.nodes
+        if node.type in {"physical_element_candidate", "physical_element"}
+        and node.node_id in occurrence_ids
+    ]
+    verified_physical_nodes = [
+        node for node in physical_nodes
+        if node.type == "physical_element"
+        and node.properties.get("physical_count_eligible") is not None
+        and node.properties["physical_count_eligible"].value is True
+    ]
 
     # 3. Group by Element Type (via INSTANCE_OF edges)
     occurrence_to_type: dict[str, str] = {}
@@ -242,11 +254,21 @@ def compile_level_overview(
     for t_id, count in sorted(type_counts.items()):
         t_node = nodes_by_id.get(t_id)
         t_name = t_node.canonical_name if t_node else t_id
+        candidate_count = sum(
+            1 for node in physical_nodes
+            if any(edge.source == node.node_id and edge.target == t_id and edge.relation == "INSTANCE_OF" for edge in snapshot.edges)
+        )
+        verified_count = sum(
+            1 for node in verified_physical_nodes
+            if any(edge.source == node.node_id and edge.target == t_id and edge.relation == "INSTANCE_OF" for edge in snapshot.edges)
+        )
         element_type_index.append(
             ElementTypeIndexEntry(
                 element_type_id=t_id,
                 name=t_name,
                 occurrence_count=count,
+                physical_candidate_count=candidate_count,
+                verified_physical_count=verified_count,
             )
         )
 
@@ -257,10 +279,18 @@ def compile_level_overview(
         if disp:
             discipline_counts_map[disp] = discipline_counts_map.get(disp, 0) + 1
 
-    discipline_counts = [
-        DisciplineCountEntry(discipline=disp, occurrence_count=count)
-        for disp, count in sorted(discipline_counts_map.items())
-    ]
+    discipline_counts = []
+    for disp, count in sorted(discipline_counts_map.items()):
+        candidate_count = sum(node.discipline == disp for node in physical_nodes)
+        verified_count = sum(node.discipline == disp for node in verified_physical_nodes)
+        discipline_counts.append(
+            DisciplineCountEntry(
+                discipline=disp,
+                occurrence_count=count,
+                physical_candidate_count=candidate_count,
+                verified_physical_count=verified_count,
+            )
+        )
 
     # 5. Stored Measurement Facts (Dimension nodes linked via HAS_DIMENSION)
     # Find relevant sources: occurrences on this level, and drawing_references related to them
@@ -401,6 +431,15 @@ def compile_level_overview(
             element_type_index=element_type_index,
             discipline_counts=discipline_counts,
             stored_measurement_facts=stored_measurement_facts,
+            label_observation_count=sum(
+                int(node.properties["label_count"].value)
+                for node in occurrences
+                if "label_count" in node.properties
+                and isinstance(node.properties["label_count"].value, int)
+            ),
+            context_group_count=len(occurrences),
+            physical_candidate_count=len(physical_nodes),
+            verified_physical_count=len(verified_physical_nodes),
         ),
         quality=quality,
         provenance=provenance,

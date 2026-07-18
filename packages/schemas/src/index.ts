@@ -1621,7 +1621,7 @@ export const NodeTypeEnum = z.enum([
   "project", "document", "sheet", "view", "drawing_zone", "revision",
   "site", "building", "wing", "level", "zone", "grid_axis", "grid_intersection",
   "space", "room", "external_area",
-  "system", "discipline", "element_type", "element_occurrence", "assembly",
+  "system", "discipline", "element_type", "element_occurrence", "element_reference", "symbol_candidate", "geometry_candidate", "physical_element_candidate", "physical_element", "measurement_fact", "work_item_candidate", "assembly",
   "material", "finish", "opening", "equipment", "fixture",
   "dimension", "specification", "note", "schedule_table", "detail_reference",
   "drawing_reference", "assumption", "conflict", "missing_information",
@@ -1792,6 +1792,8 @@ export const ElementTypeIndexEntrySchema = z.object({
   element_type_id: z.string(),
   name: z.string(),
   occurrence_count: z.number().int().nonnegative(),
+  physical_candidate_count: z.number().int().nonnegative().default(0),
+  verified_physical_count: z.number().int().nonnegative().default(0),
   data_status: z.literal("corrected").nullish(),
   correction: z.record(z.unknown()).nullish(),
 });
@@ -1800,6 +1802,8 @@ export type ElementTypeIndexEntry = z.infer<typeof ElementTypeIndexEntrySchema>;
 export const DisciplineCountEntrySchema = z.object({
   discipline: z.string(),
   occurrence_count: z.number().int().nonnegative(),
+  physical_candidate_count: z.number().int().nonnegative().default(0),
+  verified_physical_count: z.number().int().nonnegative().default(0),
 });
 export type DisciplineCountEntry = z.infer<typeof DisciplineCountEntrySchema>;
 
@@ -1816,6 +1820,10 @@ export const SummaryPayloadSchema = z.object({
   element_type_index: z.array(ElementTypeIndexEntrySchema).default([]),
   discipline_counts: z.array(DisciplineCountEntrySchema).default([]),
   stored_measurement_facts: z.array(StoredMeasurementFactSchema).default([]),
+  label_observation_count: z.number().int().nonnegative().default(0),
+  context_group_count: z.number().int().nonnegative().default(0),
+  physical_candidate_count: z.number().int().nonnegative().default(0),
+  verified_physical_count: z.number().int().nonnegative().default(0),
   data_status: z.literal("corrected").nullish(),
   corrections: z.array(z.record(z.unknown())).default([]),
 });

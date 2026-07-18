@@ -568,6 +568,8 @@ class ElementTypeIndexEntry(BaseModel):
     element_type_id: str
     name: str
     occurrence_count: int = Field(ge=0)
+    physical_candidate_count: int = Field(default=0, ge=0)
+    verified_physical_count: int = Field(default=0, ge=0)
     data_status: Optional[Literal["corrected"]] = None
     correction: Optional[Dict[str, Any]] = None
 
@@ -575,6 +577,8 @@ class ElementTypeIndexEntry(BaseModel):
 class DisciplineCountEntry(BaseModel):
     discipline: str
     occurrence_count: int = Field(ge=0)
+    physical_candidate_count: int = Field(default=0, ge=0)
+    verified_physical_count: int = Field(default=0, ge=0)
 
 
 class StoredMeasurementFact(BaseModel):
@@ -589,6 +593,10 @@ class SummaryPayload(BaseModel):
     element_type_index: List[ElementTypeIndexEntry] = Field(default_factory=list)
     discipline_counts: List[DisciplineCountEntry] = Field(default_factory=list)
     stored_measurement_facts: List[StoredMeasurementFact] = Field(default_factory=list)
+    label_observation_count: int = Field(default=0, ge=0)
+    context_group_count: int = Field(default=0, ge=0)
+    physical_candidate_count: int = Field(default=0, ge=0)
+    verified_physical_count: int = Field(default=0, ge=0)
     data_status: Optional[Literal["corrected"]] = None
     corrections: List[Dict[str, Any]] = Field(default_factory=list)
 

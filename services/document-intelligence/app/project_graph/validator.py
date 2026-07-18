@@ -66,6 +66,9 @@ def validate_project_graph(
 
     located_on_counts: dict[str, int] = {}
     located_on_targets: dict[str, set[str]] = {}
+    locatable_types = {
+        "element_occurrence", "physical_element_candidate", "physical_element"
+    }
     for edge in ordered_edges:
         for endpoint_id in (edge.source, edge.target):
             if endpoint_id not in node_counts:
@@ -82,13 +85,13 @@ def validate_project_graph(
             continue
         source_exists = edge.source in node_types
         target_exists = edge.target in node_types
-        if source_exists and node_types[edge.source] != "element_occurrence":
+        if source_exists and node_types[edge.source] not in locatable_types:
             issues.append(
                 GraphValidationIssue(
                     code="invalid_located_on_source",
                     message=(
                         f"LOCATED_ON edge {edge.edge_id!r} must originate from an "
-                        "element_occurrence"
+                        "element_occurrence or physical element"
                     ),
                     node_id=edge.source,
                     edge_id=edge.edge_id,
@@ -108,10 +111,10 @@ def validate_project_graph(
         if (
             source_exists
             and target_exists
-            and node_types[edge.source] == "element_occurrence"
+            and node_types[edge.source] in locatable_types
         ):
             located_on_counts[edge.source] = located_on_counts.get(edge.source, 0) + 1
-        if source_exists and target_exists and node_types[edge.source] == "element_occurrence":
+        if source_exists and target_exists and node_types[edge.source] in locatable_types:
             located_on_targets.setdefault(edge.source, set()).add(edge.target)
 
     for source_id in sorted(located_on_counts):
@@ -121,7 +124,7 @@ def validate_project_graph(
                 GraphValidationIssue(
                     code="multiple_located_on_targets",
                     message=(
-                        f"element occurrence {source_id!r} has {located_on_counts[source_id]} "
+                        f"locatable element {source_id!r} has {located_on_counts[source_id]} "
                         "LOCATED_ON edges targeting: "
                         f"{', '.join(sorted(targets))}"
                     ),
