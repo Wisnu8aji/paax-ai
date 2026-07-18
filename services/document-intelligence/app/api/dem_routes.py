@@ -1,20 +1,20 @@
 """HTTP endpoints for DEM extraction jobs."""
 from __future__ import annotations
 
+import hashlib
 import os
 import tempfile
-import hashlib
 import uuid
-import traceback
 
 import fitz
 import httpx
-from fastapi import APIRouter, BackgroundTasks, File, Form, UploadFile, HTTPException, Response
+from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Response, UploadFile
 
+from app.security import MAX_UPLOAD_BYTES, sanitise_filename, validate_pdf_magic
 from app.transcription.db_client import DemDbClient
 from app.transcription.document_loop import process_document
-from app.transcription.providers.qwen import QwenDemAdapter
 from app.transcription.models import DrawingEvidenceSheet
+from app.transcription.providers.qwen import QwenDemAdapter
 from app.project_graph.synthesis import synthesize_project_graph
 
 router = APIRouter(prefix="/drawings/dem", tags=["DEM"])
@@ -23,16 +23,23 @@ PROMPT_VERSION = "dem-extraction-v1.0.0"
 
 from app.project_graph.synthesis_task import synthesize_and_post_snapshot_task
 
-
-import os
-import tempfile
-
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", os.path.join(tempfile.gettempdir(), "paax_uploads"))
 
 
 @router.post("/start")
 async def start_dem_run(background_tasks: BackgroundTasks, file: UploadFile = File(...), project_id: str | None = Form(default=None)):
+    # ── Security: read with size guard ───────────────────────────────────────
     pdf_bytes = await file.read()
+    if len(pdf_bytes) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File melebihi batas 50 MB.")
+
+    # ── Security: validate PDF magic bytes before doing anything with content ─
+    if not validate_pdf_magic(pdf_bytes):
+        raise HTTPException(
+            status_code=400,
+            detail="File bukan PDF yang valid (magic byte tidak cocok). Hanya file PDF yang didukung.",
+        )
+
     document_hash = f"sha256:{hashlib.sha256(pdf_bytes).hexdigest()}"
     document = fitz.open(stream=pdf_bytes, filetype="pdf")
     try:
@@ -40,9 +47,13 @@ async def start_dem_run(background_tasks: BackgroundTasks, file: UploadFile = Fi
     finally:
         document.close()
     document_id = f"DOC-{uuid.uuid4().hex[:8]}"
-    
+
+    # ── Security: sanitise filename (path-traversal prevention) ───────────────
+    safe_filename = sanitise_filename(file.filename) if file.filename else "unknown.pdf"
+
     os.makedirs(UPLOAD_DIR, exist_ok=True)
-    pdf_path = os.path.join(UPLOAD_DIR, f"{document_id}_{file.filename or 'unknown.pdf'}")
+    # Use document_id prefix so paths stay unique even if two uploads share a name.
+    pdf_path = os.path.join(UPLOAD_DIR, f"{document_id}_{safe_filename}")
     with open(pdf_path, "wb") as out:
         out.write(pdf_bytes)
 
@@ -51,7 +62,7 @@ async def start_dem_run(background_tasks: BackgroundTasks, file: UploadFile = Fi
         project_id=project_id,
         document_id=document_id,
         document_hash=document_hash,
-        file_name=file.filename or "unknown.pdf",
+        file_name=safe_filename,
         total_pages=total_pages,
         provider="qwen",
         prompt_version=PROMPT_VERSION,
@@ -63,7 +74,7 @@ async def start_dem_run(background_tasks: BackgroundTasks, file: UploadFile = Fi
     background_tasks.add_task(
         process_document, pdf_bytes=pdf_bytes, run_id=run["id"], document_id=document_id,
         document_hash=document_hash, total_pages=total_pages, provider=provider, db_client=db_client,
-        prompt_version=PROMPT_VERSION, project_id=project_id, file_name=file.filename or "unknown.pdf",
+        prompt_version=PROMPT_VERSION, project_id=project_id, file_name=safe_filename,
     )
     return {"run_id": run["id"], "status": "pages_queued", "total_pages": total_pages}
 
