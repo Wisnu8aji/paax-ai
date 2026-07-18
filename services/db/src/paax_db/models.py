@@ -1,4 +1,4 @@
-from sqlalchemy import CHAR, Column, String, Integer, Numeric, Boolean, DateTime, ForeignKey, JSON, Text, UniqueConstraint, ForeignKeyConstraint
+from sqlalchemy import CHAR, Column, String, Integer, Numeric, Boolean, DateTime, ForeignKey, JSON, Text, UniqueConstraint, ForeignKeyConstraint, event
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -322,6 +322,11 @@ class ProjectGraphEvidence(Base):
             name='fk_project_graph_evidence_snapshot_project'
         ),
     )
+
+
+@event.listens_for(ProjectGraphEvidence, "before_update")
+def prevent_evidence_update(mapper, connection, target):
+    raise ValueError("ProjectGraphEvidence records are immutable and cannot be updated.")
 
 
 class ProjectGraphNodeEvidence(Base):

@@ -149,6 +149,21 @@ async def test_persist_snapshot_graph_keeps_node_edge_alias_and_evidence_scoped_
                     "sheet_id": "S-21",
                     "kind": "text",
                     "raw_text": "J2",
+                    "revision_id": "REV-1",
+                    "run_id": "RUN-1",
+                    "dem_page_id": "PAGE-1",
+                    "view_id": "VIEW-1",
+                    "zone_id": "ZONE-1",
+                    "modality": "vector",
+                    "raw_content": "J2",
+                    "normalized_content": "j2",
+                    "bbox_source": [0, 0, 10, 10],
+                    "bbox_normalized": [0, 0, 10, 10],
+                    "polygon_source": [1, 2, 3],
+                    "polygon_normalized": [1, 2, 3],
+                    "confidence": 0.95,
+                    "extractor": {"model": "gpt-4"},
+                    "artifact_hash": "hash-123"
                 }
             ],
             node_evidence=[{"node_id": "NODE-J2", "evidence_id": "EV-21-J2", "role": "source"}],
@@ -197,6 +212,13 @@ async def test_persist_snapshot_graph_keeps_node_edge_alias_and_evidence_scoped_
         node_evidence = (
             await session.execute(select(models.ProjectGraphNodeEvidence))
         ).scalars().one()
+        evidence_rec = (
+            await session.execute(
+                select(models.ProjectGraphEvidence).where(
+                    models.ProjectGraphEvidence.snapshot_id == "SNAPSHOT-A1"
+                )
+            )
+        ).scalars().one()
 
     assert (node.project_id, node.node_id, node.properties_json) == (
         "PROJECT-A",
@@ -214,6 +236,14 @@ async def test_persist_snapshot_graph_keeps_node_edge_alias_and_evidence_scoped_
         "EV-21-J2",
         "source",
     )
+    assert (evidence_rec.revision_id, evidence_rec.run_id, evidence_rec.dem_page_id) == ("REV-1", "RUN-1", "PAGE-1")
+    assert (evidence_rec.view_id, evidence_rec.zone_id, evidence_rec.modality) == ("VIEW-1", "ZONE-1", "vector")
+    assert (evidence_rec.raw_content, evidence_rec.normalized_content) == ("J2", "j2")
+    assert (evidence_rec.bbox_source, evidence_rec.bbox_normalized) == ([0, 0, 10, 10], [0, 0, 10, 10])
+    assert (evidence_rec.polygon_source, evidence_rec.polygon_normalized) == ([1, 2, 3], [1, 2, 3])
+    assert float(evidence_rec.confidence) == 0.95
+    assert evidence_rec.extractor == {"model": "gpt-4"}
+    assert evidence_rec.artifact_hash == "hash-123"
 
 
 @pytest.mark.asyncio
@@ -310,3 +340,58 @@ async def test_project_graph_snapshot_api_is_project_scoped_and_returns_only_act
     assert created_snapshot.status_code == 200
     assert active_snapshot.status_code == 200
     assert active_snapshot.json()["snapshot_id"] == "SNAPSHOT-A1"
+
+
+@pytest.mark.asyncio
+async def test_project_graph_evidence_immutability():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        session.add(models.Project(id="PROJECT-A", owner_id="OWNER-A", name="Project A"))
+        await session.commit()
+        await activate_snapshot(
+            session,
+            project_id="PROJECT-A",
+            snapshot_id="SNAPSHOT-A1",
+            schema_version="paax.pckm.graph.v1",
+            source_manifest_hash="manifest-a1",
+            generation_metadata={},
+        )
+
+        await persist_snapshot_graph(
+            session,
+            project_id="PROJECT-A",
+            snapshot_id="SNAPSHOT-A1",
+            nodes=[],
+            edges=[],
+            evidence=[
+                {
+                    "evidence_id": "EV-1",
+                    "document_id": "DOC-1",
+                    "page_index": 0,
+                    "sheet_id": "S-1",
+                    "kind": "text",
+                    "raw_text": "Original text",
+                }
+            ],
+            node_evidence=[],
+            edge_evidence=[],
+            aliases=[],
+            communities=[],
+        )
+
+        # Retrieve the evidence record
+        evidence_rec = (
+            await session.execute(
+                select(models.ProjectGraphEvidence).where(
+                    models.ProjectGraphEvidence.snapshot_id == "SNAPSHOT-A1"
+                )
+            )
+        ).scalars().one()
+
+        # Try to modify raw_text
+        evidence_rec.raw_text = "Modified text"
+        
+        # Verify that session.commit() raises ValueError due to our event listener
+        with pytest.raises(ValueError, match="immutable"):
+            await session.commit()

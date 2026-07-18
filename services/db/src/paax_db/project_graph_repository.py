@@ -75,6 +75,21 @@ def _add_graph_records(
             document_id=item["document_id"], page_index=item["page_index"],
             sheet_id=item["sheet_id"], kind=item["kind"], raw_text=item["raw_text"],
             bbox_json=item.get("bbox"), source_dem_id=item.get("source_dem_id"),
+            revision_id=item.get("revision_id"),
+            run_id=item.get("run_id"),
+            dem_page_id=item.get("dem_page_id"),
+            view_id=item.get("view_id"),
+            zone_id=item.get("zone_id"),
+            modality=item.get("modality"),
+            raw_content=item.get("raw_content"),
+            normalized_content=item.get("normalized_content"),
+            bbox_source=item.get("bbox_source"),
+            bbox_normalized=item.get("bbox_normalized"),
+            polygon_source=item.get("polygon_source"),
+            polygon_normalized=item.get("polygon_normalized"),
+            confidence=item.get("confidence"),
+            extractor=item.get("extractor"),
+            artifact_hash=item.get("artifact_hash"),
         )
         for item in evidence
     ])
