@@ -169,7 +169,7 @@ def test_grounded_answer_carries_citations_and_retrieval_trace():
         ],
         data_status="grounded",
         confidence=0.91,
-        missing_data=[],
+        missing_information=[],
         conflicts=[],
         retrieval_trace=RetrievalTrace(intent="ELEMENT_LOOKUP", seed_node_ids=["ELTYPE-COLUMN-K1"], node_count=8, edge_count=11, context_token_estimate=1120),
     )

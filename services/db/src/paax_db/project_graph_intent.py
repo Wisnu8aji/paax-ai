@@ -369,7 +369,7 @@ async def parse_query_plan(
         intent_terms.update(_NUMERIC_WORDS)
         intent_terms.add("dimensi")
     elif _contains_term(normalized_query, _MISSING_TERMS):
-        intent = QueryIntentEnum.MISSING_DATA
+        intent = QueryIntentEnum.MISSING_INFORMATION
         intent_terms.update({term for term in _MISSING_TERMS if _phrase_pattern(term).search(normalized_query)})
     elif entities:
         intent = QueryIntentEnum.ELEMENT_LOOKUP

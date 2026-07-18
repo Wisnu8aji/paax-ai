@@ -500,14 +500,14 @@ async def test_conflict_word_wins_when_numeric_word_is_only_part_of_conflict_que
 
 
 @pytest.mark.asyncio
-async def test_missing_data_lookup_always_returns_honest_missing_information_summary():
+async def test_missing_information_lookup_always_returns_honest_missing_information_summary():
     from .conftest import TestSession
 
     async with TestSession() as session:
         await _seed_intent_retrieval_fixture(session)
         result = await retrieve_project_graph(session, project_id="PROJECT-V2", query="data kurang", use_intent=True)
 
-    assert result.intent == "MISSING_DATA"
+    assert result.intent == "MISSING_INFORMATION"
     assert result.missing_information
 
 

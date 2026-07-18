@@ -1707,7 +1707,7 @@ export type ProjectGraphSnapshot = z.infer<typeof ProjectGraphSnapshotSchema>;
 export const QueryIntentEnum = z.enum([
   "GENERAL_CHAT", "PROJECT_OVERVIEW", "DIRECT_FACT", "LIST_FILTER", "NODE_EXPLAIN",
   "RELATIONSHIP", "PATH_QUERY", "SHEET_LOOKUP", "SPACE_LOOKUP", "ELEMENT_LOOKUP",
-  "MATERIAL_LOOKUP", "CONFLICT_LOOKUP", "MISSING_DATA", "NUMERIC_STORED_FACT",
+  "MATERIAL_LOOKUP", "CONFLICT_LOOKUP", "MISSING_INFORMATION", "NUMERIC_STORED_FACT",
   "CALCULATION_REQUIRED", "RAB_QUERY", "SCHEDULE_QUERY",
 ]);
 
@@ -1761,7 +1761,7 @@ export const GroundedAnswerSchema = z.object({
   citations: z.array(CitationSchema).default([]),
   data_status: z.enum(["grounded", "partial", "ungrounded", "not_ready"]).default("grounded"),
   confidence: z.number().min(0).max(1),
-  missing_data: z.array(z.string()).default([]),
+  missing_information: z.array(z.string()).default([]),
   conflicts: z.array(z.string()).default([]),
   retrieval_trace: RetrievalTraceSchema,
 });

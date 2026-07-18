@@ -533,11 +533,11 @@ async def _retrieve_intent(
         )
         return result
 
-    if intent == "MISSING_DATA":
+    if intent == "MISSING_INFORMATION":
         seed_nodes = (await session.execute(select(ProjectGraphNode).where(
             ProjectGraphNode.project_id == project_id,
             ProjectGraphNode.snapshot_id == snapshot_id,
-            ProjectGraphNode.node_type.in_(["missing_data", "conflict"]),
+            ProjectGraphNode.node_type.in_(["missing_information", "conflict"]),
         ))).scalars().all()
         result = await _retrieve_from_seeds(
             session, project_id=project_id, snapshot_id=snapshot_id, seed_nodes=seed_nodes,

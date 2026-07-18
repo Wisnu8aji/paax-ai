@@ -147,7 +147,7 @@ class ProjectGraphSnapshot(BaseModel):
 QueryIntent = Literal[
     "GENERAL_CHAT", "PROJECT_OVERVIEW", "DIRECT_FACT", "LIST_FILTER", "NODE_EXPLAIN",
     "RELATIONSHIP", "PATH_QUERY", "SHEET_LOOKUP", "SPACE_LOOKUP", "ELEMENT_LOOKUP",
-    "MATERIAL_LOOKUP", "CONFLICT_LOOKUP", "MISSING_DATA", "NUMERIC_STORED_FACT",
+    "MATERIAL_LOOKUP", "CONFLICT_LOOKUP", "MISSING_INFORMATION", "NUMERIC_STORED_FACT",
     "CALCULATION_REQUIRED", "RAB_QUERY", "SCHEDULE_QUERY",
 ]
 
@@ -196,7 +196,7 @@ class GroundedAnswer(BaseModel):
     citations: list[Citation] = Field(default_factory=list)
     data_status: Literal["grounded", "partial", "ungrounded", "not_ready"] = "grounded"
     confidence: float = Field(ge=0.0, le=1.0)
-    missing_data: list[str] = Field(default_factory=list)
+    missing_information: list[str] = Field(default_factory=list)
     conflicts: list[str] = Field(default_factory=list)
     retrieval_trace: RetrievalTrace
 
