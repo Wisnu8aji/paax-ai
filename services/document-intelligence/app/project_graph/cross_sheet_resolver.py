@@ -182,6 +182,7 @@ def _fact_values(patch: SheetKnowledgePatch, category: str) -> tuple[_FactValue,
 
 
 _MAX_DIMENSION_LINK_DISTANCE = 120.0
+_MAX_DIMENSION_LINK_DISTANCE_NORMALIZED = 0.05
 
 
 def _nearest_dimension(
@@ -191,11 +192,7 @@ def _nearest_dimension(
     """Find the single unambiguous nearest dimension fact for an element on the
     same page. Same conservative shape as _nearest_value: reject ties, and
     additionally reject anything farther than a page-scale-derived cutoff so a
-    lone dimension elsewhere on the sheet is never wrongly claimed as "nearest"
-    (anchor case: services/document-intelligence, dimension "1500" on page 20
-    at [455,135,490,150] sits 37.5 units from the aligned BV1 label at
-    [455,170,490,190] and 83.85 units from a different-column BV1 at
-    [530,170,565,190] -- both real, non-tied distances measured from the fixture)."""
+    lone dimension elsewhere on the sheet is never wrongly claimed as "nearest"."""
     if element_bbox is None:
         return None
     candidates = [
@@ -205,23 +202,52 @@ def _nearest_dimension(
     ]
     if not candidates:
         return None
-    element_x = (element_bbox[0] + element_bbox[2]) / 2
-    element_y = (element_bbox[1] + element_bbox[3]) / 2
-    ranked = sorted(
-        (
+
+    transform = getattr(patch, "page_transform", None)
+    if transform is not None:
+        if isinstance(transform, dict):
+            from app.perception.coordinate_transform import PageTransform
+            transform = PageTransform(**transform)
+        
+        norm_elem_bbox = transform.pdf_to_normalized_bbox(element_bbox)
+        element_x = (norm_elem_bbox[0] + norm_elem_bbox[2]) / 2
+        element_y = (norm_elem_bbox[1] + norm_elem_bbox[3]) / 2
+        
+        ranked = sorted(
             (
-                ((element_x - ((fact.bbox[0] + fact.bbox[2]) / 2)) ** 2
-                 + (element_y - ((fact.bbox[1] + fact.bbox[3]) / 2)) ** 2) ** 0.5,
-                fact.fact_id,
-                fact,
-            )
-            for fact in candidates
-        ),
-        key=lambda item: (item[0], item[1]),
-    )
-    nearest_distance, _, nearest_fact = ranked[0]
-    if nearest_distance > _MAX_DIMENSION_LINK_DISTANCE:
-        return None
+                (
+                    ((element_x - ((norm_fact_bbox[0] + norm_fact_bbox[2]) / 2)) ** 2
+                     + (element_y - ((norm_fact_bbox[1] + norm_fact_bbox[3]) / 2)) ** 2) ** 0.5,
+                    fact.fact_id,
+                    fact,
+                )
+                for fact in candidates
+                for norm_fact_bbox in [transform.pdf_to_normalized_bbox(fact.bbox)]
+            ),
+            key=lambda item: (item[0], item[1]),
+        )
+        nearest_distance, _, nearest_fact = ranked[0]
+        if nearest_distance > _MAX_DIMENSION_LINK_DISTANCE_NORMALIZED:
+            return None
+    else:
+        element_x = (element_bbox[0] + element_bbox[2]) / 2
+        element_y = (element_bbox[1] + element_bbox[3]) / 2
+        ranked = sorted(
+            (
+                (
+                    ((element_x - ((fact.bbox[0] + fact.bbox[2]) / 2)) ** 2
+                     + (element_y - ((fact.bbox[1] + fact.bbox[3]) / 2)) ** 2) ** 0.5,
+                    fact.fact_id,
+                    fact,
+                )
+                for fact in candidates
+            ),
+            key=lambda item: (item[0], item[1]),
+        )
+        nearest_distance, _, nearest_fact = ranked[0]
+        if nearest_distance > _MAX_DIMENSION_LINK_DISTANCE:
+            return None
+
     if len(ranked) > 1 and ranked[1][0] == nearest_distance:
         return None
     display = (nearest_fact.normalized or nearest_fact.raw).strip()
