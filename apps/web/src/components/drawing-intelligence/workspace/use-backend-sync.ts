@@ -66,14 +66,14 @@ function mapDemSheetToSheet(item: any): Sheet {
     floorLabel: floorInfo.floorLabel,
     disciplines: isRoof ? ['STR', 'ARC', 'MEP'] : ['STR', 'ARC', 'MEP', 'CIV'],
     drawingType: isRoof ? 'Roof Plan' : 'Floor Plan',
-    scale: '1:100',
-    scaleConfirmed: floorInfo.floorId !== 'F03',
-    revision: 'R1',
+    scale: null,        // WP5: backend tidak mengembalikan scale — tampilkan null, jangan hardcode '1:100'
+    scaleConfirmed: false,
+    revision: null,     // WP5: backend tidak mengembalikan revision — tampilkan null, jangan hardcode 'R1'
     status: item.status === 'complete' ? 'analyzed' : 'queued',
     reviewIssueCount: 0,
     sheetSize: 'A1 (841 x 594 mm)',
     analyzedOn: '2026-07-17',
-    aiConfidence: 90,
+    aiConfidence: null, // WP5: confidence dihitung backend — tampilkan null saat belum tersedia
     geometry: makeGeometry(item.page_index, isRoof),
   };
 }
