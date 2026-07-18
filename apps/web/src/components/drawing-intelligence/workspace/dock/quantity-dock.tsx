@@ -199,12 +199,9 @@ export function QuantityDock() {
   }
 
   async function resolveReviewItem(itemId: string, title: string) {
-    dispatch({ type: 'resolve-review-item', itemId });
-    dispatch({
-      type: 'push-activity',
-      entry: { time: 'Now', message: `Resolved: ${title}`, kind: 'correction' },
-    });
-
+    // WP4: dispatch ONLY after backend confirms success.
+    // Do NOT dispatch resolve-review-item optimistically — a failed backend call
+    // would leave the item permanently hidden in the UI with no way to retry.
     if (state.projectId) {
       try {
         const { resolveCorrection } = await import('../../drawing-intelligence-api');
@@ -212,11 +209,27 @@ export function QuantityDock() {
           status: 'resolved',
           resolution_note: 'Resolved via Review Queue UI',
         });
-        showToast(`Successfully resolved correction on backend`);
+        // Backend confirmed — now mark resolved in local state
+        dispatch({ type: 'resolve-review-item', itemId });
+        dispatch({
+          type: 'push-activity',
+          entry: { time: 'Now', message: `Resolved: ${title}`, kind: 'correction' },
+        });
+        showToast(`Resolved on backend and locally`);
       } catch (err: any) {
-        console.warn('Backend resolveCorrection failed (synthetic queue item):', err);
-        showToast(`Resolved locally.`);
+        // Backend failed — item stays open, user sees error
+        showToast(
+          `Could not resolve on backend: ${err?.message ?? 'Unknown error'}. Item remains open.`,
+        );
       }
+    } else {
+      // No project — no backend to call, resolve locally only (demo/mock mode)
+      dispatch({ type: 'resolve-review-item', itemId });
+      dispatch({
+        type: 'push-activity',
+        entry: { time: 'Now', message: `Resolved locally: ${title}`, kind: 'correction' },
+      });
+      showToast(`Resolved locally (no active project).`);
     }
   }
 
