@@ -21,6 +21,7 @@
 ## Referensi domain & arsitektur (baca saat relevan)
 | File | Baca saat... |
 |---|---|
+| `docs/plans/drawing intelligence/DI_SOURCE_OF_TRUTH.md` | Source of Truth aktif untuk Drawing Intelligence, arsitektur, invariant, dan aturan data |
 | `docs/ai-map/GLOSSARY.md` | Tidak paham istilah domain (AHSP, HSP, BUK, Kurva S, CPM, dst.) |
 | `docs/MASTER_PLAN.md` | Butuh blueprint besar / roadmap lengkap |
 | `docs/BRAIN_ALIGNMENT.md` | Gap-analysis spek "brain" v4.1 vs implementasi saat ini |
@@ -43,3 +44,4 @@
 | `docs/ai-map/START_HERE.md` (peta+status wajib baca) | `docs/INDEX.md` (ini, on-demand) + Graphify |
 | `docs/ai-map/MAP.md` (lokasi kode/endpoint manual) | `graphify query`/`path`/`explain` — lihat `docs/history/MAP.md` |
 | Riwayat panjang `docs/ai-map/STATE.md` | `docs/ai-map/STATE_CURRENT.md` (aktif) + `docs/history/` (arsip) |
+| Rencana & spesifikasi lama Drawing Intelligence / DEM / PCKM (2026-07-11 hingga 2026-07-17) | `docs/plans/drawing intelligence/DI_SOURCE_OF_TRUTH.md` + `PAAX_DRAWING_INTELLIGENCE_SUPER_BIG_PLAN_REVISED.md` |
