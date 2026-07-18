@@ -84,8 +84,11 @@ def test_synthesis_consumes_all_stored_pages_and_preserves_real_fixture_anchors(
     assert len(snapshot.edges) == 3720
     has_dimension_edges = [edge for edge in snapshot.edges if edge.relation == "HAS_DIMENSION"]
     assert len(has_dimension_edges) == 153
-    # The 774 quarantine records are retained one-for-one in missing
-    # information; 240 surviving entries are A2/A3 review findings.
+    # Deterministic anchor: 774 quarantine records are retained one-for-one
+    # in missing information and 240 surviving entries are A2/A3 review
+    # findings (1014 total). The prior 1016 full-suite result was two live
+    # semantic-provider review entries caused by an implicit env activation;
+    # they are deliberately excluded from this deterministic fixture anchor.
     assert len(snapshot.missing_information) == 1014
 
     # Hal. 43 (index 42) "DENAH KOLOM LANTAI 2" has no architectural spaces.

@@ -4,7 +4,9 @@ import json
 import os
 import re
 import time
-from typing import Any, Callable
+from dataclasses import dataclass
+from hashlib import sha256
+from typing import Any, Callable, Literal, Mapping
 from urllib import error, request
 
 from app.project_graph.synthesis_types import (
@@ -14,12 +16,27 @@ from app.project_graph.synthesis_types import (
     PckmSynthesisProvider,
     ResolutionCandidate,
 )
+from app.project_graph.level_canonicalizer import (
+    LevelProviderResult,
+    LevelSemanticCandidate,
+)
 
 from .base import PckmProviderError
 
 DEFAULT_API_URL = "https://api.deepseek.com/chat/completions"
 SUPPORTED_MODEL_ALIASES = frozenset({"deepseek-v4-flash", "deepseek-v4-pro"})
 PROMPT_VERSION = "pckm-resolution-v1"
+LEVEL_PROMPT_VERSION = "level-semantic-v1"
+DEFAULT_FLASH_MODEL = "deepseek-v4-flash"
+DEFAULT_PRO_MODEL = "deepseek-v4-pro"
+
+
+@dataclass(frozen=True)
+class DeepSeekJsonResult:
+    payload: dict[str, Any]
+    usage: ModelUsage
+    model: str
+    latency_ms: int
 
 
 def _as_non_negative_int(value: Any) -> int:
@@ -139,26 +156,38 @@ class DeepSeekPckmProvider(PckmSynthesisProvider):
         return cls(api_key=api_key, model_alias=model_alias, api_url=api_url)
 
     def resolve(self, candidate: ResolutionCandidate) -> PckmProviderResult:
-        started = self._clock()
         candidate_payload = self._candidate_payload(candidate)
+        completion = self.complete_json(
+            system_prompt=(
+                "Review the supplied construction knowledge candidate. "
+                "Return only this JSON object, with no additional fields: "
+                '{"decision":"merge|keep_separate|possibly_same|requires_review",'
+                '"rationale":"brief evidence-grounded explanation"}. '
+                "This is an auditable proposal only; do not calculate values or "
+                "assert unprovided facts."
+            ),
+            user_payload={"candidate": candidate_payload},
+        )
+        try:
+            proposal = PckmResolutionProposal.model_validate(completion.payload)
+        except Exception as exc:
+            raise PckmProviderError("provider proposal contract was invalid") from exc
+        return PckmProviderResult(
+            payload=proposal.model_dump(mode="json"),
+            usage=completion.usage,
+            model=completion.model,
+            prompt_version=PROMPT_VERSION,
+            latency_ms=completion.latency_ms,
+        )
+
+    def complete_json(self, *, system_prompt: str, user_payload: Mapping[str, Any]) -> DeepSeekJsonResult:
+        """Run the shared DeepSeek JSON transport without domain-specific validation."""
+        started = self._clock()
         body = {
             "model": self.model_alias,
             "messages": [
-                {
-                    "role": "system",
-                    "content": (
-                        "Review the supplied construction knowledge candidate. "
-                        "Return only this JSON object, with no additional fields: "
-                        '{"decision":"merge|keep_separate|possibly_same|requires_review",'
-                        '"rationale":"brief evidence-grounded explanation"}. '
-                        "This is an auditable proposal only; do not calculate values or "
-                        "assert unprovided facts."
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": json.dumps({"candidate": candidate_payload}, separators=(",", ":")),
-                },
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": json.dumps(user_payload, separators=(",", ":"))},
             ],
             "temperature": 0,
             "response_format": {"type": "json_object"},
@@ -176,18 +205,13 @@ class DeepSeekPckmProvider(PckmSynthesisProvider):
 
         response_payload = self._request_with_retry(req)
         result_payload = _content_payload(response_payload)
-        try:
-            proposal = PckmResolutionProposal.model_validate(result_payload)
-        except Exception as exc:
-            raise PckmProviderError("provider proposal contract was invalid") from exc
         elapsed_ms = max(0, int(round((self._clock() - started) * 1000)))
         response_model = response_payload.get("model")
         resolved_model = response_model.strip() if isinstance(response_model, str) and response_model.strip() else self.model_alias
-        return PckmProviderResult(
-            payload=proposal.model_dump(mode="json"),
+        return DeepSeekJsonResult(
+            payload=result_payload,
             usage=_usage_from_response(response_payload),
             model=resolved_model,
-            prompt_version=PROMPT_VERSION,
             latency_ms=elapsed_ms,
         )
 
@@ -244,9 +268,101 @@ class DeepSeekPckmProvider(PckmSynthesisProvider):
         raise AssertionError("unreachable")
 
 
+class DeepSeekLevelProvider:
+    """Drawing-Intelligence-only semantic level adapter over shared transport."""
+
+    def __init__(
+        self,
+        *,
+        api_key: str,
+        flash_model: str = DEFAULT_FLASH_MODEL,
+        pro_model: str = DEFAULT_PRO_MODEL,
+        api_url: str = DEFAULT_API_URL,
+        timeout_seconds: float = 30.0,
+        urlopen: Callable[..., Any] | None = None,
+        clock: Callable[[], float] = time.monotonic,
+        sleep: Callable[[float], None] = time.sleep,
+        max_retries: int = 3,
+        backoff_base_seconds: float = 0.5,
+        max_backoff_seconds: float = 8.0,
+    ) -> None:
+        shared = {
+            "api_key": api_key,
+            "api_url": api_url,
+            "timeout_seconds": timeout_seconds,
+            "urlopen": urlopen,
+            "clock": clock,
+            "sleep": sleep,
+            "max_retries": max_retries,
+            "backoff_base_seconds": backoff_base_seconds,
+            "max_backoff_seconds": max_backoff_seconds,
+        }
+        self._flash = DeepSeekPckmProvider(model_alias=flash_model, **shared)
+        self._pro = DeepSeekPckmProvider(model_alias=pro_model, **shared)
+
+    @classmethod
+    def from_env(cls) -> "DeepSeekLevelProvider | None":
+        # Do not fall back to the Command Room key: Drawing Intelligence keeps
+        # model spend, endpoint routing, and audit scope separate.
+        api_key = os.getenv("DRAWING_INTELLIGENCE_API_KEY", "").strip()
+        enabled = os.getenv("DRAWING_INTELLIGENCE_LEVEL_PROVIDER", "").strip().casefold()
+        if not api_key or enabled not in {"1", "true"}:
+            return None
+        flash_model = (
+            os.getenv("DRAWING_INTELLIGENCE_DEEPSEEK_MODEL", DEFAULT_FLASH_MODEL).strip()
+            or DEFAULT_FLASH_MODEL
+        )
+        pro_model = (
+            os.getenv("DRAWING_INTELLIGENCE_DEEPSEEK_PRO_MODEL", DEFAULT_PRO_MODEL).strip()
+            or DEFAULT_PRO_MODEL
+        )
+        api_url = os.getenv("DRAWING_INTELLIGENCE_BASE_URL", DEFAULT_API_URL).strip() or DEFAULT_API_URL
+        return cls(
+            api_key=api_key,
+            flash_model=flash_model,
+            pro_model=pro_model,
+            api_url=api_url,
+        )
+
+    def propose(
+        self,
+        candidate: LevelSemanticCandidate,
+        *,
+        tier: Literal["flash", "pro"],
+    ) -> LevelProviderResult:
+        provider = self._flash if tier == "flash" else self._pro
+        system_prompt = (
+            "Resolve one construction drawing level candidate against the supplied "
+            "project canonical levels. Return only this JSON object, with no extra fields: "
+            '{"decision":"merge_to|possibly_same|keep_separate",'
+            '"merge_to":"existing canonical level or null",'
+            '"rationale":"brief evidence-grounded explanation","confidence":0.0}. '
+            "This is an auditable proposal only. Do not invent levels, calculate values, "
+            "or override the supplied evidence."
+        )
+        completion = provider.complete_json(
+            system_prompt=system_prompt,
+            user_payload={"candidate": candidate.as_audit_input()},
+        )
+        prompt_hash = sha256(
+            f"{LEVEL_PROMPT_VERSION}:{system_prompt}".encode("utf-8")
+        ).hexdigest()
+        return LevelProviderResult(
+            payload=completion.payload,
+            model=completion.model,
+            prompt_version=LEVEL_PROMPT_VERSION,
+            prompt_hash=prompt_hash,
+        )
+
+
 __all__ = [
+    "DEFAULT_FLASH_MODEL",
+    "DEFAULT_PRO_MODEL",
     "DEFAULT_API_URL",
+    "DeepSeekJsonResult",
+    "DeepSeekLevelProvider",
     "DeepSeekPckmProvider",
+    "LEVEL_PROMPT_VERSION",
     "PROMPT_VERSION",
     "SUPPORTED_MODEL_ALIASES",
 ]

@@ -54,3 +54,18 @@ async def test_process_document_marks_partially_failed_when_a_page_fails():
         c, "dem-extraction-v1.0.0",
     )
     assert t.run["status"] == "partially_failed"
+
+
+@pytest.mark.asyncio
+async def test_process_document_with_project_id_does_not_auto_trigger_synthesis():
+    t = _Transport()
+    c = DemDbClient(base_url="http://test", internal_key="x", transport=t)
+    await process_document(
+        _pdf(2), "run-1", "DOC-1", "sha256:x", 2,
+        MockDemAdapter(response=_sheet()),
+        c, "dem-extraction-v1.0.0",
+        project_id="test-project-123"
+    )
+    assert t.run["status"] == "dem_complete"
+    assert all(p["status"] == "complete" for p in t.pages.values())
+

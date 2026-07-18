@@ -1,0 +1,61 @@
+- generic [ref=f3e3]:
+  - complementary "Navigasi utama" [ref=f3e4]:
+    - button "PAAX — ke Overview" [ref=f3e5] [cursor=pointer]
+    - navigation [ref=f3e8]:
+      - button "Overview" [ref=f3e9] [cursor=pointer]:
+        - tooltip "Overview"
+      - button "Project Studio" [ref=f3e16] [cursor=pointer]:
+        - tooltip "Project Studio"
+      - button "Command Room" [ref=f3e20] [cursor=pointer]:
+        - tooltip "Command Room"
+      - button "Site Agent" [ref=f3e25] [cursor=pointer]:
+        - tooltip "Site Agent"
+      - button "Files & Documents" [ref=f3e32] [cursor=pointer]:
+        - tooltip "Files & Documents"
+      - button "Ledger" [ref=f3e38] [cursor=pointer]:
+        - tooltip "Ledger"
+      - button "Artifacts" [ref=f3e42] [cursor=pointer]:
+        - tooltip "Artifacts"
+      - button "Team" [ref=f3e48] [cursor=pointer]:
+        - tooltip "Team"
+    - generic [ref=f3e55]:
+      - button "Settings" [ref=f3e56] [cursor=pointer]:
+        - tooltip "Settings"
+      - button "Profile" [ref=f3e61] [cursor=pointer]:
+        - generic [ref=f3e62]: BA
+        - tooltip "Profile"
+  - main [ref=f3e64]:
+    - generic [ref=f3e65]:
+      - generic [ref=f3e66]:
+        - textbox "Cari" [ref=f3e70]:
+          - /placeholder: Search
+        - generic [ref=f3e71]: ⌘K
+      - generic [ref=f3e72]: AI Ready
+      - button "Settings" [ref=f3e75] [cursor=pointer]
+      - button "Notifikasi" [ref=f3e79] [cursor=pointer]
+    - generic [ref=f3e85]:
+      - generic [ref=f3e86]:
+        - generic [ref=f3e87]:
+          - heading "Project Studio" [level=1] [ref=f3e88]
+          - paragraph [ref=f3e89]: Pusat kerja proyek — pilih proyek lalu akses Drawing Intelligence, Cost & Quantity Analysis, dan Schedule Planning (localStorage fallback)
+        - button "Buat Proyek Baru" [ref=f3e91] [cursor=pointer]
+      - generic [ref=f3e93]:
+        - generic [ref=f3e94]:
+          - generic [ref=f3e95]: Total Proyek
+          - generic [ref=f3e97]: "0"
+          - generic [ref=f3e98]: 0 aktif
+        - generic [ref=f3e99]:
+          - generic [ref=f3e100]: Nilai Portfolio
+          - generic [ref=f3e102]: Belum dihitung
+          - generic [ref=f3e103]: menunggu hasil engine
+        - generic [ref=f3e104]:
+          - generic [ref=f3e105]: Rata-rata Progress
+          - generic [ref=f3e107]: 0%
+          - generic [ref=f3e108]: metadata proyek
+        - generic [ref=f3e109]:
+          - generic [ref=f3e110]: Warning Terbuka
+          - generic [ref=f3e112]: "0"
+          - generic [ref=f3e113]: metadata proyek
+      - generic [ref=f3e115]:
+        - generic [ref=f3e116]: Memuat proyek...
+        - generic [ref=f3e117]: PAAX sedang membaca workspace proyek.

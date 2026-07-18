@@ -1,0 +1,69 @@
+- generic [ref=e3]:
+  - complementary "Navigasi utama" [ref=e4]:
+    - button "PAAX — ke Overview" [ref=e5] [cursor=pointer]
+    - navigation [ref=e8]:
+      - button "Overview" [ref=e9] [cursor=pointer]:
+        - tooltip "Overview"
+      - button "Project Studio" [ref=e16] [cursor=pointer]:
+        - tooltip "Project Studio"
+      - button "Command Room" [ref=e20] [cursor=pointer]:
+        - tooltip "Command Room"
+      - button "Site Agent" [ref=e25] [cursor=pointer]:
+        - tooltip "Site Agent"
+      - button "Files & Documents" [ref=e32] [cursor=pointer]:
+        - tooltip "Files & Documents"
+      - button "Ledger" [ref=e38] [cursor=pointer]:
+        - tooltip "Ledger"
+      - button "Artifacts" [ref=e42] [cursor=pointer]:
+        - tooltip "Artifacts"
+      - button "Team" [ref=e48] [cursor=pointer]:
+        - tooltip "Team"
+    - generic [ref=e55]:
+      - button "Settings" [ref=e56] [cursor=pointer]:
+        - tooltip "Settings"
+      - button "Profile" [ref=e61] [cursor=pointer]:
+        - generic [ref=e62]: BA
+        - tooltip "Profile"
+  - main [ref=e64]:
+    - generic [ref=e66]:
+      - generic [ref=e67]:
+        - generic [ref=e69]:
+          - tab "Home" [selected] [ref=e70] [cursor=pointer]
+          - tab "Project" [ref=e74] [cursor=pointer]
+        - generic [ref=e77]:
+          - button [ref=e78] [cursor=pointer]
+          - button [ref=e81] [cursor=pointer]
+          - button [ref=e86] [cursor=pointer]
+          - button [ref=e92] [cursor=pointer]
+        - generic [ref=e98]:
+          - generic [ref=e99]:
+            - generic [ref=e100]: Conversation
+            - button "Filter percakapan" [ref=e102] [cursor=pointer]
+          - generic [ref=e105]: Belum ada percakapan. Mulai chat pertama Anda.
+        - button "Menu akun" [ref=e107] [cursor=pointer]:
+          - generic [ref=e108]: ba
+          - generic [ref=e109]:
+            - text: Budi Andrean
+            - generic [ref=e110]: · Project Manager
+      - generic [ref=e114]:
+        - generic [ref=e115]:
+          - heading "Hello World!" [level=1] [ref=e116]
+          - paragraph [ref=e117]: What are we solving?
+        - generic [ref=e119]:
+          - generic [ref=e120]:
+            - button "Pilih atau buat project" [ref=e122] [cursor=pointer]: New Project
+            - generic [ref=e127]:
+              - button "Gambar Kerja" [ref=e128] [cursor=pointer]
+              - button "RAB" [ref=e134] [cursor=pointer]
+              - button "Schedule" [ref=e137] [cursor=pointer]
+          - generic [ref=e142]:
+            - textbox "Pesan" [ref=e144]:
+              - /placeholder: Bring the problem. I'll break it down.
+            - generic [ref=e145]:
+              - button "Tambahkan konten" [ref=e147] [cursor=pointer]
+              - button "Ultra" [ref=e149] [cursor=pointer]
+              - generic "Lucent · Ultra · High" [ref=e151]
+              - button "Pilih model AI" [ref=e153] [cursor=pointer]: Lucent
+              - button "Input suara (mic)" [ref=e156] [cursor=pointer]
+              - button "Mode voice" [ref=e160] [cursor=pointer]
+              - button "Kirim" [disabled] [ref=e162] [cursor=pointer]

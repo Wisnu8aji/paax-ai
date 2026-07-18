@@ -18,12 +18,13 @@ import { formatRupiah } from '@/lib/format';
 
 /** Modul Project Studio (utama.txt): Drawing Intelligence / Cost & Quantity
  *  Analysis / Schedule Planning — nama baru, route & flow lama tetap. */
-const STUDIO_MODULES = [
+const STUDIO_MODULES: { seg: string; title: string; desc: string; icon: typeof FileImage; href?: string }[] = [
   {
     seg: 'gambar-kerja',
     title: 'Drawing Intelligence',
-    desc: 'Baca gambar kerja PDF → TKG → takeoff. AI-assist mengisi celah klasifikasi.',
+    desc: 'Workspace teknik: upload gambar, review deteksi AI, verifikasi quantity, handoff.',
     icon: FileImage,
+    href: '/drawing-intelligence',
   },
   {
     seg: 'rab',
@@ -60,14 +61,15 @@ export default function ProjectOverviewPage() {
       <div className="pax-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
         {STUDIO_MODULES.map((m) => {
           const Icon = m.icon;
+          const target = m.href ?? `/proyek/${projectId}/${m.seg}`;
           return (
             <div
               key={m.seg}
-              onClick={() => router.push(`/proyek/${projectId}/${m.seg}`)}
+              onClick={() => router.push(target)}
               className="pax-card-hover pax-press"
               role="link"
               tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && router.push(`/proyek/${projectId}/${m.seg}`)}
+              onKeyDown={(e) => e.key === 'Enter' && router.push(target)}
               style={{
                 borderRadius: 18,
                 background: 'var(--elev)',

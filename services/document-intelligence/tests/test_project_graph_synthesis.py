@@ -216,6 +216,61 @@ def test_synthesis_canonicalizes_explicit_elevations_aliases_and_review_levels()
     )
 
 
+def test_synthesis_keeps_qualified_roof_title_on_canonical_review_candidate():
+    """A qualified roof title must not reduce an ambiguous level to ``Atap``."""
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    sheet = _sheet(
+        8,
+        "R1",
+        level="Lantai Atap P +16.20",
+        space="Ruang Mesin",
+        title="DENAH LANTAI ATAP P +16.20",
+    )
+    _position_context(sheet)
+
+    result = synthesize_project_graph([sheet])
+
+    occurrence = _node(
+        result.snapshot.nodes,
+        "element_occurrence",
+        "R1 @ Lantai Atap P +16.20 / Ruang Mesin",
+    )
+    assert occurrence.verification_status == "ambiguous"
+    assert not any(
+        node.type == "element_occurrence" and node.canonical_name == "R1 @ Atap / Ruang Mesin"
+        for node in result.snapshot.nodes
+    )
+
+
+def test_synthesis_keeps_review_metadata_when_duplicate_ambiguous_level_facts_deduplicate():
+    """Duplicate canonical level facts must retain review state on the occurrence."""
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    sheet = _sheet(9, "R1", level="Lantai Atap P +16.20", space="Ruang Mesin")
+    _position_context(sheet)
+    sheet.observations.levels.append(
+        ObservationValue(
+            raw="Lantai Atap P +16.20",
+            normalized="Lantai Atap P +16.20",
+            bbox=(24.0, 30.0, 34.0, 40.0),
+            confidence=0.9,
+            evidence_refs=["EV-9-LEVEL"],
+        )
+    )
+
+    result = synthesize_project_graph([sheet])
+
+    occurrence = _node(
+        result.snapshot.nodes,
+        "element_occurrence",
+        "R1 @ Lantai Atap P +16.20 / Ruang Mesin",
+    )
+    assert occurrence.verification_status == "ambiguous"
+    level = _node(result.snapshot.nodes, "level", "Lantai Atap P +16.20")
+    assert level.properties["merged_from"].value == "Lantai Atap P +16.20"
+
+
 def test_synthesis_merges_one_type_and_one_fully_contextual_occurrence():
     from app.project_graph.synthesis import synthesize_project_graph
 
@@ -284,6 +339,186 @@ def test_level_canonicalizer_harvests_actual_plus_minus_el_mapping():
     assert level_fact.normalized == "Lantai 1"
     assert level_fact.attributes["level_elevation"] == f"{plus_minus}0.000"
     assert "Elevasi" in level_fact.attributes["level_merged_from"]
+
+
+class _StubLevelProvider:
+    def __init__(self, flash: dict[str, object], pro: dict[str, object] | None = None) -> None:
+        self.flash = flash
+        self.pro = pro
+        self.calls: list[tuple[str, object]] = []
+
+    def propose(self, candidate: object, *, tier: str):
+        from app.project_graph.level_canonicalizer import LevelProviderResult
+
+        self.calls.append((tier, candidate))
+        payload = self.flash if tier == "flash" else self.pro
+        assert payload is not None
+        return LevelProviderResult(
+            payload=payload,
+            model=f"stub-{tier}",
+            prompt_version="level-semantic-v1",
+            prompt_hash="stub-prompt-hash",
+        )
+
+
+def _level_canonicalization_for_semantic_review(provider: object | None):
+    from app.project_graph.level_canonicalizer import canonicalize_levels
+    from app.project_graph.page_patch import build_sheet_patch
+
+    known = _sheet(10, "D1", level="Lantai 2")
+    foreign = _sheet(11, "D2", level="Main Level Two")
+    return canonicalize_levels(
+        [build_sheet_patch(known), build_sheet_patch(foreign)],
+        provider=provider,
+    )
+
+
+def _foreign_level_fact(result):
+    return next(fact for fact in result.patches[1].facts if fact.category == "levels")
+
+
+def test_level_semantic_flash_merges_foreign_alias_to_existing_canonical_level_and_audits():
+    proposal = {
+        "decision": "merge_to",
+        "merge_to": "Lantai 2",
+        "rationale": "The English alias explicitly names the second level.",
+        "confidence": 0.97,
+    }
+    provider = _StubLevelProvider(
+        proposal,
+        proposal,
+    )
+
+    result = _level_canonicalization_for_semantic_review(provider)
+    foreign_fact = next(
+        fact
+        for fact in result.patches[1].facts
+        if fact.category == "levels"
+    )
+
+    assert foreign_fact.normalized == "Lantai 2"
+    assert foreign_fact.attributes["level_classification"] == "SEMANTIC_MERGED"
+    # Total deterministic classification failure receives a thinking pass even
+    # when Flash supplied a high-confidence proposal.
+    assert [tier for tier, _candidate in provider.calls] == ["flash", "pro"]
+    assert [audit.model for audit in result.provider_audits] == ["stub-flash", "stub-pro"]
+    assert result.provider_audits[0].prompt_hash == "stub-prompt-hash"
+    assert result.provider_audits[0].input["raw"] == "Main Level Two"
+    assert result.provider_audits[0].output["merge_to"] == "Lantai 2"
+    assert result.provider_audits[0].rationale.startswith("The English")
+
+
+def test_level_semantic_invalid_merge_target_is_demoted_to_possibly_same():
+    provider = _StubLevelProvider(
+        {
+            "decision": "merge_to",
+            "merge_to": "Lantai 99",
+            "rationale": "The provider guessed a target that is absent.",
+            "confidence": 0.96,
+        }
+    )
+
+    result = _level_canonicalization_for_semantic_review(provider)
+
+    assert _foreign_level_fact(result).normalized is None
+    assert result.provider_audits[0].validated_decision == "possibly_same"
+    assert "invalid merge target" in result.provider_audits[0].validation_note
+
+
+def test_level_semantic_low_confidence_flash_escalates_to_pro():
+    provider = _StubLevelProvider(
+        {
+            "decision": "possibly_same",
+            "merge_to": None,
+            "rationale": "The alias may refer to the second level.",
+            "confidence": 0.4,
+        },
+        {
+            "decision": "merge_to",
+            "merge_to": "Lantai 2",
+            "rationale": "The qualifier Two identifies the canonical second level.",
+            "confidence": 0.91,
+        },
+    )
+
+    result = _level_canonicalization_for_semantic_review(provider)
+
+    assert _foreign_level_fact(result).normalized == "Lantai 2"
+    assert [tier for tier, _candidate in provider.calls] == ["flash", "pro"]
+    assert [audit.model for audit in result.provider_audits] == ["stub-flash", "stub-pro"]
+
+
+def test_level_semantic_validation_never_merges_different_numbered_floors():
+    from app.project_graph.level_canonicalizer import (
+        LevelProviderResult,
+        LevelSemanticCandidate,
+        _validate_semantic_proposal,
+    )
+
+    candidate = LevelSemanticCandidate(
+        candidate_id="LEVEL-1",
+        raw="Lantai 1 (ambiguous annotation)",
+        normalized="Lantai 1",
+        classification="FLOOR_NAME_AMBIGUOUS",
+        deterministic_canonical="Lantai 1",
+        canonical_levels=("Lantai 1", "Lantai 2"),
+        evidence_refs=("EV-1",),
+        context={"sheet_id": "S-01"},
+    )
+    result = LevelProviderResult(
+        payload={
+            "decision": "merge_to",
+            "merge_to": "Lantai 2",
+            "rationale": "Unsafe provider instruction.",
+            "confidence": 0.99,
+        },
+        model="stub-flash",
+        prompt_version="level-semantic-v1",
+        prompt_hash="stub-prompt-hash",
+    )
+
+    decision, target, _rationale, _confidence, note = _validate_semantic_proposal(candidate, result)
+
+    assert decision == "possibly_same"
+    assert target is None
+    assert "numbered floors differ" in note
+
+
+def test_level_semantic_without_provider_keeps_deterministic_unclassified_behavior():
+    result = _level_canonicalization_for_semantic_review(provider=None)
+
+    assert _foreign_level_fact(result).normalized is None
+    assert _foreign_level_fact(result).attributes["level_classification"] == "UNCLASSIFIED"
+    assert result.provider_audits == ()
+
+
+def test_synthesis_injects_level_provider_without_using_network_or_command_room_env():
+    from app.project_graph.synthesis import synthesize_project_graph
+
+    provider = _StubLevelProvider(
+        {
+            "decision": "merge_to",
+            "merge_to": "Lantai 2",
+            "rationale": "The alias explicitly identifies the second floor.",
+            "confidence": 0.98,
+        },
+        {
+            "decision": "merge_to",
+            "merge_to": "Lantai 2",
+            "rationale": "The alias explicitly identifies the second floor.",
+            "confidence": 0.98,
+        },
+    )
+    known = _sheet(12, "D1", level="Lantai 2", space="Ruang A")
+    foreign = _sheet(13, "D2", level="Main Level Two", space="Ruang B")
+    _position_context(known)
+    _position_context(foreign)
+
+    result = synthesize_project_graph([known, foreign], level_provider=provider)
+
+    assert [tier for tier, _candidate in provider.calls] == ["flash", "pro"]
+    assert [audit.model for audit in result.level_provider_audits] == ["stub-flash", "stub-pro"]
+    assert _node(result.snapshot.nodes, "level", "Lantai 2").verification_status == "ambiguous"
 
 
 class _RecordingProvider:

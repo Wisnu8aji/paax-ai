@@ -213,6 +213,7 @@ class DemRun(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     completed_at = Column(DateTime(timezone=True), nullable=True)
+    pdf_path = Column(String, nullable=True)
 
 
 class DemPage(Base):
@@ -365,6 +366,9 @@ class ProjectGraphCorrection(Base):
     rationale = Column(Text, nullable=False)
     status = Column(String, nullable=False, default="pending", index=True)
     resolution_note = Column(Text, nullable=True)
+    created_by = Column(String, nullable=True)
+    resolved_by = Column(String, nullable=True)
+    carried_from = Column(String, nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
 
@@ -388,5 +392,32 @@ class ProjectGraphSummaryView(Base):
     view_kind = Column(String, nullable=False, index=True)
     level_id = Column(String, nullable=True, index=True)
     payload = Column(JSON_DOCUMENT, nullable=False)  # full ProjectGraphSummaryView dict
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class RabBridgeProposal(Base):
+    __tablename__ = "rab_bridge_proposals"
+
+    id = Column(String, primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), nullable=False, index=True)
+    node_ids = Column(JSON_DOCUMENT, nullable=False)
+    payload = Column(JSON_DOCUMENT, nullable=False)
+    status = Column(String, nullable=False, default="pending", index=True)
+    created_by = Column(String, nullable=True)
+    reviewed_by = Column(String, nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class QuantityAssumption(Base):
+    __tablename__ = "quantity_assumptions"
+
+    id = Column(String, primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    element_type_id = Column(String, nullable=True, index=True)
+    text = Column(Text, nullable=False)
+    source_role = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="active", index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

@@ -35,7 +35,8 @@ _DISCIPLINE_ALIASES = {
 }
 _VALID_DISCIPLINES = frozenset({"structure", "architecture", "mep", "site", "general"})
 
-_CALCULATION_TERMS = frozenset(
+_MATERIAL_TERMS = frozenset({"material", "semen", "besi", "beton", "bertulang"})
+_CALCULATION_SIGNAL_TERMS = frozenset(
     {
         "volume",
         "m3",
@@ -47,13 +48,9 @@ _CALCULATION_TERMS = frozenset(
         "anggaran",
         "butuh",
         "kebutuhan",
-        "material",
-        "semen",
-        "besi",
-        "beton",
-        "bertulang",
     }
 )
+_CALCULATION_TERMS = _CALCULATION_SIGNAL_TERMS | _MATERIAL_TERMS
 _CONFLICT_TERMS = frozenset({"konflik", "bentrok", "tidak sesuai", "beda ukuran"})
 _MISSING_TERMS = frozenset({"data kurang", "tidak ada data", "belum lengkap", "hilang"})
 _NUMERIC_WORDS = frozenset({"dimensi", "ukuran", "tinggi", "lebar", "tebal", "elevasi", "peil"})
@@ -94,6 +91,10 @@ _CONFLICT_RELATIONS = [EdgeRelationEnum.CONFLICTS_WITH, EdgeRelationEnum.HAS_EVI
 _LEVEL_PATTERN = re.compile(r"\b(?:lantai|lt)\s*[.\-]?\s*(\d+)\b", re.IGNORECASE)
 _GENERIC_LEVEL_WORD_PATTERN = re.compile(r"\b(?:atap|dasar|basement)\b", re.IGNORECASE)
 _TOKEN_PATTERN = re.compile(r"[^\W_]+(?:[.\-][^\W_]+)?", re.UNICODE)
+_ENTITY_TOKEN_MIN_LENGTH = 4
+_MAX_ENTITY_TOKEN_MATCHES = 5
+_MAX_ENTITY_TYPES_PER_TOKEN = 8
+_GENERIC_LEVEL_TOKENS = frozenset({"atap", "dasar", "basement"})
 
 
 @dataclass(frozen=True)
@@ -259,11 +260,65 @@ def _find_entities(query: str, vocabulary: _Vocabulary) -> tuple[list[QueryEntit
         seen.add(entity_key)
         entities.append(QueryEntity(type="element_type", value=canonical_name))
         recognized_terms.update(_normalize(query[start:end]).split())
+
+    excluded_tokens = (
+        set(_STOP_WORDS)
+        | set(_DISCIPLINE_ALIASES)
+        | set(_VALID_DISCIPLINES)
+        | _GENERIC_LEVEL_TOKENS
+    )
+    excluded_tokens.update(vocabulary.disciplines)
+    excluded_tokens.update(
+        _normalize(raw_token)
+        for phrase in vocabulary.levels
+        for raw_token in _TOKEN_PATTERN.findall(phrase)
+    )
+    token_to_entities: dict[str, set[str]] = {}
+    for phrase, canonical_name in vocabulary.elements.items():
+        for raw_token in _TOKEN_PATTERN.findall(phrase):
+            token = _normalize(raw_token)
+            token_to_entities.setdefault(token, set()).add(canonical_name)
+
+    token_match_count = 0
+    for raw_token in _TOKEN_PATTERN.findall(query):
+        token = _normalize(raw_token)
+        if (
+            len(token) < _ENTITY_TOKEN_MIN_LENGTH
+            or token.isdigit()
+            or token in excluded_tokens
+        ):
+            continue
+        candidate_names = token_to_entities.get(token, set())
+        if not candidate_names or len(candidate_names) > _MAX_ENTITY_TYPES_PER_TOKEN:
+            continue
+        added_for_token = False
+        for canonical_name in sorted(candidate_names):
+            entity_key = ("element_type", canonical_name)
+            if entity_key in seen:
+                continue
+            if token_match_count >= _MAX_ENTITY_TOKEN_MATCHES or len(entities) >= _MAX_ENTITY_TOKEN_MATCHES:
+                break
+            seen.add(entity_key)
+            entities.append(QueryEntity(type="element_type", value=canonical_name))
+            token_match_count += 1
+            added_for_token = True
+        if added_for_token:
+            recognized_terms.add(token)
     return entities, recognized_terms
 
 
 def _contains_term(query: str, terms: Iterable[str]) -> bool:
     return any(_phrase_pattern(term).search(query) for term in terms)
+
+
+def has_calculation_signal(query: str) -> bool:
+    """Return whether a query explicitly asks for a calculated quantity.
+
+    Material words are lookup targets, not calculation signals by themselves.
+    Keeping this predicate deterministic lets retrieval fail closed even when
+    parsing itself raises before producing a plan.
+    """
+    return _contains_term(_normalize(query), _CALCULATION_SIGNAL_TERMS)
 
 
 def _is_numeric_fact(query: str) -> bool:
@@ -301,23 +356,18 @@ async def parse_query_plan(
     entities, entity_terms = _find_entities(normalized_query, vocabulary)
 
     intent_terms: set[str] = set()
-    if _contains_term(normalized_query, _CALCULATION_TERMS) or _contains_term(
-        normalized_query, {"kebutuhan material", "kebutuhan semen", "kebutuhan besi", "beton bertulang"}
-    ):
+    if _contains_term(normalized_query, _CONFLICT_TERMS):
+        intent = QueryIntentEnum.CONFLICT_LOOKUP
+        intent_terms.update({term for term in _CONFLICT_TERMS if _phrase_pattern(term).search(normalized_query)})
+    elif has_calculation_signal(normalized_query):
         intent = QueryIntentEnum.CALCULATION_REQUIRED
         for term in _CALCULATION_TERMS:
-            if _phrase_pattern(term).search(normalized_query):
-                intent_terms.update(term.split())
-        for term in ("kebutuhan material", "kebutuhan semen", "kebutuhan besi", "beton bertulang"):
             if _phrase_pattern(term).search(normalized_query):
                 intent_terms.update(term.split())
     elif _is_numeric_fact(normalized_query):
         intent = QueryIntentEnum.NUMERIC_STORED_FACT
         intent_terms.update(_NUMERIC_WORDS)
         intent_terms.add("dimensi")
-    elif _contains_term(normalized_query, _CONFLICT_TERMS):
-        intent = QueryIntentEnum.CONFLICT_LOOKUP
-        intent_terms.update({term for term in _CONFLICT_TERMS if _phrase_pattern(term).search(normalized_query)})
     elif _contains_term(normalized_query, _MISSING_TERMS):
         intent = QueryIntentEnum.MISSING_DATA
         intent_terms.update({term for term in _MISSING_TERMS if _phrase_pattern(term).search(normalized_query)})

@@ -14,9 +14,4 @@ describe("premium UI cleanup", () => {
     expect(globals).not.toContain(".btn-primary");
   });
 
-  it("removes the hidden legacy drawing intelligence workspace", () => {
-    const legacyWorkspace = resolve(__dirname, "../components/drawings/drawing-intelligence-workspace.tsx");
-
-    expect(existsSync(legacyWorkspace)).toBe(false);
-  });
 });

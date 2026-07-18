@@ -1779,6 +1779,8 @@ export const ElementTypeIndexEntrySchema = z.object({
   element_type_id: z.string(),
   name: z.string(),
   occurrence_count: z.number().int().nonnegative(),
+  data_status: z.literal("corrected").nullish(),
+  correction: z.record(z.unknown()).nullish(),
 });
 export type ElementTypeIndexEntry = z.infer<typeof ElementTypeIndexEntrySchema>;
 
@@ -1801,6 +1803,8 @@ export const SummaryPayloadSchema = z.object({
   element_type_index: z.array(ElementTypeIndexEntrySchema).default([]),
   discipline_counts: z.array(DisciplineCountEntrySchema).default([]),
   stored_measurement_facts: z.array(StoredMeasurementFactSchema).default([]),
+  data_status: z.literal("corrected").nullish(),
+  corrections: z.array(z.record(z.unknown())).default([]),
 });
 export type SummaryPayload = z.infer<typeof SummaryPayloadSchema>;
 
@@ -1829,6 +1833,8 @@ export const ProjectGraphSummaryViewSchema = z.object({
   summary: SummaryPayloadSchema,
   quality: QualityPayloadSchema,
   provenance: ProvenancePayloadSchema,
+  notes: z.array(z.string()).default([]),
+  data_status: z.literal("corrected").nullish(),
 });
 export type ProjectGraphSummaryView = z.infer<typeof ProjectGraphSummaryViewSchema>;
 
@@ -1841,7 +1847,7 @@ export const ProjectGraphRetrievalResponseSchema = z.object({
   context_token_estimate: z.number().int().nonnegative().default(0),
   intent: QueryIntentEnum.nullish(),
   applied_filters: z.record(z.string().nullable()).default({}),
-  data_status: z.enum(["grounded", "empty", "calculation_required", "unknown_level"]).nullish(),
+  data_status: z.enum(["grounded", "empty", "calculation_required", "unknown_level", "not_ready", "corrected"]).nullish(),
   notes: z.array(z.string()).default([]),
   summary_view: ProjectGraphSummaryViewSchema.nullish(),
   guidance: z.string().nullish(),
@@ -1849,6 +1855,123 @@ export const ProjectGraphRetrievalResponseSchema = z.object({
   missing_information: z.array(z.string()).default([]),
 });
 export type ProjectGraphRetrievalResponse = z.infer<typeof ProjectGraphRetrievalResponseSchema>;
+
+export const ReviewReasonSchema = z.object({
+  code: z.string(),
+  message: z.string(),
+  target_type: z.enum(["node", "edge"]),
+  target_id: z.string(),
+  evidence_refs: z.array(z.string()).default([]),
+});
+export type ReviewReason = z.infer<typeof ReviewReasonSchema>;
+
+export const ReviewQueueItemSchema = z.object({
+  id: z.string(),
+  category: z.enum(["conflict", "missing_dimension", "ambiguous_level", "possibly_same", "needs_review"]),
+  target_type: z.enum(["node", "edge"]),
+  target_id: z.string(),
+  node_id: z.string().nullish(),
+  edge_id: z.string().nullish(),
+  reason_codes: z.array(z.string()).default([]),
+  reasons: z.array(ReviewReasonSchema).default([]),
+  priority: z.number().nonnegative(),
+  weight: z.number().nonnegative(),
+  occurrence_count: z.number().int().nonnegative().default(0),
+  evidence_refs: z.array(z.string()).default([]),
+});
+export type ReviewQueueItem = z.infer<typeof ReviewQueueItemSchema>;
+
+export const ProjectGraphReviewQueueResponseSchema = z.object({
+  project_id: z.string(),
+  snapshot_id: z.string(),
+  items: z.array(ReviewQueueItemSchema).default([]),
+  summary: z.object({ total: z.number().int().nonnegative(), by_reason: z.record(z.string(), z.number().int().nonnegative()).default({}) }),
+});
+export type ProjectGraphReviewQueueResponse = z.infer<typeof ProjectGraphReviewQueueResponseSchema>;
+
+export const QuantityReadinessItemSchema = z.object({
+  element_type_id: z.string(),
+  name: z.string(),
+  readiness: z.enum(["ready", "needs_review", "blocked"]),
+  has_canonical_type: z.boolean(),
+  has_occurrence: z.boolean(),
+  has_written_dimension: z.boolean(),
+  no_open_conflict: z.boolean(),
+  level_binding_confirmed: z.boolean(),
+  occurrence_count: z.number().int().nonnegative(),
+  reason_codes: z.array(z.string()).default([]),
+  reasons: z.array(ReviewReasonSchema).default([]),
+});
+export type QuantityReadinessItem = z.infer<typeof QuantityReadinessItemSchema>;
+
+export const QuantityReadinessResponseSchema = z.object({
+  project_id: z.string(),
+  snapshot_id: z.string(),
+  items: z.array(QuantityReadinessItemSchema).default([]),
+  summary: z.object({
+    total: z.number().int().nonnegative(),
+    ready: z.number().int().nonnegative(),
+    needs_review: z.number().int().nonnegative(),
+    blocked: z.number().int().nonnegative(),
+  }),
+});
+export type QuantityReadinessResponse = z.infer<typeof QuantityReadinessResponseSchema>;
+
+export const ProjectGraphCorrectionResponseSchema = z.object({
+  id: z.string(),
+  project_id: z.string(),
+  snapshot_id: z.string(),
+  target_type: z.string(),
+  target_id: z.string(),
+  correction_type: z.string(),
+  proposed_value: z.record(z.unknown()),
+  rationale: z.string(),
+  status: z.enum(["pending", "accepted", "resolved", "rejected", "stale"]),
+  resolution_note: z.string().nullish(),
+  created_by: z.string().nullish(),
+  resolved_by: z.string().nullish(),
+  carried_from: z.string().nullish(),
+  created_at: z.string().nullish(),
+  resolved_at: z.string().nullish(),
+});
+export type ProjectGraphCorrectionResponse = z.infer<typeof ProjectGraphCorrectionResponseSchema>;
+
+export const RabBridgeResponseSchema = z.object({
+  status: z.string(),
+  snapshot_id: z.string().nullish(),
+  proposal_id: z.string().nullish(),
+  items: z.array(z.record(z.unknown())).default([]),
+});
+export type RabBridgeResponse = z.infer<typeof RabBridgeResponseSchema>;
+
+export const QuantityAssumptionSchema = z.object({
+  id: z.string(),
+  project_id: z.string(),
+  element_type_id: z.string().nullish(),
+  text: z.string(),
+  source_role: z.string(),
+  status: z.string().default("active"),
+  created_at: z.string().nullish(),
+});
+export type QuantityAssumption = z.infer<typeof QuantityAssumptionSchema>;
+
+export const QuantityAssumptionResolveSchema = z.object({
+  status: z.enum(["accepted", "rejected"]),
+});
+export type QuantityAssumptionResolve = z.infer<typeof QuantityAssumptionResolveSchema>;
+
+export const SkippedItemSchema = z.object({
+  node_id: z.string(),
+  reason: z.string(),
+});
+export type SkippedItem = z.infer<typeof SkippedItemSchema>;
+
+export const RabBridgeMaterializeResponseSchema = z.object({
+  materialized_count: z.number().int(),
+  skipped_items: z.array(SkippedItemSchema).default([]),
+  rab_draft_updated: z.boolean(),
+});
+export type RabBridgeMaterializeResponse = z.infer<typeof RabBridgeMaterializeResponseSchema>;
 
 export const TkgIssueSchema = z.object({
   code: z.string(),

@@ -301,6 +301,65 @@ async def _seed_intent_retrieval_fixture(session, *, summary_views=()):
 
 
 @pytest.mark.asyncio
+async def test_retrieval_api_matches_lintel_entities_and_returns_occurrences_with_levels():
+    headers = {"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A"}
+    snapshot = {
+        "snapshot_id": "SNAP-LINTEL",
+        "schema_version": "paax.pckm.graph.v1",
+        "source_manifest_hash": "lintel",
+        "generation_metadata": {"source": "synthetic lintel retrieval fixture"},
+        "nodes": [
+            {"node_id": "L1", "node_type": "level", "canonical_name": "Lantai 1", "normalized_name": "lantai 1", "discipline": "general", "verification_status": "extracted", "confidence": 1},
+            {"node_id": "LT2", "node_type": "level", "canonical_name": "LT-2", "normalized_name": "lt-2", "discipline": "general", "verification_status": "extracted", "confidence": 1},
+            {"node_id": "TYPE-LINTEL-15X10", "node_type": "element_type", "canonical_name": "Lintel 15X10", "normalized_name": "lintel 15x10", "discipline": "structure", "verification_status": "extracted", "confidence": 1},
+            {"node_id": "TYPE-BALOK-LINTEL", "node_type": "element_type", "canonical_name": "BALOK LINTEL", "normalized_name": "balok lintel", "discipline": "structure", "verification_status": "extracted", "confidence": 1},
+            {"node_id": "OCC-LINTEL-L1", "node_type": "element_occurrence", "canonical_name": "Lintel 15X10 @ Lantai 1", "normalized_name": "lintel 15x10 @ lantai 1", "discipline": "structure", "verification_status": "extracted", "confidence": 1},
+            {"node_id": "OCC-BALOK-LT2", "node_type": "element_occurrence", "canonical_name": "BALOK LINTEL @ LT-2", "normalized_name": "balok lintel @ lt-2", "discipline": "structure", "verification_status": "extracted", "confidence": 1},
+        ],
+        "edges": [
+            {"edge_id": "OCC-LINTEL-L1-LEVEL", "source_node_id": "OCC-LINTEL-L1", "target_node_id": "L1", "relation": "LOCATED_ON", "confidence_class": "EXTRACTED", "confidence": 1},
+            {"edge_id": "OCC-BALOK-LT2-LEVEL", "source_node_id": "OCC-BALOK-LT2", "target_node_id": "LT2", "relation": "LOCATED_ON", "confidence_class": "EXTRACTED", "confidence": 1},
+            {"edge_id": "OCC-LINTEL-L1-TYPE", "source_node_id": "OCC-LINTEL-L1", "target_node_id": "TYPE-LINTEL-15X10", "relation": "INSTANCE_OF", "confidence_class": "EXTRACTED", "confidence": 1},
+            {"edge_id": "OCC-BALOK-LT2-TYPE", "source_node_id": "OCC-BALOK-LT2", "target_node_id": "TYPE-BALOK-LINTEL", "relation": "INSTANCE_OF", "confidence_class": "EXTRACTED", "confidence": 1},
+        ],
+        "evidence": [],
+        "node_evidence": [],
+        "edge_evidence": [],
+        "aliases": [],
+        "communities": [],
+    }
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        project_response = await client.post(
+            "/projects", json={"id": "PROJECT-LINTEL", "owner_id": "ignored", "name": "Lintel"}, headers=headers
+        )
+        assert project_response.status_code == 200, project_response.text
+        snapshot_response = await client.post(
+            "/projects/PROJECT-LINTEL/project-graph/snapshots", json=snapshot, headers=headers
+        )
+        assert snapshot_response.status_code == 200, snapshot_response.text
+        response = await client.post(
+            "/projects/PROJECT-LINTEL/project-graph/retrieve",
+            json={"query": "balok lintel di lantai mana saja", "use_intent": True, "depth": 2},
+            headers=headers,
+        )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["intent"] == "ELEMENT_LOOKUP"
+    assert body["data_status"] == "grounded"
+    occurrence_names = {
+        node["name"] for node in body["nodes"] if node["type"] == "element_occurrence"
+    }
+    assert occurrence_names == {"Lintel 15X10 @ Lantai 1", "BALOK LINTEL @ LT-2"}
+    level_names = {
+        node["name"] for node in body["nodes"] if node["type"] == "level"
+    }
+    assert level_names == {"Lantai 1", "LT-2"}
+
+
+@pytest.mark.asyncio
 async def test_intent_list_filter_uses_level_summary_and_discipline_scope():
     from .conftest import TestSession
 
@@ -321,6 +380,8 @@ async def test_intent_list_filter_uses_level_summary_and_discipline_scope():
     assert result.intent == "LIST_FILTER"
     assert result.data_status == "grounded"
     assert result.summary_view["summary"]["element_type_index"][0]["name"] == "K1"
+    assert "occurrence_count = jumlah kelompok konteks tercatat pada gambar, bukan jumlah fisik terpasang" in result.notes
+    assert "occurrence_count = jumlah kelompok konteks tercatat pada gambar, bukan jumlah fisik terpasang" in result.summary_view["notes"]
     assert {node.node_id for node in result.nodes} == {"L2", "OCC-K1"}
     assert all(node.discipline in {"general", "structure"} for node in result.nodes)
 
@@ -337,6 +398,68 @@ async def test_intent_list_filter_falls_back_to_scoped_bfs_when_summary_is_missi
     assert result.summary_view is None
     assert {node.node_id for node in result.nodes} == {"L2", "OCC-K1", "TYPE-K1", "DIM-K1"}
     assert all(node.discipline in {"general", "structure"} for node in result.nodes)
+
+
+@pytest.mark.asyncio
+async def test_entity_and_level_summary_path_returns_only_requested_entity():
+    from .conftest import TestSession
+
+    summary = {
+        "schema_version": "paax.pckm.summary-view.v1",
+        "project_id": "PROJECT-V2",
+        "snapshot_id": "SNAP-V2",
+        "view_kind": "LEVEL_OVERVIEW",
+        "grain": {"level_id": "L2"},
+        "summary": {
+            "level_name": "Lantai 2",
+            "element_type_index": [
+                {"element_type_id": "TYPE-K1", "name": "K1", "occurrence_count": 1},
+                {"element_type_id": "TYPE-W1", "name": "Jendela", "occurrence_count": 1},
+            ],
+            "discipline_counts": [
+                {"discipline": "structure", "occurrence_count": 1},
+                {"discipline": "architecture", "occurrence_count": 1},
+            ],
+            "stored_measurement_facts": [],
+        },
+        "quality": {"confirmed_count": 2, "ambiguous_binding_count": 0, "conflict_count": 0},
+        "provenance": {"source_document_ids": ["DOC-A"], "evidence_ids": ["EV-50"], "summary_builder_version": "test"},
+    }
+    async with TestSession() as session:
+        await _seed_intent_retrieval_fixture(session, summary_views=[summary])
+        result = await retrieve_project_graph(session, project_id="PROJECT-V2", query="K1 lantai 2", use_intent=True)
+
+    assert result.data_status == "grounded"
+    assert {node.node_id for node in result.nodes} == {"L2", "OCC-K1"}
+    assert "OCC-W1" not in {node.node_id for node in result.nodes}
+    assert [entry["name"] for entry in result.summary_view["summary"]["element_type_index"]] == ["K1"]
+    assert result.summary_view["summary"]["discipline_counts"] == [{"discipline": "structure", "occurrence_count": 1}]
+    assert any("entity" in note.lower() and "K1" in note for note in result.summary_view["notes"])
+
+
+@pytest.mark.asyncio
+async def test_entity_and_level_fallback_bfs_returns_only_requested_entity():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        await _seed_intent_retrieval_fixture(session)
+        result = await retrieve_project_graph(session, project_id="PROJECT-V2", query="K1 lantai 2", use_intent=True)
+
+    assert {node.node_id for node in result.nodes} == {"L2", "OCC-K1", "TYPE-K1", "DIM-K1"}
+    assert "OCC-W1" not in {node.node_id for node in result.nodes}
+
+
+@pytest.mark.asyncio
+async def test_valid_level_with_zero_matching_discipline_is_empty_not_grounded():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        await _seed_intent_retrieval_fixture(session)
+        result = await retrieve_project_graph(session, project_id="PROJECT-V2", query="mep lantai 2", use_intent=True)
+
+    assert result.nodes == [node for node in result.nodes if node.node_id == "L2"]
+    assert result.data_status == "empty"
+    assert any("empty" in note.lower() or "tidak ada" in note.lower() for note in result.notes)
 
 
 @pytest.mark.asyncio
@@ -404,6 +527,80 @@ async def test_calculation_required_refuses_retrieval_and_points_to_core_engine(
 
 
 @pytest.mark.asyncio
+async def test_calculation_refusal_does_not_seed_graph_search(monkeypatch):
+    from .conftest import TestSession
+    import paax_db.project_graph_retrieval as retrieval_module
+
+    async def fail_seed(*args, **kwargs):
+        raise AssertionError("calculation refusal must not search entity seeds")
+
+    monkeypatch.setattr(retrieval_module, "_entity_seed_nodes", fail_seed)
+    async with TestSession() as session:
+        await _seed_intent_retrieval_fixture(session)
+        result = await retrieve_project_graph(
+            session, project_id="PROJECT-V2", query="berapa kebutuhan besi K1", use_intent=True
+        )
+
+    assert result.status == "calculation_required"
+    assert result.nodes == []
+    assert result.guidance and "K1" in result.guidance
+
+
+@pytest.mark.asyncio
+async def test_calculation_parser_error_is_not_ready_without_legacy_fallback(monkeypatch):
+    from .conftest import TestSession
+    import paax_db.project_graph_retrieval as retrieval_module
+
+    async def fail_parser(*args, **kwargs):
+        raise RuntimeError("forced parser failure")
+
+    async def fail_legacy(*args, **kwargs):
+        raise AssertionError("calculation parser error must not fall back to legacy retrieval")
+
+    monkeypatch.setattr(retrieval_module, "parse_query_plan", fail_parser)
+    monkeypatch.setattr(retrieval_module, "_retrieve_legacy", fail_legacy)
+    async with TestSession() as session:
+        await _seed_intent_retrieval_fixture(session)
+        result = await retrieve_project_graph(
+            session, project_id="PROJECT-V2", query="berapa kebutuhan besi K1", use_intent=True
+        )
+
+    assert result.status == "not_ready"
+    assert result.data_status == "not_ready"
+    assert result.intent is None
+    assert result.nodes == []
+    assert any("parser" in note for note in result.notes)
+
+
+@pytest.mark.asyncio
+async def test_api_keeps_fallback_notes_and_data_status_when_intent_is_none(monkeypatch):
+    from .conftest import TestSession
+    import paax_db.project_graph_retrieval as retrieval_module
+
+    async def fail_parser(*args, **kwargs):
+        raise RuntimeError("forced parser failure")
+
+    monkeypatch.setattr(retrieval_module, "parse_query_plan", fail_parser)
+    async with TestSession() as session:
+        await _seed_intent_retrieval_fixture(session)
+
+    headers = {"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A"}
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/projects/PROJECT-V2/project-graph/retrieve",
+            json={"query": "berapa kebutuhan besi K1", "use_intent": True},
+            headers=headers,
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "not_ready"
+    assert body["data_status"] == "not_ready"
+    assert any("parser" in note for note in body["notes"])
+
+
+@pytest.mark.asyncio
 async def test_conflict_lookup_seeds_conflict_nodes_and_unknown_level_is_honest_empty():
     from .conftest import TestSession
 
@@ -430,6 +627,24 @@ def test_retrieval_v2_schemas_expose_request_and_response_contract():
     assert request.use_intent is True
     assert response.intent == "NUMERIC_STORED_FACT"
     assert response.data_status == "grounded"
+
+
+def test_retrieval_schema_validates_summary_view_structure_and_d11_notes():
+    summary = schemas.ProjectGraphSummaryView(
+        project_id="PROJECT-V2",
+        snapshot_id="SNAP-V2",
+        grain={"level_id": "L2"},
+        summary={"level_name": "Lantai 2"},
+        quality={"confirmed_count": 0, "ambiguous_binding_count": 0, "conflict_count": 0},
+        provenance={"summary_builder_version": "test"},
+        notes=["occurrence_count = jumlah kelompok konteks tercatat pada gambar, bukan jumlah fisik terpasang"],
+    )
+    response = schemas.ProjectGraphRetrievalResponse(
+        status="success", intent="LIST_FILTER", data_status="empty", summary_view=summary
+    )
+
+    assert response.summary_view.summary.level_name == "Lantai 2"
+    assert response.summary_view.notes[0].startswith("occurrence_count = jumlah kelompok konteks")
 
 
 @pytest.mark.asyncio

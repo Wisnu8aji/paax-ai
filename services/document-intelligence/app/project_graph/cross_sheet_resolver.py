@@ -67,7 +67,11 @@ _CODE_BOUNDARY = re.compile(r"(?<![A-Z0-9]){code}(?![A-Z0-9])")
 # fixture anchor: page 47 titled "DENAH BALOK LINTEL LT-2" was missed by the
 # space-only pattern and fell back to unspecified_level despite an
 # unambiguous level marker being right there in the title.
-_TITLE_LEVEL = re.compile(r"\b(?:LT\.?|LANTAI)[\s\-]*(\d+|ATAP|ROOF|DASAR)\b", re.IGNORECASE)
+_TITLE_LEVEL = re.compile(
+    r"\b(?P<level>(?:LT\.?|LANTAI)[\s\-]*(?P<token>\d+|ATAP|ROOF|DASAR)"
+    r"(?P<qualifier>[\s\-]+P\b(?:\s*[+\-\u00b1\u0105]\s*\d+(?:[.,]\d+)?)?)?)",
+    re.IGNORECASE,
+)
 _TITLE_SCHEDULE = re.compile(r"\b(?:TABEL|SCHEDULE)\b", re.IGNORECASE)
 _TITLE_SECTION = re.compile(r"\b(?:POTONGAN|TAMPAK|SECTION|ELEVATION)\b", re.IGNORECASE)
 
@@ -154,12 +158,23 @@ def _fact_values(patch: SheetKnowledgePatch, category: str) -> tuple[_FactValue,
             values[key] = candidate
             continue
         bboxes = [bbox for bbox in (existing.bbox, candidate.bbox) if bbox is not None]
+        properties_by_key: dict[str, set[str]] = {}
+        for property_key, property_value in (*existing.properties, *candidate.properties):
+            properties_by_key.setdefault(property_key, set()).update(
+                value.strip() for value in property_value.split(" | ") if value.strip()
+            )
         values[key] = _FactValue(
             key=key,
             display=min(existing.display, candidate.display, key=lambda item: (item.casefold(), item)),
             confidence=min(existing.confidence, candidate.confidence),
             evidence_refs=tuple(sorted(set(existing.evidence_refs) | set(candidate.evidence_refs))),
             bbox=min(bboxes) if bboxes else None,
+            aliases=tuple(sorted(set(existing.aliases) | set(candidate.aliases), key=str.casefold)),
+            properties=tuple(
+                (property_key, " | ".join(sorted(property_values, key=str.casefold)))
+                for property_key, property_values in sorted(properties_by_key.items())
+            ),
+            requires_review=existing.requires_review or candidate.requires_review,
         )
     return tuple(
         value for _, value in sorted(values.items())
@@ -291,7 +306,10 @@ def _is_occurrence_excluded_sheet(patch: SheetKnowledgePatch) -> bool:
     )
 
 
-def _title_level(patch: SheetKnowledgePatch) -> _FactValue | None:
+def _title_level(
+    patch: SheetKnowledgePatch,
+    levels: Sequence[_FactValue],
+) -> _FactValue | None:
     identity = next((fact for fact in patch.facts if fact.category == "sheet_identity"), None)
     if identity is None:
         return None
@@ -299,13 +317,26 @@ def _title_level(patch: SheetKnowledgePatch) -> _FactValue | None:
     match = _TITLE_LEVEL.search(title)
     if match is None:
         return None
-    token = match.group(1).upper()
+    title_candidate = match.group("level")
+    title_candidate_key = _text_key(title_candidate)
+    for level in levels:
+        canonical_keys = {level.key, *(_text_key(alias) for alias in level.aliases)}
+        if title_candidate_key in canonical_keys:
+            return level
+
+    # A qualified title must be backed by the canonicalized level facts.  This
+    # prevents its qualifier/elevation from being discarded by a title-only
+    # fallback such as "Atap".
+    if match.group("qualifier"):
+        return None
+
+    token = match.group("token").upper()
     if token.isdigit():
         display = f"Lantai {token}"
     elif token in {"ATAP", "ROOF"}:
         display = "Atap"
     else:
-        display = "Dasar"
+        display = "Substruktur"
     return _FactValue(
         key=_text_key(display),
         display=display,
@@ -377,7 +408,7 @@ def _source_context(
     source_bbox = _element_bbox(patch, code, source_ref)
     levels = _fact_values(patch, "levels")
     spaces = _fact_values(patch, "spaces")
-    level = _title_level(patch)
+    level = _title_level(patch, levels)
     if level is None:
         level = _nearest_value(source_bbox, levels)
     space = _nearest_value(source_bbox, spaces)

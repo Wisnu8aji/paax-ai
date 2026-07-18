@@ -522,6 +522,11 @@ export default function CommandRoomPage() {
       modelName: activeModelDef.displayName as 'Lucent' | 'Arete' | 'Noir',
       effort: reasoningEffort,
       thinking: resolvedThinking,
+      // Fix 2026-07-18: projectId HANYA dikirim kalau connector aktif -- sebelumnya
+      // selalu terkirim asal project dibuka, membuat SEMUA tool (termasuk
+      // query_project_graph/gambar kerja) terdaftar ke model walau user tidak minta
+      // context apa pun (root cause token membludak + jawaban tidak relevan).
+      projectId: connectors.gambarKerja || connectors.rab || connectors.jadwal ? (next.folderId ?? undefined) : undefined,
     });
   }
 

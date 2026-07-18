@@ -1,0 +1,343 @@
+- generic [ref=f1e1]:
+  - generic [ref=f1e3]:
+    - complementary "Navigasi utama" [ref=f1e4]:
+      - button "PAAX — ke Overview" [ref=f1e5] [cursor=pointer]
+      - navigation [ref=f1e8]:
+        - button "Overview" [ref=f1e9] [cursor=pointer]:
+          - tooltip "Overview"
+        - button "Project Studio" [ref=f1e16] [cursor=pointer]:
+          - tooltip "Project Studio"
+        - button "Command Room" [ref=f1e20] [cursor=pointer]:
+          - tooltip "Command Room"
+        - button "Site Agent" [ref=f1e25] [cursor=pointer]:
+          - tooltip "Site Agent"
+        - button "Files & Documents" [ref=f1e32] [cursor=pointer]:
+          - tooltip "Files & Documents"
+        - button "Ledger" [ref=f1e38] [cursor=pointer]:
+          - tooltip "Ledger"
+        - button "Artifacts" [ref=f1e42] [cursor=pointer]:
+          - tooltip "Artifacts"
+        - button "Team" [ref=f1e48] [cursor=pointer]:
+          - tooltip "Team"
+      - generic [ref=f1e55]:
+        - button "Settings" [ref=f1e56] [cursor=pointer]:
+          - tooltip "Settings"
+        - button "Profile" [ref=f1e61] [cursor=pointer]:
+          - generic [ref=f1e62]: BA
+          - tooltip "Profile"
+    - main [ref=f1e64]:
+      - generic [ref=f1e66]:
+        - generic [ref=f1e67]:
+          - generic [ref=f1e68]: PAAX
+          - navigation "Breadcrumb" [ref=f1e69]:
+            - link "Projects" [ref=f1e70] [cursor=pointer]:
+              - /url: "#"
+            - generic [ref=f1e71]: ›
+            - link "PLHUT Campus – Building A" [ref=f1e72] [cursor=pointer]:
+              - /url: "#"
+            - generic [ref=f1e73]: ›
+            - link "Building A" [ref=f1e74] [cursor=pointer]:
+              - /url: "#"
+          - strong [ref=f1e76]: Drawing Intelligence
+          - generic [ref=f1e77]:
+            - generic [ref=f1e78]:
+              - textbox "Search sheets, items, or tags" [ref=f1e79]
+              - generic: ⌘K
+            - button "Filter" [ref=f1e81] [cursor=pointer]
+            - button "Compare Revisions" [ref=f1e87] [cursor=pointer]
+            - button "Analyze Selected" [ref=f1e93] [cursor=pointer]
+            - button "Share" [ref=f1e97] [cursor=pointer]
+            - generic "Aji Ramadhan — online" [ref=f1e104]: AR
+        - navigation "Workspace mode" [ref=f1e106]:
+          - tab "Files 1" [ref=f1e107] [cursor=pointer]:
+            - text: Files
+            - generic [ref=f1e110]: "1"
+          - tab "Sheets 6" [active] [selected] [ref=f1e111] [cursor=pointer]:
+            - text: Sheets
+            - generic [ref=f1e117]: "6"
+          - tab "Analyze" [ref=f1e118] [cursor=pointer]
+          - tab "Review 7" [ref=f1e121] [cursor=pointer]:
+            - text: Review
+            - generic [ref=f1e129]: "7"
+          - tab "Quantities 96" [ref=f1e130] [cursor=pointer]:
+            - text: Quantities
+            - generic [ref=f1e133]: "96"
+          - tab "Handoff 24" [ref=f1e134] [cursor=pointer]:
+            - text: Handoff
+            - generic [ref=f1e137]: "24"
+          - generic "Workflow progress" [ref=f1e138]: Files 1 → Sheets 6 → Verified 24 → Ready
+        - generic [ref=f1e140]:
+          - complementary [ref=f1e141]:
+            - generic [ref=f1e142]:
+              - generic [ref=f1e143]: File & Sheet Navigator
+              - button "Collapse navigator" [ref=f1e144] [cursor=pointer]
+            - generic [ref=f1e148]:
+              - generic [ref=f1e149]:
+                - generic [ref=f1e154]:
+                  - generic [ref=f1e155]: Floor Plan.pdf
+                  - generic [ref=f1e156]: 24.4 MB · 6 sheets
+                - generic [ref=f1e157]: Analyzed
+              - generic [ref=f1e158]:
+                - generic [ref=f1e159]: Disciplines (All)
+                - generic [ref=f1e160]:
+                  - button "STR 6" [ref=f1e161] [cursor=pointer]
+                  - button "ARC 6" [ref=f1e162] [cursor=pointer]
+                  - button "MEP 6" [ref=f1e163] [cursor=pointer]
+                  - button "CIV 5" [ref=f1e164] [cursor=pointer]
+                  - button "OTH 0" [ref=f1e165] [cursor=pointer]
+              - textbox "Search sheets..." [ref=f1e166]
+              - generic [ref=f1e167]:
+                - generic [ref=f1e168]: FLOORS
+                - generic [ref=f1e169]:
+                  - button "F00 – Ground Floor 1" [ref=f1e171] [cursor=pointer]:
+                    - generic [ref=f1e174]: F00 – Ground Floor
+                    - generic [ref=f1e175]: "1"
+                  - button "F01 – Floor 1 1" [ref=f1e177] [cursor=pointer]:
+                    - generic [ref=f1e180]: F01 – Floor 1
+                    - generic [ref=f1e181]: "1"
+                  - generic [ref=f1e182]:
+                    - button "F02 – Floor 2 1" [ref=f1e183] [cursor=pointer]:
+                      - generic [ref=f1e186]: F02 – Floor 2
+                      - generic [ref=f1e187]: "1"
+                    - generic [ref=f1e189] [cursor=pointer]:
+                      - generic [ref=f1e190]:
+                        - img "A2-102 — Second Floor Plan" [ref=f1e191]
+                        - checkbox "Select A2-102" [checked] [ref=f1e223]
+                      - generic [ref=f1e224]:
+                        - generic [ref=f1e225]: A2-102
+                        - generic [ref=f1e226]: 1:100
+                        - button "Sheet menu" [ref=f1e228]
+                      - generic [ref=f1e233]: Second Floor Plan
+                  - button "F03 – Floor 3 1" [ref=f1e235] [cursor=pointer]:
+                    - generic [ref=f1e238]: F03 – Floor 3
+                    - generic [ref=f1e239]: "1"
+                  - button "F04 – Floor 4 1" [ref=f1e241] [cursor=pointer]:
+                    - generic [ref=f1e244]: F04 – Floor 4
+                    - generic [ref=f1e245]: "1"
+                  - button "ROOF – Roof Plan 1" [ref=f1e247] [cursor=pointer]:
+                    - generic [ref=f1e250]: ROOF – Roof Plan
+                    - generic [ref=f1e251]: "1"
+            - button "Upload new files" [ref=f1e253] [cursor=pointer]
+          - generic [ref=f1e3491]:
+            - generic [ref=f1e3492]:
+              - heading "All Sheets (6)" [level=2] [ref=f1e3493]
+              - generic [ref=f1e3494]:
+                - button "All disciplines" [ref=f1e3496] [cursor=pointer]
+                - button "All scales" [ref=f1e3500] [cursor=pointer]
+                - generic [ref=f1e3503] [cursor=pointer]:
+                  - checkbox "Show sheet titles" [checked] [ref=f1e3504]
+                  - text: Show sheet titles
+                - button "Clear selection" [ref=f1e3505] [cursor=pointer]
+                - generic [ref=f1e3506]: 1 selected
+                - button "Grid view" [ref=f1e3507] [cursor=pointer]
+                - button "List view" [ref=f1e3513] [cursor=pointer]
+              - generic [ref=f1e3515]:
+                - generic [ref=f1e3516]:
+                  - generic [ref=f1e3517]: Ground Floor
+                  - generic [ref=f1e3519] [cursor=pointer]:
+                    - generic [ref=f1e3520]:
+                      - img "A2-100 — Ground Floor Plan" [ref=f1e3521]
+                      - checkbox "Select A2-100" [ref=f1e3553]
+                      - generic [ref=f1e3554]: 1:100
+                    - generic [ref=f1e3555]:
+                      - generic [ref=f1e3556]:
+                        - generic [ref=f1e3557]: F00
+                        - button "Sheet menu" [ref=f1e3559]
+                      - generic [ref=f1e3564]: Ground Floor Plan
+                      - generic [ref=f1e3565]:
+                        - generic "Structural" [ref=f1e3566]: STR
+                        - generic "Architectural" [ref=f1e3567]: ARC
+                        - generic "MEP" [ref=f1e3568]
+                        - generic "Civil / Site" [ref=f1e3569]: CIV
+                      - generic [ref=f1e3570]: Needs review
+                - generic [ref=f1e3577]:
+                  - generic [ref=f1e3578]: Floor 1
+                  - generic [ref=f1e3580] [cursor=pointer]:
+                    - generic [ref=f1e3581]:
+                      - img "A2-101 — Floor 1 Plan" [ref=f1e3582]
+                      - checkbox "Select A2-101" [ref=f1e3614]
+                      - generic [ref=f1e3615]: 1:100
+                    - generic [ref=f1e3616]:
+                      - generic [ref=f1e3617]:
+                        - generic [ref=f1e3618]: F01
+                        - button "Sheet menu" [ref=f1e3620]
+                      - generic [ref=f1e3625]: Floor 1 Plan
+                      - generic [ref=f1e3626]:
+                        - generic "Structural" [ref=f1e3627]: STR
+                        - generic "Architectural" [ref=f1e3628]: ARC
+                        - generic "MEP" [ref=f1e3629]
+                        - generic "Civil / Site" [ref=f1e3630]: CIV
+                      - generic [ref=f1e3631]: Verified
+                - generic [ref=f1e3638]:
+                  - generic [ref=f1e3639]: Floor 2
+                  - generic [ref=f1e3641] [cursor=pointer]:
+                    - generic [ref=f1e3642]:
+                      - img "A2-102 — Second Floor Plan" [ref=f1e3643]
+                      - checkbox "Select A2-102" [checked] [ref=f1e3675]
+                      - generic [ref=f1e3676]: 1:100
+                    - generic [ref=f1e3677]:
+                      - generic [ref=f1e3678]:
+                        - generic [ref=f1e3679]: F02
+                        - button "Sheet menu" [ref=f1e3681]
+                      - generic [ref=f1e3686]: Second Floor Plan
+                      - generic [ref=f1e3687]:
+                        - generic "Structural" [ref=f1e3688]: STR
+                        - generic "Architectural" [ref=f1e3689]: ARC
+                        - generic "MEP" [ref=f1e3690]
+                        - generic "Civil / Site" [ref=f1e3691]: CIV
+                      - generic [ref=f1e3692]: Needs review
+                - generic [ref=f1e3699]:
+                  - generic [ref=f1e3700]: Floor 3
+                  - generic [ref=f1e3702] [cursor=pointer]:
+                    - generic [ref=f1e3703]:
+                      - img "A2-103 — Floor 3 Plan" [ref=f1e3704]
+                      - checkbox "Select A2-103" [ref=f1e3736]
+                      - generic [ref=f1e3737]: 1:100
+                    - generic [ref=f1e3738]:
+                      - generic [ref=f1e3739]:
+                        - generic [ref=f1e3740]: F03
+                        - button "Sheet menu" [ref=f1e3742]
+                      - generic [ref=f1e3747]: Floor 3 Plan
+                      - generic [ref=f1e3748]:
+                        - generic "Structural" [ref=f1e3749]: STR
+                        - generic "Architectural" [ref=f1e3750]: ARC
+                        - generic "MEP" [ref=f1e3751]
+                        - generic "Civil / Site" [ref=f1e3752]: CIV
+                      - generic [ref=f1e3753]: Verified
+                - generic [ref=f1e3760]:
+                  - generic [ref=f1e3761]: Floor 4
+                  - generic [ref=f1e3763] [cursor=pointer]:
+                    - generic [ref=f1e3764]:
+                      - img "A2-104 — Floor 4 Plan" [ref=f1e3765]
+                      - checkbox "Select A2-104" [ref=f1e3797]
+                      - generic [ref=f1e3798]: 1:100
+                    - generic [ref=f1e3799]:
+                      - generic [ref=f1e3800]:
+                        - generic [ref=f1e3801]: F04
+                        - button "Sheet menu" [ref=f1e3803]
+                      - generic [ref=f1e3808]: Floor 4 Plan
+                      - generic [ref=f1e3809]:
+                        - generic "Structural" [ref=f1e3810]: STR
+                        - generic "Architectural" [ref=f1e3811]: ARC
+                        - generic "MEP" [ref=f1e3812]
+                        - generic "Civil / Site" [ref=f1e3813]: CIV
+                      - generic [ref=f1e3814]: Needs review
+                - generic [ref=f1e3821]:
+                  - generic [ref=f1e3822]: Roof Plan
+                  - generic [ref=f1e3824] [cursor=pointer]:
+                    - generic [ref=f1e3825]:
+                      - img "A2-105 — Roof Plan" [ref=f1e3826]
+                      - checkbox "Select A2-105" [ref=f1e3834]
+                      - generic [ref=f1e3835]: 1:100
+                    - generic [ref=f1e3836]:
+                      - generic [ref=f1e3837]:
+                        - generic [ref=f1e3838]: ROOF
+                        - button "Sheet menu" [ref=f1e3840]
+                      - generic [ref=f1e3845]: Roof Plan
+                      - generic [ref=f1e3846]:
+                        - generic "Structural" [ref=f1e3847]: STR
+                        - generic "Architectural" [ref=f1e3848]: ARC
+                        - generic "MEP" [ref=f1e3849]
+                      - generic [ref=f1e3850]: Verified
+              - generic [ref=f1e3857]:
+                - generic [ref=f1e3858]: 1 of 6 selected
+                - button "Analyze selected" [ref=f1e3859] [cursor=pointer]
+                - button "Set discipline" [ref=f1e3860] [cursor=pointer]
+                - button "Set floor" [ref=f1e3861] [cursor=pointer]
+                - button "Rename" [ref=f1e3862] [cursor=pointer]
+                - button "Exclude" [ref=f1e3863] [cursor=pointer]
+                - button "Clear" [ref=f1e3864] [cursor=pointer]
+            - generic [ref=f1e3865]:
+              - generic [ref=f1e3866]: "6 sheets · 1 selected · Total size: 24.4 MB"
+              - generic [ref=f1e3867]:
+                - textbox "Ask a question about these sheets..." [ref=f1e3868]
+                - button "Ask PAAX" [ref=f1e3869] [cursor=pointer]
+          - complementary [ref=f1e3872]:
+            - generic [ref=f1e3873]:
+              - generic [ref=f1e3874]: Intelligence Inspector
+              - generic [ref=f1e3875]:
+                - button "Collapse" [ref=f1e3876] [cursor=pointer]
+                - button "Close" [ref=f1e3880] [cursor=pointer]
+            - generic [ref=f1e3884]:
+              - generic [ref=f1e3885]:
+                - generic [ref=f1e3886]: K1 (300 × 600 mm)
+                - generic [ref=f1e3887]: Selected
+              - generic [ref=f1e3888]: "Column – Structural · AI ID: COL-K1-011"
+              - generic [ref=f1e3889]:
+                - button "Sheet" [ref=f1e3890] [cursor=pointer]
+                - button "Detection" [ref=f1e3891] [cursor=pointer]
+                - button "Properties" [ref=f1e3892] [cursor=pointer]
+                - button "Verification" [ref=f1e3893] [cursor=pointer]
+                - button "AI Notes" [ref=f1e3894] [cursor=pointer]
+            - generic [ref=f1e3895]:
+              - generic [ref=f1e3896]: Element Details
+              - generic [ref=f1e3897]:
+                - generic [ref=f1e3898]: Code
+                - generic [ref=f1e3899]: K1
+              - generic [ref=f1e3900]:
+                - generic [ref=f1e3901]: Category
+                - generic [ref=f1e3902]: Column
+              - generic [ref=f1e3903]:
+                - generic [ref=f1e3904]: Level
+                - generic [ref=f1e3905]: Floor 2
+              - generic [ref=f1e3906]:
+                - generic [ref=f1e3907]: Grid
+                - generic [ref=f1e3908]: B-3
+              - generic [ref=f1e3909]:
+                - generic [ref=f1e3910]: Dimensions
+                - generic [ref=f1e3911]: 300 x 600 mm
+              - generic [ref=f1e3912]:
+                - generic [ref=f1e3913]: Material
+                - generic [ref=f1e3915]:
+                  - generic [ref=f1e3916]: fc' 25 MPa
+                  - generic [ref=f1e3917]: inherited
+              - generic [ref=f1e3918]:
+                - generic [ref=f1e3919]: Formula basis
+                - generic [ref=f1e3921]:
+                  - generic [ref=f1e3922]: Count (by grid intersection)
+                  - generic [ref=f1e3923]: inferred
+              - generic [ref=f1e3924]:
+                - generic [ref=f1e3925]: Elevation
+                - generic [ref=f1e3927]:
+                  - generic [ref=f1e3928]: +6.600 m
+                  - generic [ref=f1e3929]: inferred
+            - generic [ref=f1e3930]:
+              - generic [ref=f1e3931]: Location
+              - generic [ref=f1e3932]:
+                - generic [ref=f1e3933]: Center (X, Y)
+                - generic [ref=f1e3934]: 11400, 7200 mm
+              - generic [ref=f1e3935]:
+                - generic [ref=f1e3936]: Elevation
+                - generic [ref=f1e3937]: +6.600 m
+              - generic [ref=f1e3938]:
+                - generic [ref=f1e3939]: Rotation
+                - generic [ref=f1e3940]: 0°
+            - generic [ref=f1e3941]:
+              - generic [ref=f1e3942]: Source pages
+              - generic [ref=f1e3943]:
+                - generic [ref=f1e3944]: "A2-102: S2.1"
+                - generic [ref=f1e3946]: S2.6
+                - generic [ref=f1e3948]: S5.2
+              - button "View all source pages (3)" [ref=f1e3950] [cursor=pointer]
+            - generic [ref=f1e3951]:
+              - generic [ref=f1e3952]: Confidence
+              - generic [ref=f1e3953]:
+                - img [ref=f1e3954]:
+                  - generic [ref=f1e3957]: 94%
+                - generic [ref=f1e3958]: High Confidence
+            - generic [ref=f1e3959]:
+              - button "Verify element" [ref=f1e3960] [cursor=pointer]
+              - button "Edit classification" [ref=f1e3965] [cursor=pointer]
+              - button "Mark issue" [ref=f1e3969] [cursor=pointer]
+        - generic [ref=f1e3326]:
+          - generic [ref=f1e3327]: "Page: A2-102 – Second Floor Plan"
+          - generic [ref=f1e3328]: "Scale: 1:100"
+          - generic [ref=f1e3329]: "X: 12345.67"
+          - generic [ref=f1e3330]: "Y: 6789.01"
+          - generic [ref=f1e3331]: "Zoom: 49%"
+          - generic [ref=f1e3332]: Sheet manager
+          - generic [ref=f1e3335]:
+            - button "Documentation" [ref=f1e3336] [cursor=pointer]
+            - button "Help" [ref=f1e3339] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=f1e3348] [cursor=pointer]
+  - alert [ref=f1e3352]

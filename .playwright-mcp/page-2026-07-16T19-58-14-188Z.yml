@@ -1,0 +1,27 @@
+- generic [ref=e3]:
+  - complementary "Navigasi utama" [ref=e4]:
+    - button "PAAX — ke Overview" [ref=e5] [cursor=pointer]
+    - navigation [ref=e8]:
+      - button "Overview" [ref=e9] [cursor=pointer]:
+        - tooltip "Overview"
+      - button "Project Studio" [ref=e16] [cursor=pointer]:
+        - tooltip "Project Studio"
+      - button "Command Room" [ref=e20] [cursor=pointer]:
+        - tooltip "Command Room"
+      - button "Site Agent" [ref=e25] [cursor=pointer]:
+        - tooltip "Site Agent"
+      - button "Files & Documents" [ref=e32] [cursor=pointer]:
+        - tooltip "Files & Documents"
+      - button "Ledger" [ref=e38] [cursor=pointer]:
+        - tooltip "Ledger"
+      - button "Artifacts" [ref=e42] [cursor=pointer]:
+        - tooltip "Artifacts"
+      - button "Team" [ref=e48] [cursor=pointer]:
+        - tooltip "Team"
+    - generic [ref=e55]:
+      - button "Settings" [ref=e56] [cursor=pointer]:
+        - tooltip "Settings"
+      - button "Profile" [ref=e61] [cursor=pointer]:
+        - generic [ref=e62]: BA
+        - tooltip "Profile"
+  - main [ref=e64]

@@ -177,7 +177,7 @@ export function SmartRabImport({
   const readyCount = importedLinesToEngineLines(lines).length;
 
   return (
-    <Modal open={open} onClose={onClose} title="Smart Import RAB" width={980}>
+    <Modal open={open} onClose={onClose} title="Impor dari File Eksternal (Excel/PDF)" width={980}>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <StatusPill tone={provider?.includes("gemini") ? "ok" : "warn"}>

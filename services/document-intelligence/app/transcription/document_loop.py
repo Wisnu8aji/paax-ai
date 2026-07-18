@@ -99,4 +99,5 @@ async def process_document(
         page["status"] == "failed" or page["status"] not in _TERMINAL_STATUSES
         for page in status["pages"]
     )
+    
     await db_client.update_run_status(run_id, "partially_failed" if any_problem else "dem_complete")

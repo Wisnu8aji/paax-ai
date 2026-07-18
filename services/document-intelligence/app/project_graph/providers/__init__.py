@@ -6,10 +6,11 @@ from app.project_graph.synthesis_types import (
 )
 
 from .base import PckmProviderError
-from .deepseek import DeepSeekPckmProvider
+from .deepseek import DeepSeekLevelProvider, DeepSeekPckmProvider
 
 __all__ = [
     "DeepSeekPckmProvider",
+    "DeepSeekLevelProvider",
     "ModelUsage",
     "PckmProviderError",
     "PckmProviderResult",

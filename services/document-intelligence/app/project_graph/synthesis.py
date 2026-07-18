@@ -11,7 +11,12 @@ from app.project_graph.alias_resolver import resolve_aliases
 from app.project_graph.community_builder import GraphCommunity, build_graph_communities
 from app.project_graph.conflict_resolver import resolve_conflicts
 from app.project_graph.cross_sheet_resolver import resolve_cross_sheet
-from app.project_graph.level_canonicalizer import LevelCanonicalization, canonicalize_levels
+from app.project_graph.level_canonicalizer import (
+    LevelCanonicalization,
+    LevelProviderAudit,
+    LevelSemanticReviewProvider,
+    canonicalize_levels,
+)
 from app.project_graph.models import (
     EdgeResolver,
     NodeProperty,
@@ -21,6 +26,7 @@ from app.project_graph.models import (
     ProjectGraphSnapshot,
 )
 from app.project_graph.page_patch import build_sheet_patch
+from app.project_graph.providers.deepseek import DeepSeekLevelProvider
 from app.project_graph.summary_builder import ProjectGraphSummary, build_project_graph_summary
 from app.project_graph.synthesis_types import (
     PckmProviderResult,
@@ -67,6 +73,7 @@ class SynthesisResult:
     audit: SynthesisAudit
     communities: tuple[GraphCommunity, ...]
     provider_proposals: tuple[ProviderProposal, ...]
+    level_provider_audits: tuple[LevelProviderAudit, ...]
 
 
 def _stable_id(prefix: str, *parts: object) -> str:
@@ -473,6 +480,7 @@ def _snapshot_id(
 def synthesize_project_graph(
     sheets: Sequence[DrawingEvidenceSheet],
     provider: PckmSynthesisProvider | None = None,
+    level_provider: LevelSemanticReviewProvider | None = None,
 ) -> SynthesisResult:
     """Build a deterministic project graph; provider output remains an audit proposal."""
 
@@ -490,7 +498,12 @@ def synthesize_project_graph(
         ),
         key=_patch_key,
     )
-    canonicalization = canonicalize_levels(raw_patches)
+    # The level adapter is independently injectable for deterministic tests.
+    # In service runs it activates only with the dedicated key and explicit level flag.
+    resolved_level_provider = (
+        level_provider if level_provider is not None else DeepSeekLevelProvider.from_env()
+    )
+    canonicalization = canonicalize_levels(raw_patches, provider=resolved_level_provider)
     patches = canonicalization.patches
 
     alias_resolution = resolve_aliases(patches)
@@ -601,4 +614,5 @@ def synthesize_project_graph(
         audit=audit,
         communities=communities,
         provider_proposals=proposals,
+        level_provider_audits=canonicalization.provider_audits,
     )

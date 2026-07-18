@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
-from typing import Optional, Any, Dict, List, Literal
+from typing import Optional, Any, Dict, List, Literal, Union
 from datetime import datetime
 import uuid
 
@@ -299,6 +299,7 @@ class DemRunCreate(BaseModel):
     total_pages: int
     provider: str
     prompt_version: str
+    pdf_path: Optional[str] = None
 
 
 class DemRunResponse(BaseModel):
@@ -314,6 +315,7 @@ class DemRunResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     completed_at: Optional[datetime] = None
+    pdf_path: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -339,6 +341,15 @@ class DemRunStatusResponse(BaseModel):
     status: str
     total_pages: int
     pages: list[DemPageResponse]
+
+
+class ProjectDemSheetResponse(BaseModel):
+    run_id: str
+    page_index: int
+    file_name: str
+    status: str
+    sheet_title: Optional[str] = None
+    thumbnail_url: str
 
 
 class ProjectGraphSnapshotBuildRequest(BaseModel):
@@ -384,9 +395,9 @@ class ProjectGraphRetrievalResponse(BaseModel):
     context_token_estimate: int = 0
     intent: Optional[QueryIntentEnum] = None
     applied_filters: Dict[str, Optional[str]] = Field(default_factory=dict)
-    data_status: Optional[Literal["grounded", "empty", "calculation_required", "unknown_level"]] = None
+    data_status: Optional[Literal["grounded", "empty", "calculation_required", "unknown_level", "not_ready", "corrected"]] = None
     notes: List[str] = Field(default_factory=list)
-    summary_view: Optional[Dict[str, Any]] = None
+    summary_view: Optional["ProjectGraphSummaryView"] = None
     guidance: Optional[str] = None
     rab_bridge_available: Optional[bool] = None
     missing_information: List[str] = Field(default_factory=list)
@@ -411,7 +422,7 @@ class ProjectGraphCorrectionCreate(BaseModel):
 
 
 class ProjectGraphCorrectionResolve(BaseModel):
-    status: str = Field(pattern="^(resolved|rejected)$")
+    status: Literal["accepted", "resolved", "rejected"]
     resolution_note: str = Field(min_length=1, max_length=4000)
 
 
@@ -419,6 +430,76 @@ class ProjectGraphCorrectionResponse(ProjectGraphCorrectionCreate):
     project_id: str
     status: str
     resolution_note: Optional[str] = None
+    created_by: Optional[str] = None
+    resolved_by: Optional[str] = None
+    carried_from: Optional[str] = None
+    created_at: Optional[datetime] = None
+    resolved_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReviewReason(BaseModel):
+    code: str
+    message: str
+    target_type: Literal["node", "edge"]
+    target_id: str
+    evidence_refs: List[str] = Field(default_factory=list)
+
+
+class ReviewQueueItem(BaseModel):
+    id: str
+    category: Literal["conflict", "missing_dimension", "ambiguous_level", "possibly_same", "needs_review"]
+    target_type: Literal["node", "edge"]
+    target_id: str
+    node_id: Optional[str] = None
+    edge_id: Optional[str] = None
+    reason_codes: List[str] = Field(default_factory=list)
+    reasons: List[ReviewReason] = Field(default_factory=list)
+    priority: float = Field(ge=0)
+    weight: float = Field(ge=0)
+    occurrence_count: int = Field(default=0, ge=0)
+    evidence_refs: List[str] = Field(default_factory=list)
+
+
+class ReviewQueueSummary(BaseModel):
+    total: int = Field(ge=0)
+    by_reason: Dict[str, int] = Field(default_factory=dict)
+
+
+class ProjectGraphReviewQueueResponse(BaseModel):
+    project_id: str
+    snapshot_id: str
+    items: List[ReviewQueueItem] = Field(default_factory=list)
+    summary: ReviewQueueSummary
+
+
+class QuantityReadinessItem(BaseModel):
+    element_type_id: str
+    name: str
+    readiness: Literal["ready", "needs_review", "blocked"]
+    has_canonical_type: bool
+    has_occurrence: bool
+    has_written_dimension: bool
+    no_open_conflict: bool
+    level_binding_confirmed: bool
+    occurrence_count: int = Field(ge=0)
+    reason_codes: List[str] = Field(default_factory=list)
+    reasons: List[ReviewReason] = Field(default_factory=list)
+
+
+class QuantityReadinessSummary(BaseModel):
+    total: int = Field(ge=0)
+    ready: int = Field(ge=0)
+    needs_review: int = Field(ge=0)
+    blocked: int = Field(ge=0)
+
+
+class QuantityReadinessResponse(BaseModel):
+    project_id: str
+    snapshot_id: str
+    items: List[QuantityReadinessItem] = Field(default_factory=list)
+    summary: QuantityReadinessSummary
 
 
 class RabBridgeRequest(BaseModel):
@@ -428,7 +509,115 @@ class RabBridgeRequest(BaseModel):
 class RabBridgeResponse(BaseModel):
     status: str
     snapshot_id: Optional[str] = None
+    proposal_id: Optional[str] = None
     items: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class RabBridgeProposalResolve(BaseModel):
+    status: Literal["approved", "rejected"]
+
+
+class RabBridgeProposalSummary(BaseModel):
+    """SS5.2.1 — Ringkasan proposal RAB Bridge untuk ditampilkan di UI RAB page."""
+    proposal_id: str
+    snapshot_id: str
+    status: str
+    item_count: int
+    created_at: Optional[datetime] = None
+    reviewed_at: Optional[datetime] = None
+
+
+class SkippedItem(BaseModel):
+    node_id: str
+    reason: str
+
+
+class RabBridgeMaterializeResponse(BaseModel):
+    materialized_count: int
+    skipped_items: List[SkippedItem] = Field(default_factory=list)
+    rab_draft_updated: bool
+
+
+class QuantityAssumptionCreate(BaseModel):
+    id: str
+    project_id: str
+    element_type_id: Optional[str] = None
+    text: str = Field(min_length=1, max_length=4000)
+    source_role: str
+    status: str = "active"
+
+
+class QuantityAssumptionResponse(QuantityAssumptionCreate):
+    created_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class QuantityAssumptionResolve(BaseModel):
+    status: Literal["accepted", "rejected"]
+
+
+class SummaryViewGrain(BaseModel):
+    building_id: Optional[str] = None
+    level_id: Optional[str] = None
+    discipline: Optional[str] = None
+    zone_id: Optional[str] = None
+
+
+class ElementTypeIndexEntry(BaseModel):
+    element_type_id: str
+    name: str
+    occurrence_count: int = Field(ge=0)
+    data_status: Optional[Literal["corrected"]] = None
+    correction: Optional[Dict[str, Any]] = None
+
+
+class DisciplineCountEntry(BaseModel):
+    discipline: str
+    occurrence_count: int = Field(ge=0)
+
+
+class StoredMeasurementFact(BaseModel):
+    name: str
+    value: Union[str, int, float]
+    unit: str
+    evidence_refs: List[str] = Field(default_factory=list)
+
+
+class SummaryPayload(BaseModel):
+    level_name: str
+    element_type_index: List[ElementTypeIndexEntry] = Field(default_factory=list)
+    discipline_counts: List[DisciplineCountEntry] = Field(default_factory=list)
+    stored_measurement_facts: List[StoredMeasurementFact] = Field(default_factory=list)
+    data_status: Optional[Literal["corrected"]] = None
+    corrections: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class QualityPayload(BaseModel):
+    confirmed_count: int = Field(ge=0)
+    ambiguous_binding_count: int = Field(ge=0)
+    conflict_count: int = Field(ge=0)
+    ambiguous_binding_ids: List[str] = Field(default_factory=list)
+    conflict_ids: List[str] = Field(default_factory=list)
+
+
+class ProvenancePayload(BaseModel):
+    source_document_ids: List[str] = Field(default_factory=list)
+    evidence_ids: List[str] = Field(default_factory=list)
+    summary_builder_version: str
+
+
+class ProjectGraphSummaryView(BaseModel):
+    schema_version: Literal["paax.pckm.summary-view.v1"] = "paax.pckm.summary-view.v1"
+    project_id: str
+    snapshot_id: str
+    view_kind: Literal["LEVEL_OVERVIEW"] = "LEVEL_OVERVIEW"
+    grain: SummaryViewGrain
+    summary: SummaryPayload
+    quality: QualityPayload
+    provenance: ProvenancePayload
+    notes: List[str] = Field(default_factory=list)
+    data_status: Optional[Literal["corrected"]] = None
 
 
 class ProjectGraphSummaryViewResponse(BaseModel):
@@ -437,7 +626,7 @@ class ProjectGraphSummaryViewResponse(BaseModel):
     project_id: str
     view_kind: str
     level_id: Optional[str] = None
-    payload: Dict[str, Any]
+    payload: ProjectGraphSummaryView
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

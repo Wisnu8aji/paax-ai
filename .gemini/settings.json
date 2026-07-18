@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "BeforeTool": [
+      {
+        "matcher": "read_file|list_directory",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:\\Users\\Nothing\\AppData\\Local\\Packages\\Claude_pzs8sxrjxfjjc\\LocalCache\\Roaming\\uv\\tools\\graphifyy\\Scripts\\graphify.exe hook-guard gemini"
+          }
+        ]
+      }
+    ]
+  }
+}

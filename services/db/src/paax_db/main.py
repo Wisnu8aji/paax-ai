@@ -3,6 +3,8 @@ import datetime
 import hashlib
 import json
 from typing import List, Dict, Any, Optional
+from sqlalchemy import delete
+import uuid
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,8 +14,9 @@ from . import models, schemas
 from .database import get_db
 from .auth import get_current_user, RoleChecker, User
 from .project_graph_repository import build_and_activate_snapshot, get_active_snapshot
-from .project_graph_retrieval import retrieve_project_graph
+from .project_graph_retrieval import OCCURRENCE_CARDINALITY_NOTE, retrieve_project_graph
 from .project_graph_rab_bridge import build_rab_bridge_proposal
+from .project_graph_review import active_correction_overlays, build_quantity_readiness, build_review_queue
 
 app = FastAPI(title="PAAX DB API", description="Server-side persistent storage for PAAX AI")
 
@@ -462,6 +465,54 @@ async def list_durable_memories(
     return result.scalars().all()
 
 
+@app.get(
+    "/projects/{id}/dem/sheets",
+    response_model=List[schemas.ProjectDemSheetResponse],
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def list_project_dem_sheets(id: str, db: AsyncSession = Depends(get_db)):
+    query = (
+        select(models.DemRun, models.DemPage)
+        .join(models.DemPage, models.DemRun.id == models.DemPage.run_id)
+        .where(models.DemRun.project_id == id)
+        .order_by(models.DemRun.created_at.desc(), models.DemPage.page_index.asc())
+    )
+    result = await db.execute(query)
+    rows = result.all()
+    
+    sheets = []
+    for run, page in rows:
+        sheet_title = None
+        if page.result:
+            sheet_identity = page.result.get("sheet_identity") or {}
+            title_obj = sheet_identity.get("title") or {}
+            sheet_title = title_obj.get("value")
+            
+        sheets.append(schemas.ProjectDemSheetResponse(
+            run_id=str(run.id),
+            page_index=page.page_index,
+            file_name=run.file_name,
+            status=page.status,
+            sheet_title=sheet_title,
+            thumbnail_url=f"/drawings/dem/{run.id}/pages/{page.page_index}/image"
+        ))
+    return sheets
+
+
+@app.get(
+    "/projects/{id}/dem/runs",
+    response_model=List[schemas.DemRunResponse],
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def list_project_dem_runs(id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(models.DemRun)
+        .where(models.DemRun.project_id == id)
+        .order_by(models.DemRun.created_at.desc())
+    )
+    return result.scalars().all()
+
+
 @app.post("/dem/runs", response_model=schemas.DemRunResponse, dependencies=[Depends(get_current_user)])
 async def create_dem_run(run: schemas.DemRunCreate, db: AsyncSession = Depends(get_db)):
     db_run = models.DemRun(**run.model_dump())
@@ -612,16 +663,22 @@ async def retrieve_active_project_graph(
     response = {
         "status": result.status,
         "snapshot_id": result.snapshot_id,
-        "nodes": [{"node_id": node.node_id, "type": node.node_type, "name": node.canonical_name,
-                   "discipline": node.discipline, "confidence": float(node.confidence)} for node in result.nodes],
+        "nodes": [{"node_id": node.node_id, "type": node.node_type,
+                   "name": getattr(node, "_paax_correction_name", node.canonical_name),
+                   "discipline": node.discipline, "confidence": float(node.confidence),
+                   "properties_json": node.properties_json,
+                   **({"data_status": "corrected", "correction": node._paax_correction_overlay}
+                      if hasattr(node, "_paax_correction_overlay") else {})} for node in result.nodes],
         "edges": [{"edge_id": edge.edge_id, "source": edge.source_node_id, "target": edge.target_node_id,
-                   "relation": edge.relation, "confidence": float(edge.confidence)} for edge in result.edges],
+                   "relation": edge.relation, "confidence": float(edge.confidence),
+                   **({"data_status": "corrected", "correction": edge._paax_correction_overlay}
+                      if hasattr(edge, "_paax_correction_overlay") else {})} for edge in result.edges],
         "evidence": [{"evidence_id": item.evidence_id, "document_id": item.document_id,
                       "sheet_id": item.sheet_id, "page_index": item.page_index, "raw_text": item.raw_text}
                      for item in result.evidence],
         "context_token_estimate": result.context_token_estimate,
     }
-    if request.use_intent and result.intent is not None:
+    if (request.use_intent or result.data_status == "corrected") and (result.intent is not None or result.notes or result.data_status is not None):
         response.update({
             "intent": result.intent,
             "applied_filters": result.applied_filters,
@@ -663,12 +720,12 @@ async def get_project_graph_metrics(id: str, db: AsyncSession = Depends(get_db))
     dependencies=[Depends(RoleChecker(["owner", "pm"]))],
 )
 async def create_project_graph_correction(
-    id: str, request: schemas.ProjectGraphCorrectionCreate, db: AsyncSession = Depends(get_db)
+    id: str, request: schemas.ProjectGraphCorrectionCreate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
 ):
     snapshot = await get_active_snapshot(db, id)
     if snapshot is None or snapshot.snapshot_id != request.snapshot_id:
         raise HTTPException(status_code=409, detail="Correction must target the active project graph snapshot")
-    correction = models.ProjectGraphCorrection(project_id=id, status="pending", **request.model_dump())
+    correction = models.ProjectGraphCorrection(project_id=id, status="pending", created_by=user.uid, **request.model_dump())
     db.add(correction)
     await db.commit()
     return correction
@@ -680,7 +737,7 @@ async def create_project_graph_correction(
     dependencies=[Depends(RoleChecker(["owner", "pm"]))],
 )
 async def resolve_project_graph_correction(
-    id: str, correction_id: str, request: schemas.ProjectGraphCorrectionResolve, db: AsyncSession = Depends(get_db)
+    id: str, correction_id: str, request: schemas.ProjectGraphCorrectionResolve, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
 ):
     correction = (await db.execute(select(models.ProjectGraphCorrection).where(
         models.ProjectGraphCorrection.id == correction_id,
@@ -691,7 +748,12 @@ async def resolve_project_graph_correction(
         raise HTTPException(status_code=404, detail="Pending graph correction not found")
     correction.status = request.status
     correction.resolution_note = request.resolution_note
+    correction.resolved_by = user.uid
     correction.resolved_at = _utc_now()
+    await db.execute(delete(models.ProjectGraphRetrievalCache).where(
+        models.ProjectGraphRetrievalCache.project_id == id,
+        models.ProjectGraphRetrievalCache.snapshot_id == correction.snapshot_id,
+    ))
     await db.commit()
     return correction
 
@@ -702,10 +764,252 @@ async def resolve_project_graph_correction(
     dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
 )
 async def create_rab_bridge_proposal(
-    id: str, request: schemas.RabBridgeRequest, db: AsyncSession = Depends(get_db)
+    id: str, request: schemas.RabBridgeRequest, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
 ):
-    proposal = await build_rab_bridge_proposal(db, project_id=id, node_ids=request.node_ids)
+    proposal = await build_rab_bridge_proposal(db, project_id=id, node_ids=request.node_ids, created_by=user.uid)
+    await db.commit()
     return proposal
+
+
+@app.get(
+    "/projects/{id}/project-graph/rab-bridge/proposals",
+    response_model=List[schemas.RabBridgeProposalSummary],
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def list_rab_bridge_proposals(
+    id: str,
+    status: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """SS5.2.1 — List proposals RAB Bridge untuk proyek, opsional filter by status.
+    Dipakai oleh halaman RAB untuk menampilkan proposals yang siap dimateriailsasi.
+    """
+    query = select(models.RabBridgeProposal).where(
+        models.RabBridgeProposal.project_id == id
+    ).order_by(models.RabBridgeProposal.created_at.desc())
+    if status:
+        query = query.where(models.RabBridgeProposal.status == status)
+    res = await db.execute(query)
+    proposals = res.scalars().all()
+    return [
+        schemas.RabBridgeProposalSummary(
+            proposal_id=p.id,
+            snapshot_id=p.snapshot_id,
+            status=p.status,
+            item_count=len(p.payload.get("items", [])) if p.payload else 0,
+            created_at=p.created_at,
+            reviewed_at=p.reviewed_at,
+        )
+        for p in proposals
+    ]
+
+
+@app.get(
+    "/projects/{id}/project-graph/review-queue",
+    response_model=schemas.ProjectGraphReviewQueueResponse,
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def get_project_graph_review_queue(id: str, db: AsyncSession = Depends(get_db)):
+    snapshot = await get_active_snapshot(db, id)
+    if snapshot is None:
+        return {"project_id": id, "snapshot_id": "", "items": [], "summary": {"total": 0, "by_reason": {}}}
+    return await build_review_queue(db, project_id=id, snapshot_id=snapshot.snapshot_id)
+
+
+@app.get(
+    "/projects/{id}/project-graph/quantity-readiness",
+    response_model=schemas.QuantityReadinessResponse,
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def get_quantity_readiness(id: str, db: AsyncSession = Depends(get_db)):
+    snapshot = await get_active_snapshot(db, id)
+    if snapshot is None:
+        return {"project_id": id, "snapshot_id": "", "items": [], "summary": {"total": 0, "ready": 0, "needs_review": 0, "blocked": 0}}
+    return await build_quantity_readiness(db, project_id=id, snapshot_id=snapshot.snapshot_id)
+
+
+@app.post(
+    "/projects/{id}/project-graph/rab-bridge/{proposal_id}/resolve",
+    response_model=schemas.RabBridgeResponse,
+    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+)
+async def resolve_rab_bridge_proposal(id: str, proposal_id: str, request: schemas.RabBridgeProposalResolve, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    proposal = (await db.execute(select(models.RabBridgeProposal).where(
+        models.RabBridgeProposal.id == proposal_id,
+        models.RabBridgeProposal.project_id == id,
+        models.RabBridgeProposal.status == "pending",
+    ))).scalars().first()
+    if proposal is None:
+        raise HTTPException(status_code=404, detail="Pending RAB bridge proposal not found")
+    proposal.status = request.status
+    proposal.reviewed_by = user.uid
+    proposal.reviewed_at = _utc_now()
+    await db.commit()
+    return {"status": proposal.status, "snapshot_id": proposal.snapshot_id, "proposal_id": proposal.id, "items": proposal.payload.get("items", [])}
+
+
+import sys
+from pathlib import Path
+core_engine_path = str(Path(__file__).resolve().parents[3] / "core-engine")
+if core_engine_path not in sys.path:
+    sys.path.append(core_engine_path)
+
+try:
+    from app.rab.suggest import suggest_ahsp_for_node
+    from app.rab.geometry import compute_volume
+except ImportError as e:
+    print("IMPORT ERROR:", e)
+    def suggest_ahsp_for_node(name, discipline): return None, 0.25
+    def compute_volume(dims): return None
+
+@app.post(
+    "/projects/{id}/project-graph/rab-bridge/{proposal_id}/materialize",
+    response_model=schemas.RabBridgeMaterializeResponse,
+    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+)
+async def materialize_rab_bridge_proposal(
+    id: str, proposal_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
+):
+    import uuid
+    proposal_res = await db.execute(select(models.RabBridgeProposal).where(
+        models.RabBridgeProposal.id == proposal_id,
+        models.RabBridgeProposal.project_id == id
+    ))
+    proposal = proposal_res.scalars().first()
+    if not proposal:
+        raise HTTPException(status_code=404, detail="Proposal not found")
+        
+    if proposal.status != "approved":
+        raise HTTPException(status_code=400, detail="Proposal must be approved before materialization")
+
+    items = proposal.payload.get("items", [])
+    materialized_count = 0
+    skipped_items = []
+    new_lines = []
+
+    all_evidence_ids = []
+    for item in items:
+        all_evidence_ids.extend(item.get("evidence_ids", []))
+        
+    evidence_map = {}
+    if all_evidence_ids:
+        ev_res = await db.execute(select(models.ProjectGraphEvidence).where(
+            models.ProjectGraphEvidence.snapshot_id == proposal.snapshot_id,
+            models.ProjectGraphEvidence.evidence_id.in_(all_evidence_ids)
+        ))
+        for ev_obj in ev_res.scalars().all():
+            evidence_map[ev_obj.evidence_id] = {
+                "sheet_id": ev_obj.sheet_id,
+                "page_index": ev_obj.page_index
+            }
+
+    for item in items:
+        node_id = item.get("node_id", "")
+        name = item.get("name", "")
+        discipline = item.get("discipline", "")
+        properties = item.get("properties", {})
+        evidence_ids = item.get("evidence_ids", [])
+        
+        ahsp_code, confidence = suggest_ahsp_for_node(name, discipline)
+        
+        volume = None
+        volume_source = None
+        assumption_id = None
+        
+        stored_facts = properties.get("stored_measurement_facts", [])
+        if stored_facts:
+            dims_dict = {}
+            for fact in stored_facts:
+                if isinstance(fact, dict) and "name" in fact and "value" in fact:
+                    dims_dict[fact["name"]] = fact["value"]
+            volume = compute_volume(dims_dict)
+            if volume is not None:
+                volume_source = "written_dimension"
+        
+        if volume is None:
+            element_type_id = properties.get("element_type_id")
+            if element_type_id:
+                assumption_res = await db.execute(select(models.QuantityAssumption).where(
+                    models.QuantityAssumption.project_id == id,
+                    models.QuantityAssumption.element_type_id == element_type_id,
+                    models.QuantityAssumption.status == "accepted"
+                ))
+                assumption = assumption_res.scalars().first()
+                if assumption:
+                    volume = compute_volume(assumption.text)
+                    if volume is not None:
+                        volume_source = "human_assumption"
+                        assumption_id = assumption.id
+
+        if volume is None:
+            skipped_items.append(schemas.SkippedItem(node_id=node_id, reason="blocked_missing_dimension"))
+            continue
+            
+        if not ahsp_code:
+            skipped_items.append(schemas.SkippedItem(node_id=node_id, reason="missing_ahsp_code"))
+            continue
+
+        line = {
+            "id": str(uuid.uuid4()),
+            "ahsp_code": ahsp_code,
+            "volume": volume,
+            "duration_days": None,
+            "ahsp_suggested": True,
+            "volume_source": volume_source,
+            "evidence_ids": evidence_ids,
+            # SS5.2.1 — label sumber agar user tahu baris ini berasal dari RAB Bridge
+            "source": "rab_bridge",
+        }
+        if assumption_id:
+            line["assumption_id"] = assumption_id
+        if evidence_ids and evidence_ids[0] in evidence_map:
+            line["sheet_id"] = evidence_map[evidence_ids[0]]["sheet_id"]
+            line["page_index"] = evidence_map[evidence_ids[0]]["page_index"]
+            
+        new_lines.append(line)
+        materialized_count += 1
+        
+    rab_draft_updated = False
+    if new_lines:
+        rab_res = await db.execute(select(models.RabDraft).where(models.RabDraft.project_id == id))
+        db_rab = rab_res.scalars().first()
+        
+        if db_rab and db_rab.payload:
+            payload = db_rab.payload
+            if "lines" not in payload:
+                payload["lines"] = []
+            payload["lines"].extend(new_lines)
+            from sqlalchemy.orm.attributes import flag_modified
+            flag_modified(db_rab, "payload")
+        else:
+            payload = {
+                "projectId": id,
+                "regionCode": "jateng",
+                "ppnRate": 0.11,
+                "mode": "sequential",
+                "lines": new_lines,
+                "lastTotal": None,
+                "lastCalculatedAt": None,
+                "updatedAt": _utc_now().isoformat()
+            }
+            if db_rab:
+                db_rab.payload = payload
+                from sqlalchemy.orm.attributes import flag_modified
+                flag_modified(db_rab, "payload")
+            else:
+                db_rab = models.RabDraft(project_id=id, payload=payload)
+                db.add(db_rab)
+                
+        rab_draft_updated = True
+        
+    proposal.status = "materialized"
+    await db.commit()
+    
+    return schemas.RabBridgeMaterializeResponse(
+        materialized_count=materialized_count,
+        skipped_items=skipped_items,
+        rab_draft_updated=rab_draft_updated
+    )
 
 
 @app.get(
@@ -713,8 +1017,7 @@ async def create_rab_bridge_proposal(
     response_model=List[schemas.ProjectGraphSummaryViewResponse],
     dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
 )
-async def get_project_graph_summary_views(
-    id: str,
+async def get_project_graph_summary_views(    id: str,
     view_kind: Optional[str] = None,
     level_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
@@ -734,7 +1037,105 @@ async def get_project_graph_summary_views(
 
     result = await db.execute(query)
     views = result.scalars().all()
-    return views
+    response = []
+    overlays = await active_correction_overlays(db, project_id=id, snapshot_id=snapshot.snapshot_id)
+    for view in views:
+        payload = schemas.ProjectGraphSummaryView.model_validate(view.payload).model_dump(mode="json")
+        corrections = []
+        for target_id, correction in overlays.items():
+            for entry in payload["summary"]["element_type_index"]:
+                if entry["element_type_id"] == target_id:
+                    entry["data_status"] = "corrected"
+                    entry["correction"] = correction
+                    proposed = correction.get("proposed_value") or {}
+                    if proposed.get("canonical_name"):
+                        entry["name"] = proposed["canonical_name"]
+                    corrections.append(correction)
+        if corrections:
+            payload["summary"]["data_status"] = "corrected"
+            payload["summary"]["corrections"] = corrections
+            payload["data_status"] = "corrected"
+        if OCCURRENCE_CARDINALITY_NOTE not in payload["notes"]:
+            payload["notes"].append(OCCURRENCE_CARDINALITY_NOTE)
+        response.append({
+        "snapshot_id": view.snapshot_id,
+            "view_id": view.view_id,
+            "project_id": view.project_id,
+            "view_kind": view.view_kind,
+            "level_id": view.level_id,
+            "payload": payload,
+        "created_at": view.created_at,
+        })
+    return response
+
+
+@app.post(
+    "/projects/{id}/project-graph/quantity-assumptions",
+    response_model=schemas.QuantityAssumptionResponse,
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def create_quantity_assumption(
+    id: str, request: schemas.QuantityAssumptionCreate, db: AsyncSession = Depends(get_db)
+):
+    """Buat asumsi kuantitas baru untuk proyek. Endpoint ini HANYA menyimpan teks asumsi manusia
+    dan statusnya — tidak pernah menghitung angka apa pun (Aturan Emas)."""
+    if request.project_id != id:
+        raise HTTPException(status_code=400, detail="project_id di body tidak cocok dengan project id di path")
+    existing = await db.get(models.QuantityAssumption, request.id)
+    if existing is not None:
+        raise HTTPException(status_code=409, detail="Quantity assumption with this ID already exists")
+    assumption = models.QuantityAssumption(**request.model_dump())
+    db.add(assumption)
+    await db.commit()
+    await db.refresh(assumption)
+    return assumption
+
+
+@app.get(
+    "/projects/{id}/project-graph/quantity-assumptions",
+    response_model=List[schemas.QuantityAssumptionResponse],
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def list_quantity_assumptions(
+    id: str,
+    element_type_id: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """List semua asumsi kuantitas untuk proyek. Opsional filter by element_type_id."""
+    query = select(models.QuantityAssumption).where(
+        models.QuantityAssumption.project_id == id,
+    )
+    if element_type_id is not None:
+        query = query.where(models.QuantityAssumption.element_type_id == element_type_id)
+    result = await db.execute(query)
+    return result.scalars().all()
+
+
+@app.post(
+    "/projects/{id}/project-graph/quantity-assumptions/{assumption_id}/resolve",
+    response_model=schemas.QuantityAssumptionResponse,
+    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+)
+async def resolve_quantity_assumption(
+    id: str,
+    assumption_id: str,
+    request: schemas.QuantityAssumptionResolve,
+    db: AsyncSession = Depends(get_db),
+):
+    """Ubah status asumsi kuantitas (accepted/rejected). Sesuai D12: approval SELALU aksi
+    manusia eksplisit — tidak ada auto-accept. Hanya owner dan pm yang bisa menyetujui."""
+    assumption = (await db.execute(
+        select(models.QuantityAssumption).where(
+            models.QuantityAssumption.id == assumption_id,
+            models.QuantityAssumption.project_id == id,
+        )
+    )).scalars().first()
+    if assumption is None:
+        raise HTTPException(status_code=404, detail="Quantity assumption not found")
+    assumption.status = request.status
+    await db.commit()
+    await db.refresh(assumption)
+    return assumption
 
 
 if __name__ == "__main__":

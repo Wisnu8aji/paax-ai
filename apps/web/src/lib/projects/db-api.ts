@@ -1,6 +1,11 @@
 import { type Project, type ProjectCreateInput, type ProjectUpdateInput, compareProjects } from './types';
 
-const API_BASE = process.env.NEXT_PUBLIC_DB_API_URL || 'http://localhost:8001';
+// Lewat proxy server /api/db-projects (bukan langsung ke services/db) -- services/db
+// mewajibkan otentikasi (X-Internal-Key server-to-server atau token Firebase asli),
+// yang tidak pernah tersedia dari fetch sisi-browser. Proxy menyuntik X-Internal-Key
+// di server, kunci tidak pernah terekspos ke browser (pola sama dgn core-engine/
+// drawing-intelligence proxy).
+const API_BASE = '/api/db-projects';
 
 /**
  * Normalizes snake_case backend keys to camelCase for the frontend Project type.

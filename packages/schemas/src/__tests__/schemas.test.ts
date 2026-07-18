@@ -26,6 +26,10 @@ import {
   ProjectGraphEdgeSchema,
   ProjectGraphNodeSchema,
   ProjectGraphSnapshotSchema,
+  ProjectGraphReviewQueueResponseSchema,
+  QuantityReadinessResponseSchema,
+  ProjectGraphCorrectionResponseSchema,
+  RabBridgeResponseSchema,
 } from "../index";
 
 // Contoh response aktual dari POST /rab/calculate engine
@@ -670,6 +674,67 @@ describe("ProjectGraphSnapshotSchema", () => {
     };
 
     expect(() => ProjectGraphSnapshotSchema.parse(withDuplicateLocatedOn)).toThrow();
+  });
+});
+
+describe("C7/C8 graph workflow schemas", () => {
+  it("parses deterministic review queue and quantity readiness contracts", () => {
+    const queue = ProjectGraphReviewQueueResponseSchema.parse({
+      project_id: "PROJECT-C78",
+      snapshot_id: "SNAP-C78",
+      items: [{
+        id: "missing_dimension:node:TYPE-K1A",
+        category: "missing_dimension",
+        target_type: "node",
+        target_id: "TYPE-K1A",
+        reason_codes: ["no_written_dimension"],
+        reasons: [{
+          code: "no_written_dimension",
+          message: "Element type terpakai belum memiliki dimensi tertulis.",
+          target_type: "node",
+          target_id: "TYPE-K1A",
+          evidence_refs: ["EV-K1A"],
+        }],
+        priority: 2.5,
+        weight: 2.5,
+        occurrence_count: 1,
+        evidence_refs: ["EV-K1A"],
+      }],
+      summary: { total: 1, by_reason: { no_written_dimension: 1 } },
+    });
+    const readiness = QuantityReadinessResponseSchema.parse({
+      project_id: "PROJECT-C78",
+      snapshot_id: "SNAP-C78",
+      items: [{
+        element_type_id: "TYPE-K1A",
+        name: "K1A",
+        readiness: "blocked",
+        has_canonical_type: true,
+        has_occurrence: true,
+        has_written_dimension: false,
+        no_open_conflict: true,
+        level_binding_confirmed: true,
+        occurrence_count: 1,
+        reason_codes: ["no_written_dimension"],
+        reasons: [],
+      }],
+      summary: { total: 1, ready: 0, needs_review: 0, blocked: 1 },
+    });
+    expect(queue.items[0].priority).toBe(2.5);
+    expect(readiness.items[0].readiness).toBe("blocked");
+  });
+
+  it("accepts correction overlay and persisted proposal identifiers", () => {
+    expect(ProjectGraphCorrectionResponseSchema.parse({
+      id: "CORR-1", project_id: "PROJECT-C78", snapshot_id: "SNAP-C78",
+      target_type: "node", target_id: "TYPE-K1", correction_type: "rename",
+      proposed_value: { canonical_name: "K1 corrected" }, rationale: "Human review",
+      status: "accepted", created_by: "OWNER-C78",
+    }).status).toBe("accepted");
+    expect(RabBridgeResponseSchema.parse({
+      status: "requires_human_approval", snapshot_id: "SNAP-C78",
+      proposal_id: "PROPOSAL-1", items: [],
+    }).proposal_id).toBe("PROPOSAL-1");
   });
 });
 

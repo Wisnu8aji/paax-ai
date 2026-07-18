@@ -15,10 +15,13 @@ import { Card, StatusPill, EmptyState } from '@/components/ui';
 import { useProjects } from '@/lib/projects/projects-context';
 import { PROJECT_STATUS_LABEL, PROJECT_STATUS_TONE } from '@/lib/projects/types';
 
-/** Tab modul Project Studio (nama baru per utama.txt; route lama tetap). */
-const MODULE_TABS = [
+/** Tab modul Project Studio (nama baru per utama.txt; route lama tetap).
+ * Drawing Intelligence kini membuka workspace baru full-height di
+ * /drawing-intelligence (href absolut, mengikuti proyek aktif). Route lama
+ * /gambar-kerja tetap ada untuk utilitas TKG lama. */
+const MODULE_TABS: { seg: string; label: string; href?: string }[] = [
   { seg: '', label: 'Overview' },
-  { seg: '/gambar-kerja', label: 'Drawing Intelligence' },
+  { seg: '/gambar-kerja', label: 'Drawing Intelligence', href: '/drawing-intelligence' },
   { seg: '/rab', label: 'Cost & Quantity' },
   { seg: '/schedule', label: 'Schedule Planning' },
   { seg: '/site-agent', label: 'Site Agent' },
@@ -92,7 +95,7 @@ export default function ProjectDetailLayout({
           style={{ display: 'flex', gap: 4, marginTop: 14, borderTop: '1px solid var(--border-soft)', paddingTop: 12, flexWrap: 'wrap' }}
         >
           {MODULE_TABS.map((t) => {
-            const href = `/proyek/${projectId}${t.seg}`;
+            const href = t.href ?? `/proyek/${projectId}${t.seg}`;
             const active = t.seg === '' ? pathname === href : pathname.startsWith(href);
             return (
               <Link

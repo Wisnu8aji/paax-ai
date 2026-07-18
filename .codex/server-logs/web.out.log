@@ -1,0 +1,29 @@
+
+> @paax/web@0.6.0 dev G:\paax-ai-main\apps\web
+> next dev --port 3000
+
+   ▲ Next.js 15.5.19
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.22:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 6.4s
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 7.3s (886 modules)
+ GET /dashboard 200 in 3301ms
+ GET /dashboard 200 in 637ms
+ GET /dashboard 200 in 257ms
+ GET /dashboard 200 in 364ms
+ ○ Compiling /command-room ...
+ ✓ Compiled /command-room in 7.5s (1506 modules)
+ GET /command-room 200 in 9784ms
+ GET /command-room 200 in 405ms
+ GET /command-room 200 in 385ms
+ GET /dashboard 200 in 823ms
+ GET /dashboard 200 in 346ms
+ GET /dashboard 200 in 214ms
+ GET /command-room 200 in 88ms
+ ○ Compiling /api/command-room/chat ...
+ ✓ Compiled /api/command-room/chat in 2.9s (1652 modules)
+ POST /api/command-room/chat 200 in 66410ms

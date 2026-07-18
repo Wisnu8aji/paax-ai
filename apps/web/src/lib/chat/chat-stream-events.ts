@@ -14,7 +14,8 @@ export type RunPhase =
   | "updating_conversation"
   | "completed"
   | "failed"
-  | "cancelled";
+  | "cancelled"
+  | "reasoning_summary";
 
 export type CommandRoomStreamEvent =
   | {

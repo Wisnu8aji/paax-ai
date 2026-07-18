@@ -1,0 +1,1121 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e3]:
+    - complementary "Navigasi utama" [ref=f2e4]:
+      - button "PAAX — ke Overview" [ref=f2e5] [cursor=pointer]
+      - navigation [ref=f2e8]:
+        - button "Overview" [ref=f2e9] [cursor=pointer]:
+          - tooltip "Overview"
+        - button "Project Studio" [ref=f2e16] [cursor=pointer]:
+          - tooltip "Project Studio"
+        - button "Command Room" [ref=f2e20] [cursor=pointer]:
+          - tooltip "Command Room"
+        - button "Site Agent" [ref=f2e25] [cursor=pointer]:
+          - tooltip "Site Agent"
+        - button "Files & Documents" [ref=f2e32] [cursor=pointer]:
+          - tooltip "Files & Documents"
+        - button "Ledger" [ref=f2e38] [cursor=pointer]:
+          - tooltip "Ledger"
+        - button "Artifacts" [ref=f2e42] [cursor=pointer]:
+          - tooltip "Artifacts"
+        - button "Team" [ref=f2e48] [cursor=pointer]:
+          - tooltip "Team"
+      - generic [ref=f2e55]:
+        - button "Settings" [ref=f2e56] [cursor=pointer]:
+          - tooltip "Settings"
+        - button "Profile" [ref=f2e61] [cursor=pointer]:
+          - generic [ref=f2e62]: BA
+          - tooltip "Profile"
+    - main [ref=f2e64]:
+      - generic [ref=f2e66]:
+        - generic [ref=f2e67]:
+          - generic [ref=f2e68]: PAAX
+          - navigation "Breadcrumb" [ref=f2e69]:
+            - link "Projects" [ref=f2e70] [cursor=pointer]:
+              - /url: "#"
+            - generic [ref=f2e71]: ›
+            - link "PLHUT Campus – Building A" [ref=f2e72] [cursor=pointer]:
+              - /url: "#"
+            - generic [ref=f2e73]: ›
+            - link "Building A" [ref=f2e74] [cursor=pointer]:
+              - /url: "#"
+          - strong [ref=f2e76]: Drawing Intelligence
+          - generic [ref=f2e77]:
+            - generic [ref=f2e78]:
+              - textbox "Search sheets, items, or tags" [ref=f2e79]
+              - generic: ⌘K
+            - button "Filter" [ref=f2e81] [cursor=pointer]
+            - button "Compare Revisions" [ref=f2e87] [cursor=pointer]
+            - button "Analyze Selected" [ref=f2e93] [cursor=pointer]
+            - button "Share" [ref=f2e97] [cursor=pointer]
+            - generic "Aji Ramadhan — online" [ref=f2e104]: AR
+        - navigation "Workspace mode" [ref=f2e106]:
+          - tab "Files 1" [ref=f2e107] [cursor=pointer]:
+            - text: Files
+            - generic [ref=f2e110]: "1"
+          - tab "Sheets 6" [ref=f2e111] [cursor=pointer]:
+            - text: Sheets
+            - generic [ref=f2e117]: "6"
+          - tab "Analyze" [ref=f2e118] [cursor=pointer]
+          - tab "Review 7" [ref=f2e121] [cursor=pointer]:
+            - text: Review
+            - generic [ref=f2e129]: "7"
+          - tab "Quantities 96" [ref=f2e130] [cursor=pointer]:
+            - text: Quantities
+            - generic [ref=f2e133]: "96"
+          - tab "Handoff 24" [selected] [ref=f2e134] [cursor=pointer]:
+            - text: Handoff
+            - generic [ref=f2e137]: "24"
+          - generic "Workflow progress" [ref=f2e138]: Files 1 → Sheets 6 → Verified 24 → Ready
+        - generic [ref=f2e139]:
+          - generic [ref=f2e140]:
+            - complementary [ref=f2e141]:
+              - generic [ref=f2e142]:
+                - generic [ref=f2e143]: File & Sheet Navigator
+                - button "Collapse navigator" [ref=f2e144] [cursor=pointer]
+              - generic [ref=f2e148]:
+                - generic [ref=f2e149]:
+                  - generic [ref=f2e154]:
+                    - generic [ref=f2e155]: Floor Plan.pdf
+                    - generic [ref=f2e156]: 24.4 MB · 6 sheets
+                  - generic [ref=f2e157]: Analyzed
+                - generic [ref=f2e158]:
+                  - generic [ref=f2e159]: Disciplines (All)
+                  - generic [ref=f2e160]:
+                    - button "STR 6" [ref=f2e161] [cursor=pointer]
+                    - button "ARC 6" [ref=f2e162] [cursor=pointer]
+                    - button "MEP 6" [ref=f2e163] [cursor=pointer]
+                    - button "CIV 5" [ref=f2e164] [cursor=pointer]
+                    - button "OTH 0" [ref=f2e165] [cursor=pointer]
+                - textbox "Search sheets..." [ref=f2e166]
+                - generic [ref=f2e167]:
+                  - generic [ref=f2e168]: FLOORS
+                  - generic [ref=f2e169]:
+                    - button "F00 – Ground Floor 1" [ref=f2e3948] [cursor=pointer]:
+                      - generic [ref=f2e174]: F00 – Ground Floor
+                      - generic [ref=f2e175]: "1"
+                    - button "F01 – Floor 1 1" [ref=f2e3949] [cursor=pointer]:
+                      - generic [ref=f2e180]: F01 – Floor 1
+                      - generic [ref=f2e181]: "1"
+                    - generic [ref=f2e182]:
+                      - button "F02 – Floor 2 1" [ref=f2e3950] [cursor=pointer]:
+                        - generic [ref=f2e186]: F02 – Floor 2
+                        - generic [ref=f2e187]: "1"
+                      - generic [ref=f2e189] [cursor=pointer]:
+                        - generic [ref=f2e190]:
+                          - img "A2-102 — Second Floor Plan" [ref=f2e191]
+                          - checkbox "Select A2-102" [checked] [ref=f2e223]
+                        - generic [ref=f2e224]:
+                          - generic [ref=f2e225]: A2-102
+                          - generic [ref=f2e226]: 1:100
+                          - button "Sheet menu" [ref=f2e228]
+                        - generic [ref=f2e233]: Second Floor Plan
+                    - button "F03 – Floor 3 1" [ref=f2e3951] [cursor=pointer]:
+                      - generic [ref=f2e238]: F03 – Floor 3
+                      - generic [ref=f2e239]: "1"
+                    - button "F04 – Floor 4 1" [ref=f2e3952] [cursor=pointer]:
+                      - generic [ref=f2e244]: F04 – Floor 4
+                      - generic [ref=f2e245]: "1"
+                    - button "ROOF – Roof Plan 1" [ref=f2e3953] [cursor=pointer]:
+                      - generic [ref=f2e250]: ROOF – Roof Plan
+                      - generic [ref=f2e251]: "1"
+              - button "Upload new files" [active] [ref=f2e253] [cursor=pointer]
+            - generic [ref=f2e5664]:
+              - generic [ref=f2e5665]:
+                - generic [ref=f2e7275]: 24 quantities sent to Cost & Quantity — May 15, 2026
+                - generic [ref=f2e5666]:
+                  - generic [ref=f2e5670]:
+                    - heading "Verified Quantities Ready" [level=1] [ref=f2e5671]
+                    - paragraph [ref=f2e5672]: All drawing intelligence checks are complete. Your verified quantities are ready to be handed off to Cost & Quantity.
+                  - generic [ref=f2e5673]:
+                    - button "Send again" [ref=f2e7279] [cursor=pointer]
+                    - button "Open Cost & Quantity" [ref=f2e5677] [cursor=pointer]
+                    - button "Export review report" [ref=f2e5680] [cursor=pointer]
+                - generic [ref=f2e5684]:
+                  - generic [ref=f2e5685]:
+                    - generic [ref=f2e5686]: Sheets analyzed
+                    - generic [ref=f2e5687]: "6"
+                    - generic [ref=f2e5688]: 100% of project ✓
+                  - generic [ref=f2e5689]:
+                    - generic [ref=f2e5690]: Verified items
+                    - generic [ref=f2e5691]: "24"
+                    - generic [ref=f2e5692]: 25% of total items ✓
+                  - generic [ref=f2e5693]:
+                    - generic [ref=f2e5694]: Needs review
+                    - generic [ref=f2e5695]: "7"
+                    - generic [ref=f2e5696]: 7% of total items ⚠
+                  - generic [ref=f2e5697]:
+                    - generic [ref=f2e5698]: Total floors grouped
+                    - generic [ref=f2e5699]: "6"
+                    - generic [ref=f2e5700]: F00 – Roof Plan ✓
+                  - generic [ref=f2e5701]:
+                    - generic [ref=f2e5702]: Ready for Cost & Quantity
+                    - generic [ref=f2e5703]: 100%
+                    - generic [ref=f2e5704]: Deterministic handoff ✓
+                - generic [ref=f2e5705]:
+                  - heading "Verified Work Package Summary" [level=2] [ref=f2e5706]
+                  - table [ref=f2e5708]:
+                    - rowgroup [ref=f2e5709]:
+                      - row [ref=f2e5710]:
+                        - columnheader "Work Package" [ref=f2e5711]
+                        - columnheader "Discipline" [ref=f2e5712]
+                        - columnheader "Verified Items" [ref=f2e5713]
+                        - columnheader "Quantity (Primary Unit)" [ref=f2e5714]
+                        - columnheader "Needs Review" [ref=f2e5715]
+                        - columnheader "Verification" [ref=f2e5716]
+                        - columnheader "Status" [ref=f2e5717]
+                    - rowgroup [ref=f2e5718]:
+                      - row [ref=f2e5719] [cursor=pointer]:
+                        - cell [ref=f2e5720]:
+                          - strong [ref=f2e5724]: SUBSTRUCTURE
+                      - row [ref=f2e5725] [cursor=pointer]:
+                        - cell "Footings" [ref=f2e5726]
+                        - cell "STR" [ref=f2e5727]
+                        - cell "1" [ref=f2e5729]
+                        - cell "24 No." [ref=f2e5730]
+                        - cell "0" [ref=f2e5731]
+                        - cell "100%" [ref=f2e5732]
+                        - cell "Verified" [ref=f2e5737]
+                      - row [ref=f2e5739] [cursor=pointer]:
+                        - cell "Columns (Below Grade)" [ref=f2e5740]
+                        - cell "STR" [ref=f2e5741]
+                        - cell "0" [ref=f2e5743]
+                        - cell "18 No." [ref=f2e5744]
+                        - cell "0" [ref=f2e5745]
+                        - cell "50%" [ref=f2e5746]
+                        - cell "Pending" [ref=f2e5751]
+                      - row [ref=f2e5753] [cursor=pointer]:
+                        - cell "Pile Caps" [ref=f2e5754]
+                        - cell "STR" [ref=f2e5755]
+                        - cell "0" [ref=f2e5757]
+                        - cell "12 No." [ref=f2e5758]
+                        - cell "1" [ref=f2e5759]
+                        - cell "0%" [ref=f2e5760]
+                        - cell "Pending" [ref=f2e5764]
+                      - row [ref=f2e5766] [cursor=pointer]:
+                        - cell "Grade Beams" [ref=f2e5767]
+                        - cell "STR" [ref=f2e5768]
+                        - cell "1" [ref=f2e5770]
+                        - cell "124.30 m" [ref=f2e5771]
+                        - cell "0" [ref=f2e5772]
+                        - cell "100%" [ref=f2e5773]
+                        - cell "Verified" [ref=f2e5778]
+                      - row [ref=f2e5780] [cursor=pointer]:
+                        - cell "Bulk Excavation" [ref=f2e5781]
+                        - cell "STR" [ref=f2e5782]
+                        - cell "0" [ref=f2e5784]
+                        - cell "2,145.60 m³" [ref=f2e5785]
+                        - cell "0" [ref=f2e5786]
+                        - cell "50%" [ref=f2e5787]
+                        - cell "Pending" [ref=f2e5792]
+                      - row [ref=f2e5794] [cursor=pointer]:
+                        - cell "Structural Fill" [ref=f2e5795]
+                        - cell "STR" [ref=f2e5796]
+                        - cell "0" [ref=f2e5798]
+                        - cell "864.20 m³" [ref=f2e5799]
+                        - cell "0" [ref=f2e5800]
+                        - cell "50%" [ref=f2e5801]
+                        - cell "Pending" [ref=f2e5806]
+                      - row [ref=f2e5808] [cursor=pointer]:
+                        - cell "Slab on Grade" [ref=f2e5809]
+                        - cell "STR" [ref=f2e5810]
+                        - cell "0" [ref=f2e5812]
+                        - cell "2,052.31 m²" [ref=f2e5813]
+                        - cell "0" [ref=f2e5814]
+                        - cell "50%" [ref=f2e5815]
+                        - cell "Pending" [ref=f2e5820]
+                      - row [ref=f2e5822] [cursor=pointer]:
+                        - cell "Retaining Walls" [ref=f2e5823]
+                        - cell "STR" [ref=f2e5824]
+                        - cell "0" [ref=f2e5826]
+                        - cell "1,480.30 m²" [ref=f2e5827]
+                        - cell "0" [ref=f2e5828]
+                        - cell "50%" [ref=f2e5829]
+                        - cell "Pending" [ref=f2e5834]
+                      - row [ref=f2e5836]:
+                        - cell "SUBSTRUCTURE totals" [ref=f2e5837]
+                        - cell "2" [ref=f2e5838]
+                        - cell "—" [ref=f2e5839]
+                        - cell "1" [ref=f2e5840]
+                        - cell "25%" [ref=f2e5841]
+                        - cell "Verified" [ref=f2e5846]
+                      - row [ref=f2e5848] [cursor=pointer]:
+                        - cell [ref=f2e5849]:
+                          - strong [ref=f2e5853]: SUPERSTRUCTURE
+                      - row [ref=f2e5854] [cursor=pointer]:
+                        - cell "Reinforced Concrete Column" [ref=f2e5855]
+                        - cell "STR" [ref=f2e5856]
+                        - cell "0" [ref=f2e5858]
+                        - cell "24 No." [ref=f2e5859]
+                        - cell "0" [ref=f2e5860]
+                        - cell "50%" [ref=f2e5861]
+                        - cell "Pending" [ref=f2e5866]
+                      - row [ref=f2e5868] [cursor=pointer]:
+                        - cell "Reinforced Concrete Beam" [ref=f2e5869]
+                        - cell "STR" [ref=f2e5870]
+                        - cell "0" [ref=f2e5872]
+                        - cell "482.60 m" [ref=f2e5873]
+                        - cell "1" [ref=f2e5874]
+                        - cell "0%" [ref=f2e5875]
+                        - cell "Pending" [ref=f2e5879]
+                      - row [ref=f2e5881] [cursor=pointer]:
+                        - cell "Reinforced Concrete Slab" [ref=f2e5882]
+                        - cell "STR" [ref=f2e5883]
+                        - cell "1" [ref=f2e5885]
+                        - cell "1,284.30 m²" [ref=f2e5886]
+                        - cell "0" [ref=f2e5887]
+                        - cell "100%" [ref=f2e5888]
+                        - cell "Verified" [ref=f2e5893]
+                      - row [ref=f2e5895] [cursor=pointer]:
+                        - cell "Shear Wall" [ref=f2e5896]
+                        - cell "STR" [ref=f2e5897]
+                        - cell "0" [ref=f2e5899]
+                        - cell "86.40 m²" [ref=f2e5900]
+                        - cell "0" [ref=f2e5901]
+                        - cell "50%" [ref=f2e5902]
+                        - cell "Pending" [ref=f2e5907]
+                      - row [ref=f2e5909] [cursor=pointer]:
+                        - cell "Staircase" [ref=f2e5910]
+                        - cell "STR" [ref=f2e5911]
+                        - cell "1" [ref=f2e5913]
+                        - cell "2 No." [ref=f2e5914]
+                        - cell "0" [ref=f2e5915]
+                        - cell "100%" [ref=f2e5916]
+                        - cell "Verified" [ref=f2e5921]
+                      - row [ref=f2e5923] [cursor=pointer]:
+                        - cell "Reinforced Concrete Column" [ref=f2e5924]
+                        - cell "STR" [ref=f2e5925]
+                        - cell "1" [ref=f2e5927]
+                        - cell "24 No." [ref=f2e5928]
+                        - cell "0" [ref=f2e5929]
+                        - cell "100%" [ref=f2e5930]
+                        - cell "Verified" [ref=f2e5935]
+                      - row [ref=f2e5937] [cursor=pointer]:
+                        - cell "Reinforced Concrete Beam" [ref=f2e5938]
+                        - cell "STR" [ref=f2e5939]
+                        - cell "0" [ref=f2e5941]
+                        - cell "482.60 m" [ref=f2e5942]
+                        - cell "1" [ref=f2e5943]
+                        - cell "0%" [ref=f2e5944]
+                        - cell "Pending" [ref=f2e5948]
+                      - row [ref=f2e5950] [cursor=pointer]:
+                        - cell "Reinforced Concrete Slab" [ref=f2e5951]
+                        - cell "STR" [ref=f2e5952]
+                        - cell "1" [ref=f2e5954]
+                        - cell "1,284.30 m²" [ref=f2e5955]
+                        - cell "0" [ref=f2e5956]
+                        - cell "100%" [ref=f2e5957]
+                        - cell "Verified" [ref=f2e5962]
+                      - row [ref=f2e5964] [cursor=pointer]:
+                        - cell "Shear Wall" [ref=f2e5965]
+                        - cell "STR" [ref=f2e5966]
+                        - cell "1" [ref=f2e5968]
+                        - cell "86.40 m²" [ref=f2e5969]
+                        - cell "0" [ref=f2e5970]
+                        - cell "100%" [ref=f2e5971]
+                        - cell "Verified" [ref=f2e5976]
+                      - row [ref=f2e5978] [cursor=pointer]:
+                        - cell "Staircase" [ref=f2e5979]
+                        - cell "STR" [ref=f2e5980]
+                        - cell "0" [ref=f2e5982]
+                        - cell "2 No." [ref=f2e5983]
+                        - cell "0" [ref=f2e5984]
+                        - cell "50%" [ref=f2e5985]
+                        - cell "Pending" [ref=f2e5990]
+                      - row [ref=f2e5992] [cursor=pointer]:
+                        - cell "Reinforced Concrete Column" [ref=f2e5993]
+                        - cell "STR" [ref=f2e5994]
+                        - cell "1" [ref=f2e5996]
+                        - cell "24 No." [ref=f2e5997]
+                        - cell "0" [ref=f2e5998]
+                        - cell "100%" [ref=f2e5999]
+                        - cell "Verified" [ref=f2e6004]
+                      - row [ref=f2e6006] [cursor=pointer]:
+                        - cell "Reinforced Concrete Beam" [ref=f2e6007]
+                        - cell "STR" [ref=f2e6008]
+                        - cell "0" [ref=f2e6010]
+                        - cell "482.60 m" [ref=f2e6011]
+                        - cell "1" [ref=f2e6012]
+                        - cell "0%" [ref=f2e6013]
+                        - cell "Pending" [ref=f2e6017]
+                      - row [ref=f2e6019] [cursor=pointer]:
+                        - cell "Reinforced Concrete Slab" [ref=f2e6020]
+                        - cell "STR" [ref=f2e6021]
+                        - cell "0" [ref=f2e6023]
+                        - cell "1,284.30 m²" [ref=f2e6024]
+                        - cell "0" [ref=f2e6025]
+                        - cell "50%" [ref=f2e6026]
+                        - cell "Pending" [ref=f2e6031]
+                      - row [ref=f2e6033] [cursor=pointer]:
+                        - cell "Shear Wall" [ref=f2e6034]
+                        - cell "STR" [ref=f2e6035]
+                        - cell "1" [ref=f2e6037]
+                        - cell "86.40 m²" [ref=f2e6038]
+                        - cell "0" [ref=f2e6039]
+                        - cell "100%" [ref=f2e6040]
+                        - cell "Verified" [ref=f2e6045]
+                      - row [ref=f2e6047] [cursor=pointer]:
+                        - cell "Staircase" [ref=f2e6048]
+                        - cell "STR" [ref=f2e6049]
+                        - cell "0" [ref=f2e6051]
+                        - cell "2 No." [ref=f2e6052]
+                        - cell "1" [ref=f2e6053]
+                        - cell "0%" [ref=f2e6054]
+                        - cell "Pending" [ref=f2e6058]
+                      - row [ref=f2e6060] [cursor=pointer]:
+                        - cell "Reinforced Concrete Column" [ref=f2e6061]
+                        - cell "STR" [ref=f2e6062]
+                        - cell "0" [ref=f2e6064]
+                        - cell "24 No." [ref=f2e6065]
+                        - cell "0" [ref=f2e6066]
+                        - cell "50%" [ref=f2e6067]
+                        - cell "Pending" [ref=f2e6072]
+                      - row [ref=f2e6074] [cursor=pointer]:
+                        - cell "Reinforced Concrete Beam" [ref=f2e6075]
+                        - cell "STR" [ref=f2e6076]
+                        - cell "0" [ref=f2e6078]
+                        - cell "482.60 m" [ref=f2e6079]
+                        - cell "1" [ref=f2e6080]
+                        - cell "0%" [ref=f2e6081]
+                        - cell "Pending" [ref=f2e6085]
+                      - row [ref=f2e6087] [cursor=pointer]:
+                        - cell "Reinforced Concrete Slab" [ref=f2e6088]
+                        - cell "STR" [ref=f2e6089]
+                        - cell "1" [ref=f2e6091]
+                        - cell "1,284.30 m²" [ref=f2e6092]
+                        - cell "0" [ref=f2e6093]
+                        - cell "100%" [ref=f2e6094]
+                        - cell "Verified" [ref=f2e6099]
+                      - row [ref=f2e6101] [cursor=pointer]:
+                        - cell "Shear Wall" [ref=f2e6102]
+                        - cell "STR" [ref=f2e6103]
+                        - cell "0" [ref=f2e6105]
+                        - cell "86.40 m²" [ref=f2e6106]
+                        - cell "0" [ref=f2e6107]
+                        - cell "50%" [ref=f2e6108]
+                        - cell "Pending" [ref=f2e6113]
+                      - row [ref=f2e6115] [cursor=pointer]:
+                        - cell "Staircase" [ref=f2e6116]
+                        - cell "STR" [ref=f2e6117]
+                        - cell "1" [ref=f2e6119]
+                        - cell "2 No." [ref=f2e6120]
+                        - cell "0" [ref=f2e6121]
+                        - cell "100%" [ref=f2e6122]
+                        - cell "Verified" [ref=f2e6127]
+                      - row [ref=f2e6129] [cursor=pointer]:
+                        - cell "Reinforced Concrete Column" [ref=f2e6130]
+                        - cell "STR" [ref=f2e6131]
+                        - cell "1" [ref=f2e6133]
+                        - cell "24 No." [ref=f2e6134]
+                        - cell "0" [ref=f2e6135]
+                        - cell "100%" [ref=f2e6136]
+                        - cell "Verified" [ref=f2e6141]
+                      - row [ref=f2e6143] [cursor=pointer]:
+                        - cell "Reinforced Concrete Beam" [ref=f2e6144]
+                        - cell "STR" [ref=f2e6145]
+                        - cell "0" [ref=f2e6147]
+                        - cell "482.60 m" [ref=f2e6148]
+                        - cell "1" [ref=f2e6149]
+                        - cell "0%" [ref=f2e6150]
+                        - cell "Pending" [ref=f2e6154]
+                      - row [ref=f2e6156] [cursor=pointer]:
+                        - cell "Reinforced Concrete Slab" [ref=f2e6157]
+                        - cell "STR" [ref=f2e6158]
+                        - cell "1" [ref=f2e6160]
+                        - cell "1,284.30 m²" [ref=f2e6161]
+                        - cell "0" [ref=f2e6162]
+                        - cell "100%" [ref=f2e6163]
+                        - cell "Verified" [ref=f2e6168]
+                      - row [ref=f2e6170] [cursor=pointer]:
+                        - cell "Shear Wall" [ref=f2e6171]
+                        - cell "STR" [ref=f2e6172]
+                        - cell "1" [ref=f2e6174]
+                        - cell "86.40 m²" [ref=f2e6175]
+                        - cell "0" [ref=f2e6176]
+                        - cell "100%" [ref=f2e6177]
+                        - cell "Verified" [ref=f2e6182]
+                      - row [ref=f2e6184] [cursor=pointer]:
+                        - cell "Staircase" [ref=f2e6185]
+                        - cell "STR" [ref=f2e6186]
+                        - cell "0" [ref=f2e6188]
+                        - cell "2 No." [ref=f2e6189]
+                        - cell "0" [ref=f2e6190]
+                        - cell "50%" [ref=f2e6191]
+                        - cell "Pending" [ref=f2e6196]
+                      - row [ref=f2e6198] [cursor=pointer]:
+                        - cell "Roof Columns" [ref=f2e6199]
+                        - cell "STR" [ref=f2e6200]
+                        - cell "1" [ref=f2e6202]
+                        - cell "18 No." [ref=f2e6203]
+                        - cell "0" [ref=f2e6204]
+                        - cell "100%" [ref=f2e6205]
+                        - cell "Verified" [ref=f2e6210]
+                      - row [ref=f2e6212] [cursor=pointer]:
+                        - cell "Roof Beams" [ref=f2e6213]
+                        - cell "STR" [ref=f2e6214]
+                        - cell "1" [ref=f2e6216]
+                        - cell "236.10 m" [ref=f2e6217]
+                        - cell "0" [ref=f2e6218]
+                        - cell "100%" [ref=f2e6219]
+                        - cell "Verified" [ref=f2e6224]
+                      - row [ref=f2e6226] [cursor=pointer]:
+                        - cell "Roof Slab" [ref=f2e6227]
+                        - cell "STR" [ref=f2e6228]
+                        - cell "0" [ref=f2e6230]
+                        - cell "1,210.00 m²" [ref=f2e6231]
+                        - cell "0" [ref=f2e6232]
+                        - cell "50%" [ref=f2e6233]
+                        - cell "Pending" [ref=f2e6238]
+                      - row [ref=f2e6240] [cursor=pointer]:
+                        - cell "Roof Waterproofing Membrane" [ref=f2e6241]
+                        - cell "ARC" [ref=f2e6242]
+                        - cell "0" [ref=f2e6244]
+                        - cell "1,210.00 m²" [ref=f2e6245]
+                        - cell "0" [ref=f2e6246]
+                        - cell "50%" [ref=f2e6247]
+                        - cell "Pending" [ref=f2e6252]
+                      - row [ref=f2e6254] [cursor=pointer]:
+                        - cell "Stair Railing" [ref=f2e6255]
+                        - cell "ARC" [ref=f2e6256]
+                        - cell "0" [ref=f2e6258]
+                        - cell "86.40 m" [ref=f2e6259]
+                        - cell "0" [ref=f2e6260]
+                        - cell "50%" [ref=f2e6261]
+                        - cell "Pending" [ref=f2e6266]
+                      - row [ref=f2e6268] [cursor=pointer]:
+                        - cell "Roof Parapet Coping" [ref=f2e6269]
+                        - cell "ARC" [ref=f2e6270]
+                        - cell "0" [ref=f2e6272]
+                        - cell "138.00 m" [ref=f2e6273]
+                        - cell "0" [ref=f2e6274]
+                        - cell "50%" [ref=f2e6275]
+                        - cell "Pending" [ref=f2e6280]
+                      - row [ref=f2e6282]:
+                        - cell "SUPERSTRUCTURE totals" [ref=f2e6283]
+                        - cell "14" [ref=f2e6284]
+                        - cell "—" [ref=f2e6285]
+                        - cell "6" [ref=f2e6286]
+                        - cell "45%" [ref=f2e6287]
+                        - cell "Verified" [ref=f2e6292]
+                      - row [ref=f2e6294] [cursor=pointer]:
+                        - cell [ref=f2e6295]:
+                          - strong [ref=f2e6299]: ARCHITECTURE
+                      - row [ref=f2e6300] [cursor=pointer]:
+                        - cell "Doors" [ref=f2e6301]
+                        - cell "ARC" [ref=f2e6302]
+                        - cell "1" [ref=f2e6304]
+                        - cell "38 No." [ref=f2e6305]
+                        - cell "0" [ref=f2e6306]
+                        - cell "100%" [ref=f2e6307]
+                        - cell "Verified" [ref=f2e6312]
+                      - row [ref=f2e6314] [cursor=pointer]:
+                        - cell "Windows" [ref=f2e6315]
+                        - cell "ARC" [ref=f2e6316]
+                        - cell "1" [ref=f2e6318]
+                        - cell "54 No." [ref=f2e6319]
+                        - cell "0" [ref=f2e6320]
+                        - cell "100%" [ref=f2e6321]
+                        - cell "Verified" [ref=f2e6326]
+                      - row [ref=f2e6328] [cursor=pointer]:
+                        - cell "Partitions" [ref=f2e6329]
+                        - cell "STR" [ref=f2e6330]
+                        - cell "0" [ref=f2e6332]
+                        - cell "1,236.50 m²" [ref=f2e6333]
+                        - cell "0" [ref=f2e6334]
+                        - cell "50%" [ref=f2e6335]
+                        - cell "Pending" [ref=f2e6340]
+                      - row [ref=f2e6342] [cursor=pointer]:
+                        - cell "Floor Finishes" [ref=f2e6343]
+                        - cell "ARC" [ref=f2e6344]
+                        - cell "1" [ref=f2e6346]
+                        - cell "5,420.80 m²" [ref=f2e6347]
+                        - cell "0" [ref=f2e6348]
+                        - cell "100%" [ref=f2e6349]
+                        - cell "Verified" [ref=f2e6354]
+                      - row [ref=f2e6356] [cursor=pointer]:
+                        - cell "Ceiling" [ref=f2e6357]
+                        - cell "ARC" [ref=f2e6358]
+                        - cell "1" [ref=f2e6360]
+                        - cell "5,180.20 m²" [ref=f2e6361]
+                        - cell "0" [ref=f2e6362]
+                        - cell "100%" [ref=f2e6363]
+                        - cell "Verified" [ref=f2e6368]
+                      - row [ref=f2e6370] [cursor=pointer]:
+                        - cell "Wall Painting" [ref=f2e6371]
+                        - cell "STR" [ref=f2e6372]
+                        - cell "0" [ref=f2e6374]
+                        - cell "8,640.00 m²" [ref=f2e6375]
+                        - cell "0" [ref=f2e6376]
+                        - cell "50%" [ref=f2e6377]
+                        - cell "Pending" [ref=f2e6382]
+                      - row [ref=f2e6384] [cursor=pointer]:
+                        - cell "Doors — Ground Floor" [ref=f2e6385]
+                        - cell "ARC" [ref=f2e6386]
+                        - cell "0" [ref=f2e6388]
+                        - cell "8 No." [ref=f2e6389]
+                        - cell "0" [ref=f2e6390]
+                        - cell "50%" [ref=f2e6391]
+                        - cell "Pending" [ref=f2e6396]
+                      - row [ref=f2e6398] [cursor=pointer]:
+                        - cell "Windows — Ground Floor" [ref=f2e6399]
+                        - cell "ARC" [ref=f2e6400]
+                        - cell "0" [ref=f2e6402]
+                        - cell "11 No." [ref=f2e6403]
+                        - cell "0" [ref=f2e6404]
+                        - cell "50%" [ref=f2e6405]
+                        - cell "Pending" [ref=f2e6410]
+                      - row [ref=f2e6412] [cursor=pointer]:
+                        - cell "Doors — Floor 1" [ref=f2e6413]
+                        - cell "ARC" [ref=f2e6414]
+                        - cell "0" [ref=f2e6416]
+                        - cell "8 No." [ref=f2e6417]
+                        - cell "0" [ref=f2e6418]
+                        - cell "50%" [ref=f2e6419]
+                        - cell "Pending" [ref=f2e6424]
+                      - row [ref=f2e6426] [cursor=pointer]:
+                        - cell "Windows — Floor 1" [ref=f2e6427]
+                        - cell "ARC" [ref=f2e6428]
+                        - cell "0" [ref=f2e6430]
+                        - cell "11 No." [ref=f2e6431]
+                        - cell "0" [ref=f2e6432]
+                        - cell "50%" [ref=f2e6433]
+                        - cell "Pending" [ref=f2e6438]
+                      - row [ref=f2e6440] [cursor=pointer]:
+                        - cell "Doors — Floor 2" [ref=f2e6441]
+                        - cell "ARC" [ref=f2e6442]
+                        - cell "0" [ref=f2e6444]
+                        - cell "8 No." [ref=f2e6445]
+                        - cell "0" [ref=f2e6446]
+                        - cell "50%" [ref=f2e6447]
+                        - cell "Pending" [ref=f2e6452]
+                      - row [ref=f2e6454] [cursor=pointer]:
+                        - cell "Windows — Floor 2" [ref=f2e6455]
+                        - cell "ARC" [ref=f2e6456]
+                        - cell "0" [ref=f2e6458]
+                        - cell "11 No." [ref=f2e6459]
+                        - cell "0" [ref=f2e6460]
+                        - cell "50%" [ref=f2e6461]
+                        - cell "Pending" [ref=f2e6466]
+                      - row [ref=f2e6468] [cursor=pointer]:
+                        - cell "Doors — Floor 3" [ref=f2e6469]
+                        - cell "ARC" [ref=f2e6470]
+                        - cell "0" [ref=f2e6472]
+                        - cell "8 No." [ref=f2e6473]
+                        - cell "0" [ref=f2e6474]
+                        - cell "50%" [ref=f2e6475]
+                        - cell "Pending" [ref=f2e6480]
+                      - row [ref=f2e6482] [cursor=pointer]:
+                        - cell "Windows — Floor 3" [ref=f2e6483]
+                        - cell "ARC" [ref=f2e6484]
+                        - cell "0" [ref=f2e6486]
+                        - cell "11 No." [ref=f2e6487]
+                        - cell "0" [ref=f2e6488]
+                        - cell "50%" [ref=f2e6489]
+                        - cell "Pending" [ref=f2e6494]
+                      - row [ref=f2e6496] [cursor=pointer]:
+                        - cell "Doors — Floor 4" [ref=f2e6497]
+                        - cell "ARC" [ref=f2e6498]
+                        - cell "0" [ref=f2e6500]
+                        - cell "8 No." [ref=f2e6501]
+                        - cell "0" [ref=f2e6502]
+                        - cell "50%" [ref=f2e6503]
+                        - cell "Pending" [ref=f2e6508]
+                      - row [ref=f2e6510] [cursor=pointer]:
+                        - cell "Windows — Floor 4" [ref=f2e6511]
+                        - cell "ARC" [ref=f2e6512]
+                        - cell "0" [ref=f2e6514]
+                        - cell "11 No." [ref=f2e6515]
+                        - cell "0" [ref=f2e6516]
+                        - cell "50%" [ref=f2e6517]
+                        - cell "Pending" [ref=f2e6522]
+                      - row [ref=f2e6524] [cursor=pointer]:
+                        - cell "Floor Tile 600×600 — Ground Floor" [ref=f2e6525]
+                        - cell "ARC" [ref=f2e6526]
+                        - cell "0" [ref=f2e6528]
+                        - cell "1,062.40 m²" [ref=f2e6529]
+                        - cell "0" [ref=f2e6530]
+                        - cell "50%" [ref=f2e6531]
+                        - cell "Pending" [ref=f2e6536]
+                      - row [ref=f2e6538] [cursor=pointer]:
+                        - cell "Skirting — Ground Floor" [ref=f2e6539]
+                        - cell "ARC" [ref=f2e6540]
+                        - cell "0" [ref=f2e6542]
+                        - cell "286.20 m" [ref=f2e6543]
+                        - cell "0" [ref=f2e6544]
+                        - cell "50%" [ref=f2e6545]
+                        - cell "Pending" [ref=f2e6550]
+                      - row [ref=f2e6552] [cursor=pointer]:
+                        - cell "Wall Plaster & Skim — Ground Floor" [ref=f2e6553]
+                        - cell "ARC" [ref=f2e6554]
+                        - cell "0" [ref=f2e6556]
+                        - cell "1,730.50 m²" [ref=f2e6557]
+                        - cell "0" [ref=f2e6558]
+                        - cell "50%" [ref=f2e6559]
+                        - cell "Pending" [ref=f2e6564]
+                      - row [ref=f2e6566] [cursor=pointer]:
+                        - cell "Ceiling Gypsum — Ground Floor" [ref=f2e6567]
+                        - cell "ARC" [ref=f2e6568]
+                        - cell "0" [ref=f2e6570]
+                        - cell "1,018.60 m²" [ref=f2e6571]
+                        - cell "0" [ref=f2e6572]
+                        - cell "50%" [ref=f2e6573]
+                        - cell "Pending" [ref=f2e6578]
+                      - row [ref=f2e6580] [cursor=pointer]:
+                        - cell "Floor Tile 600×600 — Floor 1" [ref=f2e6581]
+                        - cell "ARC" [ref=f2e6582]
+                        - cell "0" [ref=f2e6584]
+                        - cell "1,062.40 m²" [ref=f2e6585]
+                        - cell "0" [ref=f2e6586]
+                        - cell "50%" [ref=f2e6587]
+                        - cell "Pending" [ref=f2e6592]
+                      - row [ref=f2e6594] [cursor=pointer]:
+                        - cell "Skirting — Floor 1" [ref=f2e6595]
+                        - cell "ARC" [ref=f2e6596]
+                        - cell "0" [ref=f2e6598]
+                        - cell "286.20 m" [ref=f2e6599]
+                        - cell "0" [ref=f2e6600]
+                        - cell "50%" [ref=f2e6601]
+                        - cell "Pending" [ref=f2e6606]
+                      - row [ref=f2e6608] [cursor=pointer]:
+                        - cell "Wall Plaster & Skim — Floor 1" [ref=f2e6609]
+                        - cell "ARC" [ref=f2e6610]
+                        - cell "0" [ref=f2e6612]
+                        - cell "1,730.50 m²" [ref=f2e6613]
+                        - cell "0" [ref=f2e6614]
+                        - cell "50%" [ref=f2e6615]
+                        - cell "Pending" [ref=f2e6620]
+                      - row [ref=f2e6622] [cursor=pointer]:
+                        - cell "Ceiling Gypsum — Floor 1" [ref=f2e6623]
+                        - cell "ARC" [ref=f2e6624]
+                        - cell "0" [ref=f2e6626]
+                        - cell "1,018.60 m²" [ref=f2e6627]
+                        - cell "0" [ref=f2e6628]
+                        - cell "50%" [ref=f2e6629]
+                        - cell "Pending" [ref=f2e6634]
+                      - row [ref=f2e6636] [cursor=pointer]:
+                        - cell "Floor Tile 600×600 — Floor 2" [ref=f2e6637]
+                        - cell "ARC" [ref=f2e6638]
+                        - cell "0" [ref=f2e6640]
+                        - cell "1,062.40 m²" [ref=f2e6641]
+                        - cell "0" [ref=f2e6642]
+                        - cell "50%" [ref=f2e6643]
+                        - cell "Pending" [ref=f2e6648]
+                      - row [ref=f2e6650] [cursor=pointer]:
+                        - cell "Skirting — Floor 2" [ref=f2e6651]
+                        - cell "ARC" [ref=f2e6652]
+                        - cell "0" [ref=f2e6654]
+                        - cell "286.20 m" [ref=f2e6655]
+                        - cell "0" [ref=f2e6656]
+                        - cell "50%" [ref=f2e6657]
+                        - cell "Pending" [ref=f2e6662]
+                      - row [ref=f2e6664] [cursor=pointer]:
+                        - cell "Wall Plaster & Skim — Floor 2" [ref=f2e6665]
+                        - cell "ARC" [ref=f2e6666]
+                        - cell "0" [ref=f2e6668]
+                        - cell "1,730.50 m²" [ref=f2e6669]
+                        - cell "0" [ref=f2e6670]
+                        - cell "50%" [ref=f2e6671]
+                        - cell "Pending" [ref=f2e6676]
+                      - row [ref=f2e6678] [cursor=pointer]:
+                        - cell "Ceiling Gypsum — Floor 2" [ref=f2e6679]
+                        - cell "ARC" [ref=f2e6680]
+                        - cell "0" [ref=f2e6682]
+                        - cell "1,018.60 m²" [ref=f2e6683]
+                        - cell "0" [ref=f2e6684]
+                        - cell "50%" [ref=f2e6685]
+                        - cell "Pending" [ref=f2e6690]
+                      - row [ref=f2e6692] [cursor=pointer]:
+                        - cell "Floor Tile 600×600 — Floor 3" [ref=f2e6693]
+                        - cell "ARC" [ref=f2e6694]
+                        - cell "0" [ref=f2e6696]
+                        - cell "1,062.40 m²" [ref=f2e6697]
+                        - cell "0" [ref=f2e6698]
+                        - cell "50%" [ref=f2e6699]
+                        - cell "Pending" [ref=f2e6704]
+                      - row [ref=f2e6706] [cursor=pointer]:
+                        - cell "Skirting — Floor 3" [ref=f2e6707]
+                        - cell "ARC" [ref=f2e6708]
+                        - cell "0" [ref=f2e6710]
+                        - cell "286.20 m" [ref=f2e6711]
+                        - cell "0" [ref=f2e6712]
+                        - cell "50%" [ref=f2e6713]
+                        - cell "Pending" [ref=f2e6718]
+                      - row [ref=f2e6720] [cursor=pointer]:
+                        - cell "Wall Plaster & Skim — Floor 3" [ref=f2e6721]
+                        - cell "ARC" [ref=f2e6722]
+                        - cell "0" [ref=f2e6724]
+                        - cell "1,730.50 m²" [ref=f2e6725]
+                        - cell "0" [ref=f2e6726]
+                        - cell "50%" [ref=f2e6727]
+                        - cell "Pending" [ref=f2e6732]
+                      - row [ref=f2e6734] [cursor=pointer]:
+                        - cell "Ceiling Gypsum — Floor 3" [ref=f2e6735]
+                        - cell "ARC" [ref=f2e6736]
+                        - cell "0" [ref=f2e6738]
+                        - cell "1,018.60 m²" [ref=f2e6739]
+                        - cell "0" [ref=f2e6740]
+                        - cell "50%" [ref=f2e6741]
+                        - cell "Pending" [ref=f2e6746]
+                      - row [ref=f2e6748] [cursor=pointer]:
+                        - cell "Floor Tile 600×600 — Floor 4" [ref=f2e6749]
+                        - cell "ARC" [ref=f2e6750]
+                        - cell "0" [ref=f2e6752]
+                        - cell "1,062.40 m²" [ref=f2e6753]
+                        - cell "0" [ref=f2e6754]
+                        - cell "50%" [ref=f2e6755]
+                        - cell "Pending" [ref=f2e6760]
+                      - row [ref=f2e6762] [cursor=pointer]:
+                        - cell "Skirting — Floor 4" [ref=f2e6763]
+                        - cell "ARC" [ref=f2e6764]
+                        - cell "0" [ref=f2e6766]
+                        - cell "286.20 m" [ref=f2e6767]
+                        - cell "0" [ref=f2e6768]
+                        - cell "50%" [ref=f2e6769]
+                        - cell "Pending" [ref=f2e6774]
+                      - row [ref=f2e6776] [cursor=pointer]:
+                        - cell "Wall Plaster & Skim — Floor 4" [ref=f2e6777]
+                        - cell "ARC" [ref=f2e6778]
+                        - cell "0" [ref=f2e6780]
+                        - cell "1,730.50 m²" [ref=f2e6781]
+                        - cell "0" [ref=f2e6782]
+                        - cell "50%" [ref=f2e6783]
+                        - cell "Pending" [ref=f2e6788]
+                      - row [ref=f2e6790] [cursor=pointer]:
+                        - cell "Ceiling Gypsum — Floor 4" [ref=f2e6791]
+                        - cell "ARC" [ref=f2e6792]
+                        - cell "0" [ref=f2e6794]
+                        - cell "1,018.60 m²" [ref=f2e6795]
+                        - cell "0" [ref=f2e6796]
+                        - cell "50%" [ref=f2e6797]
+                        - cell "Pending" [ref=f2e6802]
+                      - row [ref=f2e6804]:
+                        - cell "ARCHITECTURE totals" [ref=f2e6805]
+                        - cell "4" [ref=f2e6806]
+                        - cell "—" [ref=f2e6807]
+                        - cell "0" [ref=f2e6808]
+                        - cell "11%" [ref=f2e6809]
+                        - cell "Verified" [ref=f2e6814]
+                      - row [ref=f2e6816] [cursor=pointer]:
+                        - cell [ref=f2e6817]:
+                          - strong [ref=f2e6821]: MEP
+                      - row [ref=f2e6822] [cursor=pointer]:
+                        - cell "Lighting Points" [ref=f2e6823]
+                        - cell "MEP" [ref=f2e6824]
+                        - cell "1" [ref=f2e6826]
+                        - cell "112 No." [ref=f2e6827]
+                        - cell "0" [ref=f2e6828]
+                        - cell "100%" [ref=f2e6829]
+                        - cell "Verified" [ref=f2e6834]
+                      - row [ref=f2e6836] [cursor=pointer]:
+                        - cell "Power Outlets" [ref=f2e6837]
+                        - cell "MEP" [ref=f2e6838]
+                        - cell "1" [ref=f2e6840]
+                        - cell "89 No." [ref=f2e6841]
+                        - cell "0" [ref=f2e6842]
+                        - cell "100%" [ref=f2e6843]
+                        - cell "Verified" [ref=f2e6848]
+                      - row [ref=f2e6850] [cursor=pointer]:
+                        - cell "Smoke Detectors" [ref=f2e6851]
+                        - cell "MEP" [ref=f2e6852]
+                        - cell "0" [ref=f2e6854]
+                        - cell "24 No." [ref=f2e6855]
+                        - cell "0" [ref=f2e6856]
+                        - cell "50%" [ref=f2e6857]
+                        - cell "Pending" [ref=f2e6862]
+                      - row [ref=f2e6864] [cursor=pointer]:
+                        - cell "Air Diffusers" [ref=f2e6865]
+                        - cell "MEP" [ref=f2e6866]
+                        - cell "1" [ref=f2e6868]
+                        - cell "64 No." [ref=f2e6869]
+                        - cell "0" [ref=f2e6870]
+                        - cell "100%" [ref=f2e6871]
+                        - cell "Verified" [ref=f2e6876]
+                      - row [ref=f2e6878] [cursor=pointer]:
+                        - cell "Sprinkler Heads" [ref=f2e6879]
+                        - cell "MEP" [ref=f2e6880]
+                        - cell "1" [ref=f2e6882]
+                        - cell "148 No." [ref=f2e6883]
+                        - cell "0" [ref=f2e6884]
+                        - cell "100%" [ref=f2e6885]
+                        - cell "Verified" [ref=f2e6890]
+                      - row [ref=f2e6892] [cursor=pointer]:
+                        - cell "Sanitary Fixtures" [ref=f2e6893]
+                        - cell "MEP" [ref=f2e6894]
+                        - cell "0" [ref=f2e6896]
+                        - cell "36 No." [ref=f2e6897]
+                        - cell "0" [ref=f2e6898]
+                        - cell "50%" [ref=f2e6899]
+                        - cell "Pending" [ref=f2e6904]
+                      - row [ref=f2e6906] [cursor=pointer]:
+                        - cell "Lighting Points — Ground Floor" [ref=f2e6907]
+                        - cell "MEP" [ref=f2e6908]
+                        - cell "0" [ref=f2e6910]
+                        - cell "22 No." [ref=f2e6911]
+                        - cell "0" [ref=f2e6912]
+                        - cell "50%" [ref=f2e6913]
+                        - cell "Pending" [ref=f2e6918]
+                      - row [ref=f2e6920] [cursor=pointer]:
+                        - cell "Power Outlets — Ground Floor" [ref=f2e6921]
+                        - cell "MEP" [ref=f2e6922]
+                        - cell "0" [ref=f2e6924]
+                        - cell "18 No." [ref=f2e6925]
+                        - cell "0" [ref=f2e6926]
+                        - cell "50%" [ref=f2e6927]
+                        - cell "Pending" [ref=f2e6932]
+                      - row [ref=f2e6934] [cursor=pointer]:
+                        - cell "Air Diffusers — Ground Floor" [ref=f2e6935]
+                        - cell "MEP" [ref=f2e6936]
+                        - cell "0" [ref=f2e6938]
+                        - cell "13 No." [ref=f2e6939]
+                        - cell "0" [ref=f2e6940]
+                        - cell "50%" [ref=f2e6941]
+                        - cell "Pending" [ref=f2e6946]
+                      - row [ref=f2e6948] [cursor=pointer]:
+                        - cell "Lighting Points — Floor 1" [ref=f2e6949]
+                        - cell "MEP" [ref=f2e6950]
+                        - cell "0" [ref=f2e6952]
+                        - cell "22 No." [ref=f2e6953]
+                        - cell "0" [ref=f2e6954]
+                        - cell "50%" [ref=f2e6955]
+                        - cell "Pending" [ref=f2e6960]
+                      - row [ref=f2e6962] [cursor=pointer]:
+                        - cell "Power Outlets — Floor 1" [ref=f2e6963]
+                        - cell "MEP" [ref=f2e6964]
+                        - cell "0" [ref=f2e6966]
+                        - cell "18 No." [ref=f2e6967]
+                        - cell "0" [ref=f2e6968]
+                        - cell "50%" [ref=f2e6969]
+                        - cell "Pending" [ref=f2e6974]
+                      - row [ref=f2e6976] [cursor=pointer]:
+                        - cell "Air Diffusers — Floor 1" [ref=f2e6977]
+                        - cell "MEP" [ref=f2e6978]
+                        - cell "0" [ref=f2e6980]
+                        - cell "13 No." [ref=f2e6981]
+                        - cell "0" [ref=f2e6982]
+                        - cell "50%" [ref=f2e6983]
+                        - cell "Pending" [ref=f2e6988]
+                      - row [ref=f2e6990] [cursor=pointer]:
+                        - cell "Lighting Points — Floor 2" [ref=f2e6991]
+                        - cell "MEP" [ref=f2e6992]
+                        - cell "0" [ref=f2e6994]
+                        - cell "22 No." [ref=f2e6995]
+                        - cell "0" [ref=f2e6996]
+                        - cell "50%" [ref=f2e6997]
+                        - cell "Pending" [ref=f2e7002]
+                      - row [ref=f2e7004] [cursor=pointer]:
+                        - cell "Power Outlets — Floor 2" [ref=f2e7005]
+                        - cell "MEP" [ref=f2e7006]
+                        - cell "0" [ref=f2e7008]
+                        - cell "18 No." [ref=f2e7009]
+                        - cell "0" [ref=f2e7010]
+                        - cell "50%" [ref=f2e7011]
+                        - cell "Pending" [ref=f2e7016]
+                      - row [ref=f2e7018] [cursor=pointer]:
+                        - cell "Air Diffusers — Floor 2" [ref=f2e7019]
+                        - cell "MEP" [ref=f2e7020]
+                        - cell "0" [ref=f2e7022]
+                        - cell "13 No." [ref=f2e7023]
+                        - cell "0" [ref=f2e7024]
+                        - cell "50%" [ref=f2e7025]
+                        - cell "Pending" [ref=f2e7030]
+                      - row [ref=f2e7032] [cursor=pointer]:
+                        - cell "Lighting Points — Floor 3" [ref=f2e7033]
+                        - cell "MEP" [ref=f2e7034]
+                        - cell "0" [ref=f2e7036]
+                        - cell "22 No." [ref=f2e7037]
+                        - cell "0" [ref=f2e7038]
+                        - cell "50%" [ref=f2e7039]
+                        - cell "Pending" [ref=f2e7044]
+                      - row [ref=f2e7046] [cursor=pointer]:
+                        - cell "Power Outlets — Floor 3" [ref=f2e7047]
+                        - cell "MEP" [ref=f2e7048]
+                        - cell "0" [ref=f2e7050]
+                        - cell "18 No." [ref=f2e7051]
+                        - cell "0" [ref=f2e7052]
+                        - cell "50%" [ref=f2e7053]
+                        - cell "Pending" [ref=f2e7058]
+                      - row [ref=f2e7060] [cursor=pointer]:
+                        - cell "Air Diffusers — Floor 3" [ref=f2e7061]
+                        - cell "MEP" [ref=f2e7062]
+                        - cell "0" [ref=f2e7064]
+                        - cell "13 No." [ref=f2e7065]
+                        - cell "0" [ref=f2e7066]
+                        - cell "50%" [ref=f2e7067]
+                        - cell "Pending" [ref=f2e7072]
+                      - row [ref=f2e7074] [cursor=pointer]:
+                        - cell "Lighting Points — Floor 4" [ref=f2e7075]
+                        - cell "MEP" [ref=f2e7076]
+                        - cell "0" [ref=f2e7078]
+                        - cell "22 No." [ref=f2e7079]
+                        - cell "0" [ref=f2e7080]
+                        - cell "50%" [ref=f2e7081]
+                        - cell "Pending" [ref=f2e7086]
+                      - row [ref=f2e7088] [cursor=pointer]:
+                        - cell "Power Outlets — Floor 4" [ref=f2e7089]
+                        - cell "MEP" [ref=f2e7090]
+                        - cell "0" [ref=f2e7092]
+                        - cell "18 No." [ref=f2e7093]
+                        - cell "0" [ref=f2e7094]
+                        - cell "50%" [ref=f2e7095]
+                        - cell "Pending" [ref=f2e7100]
+                      - row [ref=f2e7102] [cursor=pointer]:
+                        - cell "Air Diffusers — Floor 4" [ref=f2e7103]
+                        - cell "MEP" [ref=f2e7104]
+                        - cell "0" [ref=f2e7106]
+                        - cell "13 No." [ref=f2e7107]
+                        - cell "0" [ref=f2e7108]
+                        - cell "50%" [ref=f2e7109]
+                        - cell "Pending" [ref=f2e7114]
+                      - row [ref=f2e7116]:
+                        - cell "MEP totals" [ref=f2e7117]
+                        - cell "4" [ref=f2e7118]
+                        - cell "—" [ref=f2e7119]
+                        - cell "0" [ref=f2e7120]
+                        - cell "19%" [ref=f2e7121]
+                        - cell "Verified" [ref=f2e7126]
+                      - row [ref=f2e7128]:
+                        - cell "TOTAL" [ref=f2e7129]
+                        - cell "—" [ref=f2e7130]
+                        - cell "24" [ref=f2e7131]
+                        - cell "—" [ref=f2e7132]
+                        - cell "7" [ref=f2e7133]
+                        - cell "25%" [ref=f2e7134]
+                        - cell "Verified" [ref=f2e7139]
+              - generic [ref=f2e7141]:
+                - generic [ref=f2e7143]:
+                  - strong [ref=f2e7144]: Ready for handoff
+                  - text: — Verified quantities are ready to send to Cost & Quantity.
+                - generic [ref=f2e7145]:
+                  - button "View Cost & Quantity" [ref=f2e7146] [cursor=pointer]
+                  - button "Send verified quantities" [ref=f2e7147] [cursor=pointer]
+            - complementary [ref=f2e7148]:
+              - generic [ref=f2e7149]:
+                - generic [ref=f2e7150]: Intelligence Inspector
+                - generic [ref=f2e7151]:
+                  - button "Collapse" [ref=f2e7152] [cursor=pointer]
+                  - button "Close" [ref=f2e7156] [cursor=pointer]
+              - generic [ref=f2e7160]:
+                - generic [ref=f2e7161]:
+                  - generic [ref=f2e7162]: Sheet Summary
+                  - generic [ref=f2e7163]: Analyzed
+                - generic [ref=f2e7164]: A2-102 – Second Floor Plan
+                - generic [ref=f2e7165]:
+                  - generic [ref=f2e7166]: Discipline
+                  - generic [ref=f2e7167]: Structural / Architectural / MEP / Civil / Site
+                - generic [ref=f2e7168]:
+                  - generic [ref=f2e7169]: Scale
+                  - generic [ref=f2e7170]: 1:100
+                - generic [ref=f2e7171]:
+                  - generic [ref=f2e7172]: Sheet Size
+                  - generic [ref=f2e7173]: A1 (841 x 594 mm)
+                - generic [ref=f2e7174]:
+                  - generic [ref=f2e7175]: Revision
+                  - generic [ref=f2e7176]: R1
+                - generic [ref=f2e7177]:
+                  - generic [ref=f2e7178]: Analyzed On
+                  - generic [ref=f2e7179]: May 15, 2026 · 10:24 AM
+              - generic [ref=f2e7180]:
+                - generic [ref=f2e7181]: AI Confidence
+                - generic [ref=f2e7182]:
+                  - img [ref=f2e7183]:
+                    - generic [ref=f2e7186]: 92%
+                  - generic [ref=f2e7187]:
+                    - generic [ref=f2e7188]: High Confidence
+                    - generic "Model klasifikasi & ekstraksi internal — lihat AI Notes untuk detail actionable." [ref=f2e7189]: "AI model: PAAX-Struct v2.3"
+              - generic [ref=f2e7192]:
+                - generic [ref=f2e7193]: Detected Elements
+                - generic [ref=f2e7195]:
+                  - generic [ref=f2e7196]:
+                    - generic [ref=f2e7198]: "72"
+                    - generic [ref=f2e7199]: Columns
+                  - generic [ref=f2e7200]:
+                    - generic [ref=f2e7202]: "38"
+                    - generic [ref=f2e7203]: Beams
+                  - generic [ref=f2e7204]:
+                    - generic [ref=f2e7206]: "24"
+                    - generic [ref=f2e7207]: Walls
+                  - generic [ref=f2e7208]:
+                    - generic [ref=f2e7210]: "5"
+                    - generic [ref=f2e7211]: Shear Walls
+                  - generic [ref=f2e7212]:
+                    - generic [ref=f2e7214]: "18"
+                    - generic [ref=f2e7215]: Slabs
+                  - generic [ref=f2e7216]:
+                    - generic [ref=f2e7218]: "54"
+                    - generic [ref=f2e7219]: Rooms
+                  - generic [ref=f2e7220]:
+                    - generic [ref=f2e7222]: "89"
+                    - generic [ref=f2e7223]: Doors
+                  - generic [ref=f2e7224]:
+                    - generic [ref=f2e7226]: "112"
+                    - generic [ref=f2e7227]: Windows
+                - button "View all detections ›" [ref=f2e7228] [cursor=pointer]
+              - generic [ref=f2e7229]:
+                - generic [ref=f2e7230]: Verification Notes
+                - generic [ref=f2e7231]:
+                  - generic [ref=f2e7232]:
+                    - generic [ref=f2e7236]: "24"
+                    - generic [ref=f2e7237]: Verified
+                  - generic [ref=f2e7238]:
+                    - generic [ref=f2e7241]: "7"
+                    - generic [ref=f2e7242]: Needs review
+                  - generic [ref=f2e7243]:
+                    - generic [ref=f2e7246]: "2"
+                    - generic [ref=f2e7247]: Issues
+                - button "View all notes ›" [ref=f2e7248] [cursor=pointer]
+              - generic [ref=f2e7249]:
+                - generic [ref=f2e7250]:
+                  - generic [ref=f2e7251]: Ask PAAX
+                  - generic [ref=f2e7252]: BETA
+                - generic [ref=f2e7283]:
+                  - textbox "Ask a question about this sheet…" [ref=f2e7284]
+                  - button "›" [ref=f2e7285] [cursor=pointer]
+          - dialog [ref=f2e7286]:
+            - generic [ref=f2e7287]:
+              - generic [ref=f2e7288]:
+                - generic [ref=f2e7292]:
+                  - heading "Upload Drawing Files" [level=2] [ref=f2e7293]
+                  - paragraph [ref=f2e7294]: Upload your drawings to start AI-powered analysis and intelligence.
+                - button "Close" [ref=f2e7295] [cursor=pointer]
+              - generic [ref=f2e7299]:
+                - generic [ref=f2e7300]:
+                  - generic [ref=f2e7304]: Drag & drop drawing files here
+                  - generic [ref=f2e7305]: or
+                  - button "Select files" [ref=f2e7306] [cursor=pointer]
+                  - generic [ref=f2e7307]:
+                    - generic [ref=f2e7308]: Supported formats
+                    - generic [ref=f2e7309]:
+                      - generic [ref=f2e7310]: PDF
+                      - generic [ref=f2e7311]: DWG
+                      - generic [ref=f2e7312]: DXF
+                      - generic [ref=f2e7313]: PNG
+                      - generic [ref=f2e7314]: JPG
+                      - generic [ref=f2e7315]: TIFF
+                    - generic [ref=f2e7316]: "Max file size: 500 MB per file"
+                  - button "Use sample drawing set" [ref=f2e7317] [cursor=pointer]
+                - generic [ref=f2e7318]:
+                  - generic [ref=f2e7319]: Preflight checklist
+                  - generic [ref=f2e7324]:
+                    - generic [ref=f2e7325]: Vector PDF preferred
+                    - generic [ref=f2e7326]: Ensures best accuracy for AI analysis
+                  - generic [ref=f2e7331]:
+                    - generic [ref=f2e7332]: One sheet per page recommended
+                    - generic [ref=f2e7333]: Improves classification and sheet mapping
+                  - generic [ref=f2e7338]:
+                    - generic [ref=f2e7339]: Naming will be auto-classified by AI
+                    - generic [ref=f2e7340]: Discipline, floor, and type detection
+                  - generic [ref=f2e7345]:
+                    - generic [ref=f2e7346]: Secure & private
+                    - generic [ref=f2e7347]: Your files are encrypted in transit and at rest. We never share your data.
+              - generic [ref=f2e7348]:
+                - button "Cancel" [ref=f2e7349] [cursor=pointer]
+                - button "Upload files" [disabled] [ref=f2e7350]
+        - generic [ref=f2e730]:
+          - generic [ref=f2e731]: "Project: PLHUT Campus – Building A"
+          - generic [ref=f2e732]: "Scale: 1:100"
+          - generic [ref=f2e733]: "Units: Mixed"
+          - generic [ref=f2e736]: Verified quantities sent
+          - generic [ref=f2e739]:
+            - button "Documentation" [ref=f2e740] [cursor=pointer]
+            - button "Help" [ref=f2e743] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=f2e752] [cursor=pointer]
+  - alert [ref=f2e756]

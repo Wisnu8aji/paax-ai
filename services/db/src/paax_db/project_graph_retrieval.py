@@ -13,7 +13,13 @@ from .models import (
     ProjectGraphNodeEvidence, ProjectGraphQueryLog, ProjectGraphSummaryView,
 )
 from .project_graph_repository import get_active_snapshot
-from .project_graph_intent import parse_query_plan
+from .project_graph_intent import has_calculation_signal, parse_query_plan
+from .project_graph_review import active_correction_overlays
+
+
+OCCURRENCE_CARDINALITY_NOTE = (
+    "occurrence_count = jumlah kelompok konteks tercatat pada gambar, bukan jumlah fisik terpasang"
+)
 
 
 @dataclass
@@ -190,6 +196,59 @@ async def _entity_seed_nodes(
     return selected
 
 
+def _node_matches_entities(node: ProjectGraphNode, entity_values: list[str]) -> bool:
+    if not entity_values:
+        return True
+    names = {_normalize(node.canonical_name), _normalize(node.normalized_name)}
+    return any(
+        name == value or name.startswith(value + " ")
+        for value in {_normalize(item) for item in entity_values}
+        for name in names
+    )
+
+
+def _filter_summary_view(
+    payload: dict[str, Any], *, discipline: str | None, entity_values: list[str],
+    selected_type_ids: set[str], selected_disciplines: set[str], notes: list[str],
+) -> dict[str, Any]:
+    """Return a schema-shaped summary scoped to the matched retrieval result."""
+    from .schemas import ProjectGraphSummaryView
+
+    summary_view = ProjectGraphSummaryView.model_validate(payload).model_dump(mode="json")
+    summary_view["notes"] = list(summary_view.get("notes", []))
+    if OCCURRENCE_CARDINALITY_NOTE not in summary_view["notes"]:
+        summary_view["notes"].append(OCCURRENCE_CARDINALITY_NOTE)
+
+    if discipline is None and not entity_values:
+        return summary_view
+
+    summary = summary_view["summary"]
+    summary["element_type_index"] = [
+        entry for entry in summary.get("element_type_index", [])
+        if entry.get("element_type_id") in selected_type_ids
+    ]
+    if discipline is not None or entity_values:
+        allowed_disciplines = (
+            {_normalize(discipline)} if discipline is not None
+            else {_normalize(value) for value in selected_disciplines}
+        )
+        summary["discipline_counts"] = [
+            entry for entry in summary.get("discipline_counts", [])
+            if _normalize(entry.get("discipline", "")) in allowed_disciplines
+        ]
+    if discipline is not None:
+        summary_view["grain"]["discipline"] = discipline
+    filter_note = "summary_view difilter"
+    if entity_values:
+        filter_note += f" sesuai entity={', '.join(entity_values)}"
+    if discipline is not None:
+        filter_note += f" dan discipline={discipline}" if entity_values else f" sesuai discipline={discipline}"
+    filter_note += "."
+    summary_view["notes"].append(filter_note)
+    notes.append(filter_note)
+    return summary_view
+
+
 def _node_priority(node: ProjectGraphNode, seed_ids: set[str]) -> int:
     if node.node_id in seed_ids:
         return 1000
@@ -234,12 +293,34 @@ async def _retrieve_intent(
     session: AsyncSession, *, project_id: str, query: str, depth: int,
     budget_tokens: int, snapshot_id: str,
 ) -> GraphRetrievalResult:
-    notes: list[str] = []
+    notes: list[str] = [OCCURRENCE_CARDINALITY_NOTE]
     try:
-        plan, notes = await parse_query_plan(
+        plan, parser_notes = await parse_query_plan(
             session, project_id=project_id, snapshot_id=snapshot_id, query=query
         )
+        notes.extend(parser_notes)
     except Exception as exc:
+        if has_calculation_signal(query):
+            notes = [
+                OCCURRENCE_CARDINALITY_NOTE,
+                "parser: calculation_refusal_not_ready",
+                f"parser_error: {type(exc).__name__}",
+            ]
+            result = GraphRetrievalResult(
+                status="not_ready", snapshot_id=snapshot_id, data_status="not_ready",
+                notes=notes,
+                guidance=(
+                    "Perhitungan belum siap karena parser gagal; jangan menghitung angka di luar "
+                    "Core Engine dan tunggu perbaikan/approval manusia."
+                ),
+                rab_bridge_available=True,
+            )
+            await _write_query_log(
+                session, project_id=project_id, snapshot_id=snapshot_id, query=query,
+                query_plan={"intent": "CALCULATION_REQUIRED", "parser_error": type(exc).__name__},
+                seed_ids=[], result=result,
+            )
+            return result
         legacy = await _retrieve_legacy(
             session, project_id=project_id, query=query, depth=depth,
             budget_tokens=budget_tokens, relations=None, traversal_mode="bfs",
@@ -251,13 +332,6 @@ async def _retrieve_intent(
 
     intent = plan.intent.value
     effective_relations = set(plan.relations)
-    if intent == "NUMERIC_STORED_FACT" and any(
-        term in _normalize(query) for term in ("konflik", "bentrok", "tidak sesuai", "beda ukuran")
-    ):
-        # B4's numeric-word rule is intentionally broad; an explicit conflict
-        # phrase is the stronger execution contract for retrieval.
-        intent = "CONFLICT_LOOKUP"
-        effective_relations = {"CONFLICTS_WITH", "HAS_EVIDENCE"}
     applied_filters = {
         "level": plan.filters.get("level"),
         "discipline": plan.filters.get("discipline"),
@@ -267,17 +341,11 @@ async def _retrieve_intent(
     plan_payload["relations"] = sorted(effective_relations)
 
     if intent == "CALCULATION_REQUIRED":
-        entity_nodes = await _entity_seed_nodes(
-            session, project_id=project_id, snapshot_id=snapshot_id,
-            entity_values=[entity.value for entity in plan.entities],
-        )
-        facts = ", ".join(
-            f"tipe elemen {node.canonical_name}"
-            for node in entity_nodes
-        ) or "tipe elemen dan dimensi tertulis bila tersedia"
+        entity_values = [entity.value for entity in plan.entities]
+        facts = ", ".join(f"entity {value}" for value in entity_values) or "entity dan dimensi tertulis bila tersedia"
         guidance = (
             "Angka final wajib dihitung oleh Core Engine dan menunggu approval manusia; "
-            f"fakta tersedia: {facts}. Retrieve tidak menghitung volume atau kebutuhan material."
+            f"rujukan dari query: {facts}. Retrieve tidak menghitung volume atau kebutuhan material."
         )
         result = GraphRetrievalResult(
             status="calculation_required", snapshot_id=snapshot_id, intent=intent,
@@ -286,7 +354,7 @@ async def _retrieve_intent(
         )
         await _write_query_log(
             session, project_id=project_id, snapshot_id=snapshot_id, query=query,
-            query_plan=plan_payload, seed_ids=[node.node_id for node in entity_nodes], result=result,
+            query_plan=plan_payload, seed_ids=[], result=result,
         )
         return result
 
@@ -320,6 +388,7 @@ async def _retrieve_intent(
             return result
 
         level_ids = {node.node_id for node in level_seeds}
+        entity_values = [entity.value for entity in plan.entities]
         view = (await session.execute(select(ProjectGraphSummaryView).where(
             ProjectGraphSummaryView.project_id == project_id,
             ProjectGraphSummaryView.snapshot_id == snapshot_id,
@@ -340,21 +409,42 @@ async def _retrieve_intent(
             discipline = applied_filters["discipline"]
             selected_occurrences = [
                 node for node in occurrence_nodes.values()
-                if discipline is None or _normalize(node.discipline) == _normalize(discipline)
+                if (discipline is None or _normalize(node.discipline) == _normalize(discipline))
+                and _node_matches_entities(node, entity_values)
             ]
             selected_ids = level_ids | {node.node_id for node in selected_occurrences}
             nodes = [node for node in [*level_seeds, *selected_occurrences] if node.node_id in selected_ids]
             edges = [edge for edge in occurrence_edges if edge.source_node_id in selected_ids and edge.target_node_id in selected_ids]
+            type_edges = (await session.execute(select(ProjectGraphEdge).where(
+                ProjectGraphEdge.project_id == project_id,
+                ProjectGraphEdge.snapshot_id == snapshot_id,
+                ProjectGraphEdge.relation == "INSTANCE_OF",
+                ProjectGraphEdge.source_node_id.in_([node.node_id for node in selected_occurrences]),
+            ))).scalars().all() if selected_occurrences else []
+            selected_type_ids = {edge.target_node_id for edge in type_edges}
+            scoped_summary = _filter_summary_view(
+                view.payload,
+                discipline=discipline,
+                entity_values=entity_values,
+                selected_type_ids=selected_type_ids,
+                selected_disciplines={node.discipline for node in selected_occurrences if node.discipline},
+                notes=notes,
+            )
+            if not selected_occurrences:
+                notes.append("level valid tetapi tidak ada occurrence yang cocok setelah filter; data_status=empty")
             nodes, edges, evidence, token_estimate = await _prune_result(
                 session, project_id=project_id, snapshot_id=snapshot_id,
                 nodes=sorted({node.node_id: node for node in nodes}.values(), key=lambda node: node.node_id),
                 edges=edges, budget_tokens=budget_tokens, seed_ids=level_ids,
             )
+            matched_after_prune = any(node.node_type == "element_occurrence" for node in nodes)
+            if not matched_after_prune and selected_occurrences:
+                notes.append("tidak ada occurrence cocok yang tersisa setelah pruning; data_status=empty")
             result = GraphRetrievalResult(
                 status="success", snapshot_id=snapshot_id, nodes=nodes, edges=edges,
                 evidence=evidence, context_token_estimate=token_estimate, intent=intent,
-                applied_filters=applied_filters, data_status="grounded" if nodes else "empty",
-                notes=notes, summary_view=view.payload,
+                applied_filters=applied_filters, data_status="grounded" if matched_after_prune else "empty",
+                notes=notes, summary_view=scoped_summary,
             )
             await _write_query_log(
                 session, project_id=project_id, snapshot_id=snapshot_id, query=query,
@@ -379,6 +469,8 @@ async def _retrieve_intent(
             adjacency.setdefault(edge.target_node_id, []).append((edge.source_node_id, edge))
         discipline = applied_filters["discipline"]
         visited = set(level_ids)
+        entity_values = [entity.value for entity in plan.entities]
+        matched_occurrence_ids: set[str] = set()
         edges: list[ProjectGraphEdge] = []
         frontier = list(level_ids)
         for _ in range(max(0, plan.traversal_depth or depth)):
@@ -388,7 +480,15 @@ async def _retrieve_intent(
                     node = node_by_id.get(neighbor)
                     if neighbor in visited or node is None:
                         continue
-                    if node.node_type not in _LEVEL_NODE_TYPES and discipline and _normalize(node.discipline) != _normalize(discipline):
+                    if node.node_type == "element_occurrence":
+                        if discipline and _normalize(node.discipline) != _normalize(discipline):
+                            continue
+                        if not _node_matches_entities(node, entity_values):
+                            continue
+                        matched_occurrence_ids.add(node.node_id)
+                    elif discipline and node.node_type not in _LEVEL_NODE_TYPES and _normalize(node.discipline) != _normalize(discipline):
+                        continue
+                    elif entity_values and current not in matched_occurrence_ids:
                         continue
                     visited.add(neighbor)
                     edges.append(edge)
@@ -399,12 +499,15 @@ async def _retrieve_intent(
             session, project_id=project_id, snapshot_id=snapshot_id, nodes=nodes,
             edges=edges, budget_tokens=budget_tokens, seed_ids=level_ids,
         )
+        matched_after_prune = any(node.node_type == "element_occurrence" for node in nodes)
         result = GraphRetrievalResult(
             status="success", snapshot_id=snapshot_id, nodes=nodes, edges=edges,
             evidence=evidence, context_token_estimate=token_estimate, intent=intent,
-            applied_filters=applied_filters, data_status="grounded" if nodes else "empty",
+            applied_filters=applied_filters, data_status="grounded" if matched_after_prune else "empty",
             notes=notes,
         )
+        if not matched_after_prune:
+            result.notes.append("level valid tetapi tidak ada occurrence yang cocok setelah filter; data_status=empty")
         await _write_query_log(
             session, project_id=project_id, snapshot_id=snapshot_id, query=query,
             query_plan=plan_payload, seed_ids=sorted(level_ids), result=result,
@@ -549,15 +652,34 @@ async def retrieve_project_graph(
     if snapshot is None:
         return GraphRetrievalResult(status="not_ready")
     if use_intent:
-        return await _retrieve_intent(
+        result = await _retrieve_intent(
             session, project_id=project_id, query=query, depth=depth,
             budget_tokens=budget_tokens, snapshot_id=snapshot.snapshot_id,
         )
-    return await _retrieve_legacy(
-        session, project_id=project_id, query=query, depth=depth,
-        budget_tokens=budget_tokens, relations=relations, traversal_mode=traversal_mode,
-        target_node_id=target_node_id,
-    )
+    else:
+        result = await _retrieve_legacy(
+            session, project_id=project_id, query=query, depth=depth,
+            budget_tokens=budget_tokens, relations=relations, traversal_mode=traversal_mode,
+            target_node_id=target_node_id,
+        )
+    overlays = await active_correction_overlays(session, project_id=project_id, snapshot_id=snapshot.snapshot_id)
+    corrected = False
+    for node in result.nodes:
+        overlay = overlays.get(node.node_id)
+        if overlay:
+            corrected = True
+            proposed = overlay.get("proposed_value") or {}
+            if proposed.get("canonical_name"):
+                node._paax_correction_name = proposed["canonical_name"]
+            node._paax_correction_overlay = overlay
+    for edge in result.edges:
+        overlay = overlays.get(edge.edge_id)
+        if overlay:
+            corrected = True
+            edge._paax_correction_overlay = overlay
+    if corrected:
+        result.data_status = "corrected"
+    return result
 
 
 async def _retrieve_legacy(

@@ -26,6 +26,9 @@ import {
   ShieldCheck,
   Sparkles,
   Upload,
+  FileText,
+  BrainCircuit,
+  Database,
 } from 'lucide-react';
 import type { HSPBreakdown, RABResult, SCurveResult, ValidationResult } from '@paax/schemas';
 import { Card, Button, StatusPill, EmptyState, Modal } from '@/components/ui';
@@ -86,6 +89,8 @@ export default function ProjectRabPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  // SS5.2.1 — state untuk modal RAB Bridge (jalur Drawing Intelligence)
+  const [rabBridgeOpen, setRabBridgeOpen] = useState(false);
 
   // ── Build valid engine lines from draft (validasi input, BUKAN hitung angka) ──
   const validLines = useMemo<EngineLine[] | null>(() => {
@@ -296,14 +301,33 @@ export default function ProjectRabPage() {
     }
   };
 
-  const applyAiLines = (lines: { ahsp_code: string; volume: number }[]) => {
+  /**
+   * SS5.2.1 — Terapkan baris dari file eksternal (Smart Import) ke draft RAB.
+   * Hanya untuk jalur 'smart_import'; jalur 'rab_bridge' tidak melewati sini
+   * karena materialize langsung menulis ke DB dan perlu reload dari server.
+   */
+  const applyLinesWithSource = (
+    lines: { ahsp_code: string; volume: number }[],
+    source: 'smart_import' | 'rab_bridge' | 'manual',
+  ) => {
     if (!lines.length) return;
     setDraft((d) => ({
       ...d,
-      lines: lines.map((l) => ({ ...emptyRabLine(), ahsp_code: l.ahsp_code, volume: l.volume, duration_days: null })),
+      lines: lines.map((l) => ({ ...emptyRabLine(), ahsp_code: l.ahsp_code, volume: l.volume, duration_days: null, source })),
     }));
     invalidateResults();
   };
+
+  /** SS5.2.1 — Dipanggil setelah materialize RAB Bridge berhasil; reload draft dari server. */
+  const reloadDraftFromServer = useCallback(async () => {
+    try {
+      const savedDraft = await rabRepository.get(projectId);
+      setDraft(savedDraft);
+      invalidateResults();
+    } catch {
+      // Reload gagal — biarkan user refresh manual; draft lama masih valid.
+    }
+  }, [projectId]);
 
   if (projectsLoading) return <EmptyState title="Memuat proyek..." />;
   if (!project) return <EmptyState title="Proyek tidak ditemukan" message="Buka daftar proyek untuk memilih proyek." />;
@@ -316,10 +340,16 @@ export default function ProjectRabPage() {
         <span style={{ fontSize: 12, color: 'var(--text3)' }}>
           Semua angka (HSP, jumlah, bobot, Kurva S) dihitung engine — bukan di browser.
         </span>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <Button variant="secondary" onClick={() => setImportOpen(true)}><Upload size={15} /> Smart Import</Button>
-          <Button onClick={() => setAiOpen(true)}><Sparkles size={15} /> Susun dengan AI</Button>
-        </div>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {/* SS5.2.1 — Dua jalur import berlabel jelas untuk menghindari kebingungan user */}
+            <Button variant="secondary" onClick={() => setImportOpen(true)} title="Impor baris RAB dari file Excel, CSV, atau PDF eksternal">
+              <Upload size={15} /> Impor dari File (Excel/PDF)
+            </Button>
+            <Button variant="secondary" onClick={() => setRabBridgeOpen(true)} title="Impor baris RAB dari proposal Drawing Intelligence yang sudah diverifikasi PM">
+              <BrainCircuit size={15} /> Impor dari Drawing Intelligence (AI Terverifikasi)
+            </Button>
+            <Button onClick={() => setAiOpen(true)}><Sparkles size={15} /> Susun dengan AI</Button>
+          </div>
       </div>
 
       {bootError && <ErrorBox message={bootError} onClose={() => setBootError(null)} />}
@@ -365,8 +395,8 @@ export default function ProjectRabPage() {
                     value={row.ahsp_code}
                     disabled={bootLoading}
                     onChange={(e) => {
-                      // Ganti manual -> bukan lagi usulan AI (Fase T).
-                      updateRow(row.id, { ahsp_code: e.target.value, ahsp_suggested: false });
+                      // Ganti manual -> bukan lagi usulan AI (Fase T); tandai sebagai edited manual.
+                      updateRow(row.id, { ahsp_code: e.target.value, ahsp_suggested: false, source: 'manual' });
                       invalidateResults();
                     }}
                   >
@@ -375,8 +405,33 @@ export default function ProjectRabPage() {
                       <option key={a.code} value={a.code}>{a.code} — {a.name} [{a.unit}]</option>
                     ))}
                   </select>
+                  {/* SS5.2.1 — Badge sumber baris: membantu user mengenali asal tiap baris sekilas */}
+                  {row.source === 'smart_import' && (
+                    <StatusPill tone="neutral" style={{ cursor: 'default' }}>
+                      <Upload size={11} /> Dari File Eksternal
+                    </StatusPill>
+                  )}
+                  {row.source === 'rab_bridge' && (
+                    <StatusPill tone="ok" style={{ cursor: 'default' }}>
+                      <BrainCircuit size={11} /> Drawing Intelligence
+                    </StatusPill>
+                  )}
                   {row.ahsp_suggested && (
                     <StatusPill tone="warn">disarankan AI — cek &amp; ganti bila perlu</StatusPill>
+                  )}
+                  {(row.sheet_id || (row.evidence_ids && row.evidence_ids.length > 0)) && (
+                    <div>
+                      <StatusPill 
+                        tone="neutral"
+                        style={{ cursor: 'help' }}
+                      >
+                        <FileText size={11} /> 
+                        <span title={row.evidence_ids && row.evidence_ids.length > 0 ? `Evidence IDs: ${row.evidence_ids.join(', ')}` : undefined}>
+                          Sumber: {row.sheet_id ? `Sheet ${row.sheet_id}` : 'Drawing'}
+                          {typeof row.page_index === 'number' ? `, halaman ${row.page_index + 1}` : ''}
+                        </span>
+                      </StatusPill>
+                    </div>
                   )}
                 </div>
                 <input
@@ -459,6 +514,7 @@ export default function ProjectRabPage() {
       {rabResult && (
         <RabResultTable
           rab={rabResult}
+          draft={draft}
           onHsp={handleHsp}
           hspBusy={busy.hsp}
           onExportCsv={handleExportCsv}
@@ -481,7 +537,7 @@ export default function ProjectRabPage() {
         ahspList={ahspList}
         regionCode={draft.regionCode}
         ppnRate={draft.ppnRate}
-        onApply={applyAiLines}
+        onApply={(lines) => applyLinesWithSource(lines, 'manual')}
       />
       <SmartRabImport
         open={importOpen}
@@ -489,7 +545,14 @@ export default function ProjectRabPage() {
         ahspList={ahspList}
         regionCode={draft.regionCode}
         ppnRate={draft.ppnRate}
-        onApply={applyAiLines}
+        onApply={(lines) => applyLinesWithSource(lines, 'smart_import')}
+      />
+      {/* SS5.2.1 — Modal entry point RAB Bridge: jalur Drawing Intelligence → RAB Draft */}
+      <RabBridgeImportModal
+        open={rabBridgeOpen}
+        onClose={() => setRabBridgeOpen(false)}
+        projectId={projectId}
+        onMaterializeSuccess={reloadDraftFromServer}
       />
     </div>
   );
@@ -513,6 +576,7 @@ function ErrorBox({ message, onClose }: { message: string; onClose: () => void }
 
 function RabResultTable({
   rab,
+  draft,
   onHsp,
   hspBusy,
   onExportCsv,
@@ -521,6 +585,7 @@ function RabResultTable({
   exportExcelBusy,
 }: {
   rab: RABResult;
+  draft: ProjectRabDraft;
   onHsp: (code: string) => void;
   hspBusy: string | null;
   onExportCsv: () => void;
@@ -560,13 +625,53 @@ function RabResultTable({
             </tr>
           </thead>
           <tbody>
-            {rab.lines.map((ln, i) => (
-              <tr key={ln.ahsp_code} className="pax-row-hover">
-                <td className="pax-mono" style={{ ...td, color: 'var(--text3)' }}>{i + 1}</td>
-                <td style={{ ...td, color: 'var(--text)' }}>
-                  <div style={{ fontWeight: 600 }}>{ln.name}</div>
-                  <div className="pax-mono" style={{ fontSize: 11, color: 'var(--text3)' }}>{ln.ahsp_code}</div>
-                </td>
+            {rab.lines.map((ln, i) => {
+              const validDraftLines = draft.lines.filter(
+                (l) => l.ahsp_code && l.volume !== null && l.volume > 0
+              );
+              let correspondingDraftLine = validDraftLines[i];
+              if (correspondingDraftLine?.ahsp_code !== ln.ahsp_code) {
+                correspondingDraftLine = validDraftLines.find(l => l.ahsp_code === ln.ahsp_code) || correspondingDraftLine;
+              }
+              return (
+                <tr key={ln.ahsp_code} className="pax-row-hover">
+                  <td className="pax-mono" style={{ ...td, color: 'var(--text3)' }}>{i + 1}</td>
+                  <td style={{ ...td, color: 'var(--text)' }}>
+                    <div style={{ fontWeight: 600 }}>{ln.name}</div>
+                    <div className="pax-mono" style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
+                      <span>{ln.ahsp_code}</span>
+                      {/* SS5.2.1 — Badge sumber di tabel hasil RAB */}
+                      {correspondingDraftLine?.source === 'smart_import' && (
+                        <StatusPill
+                          tone="neutral"
+                          style={{ fontSize: 9, padding: '1px 5px', borderRadius: 4 }}
+                        >
+                          <Upload size={9} /> File Eksternal
+                        </StatusPill>
+                      )}
+                      {correspondingDraftLine?.source === 'rab_bridge' && (
+                        <StatusPill
+                          tone="ok"
+                          style={{ fontSize: 9, padding: '1px 5px', borderRadius: 4 }}
+                        >
+                          <BrainCircuit size={9} /> Drawing Intelligence
+                        </StatusPill>
+                      )}
+                      {correspondingDraftLine && (correspondingDraftLine.sheet_id || (correspondingDraftLine.evidence_ids && correspondingDraftLine.evidence_ids.length > 0)) && (
+                        <StatusPill 
+                          tone="neutral" 
+                          style={{ fontSize: 9, padding: '1px 5px', borderRadius: 4, cursor: 'help' }}
+                        >
+                          <FileText size={10} />
+                          <span title={correspondingDraftLine.evidence_ids && correspondingDraftLine.evidence_ids.length > 0 ? `Evidence IDs: ${correspondingDraftLine.evidence_ids.join(', ')}` : undefined}>
+                            {correspondingDraftLine.sheet_id ? `Sheet ${correspondingDraftLine.sheet_id}` : 'Drawing'}
+                            {typeof correspondingDraftLine.page_index === 'number' ? ` p.${correspondingDraftLine.page_index + 1}` : ''}
+                          </span>
+                        </StatusPill>
+                      )}
+                    </div>
+                  </td>
+
                 <td className="pax-mono" style={{ ...td, textAlign: 'right', color: 'var(--text)' }}>{formatNumber(ln.volume)}</td>
                 <td style={{ ...td, color: 'var(--text2)' }}>{ln.unit}</td>
                 <td className="pax-mono" style={{ ...td, textAlign: 'right', color: 'var(--text)' }}>{formatRupiah(ln.hsp)}</td>
@@ -578,7 +683,8 @@ function RabResultTable({
                   </button>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
           <tfoot>
             <tr>
@@ -642,3 +748,185 @@ function ScurvePanel({ scurve }: { scurve: SCurveResult }) {
   );
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// SS5.2.1 — RabBridgeImportModal
+// Entry point khusus untuk jalur Drawing Intelligence → RAB Draft.
+// Sengaja TERPISAH dari SmartRabImport (jalur file eksternal) karena keduanya
+// adalah dua sumber yang berbeda secara fundamental.
+// ────────────────────────────────────────────────────────────────────────────
+
+interface RabBridgeProposalSummary {
+  proposal_id: string;
+  snapshot_id: string;
+  status: string;
+  item_count: number;
+  created_at?: string | null;
+  reviewed_at?: string | null;
+}
+
+const DB_API_BASE = process.env.NEXT_PUBLIC_DB_API_URL || 'http://localhost:8001';
+
+function RabBridgeImportModal({
+  open,
+  onClose,
+  projectId,
+  onMaterializeSuccess,
+}: {
+  open: boolean;
+  onClose: () => void;
+  projectId: string;
+  onMaterializeSuccess: () => void;
+}) {
+  const [proposals, setProposals] = useState<RabBridgeProposalSummary[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [applying, setApplying] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    setLoading(true);
+    setError(null);
+    setProposals([]);
+    setSelectedId(null);
+    (async () => {
+      try {
+        const res = await fetch(
+          `${DB_API_BASE}/projects/${projectId}/project-graph/rab-bridge/proposals?status=approved`,
+          { headers: { 'X-User-Id': 'web-client' } }
+        );
+        if (!res.ok) throw new Error(`Gagal memuat proposals (${res.status})`);
+        const data: RabBridgeProposalSummary[] = await res.json();
+        if (active) setProposals(data);
+      } catch (e) {
+        if (active) setError(e instanceof Error ? e.message : 'Gagal memuat proposals RAB Bridge.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [open, projectId]);
+
+  async function handleApply() {
+    if (!selectedId) return;
+    setApplying(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `${DB_API_BASE}/projects/${projectId}/project-graph/rab-bridge/${selectedId}/materialize`,
+        { method: 'POST', headers: { 'X-User-Id': 'web-client' } }
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.detail ?? `Materialisasi gagal (${res.status})`);
+      }
+      const data = await res.json();
+      const count: number = data?.materialized_count ?? 0;
+      if (!count) throw new Error('Tidak ada baris yang berhasil dimateriaisasi. Pastikan AHSP dan volume tersedia untuk semua item.');
+      // Baris sudah ditulis ke DB oleh endpoint materialize.
+      // Panggil callback agar parent reload draft dari server.
+      onClose();
+      onMaterializeSuccess();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Gagal memateriaisasi proposal.');
+    } finally {
+      setApplying(false);
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Impor dari Drawing Intelligence (AI Terverifikasi)" width={680}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {/* Penjelasan konteks sumber — SS5.2.1 */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', borderRadius: 10, background: 'var(--ok-bg, rgba(34,197,94,0.07))', border: '1px solid var(--ok-bd, rgba(34,197,94,0.2))' }}>
+          <BrainCircuit size={16} color="var(--ok-dot)" style={{ marginTop: 1, flexShrink: 0 }} />
+          <div style={{ fontSize: 12.5, color: 'var(--text)' }}>
+            <strong>Jalur Drawing Intelligence</strong> — Baris diimpor dari proposal yang sudah diverifikasi PM berdasarkan gambar kerja proyek.
+            Berbeda dari "Impor dari File", jalur ini mengambil data dari graf pengetahuan internal PCKM (bukan file eksternal).
+            Setiap baris yang diimpor akan diberi label <em>Drawing Intelligence</em> di tabel RAB.
+          </div>
+        </div>
+
+        {error && (
+          <div style={{ display: 'flex', gap: 8, padding: 10, borderRadius: 10, border: '1px solid var(--warn-bd)', background: 'var(--warn-bg)', color: 'var(--warn-fg)', fontSize: 12.5 }}>
+            <AlertCircle size={15} /> {error}
+          </div>
+        )}
+
+        {loading && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text3)', fontSize: 13 }}>
+            <Loader2 size={15} className="animate-spin" /> Memuat daftar proposals...
+          </div>
+        )}
+
+        {!loading && proposals.length === 0 && !error && (
+          <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
+            <Database size={24} style={{ marginBottom: 8, opacity: 0.4 }} />
+            <div>Tidak ada proposal Drawing Intelligence yang disetujui untuk proyek ini.</div>
+            <div style={{ fontSize: 11.5, marginTop: 4 }}>
+              Proposal dibuat dari panel review Drawing Intelligence dan harus disetujui PM terlebih dahulu.
+            </div>
+          </div>
+        )}
+
+        {proposals.length > 0 && (
+          <div style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: 'var(--surface-raised, var(--surface))' }}>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text2)', borderBottom: '1px solid var(--border)' }}></th>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text2)', borderBottom: '1px solid var(--border)' }}>Proposal ID</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right', fontSize: 11, fontWeight: 700, color: 'var(--text2)', borderBottom: '1px solid var(--border)' }}>Jumlah Item</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text2)', borderBottom: '1px solid var(--border)' }}>Status</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text2)', borderBottom: '1px solid var(--border)' }}>Dibuat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {proposals.map((p) => (
+                  <tr
+                    key={p.proposal_id}
+                    className="pax-row-hover"
+                    style={{ cursor: 'pointer', background: selectedId === p.proposal_id ? 'var(--ok-bg, rgba(34,197,94,0.07))' : 'transparent' }}
+                    onClick={() => setSelectedId(p.proposal_id)}
+                  >
+                    <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-soft)' }}>
+                      <input
+                        type="radio"
+                        checked={selectedId === p.proposal_id}
+                        onChange={() => setSelectedId(p.proposal_id)}
+                        style={{ accentColor: 'var(--ok-dot)' }}
+                      />
+                    </td>
+                    <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-soft)', fontFamily: 'monospace', fontSize: 11, color: 'var(--text2)' }}>
+                      {p.proposal_id.slice(0, 8)}…
+                    </td>
+                    <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-soft)', textAlign: 'right', fontWeight: 600, color: 'var(--text)' }}>
+                      {p.item_count}
+                    </td>
+                    <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-soft)' }}>
+                      <StatusPill tone="ok"><CheckCircle2 size={11} /> {p.status}</StatusPill>
+                    </td>
+                    <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-soft)', color: 'var(--text3)', fontSize: 11.5 }}>
+                      {p.created_at ? new Date(p.created_at).toLocaleDateString('id-ID') : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {selectedId && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+            <Button variant="secondary" onClick={onClose}>Batal</Button>
+            <Button onClick={handleApply} disabled={applying}>
+              {applying ? <Loader2 size={15} className="animate-spin" /> : <BrainCircuit size={15} />}
+              {' '}Materialisasi ke RAB Draft
+            </Button>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}

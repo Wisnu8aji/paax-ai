@@ -127,6 +127,12 @@ export type ActiveRun = {
 
   statusLabel: string;
   statusDetail?: string;
+  // Timestamp (ms) event reasoning_summary (status-summary Mistral Small 3) terakhir diterima --
+  // dipakai timer di startTimer() supaya label kontekstual itu sempat terlihat
+  // user beberapa detik, bukan langsung ketiban lagi oleh regex generik di
+  // tick berikutnya (timer berjalan 1x/detik, tanpa penanda ini akan menimpa
+  // statusLabel status-summary dalam < 1 detik setiap kali).
+  lastStatusSummaryAt?: number;
 
   reasoningContent: string;
   answerBuffer: string;
@@ -163,6 +169,12 @@ export type StartChatRunInput = {
   modelName: "Lucent" | "Arete" | "Noir";
   effort?: "low" | "medium" | "high" | "max";
   thinking?: "on" | "off";
+  // Proyek aktif (folderId percakapan) -- diteruskan ke /api/command-room/chat
+  // supaya tool_call (query_project_graph/query_rab/dst) bisa ambil data proyek
+  // nyata via DB_API_URL, bukan hanya konteks teks bebas connector. Opsional:
+  // tanpa ini tool tetap fallback "data tidak tersedia" (route.ts sudah
+  // mendukung projectId opsional sejak awal, client ini yang belum mengirimnya).
+  projectId?: string;
 };
 
 type Listener = () => void;
@@ -261,7 +273,17 @@ class ChatRunStore {
         // Noir SENGAJA dikecualikan dari klasifikasi label ini -- Noir
         // menampilkan reasoningContent penuh apa adanya (lihat RunStatus.tsx),
         // jadi statusLabel-nya cukup generik, tidak perlu diringkas jadi fase.
-        this.updateRun(runId, { elapsedMs, statusLabel: getReasoningContextStatus(run.reasoningContent) });
+        //
+        // Kalau label kontekstual dari status-summary baru saja masuk (< 3 detik
+        // lalu), JANGAN timpa dulu dengan regex generik -- beri waktu label
+        // itu benar-benar terbaca user. Tanpa guard ini, tick 1 detik
+        // berikutnya langsung menimpa label status-summary sebelum sempat terlihat.
+        const statusSummaryFresh = run.lastStatusSummaryAt !== undefined && (Date.now() - run.lastStatusSummaryAt) < 3000;
+        if (!statusSummaryFresh) {
+          this.updateRun(runId, { elapsedMs, statusLabel: getReasoningContextStatus(run.reasoningContent) });
+        } else {
+          this.updateRun(runId, { elapsedMs });
+        }
       } else if (run.phase === "receiving_reasoning") {
         // Noir: status tetap statis/generik selama reasoning berlangsung --
         // konten reasoning penuhnya ditampilkan terpisah di UI, bukan diringkas.
@@ -334,6 +356,7 @@ class ChatRunStore {
           modelAlias: input.modelId,
           reasoningEffort: input.effort,
           thinking: input.thinking,
+          projectId: input.projectId,
         }),
         signal: controller.signal,
       });
@@ -394,7 +417,15 @@ class ChatRunStore {
             }
 
             if (parsed.type === "status") {
-              this.updateRun(runId, { phase: parsed.phase, statusLabel: parsed.statusLabel, statusDetail: parsed.statusDetail });
+              // Handle reasoning_summary (Mistral Small 3) fire-and-forget: update statusLabel
+              // saja TANPA mengubah phase (tetap "receiving_reasoning" agar timer tidak
+              // bingung). Client UI akan menampilkan statusLabel baru ini sebagai ringkasan
+              // topik reasoning kontekstual.
+              if (parsed.phase === "reasoning_summary") {
+                this.updateRun(runId, { statusLabel: parsed.statusLabel, lastStatusSummaryAt: Date.now() });
+              } else {
+                this.updateRun(runId, { phase: parsed.phase, statusLabel: parsed.statusLabel, statusDetail: parsed.statusDetail });
+              }
             } else if (parsed.type === "reasoning") {
               const run = this.state.runsById[runId];
               const deltaText = parsed.delta || "";

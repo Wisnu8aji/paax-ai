@@ -7,9 +7,11 @@ from urllib.error import HTTPError
 import pytest
 
 from app.project_graph.providers.deepseek import (
+    DeepSeekLevelProvider,
     DeepSeekPckmProvider,
     PckmProviderError,
 )
+from app.project_graph.level_canonicalizer import LevelSemanticCandidate
 
 
 class FakeResponse:
@@ -303,3 +305,104 @@ def test_resolve_rejects_a_payload_outside_the_pckm_proposal_contract():
 
     with pytest.raises(PckmProviderError, match="proposal contract"):
         provider.resolve({"candidate_id": "C-8"})
+
+
+def test_level_provider_from_env_uses_drawing_intelligence_key_and_pro_model(monkeypatch):
+    monkeypatch.setenv("DRAWING_INTELLIGENCE_API_KEY", "drawing-key-123")
+    monkeypatch.setenv("DRAWING_INTELLIGENCE_DEEPSEEK_MODEL", "deepseek-v4-flash")
+    monkeypatch.setenv("DRAWING_INTELLIGENCE_DEEPSEEK_PRO_MODEL", "deepseek-v4-pro")
+    monkeypatch.setenv("DRAWING_INTELLIGENCE_BASE_URL", "https://drawing.test/chat/completions")
+    monkeypatch.setenv("DRAWING_INTELLIGENCE_LEVEL_PROVIDER", "true")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "command-room-key-must-not-be-used")
+
+    provider = DeepSeekLevelProvider.from_env()
+
+    assert provider is not None
+    assert provider._flash.api_key == "drawing-key-123"
+    assert provider._flash.model_alias == "deepseek-v4-flash"
+    assert provider._pro.model_alias == "deepseek-v4-pro"
+    assert provider._flash.api_url == "https://drawing.test/chat/completions"
+
+
+def test_level_provider_from_env_requires_explicit_opt_in_even_when_key_is_present(monkeypatch):
+    """A generic Drawing Intelligence key must not enable live semantic review."""
+    monkeypatch.setenv("DRAWING_INTELLIGENCE_API_KEY", "drawing-key-123")
+    monkeypatch.delenv("DRAWING_INTELLIGENCE_LEVEL_PROVIDER", raising=False)
+
+    assert DeepSeekLevelProvider.from_env() is None
+
+
+def test_level_provider_from_env_activates_with_true_flag_without_network(monkeypatch):
+    """The explicit opt-in may propose through a stubbed, never-live transport."""
+    monkeypatch.setenv("DRAWING_INTELLIGENCE_API_KEY", "drawing-key-123")
+    monkeypatch.setenv("DRAWING_INTELLIGENCE_LEVEL_PROVIDER", "TRUE")
+    calls: list[str] = []
+
+    def stub_request(_provider, _request):
+        calls.append("request")
+        return {
+            "model": "stub-level-provider",
+            "choices": [
+                {
+                    "message": {
+                        "content": (
+                            '{"decision":"keep_separate","merge_to":null,'
+                            '"rationale":"stubbed transport","confidence":1.0}'
+                        )
+                    }
+                }
+            ],
+        }
+
+    monkeypatch.setattr(DeepSeekPckmProvider, "_request_with_retry", stub_request)
+
+    provider = DeepSeekLevelProvider.from_env()
+
+    assert provider is not None
+    assert provider._flash.api_key == "drawing-key-123"
+    result = provider.propose(
+        LevelSemanticCandidate(
+            candidate_id="LEVEL-FLAG",
+            raw="Main Level",
+            normalized="Main Level",
+            classification="UNCLASSIFIED",
+            deterministic_canonical=None,
+            canonical_levels=("Lantai 1",),
+            evidence_refs=("EV-LEVEL-FLAG",),
+            context={"sheet_id": "S-FLAG"},
+        ),
+        tier="flash",
+    )
+    assert result.model == "stub-level-provider"
+    assert calls == ["request"]
+
+
+def test_level_provider_reuses_json_transport_and_records_prompt_hash():
+    candidate = LevelSemanticCandidate(
+        candidate_id="LEVEL-1",
+        raw="Main Level Two",
+        normalized="Main Level Two",
+        classification="UNCLASSIFIED",
+        deterministic_canonical=None,
+        canonical_levels=("Lantai 2",),
+        evidence_refs=("EV-LEVEL-1",),
+        context={"sheet_id": "S-01"},
+    )
+    provider = DeepSeekLevelProvider(
+        api_key="drawing-key",
+        urlopen=lambda request, timeout: _response(
+            model="provider-flash-2026",
+            content=(
+                '{"decision":"merge_to","merge_to":"Lantai 2",'
+                '"rationale":"English alias names level two.","confidence":0.97}'
+            ),
+        ),
+        clock=FakeClock(4.0, 4.01),
+    )
+
+    result = provider.propose(candidate, tier="flash")
+
+    assert result.model == "provider-flash-2026"
+    assert result.payload["merge_to"] == "Lantai 2"
+    assert result.prompt_version == "level-semantic-v1"
+    assert len(result.prompt_hash) == 64

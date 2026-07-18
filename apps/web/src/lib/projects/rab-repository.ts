@@ -26,6 +26,18 @@ export interface RabDraftLine {
    * TIDAK memengaruhi perhitungan RAB. Dibersihkan begitu user mengganti
    * dropdown AHSP secara manual. */
   ahsp_suggested?: boolean;
+  volume_source?: 'written_dimension' | 'human_assumption';
+  evidence_ids?: string[];
+  assumption_id?: string;
+  sheet_id?: string;
+  page_index?: number;
+  /** SS5.2.1 — Label asal baris RAB untuk kejelasan sumber di UI.
+   * Murni penanda tampilan — TIDAK memengaruhi kalkulasi engine.
+   * - "smart_import"  : diimpor dari file Excel/PDF eksternal via SmartRabImport
+   * - "rab_bridge"    : diimpor dari Drawing Intelligence (proposal terverifikasi)
+   * - "manual"        : ditambah/diedit langsung oleh user
+   * Field opsional; baris lama tanpa field ini ditampilkan tanpa badge sumber. */
+  source?: 'smart_import' | 'rab_bridge' | 'manual';
 }
 
 export interface ProjectRabDraft {
@@ -65,6 +77,7 @@ export function emptyRabDraft(projectId: string, regionCode = 'jateng'): Project
 
 function normalizeDraft(projectId: string, raw: Partial<ProjectRabDraft> | null): ProjectRabDraft {
   if (!raw) return emptyRabDraft(projectId);
+  const VALID_SOURCES = new Set(['smart_import', 'rab_bridge', 'manual']);
   const lines = Array.isArray(raw.lines) && raw.lines.length
     ? raw.lines.map((line) => ({
         id: line?.id ?? emptyRabLine().id,
@@ -72,7 +85,13 @@ function normalizeDraft(projectId: string, raw: Partial<ProjectRabDraft> | null)
         volume: typeof line?.volume === 'number' ? line.volume : null,
         duration_days: typeof line?.duration_days === 'number' ? line.duration_days : null,
         ahsp_suggested: line?.ahsp_suggested === true,
-      }))
+        volume_source: line?.volume_source,
+        evidence_ids: line?.evidence_ids,
+        assumption_id: line?.assumption_id,
+        sheet_id: line?.sheet_id,
+        page_index: typeof line?.page_index === 'number' ? line.page_index : undefined,
+        source: VALID_SOURCES.has(line?.source ?? '') ? line?.source : undefined,
+      } as RabDraftLine))
     : [emptyRabLine()];
   return {
     projectId,

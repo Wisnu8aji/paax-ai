@@ -5,13 +5,19 @@ from paax_db.project_graph_intent import parse_query_plan
 from paax_db.project_graph_repository import build_and_activate_snapshot
 
 
-async def _seed_vocabulary(session):
-    session.add(models.Project(id="PROJECT-INTENT", owner_id="OWNER-A", name="Intent Project"))
+async def _seed_vocabulary(
+    session,
+    *,
+    project_id="PROJECT-INTENT",
+    snapshot_id="SNAP-INTENT",
+    extra_element_types=(),
+):
+    session.add(models.Project(id=project_id, owner_id="OWNER-A", name="Intent Project"))
     await session.commit()
     await build_and_activate_snapshot(
         session,
-        project_id="PROJECT-INTENT",
-        snapshot_id="SNAP-INTENT",
+        project_id=project_id,
+        snapshot_id=snapshot_id,
         schema_version="paax.pckm.graph.v1",
         source_manifest_hash="intent",
         generation_metadata={},
@@ -52,6 +58,18 @@ async def _seed_vocabulary(session):
                 "verification_status": "extracted",
                 "confidence": 1,
             },
+            *[
+                {
+                    "node_id": node_id,
+                    "node_type": "element_type",
+                    "canonical_name": canonical_name,
+                    "normalized_name": canonical_name.casefold(),
+                    "discipline": "structure",
+                    "verification_status": "extracted",
+                    "confidence": 1,
+                }
+                for node_id, canonical_name in extra_element_types
+            ],
         ],
         edges=[],
         evidence=[],
@@ -163,3 +181,88 @@ async def test_query_plan_mirror_uses_zod_field_names_and_marks_unknown_terms():
         "budget_tokens",
     }
     assert any("unrecognized_terms" in note and "xyzzy" in note for note in notes)
+
+
+@pytest.mark.asyncio
+async def test_material_words_require_a_calculation_signal_and_conflict_has_parser_precedence():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        await _seed_vocabulary(session)
+        material_plan, _ = await parse_query_plan(
+            session, project_id="PROJECT-INTENT", snapshot_id="SNAP-INTENT", query="material K1"
+        )
+        concrete_plan, _ = await parse_query_plan(
+            session, project_id="PROJECT-INTENT", snapshot_id="SNAP-INTENT", query="beton K1"
+        )
+        calculation_plan, _ = await parse_query_plan(
+            session,
+            project_id="PROJECT-INTENT",
+            snapshot_id="SNAP-INTENT",
+            query="berapa kebutuhan besi K1",
+        )
+        conflict_plan, _ = await parse_query_plan(
+            session, project_id="PROJECT-INTENT", snapshot_id="SNAP-INTENT", query="konflik dimensi"
+        )
+
+    assert material_plan.intent == "ELEMENT_LOOKUP"
+    assert [entity.value for entity in material_plan.entities] == ["K1"]
+    assert concrete_plan.intent == "ELEMENT_LOOKUP"
+    assert [entity.value for entity in concrete_plan.entities] == ["K1"]
+    assert calculation_plan.intent == "CALCULATION_REQUIRED"
+    assert conflict_plan.intent == "CONFLICT_LOOKUP"
+
+
+@pytest.mark.asyncio
+async def test_entity_token_overlap_matches_multiple_lintel_types_and_single_lintel_query():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        await _seed_vocabulary(
+            session,
+            project_id="PROJECT-INTENT-LINTEL",
+            snapshot_id="SNAP-INTENT-LINTEL",
+            extra_element_types=(
+                ("TYPE-LINTEL-15X10", "Lintel 15X10"),
+                ("TYPE-BALOK-LINTEL", "BALOK LINTEL"),
+            ),
+        )
+        natural_plan, natural_notes = await parse_query_plan(
+            session,
+            project_id="PROJECT-INTENT-LINTEL",
+            snapshot_id="SNAP-INTENT-LINTEL",
+            query="balok lintel di lantai mana saja",
+        )
+        single_plan, single_notes = await parse_query_plan(
+            session,
+            project_id="PROJECT-INTENT-LINTEL",
+            snapshot_id="SNAP-INTENT-LINTEL",
+            query="lintel",
+        )
+
+    expected_entities = {"Lintel 15X10", "BALOK LINTEL"}
+    assert {entity.value for entity in natural_plan.entities} == expected_entities
+    assert {entity.value for entity in single_plan.entities} == expected_entities
+    assert all("balok" not in note and "lintel" not in note for note in natural_notes + single_notes)
+
+
+@pytest.mark.asyncio
+async def test_entity_token_overlap_leaves_generic_token_unrecognized_after_eight_types():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        await _seed_vocabulary(
+            session,
+            project_id="PROJECT-INTENT-GENERIC",
+            snapshot_id="SNAP-INTENT-GENERIC",
+            extra_element_types=[(f"TYPE-BALOK-{index}", f"Balok {index}") for index in range(9)],
+        )
+        plan, notes = await parse_query_plan(
+            session,
+            project_id="PROJECT-INTENT-GENERIC",
+            snapshot_id="SNAP-INTENT-GENERIC",
+            query="balok",
+        )
+
+    assert plan.entities == []
+    assert any("unrecognized_terms" in note and "balok" in note for note in notes)

@@ -1,0 +1,5 @@
+
+> ai-orchestrator@0.1.0 dev G:\paax-ai-main\services\ai-orchestrator
+> tsx src/index.ts
+
+AI Orchestrator berjalan di port 8082

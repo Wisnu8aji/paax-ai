@@ -1,15 +1,11 @@
-"""Deterministic project-level canonicalization for drawing level evidence.
-
-This module deliberately has no network path.  The optional provider protocol
-is only an extension seam for a later, separately-gated semantic review.
-"""
+"""Deterministic level canonicalization with bounded semantic review proposals."""
 from __future__ import annotations
 
 import re
 import unicodedata
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
-from typing import Protocol, Sequence
+from typing import Any, Literal, Mapping, Protocol, Sequence
 
 from app.project_graph.models import NodeSourceRef
 from app.project_graph.synthesis_types import SheetFact, SheetKnowledgePatch
@@ -42,12 +38,68 @@ _ROOF_VARIANT = re.compile(
     rf"\bLANTAI[\s-]+ATAP[\s-]+P\b.*[+\-{re.escape(_PLUS_MINUS_CHARS)}]\s*\d", re.IGNORECASE
 )
 
+SEMANTIC_PROMPT_VERSION = "level-semantic-v1"
+FLASH_CONFIDENCE_FLOOR = 0.75
+
+
+@dataclass(frozen=True)
+class LevelSemanticCandidate:
+    candidate_id: str
+    raw: str
+    normalized: str | None
+    classification: str
+    deterministic_canonical: str | None
+    canonical_levels: tuple[str, ...]
+    evidence_refs: tuple[str, ...]
+    context: Mapping[str, str]
+
+    def as_audit_input(self) -> dict[str, object]:
+        return {
+            "candidate_id": self.candidate_id,
+            "raw": self.raw,
+            "normalized": self.normalized,
+            "classification": self.classification,
+            "deterministic_canonical": self.deterministic_canonical,
+            "canonical_levels": list(self.canonical_levels),
+            "evidence_refs": list(self.evidence_refs),
+            "context": dict(self.context),
+        }
+
+
+@dataclass(frozen=True)
+class LevelProviderResult:
+    """Provider output plus the metadata required for an immutable audit trail."""
+
+    payload: Mapping[str, Any]
+    model: str
+    prompt_version: str
+    prompt_hash: str
+
+
+@dataclass(frozen=True)
+class LevelProviderAudit:
+    candidate_id: str
+    tier: Literal["flash", "pro"]
+    model: str
+    prompt_version: str
+    prompt_hash: str
+    input: Mapping[str, object]
+    output: Mapping[str, Any]
+    rationale: str
+    validated_decision: Literal["merge_to", "possibly_same", "keep_separate"]
+    validation_note: str
+
 
 class LevelSemanticReviewProvider(Protocol):
-    """Future-only semantic review seam; canonicalization never calls it yet."""
+    """Propose a level identity only; this protocol never mutates source facts."""
 
-    def propose(self, *, candidates: tuple[str, ...]) -> object:
-        """Return a bounded review proposal in a later gated integration."""
+    def propose(
+        self,
+        candidate: LevelSemanticCandidate,
+        *,
+        tier: Literal["flash", "pro"],
+    ) -> LevelProviderResult:
+        """Return one auditable semantic proposal for a bounded candidate."""
 
 
 @dataclass(frozen=True)
@@ -73,6 +125,7 @@ class LevelCanonicalization:
     missing_information: tuple[str, ...]
     possibly_same: tuple[LevelReviewPair, ...]
     levels: tuple[CanonicalLevel, ...]
+    provider_audits: tuple[LevelProviderAudit, ...]
 
 
 def _text_key(value: str) -> str:
@@ -177,56 +230,246 @@ def _classify(
     return "UNCLASSIFIED", None, None, ()
 
 
+def _numbered_floor(value: str | None) -> str | None:
+    if value is None:
+        return None
+    match = _FLOOR_NUMBER.search(value)
+    return match.group("number") if match is not None else None
+
+
+def _proposal_payload(
+    payload: Mapping[str, Any],
+) -> tuple[Literal["merge_to", "possibly_same", "keep_separate"], str | None, str, float] | None:
+    decision = payload.get("decision")
+    rationale = payload.get("rationale")
+    confidence = payload.get("confidence")
+    merge_to = payload.get("merge_to")
+    if decision not in {"merge_to", "possibly_same", "keep_separate"}:
+        return None
+    if not isinstance(rationale, str) or not rationale.strip():
+        return None
+    if isinstance(confidence, bool) or not isinstance(confidence, (int, float)):
+        return None
+    confidence = float(confidence)
+    if not 0.0 <= confidence <= 1.0:
+        return None
+    if merge_to is not None and (not isinstance(merge_to, str) or not merge_to.strip()):
+        return None
+    return decision, merge_to.strip() if isinstance(merge_to, str) else None, rationale.strip(), confidence
+
+
+def _validate_semantic_proposal(
+    candidate: LevelSemanticCandidate,
+    result: LevelProviderResult,
+) -> tuple[Literal["merge_to", "possibly_same", "keep_separate"], str | None, str, float, str]:
+    parsed = _proposal_payload(result.payload)
+    if parsed is None:
+        return "possibly_same", None, "Provider proposal contract was invalid.", 0.0, "invalid provider proposal"
+    decision, merge_to, rationale, confidence = parsed
+    canonical_by_key = {_text_key(level): level for level in candidate.canonical_levels}
+    if decision != "merge_to":
+        return decision, merge_to, rationale, confidence, "accepted non-merge proposal"
+    target = canonical_by_key.get(_text_key(merge_to or ""))
+    if target is None:
+        return "possibly_same", None, rationale, confidence, "invalid merge target: not a project canonical level"
+    source_number = _numbered_floor(candidate.deterministic_canonical or candidate.raw)
+    target_number = _numbered_floor(target)
+    if source_number is not None and target_number is not None and source_number != target_number:
+        return "possibly_same", None, rationale, confidence, "numbered floors differ: automatic merge prohibited"
+    return "merge_to", target, rationale, confidence, "merge target validated deterministically"
+
+
+def _semantic_candidate(
+    *,
+    fact: SheetFact,
+    patch: SheetKnowledgePatch,
+    kind: str,
+    canonical: str | None,
+    canonical_levels: Sequence[str],
+) -> LevelSemanticCandidate:
+    return LevelSemanticCandidate(
+        candidate_id=fact.fact_id,
+        raw=fact.raw,
+        normalized=fact.normalized,
+        classification=kind,
+        deterministic_canonical=canonical,
+        canonical_levels=tuple(sorted(set(canonical_levels), key=str.casefold)),
+        evidence_refs=tuple(sorted(set(fact.evidence_refs))),
+        context={
+            "document_id": patch.document_id,
+            "sheet_id": patch.sheet_id,
+            "page_index": str(patch.page_index),
+            "discipline": patch.discipline,
+        },
+    )
+
+
+def _audit(
+    *,
+    candidate: LevelSemanticCandidate,
+    tier: Literal["flash", "pro"],
+    result: LevelProviderResult,
+    decision: Literal["merge_to", "possibly_same", "keep_separate"],
+    rationale: str,
+    note: str,
+) -> LevelProviderAudit:
+    return LevelProviderAudit(
+        candidate_id=candidate.candidate_id,
+        tier=tier,
+        model=result.model,
+        prompt_version=result.prompt_version,
+        prompt_hash=result.prompt_hash,
+        input=candidate.as_audit_input(),
+        output=dict(result.payload),
+        rationale=rationale,
+        validated_decision=decision,
+        validation_note=note,
+    )
+
+
 def canonicalize_levels(
     patches: Sequence[SheetKnowledgePatch],
     provider: LevelSemanticReviewProvider | None = None,
 ) -> LevelCanonicalization:
-    """Return copied patches with only deterministic level identities re-keyed.
+    """Return copied patches with deterministic or validated semantic level keys.
 
-    ``provider`` intentionally remains unused: unresolved semantic cases are
-    surfaced as review information until the separately authorized provider
-    integration is added.
+    Semantic output remains a bounded, auditable proposal.  It may only select
+    an already-known project canonical level and is always marked for review.
     """
 
-    del provider
     elevation_map, missing_information = _explicit_elevation_map(patches)
     classifications: dict[str, tuple[str, str | None, str | None, tuple[str, ...]]] = {}
+    fact_context: list[tuple[SheetKnowledgePatch, SheetFact]] = []
+    for patch in patches:
+        for fact in patch.facts:
+            if fact.category != "levels":
+                continue
+            classifications[fact.fact_id] = _classify(fact, elevation_map)
+            fact_context.append((patch, fact))
+
+    canonical_levels = sorted(
+        {
+            canonical
+            for _kind, canonical, _elevation_value, _mapping_refs in classifications.values()
+            if canonical is not None
+        },
+        key=str.casefold,
+    )
+    provider_audits: list[LevelProviderAudit] = []
+    semantic_pairs: list[LevelReviewPair] = []
+    if provider is not None:
+        for patch, fact in fact_context:
+            kind, canonical, elevation, mapping_refs = classifications[fact.fact_id]
+            if kind not in {"FLOOR_NAME_AMBIGUOUS", "UNCLASSIFIED"}:
+                continue
+            candidate = _semantic_candidate(
+                fact=fact,
+                patch=patch,
+                kind=kind,
+                canonical=canonical,
+                canonical_levels=canonical_levels,
+            )
+            try:
+                flash_result = provider.propose(candidate, tier="flash")
+                if not isinstance(flash_result, LevelProviderResult):
+                    raise TypeError("provider returned an unsupported level result")
+                decision, target, rationale, confidence, note = _validate_semantic_proposal(
+                    candidate,
+                    flash_result,
+                )
+                provider_audits.append(
+                    _audit(
+                        candidate=candidate,
+                        tier="flash",
+                        result=flash_result,
+                        decision=decision,
+                        rationale=rationale,
+                        note=note,
+                    )
+                )
+            except Exception as exc:
+                missing_information.append(
+                    f"level provider Flash unavailable for {fact.raw}: {exc}"
+                )
+                continue
+
+            # A fully unclassified level has no deterministic identity, so it
+            # receives the expensive thinking pass even if Flash sounds sure.
+            # Other candidates only escalate when Flash explicitly lacks confidence.
+            if kind == "UNCLASSIFIED" or confidence < FLASH_CONFIDENCE_FLOOR:
+                try:
+                    pro_result = provider.propose(candidate, tier="pro")
+                    if not isinstance(pro_result, LevelProviderResult):
+                        raise TypeError("provider returned an unsupported level result")
+                    decision, target, rationale, confidence, note = _validate_semantic_proposal(
+                        candidate,
+                        pro_result,
+                    )
+                    provider_audits.append(
+                        _audit(
+                            candidate=candidate,
+                            tier="pro",
+                            result=pro_result,
+                            decision=decision,
+                            rationale=rationale,
+                            note=note,
+                        )
+                    )
+                except Exception as exc:
+                    missing_information.append(
+                        f"level provider Pro unavailable for {fact.raw}: {exc}"
+                    )
+
+            if decision == "merge_to" and target is not None:
+                classifications[fact.fact_id] = ("SEMANTIC_MERGED", target, elevation, mapping_refs)
+            elif decision == "possibly_same":
+                missing_information.append(
+                    f"level provider review: {fact.raw} possibly same as {target or 'an unresolved canonical level'}"
+                )
+                if canonical is not None and target is not None and canonical != target:
+                    semantic_pairs.append(
+                        LevelReviewPair(
+                            left=canonical,
+                            right=target,
+                            evidence_refs=tuple(sorted(set(fact.evidence_refs))),
+                        )
+                    )
+
     aliases: dict[str, set[str]] = {}
     elevations: dict[str, set[str]] = {}
     evidence_by_level: dict[str, set[str]] = {}
     review_by_level: dict[str, bool] = {}
     sources_by_level: dict[str, list[NodeSourceRef]] = {}
 
-    for patch in patches:
-        for fact in patch.facts:
-            if fact.category != "levels":
-                continue
-            classification = _classify(fact, elevation_map)
-            classifications[fact.fact_id] = classification
-            kind, canonical, elevation, mapping_refs = classification
-            if canonical is None:
-                if kind in {"NUMBER_NOISE", "ELEVATION_AMBIGUOUS"}:
-                    missing_information.append(
-                        f"{patch.sheet_id} page {patch.page_index + 1}: {kind} level candidate {fact.raw} requires review"
-                    )
-                continue
-            aliases.setdefault(canonical, set()).add(fact.raw)
-            if fact.normalized:
-                aliases[canonical].add(fact.normalized)
-            aliases[canonical].add(canonical)
-            if elevation is not None:
-                elevations.setdefault(canonical, set()).add(elevation)
-            evidence_by_level.setdefault(canonical, set()).update(fact.evidence_refs)
-            evidence_by_level[canonical].update(mapping_refs)
-            review_by_level[canonical] = review_by_level.get(canonical, False) or kind == "FLOOR_NAME_AMBIGUOUS"
-            sources_by_level.setdefault(canonical, []).append(
-                NodeSourceRef(
-                    document_id=patch.document_id,
-                    page_index=patch.page_index,
-                    sheet_id=patch.sheet_id,
-                    evidence_refs=sorted(set(fact.evidence_refs) | set(mapping_refs)),
+    for patch, fact in fact_context:
+        classification = classifications[fact.fact_id]
+        kind, canonical, elevation, mapping_refs = classification
+        if canonical is None:
+            if kind in {"NUMBER_NOISE", "ELEVATION_AMBIGUOUS"}:
+                missing_information.append(
+                    f"{patch.sheet_id} page {patch.page_index + 1}: {kind} level candidate {fact.raw} requires review"
                 )
+            continue
+        aliases.setdefault(canonical, set()).add(fact.raw)
+        if fact.normalized:
+            aliases[canonical].add(fact.normalized)
+        aliases[canonical].add(canonical)
+        if elevation is not None:
+            elevations.setdefault(canonical, set()).add(elevation)
+        evidence_by_level.setdefault(canonical, set()).update(fact.evidence_refs)
+        evidence_by_level[canonical].update(mapping_refs)
+        review_by_level[canonical] = review_by_level.get(canonical, False) or kind in {
+            "FLOOR_NAME_AMBIGUOUS",
+            "SEMANTIC_MERGED",
+        }
+        sources_by_level.setdefault(canonical, []).append(
+            NodeSourceRef(
+                document_id=patch.document_id,
+                page_index=patch.page_index,
+                sheet_id=patch.sheet_id,
+                evidence_refs=sorted(set(fact.evidence_refs) | set(mapping_refs)),
             )
+        )
 
     copied_patches: list[SheetKnowledgePatch] = []
     for patch in patches:
@@ -258,7 +501,7 @@ def canonicalize_levels(
                 facts.append(fact.model_copy(update={"normalized": None, "attributes": attributes}))
         copied_patches.append(patch.model_copy(update={"facts": facts}))
 
-    pairs: list[LevelReviewPair] = []
+    pairs: list[LevelReviewPair] = list(semantic_pairs)
     roof_variants = [
         canonical
         for canonical in aliases
@@ -308,4 +551,5 @@ def canonicalize_levels(
         missing_information=tuple(sorted(set(missing_information))),
         possibly_same=tuple(sorted(pairs, key=lambda pair: (pair.left, pair.right))),
         levels=tuple(levels),
+        provider_audits=tuple(provider_audits),
     )

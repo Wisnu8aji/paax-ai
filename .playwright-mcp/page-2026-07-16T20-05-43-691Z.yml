@@ -1,0 +1,1750 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e3]:
+    - complementary "Navigasi utama" [ref=f2e4]:
+      - button "PAAX — ke Overview" [ref=f2e5] [cursor=pointer]
+      - navigation [ref=f2e8]:
+        - button "Overview" [ref=f2e9] [cursor=pointer]:
+          - tooltip "Overview"
+        - button "Project Studio" [ref=f2e16] [cursor=pointer]:
+          - tooltip "Project Studio"
+        - button "Command Room" [ref=f2e20] [cursor=pointer]:
+          - tooltip "Command Room"
+        - button "Site Agent" [ref=f2e25] [cursor=pointer]:
+          - tooltip "Site Agent"
+        - button "Files & Documents" [ref=f2e32] [cursor=pointer]:
+          - tooltip "Files & Documents"
+        - button "Ledger" [ref=f2e38] [cursor=pointer]:
+          - tooltip "Ledger"
+        - button "Artifacts" [ref=f2e42] [cursor=pointer]:
+          - tooltip "Artifacts"
+        - button "Team" [ref=f2e48] [cursor=pointer]:
+          - tooltip "Team"
+      - generic [ref=f2e55]:
+        - button "Settings" [ref=f2e56] [cursor=pointer]:
+          - tooltip "Settings"
+        - button "Profile" [ref=f2e61] [cursor=pointer]:
+          - generic [ref=f2e62]: BA
+          - tooltip "Profile"
+    - main [ref=f2e64]:
+      - generic [ref=f2e66]:
+        - generic [ref=f2e67]:
+          - generic [ref=f2e68]: PAAX
+          - navigation "Breadcrumb" [ref=f2e69]:
+            - link "Projects" [ref=f2e70] [cursor=pointer]:
+              - /url: "#"
+            - generic [ref=f2e71]: ›
+            - link "PLHUT Campus – Building A" [ref=f2e72] [cursor=pointer]:
+              - /url: "#"
+            - generic [ref=f2e73]: ›
+            - link "Building A" [ref=f2e74] [cursor=pointer]:
+              - /url: "#"
+          - strong [ref=f2e76]: Drawing Intelligence
+          - generic [ref=f2e77]:
+            - generic [ref=f2e78]:
+              - textbox "Search sheets, items, or tags" [ref=f2e79]
+              - generic: ⌘K
+            - button "Filter" [ref=f2e81] [cursor=pointer]
+            - button "Compare Revisions" [ref=f2e87] [cursor=pointer]
+            - button "Analyze Selected" [ref=f2e93] [cursor=pointer]
+            - button "Share" [ref=f2e97] [cursor=pointer]
+            - generic "Aji Ramadhan — online" [ref=f2e104]: AR
+        - navigation "Workspace mode" [ref=f2e106]:
+          - tab "Files 1" [ref=f2e107] [cursor=pointer]:
+            - text: Files
+            - generic [ref=f2e110]: "1"
+          - tab "Sheets 6" [ref=f2e111] [cursor=pointer]:
+            - text: Sheets
+            - generic [ref=f2e117]: "6"
+          - tab "Analyze" [selected] [ref=f2e118] [cursor=pointer]
+          - tab "Review 7" [ref=f2e121] [cursor=pointer]:
+            - text: Review
+            - generic [ref=f2e129]: "7"
+          - tab "Quantities 96" [ref=f2e130] [cursor=pointer]:
+            - text: Quantities
+            - generic [ref=f2e133]: "96"
+          - tab "Handoff 24" [ref=f2e134] [cursor=pointer]:
+            - text: Handoff
+            - generic [ref=f2e137]: "24"
+          - generic "Workflow progress" [ref=f2e138]: Files 1 → Sheets 6 → Verified 24 → Ready
+        - generic [ref=f2e139]:
+          - generic [ref=f2e140]:
+            - complementary [ref=f2e141]:
+              - generic [ref=f2e142]:
+                - generic [ref=f2e143]: File & Sheet Navigator
+                - button "Collapse navigator" [ref=f2e144] [cursor=pointer]
+              - generic [ref=f2e148]:
+                - generic [ref=f2e149]:
+                  - generic [ref=f2e154]:
+                    - generic [ref=f2e155]: Floor Plan.pdf
+                    - generic [ref=f2e156]: 24.4 MB · 6 sheets
+                  - generic [ref=f2e157]: Analyzed
+                - generic [ref=f2e158]:
+                  - generic [ref=f2e159]: Disciplines (All)
+                  - generic [ref=f2e160]:
+                    - button "STR 6" [ref=f2e161] [cursor=pointer]
+                    - button "ARC 6" [ref=f2e162] [cursor=pointer]
+                    - button "MEP 6" [ref=f2e163] [cursor=pointer]
+                    - button "CIV 5" [ref=f2e164] [cursor=pointer]
+                    - button "OTH 0" [ref=f2e165] [cursor=pointer]
+                - textbox "Search sheets..." [ref=f2e166]
+                - generic [ref=f2e167]:
+                  - generic [ref=f2e168]: FLOORS
+                  - generic [ref=f2e169]:
+                    - button "F00 – Ground Floor Queued 1" [ref=f2e3838] [cursor=pointer]:
+                      - generic [ref=f2e174]: F00 – Ground Floor
+                      - generic [ref=f2e3839]: Queued
+                      - generic [ref=f2e175]: "1"
+                    - button "F01 – Floor 1 Queued 1" [ref=f2e3840] [cursor=pointer]:
+                      - generic [ref=f2e180]: F01 – Floor 1
+                      - generic [ref=f2e3841]: Queued
+                      - generic [ref=f2e181]: "1"
+                    - generic [ref=f2e182]:
+                      - button "F02 – Floor 2 Processing 1" [ref=f2e3842] [cursor=pointer]:
+                        - generic [ref=f2e186]: F02 – Floor 2
+                        - generic [ref=f2e3843]: Processing
+                        - generic [ref=f2e187]: "1"
+                      - generic [ref=f2e189] [cursor=pointer]:
+                        - generic [ref=f2e190]:
+                          - img "A2-102 — Second Floor Plan" [ref=f2e191]
+                          - checkbox "Select A2-102" [checked] [ref=f2e223]
+                        - generic [ref=f2e224]:
+                          - generic [ref=f2e225]: A2-102
+                          - generic [ref=f2e226]: 1:100
+                          - button "Sheet menu" [ref=f2e228]
+                        - generic [ref=f2e233]: Second Floor Plan
+                    - button "F03 – Floor 3 Queued 1" [ref=f2e3844] [cursor=pointer]:
+                      - generic [ref=f2e238]: F03 – Floor 3
+                      - generic [ref=f2e3845]: Queued
+                      - generic [ref=f2e239]: "1"
+                    - button "F04 – Floor 4 Queued 1" [ref=f2e3846] [cursor=pointer]:
+                      - generic [ref=f2e244]: F04 – Floor 4
+                      - generic [ref=f2e3847]: Queued
+                      - generic [ref=f2e245]: "1"
+                    - button "ROOF – Roof Plan Queued 1" [ref=f2e3848] [cursor=pointer]:
+                      - generic [ref=f2e250]: ROOF – Roof Plan
+                      - generic [ref=f2e3849]: Queued
+                      - generic [ref=f2e251]: "1"
+              - button "Upload new files" [ref=f2e253] [cursor=pointer]
+            - generic [ref=f2e757]:
+              - generic [ref=f2e759]:
+                - generic [ref=f2e760]:
+                  - button "A2-102" [ref=f2e762] [cursor=pointer]
+                  - generic [ref=f2e763]:
+                    - button "Select Tool" [ref=f2e764] [cursor=pointer]
+                    - button "Pan Tool" [ref=f2e768] [cursor=pointer]
+                    - button "Measure Tool" [ref=f2e774] [cursor=pointer]
+                    - button "Markup Tool" [ref=f2e781] [cursor=pointer]
+                    - button "Takeoff Tool" [ref=f2e787] [cursor=pointer]
+                    - button "Calibrate Tool" [ref=f2e792] [cursor=pointer]
+                  - button "Layers" [ref=f2e798] [cursor=pointer]
+                - generic [ref=f2e805]:
+                  - img "A2-102 — Second Floor Plan" [ref=f2e807]:
+                    - generic [ref=f2e809]:
+                      - generic [ref=f2e810]: "1"
+                      - generic [ref=f2e813]: "2"
+                      - generic [ref=f2e816]: "3"
+                      - generic [ref=f2e819]: "4"
+                      - generic [ref=f2e822]: "5"
+                      - generic [ref=f2e825]: "6"
+                      - generic [ref=f2e828]: "7"
+                      - generic [ref=f2e831]: "8"
+                      - generic [ref=f2e834]: A
+                      - generic [ref=f2e837]: B
+                      - generic [ref=f2e840]: C
+                      - generic [ref=f2e843]: D
+                      - generic [ref=f2e846]: E
+                    - generic [ref=f2e849]:
+                      - generic [ref=f2e850]: "3600"
+                      - generic [ref=f2e852]: "7800"
+                      - generic [ref=f2e854]: "7800"
+                      - generic [ref=f2e856]: "7800"
+                      - generic [ref=f2e858]: "7800"
+                      - generic [ref=f2e860]: "7800"
+                      - generic [ref=f2e862]: "3600"
+                      - generic [ref=f2e864]: "46200"
+                    - generic [ref=f2e865]:
+                      - generic [ref=f2e866]:
+                        - generic [ref=f2e868]: OFFICE
+                        - generic [ref=f2e869]: "201"
+                      - generic [ref=f2e872]:
+                        - generic [ref=f2e874]: OFFICE
+                        - generic [ref=f2e875]: "202"
+                      - generic [ref=f2e878]:
+                        - generic [ref=f2e880]: MEETING
+                        - generic [ref=f2e881]: "203"
+                      - generic [ref=f2e884]:
+                        - generic [ref=f2e886]: CONFERENCE
+                        - generic [ref=f2e887]: "204"
+                      - generic [ref=f2e890]:
+                        - generic [ref=f2e892]: OFFICE
+                        - generic [ref=f2e893]: "205"
+                      - generic [ref=f2e896]:
+                        - generic [ref=f2e898]: OPEN OFFICE
+                        - generic [ref=f2e899]: "209"
+                      - generic [ref=f2e902]:
+                        - generic [ref=f2e904]: LIFT LOBBY
+                        - generic [ref=f2e905]: "210"
+                      - generic [ref=f2e908]:
+                        - generic [ref=f2e910]: CORE
+                        - generic [ref=f2e911]: "211"
+                      - generic [ref=f2e914]:
+                        - generic [ref=f2e916]: CORRIDOR
+                        - generic [ref=f2e917]: "212"
+                      - generic [ref=f2e920]:
+                        - generic [ref=f2e922]: OFFICE
+                        - generic [ref=f2e923]: "206"
+                      - generic [ref=f2e926]:
+                        - generic [ref=f2e928]: PANTRY
+                        - generic [ref=f2e929]: "207"
+                      - generic [ref=f2e932]:
+                        - generic [ref=f2e934]: BREAKOUT
+                        - generic [ref=f2e935]: "208"
+                      - generic [ref=f2e938]:
+                        - generic [ref=f2e940]: OPEN OFFICE
+                        - generic [ref=f2e941]: "213"
+                      - generic [ref=f2e944]:
+                        - generic [ref=f2e946]: LOUNGE
+                        - generic [ref=f2e947]: "214"
+                    - generic [ref=f2e1048]:
+                      - generic [ref=f2e1049]:
+                        - generic [ref=f2e1052]: RC COLUMN
+                        - generic [ref=f2e1053]: 300x600
+                      - generic [ref=f2e1054]:
+                        - generic [ref=f2e1057]: RC BEAM
+                        - generic [ref=f2e1058]: 300x600
+                      - generic [ref=f2e1059]:
+                        - generic [ref=f2e1062]: RC SLAB
+                        - generic [ref=f2e1063]: t = 150mm
+                      - generic [ref=f2e1064]:
+                        - generic [ref=f2e1067]: SHEAR WALL
+                        - generic [ref=f2e1068]: t = 200mm
+                  - generic [ref=f2e1069]:
+                    - button "Zoom out" [ref=f2e1070] [cursor=pointer]
+                    - button "49%" [ref=f2e1072] [cursor=pointer]
+                    - button "Zoom in" [ref=f2e1073] [cursor=pointer]
+                    - button "Fit" [ref=f2e1076] [cursor=pointer]
+                    - generic "Current sheet design scale" [ref=f2e1083]: "Scale: 1:100"
+                  - generic [ref=f2e1084]:
+                    - generic [ref=f2e1085]: Viewport Navigator
+                    - img "A2-102 — Second Floor Plan" [ref=f2e1087]
+              - generic [ref=f2e1337]:
+                - generic [ref=f2e1339]:
+                  - strong [ref=f2e1340]: Quantity Dock
+                  - generic [ref=f2e1341]: 96 Items
+                  - button "Filter by status" [ref=f2e1343] [cursor=pointer]
+                  - generic [ref=f2e1346]:
+                    - button "Columns" [ref=f2e1348] [cursor=pointer]
+                    - button "Settings" [ref=f2e1351] [cursor=pointer]
+                    - button "Export quantity register" [ref=f2e1355] [cursor=pointer]
+                    - button "Maximize dock" [ref=f2e1359] [cursor=pointer]
+                    - button "Collapse dock" [ref=f2e1365] [cursor=pointer]
+                - generic [ref=f2e1368]:
+                  - button "Detected Items" [ref=f2e1369] [cursor=pointer]
+                  - button "Quantities" [ref=f2e1370] [cursor=pointer]
+                  - button "Review Queue 7" [ref=f2e1371] [cursor=pointer]:
+                    - text: Review Queue
+                    - generic [ref=f2e1372]: "7"
+                  - button "Assumptions" [ref=f2e1373] [cursor=pointer]
+                  - button "Activity" [ref=f2e1374] [cursor=pointer]
+                - table [ref=f2e1376]:
+                  - rowgroup [ref=f2e1377]:
+                    - row [ref=f2e1378]:
+                      - columnheader [ref=f2e1379]
+                      - columnheader "Item Code" [ref=f2e1380] [cursor=pointer]
+                      - columnheader "Work Item" [ref=f2e1381]
+                      - columnheader "Floor" [ref=f2e1382] [cursor=pointer]
+                      - columnheader "Category" [ref=f2e1383]
+                      - columnheader "Formula" [ref=f2e1384]
+                      - columnheader "Unit" [ref=f2e1385]
+                      - columnheader "Qty" [ref=f2e1386] [cursor=pointer]
+                      - columnheader "Status" [ref=f2e1387]
+                      - columnheader "Source" [ref=f2e1388]
+                      - columnheader [ref=f2e1389]
+                  - rowgroup [ref=f2e1390]:
+                    - row [ref=f2e1391] [cursor=pointer]:
+                      - cell [ref=f2e1392]:
+                        - checkbox [checked] [ref=f2e1393]
+                      - cell "STR-FOOT-001" [ref=f2e1394]
+                      - cell [ref=f2e1395]:
+                        - button "Footings" [ref=f2e1396]
+                      - cell "F00 – Found." [ref=f2e1399]
+                      - cell "column" [ref=f2e1400]
+                      - cell [ref=f2e1401]
+                      - cell "No." [ref=f2e1406]
+                      - cell "24" [ref=f2e1407]
+                      - cell "Verified" [ref=f2e1408]
+                      - cell "S1-101" [ref=f2e1410]
+                      - cell [ref=f2e1411]:
+                        - button "Row actions" [ref=f2e1412]
+                    - row [ref=f2e1417] [cursor=pointer]:
+                      - cell [ref=f2e1418]:
+                        - checkbox [ref=f2e1419]
+                      - cell "STR-COL-BG-001" [ref=f2e1420]
+                      - cell [ref=f2e1421]:
+                        - button "Columns (Below Grade)" [ref=f2e1422]
+                      - cell "F00 – Found." [ref=f2e1425]
+                      - cell "column" [ref=f2e1426]
+                      - cell [ref=f2e1427]
+                      - cell "No." [ref=f2e1432]
+                      - cell "18" [ref=f2e1433]
+                      - cell "AI detected" [ref=f2e1434]
+                      - cell "S1-101" [ref=f2e1436]
+                      - cell [ref=f2e1437]:
+                        - button "Row actions" [ref=f2e1438]
+                    - row [ref=f2e1443] [cursor=pointer]:
+                      - cell [ref=f2e1444]:
+                        - checkbox [ref=f2e1445]
+                      - cell "STR-PCAP-001" [ref=f2e1446]
+                      - cell [ref=f2e1447]:
+                        - button "Pile Caps" [ref=f2e1448]
+                      - cell "F00 – Found." [ref=f2e1451]
+                      - cell "column" [ref=f2e1452]
+                      - cell [ref=f2e1453]
+                      - cell "No." [ref=f2e1458]
+                      - cell "12" [ref=f2e1459]
+                      - cell "Needs review" [ref=f2e1460]
+                      - cell "S1-101" [ref=f2e1462]
+                      - cell [ref=f2e1463]:
+                        - button "Row actions" [ref=f2e1464]
+                    - row [ref=f2e1469] [cursor=pointer]:
+                      - cell [ref=f2e1470]:
+                        - checkbox [checked] [ref=f2e1471]
+                      - cell "STR-GBM-001" [ref=f2e1472]
+                      - cell [ref=f2e1473]:
+                        - button "Grade Beams" [ref=f2e1474]
+                      - cell "F00 – Found." [ref=f2e1477]
+                      - cell "beam" [ref=f2e1478]
+                      - cell [ref=f2e1479]
+                      - cell "m" [ref=f2e1483]
+                      - cell "124.30" [ref=f2e1484]
+                      - cell "Verified" [ref=f2e1485]
+                      - cell "S1-101" [ref=f2e1487]
+                      - cell [ref=f2e1488]:
+                        - button "Row actions" [ref=f2e1489]
+                    - row [ref=f2e1494] [cursor=pointer]:
+                      - cell [ref=f2e1495]:
+                        - checkbox [ref=f2e1496]
+                      - cell "STR-COL-00-001" [ref=f2e1497]
+                      - cell [ref=f2e1498]:
+                        - button "Reinforced Concrete Column" [ref=f2e1499]
+                      - cell "Ground Floor" [ref=f2e1502]
+                      - cell "column" [ref=f2e1503]
+                      - cell [ref=f2e1504]
+                      - cell "No." [ref=f2e1509]
+                      - cell "24" [ref=f2e1510]
+                      - cell "AI detected" [ref=f2e1511]
+                      - 'cell "A2-100: S2.1" [ref=f2e1513]'
+                      - cell [ref=f2e1514]:
+                        - button "Row actions" [ref=f2e1515]
+                    - row [ref=f2e1520] [cursor=pointer]:
+                      - cell [ref=f2e1521]:
+                        - checkbox [ref=f2e1522]
+                      - cell "STR-BEAM-00-001" [ref=f2e1523]
+                      - cell [ref=f2e1524]:
+                        - button "Reinforced Concrete Beam" [ref=f2e1525]
+                      - cell "Ground Floor" [ref=f2e1528]
+                      - cell "beam" [ref=f2e1529]
+                      - cell [ref=f2e1530]
+                      - cell "m" [ref=f2e1534]
+                      - cell "482.60" [ref=f2e1535]
+                      - cell "Needs review" [ref=f2e1536]
+                      - 'cell "A2-100: S2.1" [ref=f2e1538]'
+                      - cell [ref=f2e1539]:
+                        - button "Row actions" [ref=f2e1540]
+                    - row [ref=f2e1545] [cursor=pointer]:
+                      - cell [ref=f2e1546]:
+                        - checkbox [checked] [ref=f2e1547]
+                      - cell "STR-SLAB-00-001" [ref=f2e1548]
+                      - cell [ref=f2e1549]:
+                        - button "Reinforced Concrete Slab" [ref=f2e1550]
+                      - cell "Ground Floor" [ref=f2e1553]
+                      - cell "slab" [ref=f2e1554]
+                      - cell [ref=f2e1555]
+                      - cell "m²" [ref=f2e1559]
+                      - cell "1,284.30" [ref=f2e1560]
+                      - cell "Verified" [ref=f2e1561]
+                      - 'cell "A2-100: S2.1" [ref=f2e1563]'
+                      - cell [ref=f2e1564]:
+                        - button "Row actions" [ref=f2e1565]
+                    - row [ref=f2e1570] [cursor=pointer]:
+                      - cell [ref=f2e1571]:
+                        - checkbox [ref=f2e1572]
+                      - cell "STR-SHW-00-001" [ref=f2e1573]
+                      - cell [ref=f2e1574]:
+                        - button "Shear Wall" [ref=f2e1575]
+                      - cell "Ground Floor" [ref=f2e1578]
+                      - cell "shear-wall" [ref=f2e1579]
+                      - cell [ref=f2e1580]
+                      - cell "m²" [ref=f2e1584]
+                      - cell "86.40" [ref=f2e1585]
+                      - cell "AI detected" [ref=f2e1586]
+                      - 'cell "A2-100: S2.1" [ref=f2e1588]'
+                      - cell [ref=f2e1589]:
+                        - button "Row actions" [ref=f2e1590]
+                    - row [ref=f2e1595] [cursor=pointer]:
+                      - cell [ref=f2e1596]:
+                        - checkbox [checked] [ref=f2e1597]
+                      - cell "STR-STAIR-00-001" [ref=f2e1598]
+                      - cell [ref=f2e1599]:
+                        - button "Staircase" [ref=f2e1600]
+                      - cell "Ground Floor" [ref=f2e1603]
+                      - cell "stair" [ref=f2e1604]
+                      - cell [ref=f2e1605]
+                      - cell "No." [ref=f2e1610]
+                      - cell "2" [ref=f2e1611]
+                      - cell "Verified" [ref=f2e1612]
+                      - 'cell "A2-100: S2.1" [ref=f2e1614]'
+                      - cell [ref=f2e1615]:
+                        - button "Row actions" [ref=f2e1616]
+                    - row [ref=f2e1621] [cursor=pointer]:
+                      - cell [ref=f2e1622]:
+                        - checkbox [checked] [ref=f2e1623]
+                      - cell "STR-COL-01-001" [ref=f2e1624]
+                      - cell [ref=f2e1625]:
+                        - button "Reinforced Concrete Column" [ref=f2e1626]
+                      - cell "Floor 1" [ref=f2e1629]
+                      - cell "column" [ref=f2e1630]
+                      - cell [ref=f2e1631]
+                      - cell "No." [ref=f2e1636]
+                      - cell "24" [ref=f2e1637]
+                      - cell "Verified" [ref=f2e1638]
+                      - 'cell "A2-11: S2.1" [ref=f2e1640]'
+                      - cell [ref=f2e1641]:
+                        - button "Row actions" [ref=f2e1642]
+                    - row [ref=f2e1647] [cursor=pointer]:
+                      - cell [ref=f2e1648]:
+                        - checkbox [ref=f2e1649]
+                      - cell "STR-BEAM-01-001" [ref=f2e1650]
+                      - cell [ref=f2e1651]:
+                        - button "Reinforced Concrete Beam" [ref=f2e1652]
+                      - cell "Floor 1" [ref=f2e1655]
+                      - cell "beam" [ref=f2e1656]
+                      - cell [ref=f2e1657]
+                      - cell "m" [ref=f2e1661]
+                      - cell "482.60" [ref=f2e1662]
+                      - cell "Needs review" [ref=f2e1663]
+                      - 'cell "A2-11: S2.1" [ref=f2e1665]'
+                      - cell [ref=f2e1666]:
+                        - button "Row actions" [ref=f2e1667]
+                    - row [ref=f2e1672] [cursor=pointer]:
+                      - cell [ref=f2e1673]:
+                        - checkbox [checked] [ref=f2e1674]
+                      - cell "STR-SLAB-01-001" [ref=f2e1675]
+                      - cell [ref=f2e1676]:
+                        - button "Reinforced Concrete Slab" [ref=f2e1677]
+                      - cell "Floor 1" [ref=f2e1680]
+                      - cell "slab" [ref=f2e1681]
+                      - cell [ref=f2e1682]
+                      - cell "m²" [ref=f2e1686]
+                      - cell "1,284.30" [ref=f2e1687]
+                      - cell "Verified" [ref=f2e1688]
+                      - 'cell "A2-11: S2.1" [ref=f2e1690]'
+                      - cell [ref=f2e1691]:
+                        - button "Row actions" [ref=f2e1692]
+                    - row [ref=f2e1697] [cursor=pointer]:
+                      - cell [ref=f2e1698]:
+                        - checkbox [checked] [ref=f2e1699]
+                      - cell "STR-SHW-01-001" [ref=f2e1700]
+                      - cell [ref=f2e1701]:
+                        - button "Shear Wall" [ref=f2e1702]
+                      - cell "Floor 1" [ref=f2e1705]
+                      - cell "shear-wall" [ref=f2e1706]
+                      - cell [ref=f2e1707]
+                      - cell "m²" [ref=f2e1711]
+                      - cell "86.40" [ref=f2e1712]
+                      - cell "Verified" [ref=f2e1713]
+                      - 'cell "A2-11: S2.1" [ref=f2e1715]'
+                      - cell [ref=f2e1716]:
+                        - button "Row actions" [ref=f2e1717]
+                    - row [ref=f2e1722] [cursor=pointer]:
+                      - cell [ref=f2e1723]:
+                        - checkbox [ref=f2e1724]
+                      - cell "STR-STAIR-01-001" [ref=f2e1725]
+                      - cell [ref=f2e1726]:
+                        - button "Staircase" [ref=f2e1727]
+                      - cell "Floor 1" [ref=f2e1730]
+                      - cell "stair" [ref=f2e1731]
+                      - cell [ref=f2e1732]
+                      - cell "No." [ref=f2e1737]
+                      - cell "2" [ref=f2e1738]
+                      - cell "AI detected" [ref=f2e1739]
+                      - 'cell "A2-11: S2.1" [ref=f2e1741]'
+                      - cell [ref=f2e1742]:
+                        - button "Row actions" [ref=f2e1743]
+                    - row [ref=f2e1748] [cursor=pointer]:
+                      - cell [ref=f2e1749]:
+                        - checkbox [checked] [ref=f2e1750]
+                      - cell "STR-COL-02-001" [ref=f2e1751]
+                      - cell [ref=f2e1752]:
+                        - button "Reinforced Concrete Column" [ref=f2e1753]
+                      - cell "Floor 2" [ref=f2e1756]
+                      - cell "column" [ref=f2e1757]
+                      - cell [ref=f2e1758]
+                      - cell "No." [ref=f2e1763]
+                      - cell "24" [ref=f2e1764]
+                      - cell "Verified" [ref=f2e1765]
+                      - 'cell "A2-12: S2.1" [ref=f2e1767]'
+                      - cell [ref=f2e1768]:
+                        - button "Row actions" [ref=f2e1769]
+                    - row [ref=f2e1774] [cursor=pointer]:
+                      - cell [ref=f2e1775]:
+                        - checkbox [ref=f2e1776]
+                      - cell "STR-BEAM-02-001" [ref=f2e1777]
+                      - cell [ref=f2e1778]:
+                        - button "Reinforced Concrete Beam" [ref=f2e1779]
+                      - cell "Floor 2" [ref=f2e1782]
+                      - cell "beam" [ref=f2e1783]
+                      - cell [ref=f2e1784]
+                      - cell "m" [ref=f2e1788]
+                      - cell "482.60" [ref=f2e1789]
+                      - cell "Needs review" [ref=f2e1790]
+                      - 'cell "A2-12: S2.1" [ref=f2e1792]'
+                      - cell [ref=f2e1793]:
+                        - button "Row actions" [ref=f2e1794]
+                    - row [ref=f2e1799] [cursor=pointer]:
+                      - cell [ref=f2e1800]:
+                        - checkbox [ref=f2e1801]
+                      - cell "STR-SLAB-02-001" [ref=f2e1802]
+                      - cell [ref=f2e1803]:
+                        - button "Reinforced Concrete Slab" [ref=f2e1804]
+                      - cell "Floor 2" [ref=f2e1807]
+                      - cell "slab" [ref=f2e1808]
+                      - cell [ref=f2e1809]
+                      - cell "m²" [ref=f2e1813]
+                      - cell "1,284.30" [ref=f2e1814]
+                      - cell "AI detected" [ref=f2e1815]
+                      - 'cell "A2-12: S2.1" [ref=f2e1817]'
+                      - cell [ref=f2e1818]:
+                        - button "Row actions" [ref=f2e1819]
+                    - row [ref=f2e1824] [cursor=pointer]:
+                      - cell [ref=f2e1825]:
+                        - checkbox [checked] [ref=f2e1826]
+                      - cell "STR-SHW-02-001" [ref=f2e1827]
+                      - cell [ref=f2e1828]:
+                        - button "Shear Wall" [ref=f2e1829]
+                      - cell "Floor 2" [ref=f2e1832]
+                      - cell "shear-wall" [ref=f2e1833]
+                      - cell [ref=f2e1834]
+                      - cell "m²" [ref=f2e1838]
+                      - cell "86.40" [ref=f2e1839]
+                      - cell "Verified" [ref=f2e1840]
+                      - 'cell "A2-12: S2.1" [ref=f2e1842]'
+                      - cell [ref=f2e1843]:
+                        - button "Row actions" [ref=f2e1844]
+                    - row [ref=f2e1849] [cursor=pointer]:
+                      - cell [ref=f2e1850]:
+                        - checkbox [ref=f2e1851]
+                      - cell "STR-STAIR-02-001" [ref=f2e1852]
+                      - cell [ref=f2e1853]:
+                        - button "Staircase" [ref=f2e1854]
+                      - cell "Floor 2" [ref=f2e1857]
+                      - cell "stair" [ref=f2e1858]
+                      - cell [ref=f2e1859]
+                      - cell "No." [ref=f2e1864]
+                      - cell "2" [ref=f2e1865]
+                      - cell "Needs review" [ref=f2e1866]
+                      - 'cell "A2-12: S2.1" [ref=f2e1868]'
+                      - cell [ref=f2e1869]:
+                        - button "Row actions" [ref=f2e1870]
+                    - row [ref=f2e1875] [cursor=pointer]:
+                      - cell [ref=f2e1876]:
+                        - checkbox [ref=f2e1877]
+                      - cell "STR-COL-03-001" [ref=f2e1878]
+                      - cell [ref=f2e1879]:
+                        - button "Reinforced Concrete Column" [ref=f2e1880]
+                      - cell "Floor 3" [ref=f2e1883]
+                      - cell "column" [ref=f2e1884]
+                      - cell [ref=f2e1885]
+                      - cell "No." [ref=f2e1890]
+                      - cell "24" [ref=f2e1891]
+                      - cell "AI detected" [ref=f2e1892]
+                      - 'cell "A2-13: S2.1" [ref=f2e1894]'
+                      - cell [ref=f2e1895]:
+                        - button "Row actions" [ref=f2e1896]
+                    - row [ref=f2e1901] [cursor=pointer]:
+                      - cell [ref=f2e1902]:
+                        - checkbox [ref=f2e1903]
+                      - cell "STR-BEAM-03-001" [ref=f2e1904]
+                      - cell [ref=f2e1905]:
+                        - button "Reinforced Concrete Beam" [ref=f2e1906]
+                      - cell "Floor 3" [ref=f2e1909]
+                      - cell "beam" [ref=f2e1910]
+                      - cell [ref=f2e1911]
+                      - cell "m" [ref=f2e1915]
+                      - cell "482.60" [ref=f2e1916]
+                      - cell "Needs review" [ref=f2e1917]
+                      - 'cell "A2-13: S2.1" [ref=f2e1919]'
+                      - cell [ref=f2e1920]:
+                        - button "Row actions" [ref=f2e1921]
+                    - row [ref=f2e1926] [cursor=pointer]:
+                      - cell [ref=f2e1927]:
+                        - checkbox [checked] [ref=f2e1928]
+                      - cell "STR-SLAB-03-001" [ref=f2e1929]
+                      - cell [ref=f2e1930]:
+                        - button "Reinforced Concrete Slab" [ref=f2e1931]
+                      - cell "Floor 3" [ref=f2e1934]
+                      - cell "slab" [ref=f2e1935]
+                      - cell [ref=f2e1936]
+                      - cell "m²" [ref=f2e1940]
+                      - cell "1,284.30" [ref=f2e1941]
+                      - cell "Verified" [ref=f2e1942]
+                      - 'cell "A2-13: S2.1" [ref=f2e1944]'
+                      - cell [ref=f2e1945]:
+                        - button "Row actions" [ref=f2e1946]
+                    - row [ref=f2e1951] [cursor=pointer]:
+                      - cell [ref=f2e1952]:
+                        - checkbox [ref=f2e1953]
+                      - cell "STR-SHW-03-001" [ref=f2e1954]
+                      - cell [ref=f2e1955]:
+                        - button "Shear Wall" [ref=f2e1956]
+                      - cell "Floor 3" [ref=f2e1959]
+                      - cell "shear-wall" [ref=f2e1960]
+                      - cell [ref=f2e1961]
+                      - cell "m²" [ref=f2e1965]
+                      - cell "86.40" [ref=f2e1966]
+                      - cell "AI detected" [ref=f2e1967]
+                      - 'cell "A2-13: S2.1" [ref=f2e1969]'
+                      - cell [ref=f2e1970]:
+                        - button "Row actions" [ref=f2e1971]
+                    - row [ref=f2e1976] [cursor=pointer]:
+                      - cell [ref=f2e1977]:
+                        - checkbox [checked] [ref=f2e1978]
+                      - cell "STR-STAIR-03-001" [ref=f2e1979]
+                      - cell [ref=f2e1980]:
+                        - button "Staircase" [ref=f2e1981]
+                      - cell "Floor 3" [ref=f2e1984]
+                      - cell "stair" [ref=f2e1985]
+                      - cell [ref=f2e1986]
+                      - cell "No." [ref=f2e1991]
+                      - cell "2" [ref=f2e1992]
+                      - cell "Verified" [ref=f2e1993]
+                      - 'cell "A2-13: S2.1" [ref=f2e1995]'
+                      - cell [ref=f2e1996]:
+                        - button "Row actions" [ref=f2e1997]
+                    - row [ref=f2e2002] [cursor=pointer]:
+                      - cell [ref=f2e2003]:
+                        - checkbox [checked] [ref=f2e2004]
+                      - cell "STR-COL-04-001" [ref=f2e2005]
+                      - cell [ref=f2e2006]:
+                        - button "Reinforced Concrete Column" [ref=f2e2007]
+                      - cell "Floor 4" [ref=f2e2010]
+                      - cell "column" [ref=f2e2011]
+                      - cell [ref=f2e2012]
+                      - cell "No." [ref=f2e2017]
+                      - cell "24" [ref=f2e2018]
+                      - cell "Verified" [ref=f2e2019]
+                      - 'cell "A2-14: S2.1" [ref=f2e2021]'
+                      - cell [ref=f2e2022]:
+                        - button "Row actions" [ref=f2e2023]
+                    - row [ref=f2e2028] [cursor=pointer]:
+                      - cell [ref=f2e2029]:
+                        - checkbox [ref=f2e2030]
+                      - cell "STR-BEAM-04-001" [ref=f2e2031]
+                      - cell [ref=f2e2032]:
+                        - button "Reinforced Concrete Beam" [ref=f2e2033]
+                      - cell "Floor 4" [ref=f2e2036]
+                      - cell "beam" [ref=f2e2037]
+                      - cell [ref=f2e2038]
+                      - cell "m" [ref=f2e2042]
+                      - cell "482.60" [ref=f2e2043]
+                      - cell "Needs review" [ref=f2e2044]
+                      - 'cell "A2-14: S2.1" [ref=f2e2046]'
+                      - cell [ref=f2e2047]:
+                        - button "Row actions" [ref=f2e2048]
+                    - row [ref=f2e2053] [cursor=pointer]:
+                      - cell [ref=f2e2054]:
+                        - checkbox [checked] [ref=f2e2055]
+                      - cell "STR-SLAB-04-001" [ref=f2e2056]
+                      - cell [ref=f2e2057]:
+                        - button "Reinforced Concrete Slab" [ref=f2e2058]
+                      - cell "Floor 4" [ref=f2e2061]
+                      - cell "slab" [ref=f2e2062]
+                      - cell [ref=f2e2063]
+                      - cell "m²" [ref=f2e2067]
+                      - cell "1,284.30" [ref=f2e2068]
+                      - cell "Verified" [ref=f2e2069]
+                      - 'cell "A2-14: S2.1" [ref=f2e2071]'
+                      - cell [ref=f2e2072]:
+                        - button "Row actions" [ref=f2e2073]
+                    - row [ref=f2e2078] [cursor=pointer]:
+                      - cell [ref=f2e2079]:
+                        - checkbox [checked] [ref=f2e2080]
+                      - cell "STR-SHW-04-001" [ref=f2e2081]
+                      - cell [ref=f2e2082]:
+                        - button "Shear Wall" [ref=f2e2083]
+                      - cell "Floor 4" [ref=f2e2086]
+                      - cell "shear-wall" [ref=f2e2087]
+                      - cell [ref=f2e2088]
+                      - cell "m²" [ref=f2e2092]
+                      - cell "86.40" [ref=f2e2093]
+                      - cell "Verified" [ref=f2e2094]
+                      - 'cell "A2-14: S2.1" [ref=f2e2096]'
+                      - cell [ref=f2e2097]:
+                        - button "Row actions" [ref=f2e2098]
+                    - row [ref=f2e2103] [cursor=pointer]:
+                      - cell [ref=f2e2104]:
+                        - checkbox [ref=f2e2105]
+                      - cell "STR-STAIR-04-001" [ref=f2e2106]
+                      - cell [ref=f2e2107]:
+                        - button "Staircase" [ref=f2e2108]
+                      - cell "Floor 4" [ref=f2e2111]
+                      - cell "stair" [ref=f2e2112]
+                      - cell [ref=f2e2113]
+                      - cell "No." [ref=f2e2118]
+                      - cell "2" [ref=f2e2119]
+                      - cell "AI detected" [ref=f2e2120]
+                      - 'cell "A2-14: S2.1" [ref=f2e2122]'
+                      - cell [ref=f2e2123]:
+                        - button "Row actions" [ref=f2e2124]
+                    - row [ref=f2e2129] [cursor=pointer]:
+                      - cell [ref=f2e2130]:
+                        - checkbox [checked] [ref=f2e2131]
+                      - cell "STR-COL-RF-001" [ref=f2e2132]
+                      - cell [ref=f2e2133]:
+                        - button "Roof Columns" [ref=f2e2134]
+                      - cell "Roof" [ref=f2e2137]
+                      - cell "column" [ref=f2e2138]
+                      - cell [ref=f2e2139]
+                      - cell "No." [ref=f2e2144]
+                      - cell "18" [ref=f2e2145]
+                      - cell "Verified" [ref=f2e2146]
+                      - 'cell "A2-105: S3.1" [ref=f2e2148]'
+                      - cell [ref=f2e2149]:
+                        - button "Row actions" [ref=f2e2150]
+                    - row [ref=f2e2155] [cursor=pointer]:
+                      - cell [ref=f2e2156]:
+                        - checkbox [checked] [ref=f2e2157]
+                      - cell "STR-BEAM-RF-001" [ref=f2e2158]
+                      - cell [ref=f2e2159]:
+                        - button "Roof Beams" [ref=f2e2160]
+                      - cell "Roof" [ref=f2e2163]
+                      - cell "beam" [ref=f2e2164]
+                      - cell [ref=f2e2165]
+                      - cell "m" [ref=f2e2169]
+                      - cell "236.10" [ref=f2e2170]
+                      - cell "Verified" [ref=f2e2171]
+                      - 'cell "A2-105: S3.1" [ref=f2e2173]'
+                      - cell [ref=f2e2174]:
+                        - button "Row actions" [ref=f2e2175]
+                    - row [ref=f2e2180] [cursor=pointer]:
+                      - cell [ref=f2e2181]:
+                        - checkbox [ref=f2e2182]
+                      - cell "STR-SLAB-RF-001" [ref=f2e2183]
+                      - cell [ref=f2e2184]:
+                        - button "Roof Slab" [ref=f2e2185]
+                      - cell "Roof" [ref=f2e2188]
+                      - cell "slab" [ref=f2e2189]
+                      - cell [ref=f2e2190]
+                      - cell "m²" [ref=f2e2194]
+                      - cell "1,210.00" [ref=f2e2195]
+                      - cell "AI detected" [ref=f2e2196]
+                      - 'cell "A2-105: S3.1" [ref=f2e2198]'
+                      - cell [ref=f2e2199]:
+                        - button "Row actions" [ref=f2e2200]
+                    - row [ref=f2e2205] [cursor=pointer]:
+                      - cell [ref=f2e2206]:
+                        - checkbox [checked] [ref=f2e2207]
+                      - cell "ARC-DOOR-001" [ref=f2e2208]
+                      - cell [ref=f2e2209]:
+                        - button "Doors" [ref=f2e2210]
+                      - cell "All Floors" [ref=f2e2213]
+                      - cell "door" [ref=f2e2214]
+                      - cell [ref=f2e2215]
+                      - cell "No." [ref=f2e2220]
+                      - cell "38" [ref=f2e2221]
+                      - cell "Verified" [ref=f2e2222]
+                      - cell "A2-100…A2-104" [ref=f2e2224]
+                      - cell [ref=f2e2225]:
+                        - button "Row actions" [ref=f2e2226]
+                    - row [ref=f2e2231] [cursor=pointer]:
+                      - cell [ref=f2e2232]:
+                        - checkbox [checked] [ref=f2e2233]
+                      - cell "ARC-WIND-001" [ref=f2e2234]
+                      - cell [ref=f2e2235]:
+                        - button "Windows" [ref=f2e2236]
+                      - cell "All Floors" [ref=f2e2239]
+                      - cell "window" [ref=f2e2240]
+                      - cell [ref=f2e2241]
+                      - cell "No." [ref=f2e2246]
+                      - cell "54" [ref=f2e2247]
+                      - cell "Verified" [ref=f2e2248]
+                      - cell "A2-100…A2-104" [ref=f2e2250]
+                      - cell [ref=f2e2251]:
+                        - button "Row actions" [ref=f2e2252]
+                    - row [ref=f2e2257] [cursor=pointer]:
+                      - cell [ref=f2e2258]:
+                        - checkbox [ref=f2e2259]
+                      - cell "ARC-PART-001" [ref=f2e2260]
+                      - cell [ref=f2e2261]:
+                        - button "Partitions" [ref=f2e2262]
+                      - cell "All Floors" [ref=f2e2265]
+                      - cell "wall" [ref=f2e2266]
+                      - cell [ref=f2e2267]
+                      - cell "m²" [ref=f2e2271]
+                      - cell "1,236.50" [ref=f2e2272]
+                      - cell "AI detected" [ref=f2e2273]
+                      - cell "A2-100…A2-104" [ref=f2e2275]
+                      - cell [ref=f2e2276]:
+                        - button "Row actions" [ref=f2e2277]
+                    - row [ref=f2e2282] [cursor=pointer]:
+                      - cell [ref=f2e2283]:
+                        - checkbox [checked] [ref=f2e2284]
+                      - cell "ARC-FLR-001" [ref=f2e2285]
+                      - cell [ref=f2e2286]:
+                        - button "Floor Finishes" [ref=f2e2287]
+                      - cell "All Floors" [ref=f2e2290]
+                      - cell "room" [ref=f2e2291]
+                      - cell [ref=f2e2292]
+                      - cell "m²" [ref=f2e2296]
+                      - cell "5,420.80" [ref=f2e2297]
+                      - cell "Verified" [ref=f2e2298]
+                      - cell "A2-100…A2-104" [ref=f2e2300]
+                      - cell [ref=f2e2301]:
+                        - button "Row actions" [ref=f2e2302]
+                    - row [ref=f2e2307] [cursor=pointer]:
+                      - cell [ref=f2e2308]:
+                        - checkbox [checked] [ref=f2e2309]
+                      - cell "ARC-CLG-001" [ref=f2e2310]
+                      - cell [ref=f2e2311]:
+                        - button "Ceiling" [ref=f2e2312]
+                      - cell "All Floors" [ref=f2e2315]
+                      - cell "room" [ref=f2e2316]
+                      - cell [ref=f2e2317]
+                      - cell "m²" [ref=f2e2321]
+                      - cell "5,180.20" [ref=f2e2322]
+                      - cell "Verified" [ref=f2e2323]
+                      - cell "A2-100…A2-104" [ref=f2e2325]
+                      - cell [ref=f2e2326]:
+                        - button "Row actions" [ref=f2e2327]
+                    - row [ref=f2e2332] [cursor=pointer]:
+                      - cell [ref=f2e2333]:
+                        - checkbox [ref=f2e2334]
+                      - cell "ARC-PNT-001" [ref=f2e2335]
+                      - cell [ref=f2e2336]:
+                        - button "Wall Painting" [ref=f2e2337]
+                      - cell "All Floors" [ref=f2e2340]
+                      - cell "wall" [ref=f2e2341]
+                      - cell [ref=f2e2342]
+                      - cell "m²" [ref=f2e2346]
+                      - cell "8,640.00" [ref=f2e2347]
+                      - cell "AI detected" [ref=f2e2348]
+                      - cell "A2-100…A2-104" [ref=f2e2350]
+                      - cell [ref=f2e2351]:
+                        - button "Row actions" [ref=f2e2352]
+                    - row [ref=f2e2357] [cursor=pointer]:
+                      - cell [ref=f2e2358]:
+                        - checkbox [checked] [ref=f2e2359]
+                      - cell "MEP-LTG-001" [ref=f2e2360]
+                      - cell [ref=f2e2361]:
+                        - button "Lighting Points" [ref=f2e2362]
+                      - cell "All Floors" [ref=f2e2365]
+                      - cell "mep-point" [ref=f2e2366]
+                      - cell [ref=f2e2367]
+                      - cell "No." [ref=f2e2372]
+                      - cell "112" [ref=f2e2373]
+                      - cell "Verified" [ref=f2e2374]
+                      - cell "A2-100…A2-105" [ref=f2e2376]
+                      - cell [ref=f2e2377]:
+                        - button "Row actions" [ref=f2e2378]
+                    - row [ref=f2e2383] [cursor=pointer]:
+                      - cell [ref=f2e2384]:
+                        - checkbox [checked] [ref=f2e2385]
+                      - cell "MEP-PWR-001" [ref=f2e2386]
+                      - cell [ref=f2e2387]:
+                        - button "Power Outlets" [ref=f2e2388]
+                      - cell "All Floors" [ref=f2e2391]
+                      - cell "mep-point" [ref=f2e2392]
+                      - cell [ref=f2e2393]
+                      - cell "No." [ref=f2e2398]
+                      - cell "89" [ref=f2e2399]
+                      - cell "Verified" [ref=f2e2400]
+                      - cell "A2-100…A2-105" [ref=f2e2402]
+                      - cell [ref=f2e2403]:
+                        - button "Row actions" [ref=f2e2404]
+                    - row [ref=f2e2409] [cursor=pointer]:
+                      - cell [ref=f2e2410]:
+                        - checkbox [ref=f2e2411]
+                      - cell "MEP-SMK-001" [ref=f2e2412]
+                      - cell [ref=f2e2413]:
+                        - button "Smoke Detectors" [ref=f2e2414]
+                      - cell "All Floors" [ref=f2e2417]
+                      - cell "mep-point" [ref=f2e2418]
+                      - cell [ref=f2e2419]
+                      - cell "No." [ref=f2e2424]
+                      - cell "24" [ref=f2e2425]
+                      - cell "AI detected" [ref=f2e2426]
+                      - cell "A2-100…A2-105" [ref=f2e2428]
+                      - cell [ref=f2e2429]:
+                        - button "Row actions" [ref=f2e2430]
+                    - row [ref=f2e2435] [cursor=pointer]:
+                      - cell [ref=f2e2436]:
+                        - checkbox [checked] [ref=f2e2437]
+                      - cell "MEP-DIF-001" [ref=f2e2438]
+                      - cell [ref=f2e2439]:
+                        - button "Air Diffusers" [ref=f2e2440]
+                      - cell "All Floors" [ref=f2e2443]
+                      - cell "mep-point" [ref=f2e2444]
+                      - cell [ref=f2e2445]
+                      - cell "No." [ref=f2e2450]
+                      - cell "64" [ref=f2e2451]
+                      - cell "Verified" [ref=f2e2452]
+                      - cell "A2-100…A2-105" [ref=f2e2454]
+                      - cell [ref=f2e2455]:
+                        - button "Row actions" [ref=f2e2456]
+                    - row [ref=f2e2461] [cursor=pointer]:
+                      - cell [ref=f2e2462]:
+                        - checkbox [checked] [ref=f2e2463]
+                      - cell "MEP-SPK-001" [ref=f2e2464]
+                      - cell [ref=f2e2465]:
+                        - button "Sprinkler Heads" [ref=f2e2466]
+                      - cell "All Floors" [ref=f2e2469]
+                      - cell "mep-point" [ref=f2e2470]
+                      - cell [ref=f2e2471]
+                      - cell "No." [ref=f2e2476]
+                      - cell "148" [ref=f2e2477]
+                      - cell "Verified" [ref=f2e2478]
+                      - cell "A2-100…A2-105" [ref=f2e2480]
+                      - cell [ref=f2e2481]:
+                        - button "Row actions" [ref=f2e2482]
+                    - row [ref=f2e2487] [cursor=pointer]:
+                      - cell [ref=f2e2488]:
+                        - checkbox [ref=f2e2489]
+                      - cell "MEP-SAN-001" [ref=f2e2490]
+                      - cell [ref=f2e2491]:
+                        - button "Sanitary Fixtures" [ref=f2e2492]
+                      - cell "All Floors" [ref=f2e2495]
+                      - cell "mep-point" [ref=f2e2496]
+                      - cell [ref=f2e2497]
+                      - cell "No." [ref=f2e2502]
+                      - cell "36" [ref=f2e2503]
+                      - cell "AI detected" [ref=f2e2504]
+                      - cell "A2-100…A2-105" [ref=f2e2506]
+                      - cell [ref=f2e2507]:
+                        - button "Row actions" [ref=f2e2508]
+                    - row [ref=f2e2513] [cursor=pointer]:
+                      - cell [ref=f2e2514]:
+                        - checkbox [ref=f2e2515]
+                      - cell "CIV-EXC-001" [ref=f2e2516]
+                      - cell [ref=f2e2517]:
+                        - button "Bulk Excavation" [ref=f2e2518]
+                      - cell "F00 – Found." [ref=f2e2521]
+                      - cell "slab" [ref=f2e2522]
+                      - cell [ref=f2e2523]
+                      - cell "m³" [ref=f2e2527]
+                      - cell "2,145.60" [ref=f2e2528]
+                      - cell "AI detected" [ref=f2e2529]
+                      - cell "C1-001" [ref=f2e2531]
+                      - cell [ref=f2e2532]:
+                        - button "Row actions" [ref=f2e2533]
+                    - row [ref=f2e2538] [cursor=pointer]:
+                      - cell [ref=f2e2539]:
+                        - checkbox [ref=f2e2540]
+                      - cell "CIV-FILL-001" [ref=f2e2541]
+                      - cell [ref=f2e2542]:
+                        - button "Structural Fill" [ref=f2e2543]
+                      - cell "F00 – Found." [ref=f2e2546]
+                      - cell "slab" [ref=f2e2547]
+                      - cell [ref=f2e2548]
+                      - cell "m³" [ref=f2e2552]
+                      - cell "864.20" [ref=f2e2553]
+                      - cell "AI detected" [ref=f2e2554]
+                      - cell "C1-001" [ref=f2e2556]
+                      - cell [ref=f2e2557]:
+                        - button "Row actions" [ref=f2e2558]
+                    - row [ref=f2e2563] [cursor=pointer]:
+                      - cell [ref=f2e2564]:
+                        - checkbox [ref=f2e2565]
+                      - cell "CIV-SOG-001" [ref=f2e2566]
+                      - cell [ref=f2e2567]:
+                        - button "Slab on Grade" [ref=f2e2568]
+                      - cell "F00 – Found." [ref=f2e2571]
+                      - cell "slab" [ref=f2e2572]
+                      - cell [ref=f2e2573]
+                      - cell "m²" [ref=f2e2577]
+                      - cell "2,052.31" [ref=f2e2578]
+                      - cell "AI detected" [ref=f2e2579]
+                      - cell "C1-001" [ref=f2e2581]
+                      - cell [ref=f2e2582]:
+                        - button "Row actions" [ref=f2e2583]
+                    - row [ref=f2e2588] [cursor=pointer]:
+                      - cell [ref=f2e2589]:
+                        - checkbox [ref=f2e2590]
+                      - cell "CIV-RET-001" [ref=f2e2591]
+                      - cell [ref=f2e2592]:
+                        - button "Retaining Walls" [ref=f2e2593]
+                      - cell "F00 – Found." [ref=f2e2596]
+                      - cell "slab" [ref=f2e2597]
+                      - cell [ref=f2e2598]
+                      - cell "m²" [ref=f2e2602]
+                      - cell "1,480.30" [ref=f2e2603]
+                      - cell "AI detected" [ref=f2e2604]
+                      - cell "C1-001" [ref=f2e2606]
+                      - cell [ref=f2e2607]:
+                        - button "Row actions" [ref=f2e2608]
+                    - row [ref=f2e2613] [cursor=pointer]:
+                      - cell [ref=f2e2614]:
+                        - checkbox [ref=f2e2615]
+                      - cell "MEP-LTG-00-001" [ref=f2e2616]
+                      - cell [ref=f2e2617]:
+                        - button "Lighting Points — Ground Floor" [ref=f2e2618]
+                      - cell "Ground Floor" [ref=f2e2621]
+                      - cell "mep-point" [ref=f2e2622]
+                      - cell [ref=f2e2623]
+                      - cell "No." [ref=f2e2628]
+                      - cell "22" [ref=f2e2629]
+                      - cell "AI detected" [ref=f2e2630]
+                      - 'cell "A2-10: M1.1" [ref=f2e2632]'
+                      - cell [ref=f2e2633]:
+                        - button "Row actions" [ref=f2e2634]
+                    - row [ref=f2e2639] [cursor=pointer]:
+                      - cell [ref=f2e2640]:
+                        - checkbox [ref=f2e2641]
+                      - cell "MEP-PWR-00-001" [ref=f2e2642]
+                      - cell [ref=f2e2643]:
+                        - button "Power Outlets — Ground Floor" [ref=f2e2644]
+                      - cell "Ground Floor" [ref=f2e2647]
+                      - cell "mep-point" [ref=f2e2648]
+                      - cell [ref=f2e2649]
+                      - cell "No." [ref=f2e2654]
+                      - cell "18" [ref=f2e2655]
+                      - cell "AI detected" [ref=f2e2656]
+                      - 'cell "A2-10: M1.1" [ref=f2e2658]'
+                      - cell [ref=f2e2659]:
+                        - button "Row actions" [ref=f2e2660]
+                    - row [ref=f2e2665] [cursor=pointer]:
+                      - cell [ref=f2e2666]:
+                        - checkbox [ref=f2e2667]
+                      - cell "MEP-DIF-00-001" [ref=f2e2668]
+                      - cell [ref=f2e2669]:
+                        - button "Air Diffusers — Ground Floor" [ref=f2e2670]
+                      - cell "Ground Floor" [ref=f2e2673]
+                      - cell "mep-point" [ref=f2e2674]
+                      - cell [ref=f2e2675]
+                      - cell "No." [ref=f2e2680]
+                      - cell "13" [ref=f2e2681]
+                      - cell "AI detected" [ref=f2e2682]
+                      - 'cell "A2-10: M1.1" [ref=f2e2684]'
+                      - cell [ref=f2e2685]:
+                        - button "Row actions" [ref=f2e2686]
+                    - row [ref=f2e2691] [cursor=pointer]:
+                      - cell [ref=f2e2692]:
+                        - checkbox [ref=f2e2693]
+                      - cell "ARC-DOOR-00-001" [ref=f2e2694]
+                      - cell [ref=f2e2695]:
+                        - button "Doors — Ground Floor" [ref=f2e2696]
+                      - cell "Ground Floor" [ref=f2e2699]
+                      - cell "door" [ref=f2e2700]
+                      - cell [ref=f2e2701]
+                      - cell "No." [ref=f2e2706]
+                      - cell "8" [ref=f2e2707]
+                      - cell "AI detected" [ref=f2e2708]
+                      - 'cell "A2-10: M1.1" [ref=f2e2710]'
+                      - cell [ref=f2e2711]:
+                        - button "Row actions" [ref=f2e2712]
+                    - row [ref=f2e2717] [cursor=pointer]:
+                      - cell [ref=f2e2718]:
+                        - checkbox [ref=f2e2719]
+                      - cell "ARC-WIND-00-001" [ref=f2e2720]
+                      - cell [ref=f2e2721]:
+                        - button "Windows — Ground Floor" [ref=f2e2722]
+                      - cell "Ground Floor" [ref=f2e2725]
+                      - cell "window" [ref=f2e2726]
+                      - cell [ref=f2e2727]
+                      - cell "No." [ref=f2e2732]
+                      - cell "11" [ref=f2e2733]
+                      - cell "AI detected" [ref=f2e2734]
+                      - 'cell "A2-10: M1.1" [ref=f2e2736]'
+                      - cell [ref=f2e2737]:
+                        - button "Row actions" [ref=f2e2738]
+                    - row [ref=f2e2743] [cursor=pointer]:
+                      - cell [ref=f2e2744]:
+                        - checkbox [ref=f2e2745]
+                      - cell "MEP-LTG-01-001" [ref=f2e2746]
+                      - cell [ref=f2e2747]:
+                        - button "Lighting Points — Floor 1" [ref=f2e2748]
+                      - cell "Floor 1" [ref=f2e2751]
+                      - cell "mep-point" [ref=f2e2752]
+                      - cell [ref=f2e2753]
+                      - cell "No." [ref=f2e2758]
+                      - cell "22" [ref=f2e2759]
+                      - cell "AI detected" [ref=f2e2760]
+                      - 'cell "A2-11: M1.1" [ref=f2e2762]'
+                      - cell [ref=f2e2763]:
+                        - button "Row actions" [ref=f2e2764]
+                    - row [ref=f2e2769] [cursor=pointer]:
+                      - cell [ref=f2e2770]:
+                        - checkbox [ref=f2e2771]
+                      - cell "MEP-PWR-01-001" [ref=f2e2772]
+                      - cell [ref=f2e2773]:
+                        - button "Power Outlets — Floor 1" [ref=f2e2774]
+                      - cell "Floor 1" [ref=f2e2777]
+                      - cell "mep-point" [ref=f2e2778]
+                      - cell [ref=f2e2779]
+                      - cell "No." [ref=f2e2784]
+                      - cell "18" [ref=f2e2785]
+                      - cell "AI detected" [ref=f2e2786]
+                      - 'cell "A2-11: M1.1" [ref=f2e2788]'
+                      - cell [ref=f2e2789]:
+                        - button "Row actions" [ref=f2e2790]
+                    - row [ref=f2e2795] [cursor=pointer]:
+                      - cell [ref=f2e2796]:
+                        - checkbox [ref=f2e2797]
+                      - cell "MEP-DIF-01-001" [ref=f2e2798]
+                      - cell [ref=f2e2799]:
+                        - button "Air Diffusers — Floor 1" [ref=f2e2800]
+                      - cell "Floor 1" [ref=f2e2803]
+                      - cell "mep-point" [ref=f2e2804]
+                      - cell [ref=f2e2805]
+                      - cell "No." [ref=f2e2810]
+                      - cell "13" [ref=f2e2811]
+                      - cell "AI detected" [ref=f2e2812]
+                      - 'cell "A2-11: M1.1" [ref=f2e2814]'
+                      - cell [ref=f2e2815]:
+                        - button "Row actions" [ref=f2e2816]
+                    - row [ref=f2e2821] [cursor=pointer]:
+                      - cell [ref=f2e2822]:
+                        - checkbox [ref=f2e2823]
+                      - cell "ARC-DOOR-01-001" [ref=f2e2824]
+                      - cell [ref=f2e2825]:
+                        - button "Doors — Floor 1" [ref=f2e2826]
+                      - cell "Floor 1" [ref=f2e2829]
+                      - cell "door" [ref=f2e2830]
+                      - cell [ref=f2e2831]
+                      - cell "No." [ref=f2e2836]
+                      - cell "8" [ref=f2e2837]
+                      - cell "AI detected" [ref=f2e2838]
+                      - 'cell "A2-11: M1.1" [ref=f2e2840]'
+                      - cell [ref=f2e2841]:
+                        - button "Row actions" [ref=f2e2842]
+                    - row [ref=f2e2847] [cursor=pointer]:
+                      - cell [ref=f2e2848]:
+                        - checkbox [ref=f2e2849]
+                      - cell "ARC-WIND-01-001" [ref=f2e2850]
+                      - cell [ref=f2e2851]:
+                        - button "Windows — Floor 1" [ref=f2e2852]
+                      - cell "Floor 1" [ref=f2e2855]
+                      - cell "window" [ref=f2e2856]
+                      - cell [ref=f2e2857]
+                      - cell "No." [ref=f2e2862]
+                      - cell "11" [ref=f2e2863]
+                      - cell "AI detected" [ref=f2e2864]
+                      - 'cell "A2-11: M1.1" [ref=f2e2866]'
+                      - cell [ref=f2e2867]:
+                        - button "Row actions" [ref=f2e2868]
+                    - row [ref=f2e2873] [cursor=pointer]:
+                      - cell [ref=f2e2874]:
+                        - checkbox [ref=f2e2875]
+                      - cell "MEP-LTG-02-001" [ref=f2e2876]
+                      - cell [ref=f2e2877]:
+                        - button "Lighting Points — Floor 2" [ref=f2e2878]
+                      - cell "Floor 2" [ref=f2e2881]
+                      - cell "mep-point" [ref=f2e2882]
+                      - cell [ref=f2e2883]
+                      - cell "No." [ref=f2e2888]
+                      - cell "22" [ref=f2e2889]
+                      - cell "AI detected" [ref=f2e2890]
+                      - 'cell "A2-12: M1.1" [ref=f2e2892]'
+                      - cell [ref=f2e2893]:
+                        - button "Row actions" [ref=f2e2894]
+                    - row [ref=f2e2899] [cursor=pointer]:
+                      - cell [ref=f2e2900]:
+                        - checkbox [ref=f2e2901]
+                      - cell "MEP-PWR-02-001" [ref=f2e2902]
+                      - cell [ref=f2e2903]:
+                        - button "Power Outlets — Floor 2" [ref=f2e2904]
+                      - cell "Floor 2" [ref=f2e2907]
+                      - cell "mep-point" [ref=f2e2908]
+                      - cell [ref=f2e2909]
+                      - cell "No." [ref=f2e2914]
+                      - cell "18" [ref=f2e2915]
+                      - cell "AI detected" [ref=f2e2916]
+                      - 'cell "A2-12: M1.1" [ref=f2e2918]'
+                      - cell [ref=f2e2919]:
+                        - button "Row actions" [ref=f2e2920]
+                    - row [ref=f2e2925] [cursor=pointer]:
+                      - cell [ref=f2e2926]:
+                        - checkbox [ref=f2e2927]
+                      - cell "MEP-DIF-02-001" [ref=f2e2928]
+                      - cell [ref=f2e2929]:
+                        - button "Air Diffusers — Floor 2" [ref=f2e2930]
+                      - cell "Floor 2" [ref=f2e2933]
+                      - cell "mep-point" [ref=f2e2934]
+                      - cell [ref=f2e2935]
+                      - cell "No." [ref=f2e2940]
+                      - cell "13" [ref=f2e2941]
+                      - cell "AI detected" [ref=f2e2942]
+                      - 'cell "A2-12: M1.1" [ref=f2e2944]'
+                      - cell [ref=f2e2945]:
+                        - button "Row actions" [ref=f2e2946]
+                    - row [ref=f2e2951] [cursor=pointer]:
+                      - cell [ref=f2e2952]:
+                        - checkbox [ref=f2e2953]
+                      - cell "ARC-DOOR-02-001" [ref=f2e2954]
+                      - cell [ref=f2e2955]:
+                        - button "Doors — Floor 2" [ref=f2e2956]
+                      - cell "Floor 2" [ref=f2e2959]
+                      - cell "door" [ref=f2e2960]
+                      - cell [ref=f2e2961]
+                      - cell "No." [ref=f2e2966]
+                      - cell "8" [ref=f2e2967]
+                      - cell "AI detected" [ref=f2e2968]
+                      - 'cell "A2-12: M1.1" [ref=f2e2970]'
+                      - cell [ref=f2e2971]:
+                        - button "Row actions" [ref=f2e2972]
+                    - row [ref=f2e2977] [cursor=pointer]:
+                      - cell [ref=f2e2978]:
+                        - checkbox [ref=f2e2979]
+                      - cell "ARC-WIND-02-001" [ref=f2e2980]
+                      - cell [ref=f2e2981]:
+                        - button "Windows — Floor 2" [ref=f2e2982]
+                      - cell "Floor 2" [ref=f2e2985]
+                      - cell "window" [ref=f2e2986]
+                      - cell [ref=f2e2987]
+                      - cell "No." [ref=f2e2992]
+                      - cell "11" [ref=f2e2993]
+                      - cell "AI detected" [ref=f2e2994]
+                      - 'cell "A2-12: M1.1" [ref=f2e2996]'
+                      - cell [ref=f2e2997]:
+                        - button "Row actions" [ref=f2e2998]
+                    - row [ref=f2e3003] [cursor=pointer]:
+                      - cell [ref=f2e3004]:
+                        - checkbox [ref=f2e3005]
+                      - cell "MEP-LTG-03-001" [ref=f2e3006]
+                      - cell [ref=f2e3007]:
+                        - button "Lighting Points — Floor 3" [ref=f2e3008]
+                      - cell "Floor 3" [ref=f2e3011]
+                      - cell "mep-point" [ref=f2e3012]
+                      - cell [ref=f2e3013]
+                      - cell "No." [ref=f2e3018]
+                      - cell "22" [ref=f2e3019]
+                      - cell "AI detected" [ref=f2e3020]
+                      - 'cell "A2-13: M1.1" [ref=f2e3022]'
+                      - cell [ref=f2e3023]:
+                        - button "Row actions" [ref=f2e3024]
+                    - row [ref=f2e3029] [cursor=pointer]:
+                      - cell [ref=f2e3030]:
+                        - checkbox [ref=f2e3031]
+                      - cell "MEP-PWR-03-001" [ref=f2e3032]
+                      - cell [ref=f2e3033]:
+                        - button "Power Outlets — Floor 3" [ref=f2e3034]
+                      - cell "Floor 3" [ref=f2e3037]
+                      - cell "mep-point" [ref=f2e3038]
+                      - cell [ref=f2e3039]
+                      - cell "No." [ref=f2e3044]
+                      - cell "18" [ref=f2e3045]
+                      - cell "AI detected" [ref=f2e3046]
+                      - 'cell "A2-13: M1.1" [ref=f2e3048]'
+                      - cell [ref=f2e3049]:
+                        - button "Row actions" [ref=f2e3050]
+                    - row [ref=f2e3055] [cursor=pointer]:
+                      - cell [ref=f2e3056]:
+                        - checkbox [ref=f2e3057]
+                      - cell "MEP-DIF-03-001" [ref=f2e3058]
+                      - cell [ref=f2e3059]:
+                        - button "Air Diffusers — Floor 3" [ref=f2e3060]
+                      - cell "Floor 3" [ref=f2e3063]
+                      - cell "mep-point" [ref=f2e3064]
+                      - cell [ref=f2e3065]
+                      - cell "No." [ref=f2e3070]
+                      - cell "13" [ref=f2e3071]
+                      - cell "AI detected" [ref=f2e3072]
+                      - 'cell "A2-13: M1.1" [ref=f2e3074]'
+                      - cell [ref=f2e3075]:
+                        - button "Row actions" [ref=f2e3076]
+                    - row [ref=f2e3081] [cursor=pointer]:
+                      - cell [ref=f2e3082]:
+                        - checkbox [ref=f2e3083]
+                      - cell "ARC-DOOR-03-001" [ref=f2e3084]
+                      - cell [ref=f2e3085]:
+                        - button "Doors — Floor 3" [ref=f2e3086]
+                      - cell "Floor 3" [ref=f2e3089]
+                      - cell "door" [ref=f2e3090]
+                      - cell [ref=f2e3091]
+                      - cell "No." [ref=f2e3096]
+                      - cell "8" [ref=f2e3097]
+                      - cell "AI detected" [ref=f2e3098]
+                      - 'cell "A2-13: M1.1" [ref=f2e3100]'
+                      - cell [ref=f2e3101]:
+                        - button "Row actions" [ref=f2e3102]
+                    - row [ref=f2e3107] [cursor=pointer]:
+                      - cell [ref=f2e3108]:
+                        - checkbox [ref=f2e3109]
+                      - cell "ARC-WIND-03-001" [ref=f2e3110]
+                      - cell [ref=f2e3111]:
+                        - button "Windows — Floor 3" [ref=f2e3112]
+                      - cell "Floor 3" [ref=f2e3115]
+                      - cell "window" [ref=f2e3116]
+                      - cell [ref=f2e3117]
+                      - cell "No." [ref=f2e3122]
+                      - cell "11" [ref=f2e3123]
+                      - cell "AI detected" [ref=f2e3124]
+                      - 'cell "A2-13: M1.1" [ref=f2e3126]'
+                      - cell [ref=f2e3127]:
+                        - button "Row actions" [ref=f2e3128]
+                    - row [ref=f2e3133] [cursor=pointer]:
+                      - cell [ref=f2e3134]:
+                        - checkbox [ref=f2e3135]
+                      - cell "MEP-LTG-04-001" [ref=f2e3136]
+                      - cell [ref=f2e3137]:
+                        - button "Lighting Points — Floor 4" [ref=f2e3138]
+                      - cell "Floor 4" [ref=f2e3141]
+                      - cell "mep-point" [ref=f2e3142]
+                      - cell [ref=f2e3143]
+                      - cell "No." [ref=f2e3148]
+                      - cell "22" [ref=f2e3149]
+                      - cell "AI detected" [ref=f2e3150]
+                      - 'cell "A2-14: M1.1" [ref=f2e3152]'
+                      - cell [ref=f2e3153]:
+                        - button "Row actions" [ref=f2e3154]
+                    - row [ref=f2e3159] [cursor=pointer]:
+                      - cell [ref=f2e3160]:
+                        - checkbox [ref=f2e3161]
+                      - cell "MEP-PWR-04-001" [ref=f2e3162]
+                      - cell [ref=f2e3163]:
+                        - button "Power Outlets — Floor 4" [ref=f2e3164]
+                      - cell "Floor 4" [ref=f2e3167]
+                      - cell "mep-point" [ref=f2e3168]
+                      - cell [ref=f2e3169]
+                      - cell "No." [ref=f2e3174]
+                      - cell "18" [ref=f2e3175]
+                      - cell "AI detected" [ref=f2e3176]
+                      - 'cell "A2-14: M1.1" [ref=f2e3178]'
+                      - cell [ref=f2e3179]:
+                        - button "Row actions" [ref=f2e3180]
+                    - row [ref=f2e3185] [cursor=pointer]:
+                      - cell [ref=f2e3186]:
+                        - checkbox [ref=f2e3187]
+                      - cell "MEP-DIF-04-001" [ref=f2e3188]
+                      - cell [ref=f2e3189]:
+                        - button "Air Diffusers — Floor 4" [ref=f2e3190]
+                      - cell "Floor 4" [ref=f2e3193]
+                      - cell "mep-point" [ref=f2e3194]
+                      - cell [ref=f2e3195]
+                      - cell "No." [ref=f2e3200]
+                      - cell "13" [ref=f2e3201]
+                      - cell "AI detected" [ref=f2e3202]
+                      - 'cell "A2-14: M1.1" [ref=f2e3204]'
+                      - cell [ref=f2e3205]:
+                        - button "Row actions" [ref=f2e3206]
+                    - row [ref=f2e3211] [cursor=pointer]:
+                      - cell [ref=f2e3212]:
+                        - checkbox [ref=f2e3213]
+                      - cell "ARC-DOOR-04-001" [ref=f2e3214]
+                      - cell [ref=f2e3215]:
+                        - button "Doors — Floor 4" [ref=f2e3216]
+                      - cell "Floor 4" [ref=f2e3219]
+                      - cell "door" [ref=f2e3220]
+                      - cell [ref=f2e3221]
+                      - cell "No." [ref=f2e3226]
+                      - cell "8" [ref=f2e3227]
+                      - cell "AI detected" [ref=f2e3228]
+                      - 'cell "A2-14: M1.1" [ref=f2e3230]'
+                      - cell [ref=f2e3231]:
+                        - button "Row actions" [ref=f2e3232]
+                    - row [ref=f2e3237] [cursor=pointer]:
+                      - cell [ref=f2e3238]:
+                        - checkbox [ref=f2e3239]
+                      - cell "ARC-WIND-04-001" [ref=f2e3240]
+                      - cell [ref=f2e3241]:
+                        - button "Windows — Floor 4" [ref=f2e3242]
+                      - cell "Floor 4" [ref=f2e3245]
+                      - cell "window" [ref=f2e3246]
+                      - cell [ref=f2e3247]
+                      - cell "No." [ref=f2e3252]
+                      - cell "11" [ref=f2e3253]
+                      - cell "AI detected" [ref=f2e3254]
+                      - 'cell "A2-14: M1.1" [ref=f2e3256]'
+                      - cell [ref=f2e3257]:
+                        - button "Row actions" [ref=f2e3258]
+                    - row [ref=f2e3263] [cursor=pointer]:
+                      - cell [ref=f2e3264]:
+                        - checkbox [ref=f2e3265]
+                      - cell "ARC-FIN-00-01" [ref=f2e3266]
+                      - cell [ref=f2e3267]:
+                        - button "Floor Tile 600×600 — Ground Floor" [ref=f2e3268]
+                      - cell "Ground Floor" [ref=f2e3271]
+                      - cell "room" [ref=f2e3272]
+                      - cell [ref=f2e3273]
+                      - cell "m²" [ref=f2e3277]
+                      - cell "1,062.40" [ref=f2e3278]
+                      - cell "AI detected" [ref=f2e3279]
+                      - 'cell "A2-10: A5.1" [ref=f2e3281]'
+                      - cell [ref=f2e3282]:
+                        - button "Row actions" [ref=f2e3283]
+                    - row [ref=f2e3288] [cursor=pointer]:
+                      - cell [ref=f2e3289]:
+                        - checkbox [ref=f2e3290]
+                      - cell "ARC-FIN-00-02" [ref=f2e3291]
+                      - cell [ref=f2e3292]:
+                        - button "Skirting — Ground Floor" [ref=f2e3293]
+                      - cell "Ground Floor" [ref=f2e3296]
+                      - cell "room" [ref=f2e3297]
+                      - cell [ref=f2e3298]
+                      - cell "m" [ref=f2e3302]
+                      - cell "286.20" [ref=f2e3303]
+                      - cell "AI detected" [ref=f2e3304]
+                      - 'cell "A2-10: A5.1" [ref=f2e3306]'
+                      - cell [ref=f2e3307]:
+                        - button "Row actions" [ref=f2e3308]
+                    - row [ref=f2e3313] [cursor=pointer]:
+                      - cell [ref=f2e3314]:
+                        - checkbox [ref=f2e3315]
+                      - cell "ARC-FIN-00-03" [ref=f2e3316]
+                      - cell [ref=f2e3317]:
+                        - button "Wall Plaster & Skim — Ground Floor" [ref=f2e3318]
+                      - cell "Ground Floor" [ref=f2e3321]
+                      - cell "room" [ref=f2e3322]
+                      - cell [ref=f2e3323]
+                      - cell "m²" [ref=f2e3327]
+                      - cell "1,730.50" [ref=f2e3328]
+                      - cell "AI detected" [ref=f2e3329]
+                      - 'cell "A2-10: A5.1" [ref=f2e3331]'
+                      - cell [ref=f2e3332]:
+                        - button "Row actions" [ref=f2e3333]
+                    - row [ref=f2e3338] [cursor=pointer]:
+                      - cell [ref=f2e3339]:
+                        - checkbox [ref=f2e3340]
+                      - cell "ARC-FIN-00-04" [ref=f2e3341]
+                      - cell [ref=f2e3342]:
+                        - button "Ceiling Gypsum — Ground Floor" [ref=f2e3343]
+                      - cell "Ground Floor" [ref=f2e3346]
+                      - cell "room" [ref=f2e3347]
+                      - cell [ref=f2e3348]
+                      - cell "m²" [ref=f2e3352]
+                      - cell "1,018.60" [ref=f2e3353]
+                      - cell "AI detected" [ref=f2e3354]
+                      - 'cell "A2-10: A5.1" [ref=f2e3356]'
+                      - cell [ref=f2e3357]:
+                        - button "Row actions" [ref=f2e3358]
+                    - row [ref=f2e3363] [cursor=pointer]:
+                      - cell [ref=f2e3364]:
+                        - checkbox [ref=f2e3365]
+                      - cell "ARC-FIN-01-01" [ref=f2e3366]
+                      - cell [ref=f2e3367]:
+                        - button "Floor Tile 600×600 — Floor 1" [ref=f2e3368]
+                      - cell "Floor 1" [ref=f2e3371]
+                      - cell "room" [ref=f2e3372]
+                      - cell [ref=f2e3373]
+                      - cell "m²" [ref=f2e3377]
+                      - cell "1,062.40" [ref=f2e3378]
+                      - cell "AI detected" [ref=f2e3379]
+                      - 'cell "A2-11: A5.1" [ref=f2e3381]'
+                      - cell [ref=f2e3382]:
+                        - button "Row actions" [ref=f2e3383]
+                    - row [ref=f2e3388] [cursor=pointer]:
+                      - cell [ref=f2e3389]:
+                        - checkbox [ref=f2e3390]
+                      - cell "ARC-FIN-01-02" [ref=f2e3391]
+                      - cell [ref=f2e3392]:
+                        - button "Skirting — Floor 1" [ref=f2e3393]
+                      - cell "Floor 1" [ref=f2e3396]
+                      - cell "room" [ref=f2e3397]
+                      - cell [ref=f2e3398]
+                      - cell "m" [ref=f2e3402]
+                      - cell "286.20" [ref=f2e3403]
+                      - cell "AI detected" [ref=f2e3404]
+                      - 'cell "A2-11: A5.1" [ref=f2e3406]'
+                      - cell [ref=f2e3407]:
+                        - button "Row actions" [ref=f2e3408]
+                    - row [ref=f2e3413] [cursor=pointer]:
+                      - cell [ref=f2e3414]:
+                        - checkbox [ref=f2e3415]
+                      - cell "ARC-FIN-01-03" [ref=f2e3416]
+                      - cell [ref=f2e3417]:
+                        - button "Wall Plaster & Skim — Floor 1" [ref=f2e3418]
+                      - cell "Floor 1" [ref=f2e3421]
+                      - cell "room" [ref=f2e3422]
+                      - cell [ref=f2e3423]
+                      - cell "m²" [ref=f2e3427]
+                      - cell "1,730.50" [ref=f2e3428]
+                      - cell "AI detected" [ref=f2e3429]
+                      - 'cell "A2-11: A5.1" [ref=f2e3431]'
+                      - cell [ref=f2e3432]:
+                        - button "Row actions" [ref=f2e3433]
+                    - row [ref=f2e3438] [cursor=pointer]:
+                      - cell [ref=f2e3439]:
+                        - checkbox [ref=f2e3440]
+                      - cell "ARC-FIN-01-04" [ref=f2e3441]
+                      - cell [ref=f2e3442]:
+                        - button "Ceiling Gypsum — Floor 1" [ref=f2e3443]
+                      - cell "Floor 1" [ref=f2e3446]
+                      - cell "room" [ref=f2e3447]
+                      - cell [ref=f2e3448]
+                      - cell "m²" [ref=f2e3452]
+                      - cell "1,018.60" [ref=f2e3453]
+                      - cell "AI detected" [ref=f2e3454]
+                      - 'cell "A2-11: A5.1" [ref=f2e3456]'
+                      - cell [ref=f2e3457]:
+                        - button "Row actions" [ref=f2e3458]
+                    - row [ref=f2e3463] [cursor=pointer]:
+                      - cell [ref=f2e3464]:
+                        - checkbox [ref=f2e3465]
+                      - cell "ARC-FIN-02-01" [ref=f2e3466]
+                      - cell [ref=f2e3467]:
+                        - button "Floor Tile 600×600 — Floor 2" [ref=f2e3468]
+                      - cell "Floor 2" [ref=f2e3471]
+                      - cell "room" [ref=f2e3472]
+                      - cell [ref=f2e3473]
+                      - cell "m²" [ref=f2e3477]
+                      - cell "1,062.40" [ref=f2e3478]
+                      - cell "AI detected" [ref=f2e3479]
+                      - 'cell "A2-12: A5.1" [ref=f2e3481]'
+                      - cell [ref=f2e3482]:
+                        - button "Row actions" [ref=f2e3483]
+                    - row [ref=f2e3488] [cursor=pointer]:
+                      - cell [ref=f2e3489]:
+                        - checkbox [ref=f2e3490]
+                      - cell "ARC-FIN-02-02" [ref=f2e3491]
+                      - cell [ref=f2e3492]:
+                        - button "Skirting — Floor 2" [ref=f2e3493]
+                      - cell "Floor 2" [ref=f2e3496]
+                      - cell "room" [ref=f2e3497]
+                      - cell [ref=f2e3498]
+                      - cell "m" [ref=f2e3502]
+                      - cell "286.20" [ref=f2e3503]
+                      - cell "AI detected" [ref=f2e3504]
+                      - 'cell "A2-12: A5.1" [ref=f2e3506]'
+                      - cell [ref=f2e3507]:
+                        - button "Row actions" [ref=f2e3508]
+                    - row [ref=f2e3513] [cursor=pointer]:
+                      - cell [ref=f2e3514]:
+                        - checkbox [ref=f2e3515]
+                      - cell "ARC-FIN-02-03" [ref=f2e3516]
+                      - cell [ref=f2e3517]:
+                        - button "Wall Plaster & Skim — Floor 2" [ref=f2e3518]
+                      - cell "Floor 2" [ref=f2e3521]
+                      - cell "room" [ref=f2e3522]
+                      - cell [ref=f2e3523]
+                      - cell "m²" [ref=f2e3527]
+                      - cell "1,730.50" [ref=f2e3528]
+                      - cell "AI detected" [ref=f2e3529]
+                      - 'cell "A2-12: A5.1" [ref=f2e3531]'
+                      - cell [ref=f2e3532]:
+                        - button "Row actions" [ref=f2e3533]
+                    - row [ref=f2e3538] [cursor=pointer]:
+                      - cell [ref=f2e3539]:
+                        - checkbox [ref=f2e3540]
+                      - cell "ARC-FIN-02-04" [ref=f2e3541]
+                      - cell [ref=f2e3542]:
+                        - button "Ceiling Gypsum — Floor 2" [ref=f2e3543]
+                      - cell "Floor 2" [ref=f2e3546]
+                      - cell "room" [ref=f2e3547]
+                      - cell [ref=f2e3548]
+                      - cell "m²" [ref=f2e3552]
+                      - cell "1,018.60" [ref=f2e3553]
+                      - cell "AI detected" [ref=f2e3554]
+                      - 'cell "A2-12: A5.1" [ref=f2e3556]'
+                      - cell [ref=f2e3557]:
+                        - button "Row actions" [ref=f2e3558]
+                    - row [ref=f2e3563] [cursor=pointer]:
+                      - cell [ref=f2e3564]:
+                        - checkbox [ref=f2e3565]
+                      - cell "ARC-FIN-03-01" [ref=f2e3566]
+                      - cell [ref=f2e3567]:
+                        - button "Floor Tile 600×600 — Floor 3" [ref=f2e3568]
+                      - cell "Floor 3" [ref=f2e3571]
+                      - cell "room" [ref=f2e3572]
+                      - cell [ref=f2e3573]
+                      - cell "m²" [ref=f2e3577]
+                      - cell "1,062.40" [ref=f2e3578]
+                      - cell "AI detected" [ref=f2e3579]
+                      - 'cell "A2-13: A5.1" [ref=f2e3581]'
+                      - cell [ref=f2e3582]:
+                        - button "Row actions" [ref=f2e3583]
+                    - row [ref=f2e3588] [cursor=pointer]:
+                      - cell [ref=f2e3589]:
+                        - checkbox [ref=f2e3590]
+                      - cell "ARC-FIN-03-02" [ref=f2e3591]
+                      - cell [ref=f2e3592]:
+                        - button "Skirting — Floor 3" [ref=f2e3593]
+                      - cell "Floor 3" [ref=f2e3596]
+                      - cell "room" [ref=f2e3597]
+                      - cell [ref=f2e3598]
+                      - cell "m" [ref=f2e3602]
+                      - cell "286.20" [ref=f2e3603]
+                      - cell "AI detected" [ref=f2e3604]
+                      - 'cell "A2-13: A5.1" [ref=f2e3606]'
+                      - cell [ref=f2e3607]:
+                        - button "Row actions" [ref=f2e3608]
+                    - row [ref=f2e3613] [cursor=pointer]:
+                      - cell [ref=f2e3614]:
+                        - checkbox [ref=f2e3615]
+                      - cell "ARC-FIN-03-03" [ref=f2e3616]
+                      - cell [ref=f2e3617]:
+                        - button "Wall Plaster & Skim — Floor 3" [ref=f2e3618]
+                      - cell "Floor 3" [ref=f2e3621]
+                      - cell "room" [ref=f2e3622]
+                      - cell [ref=f2e3623]
+                      - cell "m²" [ref=f2e3627]
+                      - cell "1,730.50" [ref=f2e3628]
+                      - cell "AI detected" [ref=f2e3629]
+                      - 'cell "A2-13: A5.1" [ref=f2e3631]'
+                      - cell [ref=f2e3632]:
+                        - button "Row actions" [ref=f2e3633]
+                    - row [ref=f2e3638] [cursor=pointer]:
+                      - cell [ref=f2e3639]:
+                        - checkbox [ref=f2e3640]
+                      - cell "ARC-FIN-03-04" [ref=f2e3641]
+                      - cell [ref=f2e3642]:
+                        - button "Ceiling Gypsum — Floor 3" [ref=f2e3643]
+                      - cell "Floor 3" [ref=f2e3646]
+                      - cell "room" [ref=f2e3647]
+                      - cell [ref=f2e3648]
+                      - cell "m²" [ref=f2e3652]
+                      - cell "1,018.60" [ref=f2e3653]
+                      - cell "AI detected" [ref=f2e3654]
+                      - 'cell "A2-13: A5.1" [ref=f2e3656]'
+                      - cell [ref=f2e3657]:
+                        - button "Row actions" [ref=f2e3658]
+                    - row [ref=f2e3663] [cursor=pointer]:
+                      - cell [ref=f2e3664]:
+                        - checkbox [ref=f2e3665]
+                      - cell "ARC-FIN-04-01" [ref=f2e3666]
+                      - cell [ref=f2e3667]:
+                        - button "Floor Tile 600×600 — Floor 4" [ref=f2e3668]
+                      - cell "Floor 4" [ref=f2e3671]
+                      - cell "room" [ref=f2e3672]
+                      - cell [ref=f2e3673]
+                      - cell "m²" [ref=f2e3677]
+                      - cell "1,062.40" [ref=f2e3678]
+                      - cell "AI detected" [ref=f2e3679]
+                      - 'cell "A2-14: A5.1" [ref=f2e3681]'
+                      - cell [ref=f2e3682]:
+                        - button "Row actions" [ref=f2e3683]
+                    - row [ref=f2e3688] [cursor=pointer]:
+                      - cell [ref=f2e3689]:
+                        - checkbox [ref=f2e3690]
+                      - cell "ARC-FIN-04-02" [ref=f2e3691]
+                      - cell [ref=f2e3692]:
+                        - button "Skirting — Floor 4" [ref=f2e3693]
+                      - cell "Floor 4" [ref=f2e3696]
+                      - cell "room" [ref=f2e3697]
+                      - cell [ref=f2e3698]
+                      - cell "m" [ref=f2e3702]
+                      - cell "286.20" [ref=f2e3703]
+                      - cell "AI detected" [ref=f2e3704]
+                      - 'cell "A2-14: A5.1" [ref=f2e3706]'
+                      - cell [ref=f2e3707]:
+                        - button "Row actions" [ref=f2e3708]
+                    - row [ref=f2e3713] [cursor=pointer]:
+                      - cell [ref=f2e3714]:
+                        - checkbox [ref=f2e3715]
+                      - cell "ARC-FIN-04-03" [ref=f2e3716]
+                      - cell [ref=f2e3717]:
+                        - button "Wall Plaster & Skim — Floor 4" [ref=f2e3718]
+                      - cell "Floor 4" [ref=f2e3721]
+                      - cell "room" [ref=f2e3722]
+                      - cell [ref=f2e3723]
+                      - cell "m²" [ref=f2e3727]
+                      - cell "1,730.50" [ref=f2e3728]
+                      - cell "AI detected" [ref=f2e3729]
+                      - 'cell "A2-14: A5.1" [ref=f2e3731]'
+                      - cell [ref=f2e3732]:
+                        - button "Row actions" [ref=f2e3733]
+                    - row [ref=f2e3738] [cursor=pointer]:
+                      - cell [ref=f2e3739]:
+                        - checkbox [ref=f2e3740]
+                      - cell "ARC-FIN-04-04" [ref=f2e3741]
+                      - cell [ref=f2e3742]:
+                        - button "Ceiling Gypsum — Floor 4" [ref=f2e3743]
+                      - cell "Floor 4" [ref=f2e3746]
+                      - cell "room" [ref=f2e3747]
+                      - cell [ref=f2e3748]
+                      - cell "m²" [ref=f2e3752]
+                      - cell "1,018.60" [ref=f2e3753]
+                      - cell "AI detected" [ref=f2e3754]
+                      - 'cell "A2-14: A5.1" [ref=f2e3756]'
+                      - cell [ref=f2e3757]:
+                        - button "Row actions" [ref=f2e3758]
+                    - row [ref=f2e3763] [cursor=pointer]:
+                      - cell [ref=f2e3764]:
+                        - checkbox [ref=f2e3765]
+                      - cell "ARC-WPF-RF-001" [ref=f2e3766]
+                      - cell [ref=f2e3767]:
+                        - button "Roof Waterproofing Membrane" [ref=f2e3768]
+                      - cell "Roof" [ref=f2e3771]
+                      - cell "room" [ref=f2e3772]
+                      - cell [ref=f2e3773]
+                      - cell "m²" [ref=f2e3777]
+                      - cell "1,210.00" [ref=f2e3778]
+                      - cell "AI detected" [ref=f2e3779]
+                      - 'cell "A2-105: A7.1" [ref=f2e3781]'
+                      - cell [ref=f2e3782]:
+                        - button "Row actions" [ref=f2e3783]
+                    - row [ref=f2e3788] [cursor=pointer]:
+                      - cell [ref=f2e3789]:
+                        - checkbox [ref=f2e3790]
+                      - cell "ARC-RLG-ST-001" [ref=f2e3791]
+                      - cell [ref=f2e3792]:
+                        - button "Stair Railing" [ref=f2e3793]
+                      - cell "Roof" [ref=f2e3796]
+                      - cell "room" [ref=f2e3797]
+                      - cell [ref=f2e3798]
+                      - cell "m" [ref=f2e3802]
+                      - cell "86.40" [ref=f2e3803]
+                      - cell "AI detected" [ref=f2e3804]
+                      - 'cell "A2-105: A7.1" [ref=f2e3806]'
+                      - cell [ref=f2e3807]:
+                        - button "Row actions" [ref=f2e3808]
+                    - row [ref=f2e3813] [cursor=pointer]:
+                      - cell [ref=f2e3814]:
+                        - checkbox [ref=f2e3815]
+                      - cell "ARC-PRA-RF-001" [ref=f2e3816]
+                      - cell [ref=f2e3817]:
+                        - button "Roof Parapet Coping" [ref=f2e3818]
+                      - cell "Roof" [ref=f2e3821]
+                      - cell "room" [ref=f2e3822]
+                      - cell [ref=f2e3823]
+                      - cell "m" [ref=f2e3827]
+                      - cell "138.00" [ref=f2e3828]
+                      - cell "AI detected" [ref=f2e3829]
+                      - 'cell "A2-105: A7.1" [ref=f2e3831]'
+                      - cell [ref=f2e3832]:
+                        - button "Row actions" [ref=f2e3833]
+          - generic [ref=f2e3851]:
+            - generic [ref=f2e3852]:
+              - heading "AI Analysis in Progress" [level=2] [ref=f2e3853]
+              - generic [ref=f2e3854]: Our AI is analyzing your drawing and extracting structured data.
+            - generic [ref=f2e3855]:
+              - generic [ref=f2e3857]:
+                - generic [ref=f2e3858]: "1"
+                - generic [ref=f2e3860]: Uploading
+              - generic [ref=f2e3863]:
+                - generic [ref=f2e3864]: "2"
+                - generic [ref=f2e3866]: Sheet classification
+              - generic [ref=f2e3869]:
+                - generic [ref=f2e3870]: "3"
+                - generic [ref=f2e3872]: Grid detection
+              - generic [ref=f2e3875]:
+                - generic [ref=f2e3876]: "4"
+                - generic [ref=f2e3878]: Element recognition
+              - generic [ref=f2e3881]:
+                - generic [ref=f2e3882]: "5"
+                - generic [ref=f2e3884]: Quantity extraction
+              - generic [ref=f2e3887]:
+                - generic [ref=f2e3888]: "6"
+                - generic [ref=f2e3890]: Verification packaging
+            - generic [ref=f2e3891]:
+              - generic [ref=f2e3892]: File upload complete
+              - generic [ref=f2e3893]: Linking detected elements to work breakdown structure…
+            - generic [ref=f2e3894]: 7%
+            - generic [ref=f2e3899]:
+              - generic [ref=f2e3900]: 10:25:43
+              - generic [ref=f2e3902]: File upload complete
+            - generic [ref=f2e3903]:
+              - generic [ref=f2e3904]: "Live Analysis Stats: 1/6 pages · 6 elements · 0 issues · 4% confidence"
+              - group [ref=f2e3905]:
+                - generic "Model Stack (Live)" [ref=f2e3906] [cursor=pointer]
+            - button "Cancel" [ref=f2e3908] [cursor=pointer]
+        - generic [ref=f2e730]:
+          - generic [ref=f2e731]: "Page: A2-102 – Second Floor Plan"
+          - generic [ref=f2e732]: "Scale: 1:100"
+          - generic [ref=f2e733]: "X: 12345.67"
+          - generic [ref=f2e734]: "Y: 6789.01"
+          - generic [ref=f2e735]: "Zoom: 49%"
+          - generic [ref=f2e736]: Analysis in progress
+          - generic [ref=f2e739]:
+            - button "Documentation" [ref=f2e740] [cursor=pointer]
+            - button "Help" [ref=f2e743] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=f2e752] [cursor=pointer]
+  - alert [ref=f2e756]

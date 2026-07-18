@@ -37,6 +37,7 @@ class DemDbClient:
         provider: str,
         prompt_version: str,
         project_id: str | None = None,
+        pdf_path: str | None = None,
     ) -> dict:
         async with await self._client() as client:
             response = await client.post(
@@ -49,6 +50,7 @@ class DemDbClient:
                     "total_pages": total_pages,
                     "provider": provider,
                     "prompt_version": prompt_version,
+                    "pdf_path": pdf_path,
                 },
             )
             response.raise_for_status()
@@ -78,5 +80,11 @@ class DemDbClient:
     async def get_run_status(self, run_id: str) -> dict:
         async with await self._client() as client:
             response = await client.get(f"/dem/runs/{run_id}/status")
+            response.raise_for_status()
+            return response.json()
+
+    async def get_run(self, run_id: str) -> dict:
+        async with await self._client() as client:
+            response = await client.get(f"/dem/runs/{run_id}")
             response.raise_for_status()
             return response.json()

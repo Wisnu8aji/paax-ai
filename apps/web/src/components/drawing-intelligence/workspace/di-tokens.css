@@ -1,0 +1,420 @@
+/* ============================================================================
+   Drawing Intelligence Workspace — design tokens (blueprint §6, Command Room
+   palette). Ber-scope .di-workspace agar TIDAK mengganggu tema app lain.
+   Interface: Inter · angka/kode/koordinat: JetBrains Mono · judul: Outfit.
+
+   Palet: gelap, matte, tenang, premium — abu-hitam netral + aksen taupe/pastel
+   matte. TIDAK ADA biru/navy terang generik-AI-dashboard, TIDAK ADA hitam murni.
+   ========================================================================== */
+
+.di-workspace {
+  /* Surfaces (abu-hitam netral, bukan hitam murni) */
+  --di-bg: #171717;
+  --di-panel: #1b1b1b;
+  --di-panel2: #262626;
+  --di-elev: #2d2d2d;
+  --di-border: #242424;
+  --di-border-strong: #3a3a3a;
+
+  /* Surface scale tambahan (blueprint reskin) */
+  --di-sidebar-bg: #101010;
+  --di-surface1: #202020;
+  --di-surface2: #262626;
+  --di-surface3: #2d2d2d;
+  --di-hover-bg: #242424;
+  --di-active-bg: #2a2a2a;
+  --di-input-bg: #272727;
+  --di-input-border: #363636;
+  --di-input-focus-border: #555555;
+  --di-input-focus-ring: rgba(255, 255, 255, 0.04);
+  --di-border-soft: #242424;
+  --di-border-default: #303030;
+  --di-divider: #222222;
+
+  /* Text — TEKS PUTIH TEGAS */
+  --di-text: #FFFFFF;
+  --di-text2: #E0E0E0;
+  --di-text3: #A8A8A8;
+  --di-text-disabled: #757575;
+
+  /* Icon — VIBRANT */
+  --di-icon-default: #B0B0B0;
+  --di-icon-active: #FFFFFF;
+
+  /* Accent PAAX — MATTE TAUPE 50% SAT */
+  --di-accent: #8D8177;
+  --di-accent-soft: rgba(141, 129, 119, 0.18);
+
+  /* Aksi primer — MATTE TAUPE 50% SAT */
+  --di-action: #8D8177;
+  --di-action-hover: #9E8B7F;
+  --di-action-ink: #FFFFFF;
+  --di-action-border: #9E8B7F;
+
+  /* Aksi primer netral alternatif (opsional, terang di atas gelap) */
+  --di-action-neutral-bg: #dedede;
+  --di-action-neutral-ink: #181818;
+
+  /* Aksi sekunder */
+  --di-btn-secondary-bg: #222222;
+  --di-btn-secondary-border: #343434;
+  --di-btn-secondary-ink: #b8b8b8;
+  --di-btn-secondary-hover-bg: #2b2b2b;
+  --di-btn-secondary-hover-ink: #e6e6e6;
+
+  /* Semantic status — MATTE 50% SAT */
+  --di-ok: #6B9E68;
+  --di-ok-bg: rgba(107, 158, 104, 0.15);
+  --di-ok-bd: rgba(107, 158, 104, 0.35);
+  --di-warn: #C89052;
+  --di-warn-bg: rgba(200, 144, 82, 0.15);
+  --di-warn-bd: rgba(200, 144, 82, 0.35);
+  --di-err: #B06666;
+  --di-err-bg: rgba(176, 102, 102, 0.15);
+  --di-err-bd: rgba(176, 102, 102, 0.35);
+  --di-info: #5A8FA8;
+  --di-info-bg: rgba(90, 143, 168, 0.15);
+  --di-info-bd: rgba(90, 143, 168, 0.35);
+
+  /* Pastel matte — MATTE 50% SAT */
+  --di-pastel-green: #6B9E68;
+  --di-pastel-blue: #5A8FA8;
+  --di-pastel-purple: #8B6FA8;
+  --di-pastel-amber: #C89052;
+  --di-pastel-red: #B06666;
+  --di-pastel-teal: #4FA5B8;
+  --di-pastel-sand: #B39B7D;
+  --di-pastel-slate: #6F8B95;
+  --di-pastel-taupe: #8D8177;
+
+  /* Status mapping tambahan — MATTE 50% SAT */
+  --di-status-processing: #8B6FA8;
+  --di-status-processing-bg: rgba(139, 111, 168, 0.15);
+  --di-status-processing-bd: rgba(139, 111, 168, 0.35);
+  --di-status-selected: #8D8177;
+  --di-status-selected-bg: rgba(141, 129, 119, 0.18);
+  --di-status-selected-bd: rgba(141, 129, 119, 0.35);
+  --di-status-queued: #6F8B95;
+  --di-status-queued-bg: rgba(111, 139, 149, 0.15);
+  --di-status-queued-bd: rgba(111, 139, 149, 0.35);
+
+  /* Overlay kategori pada kanvas — MATTE 50% SAT SOLID */
+  --di-ov-column: #B06666;
+  --di-ov-beam: #8B6FA8;
+  --di-ov-slab: #5A8FA8;
+  --di-ov-shear: #C89052;
+  --di-ov-wall: #C89052;
+  --di-ov-wall-shear: #B39B7D;
+  --di-ov-room: #4FA5B8;
+  --di-ov-opening: #6B9E68;
+  --di-ov-mep: #6F8B95;
+  --di-ov-grid: #6F8B95;
+  --di-ov-dimension: #6F7575;
+  --di-ov-selected: #8D8177;
+  --di-ov-room-office: rgba(90, 143, 168, 0.14);
+  --di-ov-room-meeting: rgba(107, 158, 104, 0.14);
+  --di-ov-room-open: rgba(176, 102, 102, 0.14);
+  --di-ov-room-pantry: rgba(200, 144, 82, 0.14);
+  --di-ov-room-service: rgba(139, 111, 168, 0.14);
+  --di-ov-room-circulation: rgba(111, 139, 149, 0.12);
+
+  /* Opacity rules kanvas: fill normal 10-16%, fill selected 22-26%,
+     outline normal 45-58%, outline selected 70-75% */
+  --di-ov-fill-alpha: 0.14;
+  --di-ov-fill-selected-alpha: 0.24;
+  --di-ov-outline-alpha: 0.52;
+  --di-ov-outline-selected-alpha: 0.72;
+
+  /* Badge disiplin — MATTE 50% SAT */
+  --di-disc-str: #5A8FA8;
+  --di-disc-arc: #C89052;
+  --di-disc-mep: #6B9E68;
+  --di-disc-civ: #8B6FA8;
+  --di-disc-oth: #6F8B95;
+
+  /* Kanvas */
+  --di-canvas-bg: #171717;
+  --di-paper: #1b1b1b; /* kertas gambar gelap matte */
+  --di-paper-line: rgba(230, 230, 230, 0.82); /* garis gambar terang */
+  --di-grid-line: #303030;
+
+  /* Chart palette — MATTE 50% SAT */
+  --di-chart-1: #5A8FA8;
+  --di-chart-2: #6B9E68;
+  --di-chart-3: #C89052;
+  --di-chart-4: #8B6FA8;
+  --di-chart-5: #B06666;
+  --di-chart-6: #6F8B95;
+  --di-chart-gridline: #303030;
+  --di-chart-label: #909090;
+
+  /* Progress bar — MATTE 50% SAT */
+  --di-progress-track: #303030;
+  --di-progress-upload: #5A8FA8;
+  --di-progress-analysis: #8B6FA8;
+  --di-progress-verified: #6B9E68;
+  --di-progress-warning: #C89052;
+  --di-progress-error: #B06666;
+
+  /* Table */
+  --di-table-header-bg: #1c1c1c;
+  --di-table-header-ink: #909090;
+  --di-table-row-bg: #1b1b1b;
+  --di-table-row-hover-bg: #222222;
+  --di-table-row-selected-bg: #292929;
+  --di-table-row-selected-border: #4a403a;
+  --di-table-divider: #2b2b2b;
+
+  /* Modal / drawer / overlay */
+  --di-modal-bg: #202020;
+  --di-modal-border: #343434;
+  --di-modal-shadow: 0 18px 50px rgba(0, 0, 0, 0.38);
+  --di-overlay-bg: rgba(0, 0, 0, 0.68);
+  --di-floating-shadow: 0 12px 36px rgba(0, 0, 0, 0.3);
+
+  /* Scrollbar */
+  --di-scrollbar-thumb: #383838;
+  --di-scrollbar-thumb-hover: #484848;
+
+  /* Sidebar item states */
+  --di-sidebar-item-bg: #101010;
+  --di-sidebar-item-hover-bg: #1d1d1d;
+  --di-sidebar-item-active-bg: #282828;
+  --di-sidebar-item-selected-border: #45413d;
+
+  /* Sheet thumbnail selected */
+  --di-thumb-selected-border: rgba(176, 164, 147, 0.55);
+
+  /* Motion (blueprint §23) */
+  --di-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --di-t-fast: 180ms;
+  --di-t-med: 260ms;
+  --di-t-mode: 400ms;
+
+  /* Font */
+  --di-font: var(--font-inter), 'Inter', system-ui, sans-serif;
+  --di-font-display: var(--font-outfit), 'Outfit', var(--di-font);
+  --di-font-mono: var(--font-jetbrains), 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Layout */
+  --di-topbar-h: 52px;
+  --di-statusbar-h: 28px;
+  --di-nav-w: 288px;
+  --di-inspector-w: 336px;
+  --di-dock-collapsed-h: 44px;
+
+  background: var(--di-bg);
+  color: var(--di-text);
+  font-family: var(--di-font);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+/* ── Scrollbar gelap khusus workspace ── */
+.di-workspace ::-webkit-scrollbar { width: 8px; height: 8px; }
+.di-workspace ::-webkit-scrollbar-track { background: transparent; }
+.di-workspace ::-webkit-scrollbar-thumb {
+  background: var(--di-scrollbar-thumb);
+  border-radius: 4px;
+}
+.di-workspace ::-webkit-scrollbar-thumb:hover { background: var(--di-scrollbar-thumb-hover); }
+
+/* ── Primitif bersama ── */
+
+.di-panel {
+  background: var(--di-panel);
+  border: 1px solid var(--di-border);
+}
+
+.di-mono { font-family: var(--di-font-mono); }
+
+.di-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--di-border);
+  background: var(--di-panel2);
+  color: var(--di-text);
+  font-size: 12.5px;
+  font-family: var(--di-font);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--di-t-fast) var(--di-ease), border-color var(--di-t-fast) var(--di-ease), color var(--di-t-fast) var(--di-ease);
+}
+.di-btn:hover { background: var(--di-elev); border-color: var(--di-border-strong); }
+.di-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.di-btn-primary {
+  background: var(--di-action);
+  border-color: transparent;
+  color: var(--di-action-ink);
+}
+.di-btn-primary:hover { background: var(--di-action-hover); border-color: transparent; }
+
+.di-btn-accent {
+  background: var(--di-accent);
+  border-color: transparent;
+  color: #FFFFFF;
+}
+.di-btn-accent:hover { background: var(--di-action-hover); border-color: transparent; }
+
+.di-btn-ok {
+  background: var(--di-ok);
+  border-color: transparent;
+  color: #FFFFFF;
+}
+.di-btn-ok:hover { background: #7BA970; border-color: transparent; }
+
+.di-btn-ghost { background: transparent; border-color: transparent; color: var(--di-text2); }
+.di-btn-ghost:hover { background: var(--di-panel2); color: var(--di-text); border-color: transparent; }
+
+.di-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--di-text2);
+  cursor: pointer;
+  transition: background var(--di-t-fast) var(--di-ease), color var(--di-t-fast) var(--di-ease);
+}
+.di-icon-btn:hover { background: var(--di-panel2); color: var(--di-text); }
+.di-icon-btn[data-active='true'] {
+  background: var(--di-accent-soft);
+  color: var(--di-accent);
+  border-color: rgba(141, 129, 119, 0.35);
+}
+
+.di-input {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--di-input-border);
+  background: var(--di-input-bg);
+  color: var(--di-text);
+  font-size: 12.5px;
+  font-family: var(--di-font);
+  outline: none;
+  transition: border-color var(--di-t-fast) var(--di-ease), box-shadow var(--di-t-fast) var(--di-ease);
+}
+.di-input::placeholder { color: var(--di-text3); }
+.di-input:focus {
+  border-color: var(--di-input-focus-border);
+  box-shadow: 0 0 0 2px var(--di-input-focus-ring);
+}
+
+/* Pill status */
+.di-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--di-border);
+  color: var(--di-text2);
+  background: var(--di-panel2);
+  white-space: nowrap;
+}
+.di-pill[data-tone='ok'] { color: var(--di-ok); background: var(--di-ok-bg); border-color: var(--di-ok-bd); }
+.di-pill[data-tone='warn'] { color: var(--di-warn); background: var(--di-warn-bg); border-color: var(--di-warn-bd); }
+.di-pill[data-tone='err'] { color: var(--di-err); background: var(--di-err-bg); border-color: var(--di-err-bd); }
+.di-pill[data-tone='info'] { color: var(--di-info); background: var(--di-info-bg); border-color: var(--di-info-bd); }
+.di-pill[data-tone='accent'] { color: var(--di-accent); background: var(--di-accent-soft); border-color: rgba(141, 129, 119, 0.35); }
+
+/* Badge disiplin */
+.di-disc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-family: var(--di-font-mono);
+  letter-spacing: 0.04em;
+  border: 1px solid;
+  background: transparent;
+}
+.di-disc[data-d='STR'] { color: var(--di-disc-str); border-color: color-mix(in srgb, var(--di-disc-str) 45%, transparent); }
+.di-disc[data-d='ARC'] { color: var(--di-disc-arc); border-color: color-mix(in srgb, var(--di-disc-arc) 45%, transparent); }
+.di-disc[data-d='MEP'] { color: var(--di-disc-mep); border-color: color-mix(in srgb, var(--di-disc-mep) 45%, transparent); }
+.di-disc[data-d='CIV'] { color: var(--di-disc-civ); border-color: color-mix(in srgb, var(--di-disc-civ) 45%, transparent); }
+.di-disc[data-d='OTH'] { color: var(--di-disc-oth); border-color: color-mix(in srgb, var(--di-disc-oth) 45%, transparent); }
+
+/* Section header panel */
+.di-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: none;
+  color: var(--di-text2);
+}
+
+/* Animasi masuk panel (blueprint §23: fade/rise) */
+@keyframes di-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.di-rise { animation: di-rise var(--di-t-med) var(--di-ease) both; }
+
+@keyframes di-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.di-fade { animation: di-fade var(--di-t-med) var(--di-ease) both; }
+
+@keyframes di-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+.di-pulse { animation: di-pulse 1.6s ease-in-out infinite; }
+
+@keyframes di-spin {
+  to { transform: rotate(360deg); }
+}
+.di-spin { animation: di-spin 1.8s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .di-rise, .di-fade { animation: none; }
+  .di-pulse { animation: none; opacity: 1; }
+  .di-workspace * { transition-duration: 1ms !important; }
+}
+
+/* Tabel dock */
+.di-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.di-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--di-table-header-bg);
+  color: var(--di-table-header-ink);
+  font-weight: 600;
+  font-size: 11px;
+  text-align: left;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--di-table-divider);
+  white-space: nowrap;
+  user-select: none;
+}
+.di-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--di-table-divider);
+  color: var(--di-text2);
+  white-space: nowrap;
+}
+.di-table tbody tr { cursor: pointer; background: var(--di-table-row-bg); transition: background var(--di-t-fast) var(--di-ease); }
+.di-table tbody tr:hover { background: var(--di-table-row-hover-bg); }
+.di-table tbody tr[data-selected='true'] { background: var(--di-table-row-selected-bg); }
+.di-table tbody tr[data-selected='true'] td { color: var(--di-text); border-color: var(--di-table-row-selected-border); }

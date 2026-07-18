@@ -91,6 +91,60 @@ function withSystemPrompt(messages: ChatMessage[]): ChatMessage[] {
 
 type SendEvent = (type: string, data: Record<string, unknown>) => void;
 
+// ─── Status summarizer (Mistral Small 3 via OpenRouter) ───────────────────────
+
+/**
+ * Ringkas cuplikan reasoning jadi status super pendek (maks ~8 kata) via
+ * Mistral Small 3 (OpenRouter, key sama dengan DEEPSEEK_API_KEY/getSharedKey()
+ * yang sudah dipakai Command Room -- TIDAK perlu key/provider baru) --
+ * menggantikan label regex generik supaya status benar-benar mencerminkan
+ * topik yang sedang dipikirkan model (mis. "Membandingkan HSPK galian tanah
+ * dan pondasi batu kali"), bukan sekadar fase abstrak ("Weighing the
+ * options..."). Dipanggil server-side, TIDAK di-stream -- harus cepat (model
+ * kecil, tanpa reasoning) dan tidak boleh pernah menggagalkan chat utama:
+ * kalau gagal/timeout, caller wajib fallback ke label lama (lihat
+ * getReasoningContextStatus di chat-run-store.ts, tapi versi servernya di sini).
+ */
+async function summarizeReasoningStatus(
+  reasoningSnippet: string,
+  req: NextRequest,
+): Promise<string | null> {
+  const apiKey = getSharedKey();
+  if (!apiKey || !isOpenRouterKey(apiKey)) return null;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000); // 4s budget -- jangan pernah menahan stream utama lama
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: STATUS_SUMMARY_MODEL,
+        messages: [
+          {
+            role: "system",
+            content: "Ringkas cuplikan pemikiran AI berikut jadi SATU frasa pendek berbahasa Indonesia (maksimal 8 kata), present tense, menggambarkan APA yang sedang dipikirkan/dikerjakan -- bukan kesimpulan, bukan tanda baca akhir, bukan tanda kutip. Contoh: 'Membandingkan HSPK galian tanah dan pondasi batu kali'. Balas HANYA frasa itu, tanpa penjelasan lain.",
+          },
+          { role: "user", content: reasoningSnippet.slice(-1500) },
+        ],
+        max_tokens: 32,
+        temperature: 0.3,
+        stream: false,
+        reasoning: { enabled: false, effort: "none", exclude: true },
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const text = data.choices?.[0]?.message?.content;
+    if (typeof text !== "string") return null;
+    const trimmed = text.trim().replace(/^["']|["']$/g, "");
+    return trimmed.length > 0 && trimmed.length < 200 ? trimmed : null;
+  } catch {
+    return null; // timeout/error apa pun -- diamkan, caller fallback ke label lama
+  }
+}
+
 // ─── Helper: baca env ──────────
 
 function getSharedKey(): string | undefined {
@@ -118,6 +172,12 @@ function getDashScopeBaseUrl(): string {
 function getAnthropicKey(): string | undefined {
   return process.env.ANTHROPIC_API_KEY?.trim() || undefined;
 }
+
+// Slug OpenRouter untuk Mistral Small 3 -- model kecil/cepat khusus meringkas
+// status, TIDAK dipakai untuk jawaban chat utama. Override via env kalau slug
+// OpenRouter berubah.
+const STATUS_SUMMARY_MODEL =
+  process.env.STATUS_SUMMARY_MODEL?.trim() || "mistralai/mistral-small-3.1-24b-instruct";
 
 function isOpenRouterKey(apiKey: string): boolean {
   return apiKey.trim().startsWith("sk-or-v1-");
@@ -183,6 +243,8 @@ async function consumeOpenAiCompatibleStream(
   sendEvent: SendEvent,
   runId: string | undefined,
   conversationId: string | undefined,
+  modelAlias?: ModelAlias,
+  req?: NextRequest,
 ): Promise<{ finishedOnLength: boolean; fullContent: string }> {
   if (!res.body) throw new Error("No response stream");
   const reader = res.body.getReader();
@@ -190,6 +252,12 @@ async function consumeOpenAiCompatibleStream(
   let buffer = "";
   let fullContent = "";
   let finishedOnLength = false;
+
+  // Akumulasi reasoning + throttle status-summary setiap ~3 kalimat baru
+  // (fire-and-forget, TIDAK menahan stream utama).
+  let reasoningAccumulator = "";
+  let sentenceCountSinceLastSummary = 0;
+  let summaryInFlight = false;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -214,6 +282,34 @@ async function consumeOpenAiCompatibleStream(
         const { content, reasoning } = extractDelta(delta);
         if (reasoning) {
           sendEvent("message", { type: "reasoning", runId, conversationId, delta: reasoning, timestamp: new Date().toISOString() });
+
+          // Status-summary (Mistral Small 3) HANYA untuk Lucent/Arete, BUKAN Noir.
+          if (modelAlias && (modelAlias === "lucent" || modelAlias === "arete") && req) {
+            reasoningAccumulator += reasoning;
+            const newSentences = (reasoning.match(/[.!?]+(\s|$)/g) || []).length;
+            sentenceCountSinceLastSummary += newSentences;
+
+            // Trigger status-summary setiap ~3 kalimat baru, TIDAK menahan stream utama.
+            if (sentenceCountSinceLastSummary >= 3 && !summaryInFlight) {
+              sentenceCountSinceLastSummary = 0;
+              summaryInFlight = true;
+              const snippet = reasoningAccumulator;
+              summarizeReasoningStatus(snippet, req)
+                .then((label) => {
+                  if (label) {
+                    sendEvent("message", {
+                      type: "status",
+                      phase: "reasoning_summary",
+                      statusLabel: label,
+                      runId,
+                      conversationId,
+                      timestamp: new Date().toISOString()
+                    });
+                  }
+                })
+                .finally(() => { summaryInFlight = false; });
+            }
+          }
         }
         if (content) {
           fullContent += content;
@@ -301,7 +397,7 @@ async function streamOpenRouter(
     }
 
     const res = await fetchOrThrow("https://openrouter.ai/api/v1/chat/completions", apiKey, currentPayload, req);
-    const { finishedOnLength, fullContent } = await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId);
+    const { finishedOnLength, fullContent } = await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId, modelAlias, req);
     hitLengthLimit = finishedOnLength;
 
     if (hitLengthLimit) {
@@ -352,10 +448,11 @@ async function streamDeepSeekNative(
   sendEvent: SendEvent,
   runId: string | undefined,
   conversationId: string | undefined,
+  modelAlias?: ModelAlias,
 ): Promise<void> {
   const payload = buildDeepSeekPayload(messages, thinking, effort);
   const res = await fetchOrThrow(`${getDeepSeekBaseUrl()}/chat/completions`, apiKey, payload, req);
-  await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId);
+  await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId, modelAlias, req);
 }
 
 // ─── Arete — Qwen3.7-Plus via DashScope native (OpenAI-compatible mode) ───────
@@ -396,10 +493,11 @@ async function streamDashScopeNative(
   sendEvent: SendEvent,
   runId: string | undefined,
   conversationId: string | undefined,
+  modelAlias?: ModelAlias,
 ): Promise<void> {
   const payload = buildDashScopePayload(messages, thinking, effort);
   const res = await fetchOrThrow(`${getDashScopeBaseUrl()}/chat/completions`, apiKey, payload, req);
-  await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId);
+  await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId, modelAlias, req);
 }
 
 // ─── Noir — provider native SDK resmi (native key saja) ─────────
@@ -675,9 +773,9 @@ export async function POST(req: NextRequest) {
         if (resolved.viaOpenRouter) {
           await streamOpenRouter(modelAlias, finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId);
         } else if (modelAlias === "lucent") {
-          await streamDeepSeekNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId);
+          await streamDeepSeekNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId, modelAlias);
         } else if (modelAlias === "arete") {
-          await streamDashScopeNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId);
+          await streamDashScopeNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId, modelAlias);
         } else {
           await streamAnthropicNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId);
         }

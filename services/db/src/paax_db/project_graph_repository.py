@@ -18,7 +18,9 @@ from .models import (
     ProjectGraphNodeEvidence,
     ProjectGraphSnapshot,
     ProjectGraphSummaryView,
+    ProjectGraphCorrection,
 )
+import uuid
 
 
 def _utc_now() -> datetime:
@@ -244,6 +246,35 @@ async def build_and_activate_snapshot(
         persist_summary_views(
             session, project_id=project_id, snapshot_id=snapshot_id, views=summary_views
         )
+        previous_active = (await session.execute(select(ProjectGraphSnapshot).where(
+            ProjectGraphSnapshot.project_id == project_id,
+            ProjectGraphSnapshot.status == "active",
+        ).with_for_update())).scalars().first()
+        if previous_active is not None:
+            accepted = (await session.execute(select(ProjectGraphCorrection).where(
+                ProjectGraphCorrection.project_id == project_id,
+                ProjectGraphCorrection.snapshot_id == previous_active.snapshot_id,
+                ProjectGraphCorrection.status == "accepted",
+            ))).scalars().all()
+            new_node_ids = {item["node_id"] for item in nodes}
+            new_edge_ids = {item["edge_id"] for item in edges}
+            for correction in accepted:
+                target_exists = correction.target_id in (new_node_ids if correction.target_type == "node" else new_edge_ids)
+                session.add(ProjectGraphCorrection(
+                    id=str(uuid.uuid4()),
+                    project_id=project_id,
+                    snapshot_id=snapshot_id,
+                    target_type=correction.target_type,
+                    target_id=correction.target_id,
+                    correction_type=correction.correction_type,
+                    proposed_value=correction.proposed_value,
+                    rationale=correction.rationale,
+                    status="accepted" if target_exists else "stale",
+                    resolution_note=None if target_exists else "Target tidak ditemukan pada snapshot baru; perlu review ulang.",
+                    created_by=correction.created_by,
+                    resolved_by=correction.resolved_by,
+                    carried_from=correction.id,
+                ))
         active_snapshots = (await session.execute(
             select(ProjectGraphSnapshot).where(
                 ProjectGraphSnapshot.project_id == project_id,
