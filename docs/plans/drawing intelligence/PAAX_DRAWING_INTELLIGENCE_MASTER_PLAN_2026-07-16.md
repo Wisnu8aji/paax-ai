@@ -1,3 +1,5 @@
+> **STATUS: HISTORICAL/SUPERSEDED** -- lihat [DI_SOURCE_OF_TRUTH.md](file:///G:/paax-ai-main/docs/plans/drawing%20intelligence/DI_SOURCE_OF_TRUTH.md) untuk kondisi terkini
+
 # PAAX Drawing Intelligence — Master Plan (2026-07-16)
 
 > Dokumen induk mandat strategis (10 deliverables).

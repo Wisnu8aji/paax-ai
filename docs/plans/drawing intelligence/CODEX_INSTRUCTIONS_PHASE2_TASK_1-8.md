@@ -1,3 +1,5 @@
+> **STATUS: HISTORICAL/SUPERSEDED** -- lihat [DI_SOURCE_OF_TRUTH.md](file:///G:/paax-ai-main/docs/plans/drawing%20intelligence/DI_SOURCE_OF_TRUTH.md) untuk kondisi terkini
+
 # Instruksi Codex — DEM Phase 2 (Job Orchestrator), Task 1 sampai 8
 
 > Plan sumber: `docs/superpowers/plans/2026-07-14-dem-phase2-job-orchestrator.md`

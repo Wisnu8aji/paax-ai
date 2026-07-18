@@ -1,3 +1,5 @@
+> **STATUS: HISTORICAL/SUPERSEDED** -- lihat [DI_SOURCE_OF_TRUTH.md](file:///G:/paax-ai-main/docs/plans/drawing%20intelligence/DI_SOURCE_OF_TRUTH.md) untuk kondisi terkini
+
 # Instruksi Codex — Task 4 sampai 8 (DEM/PCKM Phase 0+1)
 
 > Plan sumber: `docs/superpowers/plans/2026-07-14-dem-pckm-phase0-1-schemas.md`

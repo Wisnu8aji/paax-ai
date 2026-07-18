@@ -1,3 +1,5 @@
+> **STATUS: HISTORICAL/SUPERSEDED** -- lihat [DI_SOURCE_OF_TRUTH.md](file:///G:/paax-ai-main/docs/plans/drawing%20intelligence/DI_SOURCE_OF_TRUTH.md) untuk kondisi terkini
+
 # Konteks Ringkas — Drawing Intelligence
 
 **Tanggal:** 2026-07-17. Dokumen orientasi cepat — baca ini dulu sebelum dokumen lain.

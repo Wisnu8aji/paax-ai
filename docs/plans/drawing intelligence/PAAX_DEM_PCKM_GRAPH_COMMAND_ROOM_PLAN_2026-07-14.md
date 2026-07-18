@@ -1,3 +1,5 @@
+> **STATUS: HISTORICAL/SUPERSEDED** -- lihat [DI_SOURCE_OF_TRUTH.md](file:///G:/paax-ai-main/docs/plans/drawing%20intelligence/DI_SOURCE_OF_TRUTH.md) untuk kondisi terkini
+
 # PAAX AI — Rencana Implementasi Drawing Evidence Model (DEM) → Project Construction Knowledge Model (PCKM) → Graph-Retrieval Command Room
 
 **Tanggal:** 14 Juli 2026 (revisi 2026-07-14, sesi kedua)

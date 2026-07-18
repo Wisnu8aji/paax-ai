@@ -1,3 +1,5 @@
+> **STATUS: HISTORICAL/SUPERSEDED** -- lihat [DI_SOURCE_OF_TRUTH.md](file:///G:/paax-ai-main/docs/plans/drawing%20intelligence/DI_SOURCE_OF_TRUTH.md) untuk kondisi terkini
+
 # SPEC Gelombang B — Pemahaman Query (2026-07-16) [FINAL — ratifikasi Fable 2026-07-16]
 
 > Implementasi Master Plan §5 Gelombang B (item 4-6). Prasyarat: Gelombang A hijau
