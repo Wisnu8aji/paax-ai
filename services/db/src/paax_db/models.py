@@ -232,6 +232,22 @@ class DemPage(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
 
+class DurableJob(Base):
+    """Portable durable queue record; external queues lease this canonical state."""
+    __tablename__ = "durable_jobs"
+
+    id = Column(String, primary_key=True)
+    job_type = Column(String, nullable=False, index=True)
+    payload = Column(JSON_DOCUMENT, nullable=False)
+    idempotency_key = Column(String, nullable=False, unique=True)
+    status = Column(String, nullable=False, default="queued", index=True)
+    lease_owner = Column(String, nullable=True, index=True)
+    attempt_count = Column(Integer, nullable=False, default=0)
+    last_error = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+
 
 class ProjectGraphSnapshot(Base):
     __tablename__ = "project_graph_snapshots"
