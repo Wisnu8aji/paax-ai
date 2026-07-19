@@ -213,7 +213,8 @@ class DemRun(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     completed_at = Column(DateTime(timezone=True), nullable=True)
-    pdf_path = Column(String, nullable=True)
+    # Object key is portable across workers; never persist a host filesystem path.
+    artifact_key = Column(String, nullable=True)
 
 
 class DemPage(Base):
@@ -244,6 +245,10 @@ class DurableJob(Base):
     lease_owner = Column(String, nullable=True, index=True)
     attempt_count = Column(Integer, nullable=False, default=0)
     last_error = Column(Text, nullable=True)
+    lease_expires_at = Column(DateTime(timezone=True), nullable=True, index=True)
+    next_attempt_at = Column(DateTime(timezone=True), nullable=True, index=True)
+    cancel_requested_at = Column(DateTime(timezone=True), nullable=True)
+    poisoned_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

@@ -300,7 +300,7 @@ class DemRunCreate(BaseModel):
     total_pages: int
     provider: str
     prompt_version: str
-    pdf_path: Optional[str] = None
+    artifact_key: Optional[str] = None
 
 
 class DemRunResponse(BaseModel):
@@ -316,7 +316,7 @@ class DemRunResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     completed_at: Optional[datetime] = None
-    pdf_path: Optional[str] = None
+    artifact_key: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

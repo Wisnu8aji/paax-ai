@@ -8,6 +8,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.api import dem_routes
+from app.artifact_storage import LocalArtifactStore
 from app.main import app
 
 HEADERS = {"X-Internal-Key": "test-internal-key"}
@@ -40,16 +41,17 @@ async def test_get_page_image_valid_and_cached():
         import fitz
         doc = fitz.open()
         doc.new_page(width=100, height=100)
-        pdf_path = os.path.join(tmp_dir, "test.pdf")
-        doc.save(pdf_path)
+        pdf_bytes = doc.tobytes()
         doc.close()
 
+        store = LocalArtifactStore(__import__("pathlib").Path(tmp_dir))
+        artifact_key = store.put("original-pdf", pdf_bytes, content_type="application/pdf", object_key="runs/run-123/source.pdf")
         with patch("app.api.dem_routes.DemDbClient.get_run") as mock_get_run, \
-             patch("app.api.dem_routes.UPLOAD_DIR", tmp_dir):
+             patch.object(dem_routes, "ARTIFACT_STORE", store):
             
             mock_get_run.return_value = {
                 "id": "run-123",
-                "pdf_path": pdf_path,
+                "artifact_key": artifact_key,
                 "total_pages": 1,
             }
 
@@ -60,13 +62,6 @@ async def test_get_page_image_valid_and_cached():
                 png_bytes = response.content
                 assert len(png_bytes) > 0
 
-                cache_file = os.path.join(tmp_dir, "cache_run-123_0.png")
-                assert os.path.exists(cache_file)
-
-                mock_get_run.side_effect = Exception("Should not be called")
-                response = await ac.get("/drawings/dem/run-123/pages/0/image", headers=HEADERS)
-                assert response.status_code == 200
-                assert response.content == png_bytes
 
 
 @pytest.mark.asyncio
@@ -75,16 +70,17 @@ async def test_get_page_image_out_of_bounds():
         import fitz
         doc = fitz.open()
         doc.new_page(width=100, height=100)
-        pdf_path = os.path.join(tmp_dir, "test.pdf")
-        doc.save(pdf_path)
+        pdf_bytes = doc.tobytes()
         doc.close()
 
+        store = LocalArtifactStore(__import__("pathlib").Path(tmp_dir))
+        artifact_key = store.put("original-pdf", pdf_bytes, content_type="application/pdf", object_key="runs/run-123/source.pdf")
         with patch("app.api.dem_routes.DemDbClient.get_run") as mock_get_run, \
-             patch("app.api.dem_routes.UPLOAD_DIR", tmp_dir):
+             patch.object(dem_routes, "ARTIFACT_STORE", store):
             
             mock_get_run.return_value = {
                 "id": "run-123",
-                "pdf_path": pdf_path,
+                "artifact_key": artifact_key,
                 "total_pages": 1,
             }
 

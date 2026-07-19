@@ -37,7 +37,7 @@ class DemDbClient:
         provider: str,
         prompt_version: str,
         project_id: str | None = None,
-        pdf_path: str | None = None,
+        artifact_key: str | None = None,
     ) -> dict:
         async with await self._client() as client:
             response = await client.post(
@@ -50,7 +50,7 @@ class DemDbClient:
                     "total_pages": total_pages,
                     "provider": provider,
                     "prompt_version": prompt_version,
-                    "pdf_path": pdf_path,
+                    "artifact_key": artifact_key,
                 },
             )
             response.raise_for_status()

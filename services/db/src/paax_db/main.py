@@ -3,7 +3,7 @@ import datetime
 import hashlib
 import json
 from typing import List, Dict, Any, Optional
-from sqlalchemy import delete
+from sqlalchemy import delete, or_
 import uuid
 from fastapi import FastAPI, Depends, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -906,6 +906,44 @@ async def create_rab_materialization_mapping(
     facts = await _approved_scoped_measurement_facts(
         db, project_id=id, snapshot_id=snapshot.snapshot_id, measurement_fact_ids=request.measurement_fact_ids,
     )
+
+
+@app.post("/durable-jobs/enqueue", dependencies=[Depends(get_current_user)])
+async def enqueue_durable_job(body: dict, db: AsyncSession = Depends(get_db)):
+    """Canonical idempotent queue insert. A unique key absorbs duplicate delivery."""
+    key = body["idempotency_key"]
+    existing = (await db.execute(select(models.DurableJob).where(models.DurableJob.idempotency_key == key))).scalars().first()
+    if existing:
+        return {"id": existing.id, "status": existing.status, "duplicate": True}
+    job = models.DurableJob(id=str(uuid.uuid4()), job_type=body["job_type"], payload=body["payload"], idempotency_key=key, status="queued", attempt_count=0)
+    db.add(job)
+    try:
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        existing = (await db.execute(select(models.DurableJob).where(models.DurableJob.idempotency_key == key))).scalars().one()
+        return {"id": existing.id, "status": existing.status, "duplicate": True}
+    return {"id": job.id, "status": job.status, "duplicate": False}
+
+
+@app.post("/durable-jobs/lease", dependencies=[Depends(get_current_user)])
+async def lease_durable_job(body: dict, db: AsyncSession = Depends(get_db)):
+    """Atomically claim one due/expired job; SKIP LOCKED protects multi-instance workers."""
+    now = _utc_now(); seconds = max(1, int(body.get("lease_seconds", 60)))
+    stmt = (select(models.DurableJob).where(or_(
+        models.DurableJob.status == "queued",
+        (models.DurableJob.status == "retry_wait") & (models.DurableJob.next_attempt_at <= now),
+        (models.DurableJob.status.in_(["leased", "running"])) & (models.DurableJob.lease_expires_at <= now),
+    )).order_by(models.DurableJob.created_at).with_for_update(skip_locked=True).limit(1))
+    job = (await db.execute(stmt)).scalars().first()
+    if not job:
+        return None
+    if job.status in {"leased", "running"}:
+        job.attempt_count += 1
+    job.status, job.lease_owner = "leased", body["worker_id"]
+    job.lease_expires_at = now + datetime.timedelta(seconds=seconds)
+    await db.commit()
+    return {"id": job.id, "job_type": job.job_type, "payload": job.payload, "attempt_count": job.attempt_count}
     mapping = models.RabMaterializationMapping(
         id=str(uuid.uuid4()), project_id=id, snapshot_id=snapshot.snapshot_id,
         work_item_node_id=request.work_item_node_id, measurement_fact_ids=request.measurement_fact_ids,
