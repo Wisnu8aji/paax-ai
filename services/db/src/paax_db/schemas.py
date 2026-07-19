@@ -332,6 +332,7 @@ class DemRunCreate(BaseModel):
     provider: str
     prompt_version: str
     artifact_key: Optional[str] = None
+    requested_by: Optional[str] = None
 
 
 class DemRunResponse(BaseModel):

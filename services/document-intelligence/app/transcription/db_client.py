@@ -38,6 +38,7 @@ class DemDbClient:
         prompt_version: str,
         project_id: str | None = None,
         artifact_key: str | None = None,
+        requested_by: str | None = None,
     ) -> dict:
         async with await self._client() as client:
             response = await client.post(
@@ -51,6 +52,7 @@ class DemDbClient:
                     "provider": provider,
                     "prompt_version": prompt_version,
                     "artifact_key": artifact_key,
+                    "requested_by": requested_by,
                 },
             )
             response.raise_for_status()
@@ -93,6 +95,19 @@ class DemDbClient:
         async with httpx.AsyncClient(base_url=self.base_url, transport=self._transport, headers={"X-Internal-Key": self.internal_key, "X-User-Id": actor_id}) as client:
             path = "artifact-delete-access" if action == "delete" else "artifact-access"
             response = await client.post(f"/internal/projects/{project_id}/{path}", json={"artifact_key": artifact_key})
+            response.raise_for_status()
+
+    async def authorize_actor_for_project(self, actor_id: str, project_id: str) -> None:
+        """Verify actor_id (the real end-user who made a document-intelligence
+        request) is a member/owner of project_id, using services/db's
+        authoritative ProjectMember/owner data. Raises httpx.HTTPStatusError
+        (403) if not authorized -- callers should let that propagate or
+        translate it to their own HTTPException(403)."""
+        async with await self._client() as client:
+            response = await client.post(
+                "/internal/authorize-actor",
+                json={"actor_id": actor_id, "project_id": project_id},
+            )
             response.raise_for_status()
 
     async def get_artifact_retention(self, run_id: str) -> dict:

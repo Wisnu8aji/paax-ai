@@ -158,3 +158,25 @@ async def require_project_access(
         return
 
     raise HTTPException(status_code=403, detail="Not a member of this project")
+
+
+async def is_project_member_or_owner(project_id: str, actor_id: str, db: AsyncSession) -> bool:
+    """Pure membership check for an explicit actor_id, independent of the
+    caller's own identity. Used by /internal/authorize-actor: a trusted
+    internal-service caller (verified by X-Internal-Key at that route) asks
+    this on behalf of a *different* real end-user (the one who actually made
+    the original public request), so that upstream service can enforce
+    end-user project membership without forwarding that user's own bearer
+    token across services or trusting a caller-supplied X-User-Id as if it
+    were self-authenticating."""
+    result = await db.execute(
+        select(models.ProjectMember).where(
+            models.ProjectMember.project_id == project_id,
+            models.ProjectMember.user_id == actor_id,
+        )
+    )
+    if result.scalars().first() is not None:
+        return True
+    proj_res = await db.execute(select(models.Project).where(models.Project.id == project_id))
+    proj = proj_res.scalars().first()
+    return bool(proj and proj.owner_id == actor_id)

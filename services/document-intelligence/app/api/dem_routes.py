@@ -91,7 +91,28 @@ def _artifact_signing_secret() -> bytes:
 
 
 @router.post("/start")
-async def start_dem_run(file: UploadFile = File(...), project_id: str | None = Form(default=None)):
+async def start_dem_run(
+    file: UploadFile = File(...),
+    project_id: str = Form(...),
+    user: User = Depends(get_current_user),
+):
+    # Actor identity (who is asking) is `user`, resolved from the caller's own
+    # credential -- never trusted from a request body field. project_id is
+    # required (not optional) precisely because there is no run yet to
+    # resolve a project scope from; the caller must state which project they
+    # are authorized to write into, and that claim is verified below against
+    # services/db's authoritative ProjectMember/owner data before anything
+    # is created. This closes the gap where any authenticated caller could
+    # previously start a DEM run under an arbitrary project_id and have the
+    # (internal-service-authenticated) pipeline act on it regardless of
+    # whether the real user had any relationship to that project.
+    try:
+        await DemDbClient().authorize_actor_for_project(user.uid, project_id)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 403:
+            raise HTTPException(status_code=403, detail="not a member of this project")
+        raise
+
     # ── Security: read with size guard ───────────────────────────────────────
     pdf_bytes = await file.read()
     if len(pdf_bytes) > MAX_UPLOAD_BYTES:
@@ -132,6 +153,7 @@ async def start_dem_run(file: UploadFile = File(...), project_id: str | None = F
         provider="qwen",
         prompt_version=PROMPT_VERSION,
         artifact_key=artifact_key,
+        requested_by=user.uid,
     )
     await _enqueue_job(
         "dem.extract",
@@ -250,13 +272,23 @@ async def delete_artifact(run_id: str, user: User = Depends(get_current_user)):
 
 
 @router.post("/{run_id}/synthesize")
-async def trigger_synthesis(run_id: str):
+async def trigger_synthesis(run_id: str, user: User = Depends(get_current_user)):
     db_client = DemDbClient()
     run_status = await db_client.get_run_status(run_id)
     project_id = run_status.get("project_id")
     if not project_id:
         raise HTTPException(status_code=400, detail="Cannot synthesize: DEM run has no project_id")
-    
+    # project_id here is resolved from the existing run (server-side truth),
+    # not trusted from any caller-supplied field -- knowing a run_id must not
+    # be sufficient to trigger synthesis on a project the actor has no
+    # relationship to.
+    try:
+        await db_client.authorize_actor_for_project(user.uid, project_id)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 403:
+            raise HTTPException(status_code=403, detail="not a member of this project")
+        raise
+
     current_status = run_status.get("status")
     if current_status in ("synthesis_in_progress", "synthesis_complete"):
         raise HTTPException(status_code=400, detail=f"Synthesis already in progress or complete (status: {current_status})")
@@ -275,8 +307,17 @@ async def trigger_synthesis(run_id: str):
 
 
 @router.get("/{run_id}/status")
-async def get_dem_status(run_id: str):
-    data = await DemDbClient().get_run_status(run_id)
+async def get_dem_status(run_id: str, user: User = Depends(get_current_user)):
+    db_client = DemDbClient()
+    data = await db_client.get_run_status(run_id)
+    project_id = data.get("project_id")
+    if project_id:
+        try:
+            await db_client.authorize_actor_for_project(user.uid, project_id)
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 403:
+                raise HTTPException(status_code=403, detail="not a member of this project")
+            raise
     status = data.get("status")
     if status in ("synthesis_in_progress", "synthesis_complete", "synthesis_failed"):
         data["synthesis_status"] = status

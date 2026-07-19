@@ -13,7 +13,7 @@ from sqlalchemy.future import select
 
 from . import models, schemas
 from .database import get_db
-from .auth import get_current_user, require_project_access, RoleChecker, User
+from .auth import get_current_user, is_project_member_or_owner, require_project_access, RoleChecker, User
 from .project_graph_repository import build_and_activate_snapshot, get_active_snapshot
 from .models import SheetRevision
 from .project_graph_retrieval import OCCURRENCE_CARDINALITY_NOTE, retrieve_project_graph
@@ -637,8 +637,20 @@ async def list_project_dem_runs(id: str, db: AsyncSession = Depends(get_db)):
 @app.post("/dem/runs", response_model=schemas.DemRunResponse, dependencies=[Depends(get_current_user)])
 async def create_dem_run(run: schemas.DemRunCreate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
     await require_project_access(run.project_id, db, user, service_scope="dem:write")
-    db_run = models.DemRun(**run.model_dump())
+    db_run = models.DemRun(**run.model_dump(exclude={"requested_by"}))
     db.add(db_run)
+    await db.flush()
+    # requested_by is the real end-user who initiated this run from
+    # document-intelligence's /drawings/dem/start (which verifies that
+    # user's project membership before calling here) -- recorded as an
+    # audit fact even though the DB-layer authorization above trusts the
+    # calling service's dem:write scope, not this field, so the actor who
+    # asked is never lost even when the actual writer is a service identity.
+    if run.requested_by and run.project_id:
+        _audit_project_action(
+            db, project_id=run.project_id, actor=run.requested_by,
+            action="dem.run.created", target_id=str(db_run.id),
+        )
     await db.commit()
     await db.refresh(db_run)
     return db_run
@@ -680,6 +692,40 @@ async def authorize_project_artifact_deletion(id: str, body: dict, db: AsyncSess
     if run is None:
         raise HTTPException(status_code=403, detail="artifact is not in this project")
     return {"authorized": True}
+
+
+@app.post("/internal/authorize-actor")
+async def authorize_actor_for_project(body: dict, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    """Lets a trusted internal service (document-intelligence) verify a real
+    end-user's project membership on the DB's authoritative ProjectMember/
+    owner data, without forwarding that user's own bearer token between
+    services and without trusting a caller-supplied X-User-Id as
+    self-authenticating.
+
+    Only reachable by a caller presenting valid X-Internal-Key (get_current_
+    user's internal-service branch); a Firebase end-user JWT gets a User with
+    empty internal_scopes and is rejected below -- this endpoint answers on
+    behalf of another actor, which only a trusted service may ask.
+
+    project_id here is the resource's real project id (the DEM run/synthesis
+    request's project_id after it's been resolved server-side), never an
+    unauthenticated value trusted purely from the public request body --
+    dem_routes.py resolves it from the run before calling this endpoint for
+    routes that operate on an existing run (synthesize/status), and passes
+    the request's own project_id straight through only for /start, where
+    there is no existing run yet to resolve it from.
+    """
+    if "dem:authorize-actor" not in user.internal_scopes:
+        raise HTTPException(status_code=403, detail="service identity missing scope 'dem:authorize-actor'")
+    actor_id = body.get("actor_id")
+    project_id = body.get("project_id")
+    if not isinstance(actor_id, str) or not actor_id:
+        raise HTTPException(status_code=400, detail="actor_id required")
+    if not isinstance(project_id, str) or not project_id:
+        raise HTTPException(status_code=403, detail="resource has no project scope")
+    if not await is_project_member_or_owner(project_id, actor_id, db):
+        raise HTTPException(status_code=403, detail="actor is not a member of this project")
+    return {"authorized": True, "actor_id": actor_id, "project_id": project_id}
 
 
 @app.get("/dem/runs/{id}/artifact-retention", dependencies=[Depends(get_current_user)])

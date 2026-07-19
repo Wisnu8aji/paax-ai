@@ -13,6 +13,46 @@ HEADERS = {"X-Internal-Key": "test-internal-key", "X-User-Id": "user-abc"}
 
 
 @pytest.mark.asyncio
+async def test_dem_run_create_records_requested_by_actor_in_audit_trail():
+    """Acceptance test: audit record stores actor (requested_by, the real
+    end-user document-intelligence verified project membership for) even
+    though the call itself is authenticated as the internal service
+    identity (dem:write scope), not that end-user's own credential."""
+    from sqlalchemy import select
+
+    from paax_db import models
+    from .conftest import TestSession
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        response = await ac.post(
+            "/dem/runs",
+            json={
+                "project_id": "proj-audit-1",
+                "document_id": "DOC-AUDIT-1",
+                "document_hash": "sha256:audit1",
+                "file_name": "audit.pdf",
+                "total_pages": 1,
+                "provider": "qwen",
+                "prompt_version": "dem-extraction-v1.0.0",
+                "requested_by": "REAL-END-USER",
+            },
+            headers=HEADERS,
+        )
+        assert response.status_code == 200
+        run_id = response.json()["id"]
+
+    async with TestSession() as session:
+        audit = (await session.execute(
+            select(models.ToolCallAudit).where(models.ToolCallAudit.tool_name == "dem.run.created")
+        )).scalars().first()
+        assert audit is not None
+        assert audit.session_id == "REAL-END-USER"
+        assert audit.project_id == "proj-audit-1"
+        assert audit.tool_args["target_id"] == run_id
+
+
+@pytest.mark.asyncio
 async def test_dem_run_create_and_get():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
