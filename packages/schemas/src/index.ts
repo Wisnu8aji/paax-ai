@@ -105,6 +105,51 @@ export const UnitEnum = z.enum([
   "month",
 ]);
 
+// Measurement Facts are dimensional inputs, never standalone numeric quantities.
+// Final derived quantities remain the deterministic Core Engine's authority.
+export const MeasurementTypeEnum = z.enum([
+  "count",
+  "length",
+  "area",
+  "volume_input",
+  "mass_input",
+]);
+export const MeasurementSourceMethodEnum = z.enum([
+  "verified_instances",
+  "written_dimension",
+  "geometry_engine",
+  "human_input",
+]);
+export const MeasurementVerificationStatusEnum = z.enum([
+  "candidate",
+  "human_verified",
+  "engine_verified",
+  "superseded",
+]);
+
+const MeasurementFactBaseSchema = z.object({
+  measurement_id: z.string().min(1),
+  project_id: z.string().min(1),
+  snapshot_id: z.string().min(1),
+  value: z.number().finite().nonnegative(),
+  source_method: MeasurementSourceMethodEnum,
+  element_ids: z.array(z.string()).default([]),
+  evidence_refs: z.array(z.string()).default([]),
+  formula_inputs: z.array(z.string()).default([]),
+  verification_status: MeasurementVerificationStatusEnum.default("candidate"),
+  created_by: z.string().min(1).nullish(),
+  audit_metadata: z.record(z.string(), z.unknown()).default({}),
+});
+
+export const MeasurementFactSchema = z.discriminatedUnion("measurement_type", [
+  MeasurementFactBaseSchema.extend({ measurement_type: z.literal("count"), unit: z.literal("unit"), value: z.number().int().nonnegative() }),
+  MeasurementFactBaseSchema.extend({ measurement_type: z.literal("length"), unit: z.enum(["mm", "cm", "m", "inch"]) }),
+  MeasurementFactBaseSchema.extend({ measurement_type: z.literal("area"), unit: z.enum(["mm2", "cm2", "m2", "inch2"]) }),
+  MeasurementFactBaseSchema.extend({ measurement_type: z.literal("volume_input"), unit: z.enum(["mm3", "cm3", "m3", "inch3"]) }),
+  MeasurementFactBaseSchema.extend({ measurement_type: z.literal("mass_input"), unit: z.enum(["g", "kg", "tonne"]) }),
+]);
+export type MeasurementFact = z.infer<typeof MeasurementFactSchema>;
+
 export const RoleEnum = z.enum([
   "OWNER",
   "ENGINEER",

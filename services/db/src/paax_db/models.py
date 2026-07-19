@@ -544,6 +544,30 @@ class ProjectGraphCorrectionAudit(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
+class MeasurementFact(Base):
+    """Immutable, typed quantity input scoped to one project graph snapshot."""
+    __tablename__ = "measurement_facts"
+
+    measurement_id = Column(String, primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), nullable=False, index=True)
+    measurement_type = Column(String, nullable=False, index=True)
+    value = Column(Numeric(24, 9), nullable=False)
+    unit = Column(String, nullable=False)
+    source_method = Column(String, nullable=False)
+    element_ids = Column(JSON_DOCUMENT, nullable=False, default=list)
+    evidence_refs = Column(JSON_DOCUMENT, nullable=False, default=list)
+    formula_inputs = Column(JSON_DOCUMENT, nullable=False, default=list)
+    verification_status = Column(String, nullable=False, default="candidate", index=True)
+    created_by = Column(String, nullable=True)
+    audit_metadata = Column(JSON_DOCUMENT, nullable=False, default=dict)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("value >= 0", name="ck_measurement_facts_value_nonnegative"),
+    )
+
+
 class ProjectGraphRetrievalCache(Base):
     __tablename__ = "project_graph_retrieval_cache"
 

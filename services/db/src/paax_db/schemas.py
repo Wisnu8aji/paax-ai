@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 from enum import Enum
 from typing import Optional, Any, Dict, List, Literal, Union
 from datetime import datetime
+from decimal import Decimal
 import uuid
 
 
@@ -593,6 +594,44 @@ class StoredMeasurementFact(BaseModel):
     value: Union[str, int, float]
     unit: str
     evidence_refs: List[str] = Field(default_factory=list)
+
+
+class MeasurementFactCreate(BaseModel):
+    """Public persistence boundary for dimensional, non-derived measurements."""
+    measurement_id: str
+    project_id: str
+    snapshot_id: str
+    measurement_type: Literal["count", "length", "area", "volume_input", "mass_input"]
+    value: Decimal = Field(ge=0)
+    unit: str
+    source_method: Literal["verified_instances", "written_dimension", "geometry_engine", "human_input"]
+    element_ids: List[str] = Field(default_factory=list)
+    evidence_refs: List[str] = Field(default_factory=list)
+    formula_inputs: List[str] = Field(default_factory=list)
+    verification_status: Literal["candidate", "human_verified", "engine_verified", "superseded"] = "candidate"
+    created_by: Optional[str] = None
+    audit_metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def require_unit_matches_dimension(self):
+        units = {
+            "count": {"unit"},
+            "length": {"mm", "cm", "m", "inch"},
+            "area": {"mm2", "cm2", "m2", "inch2"},
+            "volume_input": {"mm3", "cm3", "m3", "inch3"},
+            "mass_input": {"g", "kg", "tonne"},
+        }
+        if self.unit not in units[self.measurement_type]:
+            raise ValueError("measurement_type and unit dimension must match")
+        if self.measurement_type == "count" and self.value != self.value.to_integral_value():
+            raise ValueError("count must be a whole number")
+        return self
+
+
+class MeasurementFactResponse(MeasurementFactCreate):
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SummaryPayload(BaseModel):

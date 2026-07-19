@@ -30,6 +30,7 @@ import {
   QuantityReadinessResponseSchema,
   ProjectGraphCorrectionResponseSchema,
   RabBridgeResponseSchema,
+  MeasurementFactSchema,
 } from "../index";
 
 // Contoh response aktual dari POST /rab/calculate engine
@@ -114,6 +115,19 @@ describe("RABResult schema", () => {
 
   it("rejects missing required fields", () => {
     expect(() => RABResult.parse({ region: "test" })).toThrow();
+  });
+});
+
+describe("MeasurementFactSchema", () => {
+  const fact = {
+    measurement_id: "M-K1-W", project_id: "P-1", snapshot_id: "S-1",
+    measurement_type: "length", value: 400, unit: "mm",
+    source_method: "written_dimension", element_ids: ["K1"], evidence_refs: ["EV-1"],
+  };
+
+  it("requires dimensional value and matching unit", () => {
+    expect(MeasurementFactSchema.parse(fact).unit).toBe("mm");
+    expect(() => MeasurementFactSchema.parse({ ...fact, unit: "m2" })).toThrow();
   });
 });
 
