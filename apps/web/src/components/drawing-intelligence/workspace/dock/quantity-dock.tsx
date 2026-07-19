@@ -32,6 +32,7 @@ import { MOCK_ASSUMPTIONS } from '../di-mock-data';
 import type { DockTab } from '../workspace-store';
 import type { QuantityItem, QuantityRowStatus, VerificationStatus } from '../di-types';
 import { useDockToast, DockToastHost } from './dock-toast';
+import { canDisplayFinalQuantity, honestStateMessage } from '../quantity-authority';
 
 const TABS: { id: DockTab; label: string }[] = [
   { id: 'detected', label: 'Detected Items' },
@@ -133,7 +134,7 @@ export function QuantityDock() {
   }
 
   const filteredQuantities = useMemo(() => {
-    let rows = state.quantities;
+    let rows = state.quantities.filter((quantity) => canDisplayFinalQuantity({ sourceAuthority: quantity.sourceAuthority ?? 'none' }));
     if (statusFilter !== 'all') rows = rows.filter((q) => q.status === statusFilter);
     if (sortKey) {
       rows = [...rows].sort((a, b) => {
@@ -172,6 +173,10 @@ export function QuantityDock() {
   }
 
   function verifyRow(q: QuantityItem) {
+    if (!canDisplayFinalQuantity({ sourceAuthority: q.sourceAuthority ?? 'none' })) {
+      showToast('Blocked: only Measurement Fact or Core Engine results can be verified as final quantities.');
+      return;
+    }
     dispatch({ type: 'set-quantity-status', quantityId: q.id, status: 'verified' });
     dispatch({
       type: 'push-activity',
@@ -492,6 +497,13 @@ export function QuantityDock() {
 
           {/* Body */}
           <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }} onClick={() => rowMenuId && setRowMenuId(null)}>
+            {dock.tab === 'quantities' && filteredQuantities.length === 0 && (
+              <div data-testid="quantity-authority-blocked" style={{ margin: 14, padding: 12, border: '1px solid var(--di-warn)', borderRadius: 8, color: 'var(--di-text2)', fontSize: 12 }}>
+                <strong>Quantity blocked</strong><br />
+                {honestStateMessage(state.honestState === 'ready' ? 'core-engine-required' : state.honestState)}<br />
+                Detected references, context groups, and candidates remain non-physical until a typed Measurement Fact or explicit Core Engine result is available.
+              </div>
+            )}
             {dock.tab === 'quantities' && (
               <table className="di-table">
                 <thead>

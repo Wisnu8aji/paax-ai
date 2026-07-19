@@ -54,6 +54,7 @@ import type { ProjectGraphSummaryView, QuantityReadinessItem } from '@paax/schem
 import type { MappedProjectSheet } from './sheet-mapping';
 import { canUseWorkspaceMocks, resolveWorkspaceEnvironmentMode } from './environment';
 import { mapProjectDemSheet } from './sheet-mapping';
+import type { HonestWorkspaceState } from './quantity-authority';
 
 // ── Tipe state ───────────────────────────────────────────────────────────────
 
@@ -147,6 +148,7 @@ export interface WorkspaceState {
   backendSyncError: 'failed' | 'not-ready' | null;
 
   summaryViews: ProjectGraphSummaryView[];
+  honestState: HonestWorkspaceState;
 }
 
 const DEFAULT_OVERLAYS: Record<string, boolean> = {
@@ -295,6 +297,7 @@ export function initialWorkspaceState(withData: boolean): WorkspaceState {
     backendConnected: false,
     backendSyncFailed: false,
     backendSyncError: null,
+    honestState: useMocks ? 'ready' : 'extraction-pending',
     summaryViews: [],
   };
 }
@@ -341,7 +344,8 @@ export type WorkspaceAction =
   | { type: 'replace-sheets'; sheets: Sheet[] }
   | { type: 'replace-files'; files: DrawingFile[] }
   | { type: 'set-active-snapshot-id'; snapshotId: string | null }
-  | { type: 'set-project-id'; projectId: string | null };
+  | { type: 'set-project-id'; projectId: string | null }
+  | { type: 'set-honest-state'; state: HonestWorkspaceState };
 
 function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
   switch (action.type) {
@@ -363,6 +367,8 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
     }
     case 'set-status':
       return { ...state, statusMessage: action.message };
+    case 'set-honest-state':
+      return { ...state, honestState: action.state };
     case 'navigator':
       return { ...state, navigator: { ...state.navigator, ...action.patch } };
     case 'inspector':
@@ -515,6 +521,7 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
         backendConnected: false,
         backendSyncFailed: true,
         backendSyncError: action.error,
+        honestState: action.error === 'not-ready' ? 'graph-not-ready' : 'evidence-incomplete',
         statusMessage: action.error === 'not-ready'
           ? 'Project graph is empty. Please upload drawing files.'
           : 'Failed to connect to backend services.',
@@ -538,10 +545,17 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
         selectedQuantityId: null,
         backendSyncFailed: false,
         backendSyncError: null,
+        honestState: 'extraction-pending',
         mode: 'files',
       };
     case 'replace-quantities':
-      return { ...state, quantities: action.quantities };
+      return {
+        ...state,
+        quantities: action.quantities,
+        honestState: action.quantities.some((item) => item.sourceAuthority === 'none' || !item.sourceAuthority)
+          ? 'quantity-blocked'
+          : 'ready',
+      };
     case 'replace-review-queue':
       return { ...state, reviewQueue: action.items };
     case 'replace-summary-views':
@@ -1163,6 +1177,7 @@ export function mapQuantityReadinessToItems(items: any[]): QuantityItem[] {
       confidence: null,
       ahspCandidate: null,
       reviewerNote: (item.reason_codes || []).join(', ') || null,
+      sourceAuthority: 'none',
     };
   });
 }

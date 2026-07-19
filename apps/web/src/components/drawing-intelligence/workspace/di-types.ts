@@ -255,6 +255,8 @@ export interface QuantityItem {
   confidence: number | null;
   ahspCandidate: string | null;
   reviewerNote: string | null;
+  /** Final numbers may only be displayed from these explicit sources. */
+  sourceAuthority?: 'none' | 'measurement_fact' | 'core_engine';
 }
 
 // ── Analysis (blueprint §12–13) ─────────────────────────────────────────────
