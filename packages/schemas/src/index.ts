@@ -2098,6 +2098,22 @@ export const RabMaterializationMappingResolveSchema = z.object({
 });
 export type RabMaterializationMappingResolve = z.infer<typeof RabMaterializationMappingResolveSchema>;
 
+export const RabBridgeV2AhspCandidateSchema = z.object({
+  ahsp_code: z.string(), description: z.string(), unit: z.string(), score: z.number(),
+  ranking_factors: z.record(z.number()).default({}), is_final: z.literal(false).default(false),
+});
+export const RabBridgeV2WorkItemCandidateSchema = z.object({
+  work_item_id: z.string(), work_type: z.string(), category: z.string(), expected_unit: z.string(),
+  measurement_fact_ids: z.array(z.string()).default([]), status: z.enum(["candidate_ready", "needs_measurement"]),
+  ahsp_candidates: z.array(RabBridgeV2AhspCandidateSchema).default([]),
+  rejected_candidates: z.array(z.object({ ahsp_code: z.string(), reason: z.string() })).default([]),
+});
+export const RabBridgeV2CandidateSetSchema = z.object({
+  project_id: z.string(), snapshot_id: z.string(), physical_element_id: z.string(),
+  work_items: z.array(RabBridgeV2WorkItemCandidateSchema), provenance: z.record(z.unknown()),
+});
+export type RabBridgeV2CandidateSet = z.infer<typeof RabBridgeV2CandidateSetSchema>;
+
 export const TkgIssueSchema = z.object({
   code: z.string(),
   severity: z.enum(["error", "warning"]),

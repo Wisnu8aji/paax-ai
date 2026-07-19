@@ -651,6 +651,25 @@ class RabMaterializationMappingAudit(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
+class RabBridgeCandidateSet(Base):
+    """Immutable review payload for V2 work-item and AHSP candidate generation."""
+    __tablename__ = "rab_bridge_candidate_sets"
+
+    id = Column(String, primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), nullable=False, index=True)
+    physical_element_id = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="candidate_ready", index=True)
+    payload = Column(JSON_DOCUMENT, nullable=False)
+    provenance = Column(JSON_DOCUMENT, nullable=False)
+    created_by = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("project_id", "snapshot_id", "physical_element_id", name="uq_rab_bridge_candidate_set_element"),
+    )
+
+
 class QuantityAssumption(Base):
     __tablename__ = "quantity_assumptions"
 

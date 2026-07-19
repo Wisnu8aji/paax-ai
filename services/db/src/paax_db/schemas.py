@@ -575,6 +575,34 @@ class RabMaterializationMappingResponse(RabMaterializationMappingCreate):
     model_config = ConfigDict(from_attributes=True)
 
 
+class RabBridgeV2AhspCandidate(BaseModel):
+    ahsp_code: str
+    description: str
+    unit: str
+    score: float
+    ranking_factors: Dict[str, float] = Field(default_factory=dict)
+    is_final: Literal[False] = False
+
+
+class RabBridgeV2WorkItemCandidate(BaseModel):
+    work_item_id: str
+    work_type: str
+    category: str
+    expected_unit: str
+    measurement_fact_ids: List[str] = Field(default_factory=list)
+    status: Literal["candidate_ready", "needs_measurement"]
+    ahsp_candidates: List[RabBridgeV2AhspCandidate] = Field(default_factory=list)
+    rejected_candidates: List[Dict[str, str]] = Field(default_factory=list)
+
+
+class RabBridgeV2CandidateSet(BaseModel):
+    project_id: str
+    snapshot_id: str
+    physical_element_id: str
+    work_items: List[RabBridgeV2WorkItemCandidate]
+    provenance: Dict[str, Any]
+
+
 class QuantityAssumptionCreate(BaseModel):
     id: str
     project_id: str

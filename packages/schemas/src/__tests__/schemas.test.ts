@@ -32,6 +32,7 @@ import {
   RabBridgeResponseSchema,
   RabBridgeMaterializeResponseSchema,
   RabMaterializationMappingSchema,
+  RabBridgeV2CandidateSetSchema,
   MeasurementFactSchema,
 } from "../index";
 
@@ -761,6 +762,11 @@ describe("C7/C8 graph workflow schemas", () => {
       measurement_fact_ids: ["MF-1"], calculation_type: "concrete_column_volume",
       evidence_refs: ["EV-1"], approval_status: "pending_approval",
     }).approval_status).toBe("pending_approval");
+    expect(RabBridgeV2CandidateSetSchema.parse({
+      project_id: "PROJECT-C78", snapshot_id: "SNAP-C78", physical_element_id: "COLUMN-1",
+      work_items: [{ work_item_id: "COLUMN-1:beton:1", work_type: "beton", category: "beton", expected_unit: "m3", status: "candidate_ready" }],
+      provenance: { ranking: "human_approval_required" },
+    }).work_items[0].ahsp_candidates).toEqual([]);
   });
 });
 
