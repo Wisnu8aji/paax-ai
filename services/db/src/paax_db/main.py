@@ -386,6 +386,26 @@ async def get_usage_anomalies(tenant_id: str, db: AsyncSession = Depends(get_db)
         "is_anomaly": is_anomaly
     }
 
+@app.get("/projects/{id}/observability", response_model=schemas.ProjectObservabilitySummary,
+         dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))])
+async def project_observability(id: str, days: int = 30, db: AsyncSession = Depends(get_db)):
+    """Read only stored telemetry; never calls an AI provider or exposes event metadata."""
+    days = max(1, min(days, 90))
+    since = _utc_now() - datetime.timedelta(days=days)
+    rows = (await db.execute(select(models.AiUsageLog).where(
+        models.AiUsageLog.project_id == id, models.AiUsageLog.created_at >= since,
+    ).order_by(models.AiUsageLog.created_at))).scalars().all()
+    buckets: dict[str, dict[str, int]] = {}
+    for row in rows:
+        created = _as_aware_utc(row.created_at)
+        key = created.date().isoformat()
+        bucket = buckets.setdefault(key, {"event_count": 0, "error_count": 0, "tokens_in": 0, "tokens_out": 0, "cost_microunits": 0, "latency_ms_total": 0})
+        bucket["event_count"] += 1
+        bucket["error_count"] += int(not row.success)
+        bucket["tokens_in"] += row.tokens_in or 0; bucket["tokens_out"] += row.tokens_out or 0
+        bucket["cost_microunits"] += row.cost_microunits or 0; bucket["latency_ms_total"] += row.latency_ms or 0
+    return {"project_id": id, "buckets": [{"bucket": key, **value} for key, value in sorted(buckets.items())]}
+
 @app.get("/usage/quota/check", response_model=schemas.QuotaCheckResponse, dependencies=[Depends(get_current_user)])
 async def check_quota(tenant_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(models.TenantQuota).where(models.TenantQuota.tenant_id == tenant_id))

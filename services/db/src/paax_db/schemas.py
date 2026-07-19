@@ -191,6 +191,19 @@ class UsageSummaryResponse(BaseModel):
     operations_count: Dict[str, int]
     cache_hit_ratio: float
 
+class ProjectObservabilityBucket(BaseModel):
+    bucket: str
+    event_count: int
+    error_count: int
+    tokens_in: int
+    tokens_out: int
+    cost_microunits: int
+    latency_ms_total: int
+
+class ProjectObservabilitySummary(BaseModel):
+    project_id: str
+    buckets: List[ProjectObservabilityBucket]
+
 class QuotaCheckResponse(BaseModel):
     tenant_id: str
     plan: str
