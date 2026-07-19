@@ -740,6 +740,10 @@ export async function POST(req: NextRequest) {
       let finalContent = "";
       let emittingComposedAnswer = false;
       const toolsCalledThisTurn: string[] = [];
+      // Real structured tool outputs, captured for per-claim provenance
+      // (claim-provenance.ts) -- never forwarded to the client as part of
+      // the SSE payload; sendEvent below strips `result` before enqueueing.
+      const toolResultsThisTurn: import("./claim-provenance").ToolResultRecord[] = [];
       // Status-summary (Mistral) dipanggil fire-and-forget di dalam
       // consumeOpenAiCompatibleStream -- TANPA pelacak ini, controller.close()
       // di finally (di bawah) langsung dieksekusi begitu stream utama selesai,
@@ -762,6 +766,16 @@ export async function POST(req: NextRequest) {
           return;
         }
         if (data.type === "tool_call" && typeof data.tool === "string") toolsCalledThisTurn.push(data.tool);
+        if (data.type === "tool_result" && typeof data.tool === "string" && "result" in data) {
+          toolResultsThisTurn.push({
+            result_id: `${data.tool}:${toolResultsThisTurn.length}`,
+            tool: data.tool,
+            result: data.result,
+          });
+          // `result` is captured above for claim provenance and must never
+          // reach the client -- only `summary` (already client-facing) does.
+          delete data.result;
+        }
         data.sequence = sequenceCounter++;
         controller.enqueue(encoder.encode(`event: message\ndata: ${JSON.stringify(data)}\n\n`));
       };
@@ -852,6 +866,7 @@ export async function POST(req: NextRequest) {
           responseText: finalContent,
           toolsCalled: toolsCalledThisTurn,
           authority: serverContext.claimAuthority,
+          toolResults: toolResultsThisTurn,
         });
         if (claimResult.responseText) {
           emittingComposedAnswer = true;

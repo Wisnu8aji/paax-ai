@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { verifyAndComposeClaims } from "./claim-pipeline";
+import type { ToolResultRecord } from "./claim-provenance";
 
 describe("Command Room claim pipeline", () => {
   it("removes unsupported project numeric claims and requests Core Engine authority", () => {
@@ -35,14 +36,19 @@ describe("Command Room claim pipeline", () => {
     expect(result.requiresCoreEngine).toBe(true);
   });
 
-  it("labels Core Engine numeric output with its authoritative class", () => {
+  it("labels a claim whose value is genuinely present in a Core Engine tool result", () => {
+    const toolResults: ToolResultRecord[] = [
+      { result_id: "query_rab:0", tool: "query_rab", result: { total_volume_m3: 12 } },
+    ];
     const result = verifyAndComposeClaims({
       responseText: "Volume tervalidasi 12 m3.",
       toolsCalled: ["query_rab"],
       authority: { quantityAuthority: "core_engine" },
+      toolResults,
     });
     expect(result.claims[0]).toMatchObject({ numericClass: "core_engine_result", status: "verified" });
     expect(result.responseText).toContain("12 m3");
+    expect(result.structuredClaims[0].source_result_id).toBe("query_rab:0");
   });
 
   it("rejects unsupported element counts without evidence", () => {
@@ -84,11 +90,15 @@ describe("Command Room claim pipeline", () => {
     expect(result.rejected.length).toBeGreaterThan(0);
   });
 
-  it("verifies element counts and dimensions when Core Engine authority backs them", () => {
+  it("verifies element counts and dimensions only when their exact value is present in a Core Engine result", () => {
+    const toolResults: ToolResultRecord[] = [
+      { result_id: "query_rab:0", tool: "query_rab", result: { columns: { K1: { count: 12, width_mm: 400 } } } },
+    ];
     const result = verifyAndComposeClaims({
       responseText: "Lantai 2 memiliki 12 kolom K1 dengan dimensi 400 mm x 400 mm.",
       toolsCalled: ["query_rab"],
       authority: { quantityAuthority: "core_engine" },
+      toolResults,
     });
     expect(result.rejected).toHaveLength(0);
     expect(result.responseText).toContain("12 kolom");
@@ -99,14 +109,79 @@ describe("Command Room claim pipeline", () => {
     expect(verifyAndComposeClaims({
       responseText: "Dimensi terukur 4 m3.", toolsCalled: [],
       authority: { quantityAuthority: "measurement_fact", evidenceCount: 1 },
-    }).claims[0]).toMatchObject({ numericClass: "verified_measurement", status: "verified" });
+    }).claims[0]).toMatchObject({ numericClass: "measurement_fact", status: "verified" });
     expect(verifyAndComposeClaims({
       responseText: "Teks gambar menyebut 4 m3.", toolsCalled: [],
       authority: { quantityAuthority: "none", evidenceCount: 1 },
     }).claims[0]).toMatchObject({ numericClass: "written_fact", status: "manual_review_required" });
     expect(verifyAndComposeClaims({
-      responseText: "Referensi AHSP 4 m3.", toolsCalled: ["lookup_ahsp"],
+      responseText: "Referensi AHSP A.2.1.1-3.", toolsCalled: ["lookup_ahsp"],
       authority: { quantityAuthority: "none" },
+      toolResults: [{ result_id: "lookup_ahsp:0", tool: "lookup_ahsp", result: { code: "A.2.1.1-3" } }],
     }).claims[0]).toMatchObject({ numericClass: "non_authoritative_reference", status: "manual_review_required" });
+  });
+
+  // ── Target 3 adversarial tests (instruction file's exact scenarios) ──────
+
+  it("adversarial: a real Core Engine dimension does not authorize an unrelated fabricated count", () => {
+    const toolResults: ToolResultRecord[] = [
+      { result_id: "query_rab:0", tool: "query_rab", result: { columns: { K1: { width_mm: 400 } } } },
+    ];
+    const result = verifyAndComposeClaims({
+      responseText: "Dimensi K1 400 mm dan lantai 3 memiliki 999 kolom.",
+      toolsCalled: ["query_rab"],
+      authority: { quantityAuthority: "core_engine" },
+      toolResults,
+    });
+    const byText = Object.fromEntries(result.claims.map((claim) => [claim.claim, claim]));
+    expect(byText["400 mm"]).toMatchObject({ status: "verified" });
+    expect(byText["999 kolom"]).toMatchObject({ status: "rejected" });
+    expect(result.responseText).not.toContain("999 kolom");
+    expect(result.responseText).toContain("400 mm");
+  });
+
+  it("adversarial: a Core Engine volume result does not authorize an unrelated price claim", () => {
+    const toolResults: ToolResultRecord[] = [
+      { result_id: "query_rab:0", tool: "query_rab", result: { volume_m3: 0.56 } },
+    ];
+    const result = verifyAndComposeClaims({
+      responseText: "Volume K1 0,56 m3 dan nilai proyek Rp999 miliar.",
+      toolsCalled: ["query_rab"],
+      authority: { quantityAuthority: "core_engine" },
+      toolResults,
+    });
+    const byText = Object.fromEntries(result.claims.map((claim) => [claim.claim, claim]));
+    expect(byText["0,56 m3"]).toMatchObject({ status: "verified" });
+    expect(byText["Rp999"].status).toBe("rejected");
+  });
+
+  it("adversarial: conflicting schedule/drawing counts surface as a conflict, not a silent pick", () => {
+    const result = verifyAndComposeClaims({
+      responseText: "Schedule menunjukkan 12 unit, tetapi gambar menunjukkan 8 unit.",
+      toolsCalled: ["query_schedule"],
+      authority: { quantityAuthority: "core_engine", conflicts: [{ reason: "count mismatch: schedule=12 vs drawing=8" }] },
+      toolResults: [{ result_id: "query_schedule:0", tool: "query_schedule", result: { unit_count: 12 } }],
+    });
+    expect(result.conflicts.length).toBeGreaterThan(0);
+    expect(result.responseText).toContain("Konflik data perlu direview");
+  });
+
+  it("adversarial: a bare physical-element count claim is rejected without any authority", () => {
+    const result = verifyAndComposeClaims({
+      responseText: "Lantai 2 memiliki 12 kolom.",
+      toolsCalled: [],
+      authority: { quantityAuthority: "none" },
+    });
+    expect(result.rejected.length).toBeGreaterThan(0);
+    expect(result.responseText).not.toContain("12 kolom");
+  });
+
+  it("adversarial: a drawing-context symbol count is not silently treated as a physical column count", () => {
+    const result = verifyAndComposeClaims({
+      responseText: "Terdapat 12 simbol K1 pada drawing context, jadi jumlah fisik kolom adalah 12.",
+      toolsCalled: [],
+      authority: { quantityAuthority: "none" },
+    });
+    expect(result.responseText).not.toContain("jumlah fisik kolom adalah 12");
   });
 });

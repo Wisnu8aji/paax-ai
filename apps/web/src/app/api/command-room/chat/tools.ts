@@ -325,8 +325,13 @@ async function runOpenAiCompatibleToolLoop(params: {
       });
       const { result, summary, artifact } = await executeTool(tools, call.function.name, args, params.context, { modelAlias: params.modelAlias, conversationId: params.conversationId });
       params.sendEvent("message", {
+        // `result` (the tool's real structured output) is captured here so
+        // route.ts's sendEvent wrapper can bind per-claim provenance against
+        // it (Target 3, final remediation wave) -- it must never reach the
+        // client as part of the outgoing SSE payload, only `summary` is
+        // client-facing; the wrapper strips `result` before forwarding.
         type: "tool_result", runId: params.runId, conversationId: params.conversationId,
-        tool: call.function.name, summary, timestamp: new Date().toISOString(),
+        tool: call.function.name, summary, result, timestamp: new Date().toISOString(),
       });
       if (artifact) {
         params.sendEvent("message", {
@@ -466,8 +471,11 @@ export async function runAnthropicWithTools(params: {
       });
       const { result, summary, artifact } = await executeTool(tools, block.name, block.input as Record<string, unknown>, params.context, { modelAlias: params.modelAlias, conversationId: params.conversationId });
       params.sendEvent("message", {
+        // See the OpenRouter loop's identical comment above: `result` is
+        // captured for per-claim provenance binding and stripped by route.ts
+        // before the event reaches the client.
         type: "tool_result", runId: params.runId, conversationId: params.conversationId,
-        tool: block.name, summary, timestamp: new Date().toISOString(),
+        tool: block.name, summary, result, timestamp: new Date().toISOString(),
       });
       if (artifact) {
         params.sendEvent("message", {
