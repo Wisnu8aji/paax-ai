@@ -20,11 +20,31 @@ from .models import (
     ProjectGraphSnapshot,
     ProjectGraphSummaryView,
     ProjectGraphCorrection,
+    ProjectGraphCorrectionAudit,
     ProjectGraphRetrievalCache,
     DocumentRevision,
     SheetRevision,
 )
 import uuid
+
+
+async def _target_evidence_revision_signature(
+    session: AsyncSession, *, snapshot_id: str, target_type: str, target_id: str,
+) -> tuple[tuple[str, str | None], ...]:
+    """Immutable provenance signature for carry-forward compatibility."""
+    if target_type == "node":
+        rows = (await session.execute(
+            select(ProjectGraphEvidence.evidence_id, ProjectGraphEvidence.revision_id)
+            .join(ProjectGraphNodeEvidence, ProjectGraphNodeEvidence.evidence_id == ProjectGraphEvidence.evidence_id)
+            .where(ProjectGraphNodeEvidence.snapshot_id == snapshot_id, ProjectGraphNodeEvidence.node_id == target_id, ProjectGraphEvidence.snapshot_id == snapshot_id)
+        )).all()
+    else:
+        rows = (await session.execute(
+            select(ProjectGraphEvidence.evidence_id, ProjectGraphEvidence.revision_id)
+            .join(ProjectGraphEdgeEvidence, ProjectGraphEdgeEvidence.evidence_id == ProjectGraphEvidence.evidence_id)
+            .where(ProjectGraphEdgeEvidence.snapshot_id == snapshot_id, ProjectGraphEdgeEvidence.edge_id == target_id, ProjectGraphEvidence.snapshot_id == snapshot_id)
+        )).all()
+    return tuple(sorted((str(evidence_id), revision_id) for evidence_id, revision_id in rows))
 
 
 def _utc_now() -> datetime:
@@ -404,7 +424,20 @@ async def build_and_activate_snapshot(
             new_edge_ids = {item["edge_id"] for item in edges}
             for correction in accepted:
                 target_exists = correction.target_id in (new_node_ids if correction.target_type == "node" else new_edge_ids)
-                session.add(ProjectGraphCorrection(
+                old_signature = await _target_evidence_revision_signature(
+                    session, snapshot_id=previous_active.snapshot_id, target_type=correction.target_type, target_id=correction.target_id,
+                )
+                new_signature = await _target_evidence_revision_signature(
+                    session, snapshot_id=snapshot_id, target_type=correction.target_type, target_id=correction.target_id,
+                ) if target_exists else ()
+                compatible = target_exists and old_signature == new_signature
+                reason = (
+                    "Stable target identity and evidence revision signature."
+                    if compatible else
+                    ("Target tidak ditemukan pada snapshot baru; perlu review ulang." if not target_exists
+                     else "Evidence revision berubah pada snapshot baru; correction tidak diterapkan.")
+                )
+                carried = ProjectGraphCorrection(
                     id=str(uuid.uuid4()),
                     project_id=project_id,
                     snapshot_id=snapshot_id,
@@ -413,11 +446,17 @@ async def build_and_activate_snapshot(
                     correction_type=correction.correction_type,
                     proposed_value=correction.proposed_value,
                     rationale=correction.rationale,
-                    status="accepted" if target_exists else "stale",
-                    resolution_note=None if target_exists else "Target tidak ditemukan pada snapshot baru; perlu review ulang.",
+                    status="accepted" if compatible else "stale",
+                    resolution_note=None if compatible else reason,
                     created_by=correction.created_by,
                     resolved_by=correction.resolved_by,
                     carried_from=correction.id,
+                )
+                session.add(carried)
+                session.add(ProjectGraphCorrectionAudit(
+                    correction_id=carried.id, project_id=project_id,
+                    source_snapshot_id=previous_active.snapshot_id, target_snapshot_id=snapshot_id,
+                    decision="carried_forward" if compatible else "stale", reason=reason,
                 ))
         active_snapshots = (await session.execute(
             select(ProjectGraphSnapshot).where(

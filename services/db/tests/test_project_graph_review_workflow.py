@@ -172,7 +172,10 @@ async def test_accepted_correction_is_read_overlay_and_new_snapshot_marks_missin
             source_manifest_hash="SNAP-CORR-2",
             generation_metadata={},
             nodes=[node("TYPE-K1", "element_type", "K1")],
-            edges=[], evidence=[], node_evidence=[], edge_evidence=[], aliases=[], communities=[],
+            edges=[],
+            evidence=[{"evidence_id": "EV-K1", "document_id": "DOC-C78", "page_index": 1, "sheet_id": "S-1", "kind": "text", "raw_text": "K1 300 mm"}],
+            node_evidence=[{"node_id": "TYPE-K1", "evidence_id": "EV-K1", "role": "source"}],
+            edge_evidence=[], aliases=[], communities=[],
         )
         carried = (
             await session.execute(
@@ -185,6 +188,11 @@ async def test_accepted_correction_is_read_overlay_and_new_snapshot_marks_missin
     assert len(carried) == 1
     assert carried[0].status == "accepted"
     assert carried[0].carried_from == "CORR-C78"
+    async with TestSession() as session:
+        audit = (await session.execute(select(models.ProjectGraphCorrectionAudit).where(
+            models.ProjectGraphCorrectionAudit.target_snapshot_id == "SNAP-CORR-2"
+        ))).scalars().one()
+    assert audit.decision == "carried_forward"
 
     async with TestSession() as session:
         await persist_quantity_fixture(session, project_id="PROJECT-STALE", snapshot_id="SNAP-STALE-1")
@@ -215,6 +223,36 @@ async def test_accepted_correction_is_read_overlay_and_new_snapshot_marks_missin
 
     assert stale.status == "stale"
     assert stale.carried_from == "CORR-STALE"
+
+
+@pytest.mark.asyncio
+async def test_carry_forward_marks_evidence_revision_change_stale_with_audit():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        await persist_quantity_fixture(session, project_id="PROJECT-REV", snapshot_id="SNAP-REV-1")
+        session.add(models.ProjectGraphCorrection(
+            id="CORR-REV", project_id="PROJECT-REV", snapshot_id="SNAP-REV-1",
+            target_type="node", target_id="TYPE-K1", correction_type="rename",
+            proposed_value={"canonical_name": "K1 approved"}, rationale="reviewed",
+            status="accepted", created_by="OWNER-C78",
+        ))
+        await session.commit()
+        await build_and_activate_snapshot(
+            session, project_id="PROJECT-REV", snapshot_id="SNAP-REV-2", schema_version="paax.pckm.graph.v1",
+            source_manifest_hash="rev-2", generation_metadata={}, nodes=[node("TYPE-K1", "element_type", "K1")], edges=[],
+            evidence=[{"evidence_id": "EV-K1", "document_id": "DOC-C78", "page_index": 1, "sheet_id": "S-1", "kind": "text", "raw_text": "K1 revised", "revision_id": "REV-2"}],
+            node_evidence=[{"node_id": "TYPE-K1", "evidence_id": "EV-K1", "role": "source"}], edge_evidence=[], aliases=[], communities=[],
+        )
+        stale = (await session.execute(select(models.ProjectGraphCorrection).where(
+            models.ProjectGraphCorrection.snapshot_id == "SNAP-REV-2"
+        ))).scalars().one()
+        audit = (await session.execute(select(models.ProjectGraphCorrectionAudit).where(
+            models.ProjectGraphCorrectionAudit.correction_id == stale.id
+        ))).scalars().one()
+    assert stale.status == "stale"
+    assert "Evidence revision" in stale.resolution_note
+    assert audit.decision == "stale"
 
 
 @pytest.mark.asyncio

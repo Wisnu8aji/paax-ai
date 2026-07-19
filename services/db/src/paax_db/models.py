@@ -531,6 +531,19 @@ class ProjectGraphCorrection(Base):
     resolved_at = Column(DateTime(timezone=True), nullable=True)
 
 
+class ProjectGraphCorrectionAudit(Base):
+    __tablename__ = "project_graph_correction_audits"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    correction_id = Column(String, ForeignKey("project_graph_corrections.id", ondelete="CASCADE"), nullable=False, index=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    source_snapshot_id = Column(String, nullable=False)
+    target_snapshot_id = Column(String, nullable=False)
+    decision = Column(String, nullable=False)  # carried_forward|stale
+    reason = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
 class ProjectGraphRetrievalCache(Base):
     __tablename__ = "project_graph_retrieval_cache"
 
