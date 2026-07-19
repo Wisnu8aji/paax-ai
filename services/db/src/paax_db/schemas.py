@@ -420,6 +420,8 @@ class ProjectGraphMetricsResponse(BaseModel):
     average_context_tokens: float
 
 
+CORRECTION_TYPES = {"rename", "reclassify", "relocate", "change-dimension", "merge", "split", "reject-candidate", "verify-physical", "add-relation", "mark-superseded"}
+
 class ProjectGraphCorrectionCreate(BaseModel):
     id: str
     snapshot_id: str

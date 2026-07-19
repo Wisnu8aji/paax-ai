@@ -735,6 +735,8 @@ async def get_project_graph_metrics(id: str, db: AsyncSession = Depends(get_db))
 async def create_project_graph_correction(
     id: str, request: schemas.ProjectGraphCorrectionCreate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
 ):
+    if request.correction_type not in schemas.CORRECTION_TYPES:
+        raise HTTPException(status_code=400, detail="Unsupported correction type")
     snapshot = await get_active_snapshot(db, id)
     if snapshot is None or snapshot.snapshot_id != request.snapshot_id:
         raise HTTPException(status_code=409, detail="Correction must target the active project graph snapshot")
@@ -768,6 +770,9 @@ async def resolve_project_graph_correction(
         models.ProjectGraphRetrievalCache.snapshot_id == correction.snapshot_id,
     ))
     await db.commit()
+    # Accepted corrections are immediately available as active overlays for this
+    # immutable snapshot; clients must refresh retrieval/review state after cache
+    # invalidation. A future snapshot rebuild consumes the durable record.
     return correction
 
 

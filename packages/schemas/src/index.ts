@@ -1956,7 +1956,7 @@ export const ProjectGraphCorrectionResponseSchema = z.object({
   snapshot_id: z.string(),
   target_type: z.string(),
   target_id: z.string(),
-  correction_type: z.string(),
+  correction_type: z.enum(["rename", "reclassify", "relocate", "change-dimension", "merge", "split", "reject-candidate", "verify-physical", "add-relation", "mark-superseded"]),
   proposed_value: z.record(z.unknown()),
   rationale: z.string(),
   status: z.enum(["pending", "accepted", "resolved", "rejected", "stale"]),

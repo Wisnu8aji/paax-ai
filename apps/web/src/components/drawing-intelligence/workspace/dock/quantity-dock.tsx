@@ -208,25 +208,10 @@ export function QuantityDock() {
     // Do NOT dispatch resolve-review-item optimistically — a failed backend call
     // would leave the item permanently hidden in the UI with no way to retry.
     if (state.projectId) {
-      try {
-        const { resolveCorrection } = await import('../../drawing-intelligence-api');
-        await resolveCorrection(state.projectId, itemId, {
-          status: 'resolved',
-          resolution_note: 'Resolved via Review Queue UI',
-        });
-        // Backend confirmed — now mark resolved in local state
-        dispatch({ type: 'resolve-review-item', itemId });
-        dispatch({
-          type: 'push-activity',
-          entry: { time: 'Now', message: `Resolved: ${title}`, kind: 'correction' },
-        });
-        showToast(`Resolved on backend and locally`);
-      } catch (err: any) {
-        // Backend failed — item stays open, user sees error
-        showToast(
-          `Could not resolve on backend: ${err?.message ?? 'Unknown error'}. Item remains open.`,
-        );
-      }
+      // Queue IDs are computed identifiers, not durable correction IDs. The item
+      // stays open until a proposal has been persisted and resolved by its ID.
+      showToast(`Create a correction proposal before resolving “${title}”. The review item remains open.`);
+      return;
     } else {
       // No project — no backend to call, resolve locally only (demo/mock mode)
       dispatch({ type: 'resolve-review-item', itemId });
@@ -260,19 +245,18 @@ export function QuantityDock() {
 
     try {
       const { createCorrection } = await import('../../drawing-intelligence-api');
+      const { createCorrectionProposal } = await import('../correction-workflow');
       const uuidVal = typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID 
         ? window.crypto.randomUUID() 
         : 'corr-' + Math.random().toString(36).substring(2, 9) + '-' + Date.now();
 
-      await createCorrection(state.projectId, {
-        id: uuidVal,
-        snapshot_id: state.activeSnapshotId,
-        target_type: targetType,
-        target_id: targetId,
-        correction_type: 'override',
-        proposed_value: { value: proposedValue },
-        rationale: rationale,
-      });
+      await createCorrection(state.projectId, createCorrectionProposal({
+        queueItem: { id: item.id, target_type: targetType, target_id: targetId },
+        snapshotId: state.activeSnapshotId,
+        correctionType: 'change-dimension',
+        proposedValue: { value: proposedValue },
+        rationale, createId: () => uuidVal,
+      }));
       showToast('Correction proposal created successfully');
       dispatch({
         type: 'push-activity',
