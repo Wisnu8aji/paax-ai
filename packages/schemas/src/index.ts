@@ -1680,6 +1680,7 @@ export const EdgeResolverSchema = z.object({
   passed_constraints: z.array(z.string()).nullish(),
   failed_constraints: z.array(z.string()).nullish(),
   rejected_candidate_ids: z.array(z.string()).nullish(),
+  confidence_calibration: z.record(z.number()).nullish(),
 });
 
 export const ProjectGraphEdgeSchema = z.object({
@@ -1878,6 +1879,13 @@ export const ProjectGraphRetrievalResponseSchema = z.object({
   guidance: z.string().nullish(),
   rab_bridge_available: z.boolean().nullish(),
   missing_information: z.array(z.string()).default([]),
+  facts: z.array(z.record(z.unknown())).default([]),
+  relationships: z.array(z.record(z.unknown())).default([]),
+  conflicts: z.array(z.record(z.unknown())).default([]),
+  citations: z.array(z.record(z.unknown())).default([]),
+  allowed_claims: z.array(z.string()).default([]),
+  forbidden_claims: z.array(z.string()).default([]),
+  quantity_authority: z.enum(["none", "measurement_fact", "core_engine"]).default("none"),
 });
 export type ProjectGraphRetrievalResponse = z.infer<typeof ProjectGraphRetrievalResponseSchema>;
 

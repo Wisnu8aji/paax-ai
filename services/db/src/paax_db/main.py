@@ -679,7 +679,7 @@ async def retrieve_active_project_graph(
                      for item in result.evidence],
         "context_token_estimate": result.context_token_estimate,
     }
-    if (request.use_intent or result.data_status == "corrected") and (result.intent is not None or result.notes or result.data_status is not None):
+    if result.snapshot_id is not None and (request.use_intent or result.data_status == "corrected" or result.intent is not None):
         response.update({
             "intent": result.intent,
             "applied_filters": result.applied_filters,
@@ -689,6 +689,13 @@ async def retrieve_active_project_graph(
             "guidance": result.guidance,
             "rab_bridge_available": result.rab_bridge_available,
             "missing_information": result.missing_information,
+            "facts": result.facts,
+            "relationships": result.relationships,
+            "conflicts": result.conflicts,
+            "citations": result.citations,
+            "allowed_claims": result.allowed_claims,
+            "forbidden_claims": result.forbidden_claims,
+            "quantity_authority": result.quantity_authority,
         })
     if result.snapshot_id:
         await db.merge(models.ProjectGraphRetrievalCache(cache_key=cache_key, project_id=id, snapshot_id=result.snapshot_id, payload=response, expires_at=_utc_now() + datetime.timedelta(seconds=int(os.getenv("PCKM_RETRIEVAL_CACHE_SECONDS", "300")))))

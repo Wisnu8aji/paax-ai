@@ -98,6 +98,7 @@ class EdgeResolver(BaseModel):
     passed_constraints: Optional[list[str]] = None
     failed_constraints: Optional[list[str]] = None
     rejected_candidate_ids: Optional[list[str]] = None
+    confidence_calibration: Optional[dict[str, float]] = None
 
 
 class ProjectGraphEdge(BaseModel):

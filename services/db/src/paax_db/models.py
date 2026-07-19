@@ -1,4 +1,4 @@
-from sqlalchemy import CHAR, Column, String, Integer, Numeric, Boolean, DateTime, ForeignKey, JSON, Text, UniqueConstraint, ForeignKeyConstraint, event
+from sqlalchemy import CHAR, Column, String, Integer, Numeric, Boolean, DateTime, ForeignKey, JSON, Text, UniqueConstraint, ForeignKeyConstraint, CheckConstraint, Index, event
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -252,6 +252,29 @@ class ProjectGraphSnapshot(Base):
     )
 
 
+@event.listens_for(ProjectGraphSnapshot, "before_update")
+def prevent_snapshot_core_update(mapper, connection, target):
+    """Snapshots are immutable except for status/timestamp transitions.
+
+    Allowed updates: status, activated_at, superseded_at (status workflow fields)
+    Blocked updates: snapshot_id, project_id, schema_version, source_manifest_hash, generation_metadata, effective_sheet_revision_ids
+    """
+    from sqlalchemy import inspect
+    state = inspect(target)
+    # Immutable core fields that should never change
+    immutable_fields = {
+        'snapshot_id', 'project_id', 'schema_version', 'source_manifest_hash',
+        'generation_metadata', 'effective_sheet_revision_ids', 'created_at'
+    }
+    for attr in state.attrs:
+        if attr.key in immutable_fields and attr.history.has_changes():
+            raise ValueError(
+                f"ProjectGraphSnapshot field '{attr.key}' is immutable. "
+                f"History: {attr.history}. "
+                "Only status/activated_at/superseded_at can be updated via status transitions."
+            )
+
+
 class DocumentRevision(Base):
     """Auditable revision lineage for a source document."""
     __tablename__ = "document_revisions"
@@ -305,6 +328,28 @@ class ProjectGraphNode(Base):
     properties_json = Column("properties", JSON_DOCUMENT, nullable=False, default=dict)
     search_text = Column(Text, nullable=False, default="")
 
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['snapshot_id', 'project_id'],
+            ['project_graph_snapshots.snapshot_id', 'project_graph_snapshots.project_id'],
+            ondelete='CASCADE',
+            name='fk_project_graph_nodes_snapshot_project'
+        ),
+        Index(
+            "ix_project_graph_nodes_normalized_name_trgm",
+            "normalized_name",
+            postgresql_using="gin",
+            postgresql_ops={"normalized_name": "gin_trgm_ops"}
+        ),
+        Index(
+            "ix_project_graph_nodes_search_text_trgm",
+            "search_text",
+            postgresql_using="gin",
+            postgresql_ops={"search_text": "gin_trgm_ops"}
+        ),
+    )
+
+
 
 class ProjectGraphEdge(Base):
     __tablename__ = "project_graph_edges"
@@ -318,6 +363,15 @@ class ProjectGraphEdge(Base):
     confidence_class = Column(String, nullable=False)
     confidence = Column(Numeric, nullable=False)
     properties_json = Column("properties", JSON_DOCUMENT, nullable=False, default=dict)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['snapshot_id', 'project_id'],
+            ['project_graph_snapshots.snapshot_id', 'project_graph_snapshots.project_id'],
+            ondelete='CASCADE',
+            name='fk_project_graph_edges_snapshot_project'
+        ),
+    )
 
 
 class ProjectGraphEvidence(Base):

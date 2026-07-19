@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from app.project_graph.models import (
     Citation,
+    EdgeResolver,
     GraphQueryPlan,
     GroundedAnswer,
     NodeProperty,
@@ -69,10 +70,30 @@ def test_project_graph_edge_accepts_instance_of_relation():
         confidence_class="CROSS_SHEET_INFERRED",
         confidence=0.89,
         evidence_refs=["EV-P032-017", "EV-P049-121"],
+        resolver=EdgeResolver(
+            method="constraint_scored_binding_v2",
+            resolver_version="2.0.0",
+            candidates_considered=4,
+            passed_constraints=["same_view"],
+            failed_constraints=["distance"],
+            rejected_candidate_ids=["ELOC-K1-L2-B2"],
+            confidence_calibration={
+                "ocr_score": 0.9,
+                "detector_score": 0.95,
+                "geometry_score": 0.8,
+                "legend_score": 1.0,
+                "schedule_score": 1.0,
+                "consistency_score": 1.0,
+                "calibrated_score": 0.855,
+            },
+        ),
     )
 
     assert edge.relation == "INSTANCE_OF"
     assert edge.confidence_class == "CROSS_SHEET_INFERRED"
+    assert edge.resolver is not None
+    assert edge.resolver.confidence_calibration is not None
+    assert edge.resolver.confidence_calibration["calibrated_score"] == 0.855
 
 
 def test_assert_single_located_on_passes_when_each_occurrence_has_one_location():

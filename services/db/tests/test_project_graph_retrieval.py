@@ -816,3 +816,66 @@ async def test_retrieval_falls_back_to_all_name_matches_when_none_are_attached()
         )
 
     assert {node.node_id for node in result.nodes} == {"NODE-MENTION-1"}
+
+
+@pytest.mark.asyncio
+async def test_context_contract_fields_and_quantity_authority_populated():
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        session.add(models.Project(id="PROJECT-CONTRACT", owner_id="OWNER-A", name="Project Contract"))
+        await session.commit()
+        await build_and_activate_snapshot(
+            session, project_id="PROJECT-CONTRACT", snapshot_id="SNAP-CONTRACT",
+            schema_version="paax.pckm.graph.v1", source_manifest_hash="contract", generation_metadata={},
+            nodes=[
+                {"node_id": "DIM-1", "node_type": "dimension", "canonical_name": "300x300", "normalized_name": "300x300", "discipline": "structure", "verification_status": "extracted", "confidence": 0.9, "properties": {"allowed_claims": ["claim1"], "forbidden_claims": ["claim2"]}},
+                {"node_id": "CONFLICT-1", "node_type": "conflict", "canonical_name": "Conflict detected", "normalized_name": "conflict detected", "discipline": "general", "verification_status": "conflicting", "confidence": 1.0},
+            ],
+            edges=[
+                {"edge_id": "DIM-CONFLICT", "source_node_id": "CONFLICT-1", "target_node_id": "DIM-1", "relation": "HAS_EVIDENCE", "confidence_class": "EXTRACTED", "confidence": 1.0},
+            ],
+            evidence=[
+                {"evidence_id": "EV-1", "document_id": "DOC-1", "page_index": 1, "sheet_id": "S-1", "kind": "text", "raw_text": "Evidence 1"}
+            ],
+            node_evidence=[
+                {"node_id": "DIM-1", "evidence_id": "EV-1", "role": "source"}
+            ],
+            edge_evidence=[], aliases=[], communities=[],
+        )
+
+        result = await retrieve_project_graph(
+            session, project_id="PROJECT-CONTRACT", query="300x300", depth=2, budget_tokens=2000,
+        )
+        calc_result = await retrieve_project_graph(
+            session, project_id="PROJECT-CONTRACT", query="berapa volume beton", use_intent=True
+        )
+
+    assert result.status == "success"
+    # Verify new context contract fields are correctly populated
+    assert len(result.facts) == 2
+    fact_ids = {f["node_id"] for f in result.facts}
+    assert fact_ids == {"DIM-1", "CONFLICT-1"}
+    dim_fact = next(f for f in result.facts if f["node_id"] == "DIM-1")
+    assert dim_fact["canonical_name"] == "300x300"
+    
+    assert len(result.relationships) == 1
+    assert result.relationships[0]["edge_id"] == "DIM-CONFLICT"
+    assert result.relationships[0]["relation"] == "HAS_EVIDENCE"
+
+    assert len(result.conflicts) == 1
+    assert result.conflicts[0]["node_id"] == "CONFLICT-1"
+
+    assert len(result.citations) == 1
+    assert result.citations[0]["evidence_id"] == "EV-1"
+    assert result.citations[0]["raw_text"] == "Evidence 1"
+
+    assert result.allowed_claims == ["claim1"]
+    assert result.forbidden_claims == ["claim2"]
+    
+    # Since a dimension node is present, quantity_authority must be measurement_fact
+    assert result.quantity_authority == "measurement_fact"
+
+    # For intent queries that are calculation-required
+    assert calc_result.status == "calculation_required"
+    assert calc_result.quantity_authority == "core_engine"

@@ -250,6 +250,7 @@ def _nearest_dimension(
     failed_constraints = []
     score_breakdown = {}
     rejected_candidate_ids = []
+    confidence_calibration = {}
 
     for s in scored:
         if s.score <= 0.0:
@@ -258,6 +259,7 @@ def _nearest_dimension(
             passed_constraints = s.passed_constraints
             failed_constraints = s.failed_constraints
             score_breakdown = s.score_breakdown
+            confidence_calibration = s.confidence_calibration
 
     resolver_meta = EdgeResolver(
         method="constraint_scored_binding_v2",
@@ -267,6 +269,7 @@ def _nearest_dimension(
         passed_constraints=passed_constraints,
         failed_constraints=failed_constraints,
         rejected_candidate_ids=rejected_candidate_ids,
+        confidence_calibration=confidence_calibration,
     )
 
     return (
@@ -905,13 +908,25 @@ def resolve_cross_sheet(
                 reference_node_id, reference_confidence, reference_evidence_refs = reference_fact
                 
                 candidates_considered = len(sheet_nodes)
+                passed_constraints = []
+                failed_constraints = []
+                score_breakdown = {}
+                confidence_calibration = {}
+                for s in scored:
+                    if s.target_node_id == best_cand["node_id"]:
+                        passed_constraints = s.passed_constraints
+                        failed_constraints = s.failed_constraints
+                        score_breakdown = s.score_breakdown
+                        confidence_calibration = s.confidence_calibration
+
                 resolver_meta = EdgeResolver(
                     method="constraint_scored_binding_v2",
                     resolver_version="2.0.0",
                     candidates_considered=candidates_considered,
-                    score_breakdown={"legend_match": 1.0 if best_cand["match"] else 0.0},
-                    passed_constraints=["legend_match"] if best_cand["match"] else [],
-                    failed_constraints=[] if best_cand["match"] else ["legend_match"],
+                    score_breakdown=score_breakdown,
+                    passed_constraints=passed_constraints,
+                    failed_constraints=failed_constraints,
+                    confidence_calibration=confidence_calibration,
                 )
                 
                 reference_edges.append(
@@ -999,7 +1014,18 @@ def resolve_cross_sheet(
                     confidence_class="CROSS_SHEET_INFERRED",
                     confidence=type_node.confidence,
                     evidence_refs=list(source.source_ref.evidence_refs),
-                    resolver=EdgeResolver(method="deterministic_exact_code"),
+                    resolver=EdgeResolver(
+                        method="deterministic_exact_code",
+                        confidence_calibration={
+                            "ocr_score": round(type_node.confidence, 4),
+                            "detector_score": 1.0,
+                            "geometry_score": 1.0,
+                            "legend_score": 1.0,
+                            "schedule_score": 1.0,
+                            "consistency_score": 1.0,
+                            "calibrated_score": round(type_node.confidence, 4),
+                        },
+                    ),
                 )
             )
             sheet_node = next(
@@ -1021,7 +1047,18 @@ def resolve_cross_sheet(
                         confidence_class="EXTRACTED",
                         confidence=type_node.confidence,
                         evidence_refs=list(source.source_ref.evidence_refs),
-                        resolver=EdgeResolver(method="deterministic_exact_code"),
+                        resolver=EdgeResolver(
+                            method="deterministic_exact_code",
+                            confidence_calibration={
+                                "ocr_score": round(type_node.confidence, 4),
+                                "detector_score": 1.0,
+                                "geometry_score": 1.0,
+                                "legend_score": 1.0,
+                                "schedule_score": 1.0,
+                                "consistency_score": 1.0,
+                                "calibrated_score": round(type_node.confidence, 4),
+                            },
+                        ),
                     )
                 )
             element_bbox = _element_bbox(source.patch, type_node.canonical_name, source.source_ref)
@@ -1186,7 +1223,18 @@ def resolve_cross_sheet(
                             for source_ref in space_node.source_refs
                             for evidence_ref in source_ref.evidence_refs
                         ),
-                        resolver=EdgeResolver(method="deterministic_occurrence_context"),
+                        resolver=EdgeResolver(
+                            method="deterministic_occurrence_context",
+                            confidence_calibration={
+                                "ocr_score": round(occurrence.confidence, 4),
+                                "detector_score": 1.0,
+                                "geometry_score": 1.0,
+                                "legend_score": 1.0,
+                                "schedule_score": 1.0,
+                                "consistency_score": 1.0,
+                                "calibrated_score": round(occurrence.confidence, 4),
+                            },
+                        ),
                     )
                 )
             if grid_node is not None:
@@ -1203,7 +1251,18 @@ def resolve_cross_sheet(
                             for source_ref in grid_node.source_refs
                             for evidence_ref in source_ref.evidence_refs
                         ),
-                        resolver=EdgeResolver(method="deterministic_occurrence_context"),
+                        resolver=EdgeResolver(
+                            method="deterministic_occurrence_context",
+                            confidence_calibration={
+                                "ocr_score": round(occurrence.confidence, 4),
+                                "detector_score": 1.0,
+                                "geometry_score": 1.0,
+                                "legend_score": 1.0,
+                                "schedule_score": 1.0,
+                                "consistency_score": 1.0,
+                                "calibrated_score": round(occurrence.confidence, 4),
+                            },
+                        ),
                     )
                 )
             edges.extend(
@@ -1222,7 +1281,18 @@ def resolve_cross_sheet(
                                 for evidence_ref in source_ref.evidence_refs
                             }
                         ),
-                        resolver=EdgeResolver(method="deterministic_occurrence_context"),
+                        resolver=EdgeResolver(
+                            method="deterministic_occurrence_context",
+                            confidence_calibration={
+                                "ocr_score": round(occurrence.confidence, 4),
+                                "detector_score": 1.0,
+                                "geometry_score": 1.0,
+                                "legend_score": 1.0,
+                                "schedule_score": 1.0,
+                                "consistency_score": 1.0,
+                                "calibrated_score": round(occurrence.confidence, 4),
+                            },
+                        ),
                     ),
                     ProjectGraphEdge(
                         edge_id=_stable_id("EDGE", occurrence.node_id, level_node.node_id, "LOCATED_ON"),
@@ -1238,7 +1308,18 @@ def resolve_cross_sheet(
                                 for evidence_ref in source_ref.evidence_refs
                             }
                         ),
-                        resolver=EdgeResolver(method="deterministic_occurrence_context"),
+                        resolver=EdgeResolver(
+                            method="deterministic_occurrence_context",
+                            confidence_calibration={
+                                "ocr_score": round(occurrence.confidence, 4),
+                                "detector_score": 1.0,
+                                "geometry_score": 1.0,
+                                "legend_score": 1.0,
+                                "schedule_score": 1.0,
+                                "consistency_score": 1.0,
+                                "calibrated_score": round(occurrence.confidence, 4),
+                            },
+                        ),
                     ),
                     *locator_edges,
                 )
@@ -1303,6 +1384,7 @@ def resolve_cross_sheet(
                         failed_constraints = []
                         score_breakdown = {}
                         rejected_candidate_ids = []
+                        confidence_calibration = {}
                         for s in scored:
                             if s.score <= 0.0:
                                 rejected_candidate_ids.append(s.target_node_id)
@@ -1310,6 +1392,7 @@ def resolve_cross_sheet(
                                 passed_constraints = s.passed_constraints
                                 failed_constraints = s.failed_constraints
                                 score_breakdown = s.score_breakdown
+                                confidence_calibration = s.confidence_calibration
                                 
                         resolver_meta = EdgeResolver(
                             method="constraint_scored_binding_v2",
@@ -1319,6 +1402,7 @@ def resolve_cross_sheet(
                             passed_constraints=passed_constraints,
                             failed_constraints=failed_constraints,
                             rejected_candidate_ids=rejected_candidate_ids,
+                            confidence_calibration=confidence_calibration,
                         )
                         
                         edges.extend(
@@ -1379,7 +1463,18 @@ def resolve_cross_sheet(
                             for evidence_ref in source_ref.evidence_refs
                         }
                     ),
-                    resolver=EdgeResolver(method="conservative_occurrence_split"),
+                    resolver=EdgeResolver(
+                        method="conservative_occurrence_split",
+                        confidence_calibration={
+                            "ocr_score": 0.5,
+                            "detector_score": 1.0,
+                            "geometry_score": 1.0,
+                            "legend_score": 1.0,
+                            "schedule_score": 1.0,
+                            "consistency_score": 1.0,
+                            "calibrated_score": 0.5,
+                        },
+                    ),
                 )
             )
 
@@ -1439,19 +1534,25 @@ def resolve_cross_sheet(
             
             if best_table is not None and table_state != "rejected":
                 candidates_considered = len(schedule_tables)
-                passed_constraints = ["same_sheet"] if best_table["same_sheet"] else []
-                if best_table["aligned"]:
-                    passed_constraints.append("table_row_alignment")
+                passed_constraints = []
+                failed_constraints = []
+                score_breakdown = {}
+                confidence_calibration = {}
+                for s in table_scored:
+                    if s.target_node_id == best_table["node_id"]:
+                        passed_constraints = s.passed_constraints
+                        failed_constraints = s.failed_constraints
+                        score_breakdown = s.score_breakdown
+                        confidence_calibration = s.confidence_calibration
+
                 resolver_meta = EdgeResolver(
                     method="constraint_scored_binding_v2",
                     resolver_version="2.0.0",
                     candidates_considered=candidates_considered,
-                    score_breakdown={
-                        "same_sheet": 1.0 if best_table["same_sheet"] else 0.0,
-                        "table_row_alignment": 1.0 if best_table["aligned"] else 0.0,
-                    },
+                    score_breakdown=score_breakdown,
                     passed_constraints=passed_constraints,
-                    failed_constraints=["table_row_alignment"] if not best_table["aligned"] else [],
+                    failed_constraints=failed_constraints,
+                    confidence_calibration=confidence_calibration,
                 )
                 
                 edges.append(

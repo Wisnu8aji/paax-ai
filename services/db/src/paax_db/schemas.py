@@ -403,6 +403,13 @@ class ProjectGraphRetrievalResponse(BaseModel):
     guidance: Optional[str] = None
     rab_bridge_available: Optional[bool] = None
     missing_information: List[str] = Field(default_factory=list)
+    facts: List[Dict[str, Any]] = Field(default_factory=list)
+    relationships: List[Dict[str, Any]] = Field(default_factory=list)
+    conflicts: List[Dict[str, Any]] = Field(default_factory=list)
+    citations: List[Dict[str, Any]] = Field(default_factory=list)
+    allowed_claims: List[str] = Field(default_factory=list)
+    forbidden_claims: List[str] = Field(default_factory=list)
+    quantity_authority: str = "none"
 
 
 class ProjectGraphMetricsResponse(BaseModel):

@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable
 import uuid
 
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, literal, union_all, and_, String
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .models import (
@@ -38,6 +38,13 @@ class GraphRetrievalResult:
     guidance: str | None = None
     rab_bridge_available: bool | None = None
     missing_information: list[str] = field(default_factory=list)
+    facts: list[dict[str, Any]] = field(default_factory=list)
+    relationships: list[dict[str, Any]] = field(default_factory=list)
+    conflicts: list[dict[str, Any]] = field(default_factory=list)
+    citations: list[dict[str, Any]] = field(default_factory=list)
+    allowed_claims: list[str] = field(default_factory=list)
+    forbidden_claims: list[str] = field(default_factory=list)
+    quantity_authority: str = "none"
 
 
 def _tokens(values: Iterable[str]) -> int:
@@ -155,12 +162,23 @@ async def _evidence_for_nodes(
 
 
 def _result_token_estimate(
-    nodes: list[ProjectGraphNode], evidence: list[ProjectGraphEvidence]
+    nodes: list[ProjectGraphNode],
+    evidence: list[ProjectGraphEvidence],
+    edges: list[ProjectGraphEdge] = (),
+    notes: list[str] = (),
 ) -> int:
-    return _tokens(
-        [node.canonical_name + " " + node.search_text for node in nodes]
+    tokens = _tokens(
+        [node.canonical_name + " " + (node.search_text or "") for node in nodes]
         + [item.raw_text for item in evidence]
     )
+    for node in nodes:
+        if node.properties_json:
+            tokens += _tokens([str(node.properties_json)])
+    if edges:
+        tokens += _tokens([edge.edge_id + " " + edge.relation for edge in edges])
+    if notes:
+        tokens += _tokens(notes)
+    return tokens
 
 
 async def _write_query_log(
@@ -270,7 +288,7 @@ async def _prune_result(
     seed_ids: set[str],
 ) -> tuple[list[ProjectGraphNode], list[ProjectGraphEdge], list[ProjectGraphEvidence], int]:
     evidence = await _evidence_for_nodes(session, project_id=project_id, snapshot_id=snapshot_id, nodes=nodes)
-    token_estimate = _result_token_estimate(nodes, evidence)
+    token_estimate = _result_token_estimate(nodes, evidence, edges)
     while nodes and token_estimate > budget_tokens:
         removable = [node for node in nodes if node.node_id not in seed_ids]
         candidate = min(removable or nodes, key=lambda node: (_node_priority(node, seed_ids), node.node_id))
@@ -283,7 +301,7 @@ async def _prune_result(
         evidence = await _evidence_for_nodes(
             session, project_id=project_id, snapshot_id=snapshot_id, nodes=nodes
         )
-        token_estimate = _result_token_estimate(nodes, evidence)
+        token_estimate = _result_token_estimate(nodes, evidence, edges)
         if len(nodes) == 1 and token_estimate > budget_tokens and nodes[0].node_id in seed_ids:
             break
     return nodes, edges, evidence, token_estimate
@@ -679,6 +697,82 @@ async def retrieve_project_graph(
             edge._paax_correction_overlay = overlay
     if corrected:
         result.data_status = "corrected"
+
+    # Populate context contract fields
+    result.facts = [
+        {
+            "node_id": node.node_id,
+            "node_type": node.node_type,
+            "canonical_name": getattr(node, "_paax_correction_name", node.canonical_name),
+            "normalized_name": node.normalized_name,
+            "discipline": node.discipline,
+            "properties": node.properties_json or {},
+        }
+        for node in result.nodes
+    ]
+    result.relationships = [
+        {
+            "edge_id": edge.edge_id,
+            "source_node_id": edge.source_node_id,
+            "target_node_id": edge.target_node_id,
+            "relation": edge.relation,
+            "properties": edge.properties_json or {},
+        }
+        for edge in result.edges
+    ]
+    result.conflicts = [
+        {
+            "node_id": node.node_id,
+            "canonical_name": getattr(node, "_paax_correction_name", node.canonical_name),
+            "properties": node.properties_json or {},
+        }
+        for node in result.nodes
+        if node.node_type == "conflict"
+    ]
+    result.citations = [
+        {
+            "evidence_id": item.evidence_id,
+            "document_id": item.document_id,
+            "page_index": item.page_index,
+            "sheet_id": item.sheet_id,
+            "raw_text": item.raw_text,
+        }
+        for item in result.evidence
+    ]
+
+    # Extract allowed and forbidden claims from node properties
+    allowed_claims = []
+    forbidden_claims = []
+    for node in result.nodes:
+        props = node.properties_json or {}
+        if "allowed_claims" in props:
+            val = props["allowed_claims"]
+            if isinstance(val, list):
+                allowed_claims.extend(val)
+            elif isinstance(val, str):
+                allowed_claims.append(val)
+        if "forbidden_claims" in props:
+            val = props["forbidden_claims"]
+            if isinstance(val, list):
+                forbidden_claims.extend(val)
+            elif isinstance(val, str):
+                forbidden_claims.append(val)
+    result.allowed_claims = sorted(list(set(allowed_claims)))
+    result.forbidden_claims = sorted(list(set(forbidden_claims)))
+
+    # Determine quantity_authority
+    if result.status == "calculation_required" or result.data_status == "calculation_required":
+        result.quantity_authority = "core_engine"
+    elif any(node.node_type == "dimension" for node in result.nodes):
+        result.quantity_authority = "measurement_fact"
+    else:
+        result.quantity_authority = "none"
+
+    # Update token estimate incorporating the final notes and metadata
+    result.context_token_estimate = _result_token_estimate(
+        result.nodes, result.evidence, result.edges, result.notes
+    )
+
     return result
 
 
@@ -790,7 +884,7 @@ async def _retrieve_legacy(
         (ProjectGraphEvidence.evidence_id == ProjectGraphNodeEvidence.evidence_id),
     ).where(ProjectGraphEvidence.project_id == project_id, ProjectGraphEvidence.snapshot_id == snapshot.snapshot_id,
             ProjectGraphNodeEvidence.node_id.in_([node.node_id for node in nodes])))).scalars().unique().all() if nodes else []
-    token_estimate = _tokens([node.canonical_name + " " + node.search_text for node in nodes] + [item.raw_text for item in evidence])
+    token_estimate = _result_token_estimate(nodes, evidence, edges)
     while nodes and token_estimate > budget_tokens:
         nodes.pop()
         permitted = {item.node_id for item in nodes}
@@ -798,7 +892,7 @@ async def _retrieve_legacy(
         permitted_evidence_ids = (await session.execute(select(ProjectGraphNodeEvidence.evidence_id).where(
             ProjectGraphNodeEvidence.snapshot_id == snapshot.snapshot_id, ProjectGraphNodeEvidence.node_id.in_(permitted)))).scalars().all()
         evidence = [item for item in evidence if item.evidence_id in set(permitted_evidence_ids)]
-        token_estimate = _tokens([node.canonical_name + " " + node.search_text for node in nodes] + [item.raw_text for item in evidence])
+        token_estimate = _result_token_estimate(nodes, evidence, edges)
     session.add(ProjectGraphQueryLog(id=uuid.uuid4(), project_id=project_id, snapshot_id=snapshot.snapshot_id,
         user_query=query, query_plan={"intent": "LEVEL_SCOPED" if level_scoped else ("DIRECT_FACT" if len(query_normalized.split()) <= 2 else "LIST_FILTER"), "depth": depth, "relations": sorted(relations or []), "traversal_mode": traversal_mode, "target_node_id": target_node_id, "vocabulary_match": query_normalized in vocabulary},
         selected_seed_ids=seed_ids, traversed_node_ids=[item.node_id for item in nodes],
