@@ -1102,8 +1102,12 @@ async def materialize_rab_bridge_proposal(
         line["measurement_mapping_id"] = mapping.id
         line["measurement_fact_ids"] = fact_ids
         line["calculation_id"] = calculation.get("calculation_id")
+        line["calculation_status"] = calculation["status"]
         line["calculation_formula"] = calculation.get("formula")
+        line["calculation_substituted_formula"] = calculation.get("substituted_formula")
         line["calculation_input_sources"] = calculation.get("input_sources", [])
+        line["calculation_engine_version"] = calculation.get("engine_version")
+        line["calculation_warnings"] = calculation.get("warnings", [])
         line["mapping_evidence_refs"] = mapping.evidence_refs
         if evidence_ids and evidence_ids[0] in evidence_map:
             line["sheet_id"] = evidence_map[evidence_ids[0]]["sheet_id"]
