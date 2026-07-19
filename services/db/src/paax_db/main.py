@@ -866,20 +866,6 @@ async def resolve_rab_bridge_proposal(id: str, proposal_id: str, request: schema
     return {"status": proposal.status, "snapshot_id": proposal.snapshot_id, "proposal_id": proposal.id, "items": proposal.payload.get("items", [])}
 
 
-import sys
-from pathlib import Path
-core_engine_path = str(Path(__file__).resolve().parents[3] / "core-engine")
-if core_engine_path not in sys.path:
-    sys.path.append(core_engine_path)
-
-try:
-    from app.rab.suggest import suggest_ahsp_for_node
-    from app.rab.geometry import compute_volume
-except ImportError as e:
-    print("IMPORT ERROR:", e)
-    def suggest_ahsp_for_node(name, discipline): return None, 0.25
-    def compute_volume(dims): return None
-
 @app.post(
     "/projects/{id}/project-graph/rab-bridge/{proposal_id}/materialize",
     response_model=schemas.RabBridgeMaterializeResponse,
@@ -928,21 +914,13 @@ async def materialize_rab_bridge_proposal(
         properties = item.get("properties", {})
         evidence_ids = item.get("evidence_ids", [])
         
-        ahsp_code, confidence = suggest_ahsp_for_node(name, discipline)
-        
+        ahsp_code = item.get("ahsp_code")
         volume = None
         volume_source = None
         assumption_id = None
         
-        stored_facts = properties.get("stored_measurement_facts", [])
-        if stored_facts:
-            dims_dict = {}
-            for fact in stored_facts:
-                if isinstance(fact, dict) and "name" in fact and "value" in fact:
-                    dims_dict[fact["name"]] = fact["value"]
-            volume = compute_volume(dims_dict)
-            if volume is not None:
-                volume_source = "written_dimension"
+        # This DB service never computes from stored facts. A typed Core Engine
+        # response is required before materialization (wired by the caller).
         
         # Typed assumptions are inputs pending approval, never a free-text volume
         # fallback. Fase 14 supplies only typed Core Engine results here.
