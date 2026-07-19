@@ -41,6 +41,7 @@ NodeType = Literal[
 
 VerificationStatus = Literal[
     "extracted", "ai_interpreted", "cross_sheet_inferred", "human_verified", "conflicting", "ambiguous",
+    "proposed", "validated", "accepted", "rejected",
 ]
 
 
@@ -91,6 +92,12 @@ ConfidenceClass = Literal[
 class EdgeResolver(BaseModel):
     method: str
     model: Optional[str] = None
+    resolver_version: Optional[str] = "2.0.0"
+    candidates_considered: Optional[int] = 0
+    score_breakdown: Optional[dict[str, float]] = None
+    passed_constraints: Optional[list[str]] = None
+    failed_constraints: Optional[list[str]] = None
+    rejected_candidate_ids: Optional[list[str]] = None
 
 
 class ProjectGraphEdge(BaseModel):
@@ -102,6 +109,7 @@ class ProjectGraphEdge(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     evidence_refs: list[str] = Field(default_factory=list)
     resolver: Optional[EdgeResolver] = None
+    resolution_state: Optional[str] = None
 
 
 def assert_single_located_on(edges: list[ProjectGraphEdge]) -> None:
