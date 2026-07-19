@@ -91,6 +91,17 @@ class AiUsageLog(Base):
     tokens_out = Column(Integer, nullable=True)
     latency_ms = Column(Integer, nullable=True)
     success = Column(Boolean, nullable=False, default=True)
+    # F18: observability stores bounded identifiers and numeric metadata only.
+    correlation_id = Column(String(128), index=True, nullable=True)
+    run_id = Column(String(128), index=True, nullable=True)
+    project_id = Column(String(128), index=True, nullable=True)
+    snapshot_id = Column(String(128), index=True, nullable=True)
+    calculation_id = Column(String(128), index=True, nullable=True)
+    event_type = Column(String(120), nullable=False, default="usage")
+    status = Column(String(64), nullable=False, default="completed")
+    metric_count = Column(Integer, nullable=False, default=1)
+    cost_microunits = Column(Integer, nullable=True)
+    metadata_json = Column(JSON_DOCUMENT, nullable=False, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 class MorningReport(Base):

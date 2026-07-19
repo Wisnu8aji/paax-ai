@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
 from enum import Enum
 from typing import Optional, Any, Dict, List, Literal, Union
 from datetime import datetime
@@ -144,13 +144,31 @@ class AiUsageLogCreate(BaseModel):
     tokens_out: Optional[int] = None
     latency_ms: Optional[int] = None
     success: bool
+    correlation_id: Optional[str] = Field(default=None, max_length=128)
+    run_id: Optional[str] = Field(default=None, max_length=128)
+    project_id: Optional[str] = Field(default=None, max_length=128)
+    snapshot_id: Optional[str] = Field(default=None, max_length=128)
+    calculation_id: Optional[str] = Field(default=None, max_length=128)
+    event_type: str = Field(default="usage", min_length=1, max_length=120)
+    status: str = Field(default="completed", min_length=1, max_length=64)
+    metric_count: int = Field(default=1, ge=0)
+    cost_microunits: Optional[int] = Field(default=None, ge=0)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("correlation_id", "run_id", "project_id", "snapshot_id", "calculation_id")
+    @classmethod
+    def identifiers_must_be_safe(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        if not value or not all(char.isalnum() or char in "._:-/" for char in value):
+            raise ValueError("observability identifiers contain unsupported characters")
+        return value
 
 class AiUsageLogResponse(AiUsageLogCreate):
     id: uuid.UUID
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class MorningReportCreate(BaseModel):
     project_id: str

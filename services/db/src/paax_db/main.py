@@ -2,6 +2,7 @@ import os
 import datetime
 import hashlib
 import json
+import re
 from typing import List, Dict, Any, Optional
 from sqlalchemy import delete, or_
 import uuid
@@ -30,6 +31,55 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+_CORRELATION_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+_SAFE_METADATA_KEY = re.compile(r"^[a-z][a-z0-9_.-]{0,63}$")
+_SENSITIVE_METADATA_TERMS = frozenset({
+    "api_key", "authorization", "content", "credential", "document", "drawing",
+    "password", "prompt", "secret", "text", "token",
+})
+
+
+def _safe_correlation_id(value: str | None) -> str:
+    """Accept a bounded trace identifier or replace it; never echo unsafe input."""
+    if value and _CORRELATION_ID_PATTERN.fullmatch(value):
+        return value
+    return str(uuid.uuid4())
+
+
+def _redact_observability_metadata(value: Any, *, depth: int = 0) -> Any:
+    """Keep only bounded numeric telemetry; raw text is intentionally discarded."""
+    if depth > 4:
+        return None
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, dict):
+        clean: dict[str, Any] = {}
+        for key, nested in list(value.items())[:64]:
+            normalized = str(key).strip().lower()
+            if (
+                not _SAFE_METADATA_KEY.fullmatch(normalized)
+                or any(term in normalized for term in _SENSITIVE_METADATA_TERMS)
+            ):
+                continue
+            redacted = _redact_observability_metadata(nested, depth=depth + 1)
+            if redacted is not None:
+                clean[normalized] = redacted
+        return clean
+    if isinstance(value, (list, tuple)):
+        clean_values = [_redact_observability_metadata(item, depth=depth + 1) for item in value[:64]]
+        return [item for item in clean_values if item is not None]
+    return None
+
+
+@app.middleware("http")
+async def correlation_id_middleware(request: Request, call_next: Any):
+    correlation_id = _safe_correlation_id(request.headers.get("X-Correlation-Id"))
+    request.state.correlation_id = correlation_id
+    response = await call_next(request)
+    response.headers["X-Correlation-Id"] = correlation_id
+    return response
 
 
 def get_core_engine_client() -> Any | None:
@@ -242,8 +292,12 @@ def _cosine_distance(left: list[float], right: list[float]) -> float:
     return 1.0 - (dot / (norm_left * norm_right))
 
 @app.post("/usage/log", response_model=schemas.AiUsageLogResponse, dependencies=[Depends(get_current_user)])
-async def log_usage(log_data: schemas.AiUsageLogCreate, db: AsyncSession = Depends(get_db)):
-    db_log = models.AiUsageLog(**log_data.model_dump())
+async def log_usage(log_data: schemas.AiUsageLogCreate, request: Request, db: AsyncSession = Depends(get_db)):
+    """Persist safe telemetry only; this endpoint does not invoke any AI provider."""
+    payload = log_data.model_dump()
+    payload["correlation_id"] = payload["correlation_id"] or request.state.correlation_id
+    payload["metadata_json"] = _redact_observability_metadata(payload.pop("metadata")) or {}
+    db_log = models.AiUsageLog(**payload)
     db.add(db_log)
     
     # Increment quota usage if it's a tenant
@@ -263,7 +317,13 @@ async def log_usage(log_data: schemas.AiUsageLogCreate, db: AsyncSession = Depen
 
     await db.commit()
     await db.refresh(db_log)
-    return db_log
+    return schemas.AiUsageLogResponse(
+        **log_data.model_dump(exclude={"id", "metadata", "correlation_id"}),
+        correlation_id=db_log.correlation_id,
+        metadata=db_log.metadata_json,
+        id=db_log.id,
+        created_at=db_log.created_at,
+    )
 
 @app.get("/usage/summary", response_model=schemas.UsageSummaryResponse, dependencies=[Depends(get_current_user)])
 async def get_usage_summary(tenant_id: str, period: str = "monthly", db: AsyncSession = Depends(get_db)):
