@@ -30,6 +30,13 @@ import {
   type ToolChatMessage,
 } from "./tools";
 import { evaluateEvidenceGate, buildIntentFrame, planDepthStatusMessage, buildExecutionPlan } from "@paax/ai-orchestrator/router";
+import {
+  buildServerChatContext,
+  CHAT_CONTEXT_LIMITS,
+  createDbContextLoaders,
+  outputTokenLimit,
+  validateChatPayload,
+} from "./context";
 
 export const runtime = "nodejs";
 export const maxDuration = 600; // 10 menit
@@ -388,18 +395,18 @@ async function streamOpenRouter(
     stream: true,
   };
   if (thinking === "on") {
-    basePayload.max_tokens = effort === "max" ? 8192 : 4096;
+    basePayload.max_tokens = outputTokenLimit(thinking, effort);
     basePayload.reasoning = { enabled: true, effort: normalizedEffort, exclude: false };
     basePayload.reasoning_effort = normalizedEffort;
     basePayload.include_reasoning = true;
     basePayload.provider = { require_parameters: true };
   } else {
-    basePayload.max_tokens = 2048;
+    basePayload.max_tokens = outputTokenLimit(thinking, effort);
     basePayload.temperature = 0.2;
     basePayload.reasoning = { enabled: false, effort: "none", exclude: true };
   }
 
-  const MAX_CONTINUATIONS = 5;
+  const MAX_CONTINUATIONS = CHAT_CONTEXT_LIMITS.maxContinuations;
   let currentMessages = [...basePayload.messages];
   let hitLengthLimit = true;
   let continuationCount = 0;
@@ -417,7 +424,7 @@ async function streamOpenRouter(
       currentPayload.reasoning = { enabled: false, effort: "none", exclude: true };
       currentPayload.include_reasoning = false;
       delete currentPayload.reasoning_effort;
-      currentPayload.max_tokens = Math.max(basePayload.max_tokens ?? 4096, 4096);
+      currentPayload.max_tokens = CHAT_CONTEXT_LIMITS.maxOutputTokens;
     }
 
     const res = await fetchOrThrow("https://openrouter.ai/api/v1/chat/completions", apiKey, currentPayload, req);
@@ -426,7 +433,7 @@ async function streamOpenRouter(
 
     if (hitLengthLimit) {
       continuationCount++;
-      if (continuationCount > MAX_CONTINUATIONS) {
+      if (continuationCount >= MAX_CONTINUATIONS) {
         hitLengthLimit = false;
         sendEvent("message", { type: "status", phase: "streaming_response", statusLabel: "Batas auto-lanjut tercapai, menghentikan generasi." });
         break;
@@ -452,11 +459,11 @@ function buildDeepSeekPayload(
     stream: true,
   };
   if (thinking === "on") {
-    payload.max_tokens = effort === "max" ? 8192 : 4096;
+    payload.max_tokens = outputTokenLimit(thinking, effort);
     payload.thinking = { type: "enabled" };
     payload.reasoning_effort = effort === "max" ? "max" : "high";
   } else {
-    payload.max_tokens = 2048;
+    payload.max_tokens = outputTokenLimit(thinking, effort);
     payload.temperature = 0.2;
     payload.thinking = { type: "disabled" };
   }
@@ -498,12 +505,12 @@ function buildDashScopePayload(
   };
   if (thinking === "on") {
     payload.enable_thinking = true;
-    payload.max_tokens = effort === "max" ? 8192 : 4096;
+    payload.max_tokens = outputTokenLimit(thinking, effort);
     // max effort = tanpa batas (thinking_budget dihilangkan); high = dibatasi.
     if (effort !== "max") payload.thinking_budget = ARETE_THINKING_BUDGET_HIGH;
   } else {
     payload.enable_thinking = false;
-    payload.max_tokens = 2048;
+    payload.max_tokens = outputTokenLimit(thinking, effort);
     payload.temperature = 0.2;
   }
   return payload;
@@ -552,7 +559,7 @@ async function streamAnthropicNative(
   const stream = client.messages.stream(
     {
       model: getModel("noir").apiModel,
-      max_tokens: thinking === "on" ? (effort === "max" ? 8192 : 4096) : 2048,
+      max_tokens: outputTokenLimit(thinking, effort),
       system,
       messages: anthropicMessages,
       thinking: thinking === "on" ? { type: "adaptive", display: "summarized" } : { type: "disabled" },
@@ -702,6 +709,10 @@ export async function POST(req: NextRequest) {
   }
 
   const { runId, conversationId, projectId, rabLines, messages, modelAlias, reasoningEffort, thinking } = parsed.data;
+  const validation = validateChatPayload({ messages });
+  if (!validation.ok) {
+    return NextResponse.json({ error: validation.error }, { status: 413 });
+  }
   const resolved = resolveKeyForModel(modelAlias);
   if (!resolved) {
     const providerLabel = getModel(modelAlias).provider;
@@ -713,6 +724,13 @@ export async function POST(req: NextRequest) {
 
   const resolvedThinking = resolveThinking(modelAlias, thinking);
   const effort = reasoningEffort as ReasoningEffort;
+  const serverContext = await buildServerChatContext({
+    projectId,
+    conversationId,
+    messages,
+    loaders: createDbContextLoaders({ authorization: req.headers.get("authorization") }),
+  });
+  const serverMessages = serverContext.messages as ChatMessage[];
 
   const encoder = new TextEncoder();
   const readableStream = new ReadableStream({
@@ -744,7 +762,7 @@ export async function POST(req: NextRequest) {
         // klasifikasi plan_depth heuristik dari pesan user terakhir, tampilkan
         // "Pendekatan" singkat untuk structured/controlled saja (blueprint §5 --
         // plan tidak ditampilkan untuk pertanyaan direct/compact yang sederhana).
-        const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+        const lastUserMessage = [...serverMessages].reverse().find((m) => m.role === "user");
         if (lastUserMessage) {
           const intentFrame = buildIntentFrame(lastUserMessage.content);
           const statusMessage = planDepthStatusMessage(intentFrame);
@@ -764,18 +782,18 @@ export async function POST(req: NextRequest) {
         // maks MAX_TOOL_TURNS giliran) sebelum stream jawaban final. Kalau flag off
         // ATAU tool-loop error apa pun, jatuh diam-diam ke messages asli tanpa tools --
         // Command Room tidak boleh pernah error total gara-gara jalur tools ini.
-        let effectiveMessages: ChatMessage[] = messages;
+        let effectiveMessages: ChatMessage[] = serverMessages;
         let toolsWereUsed = false;
         if (isToolsEnabled()) {
           try {
-            effectiveMessages = await resolveToolsForModel(modelAlias, messages, resolved.apiKey, resolved.viaOpenRouter, req, sendEvent, runId, conversationId, projectId, rabLines);
-            toolsWereUsed = effectiveMessages !== messages;
+            effectiveMessages = await resolveToolsForModel(modelAlias, serverMessages, resolved.apiKey, resolved.viaOpenRouter, req, sendEvent, runId, conversationId, projectId, rabLines);
+            toolsWereUsed = effectiveMessages !== serverMessages;
           } catch (toolErr) {
             sendEvent("message", {
               type: "status", phase: "streaming_response",
               statusLabel: "Tool-calling tidak tersedia untuk pertanyaan ini, melanjutkan tanpa tools.",
             });
-            effectiveMessages = messages;
+            effectiveMessages = serverMessages;
           }
         }
 

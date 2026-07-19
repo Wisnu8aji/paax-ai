@@ -22,8 +22,9 @@ import {
 } from "@paax/ai-orchestrator/tools";
 import type { ModelAlias, ReasoningEffort, ThinkingMode } from "@/lib/paax-models";
 import { getModel } from "@/lib/paax-models";
+import { CHAT_CONTEXT_LIMITS } from "./context";
 
-export const MAX_TOOL_TURNS = 5;
+export const MAX_TOOL_TURNS = CHAT_CONTEXT_LIMITS.maxToolTurns;
 
 export interface ToolChatMessage {
   role: "user" | "assistant" | "system" | "tool";
@@ -361,7 +362,7 @@ export async function runOpenRouterWithTools(params: {
       messages,
       tools: toolsSchema,
       temperature: 0.2,
-      max_tokens: 4096,
+      max_tokens: CHAT_CONTEXT_LIMITS.maxOutputTokens,
     }),
     messages: params.messages,
     context: params.context,
@@ -394,7 +395,7 @@ export async function runDeepSeekNativeWithTools(params: {
       messages,
       tools: toolsSchema,
       temperature: 0.2,
-      max_tokens: 4096,
+      max_tokens: CHAT_CONTEXT_LIMITS.maxOutputTokens,
     }),
     messages: params.messages,
     context: params.context,
@@ -438,7 +439,7 @@ export async function runAnthropicWithTools(params: {
     const response = await client.messages.create(
       {
         model: params.apiModel,
-        max_tokens: 4096,
+        max_tokens: CHAT_CONTEXT_LIMITS.maxOutputTokens,
         system: params.system,
         messages: currentMessages as any,
         tools: toolsSchema as any,
