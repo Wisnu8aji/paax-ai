@@ -21,7 +21,7 @@ from .project_graph_review import active_correction_overlays, build_quantity_rea
 from .core_engine_client import CoreEngineUnavailable
 from .core_engine_factory import build_core_engine_client
 from .rab_bridge_lifecycle import transition
-from .usage_telemetry import usage_logger_from_env
+from .usage_telemetry import emit_best_effort, usage_logger_from_env
 
 app = FastAPI(title="PAAX DB API", description="Server-side persistent storage for PAAX AI")
 
@@ -792,7 +792,7 @@ async def read_active_project_graph_snapshot(id: str, db: AsyncSession = Depends
     dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
 )
 async def retrieve_active_project_graph(
-    id: str, request: schemas.ProjectGraphRetrievalRequest, db: AsyncSession = Depends(get_db)
+    id: str, request: schemas.ProjectGraphRetrievalRequest, http_request: Request, db: AsyncSession = Depends(get_db)
 ):
     limit = int(os.getenv("PCKM_RETRIEVAL_LIMIT_PER_MINUTE", "60"))
     window_start = _utc_now() - datetime.timedelta(minutes=1)
@@ -806,12 +806,21 @@ async def retrieve_active_project_graph(
     cache_key = hashlib.sha256(json.dumps({"project": id, "snapshot": snapshot.snapshot_id if snapshot else None, "request": request.model_dump()}, sort_keys=True).encode()).hexdigest()
     cached = await db.get(models.ProjectGraphRetrievalCache, cache_key)
     if cached and _as_aware_utc(cached.expires_at) > _utc_now():
+        await emit_best_effort(usage_logger_from_env(), {
+            "service": "db", "operation": "pckm.retrieval", "event_type": "pipeline_metric",
+            "status": str(cached.payload.get("status", "success")), "success": True, "cache_hit": True,
+            "metric_count": 1, "correlation_id": http_request.state.correlation_id, "project_id": id,
+            "snapshot_id": snapshot.snapshot_id if snapshot else None,
+            "metadata": {"seed_count": 0, "node_count": len(cached.payload.get("nodes", [])),
+                         "context_token_estimate": int(cached.payload.get("context_token_estimate", 0)), "empty_result": 0},
+        })
         return cached.payload
     result = await retrieve_project_graph(
         db, project_id=id, query=request.query, depth=request.depth,
         budget_tokens=request.budget_tokens, relations=set(request.relations),
         traversal_mode=request.traversal_mode, target_node_id=request.target_node_id,
-        use_intent=request.use_intent,
+        use_intent=request.use_intent, telemetry=usage_logger_from_env(),
+        correlation_id=http_request.state.correlation_id,
     )
     await db.commit()
     response = {
@@ -901,7 +910,7 @@ async def create_project_graph_correction(
     dependencies=[Depends(RoleChecker(["owner", "pm"]))],
 )
 async def resolve_project_graph_correction(
-    id: str, correction_id: str, request: schemas.ProjectGraphCorrectionResolve, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
+    id: str, correction_id: str, request: schemas.ProjectGraphCorrectionResolve, http_request: Request, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
 ):
     correction = (await db.execute(select(models.ProjectGraphCorrection).where(
         models.ProjectGraphCorrection.id == correction_id,
@@ -920,6 +929,14 @@ async def resolve_project_graph_correction(
         models.ProjectGraphRetrievalCache.snapshot_id == correction.snapshot_id,
     ))
     await db.commit()
+    created_at = _as_aware_utc(correction.created_at) if correction.created_at else correction.resolved_at
+    resolution_ms = max(0, int((correction.resolved_at - created_at).total_seconds() * 1000)) if created_at else 0
+    await emit_best_effort(usage_logger_from_env(), {
+        "service": "db", "operation": "pckm.review.correction", "event_type": "pipeline_metric",
+        "status": correction.status, "success": correction.status == "accepted", "metric_count": 1,
+        "correlation_id": http_request.state.correlation_id, "project_id": id, "snapshot_id": correction.snapshot_id,
+        "metadata": {"accepted_count": int(correction.status == "accepted"), "stale_count": int(correction.status == "stale"), "resolution_ms": resolution_ms},
+    })
     # Accepted corrections are immediately available as active overlays for this
     # immutable snapshot; clients must refresh retrieval/review state after cache
     # invalidation. A future snapshot rebuild consumes the durable record.
@@ -932,10 +949,16 @@ async def resolve_project_graph_correction(
     dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
 )
 async def create_rab_bridge_proposal(
-    id: str, request: schemas.RabBridgeRequest, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
+    id: str, request: schemas.RabBridgeRequest, http_request: Request, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
 ):
     proposal = await build_rab_bridge_proposal(db, project_id=id, node_ids=request.node_ids, created_by=user.uid)
     await db.commit()
+    await emit_best_effort(usage_logger_from_env(), {
+        "service": "db", "operation": "rab.proposal", "event_type": "pipeline_metric", "status": proposal.status,
+        "success": proposal.status == "requires_human_approval", "metric_count": 1,
+        "correlation_id": http_request.state.correlation_id, "project_id": id, "snapshot_id": proposal.snapshot_id,
+        "metadata": {"proposal_count": 1, "blocked_count": int(proposal.status != "requires_human_approval"), "item_count": len(proposal.items)},
+    })
     return proposal
 
 
@@ -977,11 +1000,18 @@ async def list_rab_bridge_proposals(
     response_model=schemas.ProjectGraphReviewQueueResponse,
     dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
 )
-async def get_project_graph_review_queue(id: str, db: AsyncSession = Depends(get_db)):
+async def get_project_graph_review_queue(id: str, http_request: Request, db: AsyncSession = Depends(get_db)):
     snapshot = await get_active_snapshot(db, id)
     if snapshot is None:
         return {"project_id": id, "snapshot_id": "", "items": [], "summary": {"total": 0, "by_reason": {}}}
-    return await build_review_queue(db, project_id=id, snapshot_id=snapshot.snapshot_id)
+    queue = await build_review_queue(db, project_id=id, snapshot_id=snapshot.snapshot_id)
+    await emit_best_effort(usage_logger_from_env(), {
+        "service": "db", "operation": "pckm.review.queue", "event_type": "pipeline_metric",
+        "status": "completed", "success": True, "metric_count": 1,
+        "correlation_id": http_request.state.correlation_id, "project_id": id, "snapshot_id": snapshot.snapshot_id,
+        "metadata": {"queue_size": int(queue["summary"]["total"])},
+    })
+    return queue
 
 
 @app.get(
@@ -1001,7 +1031,7 @@ async def get_quantity_readiness(id: str, db: AsyncSession = Depends(get_db)):
     response_model=schemas.RabBridgeResponse,
     dependencies=[Depends(RoleChecker(["owner", "pm"]))],
 )
-async def resolve_rab_bridge_proposal(id: str, proposal_id: str, request: schemas.RabBridgeProposalResolve, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+async def resolve_rab_bridge_proposal(id: str, proposal_id: str, request: schemas.RabBridgeProposalResolve, http_request: Request, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
     proposal = (await db.execute(select(models.RabBridgeProposal).where(
         models.RabBridgeProposal.id == proposal_id,
         models.RabBridgeProposal.project_id == id,
@@ -1014,6 +1044,12 @@ async def resolve_rab_bridge_proposal(id: str, proposal_id: str, request: schema
     proposal.reviewed_at = _utc_now()
     _audit_project_action(db, project_id=id, actor=user.uid, action=f"rab_bridge.proposal.{request.status}", target_id=proposal.id)
     await db.commit()
+    await emit_best_effort(usage_logger_from_env(), {
+        "service": "db", "operation": "rab.ahsp.approval", "event_type": "pipeline_metric", "status": proposal.status,
+        "success": proposal.status == "approved", "metric_count": 1,
+        "correlation_id": http_request.state.correlation_id, "project_id": id, "snapshot_id": proposal.snapshot_id,
+        "metadata": {"approved_selection_count": int(proposal.status == "approved")},
+    })
     return {"status": proposal.status, "snapshot_id": proposal.snapshot_id, "proposal_id": proposal.id, "items": proposal.payload.get("items", [])}
 
 

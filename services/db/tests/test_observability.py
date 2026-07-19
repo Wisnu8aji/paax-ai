@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi.testclient import TestClient
 
 from paax_db.main import app
@@ -63,3 +65,16 @@ def test_correlation_middleware_generates_and_echoes_safe_trace_id():
     correlation_id = response.headers["X-Correlation-Id"]
     assert correlation_id
     assert len(correlation_id) <= 128
+
+
+def test_best_effort_telemetry_never_breaks_a_caller():
+    from paax_db.usage_telemetry import emit_best_effort
+
+    events = []
+
+    async def unavailable(event):
+        events.append(event)
+        raise RuntimeError("telemetry unavailable")
+
+    asyncio.run(emit_best_effort(unavailable, {"operation": "retrieval.completed"}))
+    assert events == [{"operation": "retrieval.completed"}]

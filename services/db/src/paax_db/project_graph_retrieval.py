@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Iterable
+import time
 import uuid
 
 from sqlalchemy import or_, select, literal, union_all, and_, String
@@ -15,6 +16,7 @@ from .models import (
 from .project_graph_repository import get_active_snapshot
 from .project_graph_intent import has_calculation_signal, parse_query_plan
 from .project_graph_review import active_correction_overlays
+from .usage_telemetry import emit_best_effort
 
 
 OCCURRENCE_CARDINALITY_NOTE = (
@@ -45,6 +47,7 @@ class GraphRetrievalResult:
     allowed_claims: list[str] = field(default_factory=list)
     forbidden_claims: list[str] = field(default_factory=list)
     quantity_authority: str = "none"
+    seed_count: int = 0
 
 
 def _tokens(values: Iterable[str]) -> int:
@@ -185,6 +188,7 @@ async def _write_query_log(
     session: AsyncSession, *, project_id: str, snapshot_id: str, query: str,
     query_plan: dict[str, Any], seed_ids: list[str], result: GraphRetrievalResult,
 ) -> None:
+    result.seed_count = len(seed_ids)
     session.add(ProjectGraphQueryLog(
         id=uuid.uuid4(), project_id=project_id, snapshot_id=snapshot_id,
         user_query=query, query_plan=query_plan, selected_seed_ids=seed_ids,
@@ -664,11 +668,15 @@ async def retrieve_project_graph(
     budget_tokens: int = 1400, relations: set[str] | None = None,
     traversal_mode: str = "bfs", target_node_id: str | None = None,
     use_intent: bool = False,
+    telemetry: Any | None = None, correlation_id: str | None = None,
 ) -> GraphRetrievalResult:
     """Return a bounded, evidence-backed subgraph; never calculate or cross tenants."""
+    started = time.monotonic()
     snapshot = await get_active_snapshot(session, project_id)
     if snapshot is None:
-        return GraphRetrievalResult(status="not_ready")
+        result = GraphRetrievalResult(status="not_ready")
+        await emit_best_effort(telemetry, _retrieval_event(result, project_id, correlation_id, started, cache_hit=False))
+        return result
     if use_intent:
         result = await _retrieve_intent(
             session, project_id=project_id, query=query, depth=depth,
@@ -772,8 +780,22 @@ async def retrieve_project_graph(
     result.context_token_estimate = _result_token_estimate(
         result.nodes, result.evidence, result.edges, result.notes
     )
-
+    await emit_best_effort(telemetry, _retrieval_event(result, project_id, correlation_id, started, cache_hit=False))
     return result
+
+
+def _retrieval_event(
+    result: GraphRetrievalResult, project_id: str, correlation_id: str | None, started: float, *, cache_hit: bool,
+) -> dict[str, Any]:
+    return {
+        "service": "db", "operation": "pckm.retrieval", "event_type": "pipeline_metric",
+        "status": result.status, "success": result.status == "success", "cache_hit": cache_hit,
+        "latency_ms": max(0, int((time.monotonic() - started) * 1000)), "metric_count": 1,
+        "correlation_id": correlation_id, "project_id": project_id, "snapshot_id": result.snapshot_id,
+        "metadata": {"seed_count": result.seed_count, "node_count": len(result.nodes),
+                     "context_token_estimate": result.context_token_estimate,
+                     "empty_result": int(result.data_status == "empty")},
+    }
 
 
 async def _retrieve_legacy(

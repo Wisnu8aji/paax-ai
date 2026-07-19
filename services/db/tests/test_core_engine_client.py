@@ -25,3 +25,14 @@ def test_client_blocks_after_bounded_transient_retries():
         def post(self, *args, **kwargs): raise TimeoutError()
     with pytest.raises(CoreEngineUnavailable):
         CoreEngineClient(Down(), internal_key="test").calculate({"x": 1})
+
+
+def test_client_emits_bounded_calculation_telemetry_without_request_payload():
+    events = []
+    client = CoreEngineClient(Transport(), internal_key="test", telemetry=events.append)
+
+    client.calculate({"project_id": "P", "snapshot_id": "S", "measurement_fact_ids": ["W"], "inputs": []})
+
+    assert events[0]["operation"] == "core_engine.calculation"
+    assert events[0]["project_id"] == "P" and events[0]["snapshot_id"] == "S"
+    assert events[0]["metadata"] == {"measurement_fact_count": 1, "attempt_count": 1}

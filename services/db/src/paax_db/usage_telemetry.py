@@ -12,6 +12,16 @@ from typing import Any
 import httpx
 
 
+async def emit_best_effort(logger: Callable[[dict[str, Any]], Awaitable[None]] | None, event: dict[str, Any]) -> None:
+    """Emit bounded telemetry without changing the observed operation's outcome."""
+    if logger is None:
+        return
+    try:
+        await logger(event)
+    except Exception:
+        return
+
+
 def usage_logger_from_env() -> Callable[[dict[str, Any]], Awaitable[None]]:
     endpoint = os.getenv("USAGE_LOG_URL", "").rstrip("/")
     internal_key = os.getenv("INTERNAL_SERVICE_KEY", "")

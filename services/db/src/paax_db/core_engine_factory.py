@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, Callable
 
 import requests
 
@@ -21,6 +21,7 @@ class RequestsTransport:
 
 def build_core_engine_client(
     *, base_url: str | None = None, internal_key: str | None = None, transport: Transport | None = None,
+    telemetry: Callable[[dict[str, Any]], None] | None = None,
 ) -> CoreEngineClient | None:
     """Return an authenticated client only when deployment explicitly configures it.
 
@@ -31,4 +32,4 @@ def build_core_engine_client(
     configured_internal_key = internal_key if internal_key is not None else os.getenv("INTERNAL_SERVICE_KEY")
     if not configured_base_url or not configured_internal_key:
         return None
-    return CoreEngineClient(transport or RequestsTransport(configured_base_url), internal_key=configured_internal_key)
+    return CoreEngineClient(transport or RequestsTransport(configured_base_url), internal_key=configured_internal_key, telemetry=telemetry)
