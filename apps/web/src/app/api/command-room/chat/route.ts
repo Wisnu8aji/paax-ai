@@ -38,6 +38,8 @@ import {
   validateChatPayload,
 } from "./context";
 import { verifyAndComposeClaims } from "./claim-pipeline";
+import { persistConversationSummary } from "./memory-runtime";
+import { createStatusSummaryScheduler } from "./status-summarizer";
 
 export const runtime = "nodejs";
 export const maxDuration = 600; // 10 menit
@@ -276,6 +278,11 @@ async function consumeOpenAiCompatibleStream(
   let buffer = "";
   let fullContent = "";
   let finishedOnLength = false;
+  const statusScheduler = createStatusSummaryScheduler({
+    enabled: process.env.COMMAND_ROOM_STATUS_SUMMARY_ENABLED?.trim().toLowerCase() !== "false",
+    minIntervalMs: Number.parseInt(process.env.COMMAND_ROOM_STATUS_SUMMARY_MIN_INTERVAL_MS ?? "15000", 10) || 15_000,
+    executor: async (snippet) => req ? summarizeReasoningStatus(snippet, req) : null,
+  });
 
   // Akumulasi reasoning + throttle status-summary setiap ~500 karakter baru
   // (fire-and-forget, TIDAK menahan stream utama). Awalnya berbasis hitung
@@ -287,7 +294,6 @@ async function consumeOpenAiCompatibleStream(
   // reasoning (naratif maupun bullet list).
   let reasoningAccumulator = "";
   let charsSinceLastSummary = 0;
-  let summaryInFlight = false;
   const SUMMARY_TRIGGER_CHARS = 500;
 
   while (true) {
@@ -320,25 +326,15 @@ async function consumeOpenAiCompatibleStream(
             charsSinceLastSummary += reasoning.length;
 
             // Trigger status-summary setiap ~500 karakter baru, TIDAK menahan stream utama.
-            if (charsSinceLastSummary >= SUMMARY_TRIGGER_CHARS && !summaryInFlight) {
+            if (charsSinceLastSummary >= SUMMARY_TRIGGER_CHARS) {
               charsSinceLastSummary = 0;
-              summaryInFlight = true;
               const snippet = reasoningAccumulator;
-              const summaryPromise = summarizeReasoningStatus(snippet, req)
-                .then((label) => {
-                  if (label) {
-                    sendEvent("message", {
-                      type: "status",
-                      phase: "reasoning_summary",
-                      statusLabel: label,
-                      runId,
-                      conversationId,
-                      timestamp: new Date().toISOString()
-                    });
-                  }
-                })
-                .finally(() => { summaryInFlight = false; });
-              pendingStatusSummaries.push(summaryPromise);
+              statusScheduler.schedule(runId ?? "anonymous", snippet, (label) => {
+                sendEvent("message", {
+                  type: "status", phase: "reasoning_summary", statusLabel: label,
+                  runId, conversationId, timestamp: new Date().toISOString(),
+                });
+              });
             }
           }
         }
@@ -838,10 +834,8 @@ export async function POST(req: NextRequest) {
           await streamAnthropicNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId);
         }
 
-        // Tunggu semua panggilan status-summary (Mistral) yang masih in-flight
-        // SEBELUM controller.close() -- lihat catatan pendingStatusSummaries di
-        // atas untuk root cause kenapa ini wajib ada.
-        await Promise.allSettled(pendingStatusSummaries);
+        // Status summary bersifat observability: scheduler berjalan fire-and-forget
+        // dan tidak pernah menahan answer composer atau completion chat.
 
         // Fase 10: candidate claims diverifikasi deterministik SEBELUM answer composer
         // mengirim konten ke klien. Provider tidak pernah diberi wewenang menampilkan
@@ -856,6 +850,10 @@ export async function POST(req: NextRequest) {
           sendEvent("message", { type: "content", runId, conversationId, delta: claimResult.responseText, timestamp: new Date().toISOString() });
           emittingComposedAnswer = false;
         }
+        void persistConversationSummary({
+          dbApiUrl: process.env.DB_API_URL?.trim(), authorization: req.headers.get("authorization"),
+          conversationId, content: claimResult.responseText,
+        });
         sendEvent("message", {
           type: "claim_verification", runId, conversationId,
           claims: claimResult.claims, rejectedCount: claimResult.rejected.length,

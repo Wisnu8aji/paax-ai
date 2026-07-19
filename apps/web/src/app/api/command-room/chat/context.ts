@@ -159,16 +159,30 @@ export function createDbContextLoaders(input: { authorization?: string | null; f
         quantity_authority: result.quantity_authority ?? null,
       });
     },
-    async durableMemory({ projectId, conversationId }) {
+    async durableMemory({ projectId, conversationId, query }) {
       const scopes = [projectId ? ["project", projectId] : null, conversationId ? ["conversation", conversationId] : null]
         .filter((scope): scope is [string, string] => Boolean(scope));
       const results = await Promise.all(scopes.map(async ([scope, scopeRefId]) => {
         const rows = await request(`/memory/durable?scope=${scope}&scope_ref_id=${encodeURIComponent(scopeRefId)}&status=active`) as Array<Record<string, unknown>> | null;
-        return rows?.map((row) => typeof row.content === "string" ? row.content : "") ?? [];
+        return rows ?? [];
       }));
-      return results.flat();
+      return selectRelevantMemories({
+        projectId, conversationId, query,
+        memories: results.flat().filter((row) => row.type !== "summary").map((row) => ({
+          scope: typeof row.scope === "string" ? row.scope : "",
+          scope_ref_id: typeof row.scope_ref_id === "string" ? row.scope_ref_id : null,
+          type: typeof row.type === "string" ? row.type : "",
+          content: typeof row.content === "string" ? row.content : "",
+          source_type: typeof row.source_type === "string" ? row.source_type : "",
+          importance: typeof row.importance === "number" ? row.importance : undefined,
+          status: typeof row.status === "string" ? row.status : "",
+        })),
+      });
     },
     async conversationSummary({ conversationId }) {
+      const summaries = await request(`/memory/durable?scope=conversation&scope_ref_id=${encodeURIComponent(conversationId)}&status=active`) as Array<Record<string, unknown>> | null;
+      const stored = summaries?.find((row) => row.type === "summary" && row.source_type === "server_summary");
+      if (typeof stored?.content === "string" && stored.content.trim()) return stored.content;
       const rows = await request(`/conversations/${encodeURIComponent(conversationId)}/messages`) as Array<Record<string, unknown>> | null;
       if (!rows || rows.length <= CHAT_CONTEXT_LIMITS.maxRecentTurns) return null;
       const prior = rows.slice(0, -CHAT_CONTEXT_LIMITS.maxRecentTurns)
@@ -180,3 +194,4 @@ export function createDbContextLoaders(input: { authorization?: string | null; f
     },
   };
 }
+import { selectRelevantMemories } from "./memory-runtime";

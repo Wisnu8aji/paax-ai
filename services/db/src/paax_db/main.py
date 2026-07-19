@@ -431,6 +431,11 @@ async def create_durable_memory(memory: schemas.DurableMemoryCreate, db: AsyncSe
         raise HTTPException(status_code=400, detail=f"scope tidak valid: {memory.scope}")
     if memory.type not in schemas.DURABLE_MEMORY_TYPES:
         raise HTTPException(status_code=400, detail=f"type tidak valid: {memory.type}")
+    # Model output is never authority for a durable project fact. Only immutable
+    # evidence, Project Graph evidence, or an explicitly approved correction may
+    # become a project-scoped fact.
+    if memory.scope == "project" and memory.type == "fact" and memory.source_type not in {"evidence", "project_graph", "approved_correction"}:
+        raise HTTPException(status_code=400, detail="project fact harus berasal dari evidence atau approved_correction")
 
     # Kalau memory ini menggantikan memory lama (supersedes), tandai yang lama
     # superseded -- jangan pernah diam-diam menimpa tanpa jejak (blueprint §9.5).

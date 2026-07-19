@@ -104,11 +104,23 @@ async def test_durable_memory_rejects_invalid_scope_and_type():
             "source_type": "conversation",
         }, headers=HEADERS)
         assert res.status_code == 400
-
         res = await ac.post("/memory/durable", json={
-            "scope": "project",
-            "type": "not_a_real_type",
-            "content": "x",
-            "source_type": "conversation",
+            "scope": "project", "type": "not_a_real_type", "content": "x", "source_type": "conversation",
         }, headers=HEADERS)
         assert res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_project_fact_rejects_model_output_but_accepts_evidence():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        rejected = await ac.post("/memory/durable", json={
+            "scope": "project", "scope_ref_id": "project-1", "type": "fact", "content": "model guessed fact",
+            "source_type": "model_output",
+        }, headers=HEADERS)
+        assert rejected.status_code == 400
+        accepted = await ac.post("/memory/durable", json={
+            "scope": "project", "scope_ref_id": "project-1", "type": "fact", "content": "written evidence",
+            "source_type": "evidence", "source_id": "evidence-1",
+        }, headers=HEADERS)
+        assert accepted.status_code == 200

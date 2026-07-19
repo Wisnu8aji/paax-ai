@@ -259,7 +259,7 @@ class MessageResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 DURABLE_MEMORY_SCOPES = {"global_user", "organization", "project", "module", "conversation", "temporary_run"}
-DURABLE_MEMORY_TYPES = {"decision", "preference", "constraint", "correction", "fact", "open_task", "artifact_reference"}
+DURABLE_MEMORY_TYPES = {"decision", "preference", "constraint", "correction", "fact", "open_task", "artifact_reference", "summary"}
 
 class DurableMemoryCreate(BaseModel):
     scope: str
