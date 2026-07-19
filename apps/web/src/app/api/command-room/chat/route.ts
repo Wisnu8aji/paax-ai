@@ -37,6 +37,7 @@ import {
   outputTokenLimit,
   validateChatPayload,
 } from "./context";
+import { verifyAndComposeClaims } from "./claim-pipeline";
 
 export const runtime = "nodejs";
 export const maxDuration = 600; // 10 menit
@@ -737,6 +738,7 @@ export async function POST(req: NextRequest) {
     async start(controller) {
       let sequenceCounter = 0;
       let finalContent = "";
+      let emittingComposedAnswer = false;
       const toolsCalledThisTurn: string[] = [];
       // Status-summary (Mistral) dipanggil fire-and-forget di dalam
       // consumeOpenAiCompatibleStream -- TANPA pelacak ini, controller.close()
@@ -751,7 +753,10 @@ export async function POST(req: NextRequest) {
         // + nama tool yang dipanggil, murni dengan mengamati event yang sudah lewat
         // di sini -- tidak mengubah signature/perilaku fungsi stream*()/resolveTools*
         // yang sudah teruji sama sekali.
-        if (data.type === "content" && typeof data.delta === "string") finalContent += data.delta;
+        if (!emittingComposedAnswer && data.type === "content" && typeof data.delta === "string") {
+          finalContent += data.delta;
+          return;
+        }
         if (data.type === "tool_call" && typeof data.tool === "string") toolsCalledThisTurn.push(data.tool);
         data.sequence = sequenceCounter++;
         controller.enqueue(encoder.encode(`event: message\ndata: ${JSON.stringify(data)}\n\n`));
@@ -838,12 +843,29 @@ export async function POST(req: NextRequest) {
         // atas untuk root cause kenapa ini wajib ada.
         await Promise.allSettled(pendingStatusSummaries);
 
-        // Fase 2 Evidence Gate: evaluasi heuristik non-blocking setelah jawaban akhir
-        // selesai di-stream. Hasil dikirim sebagai event terpisah (bukan menahan/
-        // mengubah jawaban) -- Command Room tetap menjawab normal, ini murni sinyal
-        // observability supaya klaim angka tanpa tool call terlihat, bukan diam-diam lolos.
+        // Fase 10: candidate claims diverifikasi deterministik SEBELUM answer composer
+        // mengirim konten ke klien. Provider tidak pernah diberi wewenang menampilkan
+        // kuantitas tanpa provenance/authority yang cukup.
+        const claimResult = verifyAndComposeClaims({
+          responseText: finalContent,
+          toolsCalled: toolsCalledThisTurn,
+          authority: serverContext.claimAuthority,
+        });
+        if (claimResult.responseText) {
+          emittingComposedAnswer = true;
+          sendEvent("message", { type: "content", runId, conversationId, delta: claimResult.responseText, timestamp: new Date().toISOString() });
+          emittingComposedAnswer = false;
+        }
+        sendEvent("message", {
+          type: "claim_verification", runId, conversationId,
+          claims: claimResult.claims, rejectedCount: claimResult.rejected.length,
+          conflicts: claimResult.conflicts, requiresCoreEngine: claimResult.requiresCoreEngine,
+          timestamp: new Date().toISOString(),
+        });
+
+        // Evidence Gate remains an observability summary over the composed answer.
         try {
-          const report = evaluateEvidenceGate({ responseText: finalContent, toolsCalled: toolsCalledThisTurn });
+          const report = evaluateEvidenceGate({ responseText: claimResult.responseText, toolsCalled: toolsCalledThisTurn });
           if (report.status !== "not_available") {
             sendEvent("message", {
               type: "evidence_gate", runId, conversationId,
