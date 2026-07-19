@@ -3,6 +3,7 @@ import hashlib
 import uuid
 from pydantic import ValidationError
 
+from app.perception.bbox_canonicalize import BboxQuarantined, canonicalize_bbox
 from app.transcription.db_client import DemDbClient
 from app.transcription.models import DrawingEvidenceSheet
 from app.transcription.typed_observations import adapt_dem_observations
@@ -164,15 +165,32 @@ async def synthesize_and_post_snapshot_task(run_id: str, project_id: str, run_st
                     "version": "1.0",
                     "prompt_version": sheet.generation.prompt_version
                 }
-                
-                # EvidenceItem.bbox is produced by the vision provider already in
-                # normalized 0.0-1.0 page-relative coordinates (see the Qwen prompt
-                # contract in app/transcription/providers/qwen.py). It must not be
-                # passed through PageTransform.pdf_to_normalized_bbox here: that
-                # transform is for PDF-point coordinates, and applying it to an
-                # already-normalized bbox shrinks it toward the origin, corrupting
-                # every evidence citation and downstream coordinate lookup.
-                bbox_normalized = bbox
+
+                # bbox_space is a stated fact (EvidenceItem.bbox_space, default
+                # "normalized" matching the current real provider contract),
+                # never guessed from whether page_transform happens to be
+                # present -- that guess is exactly the bug a prior audit found
+                # (an already-normalized bbox re-transformed as if it were a
+                # PDF-point coordinate, corrupting every evidence citation).
+                # An unrecognized/unsupported space is quarantined (bbox_
+                # normalized left None) rather than silently trusted -- Target
+                # 5 excludes quarantined evidence from authoritative retrieval.
+                bbox_normalized = None
+                bbox_quarantine_reason = None
+                coordinate_schema_version = None
+                transform_version = None
+                if bbox:
+                    try:
+                        canonical = canonicalize_bbox(
+                            tuple(bbox), bbox_space=ev.bbox_space,
+                            source_width=sheet.source.width_px, source_height=sheet.source.height_px,
+                            page_transform=sheet.source.page_transform,
+                        )
+                        bbox_normalized = list(canonical.bbox_normalized)
+                        coordinate_schema_version = canonical.coordinate_schema_version
+                        transform_version = canonical.transform_version
+                    except BboxQuarantined as exc:
+                        bbox_quarantine_reason = str(exc)
 
                 sheet_id = sheet.sheet_identity.sheet_number.value
                 evidence_list.append({
@@ -194,6 +212,10 @@ async def synthesize_and_post_snapshot_task(run_id: str, project_id: str, run_st
                     "bbox": bbox,
                     "bbox_source": bbox,
                     "bbox_normalized": bbox_normalized,
+                    "bbox_space": ev.bbox_space,
+                    "bbox_quarantine_reason": bbox_quarantine_reason,
+                    "coordinate_schema_version": coordinate_schema_version,
+                    "transform_version": transform_version,
                     "polygon_source": [],
                     "polygon_normalized": [],
                     "confidence": float(ev.confidence),

@@ -56,7 +56,11 @@ def _create_synthetic_sheet(page_index: int, code: str, level: str | None = None
             evidence_id=ev_id,
             kind="text",
             raw=ev_id,
-            bbox=(10.0, 20.0, 30.0, 40.0),
+            # Real normalized page-relative coordinates (must stay in [0, 1] --
+            # bbox_canonicalize.py's validate_and_clamp path clamps anything
+            # outside that range, which the previous 10.0-40.0 fixture never
+            # actually satisfied).
+            bbox=(0.10, 0.20, 0.30, 0.40),
             confidence=0.9,
         )
         for ev_id in evidence_ids
@@ -186,9 +190,11 @@ async def test_synthesize_and_post_snapshot_task_success():
     for ev in evidence:
         # Check that we populated full fields, not placeholders
         assert ev["raw_text"] == ev["raw_content"]
-        assert ev["bbox"] == [10.0, 20.0, 30.0, 40.0]
-        assert ev["bbox_source"] == [10.0, 20.0, 30.0, 40.0]
-        assert ev["bbox_normalized"] == [10.0, 20.0, 30.0, 40.0]
+        assert ev["bbox"] == [0.10, 0.20, 0.30, 0.40]
+        assert ev["bbox_source"] == [0.10, 0.20, 0.30, 0.40]
+        assert ev["bbox_normalized"] == [0.10, 0.20, 0.30, 0.40]
+        assert ev["bbox_space"] == "normalized"
+        assert ev["bbox_quarantine_reason"] is None
         assert ev["extractor"]["provider"] == "test-provider"
         assert ev["extractor"]["model"] == "test-model"
         assert ev["source_document_hash"] == "test-doc-hash"

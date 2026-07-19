@@ -134,12 +134,27 @@ class DemObservations(BaseModel):
     geometry_descriptions: list[ObservationValue] = Field(default_factory=list)
 
 
+BboxSpace = Literal["normalized", "pixel", "pdf_point", "viewport", "unknown"]
+
+
 class EvidenceItem(BaseModel):
     evidence_id: str
     kind: str
     raw: str
     bbox: Optional[tuple[float, float, float, float]] = None
     confidence: float = Field(ge=0.0, le=1.0)
+    # Explicit coordinate-space provenance (Target 4, final remediation wave):
+    # a prior bug unconditionally re-transformed this bbox as if it were a
+    # PDF-point coordinate whenever page_transform existed, corrupting every
+    # evidence citation for the (already-normalized) real provider output.
+    # Default stays "normalized" because that is the real, current contract
+    # every shipped provider (Qwen) is prompted to honor -- see
+    # providers/qwen.py's prompt -- but it is now a stated fact checked by
+    # bbox_canonicalize.py, not an assumption baked into the transform call
+    # site. A provider that ever emits a different space must set this
+    # explicitly; canonicalization never guesses from page_transform's mere
+    # presence.
+    bbox_space: BboxSpace = "normalized"
 
 
 class SheetCompletion(BaseModel):

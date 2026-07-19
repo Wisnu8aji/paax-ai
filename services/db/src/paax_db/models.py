@@ -433,6 +433,12 @@ class ProjectGraphEvidence(Base):
     normalized_content = Column(Text, nullable=True)
     bbox_source = Column(JSON_DOCUMENT, nullable=True)
     bbox_normalized = Column(JSON_DOCUMENT, nullable=True)
+    # Explicit coordinate-space provenance (Target 4, final remediation wave)
+    # -- see app/perception/bbox_canonicalize.py (document-intelligence).
+    bbox_space = Column(String, nullable=True)
+    bbox_quarantine_reason = Column(Text, nullable=True)
+    coordinate_schema_version = Column(String, nullable=True)
+    transform_version = Column(String, nullable=True)
     polygon_source = Column(JSON_DOCUMENT, nullable=True)
     polygon_normalized = Column(JSON_DOCUMENT, nullable=True)
     confidence = Column(Numeric, nullable=True)
