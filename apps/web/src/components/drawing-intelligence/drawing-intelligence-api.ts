@@ -105,8 +105,14 @@ export interface ProjectDemSheetResponse {
   page_index: number;
   file_name: string;
   status: string;
-  sheet_title: string | null;
-  thumbnail_url: string;
+  sheet_title?: string | null;
+  sheet_number?: string | null;
+  discipline?: string | null;
+  level?: string | null;
+  scale?: string | null;
+  revision?: string | null;
+  confidence?: number | null;
+  thumbnail_url?: string | null;
 }
 
 export interface DemPageResponse {

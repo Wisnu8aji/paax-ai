@@ -141,6 +141,20 @@ export interface Sheet {
   geometry: SheetGeometry;
 }
 
+/** Server-mapped DEM metadata. `null` means the backend did not provide it. */
+export interface ProjectSheetMapping {
+  id: string;
+  number: string | null;
+  title: string | null;
+  discipline: string | null;
+  level: string | null;
+  scale: string | null;
+  revision: string | null;
+  confidence: number | null;
+  status: string;
+  imageUrl: string | null;
+}
+
 // ── Elemen terdeteksi ────────────────────────────────────────────────────────
 
 export type ElementCategory =

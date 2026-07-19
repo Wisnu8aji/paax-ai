@@ -51,6 +51,9 @@ import {
   fetchProjectDemRuns,
 } from '../drawing-intelligence-api';
 import type { ProjectGraphSummaryView, QuantityReadinessItem } from '@paax/schemas';
+import type { MappedProjectSheet } from './sheet-mapping';
+import { canUseWorkspaceMocks, resolveWorkspaceEnvironmentMode } from './environment';
+import { mapProjectDemSheet } from './sheet-mapping';
 
 // ── Tipe state ───────────────────────────────────────────────────────────────
 
@@ -84,6 +87,8 @@ export interface WorkspaceState {
 
   files: DrawingFile[];
   sheets: Sheet[];
+  /** DEM metadata real-only; unknown fields remain null until backend supplies them. */
+  mappedSheets: MappedProjectSheet[];
   elements: DetectedElement[];
   quantities: QuantityItem[];
   reviewQueue: ReviewQueueItem[];
@@ -243,19 +248,21 @@ const DEFAULT_CONFIG: AnalysisConfig = {
 };
 
 export function initialWorkspaceState(withData: boolean): WorkspaceState {
+  const useMocks = withData && canUseWorkspaceMocks(resolveWorkspaceEnvironmentMode());
   return {
-    mode: withData ? 'review' : 'files',
+    mode: useMocks ? 'review' : 'files',
     projectId: null,
     activeSnapshotId: null,
-    hasData: withData,
-    files: withData ? [MOCK_FILE] : [],
-    sheets: withData ? MOCK_SHEETS : [],
-    elements: withData ? MOCK_ELEMENTS : [],
-    quantities: withData ? MOCK_QUANTITY_ITEMS : [],
-    reviewQueue: withData ? MOCK_REVIEW_QUEUE : [],
-    activity: withData ? MOCK_ACTIVITY : [],
-    activeSheetId: withData ? 'sheet-f02' : null,
-    selectedSheetIds: withData ? ['sheet-f02'] : [],
+    hasData: useMocks,
+    files: useMocks ? [MOCK_FILE] : [],
+    sheets: useMocks ? MOCK_SHEETS : [],
+    mappedSheets: [],
+    elements: useMocks ? MOCK_ELEMENTS : [],
+    quantities: useMocks ? MOCK_QUANTITY_ITEMS : [],
+    reviewQueue: useMocks ? MOCK_REVIEW_QUEUE : [],
+    activity: useMocks ? MOCK_ACTIVITY : [],
+    activeSheetId: useMocks ? 'sheet-f02' : null,
+    selectedSheetIds: useMocks ? ['sheet-f02'] : [],
     selectedElementId: null,
     hoveredElementId: null,
     selectedQuantityId: null,
@@ -264,10 +271,10 @@ export function initialWorkspaceState(withData: boolean): WorkspaceState {
       tab: 'sheets',
       search: '',
       disciplineFilter: null,
-      expandedFloors: withData ? ['F02'] : [],
+      expandedFloors: useMocks ? ['F02'] : [],
     },
     inspector: { collapsed: false, tab: 'sheet' },
-    dock: { expanded: withData, tab: 'quantities', heightPct: 32 },
+    dock: { expanded: useMocks, tab: 'quantities', heightPct: 32 },
     gallery: { view: 'grid', groupBy: 'floor', search: '', showTitles: true },
     canvas: { zoom: 0.67, panX: 0, panY: 0, tool: 'select' },
     overlays: { ...DEFAULT_OVERLAYS },
@@ -275,16 +282,16 @@ export function initialWorkspaceState(withData: boolean): WorkspaceState {
     analysis: {
       setupOpen: false,
       running: false,
-      complete: withData,
-      stages: ANALYSIS_STAGES.map((s) => ({ ...s, status: withData ? 'done' : 'pending' })),
+      complete: useMocks,
+      stages: ANALYSIS_STAGES.map((s) => ({ ...s, status: useMocks ? 'done' : 'pending' })),
       log: [],
-      progress: withData ? 100 : 0,
+      progress: useMocks ? 100 : 0,
       currentMessage: '',
       config: { ...DEFAULT_CONFIG },
     },
     handoff: { confirmOpen: false, sent: false, proposalId: null, sentAt: null, reviewPanelOpen: false, proposalItems: null },
     askPaax: { open: false, messages: [], busy: false },
-    statusMessage: withData ? 'Review workspace ready' : 'Waiting for drawing files',
+    statusMessage: useMocks ? 'Review workspace ready' : 'Waiting for drawing files',
     backendConnected: false,
     backendSyncFailed: false,
     backendSyncError: null,
@@ -330,6 +337,7 @@ export type WorkspaceAction =
   | { type: 'replace-review-queue'; items: ReviewQueueItem[] }
   | { type: 'replace-summary-views'; summaryViews: ProjectGraphSummaryView[] }
   | { type: 'replace-elements'; elements: DetectedElement[] }
+  | { type: 'replace-mapped-sheets'; sheets: MappedProjectSheet[] }
   | { type: 'replace-sheets'; sheets: Sheet[] }
   | { type: 'replace-files'; files: DrawingFile[] }
   | { type: 'set-active-snapshot-id'; snapshotId: string | null }
@@ -438,6 +446,13 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
     case 'upload-entries':
       return { ...state, upload: { ...state.upload, entries: action.entries } };
     case 'load-mock-data': {
+      if (!canUseWorkspaceMocks(resolveWorkspaceEnvironmentMode())) {
+        return {
+          ...state,
+          statusMessage: 'Mock data is disabled in production. Connect a project backend to load drawings.',
+          upload: { ...state.upload, running: false },
+        };
+      }
       const loaded = initialWorkspaceState(true);
       return {
         ...loaded,
@@ -487,6 +502,7 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
         hasData: false,
         files: [],
         sheets: [],
+        mappedSheets: [],
         elements: [],
         quantities: [],
         reviewQueue: [],
@@ -510,6 +526,7 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
         hasData: false,
         files: [],
         sheets: [],
+        mappedSheets: [],
         elements: [],
         quantities: [],
         reviewQueue: [],
@@ -531,6 +548,8 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
       return { ...state, summaryViews: action.summaryViews };
     case 'replace-elements':
       return { ...state, elements: action.elements };
+    case 'replace-mapped-sheets':
+      return { ...state, mappedSheets: action.sheets };
     case 'replace-sheets': {
       const activeSheetId = state.activeSheetId || (action.sheets.length > 0 ? action.sheets[0].id : null);
       const selectedSheetIds = state.selectedSheetIds.length > 0 ? state.selectedSheetIds : (activeSheetId ? [activeSheetId] : []);
@@ -678,8 +697,7 @@ export function WorkspaceProvider({
                     
                     try {
                       const sheetsData = await fetchProjectDemSheets(projectId);
-                      const mappedSheets = sheetsData.map(mapDemSheetToSheet);
-                      dispatch({ type: 'replace-sheets', sheets: mappedSheets });
+                      dispatch({ type: 'replace-mapped-sheets', sheets: sheetsData.map(mapProjectDemSheet) });
                       
                       const runsData = await fetchProjectDemRuns(projectId);
                       const mappedFiles = runsData.map(mapDemRunToDrawingFile);
@@ -931,9 +949,9 @@ export function WorkspaceProvider({
                   dispatch({ type: 'set-active-snapshot-id', snapshotId });
                 }
 
-                const mappedSheets = sheetsData.map(mapDemSheetToSheet);
                 const mappedFiles = runsData.map(mapDemRunToDrawingFile);
-                if (mappedSheets.length > 0) dispatch({ type: 'replace-sheets', sheets: mappedSheets });
+                const realMappedSheets = sheetsData.map(mapProjectDemSheet);
+                dispatch({ type: 'replace-mapped-sheets', sheets: realMappedSheets });
                 if (mappedFiles.length > 0) dispatch({ type: 'replace-files', files: mappedFiles });
 
                 if (queue.items.length > 0) {
@@ -950,7 +968,7 @@ export function WorkspaceProvider({
                     if (match) {
                       const pageIndexStr = match[1] || match[2] || match[3];
                       const pageIndex = parseInt(pageIndexStr, 10);
-                      const found = mappedSheets.find(s => s.pageNumber - 1 === pageIndex);
+                      const found = realMappedSheets.find((s) => s.id.endsWith(`-page-${pageIndex}`));
                       if (found) return found.id;
                     }
                     return null;

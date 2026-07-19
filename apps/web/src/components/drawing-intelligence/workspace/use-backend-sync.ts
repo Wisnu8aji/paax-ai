@@ -21,6 +21,7 @@ import {
 import { useWorkspace, mapQuantityReadinessToItems, mapGraphNodesToElements } from './workspace-store';
 import { makeGeometry } from './di-mock-data';
 import type { ReviewQueueItem, Sheet, DrawingFile } from './di-types';
+import { mapProjectDemSheet } from './sheet-mapping';
 
 const CATEGORY_LABELS: Record<string, string> = {
   conflict: 'Dimension conflict',
@@ -130,12 +131,10 @@ export function useBackendSync(projectId: string | null) {
           dispatch({ type: 'set-active-snapshot-id', snapshotId });
         }
 
-        const mappedSheets = sheetsData.map(mapDemSheetToSheet);
+        const mappedSheets: Sheet[] = [];
+        dispatch({ type: 'replace-mapped-sheets', sheets: sheetsData.map(mapProjectDemSheet) });
         const mappedFiles = runsData.map(mapDemRunToDrawingFile);
 
-        if (mappedSheets.length > 0) {
-          dispatch({ type: 'replace-sheets', sheets: mappedSheets });
-        }
         if (mappedFiles.length > 0) {
           dispatch({ type: 'replace-files', files: mappedFiles });
         }
