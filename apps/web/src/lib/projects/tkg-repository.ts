@@ -31,6 +31,8 @@ export interface ProjectTkgRecord {
   /** Cache hasil takeoff terakhir dari engine; frontend hanya menyimpan/menampilkan. */
   lastTakeoff: TakeoffResult | null;
   updatedAt: string;
+  /** Compatibility records are never the authority for newly-created projects. */
+  legacy?: true;
 }
 
 const COLLECTION = 'tkg_documents';
@@ -45,6 +47,7 @@ export function emptyTkgRecord(projectId: string): ProjectTkgRecord {
     lastRenderedText: null,
     lastTakeoff: null,
     updatedAt: new Date().toISOString(),
+    legacy: true,
   };
 }
 

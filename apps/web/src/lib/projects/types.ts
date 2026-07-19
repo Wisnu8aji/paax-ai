@@ -15,6 +15,7 @@ export interface Project {
   lastActivity: string;
   createdAt: string;
   updatedAt: string;
+  drawingSystem?: 'dem_pckm_v2' | 'legacy_tkg';
 }
 
 export interface ProjectCreateInput {
@@ -69,6 +70,7 @@ export function createProjectFromInput(input: ProjectCreateInput): Project {
     lastActivity: 'baru dibuat',
     createdAt: now,
     updatedAt: now,
+    drawingSystem: 'dem_pckm_v2',
   };
 }
 

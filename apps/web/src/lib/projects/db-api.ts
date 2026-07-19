@@ -26,6 +26,7 @@ function normalizeBackendProject(raw: any): Project {
     lastActivity: raw.last_activity || 'tersimpan',
     createdAt: raw.created_at,
     updatedAt: raw.updated_at,
+    drawingSystem: raw.drawing_system === 'legacy_tkg' ? 'legacy_tkg' : 'dem_pckm_v2',
   };
 }
 
@@ -42,6 +43,7 @@ function formatFrontendProject(input: Partial<ProjectCreateInput & ProjectUpdate
     status: input.status,
     description: input.description,
     rab_value: input.rabValue,
+    drawing_system: input.drawingSystem,
   };
 }
 
