@@ -31,6 +31,7 @@ import {
   ProjectGraphCorrectionResponseSchema,
   RabBridgeResponseSchema,
   RabBridgeMaterializeResponseSchema,
+  RabMaterializationMappingSchema,
   MeasurementFactSchema,
 } from "../index";
 
@@ -755,6 +756,11 @@ describe("C7/C8 graph workflow schemas", () => {
       skipped_items: [{ node_id: "NODE-1", reason: "blocked_missing_measurement_mapping" }],
       rab_draft_updated: false,
     }).skipped_items[0].status).toBe("blocked");
+    expect(RabMaterializationMappingSchema.parse({
+      id: "MAP-1", project_id: "PROJECT-C78", snapshot_id: "SNAP-C78", work_item_node_id: "NODE-1",
+      measurement_fact_ids: ["MF-1"], calculation_type: "concrete_column_volume",
+      evidence_refs: ["EV-1"], approval_status: "pending_approval",
+    }).approval_status).toBe("pending_approval");
   });
 });
 

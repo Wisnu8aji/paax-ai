@@ -551,6 +551,30 @@ class RabBridgeMaterializeResponse(BaseModel):
     rab_draft_updated: bool
 
 
+class RabMaterializationMappingCreate(BaseModel):
+    work_item_node_id: str = Field(min_length=1)
+    measurement_fact_ids: List[str] = Field(min_length=1)
+    calculation_type: Literal["concrete_column_volume", "length", "area", "count"]
+
+
+class RabMaterializationMappingResolve(BaseModel):
+    status: Literal["approved", "rejected"]
+
+
+class RabMaterializationMappingResponse(RabMaterializationMappingCreate):
+    id: str
+    project_id: str
+    snapshot_id: str
+    evidence_refs: List[str] = Field(default_factory=list)
+    approval_status: Literal["pending_approval", "approved", "rejected"]
+    created_by: Optional[str] = None
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class QuantityAssumptionCreate(BaseModel):
     id: str
     project_id: str

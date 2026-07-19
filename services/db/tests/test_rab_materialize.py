@@ -104,3 +104,39 @@ async def test_materialization_never_constructs_or_calls_a_client_when_the_compo
     assert response.json()["skipped_items"] == [{
         "node_id": "NODE-1", "reason": "blocked_core_engine_client_unconfigured", "status": "blocked",
     }]
+
+
+@pytest.mark.asyncio
+async def test_mapping_workflow_derives_provenance_from_approved_scoped_facts_and_audits_resolution():
+    from sqlalchemy import select
+    from .conftest import TestSession
+
+    await _seed_materialization_fixture(mapping=False)
+    headers = {"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A"}
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        created = await client.post(
+            "/projects/PROJECT-A/project-graph/rab-materialization-mappings",
+            headers=headers,
+            json={"work_item_node_id": "NODE-1", "measurement_fact_ids": ["MF-W"], "calculation_type": "concrete_column_volume"},
+        )
+        assert created.status_code == 201
+        mapping = created.json()
+        assert mapping["approval_status"] == "pending_approval"
+        assert mapping["evidence_refs"] == ["EV-1"]
+        updated = await client.put(
+            f"/projects/PROJECT-A/project-graph/rab-materialization-mappings/{mapping['id']}",
+            headers=headers,
+            json={"work_item_node_id": "NODE-1", "measurement_fact_ids": ["MF-W"], "calculation_type": "length"},
+        )
+        assert updated.status_code == 200
+        assert updated.json()["calculation_type"] == "length"
+        resolved = await client.post(
+            f"/projects/PROJECT-A/project-graph/rab-materialization-mappings/{mapping['id']}/resolve",
+            headers=headers, json={"status": "approved"},
+        )
+    assert resolved.status_code == 200
+    assert resolved.json()["approval_status"] == "approved"
+
+    async with TestSession() as session:
+        audits = (await session.execute(select(models.RabMaterializationMappingAudit))).scalars().all()
+    assert [(row.action, row.actor) for row in audits] == [("created", "OWNER-A"), ("updated", "OWNER-A"), ("approved", "OWNER-A")]

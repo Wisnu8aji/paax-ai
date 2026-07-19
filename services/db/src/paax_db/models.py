@@ -640,6 +640,17 @@ class RabMaterializationMapping(Base):
     )
 
 
+class RabMaterializationMappingAudit(Base):
+    __tablename__ = "rab_materialization_mapping_audits"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    mapping_id = Column(String, ForeignKey("rab_materialization_mappings.id", ondelete="CASCADE"), nullable=False, index=True)
+    action = Column(String, nullable=False)
+    actor = Column(String, nullable=True)
+    metadata_json = Column("metadata", JSON_DOCUMENT, nullable=False, default=dict)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
 class QuantityAssumption(Base):
     __tablename__ = "quantity_assumptions"
 

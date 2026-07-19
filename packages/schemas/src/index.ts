@@ -2077,6 +2077,27 @@ export const RabBridgeMaterializeResponseSchema = z.object({
 });
 export type RabBridgeMaterializeResponse = z.infer<typeof RabBridgeMaterializeResponseSchema>;
 
+export const RabMaterializationMappingSchema = z.object({
+  id: z.string(),
+  project_id: z.string(),
+  snapshot_id: z.string(),
+  work_item_node_id: z.string().min(1),
+  measurement_fact_ids: z.array(z.string()).min(1),
+  calculation_type: z.enum(["concrete_column_volume", "length", "area", "count"]),
+  evidence_refs: z.array(z.string()).default([]),
+  approval_status: z.enum(["pending_approval", "approved", "rejected"]),
+  created_by: z.string().nullish(),
+  reviewed_by: z.string().nullish(),
+  reviewed_at: z.string().nullish(),
+  created_at: z.string().nullish(),
+});
+export type RabMaterializationMapping = z.infer<typeof RabMaterializationMappingSchema>;
+
+export const RabMaterializationMappingResolveSchema = z.object({
+  status: z.enum(["approved", "rejected"]),
+});
+export type RabMaterializationMappingResolve = z.infer<typeof RabMaterializationMappingResolveSchema>;
+
 export const TkgIssueSchema = z.object({
   code: z.string(),
   severity: z.enum(["error", "warning"]),

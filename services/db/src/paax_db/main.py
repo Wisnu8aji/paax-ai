@@ -18,6 +18,7 @@ from .project_graph_retrieval import OCCURRENCE_CARDINALITY_NOTE, retrieve_proje
 from .project_graph_rab_bridge import build_rab_bridge_proposal
 from .project_graph_review import active_correction_overlays, build_quantity_readiness, build_review_queue
 from .core_engine_client import CoreEngineUnavailable
+from .core_engine_factory import build_core_engine_client
 
 app = FastAPI(title="PAAX DB API", description="Server-side persistent storage for PAAX AI")
 
@@ -32,7 +33,24 @@ app.add_middleware(
 
 def get_core_engine_client() -> Any | None:
     """Explicit composition boundary; deployments must inject the authenticated client."""
-    return getattr(app.state, "core_engine_client", None)
+    return getattr(app.state, "core_engine_client", None) or build_core_engine_client()
+
+
+async def _approved_scoped_measurement_facts(
+    db: AsyncSession, *, project_id: str, snapshot_id: str, measurement_fact_ids: list[str],
+) -> list[models.MeasurementFact]:
+    facts = (await db.execute(select(models.MeasurementFact).where(
+        models.MeasurementFact.project_id == project_id,
+        models.MeasurementFact.snapshot_id == snapshot_id,
+        models.MeasurementFact.measurement_id.in_(measurement_fact_ids),
+    ))).scalars().all()
+    by_id = {fact.measurement_id: fact for fact in facts}
+    if set(measurement_fact_ids) != set(by_id) or any(
+        fact.verification_status not in {"human_verified", "engine_verified"} or fact.superseded_at is not None
+        for fact in facts
+    ):
+        raise HTTPException(status_code=422, detail="mapping requires approved, non-superseded Measurement Facts scoped to this project snapshot")
+    return [by_id[fact_id] for fact_id in measurement_fact_ids]
 
 
 def _utc_now() -> datetime.datetime:
@@ -870,6 +888,98 @@ async def resolve_rab_bridge_proposal(id: str, proposal_id: str, request: schema
     proposal.reviewed_at = _utc_now()
     await db.commit()
     return {"status": proposal.status, "snapshot_id": proposal.snapshot_id, "proposal_id": proposal.id, "items": proposal.payload.get("items", [])}
+
+
+@app.post(
+    "/projects/{id}/project-graph/rab-materialization-mappings",
+    response_model=schemas.RabMaterializationMappingResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "owner"]))],
+)
+async def create_rab_materialization_mapping(
+    id: str, request: schemas.RabMaterializationMappingCreate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user),
+):
+    snapshot = await get_active_snapshot(db, id)
+    if snapshot is None:
+        raise HTTPException(status_code=409, detail="active project graph snapshot is required before mapping")
+    facts = await _approved_scoped_measurement_facts(
+        db, project_id=id, snapshot_id=snapshot.snapshot_id, measurement_fact_ids=request.measurement_fact_ids,
+    )
+    mapping = models.RabMaterializationMapping(
+        id=str(uuid.uuid4()), project_id=id, snapshot_id=snapshot.snapshot_id,
+        work_item_node_id=request.work_item_node_id, measurement_fact_ids=request.measurement_fact_ids,
+        calculation_type=request.calculation_type,
+        evidence_refs=list(dict.fromkeys(ref for fact in facts for ref in fact.evidence_refs)),
+        approval_status="pending_approval", created_by=user.uid,
+    )
+    db.add(mapping)
+    db.add(models.RabMaterializationMappingAudit(
+        mapping_id=mapping.id, action="created", actor=user.uid,
+        metadata_json={"measurement_fact_ids": mapping.measurement_fact_ids, "evidence_refs": mapping.evidence_refs},
+    ))
+    await db.commit()
+    await db.refresh(mapping)
+    return mapping
+
+
+@app.put(
+    "/projects/{id}/project-graph/rab-materialization-mappings/{mapping_id}",
+    response_model=schemas.RabMaterializationMappingResponse,
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "owner"]))],
+)
+async def update_rab_materialization_mapping(
+    id: str, mapping_id: str, request: schemas.RabMaterializationMappingCreate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user),
+):
+    mapping = (await db.execute(select(models.RabMaterializationMapping).where(
+        models.RabMaterializationMapping.id == mapping_id, models.RabMaterializationMapping.project_id == id,
+        models.RabMaterializationMapping.approval_status == "pending_approval",
+    ))).scalars().first()
+    if mapping is None:
+        raise HTTPException(status_code=404, detail="pending RAB materialization mapping not found")
+    facts = await _approved_scoped_measurement_facts(
+        db, project_id=id, snapshot_id=mapping.snapshot_id, measurement_fact_ids=request.measurement_fact_ids,
+    )
+    mapping.work_item_node_id = request.work_item_node_id
+    mapping.measurement_fact_ids = request.measurement_fact_ids
+    mapping.calculation_type = request.calculation_type
+    mapping.evidence_refs = list(dict.fromkeys(ref for fact in facts for ref in fact.evidence_refs))
+    db.add(models.RabMaterializationMappingAudit(
+        mapping_id=mapping.id, action="updated", actor=user.uid,
+        metadata_json={"measurement_fact_ids": mapping.measurement_fact_ids, "evidence_refs": mapping.evidence_refs},
+    ))
+    await db.commit()
+    await db.refresh(mapping)
+    return mapping
+
+
+@app.post(
+    "/projects/{id}/project-graph/rab-materialization-mappings/{mapping_id}/resolve",
+    response_model=schemas.RabMaterializationMappingResponse,
+    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+)
+async def resolve_rab_materialization_mapping(
+    id: str, mapping_id: str, request: schemas.RabMaterializationMappingResolve, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user),
+):
+    mapping = (await db.execute(select(models.RabMaterializationMapping).where(
+        models.RabMaterializationMapping.id == mapping_id, models.RabMaterializationMapping.project_id == id,
+        models.RabMaterializationMapping.approval_status == "pending_approval",
+    ))).scalars().first()
+    if mapping is None:
+        raise HTTPException(status_code=404, detail="pending RAB materialization mapping not found")
+    if request.status == "approved":
+        await _approved_scoped_measurement_facts(
+            db, project_id=id, snapshot_id=mapping.snapshot_id, measurement_fact_ids=list(mapping.measurement_fact_ids),
+        )
+    mapping.approval_status = request.status
+    mapping.reviewed_by = user.uid
+    mapping.reviewed_at = _utc_now()
+    db.add(models.RabMaterializationMappingAudit(
+        mapping_id=mapping.id, action=request.status, actor=user.uid,
+        metadata_json={"measurement_fact_ids": mapping.measurement_fact_ids, "evidence_refs": mapping.evidence_refs},
+    ))
+    await db.commit()
+    await db.refresh(mapping)
+    return mapping
 
 
 @app.post(
