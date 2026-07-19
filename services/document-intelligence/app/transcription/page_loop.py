@@ -10,9 +10,9 @@ from app.transcription.failure_classification import DemProviderError
 from app.transcription.models import DemGeneration, DemSource, DrawingEvidenceSheet
 from app.transcription.page_renderer import render_page
 from app.transcription.parser import parse_and_validate
-from app.transcription.providers.base import DemVisionProvider, PageContext
+from app.transcription.providers.base import DEM_RETRY_POLICY, DemVisionProvider, PageContext
 
-MAX_TRANSIENT_ATTEMPTS = 3
+MAX_TRANSIENT_ATTEMPTS = DEM_RETRY_POLICY.max_transient_attempts
 
 
 async def process_page(
@@ -47,7 +47,7 @@ async def process_page(
         model_output = parse_and_validate(raw_json, provider, rendered.png_bytes, context, prompt_version)
     except DemProviderError as exc:
         current_attempts = (existing_page or {}).get("attempt_count", 0)
-        if exc.kind == "transient" and current_attempts + 1 < MAX_TRANSIENT_ATTEMPTS:
+        if DEM_RETRY_POLICY.should_retry(failure_kind=exc.kind, prior_attempts=current_attempts):
             await db_client.update_page(page_id, status="retry_wait", failure_kind="transient", error=str(exc), attempt_count=current_attempts + 1)
             return
         next_attempts = current_attempts if exc.kind == "permanent" else current_attempts + 1
