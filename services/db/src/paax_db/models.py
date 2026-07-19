@@ -618,6 +618,28 @@ class RabBridgeProposal(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
+class RabMaterializationMapping(Base):
+    """Approved, snapshot-scoped authority linking one RAB work item to typed facts."""
+    __tablename__ = "rab_materialization_mappings"
+
+    id = Column(String, primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    snapshot_id = Column(String, ForeignKey("project_graph_snapshots.snapshot_id", ondelete="CASCADE"), nullable=False, index=True)
+    work_item_node_id = Column(String, nullable=False)
+    measurement_fact_ids = Column(JSON_DOCUMENT, nullable=False, default=list)
+    calculation_type = Column(String, nullable=False)
+    evidence_refs = Column(JSON_DOCUMENT, nullable=False, default=list)
+    approval_status = Column(String, nullable=False, default="pending_approval", index=True)
+    created_by = Column(String, nullable=True)
+    reviewed_by = Column(String, nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("project_id", "snapshot_id", "work_item_node_id", name="uq_rab_materialization_mapping_work_item"),
+    )
+
+
 class QuantityAssumption(Base):
     __tablename__ = "quantity_assumptions"
 

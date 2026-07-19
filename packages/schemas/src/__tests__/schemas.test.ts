@@ -30,6 +30,7 @@ import {
   QuantityReadinessResponseSchema,
   ProjectGraphCorrectionResponseSchema,
   RabBridgeResponseSchema,
+  RabBridgeMaterializeResponseSchema,
   MeasurementFactSchema,
 } from "../index";
 
@@ -749,6 +750,11 @@ describe("C7/C8 graph workflow schemas", () => {
       status: "requires_human_approval", snapshot_id: "SNAP-C78",
       proposal_id: "PROPOSAL-1", items: [],
     }).proposal_id).toBe("PROPOSAL-1");
+    expect(RabBridgeMaterializeResponseSchema.parse({
+      materialized_count: 0,
+      skipped_items: [{ node_id: "NODE-1", reason: "blocked_missing_measurement_mapping" }],
+      rab_draft_updated: false,
+    }).skipped_items[0].status).toBe("blocked");
   });
 });
 

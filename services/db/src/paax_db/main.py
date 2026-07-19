@@ -17,6 +17,7 @@ from .project_graph_repository import build_and_activate_snapshot, get_active_sn
 from .project_graph_retrieval import OCCURRENCE_CARDINALITY_NOTE, retrieve_project_graph
 from .project_graph_rab_bridge import build_rab_bridge_proposal
 from .project_graph_review import active_correction_overlays, build_quantity_readiness, build_review_queue
+from .core_engine_client import CoreEngineUnavailable
 
 app = FastAPI(title="PAAX DB API", description="Server-side persistent storage for PAAX AI")
 
@@ -27,6 +28,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def get_core_engine_client() -> Any | None:
+    """Explicit composition boundary; deployments must inject the authenticated client."""
+    return getattr(app.state, "core_engine_client", None)
 
 
 def _utc_now() -> datetime.datetime:
@@ -872,7 +878,8 @@ async def resolve_rab_bridge_proposal(id: str, proposal_id: str, request: schema
     dependencies=[Depends(RoleChecker(["owner", "pm"]))],
 )
 async def materialize_rab_bridge_proposal(
-    id: str, proposal_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
+    id: str, proposal_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user),
+    core_engine_client: Any | None = Depends(get_core_engine_client),
 ):
     import uuid
     proposal_res = await db.execute(select(models.RabBridgeProposal).where(
@@ -911,23 +918,61 @@ async def materialize_rab_bridge_proposal(
         node_id = item.get("node_id", "")
         name = item.get("name", "")
         discipline = item.get("discipline", "")
-        properties = item.get("properties", {})
         evidence_ids = item.get("evidence_ids", [])
         
         ahsp_code = item.get("ahsp_code")
-        volume = None
-        volume_source = None
-        assumption_id = None
-        
-        # This DB service never computes from stored facts. A typed Core Engine
-        # response is required before materialization (wired by the caller).
-        
-        # Typed assumptions are inputs pending approval, never a free-text volume
-        # fallback. Fase 14 supplies only typed Core Engine results here.
-
-        if volume is None:
-            skipped_items.append(schemas.SkippedItem(node_id=node_id, reason="blocked_missing_dimension"))
+        mapping = (await db.execute(select(models.RabMaterializationMapping).where(
+            models.RabMaterializationMapping.project_id == id,
+            models.RabMaterializationMapping.snapshot_id == proposal.snapshot_id,
+            models.RabMaterializationMapping.work_item_node_id == node_id,
+            models.RabMaterializationMapping.approval_status == "approved",
+        ))).scalars().first()
+        if mapping is None:
+            skipped_items.append(schemas.SkippedItem(node_id=node_id, reason="blocked_missing_measurement_mapping"))
             continue
+        if core_engine_client is None:
+            skipped_items.append(schemas.SkippedItem(node_id=node_id, reason="blocked_core_engine_client_unconfigured"))
+            continue
+
+        fact_ids = list(mapping.measurement_fact_ids or [])
+        facts = (await db.execute(select(models.MeasurementFact).where(
+            models.MeasurementFact.project_id == id,
+            models.MeasurementFact.snapshot_id == proposal.snapshot_id,
+            models.MeasurementFact.measurement_id.in_(fact_ids),
+        ))).scalars().all() if fact_ids else []
+        facts_by_id = {fact.measurement_id: fact for fact in facts}
+        if set(fact_ids) != set(facts_by_id) or any(
+            fact.verification_status not in {"human_verified", "engine_verified"} or fact.superseded_at is not None
+            for fact in facts
+        ):
+            skipped_items.append(schemas.SkippedItem(node_id=node_id, reason="blocked_unapproved_or_missing_measurement_fact"))
+            continue
+        request = {
+            "project_id": id,
+            "snapshot_id": proposal.snapshot_id,
+            "measurement_fact_ids": fact_ids,
+            "calculation_type": mapping.calculation_type,
+            "requested_by": user.uid,
+            "inputs": [{
+                "measurement_id": fact.measurement_id, "project_id": fact.project_id, "snapshot_id": fact.snapshot_id,
+                "measurement_type": fact.measurement_type, "value": str(fact.value), "unit": fact.unit,
+                "source_method": fact.source_method, "element_ids": fact.element_ids, "evidence_refs": fact.evidence_refs,
+                "formula_inputs": fact.formula_inputs, "verification_status": fact.verification_status,
+                "created_by": fact.created_by, "audit_metadata": fact.audit_metadata,
+                "supersedes_measurement_id": fact.supersedes_measurement_id,
+            } for fact in (facts_by_id[fact_id] for fact_id in fact_ids)],
+        }
+        try:
+            calculation = core_engine_client.calculate(request)
+        except CoreEngineUnavailable:
+            skipped_items.append(schemas.SkippedItem(node_id=node_id, reason="blocked_core_engine_unavailable"))
+            continue
+        if calculation.get("status") != "complete" or calculation.get("result") is None or not calculation.get("unit"):
+            skipped_items.append(schemas.SkippedItem(node_id=node_id, reason=f"blocked_core_engine_{calculation.get('status', 'invalid_response')}"))
+            continue
+
+        volume = calculation["result"]
+        volume_source = "core_engine_typed_measurements"
             
         if not ahsp_code:
             skipped_items.append(schemas.SkippedItem(node_id=node_id, reason="missing_ahsp_code"))
@@ -944,8 +989,12 @@ async def materialize_rab_bridge_proposal(
             # SS5.2.1 — label sumber agar user tahu baris ini berasal dari RAB Bridge
             "source": "rab_bridge",
         }
-        if assumption_id:
-            line["assumption_id"] = assumption_id
+        line["measurement_mapping_id"] = mapping.id
+        line["measurement_fact_ids"] = fact_ids
+        line["calculation_id"] = calculation.get("calculation_id")
+        line["calculation_formula"] = calculation.get("formula")
+        line["calculation_input_sources"] = calculation.get("input_sources", [])
+        line["mapping_evidence_refs"] = mapping.evidence_refs
         if evidence_ids and evidence_ids[0] in evidence_map:
             line["sheet_id"] = evidence_map[evidence_ids[0]]["sheet_id"]
             line["page_index"] = evidence_map[evidence_ids[0]]["page_index"]

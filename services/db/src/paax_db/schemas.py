@@ -542,6 +542,7 @@ class RabBridgeProposalSummary(BaseModel):
 class SkippedItem(BaseModel):
     node_id: str
     reason: str
+    status: Literal["blocked"] = "blocked"
 
 
 class RabBridgeMaterializeResponse(BaseModel):

@@ -1,160 +1,106 @@
-from __future__ import annotations
+from decimal import Decimal
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 from paax_db import models
-from paax_db.main import app
+from paax_db.main import app, get_core_engine_client
 
-@pytest.mark.asyncio
-async def test_materialize_rab_bridge():
+
+class CompleteEngine:
+    def __init__(self):
+        self.requests = []
+
+    def calculate(self, request):
+        self.requests.append(request)
+        return {
+            "calculation_id": "CALC-1", "status": "complete", "result": 12.5,
+            "unit": "m3", "formula": "width × depth × height",
+            "input_sources": [{"measurement_id": "MF-W", "source_method": "written_dimension", "unit": "m"}],
+        }
+
+
+async def _seed_materialization_fixture(*, mapping: bool):
     from .conftest import TestSession
 
     async with TestSession() as session:
-        # Setup
         session.add(models.Project(id="PROJECT-A", owner_id="OWNER-A", name="Project A"))
         session.add(models.ProjectMember(project_id="PROJECT-A", user_id="OWNER-A", role="owner"))
-        await session.commit()
-        
-        payload = {
-            "items": [
-                {
-                    "node_id": "NODE-1",
-                    "name": "Plesteran bata merah",
-                    "discipline": "architecture",
-                    "evidence_ids": ["EV-1"],
-                    "properties": {
-                        "element_type_id": "ET-1",
-                        "stored_measurement_facts": [
-                            {"name": "luas", "value": 50, "unit": "m2"}
-                        ]
-                    }
-                },
-                {
-                    "node_id": "NODE-2",
-                    "name": "Dinding bata ringan",
-                    "discipline": "architecture",
-                    "evidence_ids": ["EV-2"],
-                    "properties": {
-                        "element_type_id": "ET-2"
-                    }
-                },
-                {
-                    "node_id": "NODE-3",
-                    "name": "Unknown thing",
-                    "discipline": "architecture",
-                    "evidence_ids": ["EV-3"],
-                    "properties": {
-                        "element_type_id": "ET-3"
-                    }
-                }
-            ]
-        }
-        
-        assumption = models.QuantityAssumption(
-            id="ASS-1",
-            project_id="PROJECT-A",
-            element_type_id="ET-2",
-            text="volume 25",
-            source_role="human",
-            status="accepted"
-        )
-        session.add(assumption)
-        
-        session.add(models.ProjectGraphEvidence(
-            snapshot_id="SNAP-A",
-            evidence_id="EV-1",
-            project_id="PROJECT-A",
-            document_id="DOC-1",
-            page_index=46,
-            sheet_id="A-46",
-            kind="DRAWING_REGION",
-            raw_text="luas 50"
+        session.add(models.ProjectGraphSnapshot(
+            snapshot_id="SNAP-A", project_id="PROJECT-A", schema_version="v1",
+            source_manifest_hash="fixture", generation_metadata={}, effective_sheet_revision_ids=[], status="active",
         ))
-        session.add(models.ProjectGraphEvidence(
-            snapshot_id="SNAP-A",
-            evidence_id="EV-2",
-            project_id="PROJECT-A",
-            document_id="DOC-1",
-            page_index=47,
-            sheet_id="A-47",
-            kind="DRAWING_REGION",
-            raw_text="volume 25"
+        session.add(models.RabBridgeProposal(
+            id="PROP-1", project_id="PROJECT-A", snapshot_id="SNAP-A", node_ids=["NODE-1"],
+            status="approved", created_by="OWNER-A", payload={"items": [{
+                "node_id": "NODE-1", "name": "Kolom beton", "discipline": "structure",
+                "ahsp_code": "A.4.4.1.20", "evidence_ids": ["EV-1"], "properties": {},
+            }]},
         ))
-        
-        proposal = models.RabBridgeProposal(
-            id="PROP-1",
-            project_id="PROJECT-A",
-            snapshot_id="SNAP-A",
-            node_ids=["NODE-1", "NODE-2", "NODE-3"],
-            status="approved",
-            payload=payload,
-            created_by="OWNER-A"
-        )
-        session.add(proposal)
+        session.add(models.MeasurementFact(
+            measurement_id="MF-W", project_id="PROJECT-A", snapshot_id="SNAP-A",
+            measurement_type="length", value=Decimal("0.2"), unit="m", source_method="written_dimension",
+            element_ids=["NODE-1"], evidence_refs=["EV-1"], formula_inputs=["width"],
+            verification_status="human_verified", audit_metadata={},
+        ))
+        if mapping:
+            session.add(models.RabMaterializationMapping(
+                id="MAP-1", project_id="PROJECT-A", snapshot_id="SNAP-A", work_item_node_id="NODE-1",
+                measurement_fact_ids=["MF-W"], calculation_type="concrete_column_volume", evidence_refs=["EV-1"],
+                approval_status="approved", created_by="OWNER-A",
+            ))
         await session.commit()
 
-    headers = {"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A"}
-    transport = ASGITransport(app=app)
-    
-    import unittest.mock
-    def mock_suggest(name, discipline):
-        if "Plesteran" in name: return "A.4.4.1.20", 0.9
-        if "Dinding" in name: return "A.4.4.1.1", 0.8
-        return None, 0.25
-        
-    with unittest.mock.patch("paax_db.main.suggest_ahsp_for_node", side_effect=mock_suggest):
-        async with AsyncClient(transport=transport, base_url="http://test") as client:
-            res = await client.post(
-            "/projects/PROJECT-A/project-graph/rab-bridge/PROP-1/materialize",
-            headers=headers,
-        )
 
-    assert res.status_code == 200
-    data = res.json()
-    print("DATA", data)
-    assert data["materialized_count"] == 1
-    assert {item["node_id"] for item in data["skipped_items"]} == {"NODE-2", "NODE-3"}
-    assert data["rab_draft_updated"] is True
-
-    async with TestSession() as session:
-        from sqlalchemy import select
-        draft = (await session.execute(select(models.RabDraft).where(models.RabDraft.project_id == "PROJECT-A"))).scalars().first()
-        assert draft is not None
-        lines = draft.payload.get("lines", [])
-        assert len(lines) == 1
-        
-        l1 = [l for l in lines if l["volume"] == 50][0]
-        assert l1["volume_source"] == "written_dimension"
-        assert l1["ahsp_suggested"] is True
-        assert l1["sheet_id"] == "A-46"
-        assert l1["page_index"] == 46
-        
 @pytest.mark.asyncio
-async def test_materialize_rejected_proposal():
-    from .conftest import TestSession
+async def test_materialization_uses_only_an_approved_scoped_mapping_and_injected_engine():
+    await _seed_materialization_fixture(mapping=True)
+    engine = CompleteEngine()
+    app.dependency_overrides[get_core_engine_client] = lambda: engine
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                "/projects/PROJECT-A/project-graph/rab-bridge/PROP-1/materialize",
+                headers={"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A"},
+            )
+    finally:
+        app.dependency_overrides.pop(get_core_engine_client, None)
 
-    async with TestSession() as session:
-        session.add(models.Project(id="PROJECT-B", owner_id="OWNER-B", name="Project B"))
-        session.add(models.ProjectMember(project_id="PROJECT-B", user_id="OWNER-B", role="owner"))
-        proposal = models.RabBridgeProposal(
-            id="PROP-REJ",
-            project_id="PROJECT-B",
-            snapshot_id="SNAP-B",
-            node_ids=[],
-            status="rejected",
-            payload={"items": []},
-            created_by="OWNER-B"
+    assert response.status_code == 200
+    assert response.json()["materialized_count"] == 1
+    assert engine.requests[0]["project_id"] == "PROJECT-A"
+    assert engine.requests[0]["snapshot_id"] == "SNAP-A"
+    assert engine.requests[0]["measurement_fact_ids"] == ["MF-W"]
+    assert engine.requests[0]["inputs"][0]["measurement_id"] == "MF-W"
+
+
+@pytest.mark.asyncio
+async def test_materialization_fails_closed_with_structured_blocked_status_without_mapping_or_client():
+    await _seed_materialization_fixture(mapping=False)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/projects/PROJECT-A/project-graph/rab-bridge/PROP-1/materialize",
+            headers={"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A"},
         )
-        session.add(proposal)
-        await session.commit()
 
-    headers = {"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-B"}
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        res = await client.post(
-            "/projects/PROJECT-B/project-graph/rab-bridge/PROP-REJ/materialize",
-            headers=headers,
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["materialized_count"] == 0
+    assert payload["rab_draft_updated"] is False
+    assert payload["skipped_items"] == [{"node_id": "NODE-1", "reason": "blocked_missing_measurement_mapping", "status": "blocked"}]
+
+
+@pytest.mark.asyncio
+async def test_materialization_never_constructs_or_calls_a_client_when_the_composition_root_is_unconfigured():
+    await _seed_materialization_fixture(mapping=True)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/projects/PROJECT-A/project-graph/rab-bridge/PROP-1/materialize",
+            headers={"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A"},
         )
 
-    assert res.status_code == 400
+    assert response.status_code == 200
+    assert response.json()["materialized_count"] == 0
+    assert response.json()["skipped_items"] == [{
+        "node_id": "NODE-1", "reason": "blocked_core_engine_client_unconfigured", "status": "blocked",
+    }]

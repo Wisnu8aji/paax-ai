@@ -2066,6 +2066,7 @@ export type QuantityAssumptionResolve = z.infer<typeof QuantityAssumptionResolve
 export const SkippedItemSchema = z.object({
   node_id: z.string(),
   reason: z.string(),
+  status: z.literal("blocked").default("blocked"),
 });
 export type SkippedItem = z.infer<typeof SkippedItemSchema>;
 
