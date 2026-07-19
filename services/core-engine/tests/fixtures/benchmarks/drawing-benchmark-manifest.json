@@ -1,0 +1,8 @@
+{
+  "version": "f19.v1", "source_policy": "local-fixtures-only",
+  "synthetic_diversity_contract": ["vector_pdf", "raster_scan", "multiple_viewport", "architecture", "structure", "mep", "revision_set", "schedule_heavy", "legend_heavy"],
+  "required_metrics": [
+    {"id":"evidence.coverage","minimum":1.0},{"id":"semantic.sheet_classification","minimum":1.0},{"id":"physical.candidate_precision","minimum":1.0},{"id":"measurement.unit_conversion","minimum":1.0},{"id":"retrieval.intent_accuracy","minimum":1.0},{"id":"ui.no_mock_production","minimum":1.0},{"id":"plhut.non_regression","minimum":1.0}
+  ],
+  "fixture_metrics": {"evidence.coverage":1.0,"semantic.sheet_classification":1.0,"physical.candidate_precision":1.0,"measurement.unit_conversion":1.0,"retrieval.intent_accuracy":1.0,"ui.no_mock_production":1.0,"plhut.non_regression":1.0}
+}
