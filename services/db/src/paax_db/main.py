@@ -584,6 +584,42 @@ async def authorize_project_artifact(id: str, body: dict, db: AsyncSession = Dep
     return {"authorized": True}
 
 
+@app.post("/internal/projects/{id}/artifact-delete-access", dependencies=[Depends(RoleChecker(["owner"]))])
+async def authorize_project_artifact_deletion(id: str, body: dict, db: AsyncSession = Depends(get_db)):
+    """Deletion is owner-only and the DB verifies the object key belongs to this project."""
+    key = body.get("artifact_key")
+    if not isinstance(key, str):
+        raise HTTPException(status_code=400, detail="artifact key required")
+    run = (await db.execute(select(models.DemRun).where(
+        models.DemRun.project_id == id, models.DemRun.artifact_key == key,
+    ))).scalars().first()
+    if run is None:
+        raise HTTPException(status_code=403, detail="artifact is not in this project")
+    return {"authorized": True}
+
+
+@app.get("/dem/runs/{id}/artifact-retention", dependencies=[Depends(get_current_user)])
+async def get_dem_artifact_retention(id: str, db: AsyncSession = Depends(get_db)):
+    run = (await db.execute(select(models.DemRun).where(models.DemRun.id == id))).scalars().first()
+    if run is None or not run.artifact_key:
+        raise HTTPException(status_code=404, detail="artifact not found")
+    return {"run_id": str(run.id), "artifact_key": run.artifact_key, "deleted_at": run.artifact_deleted_at, "deleted_by": run.artifact_deleted_by}
+
+
+@app.post("/internal/dem/runs/{id}/artifact-deleted", dependencies=[Depends(get_current_user)])
+async def mark_dem_artifact_deleted(id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    """Persist an idempotent retention tombstone before object-store deletion."""
+    run = (await db.execute(select(models.DemRun).where(models.DemRun.id == id))).scalars().first()
+    if run is None or not run.project_id or not run.artifact_key:
+        raise HTTPException(status_code=404, detail="artifact not found")
+    if run.artifact_deleted_at is None:
+        run.artifact_deleted_at = _utc_now()
+        run.artifact_deleted_by = user.uid
+        _audit_project_action(db, project_id=run.project_id, actor=user.uid, action="dem.artifact.deleted", target_id=str(run.id))
+        await db.commit()
+    return {"run_id": str(run.id), "deleted_at": run.artifact_deleted_at, "deleted_by": run.artifact_deleted_by}
+
+
 @app.put("/dem/runs/{id}", response_model=schemas.DemRunResponse, dependencies=[Depends(get_current_user)])
 async def update_dem_run(id: str, update: dict, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(models.DemRun).where(models.DemRun.id == id))

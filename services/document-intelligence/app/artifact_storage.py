@@ -17,6 +17,7 @@ class ArtifactStore(Protocol):
     def put(self, kind: str, data: bytes, *, content_type: str, object_key: str) -> str: ...
     def get(self, key: str) -> bytes: ...
     def exists(self, key: str) -> bool: ...
+    def delete(self, key: str) -> None: ...
 
 
 def _safe_key(value: str) -> str:
@@ -47,15 +48,22 @@ class LocalArtifactStore:
     def exists(self, key: str) -> bool:
         return self.root.joinpath(*PurePosixPath(_safe_key(key)).parts).is_file()
 
+    def delete(self, key: str) -> None:
+        source = self.root.joinpath(*PurePosixPath(_safe_key(key)).parts)
+        if not source.is_file():
+            raise ArtifactUnavailable(key)
+        source.unlink()
 
-def sign_artifact_key(key: str, *, secret: bytes, expires_at: int) -> str:
+
+def sign_artifact_key(key: str, *, secret: bytes, expires_at: int, project_id: str = "") -> str:
+    """Sign the complete object-scope tuple, never a filesystem location."""
     safe = _safe_key(key)
-    payload = f"{safe}:{expires_at}".encode()
+    payload = f"v2:{project_id}:{safe}:{expires_at}".encode()
     signature = hmac.new(secret, payload, hashlib.sha256).digest()
     return f"{expires_at}.{base64.urlsafe_b64encode(signature).decode().rstrip('=')}"
 
 
-def verify_artifact_signature(key: str, token: str, *, secret: bytes, now: int | None = None) -> bool:
+def verify_artifact_signature(key: str, token: str, *, secret: bytes, project_id: str = "", now: int | None = None) -> bool:
     try:
         expiry_text, supplied = token.split(".", 1)
         expiry = int(expiry_text)
@@ -63,5 +71,5 @@ def verify_artifact_signature(key: str, token: str, *, secret: bytes, now: int |
         return False
     if expiry < (int(time.time()) if now is None else now):
         return False
-    expected = sign_artifact_key(key, secret=secret, expires_at=expiry).split(".", 1)[1]
+    expected = sign_artifact_key(key, secret=secret, expires_at=expiry, project_id=project_id).split(".", 1)[1]
     return hmac.compare_digest(supplied, expected)

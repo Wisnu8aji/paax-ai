@@ -20,6 +20,7 @@ def test_dem_routes_are_registered():
 
 
 from unittest.mock import patch, MagicMock
+from unittest.mock import AsyncMock
 import tempfile
 
 @pytest.mark.asyncio
@@ -89,4 +90,58 @@ async def test_get_page_image_out_of_bounds():
             async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
                 response = await ac.get("/drawings/dem/run-123/pages/5/image", headers=HEADERS)
                 assert response.status_code == 404
-                assert response.json()["detail"] == "Page index out of bounds"
+            assert response.json()["detail"] == "Page index out of bounds"
+
+
+@pytest.mark.asyncio
+async def test_signed_artifact_url_is_bound_to_its_project_key_and_expiry(monkeypatch):
+    """A signed link cannot be replayed for a different project/key or after expiry."""
+    monkeypatch.setenv("ARTIFACT_SIGNING_SECRET", "test-signing-secret")
+    run = {"id": "run-123", "project_id": "PROJECT-A", "artifact_key": "original-pdf/runs/run-123/source.pdf"}
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        store = LocalArtifactStore(__import__("pathlib").Path(tmp_dir))
+        store.put("original-pdf", b"%PDF-1.7", content_type="application/pdf", object_key="runs/run-123/source.pdf")
+        with patch("app.api.dem_routes.DemDbClient.get_run", new=AsyncMock(return_value=run)), \
+             patch("app.api.dem_routes.DemDbClient.authorize_artifact", new=AsyncMock()), \
+             patch("app.api.dem_routes.DemDbClient.get_artifact_retention", new=AsyncMock(return_value={"deleted_at": None})), \
+             patch.object(dem_routes, "ARTIFACT_STORE", store):
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+                issued = await ac.post("/drawings/dem/run-123/artifact-url", headers=HEADERS)
+                assert issued.status_code == 200
+                token = issued.json()["token"]
+                valid = await ac.get(f"/drawings/dem/run-123/artifact?token={token}", headers=HEADERS)
+                assert valid.status_code == 200
+
+                other = dict(run, project_id="PROJECT-B")
+                with patch("app.api.dem_routes.DemDbClient.get_run", new=AsyncMock(return_value=other)):
+                    denied = await ac.get(f"/drawings/dem/run-123/artifact?token={token}", headers=HEADERS)
+                assert denied.status_code == 403
+
+                expired = token.split(".", 1)[1]
+                denied = await ac.get(f"/drawings/dem/run-123/artifact?token=1.{expired}", headers=HEADERS)
+                assert denied.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_artifact_deletion_is_owner_authorized_audited_and_rate_limited():
+    run = {"id": "run-123", "project_id": "PROJECT-A", "artifact_key": "original-pdf/runs/run-123/source.pdf"}
+    dem_routes._RATE.clear()
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        store = LocalArtifactStore(__import__("pathlib").Path(tmp_dir))
+        store.put("original-pdf", b"%PDF-1.7", content_type="application/pdf", object_key="runs/run-123/source.pdf")
+        with patch("app.api.dem_routes.DemDbClient.get_run", new=AsyncMock(return_value=run)), \
+             patch("app.api.dem_routes.DemDbClient.authorize_artifact", new=AsyncMock()), \
+             patch("app.api.dem_routes.DemDbClient.mark_artifact_deleted", new=AsyncMock()) as mark_deleted, \
+             patch.object(dem_routes, "ARTIFACT_STORE", store):
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+                deleted = await ac.delete("/drawings/dem/run-123/artifact", headers=HEADERS)
+            assert deleted.status_code == 200
+            assert not store.exists(run["artifact_key"])
+            mark_deleted.assert_awaited_once_with("run-123", actor_id="service-account")
+
+    dem_routes._RATE.clear()
+    for _ in range(30):
+        dem_routes._rate_limit("actor", "project", "read")
+    with pytest.raises(Exception) as limited:
+        dem_routes._rate_limit("actor", "project", "read")
+    assert getattr(limited.value, "status_code", None) == 429

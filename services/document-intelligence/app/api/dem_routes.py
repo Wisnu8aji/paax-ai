@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import hashlib
+import os
+import time
 import uuid
 from pathlib import Path
 
@@ -9,7 +11,7 @@ import fitz
 import httpx
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
 
-from app.artifact_storage import ArtifactStore, ArtifactUnavailable, LocalArtifactStore
+from app.artifact_storage import ArtifactStore, ArtifactUnavailable, LocalArtifactStore, sign_artifact_key, verify_artifact_signature
 from app.durable_jobs import InMemoryDurableJobStore
 from app.security import MAX_UPLOAD_BYTES, MalwareScanner, sanitise_filename, scan_or_reject, validate_pdf_magic, validate_pdf_policy
 from app.transcription.db_client import DemDbClient
@@ -24,6 +26,15 @@ PROMPT_VERSION = "dem-extraction-v1.0.0"
 ARTIFACT_STORE: ArtifactStore = LocalArtifactStore(Path(__file__).resolve().parents[2] / ".artifacts")
 JOB_QUEUE = InMemoryDurableJobStore()
 MALWARE_SCANNER: MalwareScanner | None = None
+_RATE: dict[str, list[float]] = {}
+
+
+def _rate_limit(actor: str, project_id: str, action: str, *, limit: int = 30) -> None:
+    now = time.monotonic(); key = f"{actor}:{project_id}:{action}"
+    recent = [value for value in _RATE.get(key, []) if value > now - 60]
+    if len(recent) >= limit:
+        raise HTTPException(status_code=429, detail="artifact rate limit exceeded")
+    recent.append(now); _RATE[key] = recent
 
 
 @router.post("/start")
@@ -110,6 +121,7 @@ async def get_page_image(run_id: str, page_index: int, user: User = Depends(get_
     project_id = run.get("project_id")
     if not project_id:
         raise HTTPException(status_code=403, detail="artifact has no project scope")
+    _rate_limit(user.uid, project_id, "read")
     try:
         await db_client.authorize_artifact(project_id, artifact_key, actor_id=user.uid)
     except Exception:
@@ -125,6 +137,63 @@ async def get_page_image(run_id: str, page_index: int, user: User = Depends(get_
         raise HTTPException(status_code=404, detail=f"Failed to render page: {str(exc)}")
 
     return Response(content=png_bytes, media_type="image/png")
+
+
+@router.post("/{run_id}/artifact-url")
+async def issue_artifact_url(run_id: str, user: User = Depends(get_current_user)):
+    run = await DemDbClient().get_run(run_id)
+    project_id, key = run.get("project_id"), run.get("artifact_key")
+    if not project_id or not key:
+        raise HTTPException(status_code=404, detail="artifact not found")
+    db_client = DemDbClient()
+    await db_client.authorize_artifact(project_id, key, actor_id=user.uid)
+    if (await db_client.get_artifact_retention(run_id)).get("deleted_at"):
+        raise HTTPException(status_code=410, detail="artifact has been deleted")
+    _rate_limit(user.uid, project_id, "sign")
+    expiry = int(time.time()) + 300
+    secret = os.getenv("ARTIFACT_SIGNING_SECRET", "development-only-artifact-secret").encode()
+    return {"project_id": project_id, "artifact_key": key, "expires_at": expiry, "token": sign_artifact_key(key, secret=secret, expires_at=expiry, project_id=project_id)}
+
+
+@router.get("/{run_id}/artifact")
+async def consume_artifact_url(run_id: str, token: str):
+    """Consume a short-lived signed link; token binds project, key, and expiry."""
+    db_client = DemDbClient()
+    try:
+        run = await db_client.get_run(run_id)
+    except Exception:
+        raise HTTPException(status_code=404, detail="artifact not found")
+    project_id, key = run.get("project_id"), run.get("artifact_key")
+    if not project_id or not key:
+        raise HTTPException(status_code=404, detail="artifact not found")
+    if (await db_client.get_artifact_retention(run_id)).get("deleted_at"):
+        raise HTTPException(status_code=410, detail="artifact has been deleted")
+    secret = os.getenv("ARTIFACT_SIGNING_SECRET", "development-only-artifact-secret").encode()
+    if not verify_artifact_signature(key, token, secret=secret, project_id=project_id):
+        raise HTTPException(status_code=403, detail="invalid or expired artifact token")
+    try:
+        return Response(content=ARTIFACT_STORE.get(key), media_type="application/pdf")
+    except ArtifactUnavailable:
+        raise HTTPException(status_code=404, detail="artifact unavailable")
+
+
+@router.delete("/{run_id}/artifact")
+async def delete_artifact(run_id: str, user: User = Depends(get_current_user)):
+    run = await DemDbClient().get_run(run_id)
+    project_id, key = run.get("project_id"), run.get("artifact_key")
+    if not project_id or not key:
+        raise HTTPException(status_code=404, detail="artifact not found")
+    # DB role enforcement is authoritative; delete never accepts a caller key/path.
+    db_client = DemDbClient()
+    await db_client.authorize_artifact(project_id, key, actor_id=user.uid, action="delete")
+    _rate_limit(user.uid, project_id, "delete")
+    await db_client.mark_artifact_deleted(run_id, actor_id=user.uid)
+    try:
+        ARTIFACT_STORE.delete(key)
+    except ArtifactUnavailable:
+        # Retention tombstone is authoritative and makes retries idempotent.
+        pass
+    return {"deleted": True, "retention_status": "deleted"}
 
 
 @router.post("/{run_id}/synthesize")

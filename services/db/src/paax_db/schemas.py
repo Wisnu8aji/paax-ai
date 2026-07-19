@@ -317,6 +317,8 @@ class DemRunResponse(BaseModel):
     updated_at: datetime
     completed_at: Optional[datetime] = None
     artifact_key: Optional[str] = None
+    artifact_deleted_at: Optional[datetime] = None
+    artifact_deleted_by: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

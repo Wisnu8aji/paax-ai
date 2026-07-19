@@ -215,6 +215,8 @@ class DemRun(Base):
     completed_at = Column(DateTime(timezone=True), nullable=True)
     # Object key is portable across workers; never persist a host filesystem path.
     artifact_key = Column(String, nullable=True)
+    artifact_deleted_at = Column(DateTime(timezone=True), nullable=True)
+    artifact_deleted_by = Column(String, nullable=True)
 
 
 class DemPage(Base):
