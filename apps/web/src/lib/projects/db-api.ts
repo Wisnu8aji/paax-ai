@@ -33,7 +33,7 @@ function normalizeBackendProject(raw: any): Project {
 /**
  * Formats camelCase frontend data to snake_case backend keys.
  */
-function formatFrontendProject(input: Partial<ProjectCreateInput & ProjectUpdateInput> & { id?: string }): any {
+function formatFrontendProject(input: Partial<ProjectCreateInput & ProjectUpdateInput> & { id?: string; drawingSystem?: Project['drawingSystem'] }): any {
   return {
     id: input.id,
     name: input.name,
