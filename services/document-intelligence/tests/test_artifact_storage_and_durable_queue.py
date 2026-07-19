@@ -1,6 +1,6 @@
 import pytest
 
-from app.artifact_storage import ArtifactUnavailable, LocalArtifactStore
+from app.artifact_storage import ArtifactUnavailable, LocalArtifactStore, sign_artifact_key, verify_artifact_signature
 from app.durable_jobs import InMemoryDurableJobStore, JobLifecycleError
 
 
@@ -28,3 +28,10 @@ def test_durable_job_lifecycle_survives_store_reuse_and_resumes_retry_wait():
     assert store.lease("worker-B").id == job.id
     with pytest.raises(JobLifecycleError):
         store.transition(job.id, "completed", worker_id="worker-A")
+
+
+def test_signed_artifact_token_is_key_bound_and_expires():
+    token = sign_artifact_key("original-pdf/runs/R1/source.pdf", secret=b"test", expires_at=101)
+    assert verify_artifact_signature("original-pdf/runs/R1/source.pdf", token, secret=b"test", now=100)
+    assert not verify_artifact_signature("original-pdf/runs/R2/source.pdf", token, secret=b"test", now=100)
+    assert not verify_artifact_signature("original-pdf/runs/R1/source.pdf", token, secret=b"test", now=102)

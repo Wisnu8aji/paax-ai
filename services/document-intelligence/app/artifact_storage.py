@@ -3,6 +3,10 @@ from __future__ import annotations
 
 from pathlib import Path, PurePosixPath
 from typing import Protocol
+import base64
+import hashlib
+import hmac
+import time
 
 
 class ArtifactUnavailable(FileNotFoundError):
@@ -42,3 +46,22 @@ class LocalArtifactStore:
 
     def exists(self, key: str) -> bool:
         return self.root.joinpath(*PurePosixPath(_safe_key(key)).parts).is_file()
+
+
+def sign_artifact_key(key: str, *, secret: bytes, expires_at: int) -> str:
+    safe = _safe_key(key)
+    payload = f"{safe}:{expires_at}".encode()
+    signature = hmac.new(secret, payload, hashlib.sha256).digest()
+    return f"{expires_at}.{base64.urlsafe_b64encode(signature).decode().rstrip('=')}"
+
+
+def verify_artifact_signature(key: str, token: str, *, secret: bytes, now: int | None = None) -> bool:
+    try:
+        expiry_text, supplied = token.split(".", 1)
+        expiry = int(expiry_text)
+    except (TypeError, ValueError):
+        return False
+    if expiry < (int(time.time()) if now is None else now):
+        return False
+    expected = sign_artifact_key(key, secret=secret, expires_at=expiry).split(".", 1)[1]
+    return hmac.compare_digest(supplied, expected)

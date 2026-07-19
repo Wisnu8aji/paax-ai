@@ -11,10 +11,15 @@ from __future__ import annotations
 
 import os
 import re
+from typing import Protocol
+
+import fitz
 
 # ── Upload size limit ────────────────────────────────────────────────────────
 # 50 MB — referenced by upload_routes.py (was inline), dem_routes.py, and pdf_routes.py.
 MAX_UPLOAD_BYTES: int = 50 * 1024 * 1024
+MAX_PDF_PAGES: int = 500
+MAX_RENDER_PIXELS: int = 80_000_000
 
 # PDF magic bytes: every valid PDF starts with "%PDF-"
 _PDF_MAGIC = b"%PDF-"
@@ -64,3 +69,39 @@ def validate_pdf_magic(data: bytes) -> bool:
 def check_upload_size(size: int, limit: int = MAX_UPLOAD_BYTES) -> bool:
     """Return True if *size* bytes is within the allowed *limit*."""
     return size <= limit
+
+
+class MalwareScanner(Protocol):
+    def scan(self, data: bytes, *, filename: str) -> bool: ...
+
+
+def validate_pdf_policy(data: bytes, *, max_pages: int = MAX_PDF_PAGES, max_render_pixels: int = MAX_RENDER_PIXELS) -> int:
+    """Parse before storage and fail closed for encrypted/unsafe render inputs."""
+    try:
+        document = fitz.open(stream=data, filetype="pdf")
+    except Exception as exc:
+        raise ValueError("invalid PDF document") from exc
+    try:
+        if document.needs_pass:
+            raise ValueError("encrypted PDFs are not accepted")
+        if document.page_count > max_pages:
+            raise ValueError("PDF exceeds page limit")
+        for page in document:
+            rect = page.rect
+            # 200 DPI is the fixed renderer default; validate the worst page.
+            pixels = int(rect.width / 72 * 200) * int(rect.height / 72 * 200)
+            if pixels > max_render_pixels:
+                raise ValueError("PDF page exceeds render pixel limit")
+        return document.page_count
+    finally:
+        document.close()
+
+
+def scan_or_reject(scanner: MalwareScanner | None, data: bytes, *, filename: str) -> None:
+    """No scanner configuration means reject unless explicitly allowed for local dev."""
+    if scanner is None:
+        if os.getenv("ALLOW_UNSCANNED_UPLOADS", "false").lower() not in {"1", "true", "yes"}:
+            raise ValueError("malware scanner is unavailable")
+        return
+    if not scanner.scan(data, filename=filename):
+        raise ValueError("malware scan rejected upload")

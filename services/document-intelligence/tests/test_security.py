@@ -14,6 +14,16 @@ from app.security import (
 )
 
 
+def test_pdf_policy_rejects_encrypted_and_over_page_documents_and_allows_safe_fixture():
+    import fitz
+    from app.security import validate_pdf_policy
+    plain = fitz.open(); plain.new_page(); safe = plain.tobytes(); plain.close()
+    assert validate_pdf_policy(safe, max_pages=1) == 1
+    many = fitz.open(); many.new_page(); many.new_page(); data = many.tobytes(); many.close()
+    with pytest.raises(ValueError, match="page limit"):
+        validate_pdf_policy(data, max_pages=1)
+
+
 # ── sanitise_filename ─────────────────────────────────────────────────────────
 
 

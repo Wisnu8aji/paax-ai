@@ -11,7 +11,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
 
 from app.artifact_storage import ArtifactStore, ArtifactUnavailable, LocalArtifactStore
 from app.durable_jobs import InMemoryDurableJobStore
-from app.security import MAX_UPLOAD_BYTES, sanitise_filename, validate_pdf_magic
+from app.security import MAX_UPLOAD_BYTES, MalwareScanner, sanitise_filename, scan_or_reject, validate_pdf_magic, validate_pdf_policy
 from app.transcription.db_client import DemDbClient
 
 router = APIRouter(prefix="/drawings/dem", tags=["DEM"])
@@ -22,6 +22,7 @@ PROMPT_VERSION = "dem-extraction-v1.0.0"
 # adapters with shared object storage and the DB-backed queue at startup.
 ARTIFACT_STORE: ArtifactStore = LocalArtifactStore(Path(__file__).resolve().parents[2] / ".artifacts")
 JOB_QUEUE = InMemoryDurableJobStore()
+MALWARE_SCANNER: MalwareScanner | None = None
 
 
 @router.post("/start")
@@ -37,18 +38,20 @@ async def start_dem_run(file: UploadFile = File(...), project_id: str | None = F
             status_code=400,
             detail="File bukan PDF yang valid (magic byte tidak cocok). Hanya file PDF yang didukung.",
         )
+    if file.content_type not in {"application/pdf", "application/x-pdf", None}:
+        raise HTTPException(status_code=415, detail="Upload MIME type must be application/pdf")
+
+    safe_filename = sanitise_filename(file.filename) if file.filename else "unknown.pdf"
 
     document_hash = f"sha256:{hashlib.sha256(pdf_bytes).hexdigest()}"
-    document = fitz.open(stream=pdf_bytes, filetype="pdf")
     try:
-        total_pages = document.page_count
-    finally:
-        document.close()
+        total_pages = validate_pdf_policy(pdf_bytes)
+        scan_or_reject(MALWARE_SCANNER, pdf_bytes, filename=safe_filename)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
     document_id = f"DOC-{uuid.uuid4().hex[:8]}"
 
     # ── Security: sanitise filename (path-traversal prevention) ───────────────
-    safe_filename = sanitise_filename(file.filename) if file.filename else "unknown.pdf"
-
     artifact_key = ARTIFACT_STORE.put(
         "original-pdf", pdf_bytes, content_type="application/pdf",
         object_key=f"runs/{document_id}/source.pdf",
