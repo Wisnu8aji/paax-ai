@@ -11,6 +11,10 @@ import {
 } from "./paax-models";
 
 describe("paax-models", () => {
+  it("is a UI selection registry, not a runtime tool contract", () => {
+    expect(Object.values(PAAX_MODELS).every((model) => "apiModel" in model && "provider" in model)).toBe(true);
+    expect(Object.values(PAAX_MODELS).every((model) => !("declaration" in model) && !("execute" in model))).toBe(true);
+  });
   it("defines exactly Lucent, Arete, and Noir", () => {
     expect(Object.keys(PAAX_MODELS).sort()).toEqual(["arete", "lucent", "noir"]);
     expect(PAAX_MODELS.lucent.displayName).toBe("Lucent");
