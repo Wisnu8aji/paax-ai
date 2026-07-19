@@ -44,7 +44,7 @@ async def test_materialization_persists_complete_engine_response_and_authenticat
     app.dependency_overrides[get_core_engine_client] = lambda: CoreEngineClient(transport, internal_key="core-engine-test-key")
     try:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/projects/PROJECT-A/project-graph/rab-bridge/PROP-1/materialize", headers={"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A"})
+            response = await client.post("/projects/PROJECT-A/project-graph/rab-bridge/PROP-1/materialize", headers={"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A", "Idempotency-Key": "MATERIALIZE-1"})
     finally:
         app.dependency_overrides.pop(get_core_engine_client, None)
     assert response.status_code == 200 and response.json()["materialized_count"] == 1
@@ -57,11 +57,11 @@ async def test_materialization_persists_complete_engine_response_and_authenticat
     async with TestSession() as session:
         draft = (await session.execute(select(models.RabDraft).where(models.RabDraft.project_id == "PROJECT-A"))).scalar_one()
         line = draft.payload["lines"][0]
-    assert {key: line[key] for key in ("calculation_id", "calculation_formula", "calculation_substituted_formula", "calculation_input_sources", "calculation_engine_version", "calculation_status", "calculation_warnings", "measurement_mapping_id")} == {
-        "calculation_id": "CALC-1", "calculation_formula": "width x depth x height", "calculation_substituted_formula": "0.2 x 0.25 x 250 = 12.5", "calculation_input_sources": [{"measurement_id": "MF-W", "source_method": "written_dimension", "unit": "m"}], "calculation_engine_version": "0.6.0", "calculation_status": "complete", "calculation_warnings": ["fixture warning"], "measurement_mapping_id": "MAP-1"}
+    assert {key: line[key] for key in ("calculation_id", "calculation_formula", "calculation_substituted_formula", "calculation_input_sources", "calculation_engine_version", "calculation_status", "calculation_warnings", "measurement_mapping_id", "ahsp_selection_approved", "snapshot_id", "proposal_revision", "created_by")} == {
+        "calculation_id": "CALC-1", "calculation_formula": "width x depth x height", "calculation_substituted_formula": "0.2 x 0.25 x 250 = 12.5", "calculation_input_sources": [{"measurement_id": "MF-W", "source_method": "written_dimension", "unit": "m"}], "calculation_engine_version": "0.6.0", "calculation_status": "complete", "calculation_warnings": ["fixture warning"], "measurement_mapping_id": "MAP-1", "ahsp_selection_approved": True, "snapshot_id": "SNAP-A", "proposal_revision": 1, "created_by": "OWNER-A"}
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        replay = await client.post("/projects/PROJECT-A/project-graph/rab-bridge/PROP-1/materialize", headers={"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A"})
-    assert replay.status_code == 400
+        replay = await client.post("/projects/PROJECT-A/project-graph/rab-bridge/PROP-1/materialize", headers={"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A", "Idempotency-Key": "MATERIALIZE-1"})
+    assert replay.status_code == 200 and replay.json() == response.json()
     async with TestSession() as session:
         immutable_line = (await session.execute(select(models.RabDraft).where(models.RabDraft.project_id == "PROJECT-A"))).scalar_one().payload["lines"][0]
     assert immutable_line["calculation_id"] == "CALC-1" and immutable_line["calculation_warnings"] == ["fixture warning"]

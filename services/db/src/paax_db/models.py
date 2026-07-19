@@ -615,6 +615,11 @@ class RabBridgeProposal(Base):
     created_by = Column(String, nullable=True)
     reviewed_by = Column(String, nullable=True)
     reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    revision = Column(Integer, nullable=False, default=1)
+    materialization_key = Column(String, nullable=True, unique=True)
+    materialization_result = Column(JSON_DOCUMENT, nullable=True)
+    materialized_by = Column(String, nullable=True)
+    materialized_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 

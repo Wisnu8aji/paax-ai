@@ -5,7 +5,7 @@ import json
 from typing import List, Dict, Any, Optional
 from sqlalchemy import delete
 import uuid
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -19,6 +19,7 @@ from .project_graph_rab_bridge import build_rab_bridge_proposal
 from .project_graph_review import active_correction_overlays, build_quantity_readiness, build_review_queue
 from .core_engine_client import CoreEngineUnavailable
 from .core_engine_factory import build_core_engine_client
+from .rab_bridge_lifecycle import transition
 
 app = FastAPI(title="PAAX DB API", description="Server-side persistent storage for PAAX AI")
 
@@ -879,11 +880,11 @@ async def resolve_rab_bridge_proposal(id: str, proposal_id: str, request: schema
     proposal = (await db.execute(select(models.RabBridgeProposal).where(
         models.RabBridgeProposal.id == proposal_id,
         models.RabBridgeProposal.project_id == id,
-        models.RabBridgeProposal.status == "pending",
+        models.RabBridgeProposal.status.in_(["candidate_ready", "needs_review"]),
     ))).scalars().first()
     if proposal is None:
-        raise HTTPException(status_code=404, detail="Pending RAB bridge proposal not found")
-    proposal.status = request.status
+        raise HTTPException(status_code=404, detail="Reviewable RAB bridge proposal not found")
+    proposal.status = transition(proposal.status, request.status)
     proposal.reviewed_by = user.uid
     proposal.reviewed_at = _utc_now()
     await db.commit()
@@ -988,7 +989,7 @@ async def resolve_rab_materialization_mapping(
     dependencies=[Depends(RoleChecker(["owner", "pm"]))],
 )
 async def materialize_rab_bridge_proposal(
-    id: str, proposal_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user),
+    id: str, proposal_id: str, http_request: Request, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user),
     core_engine_client: Any | None = Depends(get_core_engine_client),
 ):
     import uuid
@@ -999,9 +1000,13 @@ async def materialize_rab_bridge_proposal(
     proposal = proposal_res.scalars().first()
     if not proposal:
         raise HTTPException(status_code=404, detail="Proposal not found")
+    idempotency_key = http_request.headers.get("Idempotency-Key")
+    if proposal.status == "materialized" and idempotency_key and proposal.materialization_key == idempotency_key:
+        return schemas.RabBridgeMaterializeResponse(**proposal.materialization_result)
         
     if proposal.status != "approved":
         raise HTTPException(status_code=400, detail="Proposal must be approved before materialization")
+    proposal.status = transition(proposal.status, "calculation_pending")
 
     items = proposal.payload.get("items", [])
     materialized_count = 0
@@ -1109,6 +1114,13 @@ async def materialize_rab_bridge_proposal(
         line["calculation_engine_version"] = calculation.get("engine_version")
         line["calculation_warnings"] = calculation.get("warnings", [])
         line["mapping_evidence_refs"] = mapping.evidence_refs
+        line["ahsp_selection_approved"] = True
+        line["ahsp_approved_by"] = proposal.reviewed_by
+        line["ahsp_approved_at"] = proposal.reviewed_at.isoformat() if proposal.reviewed_at else None
+        line["snapshot_id"] = proposal.snapshot_id
+        line["proposal_revision"] = proposal.revision
+        line["created_by"] = user.uid
+        line["materialized_at"] = _utc_now().isoformat()
         if evidence_ids and evidence_ids[0] in evidence_map:
             line["sheet_id"] = evidence_map[evidence_ids[0]]["sheet_id"]
             line["page_index"] = evidence_map[evidence_ids[0]]["page_index"]
@@ -1149,14 +1161,24 @@ async def materialize_rab_bridge_proposal(
                 
         rab_draft_updated = True
         
-    proposal.status = "materialized"
-    await db.commit()
-    
-    return schemas.RabBridgeMaterializeResponse(
-        materialized_count=materialized_count,
-        skipped_items=skipped_items,
-        rab_draft_updated=rab_draft_updated
+    if materialized_count == 0:
+        proposal.status = transition(proposal.status, "needs_review")
+        result = schemas.RabBridgeMaterializeResponse(
+            materialized_count=materialized_count, skipped_items=skipped_items, rab_draft_updated=rab_draft_updated,
+        )
+        await db.commit()
+        return result
+    proposal.status = transition(proposal.status, "calculated")
+    proposal.status = transition(proposal.status, "materialized")
+    proposal.materialization_key = idempotency_key
+    proposal.materialized_by = user.uid
+    proposal.materialized_at = _utc_now()
+    result = schemas.RabBridgeMaterializeResponse(
+        materialized_count=materialized_count, skipped_items=skipped_items, rab_draft_updated=rab_draft_updated,
     )
+    proposal.materialization_result = result.model_dump()
+    await db.commit()
+    return result
 
 
 @app.get(

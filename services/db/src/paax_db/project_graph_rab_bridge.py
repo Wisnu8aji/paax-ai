@@ -51,7 +51,7 @@ async def build_rab_bridge_proposal(
         snapshot_id=snapshot.snapshot_id,
         node_ids=list(node_ids),
         payload={"items": items},
-        status="pending",
+        status="candidate_ready",
         created_by=created_by,
     ))
     await session.flush()

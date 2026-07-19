@@ -287,7 +287,7 @@ async def test_rab_bridge_persists_pending_proposal_without_calculated_fields():
     from .conftest import TestSession
     async with TestSession() as session:
         proposal = await session.get(models.RabBridgeProposal, payload["proposal_id"])
-    assert proposal.status == "pending"
+    assert proposal.status == "candidate_ready"
     assert proposal.node_ids == ["TYPE-K1"]
 
 
