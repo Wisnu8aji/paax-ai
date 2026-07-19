@@ -25,6 +25,7 @@ const MODULE_TABS: { seg: string; label: string; href?: string }[] = [
   { seg: '/rab', label: 'Cost & Quantity' },
   { seg: '/schedule', label: 'Schedule Planning' },
   { seg: '/site-agent', label: 'Site Agent' },
+  { seg: '/observability', label: 'Observability' },
 ];
 
 export default function ProjectDetailLayout({
