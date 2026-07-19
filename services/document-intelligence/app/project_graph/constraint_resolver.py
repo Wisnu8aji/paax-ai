@@ -138,9 +138,59 @@ def score_constraints(
     passed = []
     failed = []
     
+    # 1. Handle logical/non-spatial relations first if coordinates are missing
     if source_bbox is None or candidate_bbox is None:
-        return 0.0, {}, [], ["geometry_available"]
-        
+        if relation_type == "reference_to_detail":
+            if not legend_match:
+                return 0.0, {"legend_match": 0.0}, [], ["legend_match"]
+            score_breakdown["legend_match"] = 1.0
+            passed.append("legend_match")
+            
+            score_breakdown["discipline"] = 1.0 if discipline_match else 0.0
+            if discipline_match: passed.append("discipline")
+            else: failed.append("discipline")
+            
+            score_breakdown["revision"] = 1.0 if revision_match else 0.0
+            if revision_match: passed.append("revision")
+            else: failed.append("revision")
+            
+            weights = {"legend_match": 0.8, "discipline": 0.1, "revision": 0.1}
+            total_score = sum(score_breakdown.get(name, 0.0) * weight for name, weight in weights.items())
+            return total_score, score_breakdown, passed, failed
+
+        elif relation_type in {"type_to_schedule_row", "type_to_table"}:
+            score_breakdown["legend_match"] = 1.0 if legend_match else 0.0
+            if legend_match: passed.append("legend_match")
+            else: failed.append("legend_match")
+            
+            score_breakdown["schedule_match"] = 1.0 if schedule_match else 0.0
+            if schedule_match: passed.append("schedule_match")
+            else: failed.append("schedule_match")
+            
+            score_breakdown["discipline"] = 1.0 if discipline_match else 0.0
+            if discipline_match: passed.append("discipline")
+            else: failed.append("discipline")
+            
+            score_breakdown["revision"] = 1.0 if revision_match else 0.0
+            if revision_match: passed.append("revision")
+            else: failed.append("revision")
+            
+            weights = {
+                "legend_match": 0.45,
+                "schedule_match": 0.45,
+                "discipline": 0.05,
+                "revision": 0.05
+            }
+            if score_breakdown.get("legend_match", 1.0) == 0.0 and score_breakdown.get("schedule_match", 1.0) == 0.0:
+                total_score = 0.0
+            else:
+                total_score = sum(score_breakdown.get(name, 0.0) * weight for name, weight in weights.items())
+            return total_score, score_breakdown, passed, failed
+
+        else:
+            return 0.0, {}, [], ["geometry_available"]
+
+    # 2. Spatial relations (or type_to_schedule_row/table with spatial context)
     # Same view constraint
     if check_same_view(source_bbox, candidate_bbox, views):
         score_breakdown["same_view"] = 1.0
@@ -208,27 +258,39 @@ def score_constraints(
             failed.append("table_row_alignment")
             
     # Calculate weighted final score
-    weights = {
-        "same_view": 0.15,
-        "no_boundary_crossing": 0.25,
-        "distance": 0.30,
-        "leader_line": 0.10,
-        "discipline": 0.10,
-        "revision": 0.05,
-        "typography": 0.05
-    }
     if relation_type in {"type_to_schedule_row", "type_to_table"}:
+        score_breakdown["legend_match"] = 1.0 if legend_match else 0.0
+        if legend_match: passed.append("legend_match")
+        else: failed.append("legend_match")
+        
+        score_breakdown["schedule_match"] = 1.0 if schedule_match else 0.0
+        if schedule_match: passed.append("schedule_match")
+        else: failed.append("schedule_match")
+        
         weights = {
-            "same_view": 0.10,
-            "no_boundary_crossing": 0.10,
-            "distance": 0.10,
-            "table_row_alignment": 0.50,
+            "same_view": 0.05,
+            "no_boundary_crossing": 0.05,
+            "distance": 0.05,
+            "table_row_alignment": 0.45,
+            "legend_match": 0.20,
+            "schedule_match": 0.10,
+            "discipline": 0.05,
+            "revision": 0.025,
+            "typography": 0.025
+        }
+    else:
+        weights = {
+            "same_view": 0.15,
+            "no_boundary_crossing": 0.25,
+            "distance": 0.30,
+            "leader_line": 0.10,
             "discipline": 0.10,
             "revision": 0.05,
             "typography": 0.05
         }
         
-    if score_breakdown.get("no_boundary_crossing", 1.0) == 0.0:
+    # Hard failures: no_boundary_crossing or distance exceeding max_distance
+    if score_breakdown.get("no_boundary_crossing", 1.0) == 0.0 or score_breakdown.get("distance", 1.0) == 0.0:
         total_score = 0.0
     else:
         total_score = sum(score_breakdown.get(name, 0.5) * weight for name, weight in weights.items())

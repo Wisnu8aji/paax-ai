@@ -192,11 +192,8 @@ _MAX_DIMENSION_LINK_DISTANCE_NORMALIZED = 0.05
 def _nearest_dimension(
     element_bbox: tuple[float, float, float, float] | None,
     patch: SheetKnowledgePatch,
-) -> tuple[str, tuple[float, float, float, float], float, tuple[str, ...]] | None:
-    """Find the single unambiguous nearest dimension fact for an element on the
-    same page. Same conservative shape as _nearest_value: reject ties, and
-    additionally reject anything farther than a page-scale-derived cutoff so a
-    lone dimension elsewhere on the sheet is never wrongly claimed as "nearest"."""
+) -> tuple[str, tuple[float, float, float, float], float, tuple[str, ...], EdgeResolver, str] | None:
+    """Find the nearest dimension fact using constraint resolver."""
     if element_bbox is None:
         return None
     candidates = [
@@ -212,50 +209,74 @@ def _nearest_dimension(
         if isinstance(transform, dict):
             from app.perception.coordinate_transform import PageTransform
             transform = PageTransform(**transform)
-        
-        norm_elem_bbox = transform.pdf_to_normalized_bbox(element_bbox)
-        element_x = (norm_elem_bbox[0] + norm_elem_bbox[2]) / 2
-        element_y = (norm_elem_bbox[1] + norm_elem_bbox[3]) / 2
-        
-        ranked = sorted(
-            (
-                (
-                    ((element_x - ((norm_fact_bbox[0] + norm_fact_bbox[2]) / 2)) ** 2
-                     + (element_y - ((norm_fact_bbox[1] + norm_fact_bbox[3]) / 2)) ** 2) ** 0.5,
-                    fact.fact_id,
-                    fact,
-                )
-                for fact in candidates
-                for norm_fact_bbox in [transform.pdf_to_normalized_bbox(fact.bbox)]
-            ),
-            key=lambda item: (item[0], item[1]),
-        )
-        nearest_distance, _, nearest_fact = ranked[0]
-        if nearest_distance > _MAX_DIMENSION_LINK_DISTANCE_NORMALIZED:
-            return None
-    else:
-        element_x = (element_bbox[0] + element_bbox[2]) / 2
-        element_y = (element_bbox[1] + element_bbox[3]) / 2
-        ranked = sorted(
-            (
-                (
-                    ((element_x - ((fact.bbox[0] + fact.bbox[2]) / 2)) ** 2
-                     + (element_y - ((fact.bbox[1] + fact.bbox[3]) / 2)) ** 2) ** 0.5,
-                    fact.fact_id,
-                    fact,
-                )
-                for fact in candidates
-            ),
-            key=lambda item: (item[0], item[1]),
-        )
-        nearest_distance, _, nearest_fact = ranked[0]
-        if nearest_distance > _MAX_DIMENSION_LINK_DISTANCE:
-            return None
 
-    if len(ranked) > 1 and ranked[1][0] == nearest_distance:
+    # We need to extract view bboxes and table bboxes from patch
+    views = [node for node in patch.nodes if node.type == "view"]
+    table_bboxes = [
+        fact.bbox for fact in patch.facts
+        if fact.category == "tables" and fact.bbox is not None
+    ]
+
+    cand_dicts = []
+    for fact in candidates:
+        display = (fact.normalized or fact.raw).strip()
+        cand_dicts.append({
+            "node_id": fact.fact_id,
+            "bbox": fact.bbox,
+            "confidence": fact.confidence,
+            "status": fact.status,
+            "display": display,
+            "evidence_refs": tuple(sorted(set(fact.evidence_refs)))
+        })
+
+    from app.project_graph.constraint_resolver import resolve_candidates
+    max_dist = _MAX_DIMENSION_LINK_DISTANCE_NORMALIZED if transform is not None else _MAX_DIMENSION_LINK_DISTANCE
+
+    best_cand, state, scored = resolve_candidates(
+        source_bbox=element_bbox,
+        candidates=cand_dicts,
+        relation_type="label_to_dimension",
+        transform=transform,
+        views=views,
+        table_bboxes=table_bboxes,
+        max_distance=max_dist,
+    )
+
+    if best_cand is None or state in {"rejected", "ambiguous"}:
         return None
-    display = (nearest_fact.normalized or nearest_fact.raw).strip()
-    return display, nearest_fact.bbox, nearest_fact.confidence, tuple(sorted(set(nearest_fact.evidence_refs)))
+
+    candidates_considered = len(candidates)
+    passed_constraints = []
+    failed_constraints = []
+    score_breakdown = {}
+    rejected_candidate_ids = []
+
+    for s in scored:
+        if s.score <= 0.0:
+            rejected_candidate_ids.append(s.target_node_id)
+        if s.target_node_id == best_cand["node_id"]:
+            passed_constraints = s.passed_constraints
+            failed_constraints = s.failed_constraints
+            score_breakdown = s.score_breakdown
+
+    resolver_meta = EdgeResolver(
+        method="constraint_scored_binding_v2",
+        resolver_version="2.0.0",
+        candidates_considered=candidates_considered,
+        score_breakdown=score_breakdown,
+        passed_constraints=passed_constraints,
+        failed_constraints=failed_constraints,
+        rejected_candidate_ids=rejected_candidate_ids,
+    )
+
+    return (
+        best_cand["display"],
+        best_cand["bbox"],
+        best_cand["confidence"],
+        best_cand["evidence_refs"],
+        resolver_meta,
+        state
+    )
 
 
 def _dimension_node_id(patch: SheetKnowledgePatch, display: str, bbox: tuple[float, float, float, float]) -> str | None:
@@ -515,12 +536,46 @@ def _physical_candidate_node(
 def _nearest_value(
     source_bbox: tuple[float, float, float, float] | None,
     values: Sequence[_FactValue],
+    patch: Optional[SheetKnowledgePatch] = None,
+    relation_type: str = "element_to_value",
 ) -> _FactValue | None:
     if source_bbox is None:
         return None
     candidates = [value for value in values if value.bbox is not None]
     if not candidates:
         return None
+        
+    if patch is not None:
+        cand_dicts = []
+        for val in candidates:
+            cand_dicts.append({
+                "node_id": val.key,
+                "bbox": val.bbox,
+                "confidence": val.confidence,
+                "status": "human_verified" if getattr(val, "status", None) == "human_verified" else "extracted",
+                "val": val
+            })
+            
+        from app.project_graph.constraint_resolver import resolve_candidates
+        transform = getattr(patch, "page_transform", None)
+        views = [node for node in patch.nodes if node.type == "view"]
+        table_bboxes = [
+            f.bbox for f in patch.facts
+            if f.category == "tables" and f.bbox is not None
+        ]
+        
+        best_cand, state, scored = resolve_candidates(
+            source_bbox=source_bbox,
+            candidates=cand_dicts,
+            relation_type=relation_type,
+            transform=transform,
+            views=views,
+            table_bboxes=table_bboxes,
+            max_distance=300.0,
+        )
+        if best_cand is not None and state not in {"rejected", "ambiguous"}:
+            return best_cand["val"]
+            
     source_x = (source_bbox[0] + source_bbox[2]) / 2
     source_y = (source_bbox[1] + source_bbox[3]) / 2
     ranked = sorted(
@@ -550,9 +605,9 @@ def _source_context(
     spaces = _fact_values(patch, "spaces")
     level = _title_level(patch, levels)
     if level is None:
-        level = _nearest_value(source_bbox, levels)
-    space = _nearest_value(source_bbox, spaces)
-    grid = _nearest_value(source_bbox, _fact_values(patch, "grids")) if discipline == "structure" else None
+        level = _nearest_value(source_bbox, levels, patch, "element_to_level")
+    space = _nearest_value(source_bbox, spaces, patch, "element_to_space")
+    grid = _nearest_value(source_bbox, _fact_values(patch, "grids"), patch, "element_to_grid") if discipline == "structure" else None
     requires_review = level is not None and level.requires_review
     if level is None:
         requires_review = any(
@@ -822,24 +877,54 @@ def resolve_cross_sheet(
             (node.node_id for node in patch.nodes if node.type == "sheet"), None
         )
         for reference in sorted(set(patch.unresolved_references)):
-            target_sheet_node_id = sheet_node_by_title.get(_text_key(reference))
+            sheet_nodes = [node for p in patches for node in p.nodes if node.type == "sheet"]
+            cand_dicts = []
+            for sheet_node in sheet_nodes:
+                title_prop = sheet_node.properties.get("title")
+                title_val = str(title_prop.value) if title_prop else ""
+                match = _text_key(reference) == _text_key(title_val)
+                cand_dicts.append({
+                    "node_id": sheet_node.node_id,
+                    "confidence": sheet_node.confidence,
+                    "status": sheet_node.verification_status,
+                    "title": title_val,
+                    "match": match
+                })
+            
+            from app.project_graph.constraint_resolver import resolve_candidates
+            best_cand, state, scored = resolve_candidates(
+                source_bbox=None,
+                candidates=cand_dicts,
+                relation_type="reference_to_detail",
+                legend_match_func=lambda c: c["match"],
+                discipline_match_func=lambda c: True,
+            )
+            
             reference_fact = _reference_fact_node_id(patch, reference)
-            if (
-                target_sheet_node_id is not None
-                and target_sheet_node_id != this_patch_sheet_node_id
-                and reference_fact is not None
-            ):
+            if best_cand is not None and best_cand["node_id"] != this_patch_sheet_node_id and reference_fact is not None and state != "rejected":
                 reference_node_id, reference_confidence, reference_evidence_refs = reference_fact
+                
+                candidates_considered = len(sheet_nodes)
+                resolver_meta = EdgeResolver(
+                    method="constraint_scored_binding_v2",
+                    resolver_version="2.0.0",
+                    candidates_considered=candidates_considered,
+                    score_breakdown={"legend_match": 1.0 if best_cand["match"] else 0.0},
+                    passed_constraints=["legend_match"] if best_cand["match"] else [],
+                    failed_constraints=[] if best_cand["match"] else ["legend_match"],
+                )
+                
                 reference_edges.append(
                     ProjectGraphEdge(
-                        edge_id=_stable_id("EDGE", reference_node_id, target_sheet_node_id, "REFERENCES"),
+                        edge_id=_stable_id("EDGE", reference_node_id, best_cand["node_id"], "REFERENCES"),
                         source=reference_node_id,
-                        target=target_sheet_node_id,
+                        target=best_cand["node_id"],
                         relation="REFERENCES",
-                        confidence_class="CROSS_SHEET_INFERRED",
+                        confidence_class="AMBIGUOUS" if state == "ambiguous" else "CROSS_SHEET_INFERRED",
                         confidence=reference_confidence,
                         evidence_refs=list(reference_evidence_refs),
-                        resolver=EdgeResolver(method="deterministic_exact_title_match"),
+                        resolver=resolver_meta,
+                        resolution_state=state,
                     )
                 )
             else:
@@ -942,7 +1027,7 @@ def resolve_cross_sheet(
             element_bbox = _element_bbox(source.patch, type_node.canonical_name, source.source_ref)
             nearest_dimension = _nearest_dimension(element_bbox, source.patch)
             if nearest_dimension is not None:
-                dim_display, dim_bbox, dim_confidence, dim_evidence_refs = nearest_dimension
+                dim_display, dim_bbox, dim_confidence, dim_evidence_refs, dim_resolver, dim_state = nearest_dimension
                 dim_node_id = _dimension_node_id(source.patch, dim_display, dim_bbox)
                 if dim_node_id is not None:
                     edges.append(
@@ -951,10 +1036,11 @@ def resolve_cross_sheet(
                             source=reference_node.node_id,
                             target=dim_node_id,
                             relation="HAS_DIMENSION",
-                            confidence_class="CROSS_SHEET_INFERRED",
+                            confidence_class="AMBIGUOUS" if dim_state == "ambiguous" else "CROSS_SHEET_INFERRED",
                             confidence=min(type_node.confidence, dim_confidence),
                             evidence_refs=list(dim_evidence_refs),
-                            resolver=EdgeResolver(method="deterministic_nearest_bbox"),
+                            resolver=dim_resolver,
+                            resolution_state=dim_state,
                         )
                     )
 
@@ -1170,48 +1256,108 @@ def resolve_cross_sheet(
                 )
                 if source.level is None or not has_real_locator:
                     continue
-                for basis_fact in _physical_basis_facts(source.patch, source.source_ref):
-                    candidate = _physical_candidate_node(
-                        type_node, source, level_node, space_node, grid_node, basis_fact
+                label_bbox = _element_bbox(source.patch, type_node.canonical_name, source.source_ref)
+                basis_facts = _physical_basis_facts(source.patch, source.source_ref)
+                
+                if label_bbox is not None and basis_facts:
+                    cand_dicts = []
+                    for fact in basis_facts:
+                        cand_dicts.append({
+                            "node_id": fact.fact_id,
+                            "bbox": fact.bbox,
+                            "confidence": fact.confidence,
+                            "status": fact.status,
+                            "fact": fact
+                        })
+                    
+                    from app.project_graph.constraint_resolver import resolve_candidates
+                    transform = getattr(source.patch, "page_transform", None)
+                    views = [node for node in source.patch.nodes if node.type == "view"]
+                    table_bboxes = [
+                        f.bbox for f in source.patch.facts
+                        if f.category == "tables" and f.bbox is not None
+                    ]
+                    
+                    best_cand, state, scored = resolve_candidates(
+                        source_bbox=label_bbox,
+                        candidates=cand_dicts,
+                        relation_type="label_to_symbol",
+                        transform=transform,
+                        views=views,
+                        table_bboxes=table_bboxes,
+                        max_distance=50.0,
                     )
-                    nodes.append(candidate)
-                    candidate_evidence = sorted(
-                        set(candidate.properties["physical_count_eligible"].evidence_refs)
-                    )
-                    edges.extend(
-                        (
-                            ProjectGraphEdge(
-                                edge_id=_stable_id("EDGE", candidate.node_id, type_node.node_id, "INSTANCE_OF"),
-                                source=candidate.node_id,
-                                target=type_node.node_id,
-                                relation="INSTANCE_OF",
-                                confidence_class="HUMAN_VERIFIED" if candidate.verification_status == "human_verified" else "CROSS_SHEET_INFERRED",
-                                confidence=candidate.confidence,
-                                evidence_refs=candidate_evidence,
-                                resolver=EdgeResolver(method="deterministic_physical_basis_gate"),
-                            ),
-                            ProjectGraphEdge(
-                                edge_id=_stable_id("EDGE", candidate.node_id, level_node.node_id, "LOCATED_ON"),
-                                source=candidate.node_id,
-                                target=level_node.node_id,
-                                relation="LOCATED_ON",
-                                confidence_class="HUMAN_VERIFIED" if candidate.verification_status == "human_verified" else "CROSS_SHEET_INFERRED",
-                                confidence=candidate.confidence,
-                                evidence_refs=candidate_evidence,
-                                resolver=EdgeResolver(method="deterministic_physical_basis_gate"),
-                            ),
-                            ProjectGraphEdge(
-                                edge_id=_stable_id("EDGE", candidate.node_id, (space_node or grid_node).node_id, "LOCATED_IN" if space_node else "ALIGNED_TO"),
-                                source=candidate.node_id,
-                                target=(space_node or grid_node).node_id,
-                                relation="LOCATED_IN" if space_node else "ALIGNED_TO",
-                                confidence_class="HUMAN_VERIFIED" if candidate.verification_status == "human_verified" else "CROSS_SHEET_INFERRED",
-                                confidence=candidate.confidence,
-                                evidence_refs=candidate_evidence,
-                                resolver=EdgeResolver(method="deterministic_physical_basis_gate"),
-                            ),
+                    
+                    if best_cand is not None and state != "rejected":
+                        basis_fact = best_cand["fact"]
+                        candidate = _physical_candidate_node(
+                            type_node, source, level_node, space_node, grid_node, basis_fact
                         )
-                    )
+                        nodes.append(candidate)
+                        candidate_evidence = sorted(
+                            set(candidate.properties["physical_count_eligible"].evidence_refs)
+                        )
+                        
+                        candidates_considered = len(basis_facts)
+                        passed_constraints = []
+                        failed_constraints = []
+                        score_breakdown = {}
+                        rejected_candidate_ids = []
+                        for s in scored:
+                            if s.score <= 0.0:
+                                rejected_candidate_ids.append(s.target_node_id)
+                            if s.target_node_id == best_cand["node_id"]:
+                                passed_constraints = s.passed_constraints
+                                failed_constraints = s.failed_constraints
+                                score_breakdown = s.score_breakdown
+                                
+                        resolver_meta = EdgeResolver(
+                            method="constraint_scored_binding_v2",
+                            resolver_version="2.0.0",
+                            candidates_considered=candidates_considered,
+                            score_breakdown=score_breakdown,
+                            passed_constraints=passed_constraints,
+                            failed_constraints=failed_constraints,
+                            rejected_candidate_ids=rejected_candidate_ids,
+                        )
+                        
+                        edges.extend(
+                            (
+                                ProjectGraphEdge(
+                                    edge_id=_stable_id("EDGE", candidate.node_id, type_node.node_id, "INSTANCE_OF"),
+                                    source=candidate.node_id,
+                                    target=type_node.node_id,
+                                    relation="INSTANCE_OF",
+                                    confidence_class="AMBIGUOUS" if state == "ambiguous" else "HUMAN_VERIFIED" if candidate.verification_status == "human_verified" else "CROSS_SHEET_INFERRED",
+                                    confidence=candidate.confidence,
+                                    evidence_refs=candidate_evidence,
+                                    resolver=resolver_meta,
+                                    resolution_state=state,
+                                ),
+                                ProjectGraphEdge(
+                                    edge_id=_stable_id("EDGE", candidate.node_id, level_node.node_id, "LOCATED_ON"),
+                                    source=candidate.node_id,
+                                    target=level_node.node_id,
+                                    relation="LOCATED_ON",
+                                    confidence_class="AMBIGUOUS" if state == "ambiguous" else "HUMAN_VERIFIED" if candidate.verification_status == "human_verified" else "CROSS_SHEET_INFERRED",
+                                    confidence=candidate.confidence,
+                                    evidence_refs=candidate_evidence,
+                                    resolver=resolver_meta,
+                                    resolution_state=state,
+                                ),
+                                ProjectGraphEdge(
+                                    edge_id=_stable_id("EDGE", candidate.node_id, (space_node or grid_node).node_id, "LOCATED_IN" if space_node else "ALIGNED_TO"),
+                                    source=candidate.node_id,
+                                    target=(space_node or grid_node).node_id,
+                                    relation="LOCATED_IN" if space_node else "ALIGNED_TO",
+                                    confidence_class="AMBIGUOUS" if state == "ambiguous" else "HUMAN_VERIFIED" if candidate.verification_status == "human_verified" else "CROSS_SHEET_INFERRED",
+                                    confidence=candidate.confidence,
+                                    evidence_refs=candidate_evidence,
+                                    resolver=resolver_meta,
+                                    resolution_state=state,
+                                ),
+                            )
+                        )
 
         for alternate_id in sorted(occurrence_ids)[1:]:
             primary_id = sorted(occurrence_ids)[0]
@@ -1255,6 +1401,72 @@ def resolve_cross_sheet(
         ) if occurrence_sources else None
         if request is not None:
             escalation_requests.append(request)
+
+        # Candidate generation for type ↔ schedule row / table
+        schedule_tables = [node for p in patches for node in p.nodes if node.type == "schedule_table"]
+        if schedule_tables:
+            cand_dicts = []
+            for table_node in schedule_tables:
+                same_sheet = any(s.patch.sheet_id == table_node.source_refs[0].sheet_id for s in sources if s.patch.nodes) if table_node.source_refs else False
+                aligned = False
+                for source in sources:
+                    label_bbox = _element_bbox(source.patch, type_node.canonical_name, source.source_ref)
+                    table_fact = next((f for f in source.patch.facts if f.category == "tables"), None)
+                    if label_bbox is not None and table_fact is not None and table_fact.bbox is not None:
+                        from app.project_graph.constraint_resolver import check_table_row_alignment
+                        if check_table_row_alignment(label_bbox, table_fact.bbox, tolerance=50.0):
+                            aligned = True
+                            break
+                            
+                cand_dicts.append({
+                    "node_id": table_node.node_id,
+                    "bbox": table_node.source_refs[0].evidence_refs[0] if (table_node.source_refs and table_node.source_refs[0].evidence_refs) else None,
+                    "confidence": table_node.confidence,
+                    "status": table_node.verification_status,
+                    "same_sheet": same_sheet,
+                    "aligned": aligned,
+                    "table_node": table_node
+                })
+                
+            from app.project_graph.constraint_resolver import resolve_candidates
+            best_table, table_state, table_scored = resolve_candidates(
+                source_bbox=None,
+                candidates=cand_dicts,
+                relation_type="type_to_schedule_row",
+                legend_match_func=lambda c: c["same_sheet"],
+                schedule_match_func=lambda c: c["aligned"],
+            )
+            
+            if best_table is not None and table_state != "rejected":
+                candidates_considered = len(schedule_tables)
+                passed_constraints = ["same_sheet"] if best_table["same_sheet"] else []
+                if best_table["aligned"]:
+                    passed_constraints.append("table_row_alignment")
+                resolver_meta = EdgeResolver(
+                    method="constraint_scored_binding_v2",
+                    resolver_version="2.0.0",
+                    candidates_considered=candidates_considered,
+                    score_breakdown={
+                        "same_sheet": 1.0 if best_table["same_sheet"] else 0.0,
+                        "table_row_alignment": 1.0 if best_table["aligned"] else 0.0,
+                    },
+                    passed_constraints=passed_constraints,
+                    failed_constraints=["table_row_alignment"] if not best_table["aligned"] else [],
+                )
+                
+                edges.append(
+                    ProjectGraphEdge(
+                        edge_id=_stable_id("EDGE", type_node.node_id, best_table["node_id"], "DEPICTED_IN"),
+                        source=type_node.node_id,
+                        target=best_table["node_id"],
+                        relation="DEPICTED_IN",
+                        confidence_class="AMBIGUOUS" if table_state == "ambiguous" else "CROSS_SHEET_INFERRED",
+                        confidence=min(type_node.confidence, best_table["confidence"]),
+                        evidence_refs=sorted(set(ref for s in sources for ref in s.source_ref.evidence_refs)),
+                        resolver=resolver_meta,
+                        resolution_state=table_state,
+                    )
+                )
 
     return CrossSheetResolution(
         nodes=tuple(sorted(nodes, key=lambda item: item.node_id)),

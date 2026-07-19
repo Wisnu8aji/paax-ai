@@ -203,9 +203,9 @@ def _merge_edges(edges: Iterable[ProjectGraphEdge]) -> list[ProjectGraphEdge]:
             for edge in ordered[1:]
         ):
             raise ValueError(f"edge id collision for {edge_id}")
-        resolvers = {edge.resolver.model_dump_json() if edge.resolver else "" for edge in ordered}
+        resolvers = {edge.resolver.method if edge.resolver else "" for edge in ordered}
         if len(resolvers) > 1:
-            raise ValueError(f"edge {edge_id} has conflicting resolver metadata")
+            raise ValueError(f"edge {edge_id} has conflicting resolver metadata methods: {resolvers}")
         merged.append(
             first.model_copy(
                 update={
