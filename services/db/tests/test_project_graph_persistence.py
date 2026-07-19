@@ -299,6 +299,33 @@ async def test_build_and_activate_snapshot_writes_graph_before_it_becomes_curren
 
 
 @pytest.mark.asyncio
+async def test_snapshot_telemetry_is_bounded_and_cannot_break_activation():
+    from .conftest import TestSession
+
+    events = []
+    async def failing_logger(event):
+        events.append(event)
+        raise RuntimeError("telemetry unavailable")
+
+    async with TestSession() as session:
+        session.add(models.Project(id="PROJECT-TELEMETRY", owner_id="OWNER-A", name="Telemetry"))
+        await session.commit()
+        snapshot = await build_and_activate_snapshot(
+            session, project_id="PROJECT-TELEMETRY", snapshot_id="SNAP-TELEMETRY",
+            schema_version="paax.pckm.graph.v1", source_manifest_hash="manifest", generation_metadata={"run_id": "RUN-1"},
+            nodes=[{"node_id": "N-1", "node_type": "measurement_fact", "canonical_name": "Q", "normalized_name": "q", "discipline": "architecture", "verification_status": "conflict", "confidence": 0.5}],
+            edges=[], evidence=[{"evidence_id": "E-1", "document_id": "D", "sheet_id": "S", "page_index": 0, "kind": "text", "raw_text": "x", "raw_content": "x", "normalized_content": "x", "source_type": "text"}],
+            node_evidence=[], edge_evidence=[], aliases=[], communities=[], telemetry=failing_logger, correlation_id="trace-snapshot",
+        )
+    assert snapshot.status == "active"
+    assert events[0]["operation"] == "pckm.snapshot.activated"
+    assert events[0]["run_id"] == "RUN-1"
+    assert events[0]["project_id"] == "PROJECT-TELEMETRY" and events[0]["snapshot_id"] == "SNAP-TELEMETRY"
+    assert events[0]["correlation_id"] == "trace-snapshot"
+    assert events[0]["metadata"] == {"node_count": 1, "reference_count": 1, "physical_count": 1, "conflict_count": 1, "missing_count": 0}
+
+
+@pytest.mark.asyncio
 async def test_project_graph_snapshot_api_is_project_scoped_and_returns_only_active_snapshot():
     headers = {"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A"}
     payload = {

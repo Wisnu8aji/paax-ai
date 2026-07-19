@@ -25,3 +25,30 @@ def test_worker_synthesis_handler_can_resume_after_delivery_restart(tmp_path):
     assert worker.run_once() is True
     assert calls == ["R1"]
     assert next(iter(queue.jobs.values())).status == "completed"
+
+
+def test_worker_emits_bounded_dem_lifecycle_metrics_without_affecting_delivery(tmp_path):
+    class FakeLogger:
+        def __init__(self): self.events = []
+        def emit(self, event): self.events.append(event); raise RuntimeError("telemetry offline")
+
+    store = LocalArtifactStore(Path(tmp_path))
+    key = store.put("original-pdf", b"pdf", content_type="application/pdf", object_key="runs/R1/source.pdf")
+    queue = InMemoryDurableJobStore()
+    queue.enqueue("dem.extract", {
+        "artifact_key": key, "run_id": "R1", "project_id": "P1", "correlation_id": "trace-1",
+        "pages_processed": 4, "pages_failed": 1, "retries": 2, "evidence_count": 7,
+        "dangling_reference_count": 3, "coordinate_space_count": 2, "completion_consistent": True,
+    }, idempotency_key="R1")
+    logger = FakeLogger()
+    worker = DurableWorker(queue, store, "worker", {"dem.extract": lambda job: None}, telemetry=logger)
+
+    assert worker.run_once() is True
+    assert next(iter(queue.jobs.values())).status == "completed"
+    assert logger.events[0]["operation"] == "dem.extraction.completed"
+    assert logger.events[0]["project_id"] == "P1"
+    assert logger.events[0]["run_id"] == "R1" and logger.events[0]["correlation_id"] == "trace-1"
+    assert logger.events[0]["metadata"] == {
+        "pages_processed": 4, "pages_failed": 1, "retries": 2, "evidence_count": 7,
+        "dangling_reference_count": 3, "coordinate_space_count": 2, "completion_consistent": True,
+    }

@@ -26,6 +26,8 @@ from .models import (
     SheetRevision,
 )
 import uuid
+import time
+import inspect
 
 
 async def _target_evidence_revision_signature(
@@ -376,8 +378,11 @@ async def build_and_activate_snapshot(
     communities: Sequence[Mapping[str, Any]],
     summary_views: Sequence[Mapping[str, Any]] = (),
     effective_sheet_revision_ids: Sequence[str] = (),
+    telemetry: Any | None = None,
+    correlation_id: str | None = None,
 ) -> ProjectGraphSnapshot:
     """Write a complete graph then atomically switch the project's active snapshot."""
+    started = time.monotonic()
     now = _utc_now()
     async with _transaction(session, not session.in_transaction()):
         effective_revision_ids = tuple((await session.execute(
@@ -470,6 +475,27 @@ async def build_and_activate_snapshot(
             active_snapshot.superseded_at = now
         snapshot.status = "active"
         snapshot.activated_at = now
+    if telemetry is not None:
+        statuses = [str(item.get("verification_status", "")).lower() for item in (*nodes, *edges)]
+        metadata = {
+            "node_count": len(nodes), "reference_count": len(evidence),
+            "physical_count": sum(1 for item in nodes if item.get("node_type") in {"measurement_fact", "physical_quantity"}),
+            "conflict_count": sum(1 for status in statuses if status in {"conflict", "conflicting"}),
+            "missing_count": sum(1 for status in statuses if status in {"missing", "absent"}),
+        }
+        event = {
+            "service": "db", "operation": "pckm.snapshot.activated", "event_type": "pipeline_metric",
+            "status": "completed", "success": True, "latency_ms": max(0, int((time.monotonic() - started) * 1000)),
+            "metric_count": 1, "correlation_id": correlation_id, "project_id": project_id,
+            "snapshot_id": snapshot_id, "run_id": generation_metadata.get("run_id"), "metadata": metadata,
+        }
+        try:
+            result = telemetry(event)
+            if inspect.isawaitable(result):
+                await result
+        except Exception:
+            # Snapshot durability and activation are independent from telemetry delivery.
+            pass
     return snapshot
 
 

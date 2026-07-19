@@ -21,6 +21,7 @@ from .project_graph_review import active_correction_overlays, build_quantity_rea
 from .core_engine_client import CoreEngineUnavailable
 from .core_engine_factory import build_core_engine_client
 from .rab_bridge_lifecycle import transition
+from .usage_telemetry import usage_logger_from_env
 
 app = FastAPI(title="PAAX DB API", description="Server-side persistent storage for PAAX AI")
 
@@ -742,6 +743,7 @@ async def update_dem_page(id: str, update: dict, db: AsyncSession = Depends(get_
 async def build_project_graph_snapshot(
     id: str,
     request: schemas.ProjectGraphSnapshotBuildRequest,
+    http_request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     project = (await db.execute(select(models.Project).where(models.Project.id == id))).scalars().first()
@@ -763,6 +765,8 @@ async def build_project_graph_snapshot(
         aliases=request.aliases,
         communities=request.communities,
         summary_views=request.summary_views,
+        telemetry=usage_logger_from_env(),
+        correlation_id=http_request.state.correlation_id,
     )
     await db.commit()
     return snapshot
