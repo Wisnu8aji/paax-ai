@@ -145,3 +145,28 @@ def test_typed_collection_roundtrips_with_schema_version():
     assert restored.schema_version == "paax.dem.observations.v2"
     assert restored.dimensions[0].numeric_value is None
 
+
+def test_legacy_compatibility_mode_drops_failing_observations_instead_of_raising():
+    """Target 5 (final remediation wave): legacy_compatibility mode (the
+    default) must never regress synthesis for sheets captured before the v2
+    evidence contract existed -- a failing observation is silently excluded
+    from the typed collection rather than raising."""
+    legacy = DemObservations(
+        texts=[ObservationValue(raw="ROOM", confidence=0.9, evidence_refs=["EV-TEXT"])],
+        dimensions=[ObservationValue(raw="3000", numeric_value=3000, unit="mm", confidence=0.9, evidence_refs=[])],
+    )
+
+    typed = adapt_dem_observations(legacy, mode="legacy_compatibility")
+
+    assert len(typed.texts) == 1
+    assert typed.dimensions == []
+
+
+def test_strict_mode_raises_on_the_same_failing_observation():
+    legacy = DemObservations(
+        dimensions=[ObservationValue(raw="3000", numeric_value=3000, unit="mm", confidence=0.9, evidence_refs=[])],
+    )
+
+    with pytest.raises(ValidationError, match="evidence_ref"):
+        adapt_dem_observations(legacy, mode="strict")
+

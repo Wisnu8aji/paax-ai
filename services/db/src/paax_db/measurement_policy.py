@@ -13,7 +13,18 @@ def require_measurement_eligibility(
     verification_status: str, is_contextual_reference: bool = False,
     valid_unit: bool = True, binding_valid: bool = True,
     engine_calculation_id: str | None = None,
+    has_quarantined_evidence: bool = False,
 ) -> None:
+    # Target 5 (final remediation wave): a node's own verification_status can
+    # read "confirmed" while its supporting evidence is in an unknown/failed
+    # coordinate space (bbox_quarantine_reason set) -- that evidence was never
+    # usable for anything authoritative, so it must not be allowed to promote
+    # a physical count/dimension into a Measurement Fact either.
+    if has_quarantined_evidence:
+        raise MeasurementEligibilityError(
+            "measurement is backed by quarantined evidence (unknown/failed coordinate space) "
+            "and cannot be treated as authoritative"
+        )
     verified_physical = element_kind == "physical_element" and verification_status in {"confirmed", "human_verified", "engine_verified"}
     if measurement_type == "count":
         if is_contextual_reference or not verified_physical:

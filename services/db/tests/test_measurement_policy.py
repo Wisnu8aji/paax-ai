@@ -22,6 +22,18 @@ def test_contextual_reference_cannot_create_count_and_missing_dimension_blocks_l
         )
 
 
+def test_quarantined_evidence_blocks_eligibility_even_when_node_looks_confirmed():
+    """Target 5 (final remediation wave): verification_status="confirmed" on
+    the node is not enough -- if its backing evidence is bbox-quarantined
+    (unknown/failed coordinate space), the measurement must still be
+    rejected."""
+    with pytest.raises(MeasurementEligibilityError, match="quarantined evidence"):
+        require_measurement_eligibility(
+            measurement_type="count", source_method="verified_instances", element_kind="physical_element",
+            verification_status="confirmed", has_quarantined_evidence=True,
+        )
+
+
 def test_volume_requires_engine_result_and_assumption_starts_unapproved():
     with pytest.raises(MeasurementEligibilityError, match="Core Engine"):
         require_measurement_eligibility(

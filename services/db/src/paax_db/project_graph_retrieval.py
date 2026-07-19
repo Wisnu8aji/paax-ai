@@ -10,8 +10,8 @@ from sqlalchemy import or_, select, literal, union_all, and_, String
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .models import (
-    ProjectGraphAlias, ProjectGraphEdge, ProjectGraphEvidence, ProjectGraphNode,
-    ProjectGraphNodeEvidence, ProjectGraphQueryLog, ProjectGraphSummaryView,
+    ProjectGraphAlias, ProjectGraphEdge, ProjectGraphEdgeEvidence, ProjectGraphEvidence,
+    ProjectGraphNode, ProjectGraphNodeEvidence, ProjectGraphQueryLog, ProjectGraphSummaryView,
 )
 from .project_graph_repository import get_active_snapshot
 from .project_graph_intent import has_calculation_signal, parse_query_plan
@@ -22,6 +22,89 @@ from .usage_telemetry import emit_best_effort
 OCCURRENCE_CARDINALITY_NOTE = (
     "occurrence_count = jumlah kelompok konteks tercatat pada gambar, bukan jumlah fisik terpasang"
 )
+
+# Retrieval-eligibility gate (Target 5, final remediation wave): missing
+# evidence, conflicting evidence, and unknown/quarantined coordinate space
+# must exclude a node/edge from the AUTHORITATIVE payload (facts/
+# relationships/citations/allowed_claims) sent to Command Room -- it may
+# still be returned in the raw nodes/edges lists for audit/review, but must
+# never be treated as usable for a physical count, Measurement Fact, Core
+# Engine input, RAB Bridge, or authoritative Command Room response.
+_INELIGIBLE_NODE_VERIFICATION_STATUSES = {"ambiguous", "conflicting", "superseded"}
+_INELIGIBLE_EDGE_CONFIDENCE_CLASSES = {"AMBIGUOUS", "CONFLICTING"}
+
+
+async def _quarantined_evidence_by_node(
+    session: AsyncSession, *, snapshot_id: str, node_ids: list[str]
+) -> dict[str, list[str]]:
+    """node_id -> list of bbox_quarantine_reason for its quarantined evidence rows."""
+    if not node_ids:
+        return {}
+    rows = (await session.execute(
+        select(ProjectGraphNodeEvidence.node_id, ProjectGraphEvidence.bbox_quarantine_reason)
+        .join(
+            ProjectGraphEvidence,
+            (ProjectGraphEvidence.snapshot_id == ProjectGraphNodeEvidence.snapshot_id)
+            & (ProjectGraphEvidence.evidence_id == ProjectGraphNodeEvidence.evidence_id),
+        )
+        .where(
+            ProjectGraphNodeEvidence.snapshot_id == snapshot_id,
+            ProjectGraphNodeEvidence.node_id.in_(node_ids),
+            ProjectGraphEvidence.bbox_quarantine_reason.is_not(None),
+        )
+    )).all()
+    quarantined: dict[str, list[str]] = {}
+    for node_id, reason in rows:
+        quarantined.setdefault(node_id, []).append(reason)
+    return quarantined
+
+
+async def _quarantined_evidence_by_edge(
+    session: AsyncSession, *, snapshot_id: str, edge_ids: list[str]
+) -> dict[str, list[str]]:
+    if not edge_ids:
+        return {}
+    rows = (await session.execute(
+        select(ProjectGraphEdgeEvidence.edge_id, ProjectGraphEvidence.bbox_quarantine_reason)
+        .join(
+            ProjectGraphEvidence,
+            (ProjectGraphEvidence.snapshot_id == ProjectGraphEdgeEvidence.snapshot_id)
+            & (ProjectGraphEvidence.evidence_id == ProjectGraphEdgeEvidence.evidence_id),
+        )
+        .where(
+            ProjectGraphEdgeEvidence.snapshot_id == snapshot_id,
+            ProjectGraphEdgeEvidence.edge_id.in_(edge_ids),
+            ProjectGraphEvidence.bbox_quarantine_reason.is_not(None),
+        )
+    )).all()
+    quarantined: dict[str, list[str]] = {}
+    for edge_id, reason in rows:
+        quarantined.setdefault(edge_id, []).append(reason)
+    return quarantined
+
+
+def _node_ineligibility_reason(node: ProjectGraphNode, quarantined_by_node: dict[str, list[str]]) -> str | None:
+    if node.verification_status in _INELIGIBLE_NODE_VERIFICATION_STATUSES:
+        return f"verification_status={node.verification_status}"
+    if node.node_id in quarantined_by_node:
+        return f"bbox_quarantine_reason={quarantined_by_node[node.node_id][0]}"
+    return None
+
+
+def _edge_ineligibility_reason(
+    edge: ProjectGraphEdge, quarantined_by_edge: dict[str, list[str]], node_ineligibility: dict[str, str]
+) -> str | None:
+    if edge.confidence_class in _INELIGIBLE_EDGE_CONFIDENCE_CLASSES:
+        return f"confidence_class={edge.confidence_class}"
+    if edge.edge_id in quarantined_by_edge:
+        return f"bbox_quarantine_reason={quarantined_by_edge[edge.edge_id][0]}"
+    # An edge whose source or target node is itself ineligible cannot be
+    # authoritative either -- a relationship anchored on an ambiguous/
+    # conflicting/quarantined node is not a usable fact just because the
+    # edge row's own confidence_class happens to look fine.
+    if edge.source_node_id in node_ineligibility or edge.target_node_id in node_ineligibility:
+        return "endpoint_node_ineligible"
+    return None
 
 
 @dataclass
@@ -706,7 +789,31 @@ async def retrieve_project_graph(
     if corrected:
         result.data_status = "corrected"
 
-    # Populate context contract fields
+    # Retrieval eligibility (Target 5): resolve which nodes/edges are backed
+    # by quarantined evidence (unknown/failed coordinate space) so the
+    # authoritative payload below can exclude them. verification_status and
+    # confidence_class are checked directly on the node/edge rows.
+    quarantined_by_node = await _quarantined_evidence_by_node(
+        session, snapshot_id=snapshot.snapshot_id, node_ids=[node.node_id for node in result.nodes]
+    )
+    quarantined_by_edge = await _quarantined_evidence_by_edge(
+        session, snapshot_id=snapshot.snapshot_id, edge_ids=[edge.edge_id for edge in result.edges]
+    )
+    node_ineligibility: dict[str, str] = {}
+    for node in result.nodes:
+        reason = _node_ineligibility_reason(node, quarantined_by_node)
+        if reason:
+            node_ineligibility[node.node_id] = reason
+    edge_ineligibility: dict[str, str] = {}
+    for edge in result.edges:
+        reason = _edge_ineligibility_reason(edge, quarantined_by_edge, node_ineligibility)
+        if reason:
+            edge_ineligibility[edge.edge_id] = reason
+
+    # Populate context contract fields -- ineligible nodes/edges are excluded
+    # from the authoritative facts/relationships/citations payload (they
+    # remain visible in the raw result.nodes/result.edges/result.evidence
+    # lists above for audit/review, per Target 5's storage-vs-authority split).
     result.facts = [
         {
             "node_id": node.node_id,
@@ -717,6 +824,7 @@ async def retrieve_project_graph(
             "properties": node.properties_json or {},
         }
         for node in result.nodes
+        if node.node_id not in node_ineligibility
     ]
     result.relationships = [
         {
@@ -727,6 +835,7 @@ async def retrieve_project_graph(
             "properties": edge.properties_json or {},
         }
         for edge in result.edges
+        if edge.edge_id not in edge_ineligibility
     ]
     result.conflicts = [
         {
@@ -737,6 +846,9 @@ async def retrieve_project_graph(
         for node in result.nodes
         if node.node_type == "conflict"
     ]
+    ineligible_evidence_ids = {
+        item.evidence_id for item in result.evidence if item.bbox_quarantine_reason is not None
+    }
     result.citations = [
         {
             "evidence_id": item.evidence_id,
@@ -746,27 +858,32 @@ async def retrieve_project_graph(
             "raw_text": item.raw_text,
         }
         for item in result.evidence
+        if item.evidence_id not in ineligible_evidence_ids
     ]
 
-    # Extract allowed and forbidden claims from node properties
-    allowed_claims = []
-    forbidden_claims = []
-    for node in result.nodes:
-        props = node.properties_json or {}
-        if "allowed_claims" in props:
-            val = props["allowed_claims"]
-            if isinstance(val, list):
-                allowed_claims.extend(val)
-            elif isinstance(val, str):
-                allowed_claims.append(val)
-        if "forbidden_claims" in props:
-            val = props["forbidden_claims"]
-            if isinstance(val, list):
-                forbidden_claims.extend(val)
-            elif isinstance(val, str):
-                forbidden_claims.append(val)
-    result.allowed_claims = sorted(list(set(allowed_claims)))
-    result.forbidden_claims = sorted(list(set(forbidden_claims)))
+    # allowed_claims / forbidden_claims: derived directly from the eligibility
+    # gate above (verification_status / confidence_class / evidence
+    # quarantine), not scraped from a node property that nothing in synthesis
+    # ever populates -- a node/edge excluded from facts/relationships above is
+    # reported as a forbidden claim so Command Room's claim-provenance layer
+    # can reject any numeric answer that leans on it.
+    allowed_claims = [
+        getattr(node, "_paax_correction_name", node.canonical_name)
+        for node in result.nodes
+        if node.node_id not in node_ineligibility
+    ]
+    forbidden_claims = [
+        getattr(node, "_paax_correction_name", node.canonical_name)
+        for node in result.nodes
+        if node.node_id in node_ineligibility
+    ]
+    result.allowed_claims = sorted(set(allowed_claims))
+    result.forbidden_claims = sorted(set(forbidden_claims))
+    if node_ineligibility or edge_ineligibility:
+        result.notes.append(
+            f"retrieval_eligibility: excluded {len(node_ineligibility)} node(s) and "
+            f"{len(edge_ineligibility)} edge(s) from authoritative payload (quarantined/ambiguous/conflicting)"
+        )
 
     # Determine quantity_authority
     if result.status == "calculation_required" or result.data_status == "calculation_required":

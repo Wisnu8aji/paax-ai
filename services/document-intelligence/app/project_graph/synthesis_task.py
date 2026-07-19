@@ -1,3 +1,4 @@
+import os
 import traceback
 import hashlib
 import uuid
@@ -6,24 +7,42 @@ from pydantic import ValidationError
 from app.perception.bbox_canonicalize import BboxQuarantined, canonicalize_bbox
 from app.transcription.db_client import DemDbClient
 from app.transcription.models import DrawingEvidenceSheet
-from app.transcription.typed_observations import adapt_dem_observations
+from app.transcription.typed_observations import TypedValidationMode, adapt_dem_observations
 from app.project_graph.synthesis import synthesize_project_graph
 
+# Target 5 (final remediation wave): explicit mode boundary for the typed-DEM
+# v2 evidence-by-status contract. Defaults to "legacy_compatibility" so
+# already-accepted production sheets are not regressed by this change --
+# this default is the CONSERVATIVE choice for existing data, not a
+# statement that compatibility mode is the intended long-term posture. Set
+# DEM_TYPED_VALIDATION_MODE=strict to require every sheet synthesized to
+# satisfy the v2 contract; failing sheets are then quarantined (their
+# affected nodes/edges are excluded from retrieval eligibility) instead of
+# only being recorded as an audit note.
+def _typed_validation_mode() -> TypedValidationMode:
+    value = os.environ.get("DEM_TYPED_VALIDATION_MODE", "legacy_compatibility").strip().lower()
+    return "strict" if value == "strict" else "legacy_compatibility"
 
-def _typed_observation_audit(sheets):
-    """Best-effort typed-DEM-v2 validation pass (see typed_observations.py).
-    Not wired as a hard gate: the v2 adapter enforces evidence-by-status
-    requirements that real production extraction does not yet satisfy for
-    every observation (see P1-4's note on the same gap), so a validation
-    failure here is recorded as an audit signal, not a synthesis blocker.
-    This still gives production visibility into which sheets/categories
-    would fail the stricter typed contract, without regressing extraction
-    that is already accepted today."""
+
+def _typed_observation_audit(sheets, *, mode: TypedValidationMode | None = None):
+    """Validate every sheet's observations against the typed-DEM-v2 contract.
+
+    In "legacy_compatibility" mode (the default), a validation failure is
+    recorded here as an audit signal only -- synthesis proceeds unaffected,
+    preserving today's behavior for sheets captured before the v2 contract
+    existed. In "strict" mode, sheets are still recorded here, but the
+    caller (synthesize_and_post_snapshot_task) uses failed_sheet_keys below
+    to quarantine any node/edge backed only by a failing sheet's evidence,
+    exactly like the missing-evidence-id quarantine a few lines below this
+    call site."""
+    if mode is None:
+        mode = _typed_validation_mode()
     passed = 0
     failed: list[dict] = []
+    failed_sheet_keys: set[tuple[str, int]] = set()
     for sheet in sheets:
         try:
-            adapt_dem_observations(sheet.observations)
+            adapt_dem_observations(sheet.observations, mode="strict")
             passed += 1
         except ValidationError as exc:
             failed.append({
@@ -31,7 +50,14 @@ def _typed_observation_audit(sheets):
                 "sheet_id": sheet.sheet_identity.sheet_number.value,
                 "errors": exc.errors(include_url=False, include_context=False),
             })
-    return {"sheets_passed": passed, "sheets_failed": len(failed), "failures": failed}
+            failed_sheet_keys.add((sheet.sheet_identity.sheet_number.value, sheet.source.page_index))
+    return {
+        "mode": mode,
+        "sheets_passed": passed,
+        "sheets_failed": len(failed),
+        "failures": failed,
+        "failed_sheet_keys": sorted(failed_sheet_keys),
+    }
 
 
 def _node_to_dict(node, level_map):
@@ -261,6 +287,37 @@ async def synthesize_and_post_snapshot_task(run_id: str, project_id: str, run_st
                 if set(edge.evidence_refs) & missing_evidence_ids:
                     edge.confidence_class = "AMBIGUOUS"
 
+        # 3b. Typed-DEM v2 contract (Target 5, final remediation wave). In
+        # "strict" mode a sheet failing the evidence-by-status contract is a
+        # real quarantine signal: every node/edge whose evidence traces back
+        # to that (sheet_id, page_index) is downgraded exactly like the
+        # missing-evidence-id case just above. "legacy_compatibility" (the
+        # default) never touches verification_status/confidence_class here --
+        # it only records the audit below, preserving today's behavior for
+        # sheets captured before the v2 contract existed.
+        typed_observation_audit = _typed_observation_audit(sheets)
+        if typed_observation_audit["mode"] == "strict" and typed_observation_audit["failed_sheet_keys"]:
+            failed_keys = {tuple(key) for key in typed_observation_audit["failed_sheet_keys"]}
+            evidence_id_to_sheet_key = {
+                item["evidence_id"]: (item["sheet_id"], item["page_index"]) for item in evidence_list
+            }
+            failed_evidence_ids = {
+                ev_id for ev_id, key in evidence_id_to_sheet_key.items() if key in failed_keys
+            }
+            if failed_evidence_ids:
+                print(
+                    f"Synthesis quarantine (strict typed-DEM): {len(failed_evidence_ids)} evidence id(s) "
+                    f"from {len(failed_keys)} sheet(s) failed the v2 evidence-by-status contract"
+                )
+                for node in snapshot.nodes:
+                    node_evidence_refs = {ev_id for ref in node.source_refs for ev_id in ref.evidence_refs}
+                    node_evidence_refs.update(ev_id for prop in node.properties.values() for ev_id in prop.evidence_refs)
+                    if node_evidence_refs & failed_evidence_ids:
+                        node.verification_status = "ambiguous"
+                for edge in snapshot.edges:
+                    if set(edge.evidence_refs) & failed_evidence_ids:
+                        edge.confidence_class = "AMBIGUOUS"
+
         # 4. Level mapping
         level_map = {}
         for node in snapshot.nodes:
@@ -312,7 +369,7 @@ async def synthesize_and_post_snapshot_task(run_id: str, project_id: str, run_st
             "generation_metadata": {
                 "source": "synthesize_and_post_snapshot_task",
                 "run_id": run_id,
-                "typed_observation_audit": _typed_observation_audit(sheets),
+                "typed_observation_audit": typed_observation_audit,
             },
             "effective_sheet_revision_ids": effective_sheet_revision_ids,
             "nodes": [_node_to_dict(n, level_map) for n in snapshot.nodes],

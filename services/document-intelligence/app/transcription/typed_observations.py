@@ -3,14 +3,33 @@
 The v1 ``ObservationValue`` model remains the wire-compatible reader for old
 fixtures and persisted sheets.  New extraction code can use these typed models
 without changing the v1 contract.
+
+Validation mode (Target 5, final remediation wave)
+----------------------------------------------------
+``adapt_dem_observations``/``adapt_observation`` take an explicit
+``mode: TypedValidationMode``:
+
+- ``"strict"`` -- the v2 evidence-by-status contract (see
+  ``TypedObservationBase.validate_evidence_requirements``) is a hard gate.
+  A validation failure is a real error the caller must treat as a
+  quarantine signal (exclude from retrieval eligibility), not just an
+  audit note. All NEW extraction must use this mode.
+- ``"legacy_compatibility"`` -- validation failures are swallowed and
+  reported for audit only; existing/legacy sheets that predate the v2
+  evidence contract can still be synthesized. This mode exists ONLY to
+  avoid regressing already-accepted production data captured before the
+  v2 contract existed -- it must never become the permanent default for
+  new extraction (see DEM_TYPED_VALIDATION_MODE in synthesis_task.py).
 """
 from __future__ import annotations
 
 from typing import Any, Literal, Optional, Union
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, ValidationError, model_validator
 
 from app.transcription.models import DemObservations, DemStatus, ObservationValue
+
+TypedValidationMode = Literal["strict", "legacy_compatibility"]
 
 
 class VerificationRecord(BaseModel):
@@ -207,10 +226,29 @@ def adapt_observation(category: str, observation: ObservationValue) -> TypedObse
     return model_type(**observation.model_dump())
 
 
-def adapt_dem_observations(observations: DemObservations) -> TypedDemObservations:
-    """Convert a complete v1 observation collection without mutating the input."""
+def adapt_dem_observations(
+    observations: DemObservations, *, mode: TypedValidationMode = "legacy_compatibility"
+) -> TypedDemObservations:
+    """Convert a complete v1 observation collection without mutating the input.
+
+    In "strict" mode, any observation that fails the v2 evidence-by-status
+    contract raises ValidationError (propagated to the caller as a hard
+    failure). In "legacy_compatibility" mode, observations that fail are
+    silently dropped from the returned collection rather than raising --
+    callers relying on this mode for audit purposes should validate each
+    observation individually (see adapt_observation) if they need to know
+    which ones failed.
+    """
     values: dict[str, list[TypedObservationBase]] = {}
     for category in DemObservations.model_fields:
-        values[category] = [adapt_observation(category, item) for item in getattr(observations, category)]
+        converted: list[TypedObservationBase] = []
+        for item in getattr(observations, category):
+            try:
+                converted.append(adapt_observation(category, item))
+            except ValidationError:
+                if mode == "strict":
+                    raise
+                continue
+        values[category] = converted
     return TypedDemObservations(**values)
 

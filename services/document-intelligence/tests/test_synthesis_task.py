@@ -422,9 +422,81 @@ async def test_synthesize_records_typed_observation_audit_signal_without_blockin
 
     post_json = mock_client_in_context.post.call_args[1]["json"]
     audit = post_json["generation_metadata"]["typed_observation_audit"]
+    assert audit["mode"] == "legacy_compatibility"
     assert audit["sheets_passed"] == 1
     assert audit["sheets_failed"] == 1
     assert audit["failures"][0]["page_index"] == 1
+
+
+@pytest.mark.asyncio
+async def test_strict_typed_dem_mode_quarantines_nodes_from_a_failing_sheet(monkeypatch):
+    """Target 5 (final remediation wave): with DEM_TYPED_VALIDATION_MODE=strict,
+    a sheet failing the v2 evidence-by-status contract must downgrade every
+    node/edge whose evidence traces back to that sheet -- exactly like the
+    existing missing-evidence-id quarantine -- instead of only recording an
+    audit note."""
+    monkeypatch.setenv("DEM_TYPED_VALIDATION_MODE", "strict")
+
+    run_id = "RUN-TEST"
+    project_id = "PROJECT-TEST"
+
+    good_sheet = _create_synthetic_sheet(0, "COL-1", level="L1")
+
+    bad_sheet = _create_synthetic_sheet(1, "COL-2", level="L2")
+    bad_sheet.observations.spaces[0].status = "ai_interpreted"
+
+    run_status = {
+        "project_id": project_id,
+        "status": "dem_complete",
+        "pages": [
+            {"page_index": 0, "status": "complete", "id": "PAGE-ID-0", "result": good_sheet.model_dump()},
+            {"page_index": 1, "status": "complete", "id": "PAGE-ID-1", "result": bad_sheet.model_dump()},
+        ]
+    }
+
+    mock_db_client = MagicMock(spec=DemDbClient)
+    mock_db_client.update_run_status = AsyncMock()
+    mock_db_client.get_active_sheet_revisions = AsyncMock(return_value=[])
+
+    mock_client_in_context = AsyncMock()
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"status": "success"}
+    mock_client_in_context.post = AsyncMock(return_value=mock_response)
+
+    mock_client = MagicMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client_in_context)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    async def async_client_context():
+        return mock_client
+    mock_db_client._client = async_client_context
+    mock_db_client._headers.return_value = {"Authorization": "Bearer token"}
+
+    await synthesize_and_post_snapshot_task(run_id, project_id, run_status, mock_db_client)
+
+    mock_db_client.update_run_status.assert_called_once_with(run_id, "synthesis_complete")
+
+    post_json = mock_client_in_context.post.call_args[1]["json"]
+    audit = post_json["generation_metadata"]["typed_observation_audit"]
+    assert audit["mode"] == "strict"
+    assert audit["sheets_failed"] == 1
+
+    nodes = post_json["nodes"]
+    # Any node whose source evidence traces back to page_index 1 (the bad
+    # sheet, sheet_id "COL-2") must be quarantined to "ambiguous", while a
+    # node from the good sheet (page 0, "COL-1") must remain unaffected.
+    bad_sheet_nodes = [n for n in nodes if any(
+        ev.startswith("EV-1-") for props in n.get("properties", {}).values() for ev in props.get("evidence_refs", [])
+    )]
+    assert bad_sheet_nodes, "expected at least one node backed by the bad sheet's evidence"
+    assert all(n["verification_status"] == "ambiguous" for n in bad_sheet_nodes)
+
+    good_sheet_nodes = [n for n in nodes if any(
+        ev.startswith("EV-0-") for props in n.get("properties", {}).values() for ev in props.get("evidence_refs", [])
+    )]
+    assert good_sheet_nodes, "expected at least one node backed by the good sheet's evidence"
+    assert all(n["verification_status"] != "ambiguous" for n in good_sheet_nodes)
 
 
 def test_edge_to_dict_persists_the_full_resolver_audit_payload():

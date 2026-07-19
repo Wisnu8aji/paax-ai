@@ -829,7 +829,7 @@ async def test_context_contract_fields_and_quantity_authority_populated():
             session, project_id="PROJECT-CONTRACT", snapshot_id="SNAP-CONTRACT",
             schema_version="paax.pckm.graph.v1", source_manifest_hash="contract", generation_metadata={},
             nodes=[
-                {"node_id": "DIM-1", "node_type": "dimension", "canonical_name": "300x300", "normalized_name": "300x300", "discipline": "structure", "verification_status": "extracted", "confidence": 0.9, "properties": {"allowed_claims": ["claim1"], "forbidden_claims": ["claim2"]}},
+                {"node_id": "DIM-1", "node_type": "dimension", "canonical_name": "300x300", "normalized_name": "300x300", "discipline": "structure", "verification_status": "extracted", "confidence": 0.9},
                 {"node_id": "CONFLICT-1", "node_type": "conflict", "canonical_name": "Conflict detected", "normalized_name": "conflict detected", "discipline": "general", "verification_status": "conflicting", "confidence": 1.0},
             ],
             edges=[
@@ -852,16 +852,19 @@ async def test_context_contract_fields_and_quantity_authority_populated():
         )
 
     assert result.status == "success"
-    # Verify new context contract fields are correctly populated
-    assert len(result.facts) == 2
+    # Verify new context contract fields are correctly populated. CONFLICT-1
+    # has verification_status="conflicting" -- Target 5's retrieval
+    # eligibility gate excludes it (and any edge touching it) from the
+    # authoritative facts/relationships/citations payload even though it is
+    # still present in the raw result.nodes/result.edges lists for audit.
+    assert {node.node_id for node in result.nodes} == {"DIM-1", "CONFLICT-1"}
+    assert len(result.facts) == 1
     fact_ids = {f["node_id"] for f in result.facts}
-    assert fact_ids == {"DIM-1", "CONFLICT-1"}
+    assert fact_ids == {"DIM-1"}
     dim_fact = next(f for f in result.facts if f["node_id"] == "DIM-1")
     assert dim_fact["canonical_name"] == "300x300"
-    
-    assert len(result.relationships) == 1
-    assert result.relationships[0]["edge_id"] == "DIM-CONFLICT"
-    assert result.relationships[0]["relation"] == "HAS_EVIDENCE"
+
+    assert result.relationships == []
 
     assert len(result.conflicts) == 1
     assert result.conflicts[0]["node_id"] == "CONFLICT-1"
@@ -870,12 +873,50 @@ async def test_context_contract_fields_and_quantity_authority_populated():
     assert result.citations[0]["evidence_id"] == "EV-1"
     assert result.citations[0]["raw_text"] == "Evidence 1"
 
-    assert result.allowed_claims == ["claim1"]
-    assert result.forbidden_claims == ["claim2"]
-    
+    assert result.allowed_claims == ["300x300"]
+    assert result.forbidden_claims == ["Conflict detected"]
+
     # Since a dimension node is present, quantity_authority must be measurement_fact
     assert result.quantity_authority == "measurement_fact"
 
     # For intent queries that are calculation-required
     assert calc_result.status == "calculation_required"
     assert calc_result.quantity_authority == "core_engine"
+
+
+@pytest.mark.asyncio
+async def test_node_backed_only_by_quarantined_bbox_evidence_is_excluded_from_authoritative_payload():
+    """Target 5 (final remediation wave): a node's own verification_status
+    can read "extracted"/"confirmed" while the only evidence backing it has
+    an unknown/failed coordinate space (bbox_quarantine_reason set, see
+    Target 4's bbox_canonicalize.py). That evidence was never usable for
+    anything authoritative -- it must exclude the node from facts/
+    allowed_claims even though verification_status alone looks fine."""
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        session.add(models.Project(id="PROJECT-QUARANTINE", owner_id="OWNER-A", name="Project Quarantine"))
+        await session.commit()
+        await build_and_activate_snapshot(
+            session, project_id="PROJECT-QUARANTINE", snapshot_id="SNAP-QUARANTINE",
+            schema_version="paax.pckm.graph.v1", source_manifest_hash="quarantine", generation_metadata={},
+            nodes=[
+                {"node_id": "COL-1", "node_type": "physical_element", "canonical_name": "Kolom K1", "normalized_name": "kolom k1", "discipline": "structure", "verification_status": "confirmed", "confidence": 0.95},
+            ],
+            edges=[], evidence=[
+                {"evidence_id": "EV-QUARANTINED", "document_id": "DOC-1", "page_index": 0, "sheet_id": "S-1", "kind": "text", "raw_text": "K1", "bbox_quarantine_reason": "unrecognized or unknown bbox_space"},
+            ],
+            node_evidence=[{"node_id": "COL-1", "evidence_id": "EV-QUARANTINED", "role": "source"}],
+            edge_evidence=[], aliases=[], communities=[],
+        )
+
+        result = await retrieve_project_graph(
+            session, project_id="PROJECT-QUARANTINE", query="Kolom K1", depth=1, budget_tokens=2000,
+        )
+
+    assert {node.node_id for node in result.nodes} == {"COL-1"}
+    assert result.facts == []
+    assert result.citations == []
+    assert result.allowed_claims == []
+    assert result.forbidden_claims == ["Kolom K1"]
+    assert any("retrieval_eligibility" in note for note in result.notes)
