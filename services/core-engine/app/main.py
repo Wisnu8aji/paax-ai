@@ -85,6 +85,7 @@ from .mapping.takeoff_ahsp import TakeoffAhspSuggestion, suggest_ahsp_for_takeof
 from .review.corrections import log_correction
 from .review.models import CorrectionLogRequest, CorrectionRecord, ReviewTriageRequest, ReviewTriageResult
 from .review.triage import triage_review_tasks
+from .calculation_boundary import CalculationRequest, CalculationResponse, calculate as calculate_measurements
 
 import os
 
@@ -149,6 +150,11 @@ class ConfidenceRequest(BaseModel):
     critical: bool = False
     weights: Optional[Dict[str, float]] = None
     ambang_conf: float = 0.7
+
+
+@api_router.post("/calculations", response_model=CalculationResponse)
+def calculate_from_measurements(req: CalculationRequest):
+    return calculate_measurements(req)
 
 
 # ----------------------------- Endpoints -----------------------------

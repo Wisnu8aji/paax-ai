@@ -150,6 +150,19 @@ export const MeasurementFactSchema = z.discriminatedUnion("measurement_type", [
 ]);
 export type MeasurementFact = z.infer<typeof MeasurementFactSchema>;
 
+export const EngineCalculationRequestSchema = z.object({
+  project_id: z.string().min(1), snapshot_id: z.string().min(1),
+  measurement_fact_ids: z.array(z.string().min(1)).min(1),
+  calculation_type: z.enum(["concrete_column_volume", "length", "area", "count"]),
+  inputs: z.array(MeasurementFactSchema).min(1), requested_by: z.string().min(1),
+});
+export const EngineCalculationResponseSchema = z.object({
+  calculation_id: z.string(), status: z.enum(["complete", "blocked", "needs_input"]),
+  formula: z.string().nullish(), substituted_formula: z.string().nullish(), result: z.number().nullish(), unit: z.string().nullish(),
+  input_sources: z.array(z.object({ measurement_id: z.string(), source_method: z.string(), unit: z.string() })).default([]),
+  engine_version: z.string(), warnings: z.array(z.string()).default([]),
+});
+
 export const RoleEnum = z.enum([
   "OWNER",
   "ENGINEER",
