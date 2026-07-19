@@ -22,6 +22,7 @@ import { CanvasToolbar } from './canvas-toolbar';
 import { ZoomBar } from './zoom-bar';
 import { Minimap } from './minimap';
 import { SelectionContextBar } from './selection-context-bar';
+import { RealPageSvg } from './real-page-svg';
 
 /** lebar dasar render SVG pada zoom=1 (px) — 100% ≈ lebar A1 landscape wajar */
 const BASE_WIDTH_PX = 1400;
@@ -32,6 +33,8 @@ export function DrawingCanvas() {
   const { state, dispatch } = useWorkspace();
   const sheet = useActiveSheet();
   const selectedElement = useSelectedElement();
+  const mappedSheet = state.mappedSheets.find((candidate) => candidate.id === state.activeSheetId) ?? null;
+  const realImageUrl = mappedSheet?.imageUrl ?? null;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [spaceDown, setSpaceDown] = useState(false);
   const dragRef = useRef<{ startX: number; startY: number; panX: number; panY: number; button: number } | null>(null);
@@ -41,7 +44,7 @@ export function DrawingCanvas() {
 
   const aspect = sheet
     ? (sheet.geometry.heightMm + (PLAN_MARGIN + 1900) * 2) / (sheet.geometry.widthMm + (PLAN_MARGIN + 1900) * 2)
-    : 0.55;
+    : 1;
   const baseW = BASE_WIDTH_PX;
   const baseH = BASE_WIDTH_PX * aspect;
 
@@ -190,7 +193,7 @@ export function DrawingCanvas() {
     };
   }, [panX, panY, zoom, baseW, baseH]);
 
-  if (!sheet) {
+  if (!sheet && !mappedSheet) {
     return (
       <div
         style={{
@@ -206,6 +209,9 @@ export function DrawingCanvas() {
         Select one or more sheets to begin analysis.
       </div>
     );
+  }
+  if (!sheet && mappedSheet && !realImageUrl) {
+    return <div style={{ flex: 1, display: 'grid', placeItems: 'center', background: 'var(--di-canvas-bg)', color: 'var(--di-text3)', fontSize: 12.5 }}>Source image is unavailable for this sheet. No canvas overlay is shown.</div>;
   }
 
   const cursor = dragging
@@ -241,7 +247,7 @@ export function DrawingCanvas() {
             // tanpa transition — kanvas mengutamakan responsivitas (§23)
           }}
         >
-          <SheetPlanSvg
+          {sheet ? <SheetPlanSvg
             sheet={sheet}
             elements={state.elements}
             overlays={state.overlays}
@@ -249,21 +255,26 @@ export function DrawingCanvas() {
             hoveredElementId={state.hoveredElementId}
             onSelectElement={(id) => dispatch({ type: 'select-element', elementId: id })}
             onHoverElement={(id) => dispatch({ type: 'hover-element', elementId: id })}
-          />
+          /> : realImageUrl ? <RealPageSvg
+            imageUrl={realImageUrl}
+            elements={state.elements.filter((element) => element.sheetId === mappedSheet!.id)}
+            selectedElementId={state.selectedElementId}
+            onSelectElement={(id) => dispatch({ type: 'select-element', elementId: id })}
+          /> : null}
         </div>
 
         {selectedElement && <SelectionContextBar element={selectedElement} />}
 
         <ZoomBar
           zoom={zoom}
-          scaleLabel={sheet.scale ?? '—'}
+          scaleLabel={sheet?.scale ?? mappedSheet?.scale ?? '—'}
           onZoomIn={() => zoomTo(zoom * 1.2)}
           onZoomOut={() => zoomTo(zoom / 1.2)}
           onFit={fitSheet}
           onActualSize={() => zoomTo(1)}
         />
 
-        <Minimap
+        {sheet && <Minimap
           sheet={sheet}
           elements={state.elements}
           overlays={state.overlays}
@@ -276,7 +287,7 @@ export function DrawingCanvas() {
               panY: el.clientHeight / 2 - fy * baseH * zoom,
             });
           }}
-        />
+        />}
       </div>
     </div>
   );

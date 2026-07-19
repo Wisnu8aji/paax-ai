@@ -549,7 +549,12 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
     case 'replace-elements':
       return { ...state, elements: action.elements };
     case 'replace-mapped-sheets':
-      return { ...state, mappedSheets: action.sheets };
+      return {
+        ...state,
+        mappedSheets: action.sheets,
+        activeSheetId: state.activeSheetId ?? action.sheets[0]?.id ?? null,
+        selectedSheetIds: state.selectedSheetIds.length ? state.selectedSheetIds : (action.sheets[0] ? [action.sheets[0].id] : []),
+      };
     case 'replace-sheets': {
       const activeSheetId = state.activeSheetId || (action.sheets.length > 0 ? action.sheets[0].id : null);
       const selectedSheetIds = state.selectedSheetIds.length > 0 ? state.selectedSheetIds : (activeSheetId ? [activeSheetId] : []);
