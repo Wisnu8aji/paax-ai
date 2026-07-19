@@ -57,6 +57,7 @@ const CommandRoomChatSchema = z.object({
   // compatible: tidak dikirim = tool tetap fallback "data tidak tersedia"
   // seperti perilaku sebelumnya, TIDAK merusak apa pun yang sudah jalan.
   projectId: z.string().optional(),
+  snapshotId: z.string().optional(),
   // rabLines opsional -- alternatif projectId+DB_API_URL untuk kirim data RAB
   // langsung tanpa services/db (mis. client sudah punya draft RAB di state lokal).
   rabLines: z
@@ -705,7 +706,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { runId, conversationId, projectId, rabLines, messages, modelAlias, reasoningEffort, thinking } = parsed.data;
+  const { runId, conversationId, projectId, snapshotId, rabLines, messages, modelAlias, reasoningEffort, thinking } = parsed.data;
+  const incomingCorrelation = req.headers.get("x-correlation-id");
+  const correlationId = incomingCorrelation && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(incomingCorrelation)
+    ? incomingCorrelation : crypto.randomUUID();
   const validation = validateChatPayload({ messages });
   if (!validation.ok) {
     return NextResponse.json({ error: validation.error }, { status: 413 });
@@ -745,6 +749,10 @@ export async function POST(req: NextRequest) {
       // Setiap panggilan mendaftarkan promise-nya ke sini; di-await sebelum close.
       const pendingStatusSummaries: Promise<unknown>[] = [];
       const sendEvent: SendEvent = (_type, data) => {
+        // Only opaque identifiers flow to clients/observability; never messages, prompts, or credentials.
+        data.correlationId = correlationId;
+        if (projectId) data.projectId = projectId;
+        if (snapshotId) data.snapshotId = snapshotId;
         // Fase 2 Evidence Gate (PLAN.md §9 Fase 2): akumulasi konten jawaban akhir
         // + nama tool yang dipanggil, murni dengan mengamati event yang sudah lewat
         // di sini -- tidak mengubah signature/perilaku fungsi stream*()/resolveTools*
@@ -897,6 +905,7 @@ export async function POST(req: NextRequest) {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
       "Connection": "keep-alive",
+      "X-Correlation-Id": correlationId,
     },
   });
 }

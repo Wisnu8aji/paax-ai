@@ -16,17 +16,23 @@ const echoTool: ToolDefinition = {
 
 describe("runToolCallingLoop", () => {
   it("returns direct model text without running tools", async () => {
+    const usageEvents: any[] = [];
     const result = await runToolCallingLoop({
       apiKey: "key",
       systemPrompt: "system",
       userMessage: "halo",
       tools: [echoTool],
       fetchImpl: sequenceFetch([textPart("jawaban final")]),
+      context: { project_id: "PROJECT-1" },
+      trace: { correlationId: "trace-1", snapshotId: "SNAP-1", runId: "RUN-1" },
+      usageSink: async (event) => { usageEvents.push(event); },
     });
 
     expect(result.answer).toBe("jawaban final");
     expect(result.toolCalls).toEqual([]);
     expect(result.hitMaxTurns).toBe(false);
+    expect(usageEvents[0]).toMatchObject({ correlationId: "trace-1", projectId: "PROJECT-1", snapshotId: "SNAP-1", runId: "RUN-1" });
+    expect(usageEvents[0].metadata).toEqual({ tool_turn: 0 });
   });
 
   it("executes requested tool, sends functionResponse, and returns final answer", async () => {

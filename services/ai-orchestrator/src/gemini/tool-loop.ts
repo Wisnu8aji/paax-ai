@@ -2,7 +2,7 @@ import { geminiGenerateContent } from "./client";
 import type { GeminiContent, GeminiFunctionCall, GeminiGenerateContentRequest } from "./types";
 import type { ChatContext, ToolDefinition } from "../tools/types";
 import { summarizeResult } from "../tools/types";
-import { logUsage } from "../usage";
+import { logUsageEvent, type UsageEvent } from "../usage";
 
 export const MAX_TOOL_TURNS = 3;
 export const MAX_TURNS_FALLBACK = "Maaf, saya butuh terlalu banyak langkah untuk pertanyaan ini. Coba perjelas pertanyaan Anda.";
@@ -51,6 +51,8 @@ export async function runToolCallingLoop(params: {
   maxTurns?: number;
   fetchImpl?: typeof fetch;
   onEvent?: (event: any) => void;
+  trace?: { correlationId?: string; projectId?: string; snapshotId?: string; runId?: string };
+  usageSink?: (event: UsageEvent) => Promise<void>;
 }): Promise<ToolLoopResult> {
   const maxTurns = params.maxTurns ?? Number(process.env.AI_ORCH_MAX_TOOL_TURNS || MAX_TOOL_TURNS);
   const contents: GeminiContent[] = [{ role: "user", parts: [{ text: params.userMessage }] }];
@@ -71,15 +73,15 @@ export async function runToolCallingLoop(params: {
     const usageMetadata = (response as any).usageMetadata || {};
     
     // Fire and forget usage logging
-    logUsage(
-      tenantId,
-      "tool_calling_turn",
-      true,
-      usageMetadata.promptTokenCount,
-      usageMetadata.candidatesTokenCount,
-      undefined,
-      false
-    ).catch(() => {});
+    const usageEvent: UsageEvent = {
+      tenantId, operation: "tool_calling_turn", success: true,
+      tokensIn: usageMetadata.promptTokenCount, tokensOut: usageMetadata.candidatesTokenCount,
+      correlationId: params.trace?.correlationId, projectId: params.trace?.projectId ?? params.context?.project_id,
+      snapshotId: params.trace?.snapshotId, runId: params.trace?.runId,
+      metadata: { tool_turn: turn },
+    };
+    const usageSink = params.usageSink ?? logUsageEvent;
+    usageSink(usageEvent).catch(() => {});
 
     if (part?.text) {
       if (params.onEvent) {
