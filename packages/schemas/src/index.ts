@@ -2104,7 +2104,7 @@ export const RabBridgeV2AhspCandidateSchema = z.object({
 });
 export const RabBridgeV2WorkItemCandidateSchema = z.object({
   work_item_id: z.string(), work_type: z.string(), category: z.string(), expected_unit: z.string(),
-  measurement_fact_ids: z.array(z.string()).default([]), status: z.enum(["candidate_ready", "needs_measurement"]),
+  measurement_fact_ids: z.array(z.string()).default([]), status: z.enum(["candidate_ready", "needs_measurement", "no_candidate"]),
   ahsp_candidates: z.array(RabBridgeV2AhspCandidateSchema).default([]),
   rejected_candidates: z.array(z.object({ ahsp_code: z.string(), reason: z.string() })).default([]),
 });

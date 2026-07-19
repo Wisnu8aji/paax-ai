@@ -131,7 +131,17 @@ export function useBackendSync(projectId: string | null) {
           dispatch({ type: 'set-active-snapshot-id', snapshotId });
         }
 
-        const mappedSheets: Sheet[] = [];
+        // Two distinct shapes come from the same sheetsData: `Sheet[]` drives
+        // the canvas/lookup logic below and workspace navigation, while
+        // `MappedProjectSheet[]` (mapProjectDemSheet) is the review/quantity
+        // display shape dispatched separately as `mappedSheets` state. A
+        // prior bug declared `mappedSheets` (this local, Sheet[]-typed) as an
+        // always-empty array and never actually assigned it, so every real
+        // graph node/evidence lookup below silently found nothing.
+        const mappedSheets: Sheet[] = sheetsData.map(mapDemSheetToSheet);
+        if (mappedSheets.length > 0) {
+          dispatch({ type: 'replace-sheets', sheets: mappedSheets });
+        }
         dispatch({ type: 'replace-mapped-sheets', sheets: sheetsData.map(mapProjectDemSheet) });
         const mappedFiles = runsData.map(mapDemRunToDrawingFile);
 

@@ -145,6 +145,67 @@ async def test_list_project_dem_sheets():
 
 
 @pytest.mark.asyncio
+async def test_end_user_cannot_read_or_update_dem_run_of_another_project():
+    os.environ["TESTING"] = "1"
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        owner_headers = {"X-Internal-Key": "test-internal-key", "X-User-Id": "owner-a"}
+        proj_res = await ac.post(
+            "/projects",
+            json={"id": "proj-scope-a", "name": "Scope A", "owner_id": "owner-a"},
+            headers=owner_headers,
+        )
+        assert proj_res.status_code == 200
+
+        run_res = await ac.post(
+            "/dem/runs",
+            json={
+                "project_id": "proj-scope-a",
+                "document_id": "DOC-SCOPE-A",
+                "document_hash": "sha256:scope-a",
+                "file_name": "scope_a.pdf",
+                "total_pages": 1,
+                "provider": "qwen",
+                "prompt_version": "v1",
+            },
+            headers=owner_headers,
+        )
+        assert run_res.status_code == 200
+        run = run_res.json()
+
+        outsider_token = {"Authorization": "Bearer test-token-outsider-b"}
+        get_res = await ac.get(f"/dem/runs/{run['id']}", headers=outsider_token)
+        assert get_res.status_code == 403
+
+        put_res = await ac.put(
+            f"/dem/runs/{run['id']}",
+            json={"status": "tampered"},
+            headers=outsider_token,
+        )
+        assert put_res.status_code == 403
+
+        page_res = await ac.post(
+            f"/dem/pages?run_id={run['id']}&page_index=0",
+            headers=owner_headers,
+        )
+        assert page_res.status_code == 200
+        page = page_res.json()
+
+        page_put_res = await ac.put(
+            f"/dem/pages/{page['id']}",
+            json={"status": "tampered"},
+            headers=outsider_token,
+        )
+        assert page_put_res.status_code == 403
+
+        # The project owner, authenticated as an end user (not the internal
+        # service), can still read/update their own run.
+        owner_token = {"Authorization": "Bearer test-token-owner-a"}
+        owner_get_res = await ac.get(f"/dem/runs/{run['id']}", headers=owner_token)
+        assert owner_get_res.status_code == 200
+
+
+@pytest.mark.asyncio
 async def test_list_project_dem_runs():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:

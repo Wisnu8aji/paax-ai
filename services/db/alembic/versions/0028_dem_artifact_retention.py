@@ -8,7 +8,7 @@ import sqlalchemy as sa
 
 
 revision = "0028_dem_artifact_retention"
-down_revision = "0027_dem_artifacts_and_durable_leases"
+down_revision = "0027"
 branch_labels = None
 depends_on = None
 

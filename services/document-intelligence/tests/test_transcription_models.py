@@ -146,3 +146,30 @@ def test_continuation_patch_carries_base_hash_and_cursor():
     assert patch.base_result_hash == "sha256:previousresulthash"
     assert patch.is_complete is False
     assert patch.next_cursor == "element_labels:0"
+
+
+def test_observation_value_conflicting_requires_at_least_two_evidence_refs():
+    import pytest
+
+    with pytest.raises(ValueError, match="conflicting"):
+        ObservationValue(raw="400 mm", confidence=0.8, status="conflicting", evidence_refs=["EV-1"])
+
+    with pytest.raises(ValueError, match="conflicting"):
+        ObservationValue(raw="400 mm", confidence=0.8, status="conflicting", evidence_refs=[])
+
+    # Two competing sources is the minimum a real conflict needs.
+    observation = ObservationValue(
+        raw="400 mm", confidence=0.8, status="conflicting", evidence_refs=["EV-1", "EV-2"],
+    )
+    assert observation.status == "conflicting"
+
+
+def test_observation_value_missing_and_extracted_do_not_require_evidence_refs():
+    """Only 'conflicting' is hard-enforced today (see the model's docstring on
+    _conflicting_requires_competing_evidence for why 'extracted' etc. are not
+    yet enforced -- real production fixtures still lack evidence_refs)."""
+    missing = ObservationValue(raw="", confidence=0.0, status="missing", evidence_refs=[])
+    assert missing.status == "missing"
+
+    extracted = ObservationValue(raw="J2", confidence=0.9, status="extracted", evidence_refs=[])
+    assert extracted.status == "extracted"

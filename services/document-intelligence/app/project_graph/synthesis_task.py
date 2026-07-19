@@ -1,9 +1,36 @@
 import traceback
 import hashlib
 import uuid
+from pydantic import ValidationError
+
 from app.transcription.db_client import DemDbClient
 from app.transcription.models import DrawingEvidenceSheet
+from app.transcription.typed_observations import adapt_dem_observations
 from app.project_graph.synthesis import synthesize_project_graph
+
+
+def _typed_observation_audit(sheets):
+    """Best-effort typed-DEM-v2 validation pass (see typed_observations.py).
+    Not wired as a hard gate: the v2 adapter enforces evidence-by-status
+    requirements that real production extraction does not yet satisfy for
+    every observation (see P1-4's note on the same gap), so a validation
+    failure here is recorded as an audit signal, not a synthesis blocker.
+    This still gives production visibility into which sheets/categories
+    would fail the stricter typed contract, without regressing extraction
+    that is already accepted today."""
+    passed = 0
+    failed: list[dict] = []
+    for sheet in sheets:
+        try:
+            adapt_dem_observations(sheet.observations)
+            passed += 1
+        except ValidationError as exc:
+            failed.append({
+                "page_index": sheet.source.page_index,
+                "sheet_id": sheet.sheet_identity.sheet_number.value,
+                "errors": exc.errors(include_url=False, include_context=False),
+            })
+    return {"sheets_passed": passed, "sheets_failed": len(failed), "failures": failed}
 
 
 def _node_to_dict(node, level_map):
@@ -31,10 +58,12 @@ def _node_to_dict(node, level_map):
 def _edge_to_dict(edge):
     props = {}
     if edge.resolver:
-        props["resolver"] = {
-            "method": edge.resolver.method,
-            "model": edge.resolver.model,
-        }
+        # Persist the full versioned resolver payload, not a hand-picked
+        # subset -- candidate/rejection/score-breakdown/constraint data is
+        # exactly what a human reviewer needs to trust or contest an
+        # inferred edge, and a manual field list silently drops new
+        # EdgeResolver fields whenever the model grows (see P1-5).
+        props["resolver"] = edge.resolver.model_dump(exclude_none=True)
     return {
         "edge_id": edge.edge_id,
         "source_node_id": edge.source,
@@ -84,7 +113,19 @@ async def synthesize_and_post_snapshot_task(run_id: str, project_id: str, run_st
             
         result = synthesize_project_graph(sheets)
         snapshot = result.snapshot
-        
+
+        # Resolve the project's currently-effective sheet revisions so evidence
+        # can be tagged with a real revision_id instead of guessing/omitting it.
+        # (document_id, sheet_id) is the same key active_sheet_revision uses in
+        # services/db; sheet_id is not a separate DEM concept yet, so the sheet
+        # number text already used as sheet_id below (see evidence_list) is the
+        # matching key here too.
+        active_revisions = await db_client.get_active_sheet_revisions(project_id)
+        revision_by_sheet: dict[tuple[str, str], str] = {
+            (rev["document_id"], rev["sheet_id"]): rev["revision_id"] for rev in active_revisions
+        }
+        effective_sheet_revision_ids = sorted({rev["revision_id"] for rev in active_revisions})
+
         # Build dem_page_id map
         dem_page_map = {}
         for page in run_status.get("pages", []):
@@ -96,12 +137,25 @@ async def synthesize_and_post_snapshot_task(run_id: str, project_id: str, run_st
         # 1. Map all evidence items
         evidence_list = []
         seen_ids = set()
+        seen_ids_by_page: dict[str, int] = {}
         for sheet in sheets:
             for ev in sheet.evidence:
                 if ev.evidence_id in seen_ids:
+                    owning_page = seen_ids_by_page.get(ev.evidence_id)
+                    if owning_page is not None and owning_page != sheet.source.page_index:
+                        # Evidence ids are namespaced per-page at extraction time
+                        # (see evidence_namespacing.py). Seeing the same id again
+                        # from a *different* page means the namespacing was
+                        # bypassed or two runs collided -- this must never
+                        # silently first-wins-drop the second page's evidence.
+                        raise ValueError(
+                            f"duplicate evidence_id '{ev.evidence_id}' across pages "
+                            f"{owning_page} and {sheet.source.page_index} in run {run_id}"
+                        )
                     continue
                 seen_ids.add(ev.evidence_id)
-                
+                seen_ids_by_page[ev.evidence_id] = sheet.source.page_index
+
                 dem_page_id = dem_page_map.get(sheet.source.page_index)
                 bbox = list(ev.bbox) if ev.bbox else None
                 extractor = {
@@ -111,26 +165,25 @@ async def synthesize_and_post_snapshot_task(run_id: str, project_id: str, run_st
                     "prompt_version": sheet.generation.prompt_version
                 }
                 
+                # EvidenceItem.bbox is produced by the vision provider already in
+                # normalized 0.0-1.0 page-relative coordinates (see the Qwen prompt
+                # contract in app/transcription/providers/qwen.py). It must not be
+                # passed through PageTransform.pdf_to_normalized_bbox here: that
+                # transform is for PDF-point coordinates, and applying it to an
+                # already-normalized bbox shrinks it toward the origin, corrupting
+                # every evidence citation and downstream coordinate lookup.
                 bbox_normalized = bbox
-                if bbox:
-                    transform = getattr(sheet.source, "page_transform", None)
-                    if transform is not None:
-                        # PageTransform could be a dict if loaded from JSON DB/json-serializable format.
-                        # Let's support both object and dict access:
-                        if isinstance(transform, dict):
-                            from app.perception.coordinate_transform import PageTransform
-                            transform = PageTransform(**transform)
-                        bbox_normalized = list(transform.pdf_to_normalized_bbox(tuple(bbox)))
 
+                sheet_id = sheet.sheet_identity.sheet_number.value
                 evidence_list.append({
                     "evidence_id": ev.evidence_id,
                     "project_id": sheet.project_id,
                     "document_id": sheet.document_id,
-                    "revision_id": getattr(sheet, "revision_id", None),
+                    "revision_id": revision_by_sheet.get((sheet.document_id, sheet_id)),
                     "run_id": sheet.run_id,
                     "dem_page_id": dem_page_id,
                     "page_index": sheet.source.page_index,
-                    "sheet_id": sheet.sheet_identity.sheet_number.value,
+                    "sheet_id": sheet_id,
                     "view_id": None,
                     "zone_id": None,
                     "modality": "ocr",
@@ -145,7 +198,7 @@ async def synthesize_and_post_snapshot_task(run_id: str, project_id: str, run_st
                     "polygon_normalized": [],
                     "confidence": float(ev.confidence),
                     "extractor": extractor,
-                    "artifact_hash": sheet.source.document_hash,
+                    "source_document_hash": sheet.source.document_hash,
                     "source_dem_id": dem_page_id,
                 })
 
@@ -167,47 +220,24 @@ async def synthesize_and_post_snapshot_task(run_id: str, project_id: str, run_st
         for edge in snapshot.edges:
             referenced_evidence_ids.update(edge.evidence_refs)
 
-        # 3. Add fallbacks for missing referenced evidence items
-        for ev_id in referenced_evidence_ids:
-            if ev_id not in seen_ids:
-                seen_ids.add(ev_id)
-                meta = ref_meta.get(ev_id, {})
-                doc_id = meta.get("document_id", sheets[0].document_id if sheets else "")
-                page_idx = meta.get("page_index", sheets[0].source.page_index if sheets else 0)
-                sheet_id = meta.get("sheet_id", sheets[0].sheet_identity.sheet_number.value if sheets else "")
-                dem_page_id = dem_page_map.get(page_idx)
-
-                evidence_list.append({
-                    "evidence_id": ev_id,
-                    "project_id": project_id,
-                    "document_id": doc_id,
-                    "revision_id": None,
-                    "run_id": run_id,
-                    "dem_page_id": dem_page_id,
-                    "page_index": page_idx,
-                    "sheet_id": sheet_id,
-                    "view_id": None,
-                    "zone_id": None,
-                    "modality": "ocr",
-                    "kind": "text",
-                    "raw_content": ev_id,
-                    "raw_text": ev_id,
-                    "normalized_content": ev_id.lower().strip(),
-                    "bbox": None,
-                    "bbox_source": None,
-                    "bbox_normalized": None,
-                    "polygon_source": [],
-                    "polygon_normalized": [],
-                    "confidence": 0.5,
-                    "extractor": {
-                        "provider": "fallback",
-                        "model": "unknown",
-                        "version": "1.0",
-                        "prompt_version": "unknown"
-                    },
-                    "artifact_hash": sheets[0].source.document_hash if sheets else "",
-                    "source_dem_id": dem_page_id,
-                })
+        # 3. Missing referenced evidence must never be fabricated. A node/edge/
+        # property citing an evidence_id that was never produced by any sheet
+        # is a real integrity gap, not something a synthetic "fallback" evidence
+        # row can paper over -- that would make a dangling reference look
+        # structurally valid without any source backing it. Quarantine instead:
+        # collect the missing ids so callers can downgrade affected facts to
+        # review, and never add them to evidence_list/seen_ids.
+        missing_evidence_ids = {ev_id for ev_id in referenced_evidence_ids if ev_id not in seen_ids}
+        if missing_evidence_ids:
+            print(f"Synthesis quarantine: {len(missing_evidence_ids)} referenced evidence id(s) have no source evidence: {sorted(missing_evidence_ids)}")
+            for node in snapshot.nodes:
+                node_evidence_refs = {ev_id for ref in node.source_refs for ev_id in ref.evidence_refs}
+                node_evidence_refs.update(ev_id for prop in node.properties.values() for ev_id in prop.evidence_refs)
+                if node_evidence_refs & missing_evidence_ids:
+                    node.verification_status = "ambiguous"
+            for edge in snapshot.edges:
+                if set(edge.evidence_refs) & missing_evidence_ids:
+                    edge.confidence_class = "AMBIGUOUS"
 
         # 4. Level mapping
         level_map = {}
@@ -257,7 +287,12 @@ async def synthesize_and_post_snapshot_task(run_id: str, project_id: str, run_st
             "snapshot_id": snapshot.snapshot_id,
             "schema_version": snapshot.schema_version,
             "source_manifest_hash": source_manifest_hash,
-            "generation_metadata": {"source": "synthesize_and_post_snapshot_task", "run_id": run_id},
+            "generation_metadata": {
+                "source": "synthesize_and_post_snapshot_task",
+                "run_id": run_id,
+                "typed_observation_audit": _typed_observation_audit(sheets),
+            },
+            "effective_sheet_revision_ids": effective_sheet_revision_ids,
             "nodes": [_node_to_dict(n, level_map) for n in snapshot.nodes],
             "edges": [_edge_to_dict(e) for e in snapshot.edges],
             "evidence": evidence_list,

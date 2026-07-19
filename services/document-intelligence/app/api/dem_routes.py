@@ -11,8 +11,8 @@ import fitz
 import httpx
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
 
-from app.artifact_storage import ArtifactStore, ArtifactUnavailable, LocalArtifactStore, sign_artifact_key, verify_artifact_signature
-from app.durable_jobs import InMemoryDurableJobStore
+from app.artifact_storage import ArtifactStore, ArtifactUnavailable, LocalArtifactStore, S3ArtifactStore, sign_artifact_key, verify_artifact_signature
+from app.durable_jobs import DbDurableJobStore, InMemoryDurableJobStore
 from app.security import MAX_UPLOAD_BYTES, MalwareScanner, sanitise_filename, scan_or_reject, validate_pdf_magic, validate_pdf_policy
 from app.transcription.db_client import DemDbClient
 from app.auth import User, get_current_user
@@ -22,11 +22,49 @@ PROMPT_VERSION = "dem-extraction-v1.0.0"
 
 
 # These defaults are deliberately object-key based. Production replaces both
-# adapters with shared object storage and the DB-backed queue at startup.
-ARTIFACT_STORE: ArtifactStore = LocalArtifactStore(Path(__file__).resolve().parents[2] / ".artifacts")
-JOB_QUEUE = InMemoryDurableJobStore()
+# adapters with shared object storage and the DB-backed queue at startup --
+# see _durable_adapters_or_fail_startup below, which refuses to let the
+# process even come up with these non-durable defaults when ENV=production.
+# A previous audit found no composition root ever overrode them: process
+# restart silently loses the queue, and local artifacts are not portable
+# across instances/Cloud Run's ephemeral filesystem.
+def _durable_adapters_or_fail_startup() -> tuple[ArtifactStore, object]:
+    env_mode = os.environ.get("ENV", "development")
+    artifact_backend = os.environ.get("ARTIFACT_STORE_BACKEND", "local")
+    job_queue_backend = os.environ.get("JOB_QUEUE_BACKEND", "memory")
+    if env_mode == "production":
+        if artifact_backend == "local":
+            raise RuntimeError(
+                "ARTIFACT_STORE_BACKEND=local is not durable and must not run in "
+                "production (ENV=production). Configure a real object-storage "
+                "backend, or set ARTIFACT_STORE_BACKEND explicitly if this "
+                "process is intentionally non-production."
+            )
+        if job_queue_backend == "memory":
+            raise RuntimeError(
+                "JOB_QUEUE_BACKEND=memory is not durable and must not run in "
+                "production (ENV=production). Configure a real durable queue "
+                "backend, or set JOB_QUEUE_BACKEND explicitly if this process "
+                "is intentionally non-production."
+            )
+    job_queue = DbDurableJobStore() if job_queue_backend == "durable-db" else InMemoryDurableJobStore()
+    artifact_store: ArtifactStore = (
+        S3ArtifactStore() if artifact_backend == "s3" else LocalArtifactStore(Path(__file__).resolve().parents[2] / ".artifacts")
+    )
+    return (artifact_store, job_queue)
+
+
+ARTIFACT_STORE, JOB_QUEUE = _durable_adapters_or_fail_startup()
 MALWARE_SCANNER: MalwareScanner | None = None
 _RATE: dict[str, list[float]] = {}
+
+
+async def _enqueue_job(job_type: str, payload: dict, *, idempotency_key: str) -> None:
+    """Uniform call for both the sync in-memory store and the async
+    DB-backed store (DbDurableJobStore.enqueue makes an HTTP call)."""
+    result = JOB_QUEUE.enqueue(job_type, payload, idempotency_key=idempotency_key)
+    if hasattr(result, "__await__"):
+        await result
 
 
 def _rate_limit(actor: str, project_id: str, action: str, *, limit: int = 30) -> None:
@@ -35,6 +73,21 @@ def _rate_limit(actor: str, project_id: str, action: str, *, limit: int = 30) ->
     if len(recent) >= limit:
         raise HTTPException(status_code=429, detail="artifact rate limit exceeded")
     recent.append(now); _RATE[key] = recent
+
+
+def _artifact_signing_secret() -> bytes:
+    """A predictable fallback secret would let anyone who reads this source
+    forge artifact URLs against any deployment that forgot to set
+    ARTIFACT_SIGNING_SECRET. The fallback is only acceptable under an
+    explicit TESTING=1 flag (matching the internal-service-key convention in
+    app/auth.py); otherwise a missing secret must fail the request, not
+    silently sign with a well-known value."""
+    secret = os.getenv("ARTIFACT_SIGNING_SECRET")
+    if secret:
+        return secret.encode()
+    if os.environ.get("TESTING") == "1":
+        return b"development-only-artifact-secret"
+    raise HTTPException(status_code=500, detail="ARTIFACT_SIGNING_SECRET is not configured")
 
 
 @router.post("/start")
@@ -80,7 +133,7 @@ async def start_dem_run(file: UploadFile = File(...), project_id: str | None = F
         prompt_version=PROMPT_VERSION,
         artifact_key=artifact_key,
     )
-    JOB_QUEUE.enqueue(
+    await _enqueue_job(
         "dem.extract",
         {"run_id": run["id"], "document_id": document_id, "document_hash": document_hash,
          "total_pages": total_pages, "artifact_key": artifact_key, "project_id": project_id,
@@ -151,7 +204,7 @@ async def issue_artifact_url(run_id: str, user: User = Depends(get_current_user)
         raise HTTPException(status_code=410, detail="artifact has been deleted")
     _rate_limit(user.uid, project_id, "sign")
     expiry = int(time.time()) + 300
-    secret = os.getenv("ARTIFACT_SIGNING_SECRET", "development-only-artifact-secret").encode()
+    secret = _artifact_signing_secret()
     return {"project_id": project_id, "artifact_key": key, "expires_at": expiry, "token": sign_artifact_key(key, secret=secret, expires_at=expiry, project_id=project_id)}
 
 
@@ -168,7 +221,7 @@ async def consume_artifact_url(run_id: str, token: str):
         raise HTTPException(status_code=404, detail="artifact not found")
     if (await db_client.get_artifact_retention(run_id)).get("deleted_at"):
         raise HTTPException(status_code=410, detail="artifact has been deleted")
-    secret = os.getenv("ARTIFACT_SIGNING_SECRET", "development-only-artifact-secret").encode()
+    secret = _artifact_signing_secret()
     if not verify_artifact_signature(key, token, secret=secret, project_id=project_id):
         raise HTTPException(status_code=403, detail="invalid or expired artifact token")
     try:
@@ -213,7 +266,7 @@ async def trigger_synthesis(run_id: str):
             raise HTTPException(status_code=400, detail="Cannot synthesize: Extraction is not complete")
 
     await db_client.update_run_status(run_id, "synthesis_in_progress")
-    JOB_QUEUE.enqueue(
+    await _enqueue_job(
         "dem.synthesize", {"run_id": run_id, "project_id": project_id},
         idempotency_key=f"dem.synthesize:{run_id}",
     )

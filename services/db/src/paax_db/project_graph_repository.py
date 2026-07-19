@@ -129,7 +129,7 @@ def _add_graph_records(
             polygon_normalized=item.get("polygon_normalized"),
             confidence=item.get("confidence"),
             extractor=item.get("extractor"),
-            artifact_hash=item.get("artifact_hash"),
+            source_document_hash=item.get("source_document_hash"),
         )
         for item in evidence
     ])

@@ -13,8 +13,9 @@ from sqlalchemy.future import select
 
 from . import models, schemas
 from .database import get_db
-from .auth import get_current_user, RoleChecker, User
+from .auth import get_current_user, require_project_access, RoleChecker, User
 from .project_graph_repository import build_and_activate_snapshot, get_active_snapshot
+from .models import SheetRevision
 from .project_graph_retrieval import OCCURRENCE_CARDINALITY_NOTE, retrieve_project_graph
 from .project_graph_rab_bridge import build_rab_bridge_proposal
 from .project_graph_review import active_correction_overlays, build_quantity_readiness, build_review_queue
@@ -634,7 +635,8 @@ async def list_project_dem_runs(id: str, db: AsyncSession = Depends(get_db)):
 
 
 @app.post("/dem/runs", response_model=schemas.DemRunResponse, dependencies=[Depends(get_current_user)])
-async def create_dem_run(run: schemas.DemRunCreate, db: AsyncSession = Depends(get_db)):
+async def create_dem_run(run: schemas.DemRunCreate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    await require_project_access(run.project_id, db, user, service_scope="dem:write")
     db_run = models.DemRun(**run.model_dump())
     db.add(db_run)
     await db.commit()
@@ -643,11 +645,12 @@ async def create_dem_run(run: schemas.DemRunCreate, db: AsyncSession = Depends(g
 
 
 @app.get("/dem/runs/{id}", response_model=schemas.DemRunResponse, dependencies=[Depends(get_current_user)])
-async def get_dem_run(id: str, db: AsyncSession = Depends(get_db)):
+async def get_dem_run(id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
     result = await db.execute(select(models.DemRun).where(models.DemRun.id == id))
     run = result.scalars().first()
     if not run:
         raise HTTPException(status_code=404, detail="DEM run not found")
+    await require_project_access(run.project_id, db, user, service_scope="dem:read")
     return run
 
 
@@ -680,10 +683,11 @@ async def authorize_project_artifact_deletion(id: str, body: dict, db: AsyncSess
 
 
 @app.get("/dem/runs/{id}/artifact-retention", dependencies=[Depends(get_current_user)])
-async def get_dem_artifact_retention(id: str, db: AsyncSession = Depends(get_db)):
+async def get_dem_artifact_retention(id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
     run = (await db.execute(select(models.DemRun).where(models.DemRun.id == id))).scalars().first()
     if run is None or not run.artifact_key:
         raise HTTPException(status_code=404, detail="artifact not found")
+    await require_project_access(run.project_id, db, user, service_scope="dem:read")
     return {"run_id": str(run.id), "artifact_key": run.artifact_key, "deleted_at": run.artifact_deleted_at, "deleted_by": run.artifact_deleted_by}
 
 
@@ -693,6 +697,7 @@ async def mark_dem_artifact_deleted(id: str, db: AsyncSession = Depends(get_db),
     run = (await db.execute(select(models.DemRun).where(models.DemRun.id == id))).scalars().first()
     if run is None or not run.project_id or not run.artifact_key:
         raise HTTPException(status_code=404, detail="artifact not found")
+    await require_project_access(run.project_id, db, user, service_scope="dem:delete")
     if run.artifact_deleted_at is None:
         run.artifact_deleted_at = _utc_now()
         run.artifact_deleted_by = user.uid
@@ -702,25 +707,26 @@ async def mark_dem_artifact_deleted(id: str, db: AsyncSession = Depends(get_db),
 
 
 @app.put("/dem/runs/{id}", response_model=schemas.DemRunResponse, dependencies=[Depends(get_current_user)])
-async def update_dem_run(id: str, update: dict, db: AsyncSession = Depends(get_db)):
+async def update_dem_run(id: str, update: schemas.DemRunUpdate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
     result = await db.execute(select(models.DemRun).where(models.DemRun.id == id))
     run = result.scalars().first()
     if not run:
         raise HTTPException(status_code=404, detail="DEM run not found")
-    for key, value in update.items():
-        if hasattr(run, key):
-            setattr(run, key, value)
+    await require_project_access(run.project_id, db, user, service_scope="dem:write")
+    for key, value in update.model_dump(exclude_unset=True).items():
+        setattr(run, key, value)
     await db.commit()
     await db.refresh(run)
     return run
 
 
 @app.get("/dem/runs/{id}/status", response_model=schemas.DemRunStatusResponse, dependencies=[Depends(get_current_user)])
-async def get_dem_run_status(id: str, db: AsyncSession = Depends(get_db)):
+async def get_dem_run_status(id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
     result = await db.execute(select(models.DemRun).where(models.DemRun.id == id))
     run = result.scalars().first()
     if not run:
         raise HTTPException(status_code=404, detail="DEM run not found")
+    await require_project_access(run.project_id, db, user, service_scope="dem:read")
     pages_result = await db.execute(
         select(models.DemPage).where(models.DemPage.run_id == id).order_by(models.DemPage.page_index)
     )
@@ -734,7 +740,11 @@ async def get_dem_run_status(id: str, db: AsyncSession = Depends(get_db)):
 
 
 @app.post("/dem/pages", response_model=schemas.DemPageResponse, dependencies=[Depends(get_current_user)])
-async def create_dem_page(run_id: str, page_index: int, db: AsyncSession = Depends(get_db)):
+async def create_dem_page(run_id: str, page_index: int, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    run = (await db.execute(select(models.DemRun).where(models.DemRun.id == run_id))).scalars().first()
+    if not run:
+        raise HTTPException(status_code=404, detail="DEM run not found")
+    await require_project_access(run.project_id, db, user, service_scope="dem:write")
     db_page = models.DemPage(run_id=run_id, page_index=page_index)
     db.add(db_page)
     await db.commit()
@@ -743,22 +753,40 @@ async def create_dem_page(run_id: str, page_index: int, db: AsyncSession = Depen
 
 
 @app.put("/dem/pages/{id}", response_model=schemas.DemPageResponse, dependencies=[Depends(get_current_user)])
-async def update_dem_page(id: str, update: dict, db: AsyncSession = Depends(get_db)):
+async def update_dem_page(id: str, update: schemas.DemPageUpdate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
     result = await db.execute(select(models.DemPage).where(models.DemPage.id == id))
     page = result.scalars().first()
     if not page:
         raise HTTPException(status_code=404, detail="DEM page not found")
-    for key, value in update.items():
-        if hasattr(page, key):
-            setattr(page, key, value)
+    run = (await db.execute(select(models.DemRun).where(models.DemRun.id == page.run_id))).scalars().first()
+    await require_project_access(run.project_id if run else None, db, user, service_scope="dem:write")
+    for key, value in update.model_dump(exclude_unset=True).items():
+        setattr(page, key, value)
     await db.commit()
     await db.refresh(page)
     return page
 
+@app.get(
+    "/projects/{id}/sheet-revisions/active",
+    response_model=List[schemas.ActiveSheetRevisionResponse],
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"], service_scope="project_graph:synthesize"))],
+)
+async def list_active_sheet_revisions(id: str, db: AsyncSession = Depends(get_db)):
+    """Expose the project's currently-effective sheet revisions so DEM synthesis
+    can tag evidence with a real revision_id instead of guessing/omitting it."""
+    result = await db.execute(
+        select(SheetRevision).where(
+            SheetRevision.project_id == id,
+            SheetRevision.is_active.is_(True),
+        ).order_by(SheetRevision.revision_id)
+    )
+    return result.scalars().all()
+
+
 @app.post(
     "/projects/{id}/project-graph/snapshots",
     response_model=schemas.ProjectGraphSnapshotResponse,
-    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+    dependencies=[Depends(RoleChecker(["owner", "pm"], service_scope="project_graph:synthesize"))],
 )
 async def build_project_graph_snapshot(
     id: str,

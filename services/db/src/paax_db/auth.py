@@ -72,8 +72,12 @@ from sqlalchemy.future import select
 from . import models
 
 class RoleChecker:
-    def __init__(self, allowed_roles: List[str]):
+    def __init__(self, allowed_roles: List[str], service_scope: Optional[str] = None):
         self.allowed_roles = allowed_roles
+        # Optional explicit scope a trusted internal-service identity may present
+        # instead of a human project role. Deployment config grants this scope
+        # (INTERNAL_SERVICE_SCOPES); the caller cannot self-elevate with a header.
+        self.service_scope = service_scope
 
     async def __call__(
         self,
@@ -81,6 +85,9 @@ class RoleChecker:
         db: AsyncSession = Depends(get_db),
         user: User = Depends(get_current_user)
     ):
+        if self.service_scope and self.service_scope in user.internal_scopes:
+            return user
+
         result = await db.execute(
             select(models.ProjectMember)
             .where(
@@ -112,3 +119,42 @@ class RoleChecker:
                  raise HTTPException(status_code=403, detail=f"Role {member_role} not allowed")
 
         return user
+
+
+async def require_project_access(
+    project_id: Optional[str],
+    db: AsyncSession,
+    user: User,
+    *,
+    service_scope: str,
+) -> None:
+    """Authorize access to a project-scoped resource whose project_id is only
+    known after loading the resource itself (e.g. a DEM run/page looked up by
+    its own id). A trusted internal-service caller must carry an explicit
+    scope granted by deployment config; the X-Internal-Key header alone only
+    proves the caller is a known service, not that it may touch this project.
+    An end-user caller must be a member (or owner) of the project.
+    """
+    if user.internal_scopes:
+        if service_scope in user.internal_scopes:
+            return
+        raise HTTPException(status_code=403, detail=f"service identity missing scope '{service_scope}'")
+
+    if not project_id:
+        raise HTTPException(status_code=403, detail="resource has no project scope")
+
+    result = await db.execute(
+        select(models.ProjectMember).where(
+            models.ProjectMember.project_id == project_id,
+            models.ProjectMember.user_id == user.uid,
+        )
+    )
+    if result.scalars().first() is not None:
+        return
+
+    proj_res = await db.execute(select(models.Project).where(models.Project.id == project_id))
+    proj = proj_res.scalars().first()
+    if proj and proj.owner_id == user.uid:
+        return
+
+    raise HTTPException(status_code=403, detail="Not a member of this project")

@@ -145,3 +145,21 @@ async def test_artifact_deletion_is_owner_authorized_audited_and_rate_limited():
     with pytest.raises(Exception) as limited:
         dem_routes._rate_limit("actor", "project", "read")
     assert getattr(limited.value, "status_code", None) == 429
+
+
+@pytest.mark.asyncio
+async def test_issuing_artifact_url_fails_closed_without_a_configured_signing_secret(monkeypatch):
+    """A prior audit found ARTIFACT_SIGNING_SECRET falls back to a predictable
+    "development-only-artifact-secret" whenever the env var is unset -- a
+    misconfigured production deployment would silently sign artifact URLs
+    with a secret anyone reading the source already knows. This proves the
+    fallback now only applies under an explicit TESTING=1 flag."""
+    monkeypatch.delenv("ARTIFACT_SIGNING_SECRET", raising=False)
+    monkeypatch.delenv("TESTING", raising=False)
+    run = {"id": "run-500", "project_id": "PROJECT-A", "artifact_key": "original-pdf/runs/run-500/source.pdf"}
+    with patch("app.api.dem_routes.DemDbClient.get_run", new=AsyncMock(return_value=run)), \
+         patch("app.api.dem_routes.DemDbClient.authorize_artifact", new=AsyncMock()), \
+         patch("app.api.dem_routes.DemDbClient.get_artifact_retention", new=AsyncMock(return_value={"deleted_at": None})):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+            response = await ac.post("/drawings/dem/run-500/artifact-url", headers=HEADERS)
+    assert response.status_code == 500

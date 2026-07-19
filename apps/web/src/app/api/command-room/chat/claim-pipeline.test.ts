@@ -45,6 +45,56 @@ describe("Command Room claim pipeline", () => {
     expect(result.responseText).toContain("12 m3");
   });
 
+  it("rejects unsupported element counts without evidence", () => {
+    const result = verifyAndComposeClaims({
+      responseText: "Lantai 2 memiliki 12 kolom K1.",
+      toolsCalled: [],
+      authority: { quantityAuthority: "none" },
+    });
+    expect(result.responseText).not.toContain("12 kolom");
+    expect(result.rejected).toHaveLength(1);
+    expect(result.requiresCoreEngine).toBe(true);
+  });
+
+  it("rejects unsupported mm/cm dimension claims without evidence", () => {
+    const mm = verifyAndComposeClaims({
+      responseText: "Dimensi kolom K1 adalah 400 mm x 400 mm.",
+      toolsCalled: [],
+      authority: { quantityAuthority: "none" },
+    });
+    expect(mm.responseText).not.toContain("400 mm");
+    expect(mm.rejected.length).toBeGreaterThan(0);
+
+    const cm = verifyAndComposeClaims({
+      responseText: "Tebal pelat 30 cm.",
+      toolsCalled: [],
+      authority: { quantityAuthority: "none" },
+    });
+    expect(cm.responseText).not.toContain("30 cm");
+    expect(cm.rejected).toHaveLength(1);
+  });
+
+  it("rejects unsupported elevation claims without evidence", () => {
+    const result = verifyAndComposeClaims({
+      responseText: "Elevasi lantai adalah +4.000 m dari peil ±0.00.",
+      toolsCalled: [],
+      authority: { quantityAuthority: "none" },
+    });
+    expect(result.responseText).not.toContain("+4.000 m");
+    expect(result.rejected.length).toBeGreaterThan(0);
+  });
+
+  it("verifies element counts and dimensions when Core Engine authority backs them", () => {
+    const result = verifyAndComposeClaims({
+      responseText: "Lantai 2 memiliki 12 kolom K1 dengan dimensi 400 mm x 400 mm.",
+      toolsCalled: ["query_rab"],
+      authority: { quantityAuthority: "core_engine" },
+    });
+    expect(result.rejected).toHaveLength(0);
+    expect(result.responseText).toContain("12 kolom");
+    expect(result.responseText).toContain("400 mm");
+  });
+
   it("uses conservative numeric classes for measurements, written facts, and references", () => {
     expect(verifyAndComposeClaims({
       responseText: "Dimensi terukur 4 m3.", toolsCalled: [],

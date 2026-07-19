@@ -437,7 +437,7 @@ class ProjectGraphEvidence(Base):
     polygon_normalized = Column(JSON_DOCUMENT, nullable=True)
     confidence = Column(Numeric, nullable=True)
     extractor = Column(JSON_DOCUMENT, nullable=True)
-    artifact_hash = Column(String, nullable=True)
+    source_document_hash = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     __table_args__ = (
@@ -602,6 +602,34 @@ class MeasurementFact(Base):
     __table_args__ = (
         CheckConstraint("value >= 0", name="ck_measurement_facts_value_nonnegative"),
     )
+
+
+@event.listens_for(MeasurementFact, "before_update")
+def prevent_measurement_fact_core_update(mapper, connection, target):
+    """Measurement facts are append-only except for the supersession status
+    transition (see measurement_repository.supersede_measurement_fact).
+
+    Allowed updates: verification_status, superseded_at (supersession workflow)
+    Blocked updates: value, unit, measurement_type, source_method, element_ids,
+    evidence_refs, formula_inputs, supersedes_measurement_id, and all identity/
+    scope fields. A docstring saying "immutable" is not an invariant on its
+    own -- this makes it one at the ORM layer.
+    """
+    from sqlalchemy import inspect
+    state = inspect(target)
+    immutable_fields = {
+        'measurement_id', 'project_id', 'snapshot_id', 'measurement_type',
+        'value', 'unit', 'source_method', 'element_ids', 'evidence_refs',
+        'formula_inputs', 'created_by', 'audit_metadata',
+        'supersedes_measurement_id', 'created_at',
+    }
+    for attr in state.attrs:
+        if attr.key in immutable_fields and attr.history.has_changes():
+            raise ValueError(
+                f"MeasurementFact field '{attr.key}' is immutable. "
+                f"History: {attr.history}. "
+                "Only verification_status/superseded_at can change, via supersession."
+            )
 
 
 class MeasurementFactAudit(Base):

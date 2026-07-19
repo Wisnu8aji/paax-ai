@@ -21,6 +21,103 @@ from paax_db.project_graph_retrieval import retrieve_project_graph
 from paax_db.main import app
 
 
+@pytest.mark.asyncio
+async def test_active_sheet_revisions_endpoint_exposes_only_currently_effective_revisions():
+    """DEM synthesis resolves revision_id via GET /projects/{id}/sheet-revisions/active
+    (see services/document-intelligence's DemDbClient.get_active_sheet_revisions).
+    Only the active SheetRevision should be returned, not superseded ones."""
+    import os
+
+    os.environ["TESTING"] = "1"
+    internal_headers = {"X-Internal-Key": "test-internal-key", "X-User-Id": "service-account"}
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        create_project = await client.post(
+            "/projects",
+            json={"id": "PROJECT-REV-EP", "owner_id": "owner-rev-ep", "name": "Revision Endpoint"},
+            headers=internal_headers,
+        )
+        assert create_project.status_code == 200
+
+        from .conftest import TestSession
+        async with TestSession() as session:
+            session.add_all([
+                models.DocumentRevision(
+                    revision_id="DOC-REV-EP-1", project_id="PROJECT-REV-EP", document_id="DOC-EP",
+                    issue_purpose="Tender", status="issued",
+                ),
+                models.SheetRevision(
+                    revision_id="SHEET-REV-EP-1", project_id="PROJECT-REV-EP", document_id="DOC-EP",
+                    document_revision_id="DOC-REV-EP-1", sheet_id="A-201", issue_purpose="Tender",
+                    status="issued",
+                ),
+            ])
+            await session.commit()
+            await activate_document_revision(session, project_id="PROJECT-REV-EP", revision_id="DOC-REV-EP-1")
+            await activate_sheet_revision(session, project_id="PROJECT-REV-EP", revision_id="SHEET-REV-EP-1")
+
+        active = await client.get("/projects/PROJECT-REV-EP/sheet-revisions/active", headers=internal_headers)
+        assert active.status_code == 200
+        revisions = active.json()
+        assert revisions == [{"revision_id": "SHEET-REV-EP-1", "document_id": "DOC-EP", "sheet_id": "A-201"}]
+
+        outsider_headers = {"Authorization": "Bearer test-token-outsider-rev"}
+        rejected = await client.get("/projects/PROJECT-REV-EP/sheet-revisions/active", headers=outsider_headers)
+        assert rejected.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_synthesis_service_identity_can_build_snapshot_for_its_project_but_not_others():
+    """The document-intelligence background job posts snapshots as the
+    internal service identity (X-User-Id: service-account), not a human
+    project member. It must be authorized via its granted service scope
+    (project_graph:synthesize), not by accident because internal-key traffic
+    happened to reuse an owner's uid."""
+    import os
+
+    os.environ["TESTING"] = "1"
+    internal_headers = {
+        "X-Internal-Key": "test-internal-key",
+        "X-User-Id": "service-account",
+    }
+    payload = {
+        "snapshot_id": "SNAPSHOT-SVC-1",
+        "schema_version": "paax.pckm.graph.v1",
+        "source_manifest_hash": "manifest-svc-1",
+        "generation_metadata": {"run_id": "RUN-SVC-1"},
+        "nodes": [],
+        "edges": [],
+        "evidence": [],
+        "node_evidence": [],
+        "edge_evidence": [],
+        "aliases": [],
+        "communities": [],
+    }
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        create_project = await client.post(
+            "/projects",
+            json={"id": "PROJECT-SVC", "owner_id": "owner-svc", "name": "Project Svc"},
+            headers=internal_headers,
+        )
+        assert create_project.status_code == 200
+
+        service_snapshot = await client.post(
+            "/projects/PROJECT-SVC/project-graph/snapshots",
+            json=payload,
+            headers=internal_headers,
+        )
+        assert service_snapshot.status_code == 200
+
+        outsider_headers = {"Authorization": "Bearer test-token-outsider"}
+        rejected = await client.post(
+            "/projects/PROJECT-SVC/project-graph/snapshots",
+            json={**payload, "snapshot_id": "SNAPSHOT-SVC-2"},
+            headers=outsider_headers,
+        )
+        assert rejected.status_code == 403
+
+
 def test_project_graph_storage_migration_declares_all_immutable_snapshot_tables():
     migration_path = (
         Path(__file__).resolve().parents[1]
@@ -168,7 +265,7 @@ async def test_persist_snapshot_graph_keeps_node_edge_alias_and_evidence_scoped_
                     "polygon_normalized": [1, 2, 3],
                     "confidence": 0.95,
                     "extractor": {"model": "gpt-4"},
-                    "artifact_hash": "hash-123"
+                    "source_document_hash": "hash-123"
                 }
             ],
             node_evidence=[{"node_id": "NODE-J2", "evidence_id": "EV-21-J2", "role": "source"}],
@@ -248,7 +345,7 @@ async def test_persist_snapshot_graph_keeps_node_edge_alias_and_evidence_scoped_
     assert (evidence_rec.polygon_source, evidence_rec.polygon_normalized) == ([1, 2, 3], [1, 2, 3])
     assert float(evidence_rec.confidence) == 0.95
     assert evidence_rec.extractor == {"model": "gpt-4"}
-    assert evidence_rec.artifact_hash == "hash-123"
+    assert evidence_rec.source_document_hash == "hash-123"
 
 
 @pytest.mark.asyncio

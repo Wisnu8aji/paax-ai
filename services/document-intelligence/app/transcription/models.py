@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 DemStatus = Literal[
     "extracted", "ai_interpreted", "ambiguous", "conflicting", "missing", "human_verified",
@@ -99,6 +99,23 @@ class ObservationValue(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     status: DemStatus = "extracted"
     evidence_refs: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _conflicting_requires_competing_evidence(self) -> "ObservationValue":
+        """status='conflicting' asserts that two or more sources disagree; an
+        empty or single-item evidence_refs list can't back that claim (there's
+        nothing to conflict with). This is intentionally narrower than the
+        full P1-4 finding (extracted/ai_interpreted/human_verified should also
+        require >=1 evidence_ref) -- real extracted fixtures in this repo
+        today have status='extracted' with empty evidence_refs, so enforcing
+        that part here would reject already-accepted production data rather
+        than flag it. That upstream gap needs an extraction-side fix, not a
+        model-level hard rejection that breaks the current pipeline."""
+        if self.status == "conflicting" and len(self.evidence_refs) < 2:
+            raise ValueError(
+                "ObservationValue with status='conflicting' requires at least 2 evidence_refs"
+            )
+        return self
 
 
 class DemObservations(BaseModel):

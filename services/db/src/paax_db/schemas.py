@@ -354,6 +354,35 @@ class DemRunResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class DemRunUpdate(BaseModel):
+    """Allowlisted fields the DEM job orchestrator may update on a run.
+    Identity/lineage fields (project_id, document_id, document_hash, provider,
+    artifact metadata) are intentionally excluded -- they must never be
+    mutated by a generic update call."""
+
+    status: Optional[str] = None
+    completed_at: Optional[datetime] = None
+
+
+class DemPageUpdate(BaseModel):
+    """Allowlisted fields the DEM job orchestrator may update on a page."""
+
+    status: Optional[str] = None
+    attempt_count: Optional[int] = None
+    failure_kind: Optional[str] = None
+    error: Optional[str] = None
+    input_hash: Optional[str] = None
+    result: Optional[dict] = None
+
+
+class ActiveSheetRevisionResponse(BaseModel):
+    revision_id: str
+    document_id: str
+    sheet_id: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class DemPageResponse(BaseModel):
     id: uuid.UUID
     run_id: uuid.UUID

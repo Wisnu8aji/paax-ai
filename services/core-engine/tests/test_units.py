@@ -3,7 +3,7 @@ from decimal import Decimal
 import pytest
 
 from app.units import convert, scale_aware_distance
-from paax_schemas.measurement import Area, Length, MeasurementFact, Volume
+from paax_schemas.measurement import Area, Count, Length, MeasurementFact, Volume
 
 
 def test_dimensions_are_typed_inputs_and_convert_without_calculating_final_volume():
@@ -41,3 +41,13 @@ def test_measurement_fact_rejects_incompatible_unit_at_public_boundary():
         )
 
     assert Area(value="160000", unit="mm2").unit == "mm2"
+
+
+def test_count_converts_through_its_single_identity_unit():
+    # Count has exactly one valid unit ("unit"); convert() must accept it as
+    # a no-op rather than raising KeyError for an "unregistered" quantity type.
+    converted = convert(Count(value="5", unit="unit"), "unit")
+    assert converted.value == Decimal("5")
+
+    with pytest.raises(ValueError, match="incompatible"):
+        convert(Count(value="5", unit="unit"), "m")

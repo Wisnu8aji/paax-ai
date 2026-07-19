@@ -106,3 +106,12 @@ class DemDbClient:
             response = await client.post(f"/internal/dem/runs/{run_id}/artifact-deleted")
             response.raise_for_status()
             return response.json()
+
+    async def get_active_sheet_revisions(self, project_id: str) -> list[dict]:
+        """Return the project's currently-effective sheet revisions, keyed by
+        (document_id, sheet_id), so synthesis can tag evidence with a real
+        revision_id instead of omitting it."""
+        async with await self._client() as client:
+            response = await client.get(f"/projects/{project_id}/sheet-revisions/active")
+            response.raise_for_status()
+            return response.json()

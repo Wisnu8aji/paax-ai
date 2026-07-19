@@ -35,7 +35,7 @@ class WorkItemCandidate(BaseModel):
     category: str
     expected_unit: str
     measurement_fact_ids: list[str] = Field(default_factory=list)
-    status: Literal["candidate_ready", "needs_measurement"]
+    status: Literal["candidate_ready", "needs_measurement", "no_candidate"]
     ahsp_candidates: list[AhspCandidate] = Field(default_factory=list)
     rejected_candidates: list[RejectedCandidate] = Field(default_factory=list)
 
@@ -55,6 +55,48 @@ _CONCRETE_WORKS = [
     ("curing", "curing", "m2", "area"),
     ("support", "support", "unit", "count"),
 ]
+
+# Domain-specific work breakdowns, keyed by discipline (see project_graph
+# node.discipline conventions in cross_sheet_resolver.py: "structure",
+# "architecture", "mep"). A prior audit found every non-concrete element
+# collapsed to a single generic ("primary", element_category, "unit",
+# "count") work item regardless of what it actually was -- a masonry wall
+# and a plumbing fixture both got the identical, uninformative breakdown.
+# These lists give architecture/MEP elements the same multi-work-item
+# decomposition concrete already had. Structure non-concrete elements (e.g.
+# structural steel) fall through to _STRUCTURE_NON_CONCRETE_WORKS.
+_STRUCTURE_NON_CONCRETE_WORKS = [
+    ("erection", "structural_steel", "kg", "mass_input"),
+    ("connection", "connection", "unit", "count"),
+    ("coating", "coating", "m2", "area"),
+]
+
+_ARCHITECTURE_WORKS = [
+    ("pasangan", "pasangan", "m2", "area"),
+    ("plesteran", "plesteran", "m2", "area"),
+    ("acian", "acian", "m2", "area"),
+    ("finishing", "finishing", "m2", "area"),
+    ("unit_terpasang", "unit_terpasang", "unit", "count"),
+]
+
+_MEP_WORKS = [
+    ("instalasi_pipa", "instalasi_pipa", "m", "length"),
+    ("titik_instalasi", "titik_instalasi", "unit", "count"),
+    ("peralatan_utama", "peralatan_utama", "unit", "count"),
+    ("pengujian", "pengujian", "unit", "count"),
+]
+
+_DISCIPLINE_WORKS: dict[str, list[tuple[str, str, str, str]]] = {
+    "structure": _STRUCTURE_NON_CONCRETE_WORKS,
+    "architecture": _ARCHITECTURE_WORKS,
+    "mep": _MEP_WORKS,
+}
+
+# Below this score a candidate's token/metadata overlap with the queried
+# element is too weak to present as a ranked AHSP suggestion; a work item
+# whose only candidates all fall under this line becomes "no_candidate"
+# rather than silently surfacing the least-bad guess as if it were reliable.
+_MINIMUM_CANDIDATE_SCORE = 0.15
 
 
 def _score(
@@ -94,11 +136,14 @@ def build_candidate_set(
     if not verified_physical:
         raise ValueError("RAB Bridge V2 accepts only verified physical elements")
     approved = [fact for fact in measurement_facts if fact.get("verification_status") in {"human_verified", "engine_verified"}]
-    work_specs = _CONCRETE_WORKS if material == "concrete" else [("primary", element_category, "unit", "count")]
+    if material == "concrete":
+        work_specs = _CONCRETE_WORKS
+    else:
+        work_specs = _DISCIPLINE_WORKS.get(discipline, [("primary", element_category, "unit", "count")])
     work_items: list[WorkItemCandidate] = []
     for index, (work_type, category, expected_unit, measurement_type) in enumerate(work_specs, start=1):
         facts = [fact for fact in approved if fact.get("measurement_type") == measurement_type and fact.get("unit") == expected_unit]
-        status: Literal["candidate_ready", "needs_measurement"] = "candidate_ready" if facts else "needs_measurement"
+        status: Literal["candidate_ready", "needs_measurement", "no_candidate"] = "candidate_ready" if facts else "needs_measurement"
         candidates: list[AhspCandidate] = []
         rejected: list[RejectedCandidate] = []
         if status == "candidate_ready":
@@ -112,8 +157,17 @@ def build_candidate_set(
                     rejected.append(RejectedCandidate(ahsp_code=item.get("code", ""), reason=f"incompatible_unit:{item.get('unit')}!={expected_unit}"))
                     continue
                 score, factors = _score(work_type=work_type, unit=expected_unit, description=description, discipline=discipline, category=category, material=material, method=method, wbs=wbs, region_code=region_code, item=item, history=human_history)
+                if score < _MINIMUM_CANDIDATE_SCORE:
+                    rejected.append(RejectedCandidate(ahsp_code=item.get("code", ""), reason=f"below_minimum_score:{score}<{_MINIMUM_CANDIDATE_SCORE}"))
+                    continue
                 candidates.append(AhspCandidate(ahsp_code=item["code"], description=item.get("description", ""), unit=expected_unit, score=score, ranking_factors=factors))
             candidates.sort(key=lambda candidate: (-candidate.score, candidate.ahsp_code))
+            # Every catalog item was either excluded, unit-incompatible, or
+            # below the minimum score -- there is no reliable candidate to
+            # present, so say so explicitly instead of silently returning an
+            # empty candidate list under a status that implies readiness.
+            if not candidates and catalog:
+                status = "no_candidate"
         work_items.append(WorkItemCandidate(
             work_item_id=f"{physical_element_id}:{work_type}:{index}", work_type=work_type, category=category,
             expected_unit=expected_unit, measurement_fact_ids=[fact["measurement_id"] for fact in facts], status=status,

@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime, timezone
 
 from app.transcription.db_client import DemDbClient
+from app.transcription.evidence_namespacing import namespace_evidence_ids
 from app.transcription.failure_classification import DemProviderError
 from app.transcription.models import DemGeneration, DemSource, DrawingEvidenceSheet
 from app.transcription.page_renderer import render_page
@@ -45,6 +46,7 @@ async def process_page(
     try:
         raw_json = provider.extract_page(rendered.png_bytes, context, prompt_version)
         model_output = parse_and_validate(raw_json, provider, rendered.png_bytes, context, prompt_version)
+        model_output = namespace_evidence_ids(model_output, run_id=run["id"], page_index=page_index)
     except DemProviderError as exc:
         current_attempts = (existing_page or {}).get("attempt_count", 0)
         if DEM_RETRY_POLICY.should_retry(failure_kind=exc.kind, prior_attempts=current_attempts):

@@ -25,7 +25,12 @@ def get_current_user(
 ) -> Optional[User]:
     # 1. Cek Service-to-Service auth dulu (X-Internal-Key)
     internal_key = os.environ.get("INTERNAL_SERVICE_KEY")
-    if not internal_key and os.environ.get("ENV", "development") in {"development", "test"}:
+    # The well-known test key is only ever a valid bypass under an explicit
+    # TESTING=1 flag (matching services/db's auth.py convention) -- never
+    # merely because ENV defaults to "development" when unset. A misconfigured
+    # production deployment that forgot both ENV and INTERNAL_SERVICE_KEY must
+    # not silently accept a well-known key.
+    if not internal_key and os.environ.get("TESTING") == "1":
         internal_key = "test-internal-key"
     req_internal_key = request.headers.get("X-Internal-Key")
     

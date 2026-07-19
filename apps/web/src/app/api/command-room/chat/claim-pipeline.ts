@@ -22,7 +22,7 @@ export interface VerifiedClaim {
   reason?: string;
 }
 
-const PROJECT_NUMBER = /\bRp\s?[\d.,]+|\b\d[\d.,]*\s?(?:m2|m3|m'|ha)\b|\b\d+(?:[.,]\d+)?\s?(?:hari|minggu|bulan)\b|\b\d+(?:[.,]\d+)?\s?%\b|\b[A-Z]\.\d+(?:\.\d+)*(?:-\d+)?\b/gi;
+const PROJECT_NUMBER = /\bRp\s?[\d.,]+|\b\d[\d.,]*\s?(?:m2|m3|m'|ha)\b|\b\d+(?:[.,]\d+)?\s?(?:hari|minggu|bulan)\b|\b\d+(?:[.,]\d+)?\s?%\b|\b[A-Z]\.\d+(?:\.\d+)*(?:-\d+)?\b|\b\d+(?:[.,]\d+)?\s?(?:mm|cm|m)\b|[+±]\s?\d+(?:[.,]\d+)?\s?m\b|\b\d+(?:[.,]\d+)?\s?(?:kolom|balok|pintu|jendela|unit|buah|titik|batang)\b/gi;
 const CORE_ENGINE_TOOLS = new Set(["query_rab", "query_schedule", "run_scenario"]);
 const REFERENCE_TOOLS = new Set(["lookup_ahsp", "analyze_drawing"]);
 const PHYSICAL_QUANTITY_ASSERTION = /(?:occurrence_count|kelompok konteks|context group).{0,100}(?:jumlah fisik|fisik terpasang|jumlah (?:kolom|balok|unit)|physical quantity)/i;

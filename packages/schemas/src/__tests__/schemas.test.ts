@@ -768,6 +768,18 @@ describe("C7/C8 graph workflow schemas", () => {
       provenance: { ranking: "human_approval_required" },
     }).work_items[0].ahsp_candidates).toEqual([]);
   });
+
+  it("accepts no_candidate status when every catalog entry is excluded or below the minimum score", () => {
+    expect(RabBridgeV2CandidateSetSchema.parse({
+      project_id: "PROJECT-C78", snapshot_id: "SNAP-C78", physical_element_id: "WALL-1",
+      work_items: [{
+        work_item_id: "WALL-1:pasangan:1", work_type: "pasangan", category: "pasangan", expected_unit: "m2",
+        status: "no_candidate",
+        rejected_candidates: [{ ahsp_code: "BATA-M2", reason: "below_minimum_score:0.05<0.15" }],
+      }],
+      provenance: { ranking: "human_approval_required" },
+    }).work_items[0].status).toBe("no_candidate");
+  });
 });
 
 describe("GraphQueryPlanSchema", () => {

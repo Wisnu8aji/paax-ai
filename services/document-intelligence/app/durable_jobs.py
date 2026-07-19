@@ -1,10 +1,13 @@
 """Queue abstraction with a deterministic local durable-worker compatible store."""
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any, Protocol
 import uuid
+
+import httpx
 
 
 STATUSES = {"queued", "leased", "running", "retry_wait", "partially_failed", "completed", "failed", "cancelled"}
@@ -122,3 +125,53 @@ class InMemoryDurableJobStore:
             return self.transition(job_id, "failed", worker_id=worker_id, error=error)
         job.next_attempt_at = self._now() + timedelta(seconds=2 ** (job.attempt_count - 1))
         return self.transition(job_id, "retry_wait", worker_id=worker_id, error=error)
+
+
+class DbDurableJobStore:
+    """Durable adapter backed by services/db's durable_jobs table (migration
+    0026), reached over the HTTP boundary like DemDbClient -- this service
+    never opens a direct DB connection (Aturan Emas / architecture boundary).
+
+    Only enqueue/lease are implemented because those are the only two
+    operations services/db currently exposes as HTTP endpoints
+    (POST /durable-jobs/enqueue, POST /durable-jobs/lease); no worker in this
+    codebase currently leases from the queue at all (dem.extract/dem.synthesize
+    run in-process via FastAPI BackgroundTasks), so transition/heartbeat/
+    cancel/retry have no caller yet and are intentionally not implemented
+    here -- add them alongside the worker that will actually use them.
+    """
+
+    def __init__(
+        self,
+        *,
+        base_url: str | None = None,
+        internal_key: str | None = None,
+        transport: httpx.AsyncBaseTransport | None = None,
+    ) -> None:
+        self.base_url = (base_url or os.getenv("DB_API_URL", "http://localhost:8084")).rstrip("/")
+        self.internal_key = internal_key or os.getenv("INTERNAL_SERVICE_KEY", "")
+        self._transport = transport
+
+    def _headers(self) -> dict[str, str]:
+        return {"X-Internal-Key": self.internal_key, "X-User-Id": "dem-job-orchestrator"}
+
+    def _client(self) -> httpx.AsyncClient:
+        return httpx.AsyncClient(base_url=self.base_url, transport=self._transport, headers=self._headers())
+
+    async def enqueue(self, job_type: str, payload: dict[str, Any], *, idempotency_key: str) -> dict:
+        async with self._client() as client:
+            response = await client.post(
+                "/durable-jobs/enqueue",
+                json={"job_type": job_type, "payload": payload, "idempotency_key": idempotency_key},
+            )
+            response.raise_for_status()
+            return response.json()
+
+    async def lease(self, worker_id: str, *, lease_seconds: int = 60) -> dict | None:
+        async with self._client() as client:
+            response = await client.post(
+                "/durable-jobs/lease",
+                json={"worker_id": worker_id, "lease_seconds": lease_seconds},
+            )
+            response.raise_for_status()
+            return response.json()

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
 os.environ.setdefault("INTERNAL_SERVICE_KEY", "test-internal-key")
+os.environ.setdefault("INTERNAL_SERVICE_SCOPES", "dem:read,dem:write,dem:delete,project_graph:synthesize")
 
 from paax_db.database import Base, get_db
 from paax_db.main import app

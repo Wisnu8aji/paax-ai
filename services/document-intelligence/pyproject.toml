@@ -13,6 +13,7 @@ pydantic = "*"
 python-multipart = "*"
 pymupdf = "^1.23.0"
 firebase-admin = ">=6.5.0"
+boto3 = "^1.34.0"
 paax-schemas = { path = "../../packages/schemas/python", develop = true }
 paddleocr = { version = "*", optional = true }
 paddlepaddle = { version = "*", optional = true }
