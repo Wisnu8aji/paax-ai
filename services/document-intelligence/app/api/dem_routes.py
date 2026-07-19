@@ -7,12 +7,13 @@ from pathlib import Path
 
 import fitz
 import httpx
-from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
 
 from app.artifact_storage import ArtifactStore, ArtifactUnavailable, LocalArtifactStore
 from app.durable_jobs import InMemoryDurableJobStore
 from app.security import MAX_UPLOAD_BYTES, MalwareScanner, sanitise_filename, scan_or_reject, validate_pdf_magic, validate_pdf_policy
 from app.transcription.db_client import DemDbClient
+from app.auth import User, get_current_user
 
 router = APIRouter(prefix="/drawings/dem", tags=["DEM"])
 PROMPT_VERSION = "dem-extraction-v1.0.0"
@@ -79,7 +80,7 @@ async def start_dem_run(file: UploadFile = File(...), project_id: str | None = F
 
 
 @router.get("/{run_id}/pages/{page_index}/image")
-async def get_page_image(run_id: str, page_index: int):
+async def get_page_image(run_id: str, page_index: int, user: User = Depends(get_current_user)):
     """Render (or serve cached) PNG for a single page of a DEM run's source PDF.
 
     Note: this route previously had a duplicate definition later in this file
@@ -106,6 +107,13 @@ async def get_page_image(run_id: str, page_index: int):
 
     if page_index < 0 or page_index >= run.get("total_pages", 0):
         raise HTTPException(status_code=404, detail="Page index out of bounds")
+    project_id = run.get("project_id")
+    if not project_id:
+        raise HTTPException(status_code=403, detail="artifact has no project scope")
+    try:
+        await db_client.authorize_artifact(project_id, artifact_key, actor_id=user.uid)
+    except Exception:
+        raise HTTPException(status_code=403, detail="artifact access denied")
 
     from app.transcription.page_renderer import render_page_to_png
     try:

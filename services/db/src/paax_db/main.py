@@ -570,6 +570,20 @@ async def get_dem_run(id: str, db: AsyncSession = Depends(get_db)):
     return run
 
 
+@app.post("/internal/projects/{id}/artifact-access", dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))])
+async def authorize_project_artifact(id: str, body: dict, db: AsyncSession = Depends(get_db)):
+    """DB is the sole authority for artifact project scope; keys are verified against a DEM run."""
+    key = body.get("artifact_key")
+    if not isinstance(key, str):
+        raise HTTPException(status_code=400, detail="artifact key required")
+    run = (await db.execute(select(models.DemRun).where(
+        models.DemRun.project_id == id, models.DemRun.artifact_key == key,
+    ))).scalars().first()
+    if run is None:
+        raise HTTPException(status_code=403, detail="artifact is not in this project")
+    return {"authorized": True}
+
+
 @app.put("/dem/runs/{id}", response_model=schemas.DemRunResponse, dependencies=[Depends(get_current_user)])
 async def update_dem_run(id: str, update: dict, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(models.DemRun).where(models.DemRun.id == id))

@@ -88,3 +88,8 @@ class DemDbClient:
             response = await client.get(f"/dem/runs/{run_id}")
             response.raise_for_status()
             return response.json()
+
+    async def authorize_artifact(self, project_id: str, artifact_key: str, *, actor_id: str) -> None:
+        async with httpx.AsyncClient(base_url=self.base_url, transport=self._transport, headers={"X-Internal-Key": self.internal_key, "X-User-Id": actor_id}) as client:
+            response = await client.post(f"/internal/projects/{project_id}/artifact-access", json={"artifact_key": artifact_key})
+            response.raise_for_status()

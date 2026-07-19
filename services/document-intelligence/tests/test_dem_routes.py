@@ -47,11 +47,13 @@ async def test_get_page_image_valid_and_cached():
         store = LocalArtifactStore(__import__("pathlib").Path(tmp_dir))
         artifact_key = store.put("original-pdf", pdf_bytes, content_type="application/pdf", object_key="runs/run-123/source.pdf")
         with patch("app.api.dem_routes.DemDbClient.get_run") as mock_get_run, \
+             patch("app.api.dem_routes.DemDbClient.authorize_artifact") as authorize, \
              patch.object(dem_routes, "ARTIFACT_STORE", store):
             
             mock_get_run.return_value = {
                 "id": "run-123",
-                "artifact_key": artifact_key,
+                    "artifact_key": artifact_key,
+                    "project_id": "PROJECT-A",
                 "total_pages": 1,
             }
 
