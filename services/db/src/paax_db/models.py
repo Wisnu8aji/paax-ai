@@ -242,6 +242,7 @@ class ProjectGraphSnapshot(Base):
     source_manifest_hash = Column(String, nullable=False)
     status = Column(String, nullable=False, index=True, default="building")
     generation_metadata = Column(JSON_DOCUMENT, nullable=False)
+    effective_sheet_revision_ids = Column(JSON_DOCUMENT, nullable=False, default=list)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     activated_at = Column(DateTime(timezone=True), nullable=True)
     superseded_at = Column(DateTime(timezone=True), nullable=True)
@@ -249,6 +250,43 @@ class ProjectGraphSnapshot(Base):
     __table_args__ = (
         UniqueConstraint('snapshot_id', 'project_id', name='uq_project_graph_snapshots_id_project'),
     )
+
+
+class DocumentRevision(Base):
+    """Auditable revision lineage for a source document."""
+    __tablename__ = "document_revisions"
+
+    revision_id = Column(String, primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    document_id = Column(String, nullable=False, index=True)
+    issue_date = Column(DateTime(timezone=True), nullable=True)
+    issue_purpose = Column(String, nullable=True)
+    status = Column(String, nullable=False, default="draft", index=True)
+    supersedes_revision_id = Column(String, ForeignKey("document_revisions.revision_id", ondelete="SET NULL"), nullable=True, index=True)
+    superseded_by_revision_id = Column(String, ForeignKey("document_revisions.revision_id", ondelete="SET NULL"), nullable=True, index=True)
+    effective_date = Column(DateTime(timezone=True), nullable=True)
+    is_active = Column(Boolean, nullable=False, default=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class SheetRevision(Base):
+    """Effective revision state for one sheet within a document revision."""
+    __tablename__ = "sheet_revisions"
+
+    revision_id = Column(String, primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    document_id = Column(String, nullable=False, index=True)
+    document_revision_id = Column(String, ForeignKey("document_revisions.revision_id", ondelete="CASCADE"), nullable=False, index=True)
+    sheet_id = Column(String, nullable=False, index=True)
+    issue_date = Column(DateTime(timezone=True), nullable=True)
+    issue_purpose = Column(String, nullable=True)
+    status = Column(String, nullable=False, default="draft", index=True)
+    supersedes_revision_id = Column(String, ForeignKey("sheet_revisions.revision_id", ondelete="SET NULL"), nullable=True, index=True)
+    superseded_by_revision_id = Column(String, ForeignKey("sheet_revisions.revision_id", ondelete="SET NULL"), nullable=True, index=True)
+    revision_cloud_regions = Column(JSON_DOCUMENT, nullable=False, default=list)
+    effective_date = Column(DateTime(timezone=True), nullable=True)
+    is_active = Column(Boolean, nullable=False, default=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 class ProjectGraphNode(Base):

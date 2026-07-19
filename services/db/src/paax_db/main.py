@@ -605,6 +605,7 @@ async def build_project_graph_snapshot(
         schema_version=request.schema_version,
         source_manifest_hash=request.source_manifest_hash,
         generation_metadata=request.generation_metadata,
+        effective_sheet_revision_ids=request.effective_sheet_revision_ids,
         nodes=request.nodes,
         edges=request.edges,
         evidence=request.evidence,

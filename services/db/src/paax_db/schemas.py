@@ -357,6 +357,7 @@ class ProjectGraphSnapshotBuildRequest(BaseModel):
     schema_version: str
     source_manifest_hash: str
     generation_metadata: Dict[str, Any]
+    effective_sheet_revision_ids: List[str] = Field(default_factory=list)
     nodes: List[Dict[str, Any]] = Field(default_factory=list)
     edges: List[Dict[str, Any]] = Field(default_factory=list)
     evidence: List[Dict[str, Any]] = Field(default_factory=list)
@@ -374,6 +375,7 @@ class ProjectGraphSnapshotResponse(BaseModel):
     schema_version: str
     status: str
     source_manifest_hash: str
+    effective_sheet_revision_ids: List[str] = Field(default_factory=list)
 
 
 class ProjectGraphRetrievalRequest(BaseModel):
