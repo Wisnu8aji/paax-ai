@@ -35,6 +35,13 @@ class VerificationStatus(str, Enum):
     SUPERSEDED = "superseded"
 
 
+class AssumptionApprovalStatus(str, Enum):
+    PENDING_APPROVAL = "pending_approval"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    STALE = "stale"
+
+
 class Quantity(BaseModel):
     """A dimensional input; a numeric value is never accepted without unit."""
 
@@ -93,6 +100,7 @@ class MeasurementFact(BaseModel):
     verification_status: VerificationStatus = VerificationStatus.CANDIDATE
     created_by: str | None = None
     audit_metadata: dict[str, object] = Field(default_factory=dict)
+    supersedes_measurement_id: str | None = None
 
     @model_validator(mode="after")
     def require_type_unit_match(self) -> "MeasurementFact":
@@ -116,3 +124,29 @@ class MeasurementFact(BaseModel):
             MeasurementType.MASS_INPUT: Mass,
         }[self.measurement_type]
         return quantity_type(value=self.value, unit=self.unit)
+
+
+class QuantityAssumption(BaseModel):
+    """A human/evidence supplied typed input; approval is always explicit."""
+    id: str
+    project_id: str
+    element_type_id: str | None = None
+    snapshot_id: str | None = None
+    value: Annotated[Decimal, Field(ge=0)]
+    unit: str
+    scope: dict[str, object]
+    rationale: str = Field(min_length=1)
+    owner: str = Field(min_length=1)
+    approval_status: AssumptionApprovalStatus = AssumptionApprovalStatus.PENDING_APPROVAL
+    expires_at: str | None = None
+    stale_reason: str | None = None
+    evidence_refs: list[str] = Field(default_factory=list)
+    explicit_human_source: bool = False
+    source_role: str = "human"
+    status: AssumptionApprovalStatus = AssumptionApprovalStatus.PENDING_APPROVAL
+
+    @model_validator(mode="after")
+    def require_evidence_or_explicit_human_source(self) -> "QuantityAssumption":
+        if not self.evidence_refs and not self.explicit_human_source:
+            raise ValueError("assumption requires evidence or explicit human source")
+        return self

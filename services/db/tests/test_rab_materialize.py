@@ -113,9 +113,8 @@ async def test_materialize_rab_bridge():
     assert res.status_code == 200
     data = res.json()
     print("DATA", data)
-    assert data["materialized_count"] == 2
-    assert len(data["skipped_items"]) == 1
-    assert data["skipped_items"][0]["node_id"] == "NODE-3"
+    assert data["materialized_count"] == 1
+    assert {item["node_id"] for item in data["skipped_items"]} == {"NODE-2", "NODE-3"}
     assert data["rab_draft_updated"] is True
 
     async with TestSession() as session:
@@ -123,7 +122,7 @@ async def test_materialize_rab_bridge():
         draft = (await session.execute(select(models.RabDraft).where(models.RabDraft.project_id == "PROJECT-A"))).scalars().first()
         assert draft is not None
         lines = draft.payload.get("lines", [])
-        assert len(lines) == 2
+        assert len(lines) == 1
         
         l1 = [l for l in lines if l["volume"] == 50][0]
         assert l1["volume_source"] == "written_dimension"
@@ -131,13 +130,6 @@ async def test_materialize_rab_bridge():
         assert l1["sheet_id"] == "A-46"
         assert l1["page_index"] == 46
         
-        l2 = [l for l in lines if l["volume"] == 25][0]
-        assert l2["volume_source"] == "human_assumption"
-        assert l2["assumption_id"] == "ASS-1"
-        assert l2["ahsp_suggested"] is True
-        assert l2["sheet_id"] == "A-47"
-        assert l2["page_index"] == 47
-
 @pytest.mark.asyncio
 async def test_materialize_rejected_proposal():
     from .conftest import TestSession

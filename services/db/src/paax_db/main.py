@@ -944,20 +944,8 @@ async def materialize_rab_bridge_proposal(
             if volume is not None:
                 volume_source = "written_dimension"
         
-        if volume is None:
-            element_type_id = properties.get("element_type_id")
-            if element_type_id:
-                assumption_res = await db.execute(select(models.QuantityAssumption).where(
-                    models.QuantityAssumption.project_id == id,
-                    models.QuantityAssumption.element_type_id == element_type_id,
-                    models.QuantityAssumption.status == "accepted"
-                ))
-                assumption = assumption_res.scalars().first()
-                if assumption:
-                    volume = compute_volume(assumption.text)
-                    if volume is not None:
-                        volume_source = "human_assumption"
-                        assumption_id = assumption.id
+        # Typed assumptions are inputs pending approval, never a free-text volume
+        # fallback. Fase 14 supplies only typed Core Engine results here.
 
         if volume is None:
             skipped_items.append(schemas.SkippedItem(node_id=node_id, reason="blocked_missing_dimension"))
@@ -1151,6 +1139,7 @@ async def resolve_quantity_assumption(
     if assumption is None:
         raise HTTPException(status_code=404, detail="Quantity assumption not found")
     assumption.status = request.status
+    assumption.approval_status = request.status
     await db.commit()
     await db.refresh(assumption)
     return assumption

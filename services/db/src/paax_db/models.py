@@ -561,11 +561,24 @@ class MeasurementFact(Base):
     verification_status = Column(String, nullable=False, default="candidate", index=True)
     created_by = Column(String, nullable=True)
     audit_metadata = Column(JSON_DOCUMENT, nullable=False, default=dict)
+    supersedes_measurement_id = Column(String, ForeignKey("measurement_facts.measurement_id", ondelete="SET NULL"), nullable=True, index=True)
+    superseded_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     __table_args__ = (
         CheckConstraint("value >= 0", name="ck_measurement_facts_value_nonnegative"),
     )
+
+
+class MeasurementFactAudit(Base):
+    __tablename__ = "measurement_fact_audits"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    measurement_id = Column(String, ForeignKey("measurement_facts.measurement_id", ondelete="CASCADE"), nullable=False, index=True)
+    action = Column(String, nullable=False)
+    actor = Column(String, nullable=True)
+    metadata_json = Column("metadata", JSON_DOCUMENT, nullable=False, default=dict)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 class ProjectGraphRetrievalCache(Base):
@@ -611,8 +624,19 @@ class QuantityAssumption(Base):
     id = Column(String, primary_key=True)
     project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
     element_type_id = Column(String, nullable=True, index=True)
-    text = Column(Text, nullable=False)
+    text = Column(Text, nullable=True)  # legacy rationale only; never a calculation input
     source_role = Column(String, nullable=False)
-    status = Column(String, nullable=False, default="active", index=True)
+    status = Column(String, nullable=False, default="pending_approval", index=True)
+    snapshot_id = Column(String, nullable=True, index=True)
+    value = Column(Numeric(24, 9), nullable=True)
+    unit = Column(String, nullable=True)
+    scope = Column(JSON_DOCUMENT, nullable=True)
+    rationale = Column(Text, nullable=True)
+    owner = Column(String, nullable=True)
+    approval_status = Column(String, nullable=False, default="pending_approval", index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    stale_reason = Column(Text, nullable=True)
+    evidence_refs = Column(JSON_DOCUMENT, nullable=True)
+    explicit_human_source = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

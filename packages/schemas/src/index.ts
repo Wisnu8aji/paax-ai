@@ -2026,15 +2026,27 @@ export const QuantityAssumptionSchema = z.object({
   id: z.string(),
   project_id: z.string(),
   element_type_id: z.string().nullish(),
-  text: z.string(),
-  source_role: z.string(),
-  status: z.string().default("active"),
+  snapshot_id: z.string().nullish(),
+  value: z.number().finite().nonnegative(),
+  unit: z.enum(["mm", "cm", "m", "inch", "mm2", "cm2", "m2", "inch2", "mm3", "cm3", "m3", "inch3", "g", "kg", "tonne", "unit"]),
+  scope: z.record(z.string(), z.unknown()),
+  rationale: z.string().min(1),
+  owner: z.string().min(1),
+  approval_status: z.enum(["pending_approval", "approved", "rejected", "stale"]).default("pending_approval"),
+  expires_at: z.string().datetime().nullish(),
+  stale_reason: z.string().nullish(),
+  evidence_refs: z.array(z.string()).default([]),
+  explicit_human_source: z.boolean().default(false),
+  source_role: z.string().default("human"),
+  status: z.enum(["pending_approval", "approved", "rejected", "stale"]).default("pending_approval"),
   created_at: z.string().nullish(),
+}).refine((value) => value.evidence_refs.length > 0 || value.explicit_human_source, {
+  message: "assumption requires evidence or explicit human source",
 });
 export type QuantityAssumption = z.infer<typeof QuantityAssumptionSchema>;
 
 export const QuantityAssumptionResolveSchema = z.object({
-  status: z.enum(["accepted", "rejected"]),
+  status: z.enum(["approved", "rejected"]),
 });
 export type QuantityAssumptionResolve = z.infer<typeof QuantityAssumptionResolveSchema>;
 

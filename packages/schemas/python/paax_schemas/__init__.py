@@ -2,18 +2,20 @@
 
 from .measurement import (
     Area,
+    AssumptionApprovalStatus,
     Count,
     Length,
     Mass,
     MeasurementFact,
     MeasurementType,
+    QuantityAssumption,
     SourceMethod,
     VerificationStatus,
     Volume,
 )
 
 __all__ = [
-    "Area", "Count", "Length", "Mass", "MeasurementFact", "MeasurementType",
+    "Area", "AssumptionApprovalStatus", "Count", "Length", "Mass", "MeasurementFact", "MeasurementType", "QuantityAssumption",
     "SourceMethod", "VerificationStatus", "Volume",
 ]
 

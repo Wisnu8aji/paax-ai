@@ -554,9 +554,26 @@ class QuantityAssumptionCreate(BaseModel):
     id: str
     project_id: str
     element_type_id: Optional[str] = None
-    text: str = Field(min_length=1, max_length=4000)
-    source_role: str
-    status: str = "active"
+    snapshot_id: Optional[str] = None
+    value: Decimal = Field(ge=0)
+    unit: Literal["mm", "cm", "m", "inch", "mm2", "cm2", "m2", "inch2", "mm3", "cm3", "m3", "inch3", "g", "kg", "tonne", "unit"]
+    scope: Dict[str, Any]
+    rationale: str = Field(min_length=1, max_length=4000)
+    owner: str = Field(min_length=1)
+    evidence_refs: List[str] = Field(default_factory=list)
+    explicit_human_source: bool = False
+    approval_status: Literal["pending_approval", "approved", "rejected", "stale"] = "pending_approval"
+    expires_at: Optional[datetime] = None
+    stale_reason: Optional[str] = None
+    source_role: str = "human"
+
+    @model_validator(mode="after")
+    def require_evidence_or_human_source(self):
+        if not self.evidence_refs and not self.explicit_human_source:
+            raise ValueError("assumption requires evidence or explicit human source")
+        if self.approval_status != "pending_approval":
+            raise ValueError("assumption approval must start pending_approval")
+        return self
 
 
 class QuantityAssumptionResponse(QuantityAssumptionCreate):
@@ -566,7 +583,7 @@ class QuantityAssumptionResponse(QuantityAssumptionCreate):
 
 
 class QuantityAssumptionResolve(BaseModel):
-    status: Literal["accepted", "rejected"]
+    status: Literal["approved", "rejected"]
 
 
 class SummaryViewGrain(BaseModel):
@@ -611,6 +628,7 @@ class MeasurementFactCreate(BaseModel):
     verification_status: Literal["candidate", "human_verified", "engine_verified", "superseded"] = "candidate"
     created_by: Optional[str] = None
     audit_metadata: Dict[str, Any] = Field(default_factory=dict)
+    supersedes_measurement_id: Optional[str] = None
 
     @model_validator(mode="after")
     def require_unit_matches_dimension(self):
