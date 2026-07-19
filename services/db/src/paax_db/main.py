@@ -58,6 +58,15 @@ def _utc_now() -> datetime.datetime:
     return datetime.datetime.now(datetime.timezone.utc)
 
 
+def _audit_project_action(db: AsyncSession, *, project_id: str, actor: str, action: str, target_id: str, success: bool = True) -> None:
+    """Append-only, secret-free audit event for privileged project operations."""
+    db.add(models.ToolCallAudit(
+        session_id=actor, project_id=project_id, tool_name=action,
+        tool_args={"target_id": target_id}, result_payload=None,
+        success=success,
+    ))
+
+
 def _as_aware_utc(value: datetime.datetime) -> datetime.datetime:
     if value.tzinfo is None:
         return value.replace(tzinfo=datetime.timezone.utc)
@@ -767,6 +776,7 @@ async def create_project_graph_correction(
         raise HTTPException(status_code=409, detail="Correction must target the active project graph snapshot")
     correction = models.ProjectGraphCorrection(project_id=id, status="pending", created_by=user.uid, **request.model_dump())
     db.add(correction)
+    _audit_project_action(db, project_id=id, actor=user.uid, action="project_graph.correction.created", target_id=correction.id)
     await db.commit()
     return correction
 
@@ -790,6 +800,7 @@ async def resolve_project_graph_correction(
     correction.resolution_note = request.resolution_note
     correction.resolved_by = user.uid
     correction.resolved_at = _utc_now()
+    _audit_project_action(db, project_id=id, actor=user.uid, action=f"project_graph.correction.{request.status}", target_id=correction.id)
     await db.execute(delete(models.ProjectGraphRetrievalCache).where(
         models.ProjectGraphRetrievalCache.project_id == id,
         models.ProjectGraphRetrievalCache.snapshot_id == correction.snapshot_id,
@@ -887,6 +898,7 @@ async def resolve_rab_bridge_proposal(id: str, proposal_id: str, request: schema
     proposal.status = transition(proposal.status, request.status)
     proposal.reviewed_by = user.uid
     proposal.reviewed_at = _utc_now()
+    _audit_project_action(db, project_id=id, actor=user.uid, action=f"rab_bridge.proposal.{request.status}", target_id=proposal.id)
     await db.commit()
     return {"status": proposal.status, "snapshot_id": proposal.snapshot_id, "proposal_id": proposal.id, "items": proposal.payload.get("items", [])}
 
@@ -907,43 +919,6 @@ async def create_rab_materialization_mapping(
         db, project_id=id, snapshot_id=snapshot.snapshot_id, measurement_fact_ids=request.measurement_fact_ids,
     )
 
-
-@app.post("/durable-jobs/enqueue", dependencies=[Depends(get_current_user)])
-async def enqueue_durable_job(body: dict, db: AsyncSession = Depends(get_db)):
-    """Canonical idempotent queue insert. A unique key absorbs duplicate delivery."""
-    key = body["idempotency_key"]
-    existing = (await db.execute(select(models.DurableJob).where(models.DurableJob.idempotency_key == key))).scalars().first()
-    if existing:
-        return {"id": existing.id, "status": existing.status, "duplicate": True}
-    job = models.DurableJob(id=str(uuid.uuid4()), job_type=body["job_type"], payload=body["payload"], idempotency_key=key, status="queued", attempt_count=0)
-    db.add(job)
-    try:
-        await db.commit()
-    except Exception:
-        await db.rollback()
-        existing = (await db.execute(select(models.DurableJob).where(models.DurableJob.idempotency_key == key))).scalars().one()
-        return {"id": existing.id, "status": existing.status, "duplicate": True}
-    return {"id": job.id, "status": job.status, "duplicate": False}
-
-
-@app.post("/durable-jobs/lease", dependencies=[Depends(get_current_user)])
-async def lease_durable_job(body: dict, db: AsyncSession = Depends(get_db)):
-    """Atomically claim one due/expired job; SKIP LOCKED protects multi-instance workers."""
-    now = _utc_now(); seconds = max(1, int(body.get("lease_seconds", 60)))
-    stmt = (select(models.DurableJob).where(or_(
-        models.DurableJob.status == "queued",
-        (models.DurableJob.status == "retry_wait") & (models.DurableJob.next_attempt_at <= now),
-        (models.DurableJob.status.in_(["leased", "running"])) & (models.DurableJob.lease_expires_at <= now),
-    )).order_by(models.DurableJob.created_at).with_for_update(skip_locked=True).limit(1))
-    job = (await db.execute(stmt)).scalars().first()
-    if not job:
-        return None
-    if job.status in {"leased", "running"}:
-        job.attempt_count += 1
-    job.status, job.lease_owner = "leased", body["worker_id"]
-    job.lease_expires_at = now + datetime.timedelta(seconds=seconds)
-    await db.commit()
-    return {"id": job.id, "job_type": job.job_type, "payload": job.payload, "attempt_count": job.attempt_count}
     mapping = models.RabMaterializationMapping(
         id=str(uuid.uuid4()), project_id=id, snapshot_id=snapshot.snapshot_id,
         work_item_node_id=request.work_item_node_id, measurement_fact_ids=request.measurement_fact_ids,
@@ -989,6 +964,44 @@ async def update_rab_materialization_mapping(
     await db.commit()
     await db.refresh(mapping)
     return mapping
+
+
+@app.post("/durable-jobs/enqueue", dependencies=[Depends(get_current_user)])
+async def enqueue_durable_job(body: dict, db: AsyncSession = Depends(get_db)):
+    """Canonical idempotent queue insert. A unique key absorbs duplicate delivery."""
+    key = body["idempotency_key"]
+    existing = (await db.execute(select(models.DurableJob).where(models.DurableJob.idempotency_key == key))).scalars().first()
+    if existing:
+        return {"id": existing.id, "status": existing.status, "duplicate": True}
+    job = models.DurableJob(id=str(uuid.uuid4()), job_type=body["job_type"], payload=body["payload"], idempotency_key=key, status="queued", attempt_count=0)
+    db.add(job)
+    try:
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        existing = (await db.execute(select(models.DurableJob).where(models.DurableJob.idempotency_key == key))).scalars().one()
+        return {"id": existing.id, "status": existing.status, "duplicate": True}
+    return {"id": job.id, "status": job.status, "duplicate": False}
+
+
+@app.post("/durable-jobs/lease", dependencies=[Depends(get_current_user)])
+async def lease_durable_job(body: dict, db: AsyncSession = Depends(get_db)):
+    """Atomically claim one due/expired job; SKIP LOCKED protects multi-instance workers."""
+    now = _utc_now(); seconds = max(1, int(body.get("lease_seconds", 60)))
+    stmt = (select(models.DurableJob).where(or_(
+        models.DurableJob.status == "queued",
+        (models.DurableJob.status == "retry_wait") & (models.DurableJob.next_attempt_at <= now),
+        (models.DurableJob.status.in_(["leased", "running"])) & (models.DurableJob.lease_expires_at <= now),
+    )).order_by(models.DurableJob.created_at).with_for_update(skip_locked=True).limit(1))
+    job = (await db.execute(stmt)).scalars().first()
+    if not job:
+        return None
+    if job.status in {"leased", "running"}:
+        job.attempt_count += 1
+    job.status, job.lease_owner = "leased", body["worker_id"]
+    job.lease_expires_at = now + datetime.timedelta(seconds=seconds)
+    await db.commit()
+    return {"id": job.id, "job_type": job.job_type, "payload": job.payload, "attempt_count": job.attempt_count}
 
 
 @app.post(
@@ -1215,6 +1228,7 @@ async def materialize_rab_bridge_proposal(
         materialized_count=materialized_count, skipped_items=skipped_items, rab_draft_updated=rab_draft_updated,
     )
     proposal.materialization_result = result.model_dump()
+    _audit_project_action(db, project_id=id, actor=user.uid, action="rab_bridge.materialized", target_id=proposal.id)
     await db.commit()
     return result
 

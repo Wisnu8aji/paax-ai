@@ -1,5 +1,5 @@
 import os
-from typing import Optional, List
+from typing import Optional, List, FrozenSet
 from fastapi import Request, HTTPException, Security, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import firebase_admin
@@ -9,6 +9,7 @@ from pydantic import BaseModel
 class User(BaseModel):
     uid: str
     email: Optional[str] = None
+    internal_scopes: FrozenSet[str] = frozenset()
 
 # Inisialisasi Firebase Admin jika belum
 if not firebase_admin._apps:
@@ -32,8 +33,13 @@ def get_current_user(
     if internal_key and req_internal_key == internal_key:
         # Request datang dari internal service yang valid
         # Bisa juga mengecek apakah ada UID di header (diteruskan dari service pemanggil)
+        # A service identity must name an actor.  It cannot silently become a
+        # global project-member bypass.  Deployment grants scopes in config;
+        # callers cannot elevate themselves with a request header.
         uid = request.headers.get("X-User-Id", "service-account")
-        return User(uid=uid)
+        configured = os.environ.get("INTERNAL_SERVICE_SCOPES", "")
+        scopes = frozenset(scope.strip() for scope in configured.split(",") if scope.strip())
+        return User(uid=uid, internal_scopes=scopes)
 
     # 2. Cek Firebase JWT
     if not auth_header:
@@ -75,10 +81,6 @@ class RoleChecker:
         db: AsyncSession = Depends(get_db),
         user: User = Depends(get_current_user)
     ):
-        # Service account bypass (if uid is service-account, allow)
-        if user.uid == "service-account":
-            return user
-            
         result = await db.execute(
             select(models.ProjectMember)
             .where(
