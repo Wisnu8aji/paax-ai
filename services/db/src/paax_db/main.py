@@ -1202,6 +1202,104 @@ async def lease_durable_job(body: dict, db: AsyncSession = Depends(get_db)):
     return {"id": job.id, "job_type": job.job_type, "payload": job.payload, "attempt_count": job.attempt_count}
 
 
+def _durable_job_or_404(job: models.DurableJob | None) -> models.DurableJob:
+    if job is None:
+        raise HTTPException(status_code=404, detail="durable job not found")
+    return job
+
+
+def _require_lease_owner(job: models.DurableJob, worker_id: str) -> None:
+    if job.lease_owner and job.lease_owner != worker_id:
+        raise HTTPException(status_code=409, detail="job lease belongs to another worker")
+
+
+@app.post("/durable-jobs/{job_id}/transition", dependencies=[Depends(get_current_user)])
+async def transition_durable_job(job_id: str, body: dict, db: AsyncSession = Depends(get_db)):
+    """Move a leased job to 'running'. A dedicated endpoint (rather than the
+    generic patch pattern used elsewhere) keeps the durable-job state machine
+    server-authoritative -- the worker states its intent, the DB enforces
+    whether that transition is legal from the job's current status."""
+    worker_id = body["worker_id"]
+    job = _durable_job_or_404((await db.execute(
+        select(models.DurableJob).where(models.DurableJob.id == job_id).with_for_update()
+    )).scalars().first())
+    _require_lease_owner(job, worker_id)
+    if job.status not in {"leased", "running"}:
+        raise HTTPException(status_code=409, detail=f"cannot transition to running from status '{job.status}'")
+    job.status = "running"
+    await db.commit()
+    return {"id": job.id, "status": job.status}
+
+
+@app.post("/durable-jobs/{job_id}/heartbeat", dependencies=[Depends(get_current_user)])
+async def heartbeat_durable_job(job_id: str, body: dict, db: AsyncSession = Depends(get_db)):
+    """Extend a lease while a worker is actively processing a job -- without
+    this, a slow (but healthy) job would have its lease expire and get
+    re-leased to a second worker mid-processing."""
+    worker_id = body["worker_id"]
+    seconds = max(1, int(body.get("lease_seconds", 60)))
+    job = _durable_job_or_404((await db.execute(
+        select(models.DurableJob).where(models.DurableJob.id == job_id).with_for_update()
+    )).scalars().first())
+    if job.status not in {"leased", "running"} or job.lease_owner != worker_id:
+        raise HTTPException(status_code=409, detail="cannot heartbeat a job not leased by this worker")
+    job.lease_expires_at = _utc_now() + datetime.timedelta(seconds=seconds)
+    await db.commit()
+    return {"id": job.id, "lease_expires_at": job.lease_expires_at}
+
+
+@app.post("/durable-jobs/{job_id}/complete", dependencies=[Depends(get_current_user)])
+async def complete_durable_job(job_id: str, body: dict, db: AsyncSession = Depends(get_db)):
+    worker_id = body["worker_id"]
+    job = _durable_job_or_404((await db.execute(
+        select(models.DurableJob).where(models.DurableJob.id == job_id).with_for_update()
+    )).scalars().first())
+    _require_lease_owner(job, worker_id)
+    if job.status != "running":
+        raise HTTPException(status_code=409, detail=f"cannot complete a job in status '{job.status}'")
+    job.status, job.lease_expires_at, job.lease_owner = "completed", None, None
+    await db.commit()
+    return {"id": job.id, "status": job.status}
+
+
+@app.post("/durable-jobs/{job_id}/retry", dependencies=[Depends(get_current_user)])
+async def retry_durable_job(job_id: str, body: dict, db: AsyncSession = Depends(get_db)):
+    """Bounded-retry transition matching InMemoryDurableJobStore.retry's
+    policy: exponential backoff (1s/4s/16s pattern via 2**(attempt-1)) until
+    max_attempts, then poisoned/failed -- so both queue backends behave
+    identically to any caller."""
+    worker_id, error = body["worker_id"], body.get("error", "")
+    max_attempts = max(1, int(body.get("max_attempts", 3)))
+    job = _durable_job_or_404((await db.execute(
+        select(models.DurableJob).where(models.DurableJob.id == job_id).with_for_update()
+    )).scalars().first())
+    if job.status != "running" or job.lease_owner != worker_id:
+        raise HTTPException(status_code=409, detail="only the lease owner can retry a running job")
+    job.attempt_count += 1
+    job.last_error = error
+    job.lease_expires_at = None
+    if job.attempt_count >= max_attempts:
+        job.poisoned_at = _utc_now()
+        job.status = "failed"
+    else:
+        job.status = "retry_wait"
+        job.next_attempt_at = _utc_now() + datetime.timedelta(seconds=2 ** (job.attempt_count - 1))
+    await db.commit()
+    return {"id": job.id, "status": job.status, "attempt_count": job.attempt_count}
+
+
+@app.get("/durable-jobs/{job_id}", dependencies=[Depends(get_current_user)])
+async def get_durable_job(job_id: str, db: AsyncSession = Depends(get_db)):
+    job = _durable_job_or_404((await db.execute(
+        select(models.DurableJob).where(models.DurableJob.id == job_id)
+    )).scalars().first())
+    return {
+        "id": job.id, "job_type": job.job_type, "payload": job.payload, "status": job.status,
+        "lease_owner": job.lease_owner, "attempt_count": job.attempt_count, "last_error": job.last_error,
+        "poisoned_at": job.poisoned_at,
+    }
+
+
 @app.post(
     "/projects/{id}/project-graph/rab-materialization-mappings/{mapping_id}/resolve",
     response_model=schemas.RabMaterializationMappingResponse,

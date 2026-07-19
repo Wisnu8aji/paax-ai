@@ -45,6 +45,22 @@ class DurableJobQueue(Protocol):
     def lease(self, worker_id: str) -> DurableJob | None: ...
 
 
+class AsyncDurableJobQueue(Protocol):
+    """Async lifecycle interface a production worker drives. Deliberately a
+    separate protocol from the sync DurableJobQueue above (used by the
+    in-memory store's own worker/tests) rather than forcing one interface to
+    cover both -- DbDurableJobStore's operations are HTTP calls and must be
+    awaited; retrofitting that onto the synchronous in-memory contract would
+    either block the event loop or make every existing InMemoryDurableJobStore
+    caller/test await something that was never asynchronous."""
+
+    async def lease(self, worker_id: str, *, lease_seconds: int = 60) -> dict | None: ...
+    async def transition_running(self, job_id: str, worker_id: str) -> dict: ...
+    async def heartbeat(self, job_id: str, worker_id: str, *, lease_seconds: int = 60) -> dict: ...
+    async def complete(self, job_id: str, worker_id: str) -> dict: ...
+    async def retry(self, job_id: str, worker_id: str, *, error: str, max_attempts: int = 3) -> dict: ...
+
+
 class InMemoryDurableJobStore:
     """Deterministic local adapter; production backends implement DurableJobQueue."""
     def __init__(self, *, now: callable | None = None, max_attempts: int = 3):
@@ -132,13 +148,20 @@ class DbDurableJobStore:
     0026), reached over the HTTP boundary like DemDbClient -- this service
     never opens a direct DB connection (Aturan Emas / architecture boundary).
 
-    Only enqueue/lease are implemented because those are the only two
-    operations services/db currently exposes as HTTP endpoints
-    (POST /durable-jobs/enqueue, POST /durable-jobs/lease); no worker in this
-    codebase currently leases from the queue at all (dem.extract/dem.synthesize
-    run in-process via FastAPI BackgroundTasks), so transition/heartbeat/
-    cancel/retry have no caller yet and are intentionally not implemented
-    here -- add them alongside the worker that will actually use them.
+    Every DurableJobQueue lifecycle operation (enqueue/lease/transition/
+    heartbeat/complete/retry) is a real HTTP call to services/db, so a
+    production worker (see durable_worker.py / durable_worker_main.py) gets
+    the same restart-safe, multi-instance-safe guarantees as the DB-backed
+    queue itself: leases are SKIP LOCKED-protected server-side, and status
+    transitions are enforced by the DB row's current state, not trusted from
+    the caller.
+
+    This class's methods are all async (an HTTP call per operation) -- unlike
+    InMemoryDurableJobStore, which is synchronous. Callers that need to work
+    with either backend uniformly should use the AsyncDurableJobQueue
+    protocol and DurableWorker, not assume a sync interface (see
+    durable_worker.py's docstring for why the worker never imports
+    InMemoryDurableJobStore directly).
     """
 
     def __init__(
@@ -173,5 +196,41 @@ class DbDurableJobStore:
                 "/durable-jobs/lease",
                 json={"worker_id": worker_id, "lease_seconds": lease_seconds},
             )
+            response.raise_for_status()
+            return response.json()
+
+    async def transition_running(self, job_id: str, worker_id: str) -> dict:
+        async with self._client() as client:
+            response = await client.post(f"/durable-jobs/{job_id}/transition", json={"worker_id": worker_id})
+            response.raise_for_status()
+            return response.json()
+
+    async def heartbeat(self, job_id: str, worker_id: str, *, lease_seconds: int = 60) -> dict:
+        async with self._client() as client:
+            response = await client.post(
+                f"/durable-jobs/{job_id}/heartbeat",
+                json={"worker_id": worker_id, "lease_seconds": lease_seconds},
+            )
+            response.raise_for_status()
+            return response.json()
+
+    async def complete(self, job_id: str, worker_id: str) -> dict:
+        async with self._client() as client:
+            response = await client.post(f"/durable-jobs/{job_id}/complete", json={"worker_id": worker_id})
+            response.raise_for_status()
+            return response.json()
+
+    async def retry(self, job_id: str, worker_id: str, *, error: str, max_attempts: int = 3) -> dict:
+        async with self._client() as client:
+            response = await client.post(
+                f"/durable-jobs/{job_id}/retry",
+                json={"worker_id": worker_id, "error": error, "max_attempts": max_attempts},
+            )
+            response.raise_for_status()
+            return response.json()
+
+    async def get_job(self, job_id: str) -> dict:
+        async with self._client() as client:
+            response = await client.get(f"/durable-jobs/{job_id}")
             response.raise_for_status()
             return response.json()
