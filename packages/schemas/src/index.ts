@@ -1629,6 +1629,7 @@ export const NodeTypeEnum = z.enum([
 
 export const VerificationStatusEnum = z.enum([
   "extracted", "ai_interpreted", "cross_sheet_inferred", "human_verified", "conflicting", "ambiguous",
+  "proposed", "validated", "accepted", "rejected",
 ]);
 
 export const NodePropertySchema = z.object({
@@ -1673,6 +1674,12 @@ export const ConfidenceClassEnum = z.enum([
 export const EdgeResolverSchema = z.object({
   method: z.string(),
   model: z.string().nullish(),
+  resolver_version: z.string().nullish(),
+  candidates_considered: z.number().nullish(),
+  score_breakdown: z.record(z.number()).nullish(),
+  passed_constraints: z.array(z.string()).nullish(),
+  failed_constraints: z.array(z.string()).nullish(),
+  rejected_candidate_ids: z.array(z.string()).nullish(),
 });
 
 export const ProjectGraphEdgeSchema = z.object({
@@ -1684,6 +1691,7 @@ export const ProjectGraphEdgeSchema = z.object({
   confidence: z.number().min(0).max(1),
   evidence_refs: z.array(z.string()).default([]),
   resolver: EdgeResolverSchema.nullish(),
+  resolution_state: z.string().nullish(),
 });
 export type ProjectGraphEdge = z.infer<typeof ProjectGraphEdgeSchema>;
 
