@@ -8,6 +8,7 @@ benchmark = importlib.util.module_from_spec(spec); assert spec.loader; spec.load
 def test_offline_benchmark_requires_every_metric_and_passes_local_fixture(tmp_path):
     result = benchmark.run()
     assert result["offline"] and result["passed"]
+    assert result["diversity"]["passed"] and len(result["diversity"]["suites"]) == 2
     payload = json.loads(benchmark.MANIFEST.read_text())
     payload["fixture_metrics"].pop("retrieval.intent_accuracy")
     missing = tmp_path / "missing.json"; missing.write_text(json.dumps(payload))
