@@ -39,6 +39,13 @@ def test_production_starts_when_both_backends_are_explicitly_configured(monkeypa
     monkeypatch.setenv("ARTIFACT_STORE_BACKEND", "s3")
     monkeypatch.setenv("ARTIFACT_STORE_S3_BUCKET", "test-bucket")
     monkeypatch.setenv("JOB_QUEUE_BACKEND", "durable-db")
+    # boto3.client() resolves credentials eagerly at construction time; without
+    # any credential source it falls through to the EC2 instance-metadata
+    # service (169.254.169.254), a real outbound call this suite must never
+    # make. Fake static credentials make boto3 skip that fallback entirely --
+    # this test only asserts adapter *type*, not that S3 calls succeed.
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "test-access-key")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "test-secret-key")
     # No RuntimeError, and both backend selections are real, not config
     # no-ops: ARTIFACT_STORE_BACKEND=s3 actually constructs S3ArtifactStore,
     # JOB_QUEUE_BACKEND=durable-db actually constructs DbDurableJobStore.

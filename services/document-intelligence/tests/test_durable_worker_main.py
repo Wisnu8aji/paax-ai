@@ -38,6 +38,11 @@ def test_builds_a_real_worker_when_fully_configured(monkeypatch):
     monkeypatch.setenv("JOB_QUEUE_BACKEND", "durable-db")
     monkeypatch.setenv("ARTIFACT_STORE_BACKEND", "s3")
     monkeypatch.setenv("ARTIFACT_STORE_S3_BUCKET", "test-bucket")
+    # See test_durable_adapters_fail_closed.py: without static credentials,
+    # boto3.client() falls through to the EC2 instance-metadata service, a
+    # real outbound call this suite must never make.
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "test-access-key")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "test-secret-key")
     worker = build_worker(worker_id="worker-test")
     assert worker.worker_id == "worker-test"
     assert isinstance(worker.queue, DbDurableJobStore)
