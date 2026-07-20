@@ -2,6 +2,7 @@ import asyncio
 import os
 
 import pytest
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
@@ -18,6 +19,15 @@ test_engine = create_async_engine(
     poolclass=StaticPool,
 )
 TestSession = async_sessionmaker(test_engine, expire_on_commit=False)
+
+
+@event.listens_for(test_engine.sync_engine, "connect")
+def enable_sqlite_foreign_keys(dbapi_connection, _connection_record):
+    """Match PostgreSQL semantics in every test, not only after a test happens
+    to execute PRAGMA foreign_keys=ON on the shared StaticPool connection."""
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 
 async def override_get_db():

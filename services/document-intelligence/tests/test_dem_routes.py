@@ -15,8 +15,29 @@ HEADERS = {"X-Internal-Key": "test-internal-key"}
 
 
 def test_dem_routes_are_registered():
-    included = [getattr(route, "original_router", None) for route in app.routes]
-    assert dem_routes.router in included
+    """Assert the public DEM contract via the OpenAPI schema.
+
+    FastAPI's ``app.routes`` may hold lazily-resolved wrapper objects
+    depending on installed version (see ``fastapi.routing._IncludedRouter``),
+    so walking it directly is not a stable contract. ``app.openapi()`` is
+    the actual public, version-stable surface clients and tooling rely on.
+    """
+    paths = app.openapi().get("paths", {})
+    registered = {
+        (path, method.upper())
+        for path, methods in paths.items()
+        for method in methods
+    }
+    expected = {
+        ("/drawings/dem/start", "POST"),
+        ("/drawings/dem/{run_id}/status", "GET"),
+        ("/drawings/dem/{run_id}/synthesize", "POST"),
+        ("/drawings/dem/{run_id}/pages/{page_index}/image", "GET"),
+        ("/drawings/dem/{run_id}/artifact-url", "POST"),
+        ("/drawings/dem/{run_id}/artifact", "GET"),
+        ("/drawings/dem/{run_id}/artifact", "DELETE"),
+    }
+    assert expected <= registered
 
 
 from unittest.mock import patch, MagicMock

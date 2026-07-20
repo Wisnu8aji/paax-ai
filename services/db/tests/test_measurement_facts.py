@@ -13,10 +13,12 @@ async def test_measurement_fact_persists_typed_input_with_audit_and_provenance()
 
     async with TestSession() as session:
         session.add(models.Project(id="PROJECT-MEASURE", owner_id="OWNER", name="Measurement project"))
+        await session.flush()
         session.add(models.ProjectGraphSnapshot(
             snapshot_id="SNAP-MEASURE", project_id="PROJECT-MEASURE", schema_version="v1",
             source_manifest_hash="fixture", generation_metadata={}, effective_sheet_revision_ids=[],
         ))
+        await session.flush()
         session.add(models.MeasurementFact(
             measurement_id="M-COLUMN-W", project_id="PROJECT-MEASURE", snapshot_id="SNAP-MEASURE",
             measurement_type="length", value=Decimal("400"), unit="mm", source_method="written_dimension",
@@ -40,10 +42,12 @@ async def test_measurement_fact_value_and_unit_are_immutable_after_persistence()
 
     async with TestSession() as session:
         session.add(models.Project(id="PROJECT-MEASURE-IMM", owner_id="OWNER", name="Immutable measurement project"))
+        await session.flush()
         session.add(models.ProjectGraphSnapshot(
             snapshot_id="SNAP-MEASURE-IMM", project_id="PROJECT-MEASURE-IMM", schema_version="v1",
             source_manifest_hash="fixture", generation_metadata={}, effective_sheet_revision_ids=[],
         ))
+        await session.flush()
         session.add(models.MeasurementFact(
             measurement_id="M-IMM", project_id="PROJECT-MEASURE-IMM", snapshot_id="SNAP-MEASURE-IMM",
             measurement_type="length", value=Decimal("1"), unit="m", source_method="written_dimension",
@@ -77,10 +81,12 @@ async def test_measurement_fact_verification_status_and_superseded_at_remain_upd
 
     async with TestSession() as session:
         session.add(models.Project(id="PROJECT-MEASURE-SUP", owner_id="OWNER", name="Supersedable measurement project"))
+        await session.flush()
         session.add(models.ProjectGraphSnapshot(
             snapshot_id="SNAP-MEASURE-SUP", project_id="PROJECT-MEASURE-SUP", schema_version="v1",
             source_manifest_hash="fixture", generation_metadata={}, effective_sheet_revision_ids=[],
         ))
+        await session.flush()
         session.add(models.MeasurementFact(
             measurement_id="M-SUP", project_id="PROJECT-MEASURE-SUP", snapshot_id="SNAP-MEASURE-SUP",
             measurement_type="length", value=Decimal("1"), unit="m", source_method="written_dimension",

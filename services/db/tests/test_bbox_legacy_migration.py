@@ -9,6 +9,7 @@ from paax_db.bbox_legacy_migration import migrate_legacy_bbox_rows
 
 async def _seed_project(session, *, project_id: str):
     session.add(models.Project(id=project_id, owner_id="OWNER", name="Legacy bbox project"))
+    await session.flush()
     session.add(models.ProjectGraphSnapshot(
         snapshot_id=f"{project_id}-SNAP", project_id=project_id, schema_version="v1",
         source_manifest_hash="fixture", generation_metadata={}, effective_sheet_revision_ids=[],
@@ -45,6 +46,7 @@ async def test_legacy_row_with_resolvable_dem_page_dimensions_is_reported_conver
             id="11111111-1111-1111-1111-111111111111", document_id="DOC-2", document_hash="sha256:x",
             file_name="legacy.pdf", total_pages=1, provider="qwen", prompt_version="v1",
         ))
+        await session.flush()
         session.add(models.DemPage(
             id="22222222-2222-2222-2222-222222222222", run_id="11111111-1111-1111-1111-111111111111",
             page_index=0, status="complete",
@@ -100,6 +102,7 @@ async def test_double_run_produces_identical_report_and_never_mutates_anything()
             id="33333333-3333-3333-3333-333333333333", document_id="DOC-4", document_hash="sha256:y",
             file_name="legacy.pdf", total_pages=1, provider="qwen", prompt_version="v1",
         ))
+        await session.flush()
         session.add(models.DemPage(
             id="44444444-4444-4444-4444-444444444444", run_id="33333333-3333-3333-3333-333333333333",
             page_index=0, status="complete",

@@ -2,12 +2,17 @@ name: PAAX AI CI
 
 on:
   push:
-    branches: [ "main", "develop", "feature/*" ]
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+      - 'feat/**'
   pull_request:
-    branches: [ "main", "develop" ]
+    branches: [main, develop]
 
 jobs:
-  build-and-test:
+  node-quality:
+    name: Node tests, typecheck, and build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,37 +25,164 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'pnpm'
+          cache: pnpm
 
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile --config.optional=true
-        
-      - name: Build Monorepo Workspace
+
+      - name: Test shared schemas
+        run: pnpm --filter @paax/schemas test
+
+      - name: Test AI Orchestrator
+        run: pnpm --filter @paax/ai-orchestrator test
+
+      - name: Typecheck AI Orchestrator
+        run: pnpm --filter @paax/ai-orchestrator build
+
+      - name: Test web application
+        run: pnpm --filter @paax/web test
+
+      - name: Typecheck web application
+        run: pnpm --filter @paax/web exec tsc --noEmit
+
+      - name: Build monorepo workspace
         run: pnpm build --concurrency=1
         env:
           NODE_OPTIONS: --max_old_space_size=4096
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+  python-services:
+    name: Deterministic Python service suites
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install shared Python schemas
-        run: pip install -e ./packages/schemas/python
-      - name: Install Core Engine dependencies
+          cache: pip
+
+      - name: Verify committed runtime data and real-fixture anchors
+        shell: bash
+        run: |
+          test -f data/ahsp/cipta-karya.sample.json
+          test -f data/ahsp/cipta-karya-2026.json
+          test -f data/harga-satuan/jateng.sample.json
+          test -f data/harga-satuan/semarang.json
+          test -f data/harga-satuan/surakarta.json
+          test "$(find report/report_drawing_intelligence/dem_extraction_88pages/pages -name 'page-*.json' | wc -l)" -eq 88
+
+      - name: Install Python services and test tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ./packages/schemas/python
+          pip install -e './services/core-engine[dev]'
+          pip install -e ./services/document-intelligence
+          pip install pytest httpx pytest-socket
+
+      - name: Run Core Engine tests with outbound network blocked
         working-directory: ./services/core-engine
-        run: pip install -e . pytest httpx
-      - name: Run Core Engine Tests
-        working-directory: ./services/core-engine
-        run: pytest
-      - name: Install Document Intelligence dependencies
+        env:
+          TESTING: '1'
+          OPENAI_API_KEY: ''
+          ANTHROPIC_API_KEY: ''
+          GOOGLE_API_KEY: ''
+          GEMINI_API_KEY: ''
+          OPENROUTER_API_KEY: ''
+        run: pytest -q --disable-socket
+
+      - name: Run Document Intelligence tests with outbound network blocked
         working-directory: ./services/document-intelligence
-        run: pip install -e . pytest httpx
-      - name: Run Document Intelligence Tests
+        env:
+          TESTING: '1'
+          INTERNAL_SERVICE_KEY: test-internal-key
+          OPENAI_API_KEY: ''
+          ANTHROPIC_API_KEY: ''
+          GOOGLE_API_KEY: ''
+          GEMINI_API_KEY: ''
+          OPENROUTER_API_KEY: ''
+        run: pytest -q --disable-socket
+
+      - name: Re-run durable deterministic pipeline acceptance tests explicitly
         working-directory: ./services/document-intelligence
-        run: pytest
-      - name: Test AI Orchestrator
-        run: pnpm --filter ai-orchestrator test
-      - name: Typecheck AI Orchestrator
-        run: pnpm --filter ai-orchestrator run build
-      - name: Test Apps/Web
-        run: pnpm --dir apps/web test
+        env:
+          TESTING: '1'
+          INTERNAL_SERVICE_KEY: test-internal-key
+          OPENAI_API_KEY: ''
+          ANTHROPIC_API_KEY: ''
+          GOOGLE_API_KEY: ''
+          GEMINI_API_KEY: ''
+          OPENROUTER_API_KEY: ''
+        run: |
+          pytest -q --disable-socket \
+            tests/test_durable_worker_async.py \
+            tests/test_dem_job_handlers.py \
+            tests/test_synthesis_task.py
+
+  database:
+    name: DB tests and PostgreSQL + pgvector migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: paax
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d paax"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install DB service
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ./packages/schemas/python
+          pip install -e './services/db[dev]'
+
+      - name: Run complete DB test suite
+        working-directory: ./services/db
+        env:
+          TESTING: '1'
+          INTERNAL_SERVICE_KEY: test-internal-key
+          INTERNAL_SERVICE_SCOPES: project_graph:synthesize,dem:read,dem:write,dem:authorize-actor
+        run: pytest -q
+
+      - name: Verify Alembic graph
+        working-directory: ./services/db
+        run: |
+          test "$(alembic heads | wc -l)" -eq 1
+          alembic history
+
+      - name: Upgrade empty PostgreSQL + pgvector database to head
+        working-directory: ./services/db
+        env:
+          DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/paax
+        run: alembic upgrade head
+
+      - name: Verify pgvector and current revision
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d paax -v ON_ERROR_STOP=1 -c "SELECT extname FROM pg_extension WHERE extname = 'vector';"
+          psql -h localhost -U postgres -d paax -v ON_ERROR_STOP=1 -c "SELECT version_num FROM alembic_version;"
+
+      - name: Downgrade one revision and re-upgrade
+        working-directory: ./services/db
+        env:
+          DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/paax
+        run: |
+          alembic downgrade -1
+          alembic upgrade head

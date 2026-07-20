@@ -56,7 +56,9 @@ async def test_measurement_supersession_preserves_old_fact_and_audit():
     from .conftest import TestSession
     async with TestSession() as session:
         session.add(models.Project(id="P-SUP", owner_id="OWNER", name="Supersession"))
+        await session.flush()
         session.add(models.ProjectGraphSnapshot(snapshot_id="S-SUP", project_id="P-SUP", schema_version="v1", source_manifest_hash="x", generation_metadata={}, effective_sheet_revision_ids=[]))
+        await session.flush()
         session.add(models.MeasurementFact(measurement_id="M-OLD", project_id="P-SUP", snapshot_id="S-SUP", measurement_type="length", value=Decimal("400"), unit="mm", source_method="written_dimension", element_ids=[], evidence_refs=["EV-1"], formula_inputs=[], verification_status="human_verified", audit_metadata={}))
         await session.commit()
         replacement = models.MeasurementFact(measurement_id="M-NEW", project_id="P-SUP", snapshot_id="S-SUP", measurement_type="length", value=Decimal("450"), unit="mm", source_method="written_dimension", element_ids=[], evidence_refs=["EV-2"], formula_inputs=[], verification_status="human_verified", audit_metadata={})

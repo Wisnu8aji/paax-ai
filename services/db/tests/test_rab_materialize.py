@@ -25,11 +25,20 @@ class CompleteEngineTransport:
 async def _seed_materialization_fixture(*, mapping: bool):
     from .conftest import TestSession
     async with TestSession() as session:
+        # Flush dependency layers explicitly. The production schema enforces
+        # project/snapshot foreign keys and these models intentionally do not
+        # expose ORM relationships, so relying on add-order is not portable.
         session.add(models.Project(id="PROJECT-A", owner_id="OWNER-A", name="Project A"))
+        await session.flush()
+
         session.add(models.ProjectMember(project_id="PROJECT-A", user_id="OWNER-A", role="owner"))
         session.add(models.ProjectGraphSnapshot(snapshot_id="SNAP-A", project_id="PROJECT-A", schema_version="v1", source_manifest_hash="fixture", generation_metadata={}, effective_sheet_revision_ids=[], status="active"))
+        await session.flush()
+
         session.add(models.RabBridgeProposal(id="PROP-1", project_id="PROJECT-A", snapshot_id="SNAP-A", node_ids=["NODE-1"], status="approved", created_by="OWNER-A", payload={"items": [{"node_id": "NODE-1", "name": "Kolom beton", "discipline": "structure", "ahsp_code": "A.4.4.1.20", "evidence_ids": ["EV-1"], "properties": {}}]}))
         session.add(models.MeasurementFact(measurement_id="MF-W", project_id="PROJECT-A", snapshot_id="SNAP-A", measurement_type="length", value=Decimal("0.2"), unit="m", source_method="written_dimension", element_ids=["NODE-1"], evidence_refs=["EV-1"], formula_inputs=["width"], verification_status="human_verified", audit_metadata={}))
+        await session.flush()
+
         if mapping:
             session.add(models.RabMaterializationMapping(id="MAP-1", project_id="PROJECT-A", snapshot_id="SNAP-A", work_item_node_id="NODE-1", measurement_fact_ids=["MF-W"], calculation_type="concrete_column_volume", evidence_refs=["EV-1"], approval_status="approved", created_by="OWNER-A"))
         await session.commit()

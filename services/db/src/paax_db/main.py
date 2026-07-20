@@ -1640,8 +1640,11 @@ async def get_project_graph_summary_views(    id: str,
 async def create_quantity_assumption(
     id: str, request: schemas.QuantityAssumptionCreate, db: AsyncSession = Depends(get_db)
 ):
-    """Buat asumsi kuantitas baru untuk proyek. Endpoint ini HANYA menyimpan teks asumsi manusia
-    dan statusnya — tidak pernah menghitung angka apa pun (Aturan Emas)."""
+    """Simpan kandidat asumsi kuantitas typed yang diberikan manusia.
+
+    Endpoint ini hanya menyimpan input, scope, rationale, provenance, dan status
+    approval awal. Endpoint tidak menghitung quantity atau nilai akhir (Aturan Emas).
+    """
     if request.project_id != id:
         raise HTTPException(status_code=400, detail="project_id di body tidak cocok dengan project id di path")
     existing = await db.get(models.QuantityAssumption, request.id)
@@ -1685,8 +1688,11 @@ async def resolve_quantity_assumption(
     request: schemas.QuantityAssumptionResolve,
     db: AsyncSession = Depends(get_db),
 ):
-    """Ubah status asumsi kuantitas (accepted/rejected). Sesuai D12: approval SELALU aksi
-    manusia eksplisit — tidak ada auto-accept. Hanya owner dan pm yang bisa menyetujui."""
+    """Ubah status asumsi kuantitas menjadi approved atau rejected.
+
+    Sesuai D12, approval selalu aksi manusia eksplisit; tidak ada auto-approval.
+    Hanya owner dan PM yang dapat menyelesaikan review.
+    """
     assumption = (await db.execute(
         select(models.QuantityAssumption).where(
             models.QuantityAssumption.id == assumption_id,

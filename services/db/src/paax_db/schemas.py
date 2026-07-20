@@ -181,9 +181,8 @@ class MorningReportCreate(BaseModel):
 class MorningReportResponse(MorningReportCreate):
     id: str
     generated_at: datetime
-    
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
 
 class UsageSummaryResponse(BaseModel):
     total_tokens_in: int
@@ -653,7 +652,7 @@ class RabBridgeV2WorkItemCandidate(BaseModel):
     category: str
     expected_unit: str
     measurement_fact_ids: List[str] = Field(default_factory=list)
-    status: Literal["candidate_ready", "needs_measurement"]
+    status: Literal["candidate_ready", "needs_measurement", "no_candidate"]
     ahsp_candidates: List[RabBridgeV2AhspCandidate] = Field(default_factory=list)
     rejected_candidates: List[Dict[str, str]] = Field(default_factory=list)
 
@@ -666,7 +665,7 @@ class RabBridgeV2CandidateSet(BaseModel):
     provenance: Dict[str, Any]
 
 
-class QuantityAssumptionCreate(BaseModel):
+class QuantityAssumptionBase(BaseModel):
     id: str
     project_id: str
     element_type_id: Optional[str] = None
@@ -679,6 +678,7 @@ class QuantityAssumptionCreate(BaseModel):
     evidence_refs: List[str] = Field(default_factory=list)
     explicit_human_source: bool = False
     approval_status: Literal["pending_approval", "approved", "rejected", "stale"] = "pending_approval"
+    status: Literal["pending_approval", "approved", "rejected", "stale"] = "pending_approval"
     expires_at: Optional[datetime] = None
     stale_reason: Optional[str] = None
     source_role: str = "human"
@@ -687,12 +687,18 @@ class QuantityAssumptionCreate(BaseModel):
     def require_evidence_or_human_source(self):
         if not self.evidence_refs and not self.explicit_human_source:
             raise ValueError("assumption requires evidence or explicit human source")
-        if self.approval_status != "pending_approval":
-            raise ValueError("assumption approval must start pending_approval")
         return self
 
 
-class QuantityAssumptionResponse(QuantityAssumptionCreate):
+class QuantityAssumptionCreate(QuantityAssumptionBase):
+    @model_validator(mode="after")
+    def require_initial_pending_state(self):
+        if self.approval_status != "pending_approval" or self.status != "pending_approval":
+            raise ValueError("assumption approval and status must start pending_approval")
+        return self
+
+
+class QuantityAssumptionResponse(QuantityAssumptionBase):
     created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)

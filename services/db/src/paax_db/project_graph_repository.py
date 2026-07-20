@@ -76,7 +76,7 @@ async def _transaction(session: AsyncSession, enabled: bool):
         yield
 
 
-def _add_graph_records(
+async def _add_graph_records(
     session: AsyncSession,
     *,
     project_id: str,
@@ -89,6 +89,15 @@ def _add_graph_records(
     aliases: Sequence[Mapping[str, Any]],
     communities: Sequence[Mapping[str, Any]],
 ) -> None:
+    """Persist immutable graph records in explicit FK-safe phases.
+
+    SQLAlchemy's unit-of-work ordering is relationship-driven; these models
+    intentionally do not expose mutable ORM relationships. With PostgreSQL
+    foreign keys enabled, adding every table in one flush can therefore emit
+    edges/aliases before their nodes or join rows before their evidence. The
+    migration has always required those references to exist, so flush parents
+    first instead of relying on SQLite's historically-disabled FK pragma.
+    """
     session.add_all([
         ProjectGraphNode(
             snapshot_id=snapshot_id, project_id=project_id, node_id=item["node_id"],
@@ -101,6 +110,38 @@ def _add_graph_records(
         for item in nodes
     ])
     session.add_all([
+        ProjectGraphEvidence(
+            snapshot_id=snapshot_id, project_id=project_id, evidence_id=item["evidence_id"],
+            document_id=item["document_id"], page_index=item["page_index"],
+            sheet_id=item["sheet_id"], kind=item["kind"], raw_text=item["raw_text"],
+            bbox_json=item.get("bbox"), source_dem_id=item.get("source_dem_id"),
+            revision_id=item.get("revision_id"), run_id=item.get("run_id"),
+            dem_page_id=item.get("dem_page_id"), view_id=item.get("view_id"),
+            zone_id=item.get("zone_id"), modality=item.get("modality"),
+            raw_content=item.get("raw_content"), normalized_content=item.get("normalized_content"),
+            bbox_source=item.get("bbox_source"), bbox_normalized=item.get("bbox_normalized"),
+            bbox_space=item.get("bbox_space"),
+            bbox_quarantine_reason=item.get("bbox_quarantine_reason"),
+            coordinate_schema_version=item.get("coordinate_schema_version"),
+            transform_version=item.get("transform_version"),
+            polygon_source=item.get("polygon_source"),
+            polygon_normalized=item.get("polygon_normalized"),
+            confidence=item.get("confidence"), extractor=item.get("extractor"),
+            source_document_hash=item.get("source_document_hash"),
+        )
+        for item in evidence
+    ])
+    session.add_all([
+        ProjectGraphCommunity(
+            snapshot_id=snapshot_id, community_id=item["community_id"],
+            community_type=item["community_type"], name=item["name"],
+            summary=item.get("summary", ""), member_count=item["member_count"],
+        )
+        for item in communities
+    ])
+    await session.flush()
+
+    session.add_all([
         ProjectGraphEdge(
             snapshot_id=snapshot_id, project_id=project_id, edge_id=item["edge_id"],
             source_node_id=item["source_node_id"], target_node_id=item["target_node_id"],
@@ -110,33 +151,15 @@ def _add_graph_records(
         for item in edges
     ])
     session.add_all([
-        ProjectGraphEvidence(
-            snapshot_id=snapshot_id, project_id=project_id, evidence_id=item["evidence_id"],
-            document_id=item["document_id"], page_index=item["page_index"],
-            sheet_id=item["sheet_id"], kind=item["kind"], raw_text=item["raw_text"],
-            bbox_json=item.get("bbox"), source_dem_id=item.get("source_dem_id"),
-            revision_id=item.get("revision_id"),
-            run_id=item.get("run_id"),
-            dem_page_id=item.get("dem_page_id"),
-            view_id=item.get("view_id"),
-            zone_id=item.get("zone_id"),
-            modality=item.get("modality"),
-            raw_content=item.get("raw_content"),
-            normalized_content=item.get("normalized_content"),
-            bbox_source=item.get("bbox_source"),
-            bbox_normalized=item.get("bbox_normalized"),
-            bbox_space=item.get("bbox_space"),
-            bbox_quarantine_reason=item.get("bbox_quarantine_reason"),
-            coordinate_schema_version=item.get("coordinate_schema_version"),
-            transform_version=item.get("transform_version"),
-            polygon_source=item.get("polygon_source"),
-            polygon_normalized=item.get("polygon_normalized"),
-            confidence=item.get("confidence"),
-            extractor=item.get("extractor"),
-            source_document_hash=item.get("source_document_hash"),
+        ProjectGraphAlias(
+            snapshot_id=snapshot_id, project_id=project_id,
+            alias_normalized=item["alias_normalized"], alias_raw=item["alias_raw"],
+            node_id=item["node_id"], alias_type=item["alias_type"], confidence=item["confidence"],
         )
-        for item in evidence
+        for item in aliases
     ])
+    await session.flush()
+
     session.add_all([
         ProjectGraphNodeEvidence(
             snapshot_id=snapshot_id, node_id=item["node_id"],
@@ -151,22 +174,7 @@ def _add_graph_records(
         )
         for item in edge_evidence
     ])
-    session.add_all([
-        ProjectGraphAlias(
-            snapshot_id=snapshot_id, project_id=project_id,
-            alias_normalized=item["alias_normalized"], alias_raw=item["alias_raw"],
-            node_id=item["node_id"], alias_type=item["alias_type"], confidence=item["confidence"],
-        )
-        for item in aliases
-    ])
-    session.add_all([
-        ProjectGraphCommunity(
-            snapshot_id=snapshot_id, community_id=item["community_id"],
-            community_type=item["community_type"], name=item["name"],
-            summary=item.get("summary", ""), member_count=item["member_count"],
-        )
-        for item in communities
-    ])
+
 
 
 def persist_summary_views(
@@ -358,7 +366,7 @@ async def persist_snapshot_graph(
             raise ValueError("snapshot does not belong to project")
         if snapshot.status not in {"building", "active"}:
             raise ValueError("snapshot is not available for graph persistence")
-        _add_graph_records(
+        await _add_graph_records(
             session, project_id=project_id, snapshot_id=snapshot_id, nodes=nodes, edges=edges,
             evidence=evidence, node_evidence=node_evidence, edge_evidence=edge_evidence,
             aliases=aliases, communities=communities,
@@ -411,7 +419,7 @@ async def build_and_activate_snapshot(
         )
         session.add(snapshot)
         await session.flush()
-        _add_graph_records(
+        await _add_graph_records(
             session, project_id=project_id, snapshot_id=snapshot_id, nodes=nodes, edges=edges,
             evidence=evidence, node_evidence=node_evidence, edge_evidence=edge_evidence,
             aliases=aliases, communities=communities,
@@ -459,6 +467,11 @@ async def build_and_activate_snapshot(
                     resolution_note=None if compatible else reason,
                     created_by=correction.created_by,
                     resolved_by=correction.resolved_by,
+                    # Accepted corrections are subject to the DB invariant that
+                    # approved records carry both reviewer and review time.
+                    # Preserve the original human decision metadata when the
+                    # correction is carried into the new immutable snapshot.
+                    resolved_at=correction.resolved_at,
                     carried_from=correction.id,
                 )
                 session.add(carried)

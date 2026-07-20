@@ -230,7 +230,18 @@ async def test_persist_snapshot_graph_keeps_node_edge_alias_and_evidence_scoped_
                     "confidence": 0.93,
                     "properties": {"raw": "J2"},
                     "search_text": "J2 jendela",
-                }
+                },
+                {
+                    "node_id": "SHEET-21",
+                    "node_type": "sheet",
+                    "canonical_name": "S-21",
+                    "normalized_name": "s-21",
+                    "discipline": "architecture",
+                    "verification_status": "extracted",
+                    "confidence": 1.0,
+                    "properties": {},
+                    "search_text": "S-21 sheet",
+                },
             ],
             edges=[
                 {
@@ -293,7 +304,8 @@ async def test_persist_snapshot_graph_keeps_node_edge_alias_and_evidence_scoped_
         node = (
             await session.execute(
                 select(models.ProjectGraphNode).where(
-                    models.ProjectGraphNode.snapshot_id == "SNAPSHOT-A1"
+                    models.ProjectGraphNode.snapshot_id == "SNAPSHOT-A1",
+                    models.ProjectGraphNode.node_id == "NODE-J2",
                 )
             )
         ).scalars().one()
@@ -533,26 +545,27 @@ async def test_effective_sheet_revision_supersedes_old_truth_and_default_retriev
 
     async with TestSession() as session:
         session.add(models.Project(id="PROJECT-REV", owner_id="OWNER-REV", name="Revision project"))
-        session.add_all([
-            models.DocumentRevision(
-                revision_id="DOC-REV-1", project_id="PROJECT-REV", document_id="DOC-1",
-                issue_purpose="Tender", status="issued",
-            ),
-            models.DocumentRevision(
-                revision_id="DOC-REV-2", project_id="PROJECT-REV", document_id="DOC-1",
-                issue_purpose="Construction", status="issued", supersedes_revision_id="DOC-REV-1",
-            ),
-            models.SheetRevision(
-                revision_id="SHEET-REV-1", project_id="PROJECT-REV", document_id="DOC-1",
-                document_revision_id="DOC-REV-1", sheet_id="A-101", issue_purpose="Tender", status="issued",
-            ),
-            models.SheetRevision(
-                revision_id="SHEET-REV-2", project_id="PROJECT-REV", document_id="DOC-1",
-                document_revision_id="DOC-REV-2", sheet_id="A-101", issue_purpose="Construction",
-                status="issued", supersedes_revision_id="SHEET-REV-1",
-                revision_cloud_regions=[{"bbox": [1, 2, 3, 4]}],
-            ),
-        ])
+        await session.flush()
+        session.add(models.DocumentRevision(
+            revision_id="DOC-REV-1", project_id="PROJECT-REV", document_id="DOC-1",
+            issue_purpose="Tender", status="issued",
+        ))
+        await session.flush()
+        session.add(models.DocumentRevision(
+            revision_id="DOC-REV-2", project_id="PROJECT-REV", document_id="DOC-1",
+            issue_purpose="Construction", status="issued", supersedes_revision_id="DOC-REV-1",
+        ))
+        session.add(models.SheetRevision(
+            revision_id="SHEET-REV-1", project_id="PROJECT-REV", document_id="DOC-1",
+            document_revision_id="DOC-REV-1", sheet_id="A-101", issue_purpose="Tender", status="issued",
+        ))
+        await session.flush()
+        session.add(models.SheetRevision(
+            revision_id="SHEET-REV-2", project_id="PROJECT-REV", document_id="DOC-1",
+            document_revision_id="DOC-REV-2", sheet_id="A-101", issue_purpose="Construction",
+            status="issued", supersedes_revision_id="SHEET-REV-1",
+            revision_cloud_regions=[{"bbox": [1, 2, 3, 4]}],
+        ))
         await session.commit()
 
         await activate_document_revision(session, project_id="PROJECT-REV", revision_id="DOC-REV-1")
@@ -645,6 +658,12 @@ async def test_incremental_resynthesis_plan_is_limited_to_changed_page_and_inval
             edge_evidence=[{"edge_id": "EDGE-CHANGED", "evidence_id": "EV-CHANGED", "role": "source"}],
             aliases=[], communities=[],
         )
+        session.add(models.ProjectGraphSnapshot(
+            snapshot_id="OTHER-SNAPSHOT", project_id="PROJECT-INCR", schema_version="paax.pckm.graph.v2",
+            source_manifest_hash="other", generation_metadata={}, effective_sheet_revision_ids=[],
+            status="superseded", superseded_at=datetime.now(timezone.utc),
+        ))
+        await session.flush()
         session.add_all([
             models.ProjectGraphRetrievalCache(cache_key="CACHE-CHANGED", project_id="PROJECT-INCR", snapshot_id="SNAP-INCR", payload={}, expires_at=datetime.now(timezone.utc) + timedelta(minutes=5)),
             models.ProjectGraphRetrievalCache(cache_key="CACHE-OTHER", project_id="PROJECT-INCR", snapshot_id="OTHER-SNAPSHOT", payload={}, expires_at=datetime.now(timezone.utc) + timedelta(minutes=5)),

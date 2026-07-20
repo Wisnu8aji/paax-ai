@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
@@ -201,6 +203,7 @@ async def test_accepted_correction_is_read_overlay_and_new_snapshot_marks_missin
             target_type="node", target_id="TYPE-K1", correction_type="rename",
             proposed_value={"canonical_name": "K1 corrected"}, rationale="Human review",
             status="accepted", created_by="OWNER-C78",
+            resolved_by="OWNER-C78", resolved_at=datetime.now(timezone.utc),
         ))
         await session.commit()
         await build_and_activate_snapshot(
@@ -236,6 +239,7 @@ async def test_carry_forward_marks_evidence_revision_change_stale_with_audit():
             target_type="node", target_id="TYPE-K1", correction_type="rename",
             proposed_value={"canonical_name": "K1 approved"}, rationale="reviewed",
             status="accepted", created_by="OWNER-C78",
+            resolved_by="OWNER-C78", resolved_at=datetime.now(timezone.utc),
         ))
         await session.commit()
         await build_and_activate_snapshot(

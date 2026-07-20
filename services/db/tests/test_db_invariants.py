@@ -3,7 +3,7 @@ from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from paax_db import models
 from .conftest import TestSession
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 @pytest.mark.asyncio
@@ -27,7 +27,7 @@ async def test_snapshot_immutability():
 
         # Update status and timestamps - should succeed
         snap.status = "active"
-        snap.activated_at = datetime.utcnow()
+        snap.activated_at = datetime.now(timezone.utc)
         await session.commit()
 
         # Try to update a structural field (e.g. source_manifest_hash)
@@ -257,7 +257,11 @@ async def test_edge_endpoints_snapshot_isolation():
             project_id="PROJ-EP",
             schema_version="v2",
             source_manifest_hash="hash-2",
-            status="active",
+            # A project may have only one active snapshot. The endpoint
+            # isolation invariant is independent of lifecycle state, so keep
+            # the second snapshot in building state rather than weakening the
+            # one-active-snapshot constraint merely to construct this fixture.
+            status="building",
             generation_metadata={},
         )
         session.add_all([snap1, snap2])

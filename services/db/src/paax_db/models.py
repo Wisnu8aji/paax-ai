@@ -1,4 +1,4 @@
-from sqlalchemy import CHAR, Column, String, Integer, Numeric, Boolean, DateTime, ForeignKey, JSON, Text, UniqueConstraint, ForeignKeyConstraint, CheckConstraint, Index, event
+from sqlalchemy import CHAR, Column, String, Integer, Numeric, Boolean, DateTime, ForeignKey, JSON, Text, UniqueConstraint, ForeignKeyConstraint, CheckConstraint, Index, event, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -245,6 +245,10 @@ class DemPage(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
+    __table_args__ = (
+        UniqueConstraint("run_id", "page_index", name="uq_dem_pages_run_page"),
+    )
+
 
 class DurableJob(Base):
     """Portable durable queue record; external queues lease this canonical state."""
@@ -283,6 +287,17 @@ class ProjectGraphSnapshot(Base):
 
     __table_args__ = (
         UniqueConstraint('snapshot_id', 'project_id', name='uq_project_graph_snapshots_id_project'),
+        CheckConstraint(
+            "status IN ('building', 'active', 'superseded', 'failed', 'stale')",
+            name='ck_project_graph_snapshots_status',
+        ),
+        Index(
+            'ix_project_graph_snapshots_one_active_per_project',
+            'project_id',
+            unique=True,
+            postgresql_where=text("status = 'active'"),
+            sqlite_where=text("status = 'active'"),
+        ),
     )
 
 
@@ -381,6 +396,10 @@ class ProjectGraphNode(Base):
             postgresql_using="gin",
             postgresql_ops={"search_text": "gin_trgm_ops"}
         ),
+        CheckConstraint(
+            "confidence >= 0 AND confidence <= 1",
+            name="ck_project_graph_nodes_confidence_range",
+        ),
     )
 
 
@@ -404,6 +423,22 @@ class ProjectGraphEdge(Base):
             ['project_graph_snapshots.snapshot_id', 'project_graph_snapshots.project_id'],
             ondelete='CASCADE',
             name='fk_project_graph_edges_snapshot_project'
+        ),
+        ForeignKeyConstraint(
+            ['snapshot_id', 'source_node_id'],
+            ['project_graph_nodes.snapshot_id', 'project_graph_nodes.node_id'],
+            ondelete='CASCADE',
+            name='fk_project_graph_edges_source_node',
+        ),
+        ForeignKeyConstraint(
+            ['snapshot_id', 'target_node_id'],
+            ['project_graph_nodes.snapshot_id', 'project_graph_nodes.node_id'],
+            ondelete='CASCADE',
+            name='fk_project_graph_edges_target_node',
+        ),
+        CheckConstraint(
+            "confidence >= 0 AND confidence <= 1",
+            name="ck_project_graph_edges_confidence_range",
         ),
     )
 
@@ -452,6 +487,10 @@ class ProjectGraphEvidence(Base):
             ['project_graph_snapshots.snapshot_id', 'project_graph_snapshots.project_id'],
             ondelete='CASCADE',
             name='fk_project_graph_evidence_snapshot_project'
+        ),
+        CheckConstraint(
+            "confidence IS NULL OR (confidence >= 0 AND confidence <= 1)",
+            name="ck_project_graph_evidence_confidence_range",
         ),
     )
 
@@ -520,6 +559,25 @@ class ProjectGraphAlias(Base):
     alias_type = Column(String, nullable=False)
     confidence = Column(Numeric, nullable=False)
 
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['snapshot_id', 'project_id'],
+            ['project_graph_snapshots.snapshot_id', 'project_graph_snapshots.project_id'],
+            ondelete='CASCADE',
+            name='fk_project_graph_aliases_snapshot_project',
+        ),
+        ForeignKeyConstraint(
+            ['snapshot_id', 'node_id'],
+            ['project_graph_nodes.snapshot_id', 'project_graph_nodes.node_id'],
+            ondelete='CASCADE',
+            name='fk_project_graph_aliases_node',
+        ),
+        CheckConstraint(
+            "confidence >= 0 AND confidence <= 1",
+            name="ck_project_graph_aliases_confidence_range",
+        ),
+    )
+
 
 class ProjectGraphCommunity(Base):
     __tablename__ = "project_graph_communities"
@@ -569,6 +627,28 @@ class ProjectGraphCorrection(Base):
     carried_from = Column(String, nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['snapshot_id', 'project_id'],
+            ['project_graph_snapshots.snapshot_id', 'project_graph_snapshots.project_id'],
+            ondelete='CASCADE',
+            name='fk_project_graph_corrections_snapshot_project',
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'accepted', 'rejected', 'resolved', 'carried', 'stale')",
+            name='ck_project_graph_corrections_status',
+        ),
+        CheckConstraint(
+            "target_type IN ('node', 'edge', 'evidence', 'alias', 'snapshot')",
+            name='ck_project_graph_corrections_target_type',
+        ),
+        CheckConstraint(
+            "status NOT IN ('accepted', 'resolved') OR "
+            "(resolved_by IS NOT NULL AND resolved_at IS NOT NULL)",
+            name='ck_corrections_accepted_has_reviewer',
+        ),
+    )
 
 
 class ProjectGraphCorrectionAudit(Base):
