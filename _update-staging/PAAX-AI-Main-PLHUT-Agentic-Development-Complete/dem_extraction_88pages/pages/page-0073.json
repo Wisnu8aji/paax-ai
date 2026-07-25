@@ -1,0 +1,571 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 73,
+    "page_number": 74,
+    "render_uri": "local://plhut-88pg-run-1/page-0073.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T22:24:15.269069+00:00",
+    "completed_at": "2026-07-14T22:24:15.269103+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "Sheet 73",
+      "raw": "73",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-sheet-number-73"
+      ]
+    },
+    "title": {
+      "value": "DENAH AIR KOTOR LT 1",
+      "raw": "DENAH AIR KOTOR LT 1",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-title-air-kotor-lt1"
+      ]
+    },
+    "discipline": {
+      "value": "MEP",
+      "confidence": 0.9,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1 : 100",
+        "normalized": "1:100",
+        "confidence": 0.98,
+        "evidence_refs": [
+          "ev-scale-1-100"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-floor-plan-lt-1",
+      "type": "Floor Plan",
+      "title": "DENAH AIR KOTOR LT 1",
+      "bbox": [
+        0.0,
+        0.0,
+        1200.0,
+        900.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KEMENTERIAN AGAMA RI",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1120.0,
+          80.0,
+          1200.0,
+          100.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-kemenag"
+        ]
+      },
+      {
+        "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1120.0,
+          150.0,
+          1200.0,
+          220.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-title-project"
+        ]
+      },
+      {
+        "raw": "JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1120.0,
+          240.0,
+          1200.0,
+          280.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-location"
+        ]
+      },
+      {
+        "raw": "DENAH AIR KOTOR LT 1",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          600.0,
+          830.0,
+          750.0,
+          850.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-drawing-title"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "20250",
+        "normalized": null,
+        "numeric_value": 20250.0,
+        "unit": "mm",
+        "bbox": [
+          400.0,
+          150.0,
+          450.0,
+          170.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-20250"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": null,
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          780.0,
+          350.0,
+          800.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-4000-1"
+        ]
+      },
+      {
+        "raw": "5000",
+        "normalized": null,
+        "numeric_value": 5000.0,
+        "unit": "mm",
+        "bbox": [
+          100.0,
+          450.0,
+          120.0,
+          500.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-5000-1"
+        ]
+      },
+      {
+        "raw": "3000",
+        "normalized": null,
+        "numeric_value": 3000.0,
+        "unit": "mm",
+        "bbox": [
+          100.0,
+          280.0,
+          120.0,
+          330.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-3000-1"
+        ]
+      }
+    ],
+    "grids": [
+      {
+        "raw": "A",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          180.0,
+          850.0,
+          200.0,
+          870.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-A"
+        ]
+      },
+      {
+        "raw": "B",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          380.0,
+          850.0,
+          400.0,
+          870.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-B"
+        ]
+      },
+      {
+        "raw": "1",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          160.0,
+          650.0,
+          180.0,
+          670.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-1"
+        ]
+      },
+      {
+        "raw": "2",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          160.0,
+          420.0,
+          180.0,
+          440.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-2"
+        ]
+      }
+    ],
+    "levels": [],
+    "spaces": [
+      {
+        "raw": "BIO TANK",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          250.0,
+          200.0,
+          350.0,
+          220.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-bio-tank"
+        ]
+      },
+      {
+        "raw": "BUANGAN KE DRAINASE",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          250.0,
+          150.0,
+          400.0,
+          170.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-drain-note"
+        ]
+      }
+    ],
+    "element_labels": [
+      {
+        "raw": "PVC O 4\"",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          230.0,
+          350.0,
+          280.0,
+          370.0
+        ],
+        "confidence": 0.92,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-pvc-4"
+        ]
+      },
+      {
+        "raw": "CO",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          260.0,
+          420.0,
+          280.0,
+          440.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-co-1"
+        ]
+      },
+      {
+        "raw": "CG",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          330.0,
+          290.0,
+          350.0,
+          310.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-cg-1"
+        ]
+      }
+    ],
+    "symbols": [
+      {
+        "raw": "NK",
+        "normalized": "Notasi Pipa Air Kotor",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          450.0,
+          550.0,
+          480.0,
+          570.0
+        ],
+        "confidence": 0.85,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-nk"
+        ]
+      },
+      {
+        "raw": "Simbol Pintu Single",
+        "normalized": "Pintu Tunggal",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          400.0,
+          580.0,
+          430.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-door-single-1"
+        ]
+      }
+    ],
+    "tables": [],
+    "materials": [],
+    "notes": [
+      {
+        "raw": "BUANGAN KE DRAINASE",
+        "normalized": "Arah pembuangan air kotor menuju drainase umum",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          250.0,
+          150.0,
+          400.0,
+          170.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-drain-1"
+        ]
+      }
+    ],
+    "references": [
+      {
+        "raw": "KODE GBR",
+        "normalized": "Rujukan ke daftar kode gambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1180.0,
+          920.0,
+          1220.0,
+          940.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-ref-kode-gbr"
+        ]
+      }
+    ],
+    "patterns": [
+      {
+        "raw": "Hatch Dinding Beton",
+        "normalized": "Arsir silang ganda untuk elemen beton bertulang (kolom/balok)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          300.0,
+          320.0,
+          320.0
+        ],
+        "confidence": 0.92,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-concrete-wall"
+        ]
+      }
+    ],
+    "geometry_descriptions": [
+      {
+        "raw": "Tangga dengan 11 trap anak tangga",
+        "normalized": "Tangga lurus dengan 11 anak tangga menuju ke atas/bawah",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          280.0,
+          500.0,
+          400.0,
+          600.0
+        ],
+        "confidence": 0.94,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geo-stairs-11"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-sheet-number-73",
+      "kind": "text",
+      "raw": "73",
+      "bbox": [
+        1120.0,
+        920.0,
+        1140.0,
+        940.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-title-air-kotor-lt1",
+      "kind": "text",
+      "raw": "DENAH AIR KOTOR LT 1",
+      "bbox": [
+        600.0,
+        830.0,
+        750.0,
+        850.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-scale-1-100",
+      "kind": "text",
+      "raw": "1 : 100",
+      "bbox": [
+        760.0,
+        850.0,
+        800.0,
+        870.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-text-kemenag",
+      "kind": "text",
+      "raw": "KEMENTERIAN AGAMA RI",
+      "bbox": [
+        1120.0,
+        80.0,
+        1200.0,
+        100.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-dim-20250",
+      "kind": "dimension",
+      "raw": "20250",
+      "bbox": [
+        400.0,
+        150.0,
+        450.0,
+        170.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-A",
+      "kind": "grid_label",
+      "raw": "A",
+      "bbox": [
+        180.0,
+        850.0,
+        200.0,
+        870.0
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

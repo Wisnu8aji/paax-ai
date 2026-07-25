@@ -1,0 +1,576 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 84,
+    "page_number": 85,
+    "render_uri": "local://plhut-88pg-run-1/page-0084.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T22:30:07.346126+00:00",
+    "completed_at": "2026-07-14T22:30:07.346158+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "85",
+      "raw": "85",
+      "confidence": 0.95,
+      "evidence_refs": [
+        "ev-sheet-number"
+      ]
+    },
+    "title": {
+      "value": "SKEMATIK DIAGRAM INSTALASI AIR BERSIH (3)",
+      "raw": "SKEMATIK DIAGRAM INSTALASI AIR BERSIH (3)",
+      "confidence": 0.9,
+      "evidence_refs": [
+        "ev-title"
+      ]
+    },
+    "discipline": {
+      "value": "MEP",
+      "confidence": 0.9,
+      "status": "extracted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "SKALA 1 : 100",
+        "normalized": "1:100",
+        "confidence": 0.95,
+        "evidence_refs": [
+          "ev-scale"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-skematik-air-bersih",
+      "type": "schematic_diagram",
+      "title": "SKEMATIK DIAGRAM INSTALASI AIR BERSIH (3)",
+      "bbox": [
+        200.0,
+        80.0,
+        1400.0,
+        500.0
+      ],
+      "confidence": 0.9
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KETERANGAN",
+        "normalized": "Keterangan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          20.0,
+          1800.0,
+          50.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-legend-title"
+        ]
+      },
+      {
+        "raw": "PIPA AIR HUJAN",
+        "normalized": "Pipa Air Hujan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          60.0,
+          1800.0,
+          80.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pipa-air-hujan"
+        ]
+      },
+      {
+        "raw": "RD : ROOF DRAIN",
+        "normalized": "RD: Roof Drain",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          90.0,
+          1800.0,
+          110.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-roof-drain"
+        ]
+      },
+      {
+        "raw": "LANTAI ATAP",
+        "normalized": "Lantai Atap",
+        "numeric_value": 0.0,
+        "unit": "Lantai",
+        "bbox": [
+          200.0,
+          120.0,
+          400.0,
+          140.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-lantai-atap"
+        ]
+      },
+      {
+        "raw": "LANTAI 2",
+        "normalized": "Lantai 2",
+        "numeric_value": 2.0,
+        "unit": "Lantai",
+        "bbox": [
+          200.0,
+          180.0,
+          400.0,
+          200.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-lantai-2"
+        ]
+      },
+      {
+        "raw": "LANTAI 1",
+        "normalized": "Lantai 1",
+        "numeric_value": 1.0,
+        "unit": "Lantai",
+        "bbox": [
+          200.0,
+          260.0,
+          400.0,
+          280.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-lantai-1"
+        ]
+      },
+      {
+        "raw": "SALURAN\\n(BY.SIPIL)",
+        "normalized": "Saluran (By Sipil)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          340.0,
+          500.0,
+          380.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-saluran-1"
+        ]
+      },
+      {
+        "raw": "SALURAN\\n(BY.SIPIL)",
+        "normalized": "Saluran (By Sipil)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          340.0,
+          1100.0,
+          380.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-saluran-2"
+        ]
+      },
+      {
+        "raw": "SALURAN\\n(BY.SIPIL)",
+        "normalized": "Saluran (By Sipil)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1500.0,
+          340.0,
+          1700.0,
+          380.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-saluran-3"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "80",
+        "normalized": "80",
+        "numeric_value": 80.0,
+        "unit": "cm",
+        "bbox": [
+          480.0,
+          140.0,
+          520.0,
+          160.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-1"
+        ]
+      },
+      {
+        "raw": "80",
+        "normalized": "80",
+        "numeric_value": 80.0,
+        "unit": "cm",
+        "bbox": [
+          480.0,
+          200.0,
+          520.0,
+          220.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-2"
+        ]
+      },
+      {
+        "raw": "80",
+        "normalized": "80",
+        "numeric_value": 80.0,
+        "unit": "cm",
+        "bbox": [
+          480.0,
+          280.0,
+          520.0,
+          300.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-3"
+        ]
+      },
+      {
+        "raw": "80",
+        "normalized": "80",
+        "numeric_value": 80.0,
+        "unit": "cm",
+        "bbox": [
+          960.0,
+          140.0,
+          1000.0,
+          160.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-4"
+        ]
+      },
+      {
+        "raw": "80",
+        "normalized": "80",
+        "numeric_value": 80.0,
+        "unit": "cm",
+        "bbox": [
+          960.0,
+          200.0,
+          1000.0,
+          220.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-5"
+        ]
+      },
+      {
+        "raw": "80",
+        "normalized": "80",
+        "numeric_value": 80.0,
+        "unit": "cm",
+        "bbox": [
+          960.0,
+          280.0,
+          1000.0,
+          300.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-6"
+        ]
+      },
+      {
+        "raw": "80",
+        "normalized": "80",
+        "numeric_value": 80.0,
+        "unit": "cm",
+        "bbox": [
+          1440.0,
+          140.0,
+          1480.0,
+          160.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-7"
+        ]
+      },
+      {
+        "raw": "80",
+        "normalized": "80",
+        "numeric_value": 80.0,
+        "unit": "cm",
+        "bbox": [
+          1440.0,
+          200.0,
+          1480.0,
+          220.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-8"
+        ]
+      },
+      {
+        "raw": "80",
+        "normalized": "80",
+        "numeric_value": 80.0,
+        "unit": "cm",
+        "bbox": [
+          1440.0,
+          280.0,
+          1480.0,
+          300.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-9"
+        ]
+      }
+    ],
+    "grids": [],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [
+      {
+        "raw": "RD",
+        "normalized": "RD",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          130.0,
+          430.0,
+          150.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-rd-1"
+        ]
+      },
+      {
+        "raw": "RD",
+        "normalized": "RD",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          880.0,
+          130.0,
+          910.0,
+          150.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-rd-2"
+        ]
+      },
+      {
+        "raw": "RD",
+        "normalized": "RD",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1360.0,
+          130.0,
+          1390.0,
+          150.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-rd-3"
+        ]
+      }
+    ],
+    "symbols": [],
+    "tables": [],
+    "materials": [],
+    "notes": [
+      {
+        "raw": "SALURAN (BY.SIPIL)",
+        "normalized": "Saluran oleh pekerjaan sipil",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          340.0,
+          500.0,
+          380.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-saluran-1"
+        ]
+      },
+      {
+        "raw": "SALURAN (BY.SIPIL)",
+        "normalized": "Saluran oleh pekerjaan sipil",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          340.0,
+          1100.0,
+          380.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-saluran-2"
+        ]
+      },
+      {
+        "raw": "SALURAN (BY.SIPIL)",
+        "normalized": "Saluran oleh pekerjaan sipil",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1500.0,
+          340.0,
+          1700.0,
+          380.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-saluran-3"
+        ]
+      }
+    ],
+    "references": [],
+    "patterns": [],
+    "geometry_descriptions": [
+      {
+        "raw": "SKEMATIK DIAGRAM INSTALASI AIR BERSIH (3)",
+        "normalized": "Diagram skematik instalasi air bersih nomor 3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          500.0,
+          390.0,
+          800.0,
+          410.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geometry-desc"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-sheet-number",
+      "kind": "text",
+      "raw": "85",
+      "bbox": [
+        100.0,
+        20.0,
+        150.0,
+        50.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-title",
+      "kind": "text",
+      "raw": "SKEMATIK DIAGRAM INSTALASI AIR BERSIH (3)",
+      "bbox": [
+        500.0,
+        390.0,
+        800.0,
+        410.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-scale",
+      "kind": "text",
+      "raw": "SKALA 1 : 100",
+      "bbox": [
+        600.0,
+        410.0,
+        700.0,
+        430.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-legend-title",
+      "kind": "text",
+      "raw": "KETERANGAN",
+      "bbox": [
+        1400.0,
+        20.0,
+        1800.0,
+        50.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

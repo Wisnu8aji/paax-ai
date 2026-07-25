@@ -1,0 +1,880 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 17,
+    "page_number": 18,
+    "render_uri": "local://plhut-88pg-run-1/page-0017.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T21:01:09.341747+00:00",
+    "completed_at": "2026-07-14T21:01:09.341787+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "18",
+      "raw": "18",
+      "confidence": 0.95,
+      "evidence_refs": [
+        "ev-index-17"
+      ]
+    },
+    "title": {
+      "value": "DENAH POLA LANTAI 2",
+      "raw": "DENAH POLA LANTAI 2",
+      "confidence": 0.95,
+      "evidence_refs": [
+        "ev-title-block"
+      ]
+    },
+    "discipline": {
+      "value": "Arsitektur",
+      "confidence": 0.95,
+      "status": "extracted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1 : 100",
+        "normalized": "1:100",
+        "confidence": 0.95,
+        "evidence_refs": [
+          "ev-scale-block"
+        ]
+      }
+    ]
+  },
+  "views": [],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KEMENTERIAN AGAMA RI",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          800.0,
+          50.0,
+          900.0,
+          60.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-header1"
+        ]
+      },
+      {
+        "raw": "DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          65.0,
+          950.0,
+          75.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-header2"
+        ]
+      },
+      {
+        "raw": "TAHUN ANGGARAN 2024",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          750.0,
+          80.0,
+          900.0,
+          90.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-header3"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "20250",
+        "normalized": "20250",
+        "numeric_value": 20250.0,
+        "unit": "mm",
+        "bbox": [
+          250.0,
+          100.0,
+          600.0,
+          110.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-top"
+        ]
+      },
+      {
+        "raw": "1625",
+        "normalized": "1625",
+        "numeric_value": 1625.0,
+        "unit": "mm",
+        "bbox": [
+          250.0,
+          115.0,
+          290.0,
+          125.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-top-left1"
+        ]
+      },
+      {
+        "raw": "1500",
+        "normalized": "1500",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          295.0,
+          115.0,
+          335.0,
+          125.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-top-left2"
+        ]
+      },
+      {
+        "raw": "1500",
+        "normalized": "1500",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          340.0,
+          115.0,
+          380.0,
+          125.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-top-left3"
+        ]
+      },
+      {
+        "raw": "1500",
+        "normalized": "1500",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          385.0,
+          115.0,
+          425.0,
+          125.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-top-left4"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": "2000",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          430.0,
+          115.0,
+          470.0,
+          125.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-top-middle1"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          475.0,
+          115.0,
+          515.0,
+          125.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-top-middle2"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          520.0,
+          115.0,
+          560.0,
+          125.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-top-right1"
+        ]
+      },
+      {
+        "raw": "4125",
+        "normalized": "4125",
+        "numeric_value": 4125.0,
+        "unit": "mm",
+        "bbox": [
+          565.0,
+          115.0,
+          605.0,
+          125.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-top-right2"
+        ]
+      },
+      {
+        "raw": "3000",
+        "normalized": "3000",
+        "numeric_value": 3000.0,
+        "unit": "mm",
+        "bbox": [
+          200.0,
+          200.0,
+          230.0,
+          400.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-left1"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": "2000",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          200.0,
+          410.0,
+          230.0,
+          550.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-left2"
+        ]
+      },
+      {
+        "raw": "5000",
+        "normalized": "5000",
+        "numeric_value": 5000.0,
+        "unit": "mm",
+        "bbox": [
+          200.0,
+          560.0,
+          230.0,
+          800.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-left3"
+        ]
+      }
+    ],
+    "grids": [
+      {
+        "raw": "A",
+        "normalized": "Grid A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          850.0,
+          220.0,
+          870.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-a"
+        ]
+      },
+      {
+        "raw": "B",
+        "normalized": "Grid B",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          350.0,
+          850.0,
+          370.0,
+          870.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-b"
+        ]
+      },
+      {
+        "raw": "C",
+        "normalized": "Grid C",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          500.0,
+          850.0,
+          520.0,
+          870.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-c"
+        ]
+      },
+      {
+        "raw": "D",
+        "normalized": "Grid D",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          850.0,
+          670.0,
+          870.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-d"
+        ]
+      },
+      {
+        "raw": "E",
+        "normalized": "Grid E",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          800.0,
+          850.0,
+          820.0,
+          870.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-e"
+        ]
+      },
+      {
+        "raw": "F",
+        "normalized": "Grid F",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          950.0,
+          850.0,
+          970.0,
+          870.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-f"
+        ]
+      }
+    ],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [],
+    "symbols": [],
+    "tables": [],
+    "materials": [
+      {
+        "raw": "F1 = FLOOR ex.HOMOGENEOUS TILE 600x600mm",
+        "normalized": "F1: Lantai keramik homogen 600x600mm",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          700.0,
+          600.0,
+          720.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-f1"
+        ]
+      },
+      {
+        "raw": "F2 = FLOOR 250x250mm",
+        "normalized": "F2: Lantai keramik 250x250mm",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          725.0,
+          600.0,
+          745.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-f2"
+        ]
+      },
+      {
+        "raw": "■ = START PEMASANGAN KERAMIK",
+        "normalized": "■: Titik awal pemasangan keramik",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          750.0,
+          600.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-start"
+        ]
+      }
+    ],
+    "notes": [
+      {
+        "raw": "DENAH POLA LANTAI 2",
+        "normalized": "Denah pola lantai level 2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          700.0,
+          800.0,
+          720.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-title"
+        ]
+      },
+      {
+        "raw": "SKALA 1 : 100",
+        "normalized": "Skala gambar 1:100",
+        "numeric_value": 100.0,
+        "unit": null,
+        "bbox": [
+          650.0,
+          725.0,
+          800.0,
+          745.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-scale"
+        ]
+      }
+    ],
+    "references": [],
+    "patterns": [],
+    "geometry_descriptions": []
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-index-17",
+      "kind": "text",
+      "raw": "18",
+      "bbox": [
+        10.0,
+        10.0,
+        30.0,
+        20.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-title-block",
+      "kind": "text",
+      "raw": "DENAH POLA LANTAI 2",
+      "bbox": [
+        650.0,
+        700.0,
+        800.0,
+        720.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-scale-block",
+      "kind": "text",
+      "raw": "1 : 100",
+      "bbox": [
+        750.0,
+        725.0,
+        800.0,
+        745.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-title-block-header1",
+      "kind": "text",
+      "raw": "KEMENTERIAN AGAMA RI",
+      "bbox": [
+        800.0,
+        50.0,
+        900.0,
+        60.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-title-block-header2",
+      "kind": "text",
+      "raw": "DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH",
+      "bbox": [
+        700.0,
+        65.0,
+        950.0,
+        75.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-title-block-header3",
+      "kind": "text",
+      "raw": "TAHUN ANGGARAN 2024",
+      "bbox": [
+        750.0,
+        80.0,
+        900.0,
+        90.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimension-top",
+      "kind": "dimension",
+      "raw": "20250",
+      "bbox": [
+        250.0,
+        100.0,
+        600.0,
+        110.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimension-top-left1",
+      "kind": "dimension",
+      "raw": "1625",
+      "bbox": [
+        250.0,
+        115.0,
+        290.0,
+        125.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimension-top-left2",
+      "kind": "dimension",
+      "raw": "1500",
+      "bbox": [
+        295.0,
+        115.0,
+        335.0,
+        125.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimension-top-left3",
+      "kind": "dimension",
+      "raw": "1500",
+      "bbox": [
+        340.0,
+        115.0,
+        380.0,
+        125.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimension-top-left4",
+      "kind": "dimension",
+      "raw": "1500",
+      "bbox": [
+        385.0,
+        115.0,
+        425.0,
+        125.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimension-top-middle1",
+      "kind": "dimension",
+      "raw": "2000",
+      "bbox": [
+        430.0,
+        115.0,
+        470.0,
+        125.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimension-top-middle2",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        475.0,
+        115.0,
+        515.0,
+        125.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimension-top-right1",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        520.0,
+        115.0,
+        560.0,
+        125.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimension-top-right2",
+      "kind": "dimension",
+      "raw": "4125",
+      "bbox": [
+        565.0,
+        115.0,
+        605.0,
+        125.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimension-left1",
+      "kind": "dimension",
+      "raw": "3000",
+      "bbox": [
+        200.0,
+        200.0,
+        230.0,
+        400.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimension-left2",
+      "kind": "dimension",
+      "raw": "2000",
+      "bbox": [
+        200.0,
+        410.0,
+        230.0,
+        550.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimension-left3",
+      "kind": "dimension",
+      "raw": "5000",
+      "bbox": [
+        200.0,
+        560.0,
+        230.0,
+        800.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-a",
+      "kind": "grid",
+      "raw": "A",
+      "bbox": [
+        200.0,
+        850.0,
+        220.0,
+        870.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-b",
+      "kind": "grid",
+      "raw": "B",
+      "bbox": [
+        350.0,
+        850.0,
+        370.0,
+        870.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-c",
+      "kind": "grid",
+      "raw": "C",
+      "bbox": [
+        500.0,
+        850.0,
+        520.0,
+        870.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-d",
+      "kind": "grid",
+      "raw": "D",
+      "bbox": [
+        650.0,
+        850.0,
+        670.0,
+        870.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-e",
+      "kind": "grid",
+      "raw": "E",
+      "bbox": [
+        800.0,
+        850.0,
+        820.0,
+        870.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-f",
+      "kind": "grid",
+      "raw": "F",
+      "bbox": [
+        950.0,
+        850.0,
+        970.0,
+        870.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-f1",
+      "kind": "material",
+      "raw": "F1 = FLOOR ex.HOMOGENEOUS TILE 600x600mm",
+      "bbox": [
+        400.0,
+        700.0,
+        600.0,
+        720.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-f2",
+      "kind": "material",
+      "raw": "F2 = FLOOR 250x250mm",
+      "bbox": [
+        400.0,
+        725.0,
+        600.0,
+        745.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-start",
+      "kind": "material",
+      "raw": "■ = START PEMASANGAN KERAMIK",
+      "bbox": [
+        400.0,
+        750.0,
+        600.0,
+        770.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-note-title",
+      "kind": "note",
+      "raw": "DENAH POLA LANTAI 2",
+      "bbox": [
+        650.0,
+        700.0,
+        800.0,
+        720.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-note-scale",
+      "kind": "note",
+      "raw": "SKALA 1 : 100",
+      "bbox": [
+        650.0,
+        725.0,
+        800.0,
+        745.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

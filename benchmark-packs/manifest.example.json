@@ -1,0 +1,12 @@
+{
+  "schema_version": "paax.external-benchmark-pack.v1",
+  "pack_id": "replace-me",
+  "title": "Licensed construction drawing benchmark",
+  "source": {"url": "", "license": "", "downloaded_at": "", "sha256": "", "page_count": 0},
+  "project_type": "building|road|bridge|water|mixed",
+  "disciplines": [],
+  "language": "id|en|mixed",
+  "ground_truth": {"reviewers": [], "adjudicator": "", "object_classes": [], "hidden_holdout": true},
+  "command_room_questions": [],
+  "status": "acquisition_required"
+}

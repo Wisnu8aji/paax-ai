@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "project_id": "PLHUT-SURAKARTA",
+  "name": "PLHUT Surakarta",
+  "owner_id": "paax-web",
+  "status": "active",
+  "description": "Proyek acuan Drawing Intelligence PLHUT Surakarta — 88 halaman.",
+  "portable_default": true,
+  "source_document": {
+    "path": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "sha256": "bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "page_count": 88,
+    "mime_type": "application/pdf"
+  },
+  "dem_fixture_dir": "fixtures/plhut/dem-pages",
+  "civil_work_items": "fixtures/plhut/civil-work-items.json",
+  "bootstrap_policy": {
+    "mode": "idempotent_create_or_repair",
+    "preserve_existing_user_data": true,
+    "never_drop_database": true
+  },
+  "expected": {
+    "dem_pages": 88,
+    "project_graph_min_nodes": 3000,
+    "civil_work_items": 8
+  }
+}

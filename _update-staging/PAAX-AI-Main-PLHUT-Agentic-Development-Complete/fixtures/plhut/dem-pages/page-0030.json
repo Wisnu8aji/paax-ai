@@ -1,0 +1,1130 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 30,
+    "page_number": 31,
+    "render_uri": "local://plhut-88pg-run-1/page-0030.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T21:32:17.343729+00:00",
+    "completed_at": "2026-07-14T21:32:17.343758+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "KODE GBR",
+      "raw": null,
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-sheet-number-kode-gbr"
+      ]
+    },
+    "title": {
+      "value": "DETAIL KUSEN",
+      "raw": "DETAIL KUSEN",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-title-detail-kusen"
+      ]
+    },
+    "discipline": {
+      "value": "ARSITEKTUR",
+      "confidence": 1.0,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1 : 20",
+        "normalized": "1:20",
+        "confidence": 0.95,
+        "evidence_refs": [
+          "ev-scale-1-20"
+        ]
+      },
+      {
+        "raw": "1 : NTS",
+        "normalized": "1: Not To Scale",
+        "confidence": 0.95,
+        "evidence_refs": [
+          "ev-scale-1-nts"
+        ]
+      },
+      {
+        "raw": "1:25",
+        "normalized": "1:25",
+        "confidence": 0.95,
+        "evidence_refs": [
+          "ev-scale-1-25"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "v1",
+      "type": "detail_pemasangan_kusen",
+      "title": "Detail Pemasangan Kusen",
+      "bbox": [
+        70.0,
+        350.0,
+        750.0,
+        430.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "view_id": "v2",
+      "type": "detail_handle_pintu",
+      "title": "Detail Handle Pintu",
+      "bbox": [
+        750.0,
+        350.0,
+        1400.0,
+        430.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "view_id": "v3",
+      "type": "detail_kusen_kaca",
+      "title": "Detail Kusen Kaca",
+      "bbox": [
+        70.0,
+        650.0,
+        500.0,
+        730.0
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KEMENTERIAN AGAMA RI",
+        "normalized": "Kementerian Agama Republik Indonesia",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1380.0,
+          200.0,
+          1700.0,
+          220.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-header"
+        ]
+      },
+      {
+        "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+        "normalized": "Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1380.0,
+          250.0,
+          1700.0,
+          290.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-project-title"
+        ]
+      },
+      {
+        "raw": "JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+        "normalized": "Jalan Ki Mangun Sarkoro No.115, Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1380.0,
+          320.0,
+          1700.0,
+          350.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-location"
+        ]
+      },
+      {
+        "raw": "Detail Pemasangan Kusen",
+        "normalized": "Detail Pemasangan Kusen",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          550.0,
+          450.0,
+          570.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-view-title-1"
+        ]
+      },
+      {
+        "raw": "SKALA 1 : 20",
+        "normalized": "Skala 1:20",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          280.0,
+          580.0,
+          400.0,
+          600.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-scale-1"
+        ]
+      },
+      {
+        "raw": "Detail Handle Pintu",
+        "normalized": "Detail Handle Pintu",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          850.0,
+          1150.0,
+          870.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-view-title-2"
+        ]
+      },
+      {
+        "raw": "SKALA 1 : NTS",
+        "normalized": "Skala 1: Not To Scale",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          980.0,
+          880.0,
+          1100.0,
+          900.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-scale-2"
+        ]
+      },
+      {
+        "raw": "UNTUK KM/WA",
+        "normalized": "Untuk Kamar Mandi/WC",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          220.0,
+          690.0,
+          300.0,
+          710.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-detail-label-1"
+        ]
+      },
+      {
+        "raw": "UNTUK TERAS",
+        "normalized": "Untuk Teras",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          310.0,
+          690.0,
+          380.0,
+          710.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-detail-label-2"
+        ]
+      },
+      {
+        "raw": "DETAIL KUSEN",
+        "normalized": "Detail Kusen",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1380.0,
+          820.0,
+          1500.0,
+          840.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-title"
+        ]
+      },
+      {
+        "raw": "JANUARI 2024",
+        "normalized": "Januari 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1380.0,
+          910.0,
+          1500.0,
+          930.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-date"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "80",
+        "normalized": "80",
+        "numeric_value": 80.0,
+        "unit": "mm",
+        "bbox": [
+          100.0,
+          400.0,
+          120.0,
+          420.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-80"
+        ]
+      },
+      {
+        "raw": "800",
+        "normalized": "800",
+        "numeric_value": 800.0,
+        "unit": "mm",
+        "bbox": [
+          250.0,
+          600.0,
+          300.0,
+          620.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-800"
+        ]
+      },
+      {
+        "raw": "L1890 P824",
+        "normalized": "L1890 P824",
+        "numeric_value": null,
+        "unit": "mm",
+        "bbox": [
+          480.0,
+          480.0,
+          530.0,
+          500.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-l1890-p824"
+        ]
+      },
+      {
+        "raw": "L1890 P824",
+        "normalized": "L1890 P824",
+        "numeric_value": null,
+        "unit": "mm",
+        "bbox": [
+          720.0,
+          510.0,
+          770.0,
+          530.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-l1890-p824-2"
+        ]
+      },
+      {
+        "raw": "L1846",
+        "normalized": "L1846",
+        "numeric_value": 1846.0,
+        "unit": "mm",
+        "bbox": [
+          350.0,
+          580.0,
+          390.0,
+          600.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-l1846"
+        ]
+      },
+      {
+        "raw": "LEBAR",
+        "normalized": "Lebar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          620.0,
+          440.0,
+          640.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-lebar"
+        ]
+      },
+      {
+        "raw": "LEBAR",
+        "normalized": "Lebar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          630.0,
+          620.0,
+          670.0,
+          640.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-lebar-2"
+        ]
+      }
+    ],
+    "grids": [],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [
+      {
+        "raw": "ENGSEL",
+        "normalized": "Engsel",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          90.0,
+          370.0,
+          130.0,
+          390.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-engsel-1"
+        ]
+      },
+      {
+        "raw": "ENGSEL",
+        "normalized": "Engsel",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          90.0,
+          400.0,
+          130.0,
+          420.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-engsel-2"
+        ]
+      },
+      {
+        "raw": "ENGSEL",
+        "normalized": "Engsel",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          90.0,
+          500.0,
+          130.0,
+          520.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-engsel-3"
+        ]
+      },
+      {
+        "raw": "HANDLE",
+        "normalized": "Handle",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          210.0,
+          450.0,
+          260.0,
+          470.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-handle-1"
+        ]
+      },
+      {
+        "raw": "FRICtoin STAY",
+        "normalized": "Friction Stay",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          350.0,
+          430.0,
+          430.0,
+          450.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-friction-stay-1"
+        ]
+      },
+      {
+        "raw": "FRICtoin STAY",
+        "normalized": "Friction Stay",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          600.0,
+          430.0,
+          680.0,
+          450.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-friction-stay-2"
+        ]
+      },
+      {
+        "raw": "FRICtoin STAY",
+        "normalized": "Friction Stay",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          430.0,
+          900.0,
+          450.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-friction-stay-3"
+        ]
+      },
+      {
+        "raw": "RAM BUNCIS",
+        "normalized": "Ram Buncis",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          320.0,
+          540.0,
+          390.0,
+          560.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-ram-buncis-1"
+        ]
+      },
+      {
+        "raw": "RAM BUNCIS",
+        "normalized": "Ram Buncis",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          690.0,
+          610.0,
+          770.0,
+          630.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-ram-buncis-2"
+        ]
+      },
+      {
+        "raw": "HANDLE PINTU TYPE SILINDER",
+        "normalized": "Handle Pintu Type Silinder",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1000.0,
+          370.0,
+          1250.0,
+          390.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-handle-pintu-type-silinder-1"
+        ]
+      },
+      {
+        "raw": "TAMPAK DEPAN",
+        "normalized": "Tampak Depan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1050.0,
+          600.0,
+          1180.0,
+          620.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-tampak-depan"
+        ]
+      },
+      {
+        "raw": "HANDLE PINTU TYPE SILINDER",
+        "normalized": "Handle Pintu Type Silinder",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1000.0,
+          720.0,
+          1250.0,
+          740.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-handle-pintu-type-silinder-2"
+        ]
+      },
+      {
+        "raw": "TAMPAK ATAS",
+        "normalized": "Tampak Atas",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1050.0,
+          830.0,
+          1160.0,
+          850.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-tampak-atas"
+        ]
+      }
+    ],
+    "symbols": [],
+    "tables": [],
+    "materials": [],
+    "notes": [],
+    "references": [
+      {
+        "raw": "DETAIL KUSEN",
+        "normalized": "Detail Kusen",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          450.0,
+          700.0,
+          500.0,
+          720.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-ref-detail-kusen"
+        ]
+      }
+    ],
+    "patterns": [],
+    "geometry_descriptions": []
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-text-header",
+      "kind": "text",
+      "raw": "KEMENTERIAN AGAMA RI",
+      "bbox": [
+        1380.0,
+        200.0,
+        1700.0,
+        220.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-project-title",
+      "kind": "text",
+      "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+      "bbox": [
+        1380.0,
+        250.0,
+        1700.0,
+        290.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-location",
+      "kind": "text",
+      "raw": "JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+      "bbox": [
+        1380.0,
+        320.0,
+        1700.0,
+        350.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-view-title-1",
+      "kind": "text",
+      "raw": "Detail Pemasangan Kusen",
+      "bbox": [
+        200.0,
+        550.0,
+        450.0,
+        570.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-scale-1",
+      "kind": "text",
+      "raw": "SKALA 1 : 20",
+      "bbox": [
+        280.0,
+        580.0,
+        400.0,
+        600.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-view-title-2",
+      "kind": "text",
+      "raw": "Detail Handle Pintu",
+      "bbox": [
+        900.0,
+        850.0,
+        1150.0,
+        870.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-scale-2",
+      "kind": "text",
+      "raw": "SKALA 1 : NTS",
+      "bbox": [
+        980.0,
+        880.0,
+        1100.0,
+        900.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-detail-label-1",
+      "kind": "text",
+      "raw": "UNTUK KM/WA",
+      "bbox": [
+        220.0,
+        690.0,
+        300.0,
+        710.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-detail-label-2",
+      "kind": "text",
+      "raw": "UNTUK TERAS",
+      "bbox": [
+        310.0,
+        690.0,
+        380.0,
+        710.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-title-block-title",
+      "kind": "text",
+      "raw": "DETAIL KUSEN",
+      "bbox": [
+        1380.0,
+        820.0,
+        1500.0,
+        840.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-title-block-date",
+      "kind": "text",
+      "raw": "JANUARI 2024",
+      "bbox": [
+        1380.0,
+        910.0,
+        1500.0,
+        930.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-80",
+      "kind": "dimension",
+      "raw": "80",
+      "bbox": [
+        100.0,
+        400.0,
+        120.0,
+        420.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-800",
+      "kind": "dimension",
+      "raw": "800",
+      "bbox": [
+        250.0,
+        600.0,
+        300.0,
+        620.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-l1890-p824",
+      "kind": "dimension",
+      "raw": "L1890 P824",
+      "bbox": [
+        480.0,
+        480.0,
+        530.0,
+        500.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-l1890-p824-2",
+      "kind": "dimension",
+      "raw": "L1890 P824",
+      "bbox": [
+        720.0,
+        510.0,
+        770.0,
+        530.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-l1846",
+      "kind": "dimension",
+      "raw": "L1846",
+      "bbox": [
+        350.0,
+        580.0,
+        390.0,
+        600.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-lebar",
+      "kind": "dimension",
+      "raw": "LEBAR",
+      "bbox": [
+        400.0,
+        620.0,
+        440.0,
+        640.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-lebar-2",
+      "kind": "dimension",
+      "raw": "LEBAR",
+      "bbox": [
+        630.0,
+        620.0,
+        670.0,
+        640.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-engsel-1",
+      "kind": "element_label",
+      "raw": "ENGSEL",
+      "bbox": [
+        90.0,
+        370.0,
+        130.0,
+        390.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-engsel-2",
+      "kind": "element_label",
+      "raw": "ENGSEL",
+      "bbox": [
+        90.0,
+        400.0,
+        130.0,
+        420.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-engsel-3",
+      "kind": "element_label",
+      "raw": "ENGSEL",
+      "bbox": [
+        90.0,
+        500.0,
+        130.0,
+        520.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-handle-1",
+      "kind": "element_label",
+      "raw": "HANDLE",
+      "bbox": [
+        210.0,
+        450.0,
+        260.0,
+        470.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-friction-stay-1",
+      "kind": "element_label",
+      "raw": "FRICtoin STAY",
+      "bbox": [
+        350.0,
+        430.0,
+        430.0,
+        450.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-friction-stay-2",
+      "kind": "element_label",
+      "raw": "FRICtoin STAY",
+      "bbox": [
+        600.0,
+        430.0,
+        680.0,
+        450.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-friction-stay-3",
+      "kind": "element_label",
+      "raw": "FRICtoin STAY",
+      "bbox": [
+        820.0,
+        430.0,
+        900.0,
+        450.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-ram-buncis-1",
+      "kind": "element_label",
+      "raw": "RAM BUNCIS",
+      "bbox": [
+        320.0,
+        540.0,
+        390.0,
+        560.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-ram-buncis-2",
+      "kind": "element_label",
+      "raw": "RAM BUNCIS",
+      "bbox": [
+        690.0,
+        610.0,
+        770.0,
+        630.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-handle-pintu-type-silinder-1",
+      "kind": "element_label",
+      "raw": "HANDLE PINTU TYPE SILINDER",
+      "bbox": [
+        1000.0,
+        370.0,
+        1250.0,
+        390.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-tampak-depan",
+      "kind": "element_label",
+      "raw": "TAMPAK DEPAN",
+      "bbox": [
+        1050.0,
+        600.0,
+        1180.0,
+        620.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-handle-pintu-type-silinder-2",
+      "kind": "element_label",
+      "raw": "HANDLE PINTU TYPE SILINDER",
+      "bbox": [
+        1000.0,
+        720.0,
+        1250.0,
+        740.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-tampak-atas",
+      "kind": "element_label",
+      "raw": "TAMPAK ATAS",
+      "bbox": [
+        1050.0,
+        830.0,
+        1160.0,
+        850.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-ref-detail-kusen",
+      "kind": "reference",
+      "raw": "DETAIL KUSEN",
+      "bbox": [
+        450.0,
+        700.0,
+        500.0,
+        720.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-sheet-number-kode-gbr",
+      "kind": "sheet_number",
+      "raw": "KODE GBR",
+      "bbox": [
+        1380.0,
+        930.0,
+        1500.0,
+        950.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-title-detail-kusen",
+      "kind": "title",
+      "raw": "DETAIL KUSEN",
+      "bbox": [
+        1380.0,
+        820.0,
+        1500.0,
+        840.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-scale-1-20",
+      "kind": "scale_candidate",
+      "raw": "1 : 20",
+      "bbox": [
+        280.0,
+        580.0,
+        400.0,
+        600.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-scale-1-nts",
+      "kind": "scale_candidate",
+      "raw": "1 : NTS",
+      "bbox": [
+        980.0,
+        880.0,
+        1100.0,
+        900.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-scale-1-25",
+      "kind": "scale_candidate",
+      "raw": "1:25",
+      "bbox": [
+        1520.0,
+        820.0,
+        1580.0,
+        840.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

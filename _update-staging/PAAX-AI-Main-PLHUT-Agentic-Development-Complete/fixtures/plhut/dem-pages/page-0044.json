@@ -1,0 +1,2203 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 44,
+    "page_number": 45,
+    "render_uri": "local://plhut-88pg-run-1/page-0044.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T22:11:14.263824+00:00",
+    "completed_at": "2026-07-14T22:11:14.263854+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "PLHUT-SURAKARTA-88PG-45",
+      "raw": "45",
+      "confidence": 0.95,
+      "evidence_refs": [
+        "ev-sheet-45"
+      ]
+    },
+    "title": {
+      "value": "DENAH BALOK LANTAI ATAP",
+      "raw": "DENAH BALOK LANTAI ATAP",
+      "confidence": 0.95,
+      "evidence_refs": [
+        "ev-title-block"
+      ]
+    },
+    "discipline": {
+      "value": "Struktur",
+      "confidence": 0.95,
+      "status": "extracted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1:100",
+        "normalized": "1:100",
+        "confidence": 0.95,
+        "evidence_refs": [
+          "ev-scale-1-100"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-main-plan",
+      "type": "Floor Plan",
+      "title": "DENAH BALOK LANTAI ATAP",
+      "bbox": [
+        50.0,
+        50.0,
+        1000.0,
+        950.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KEMENTERIAN AGAMA RI DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMROH TAHUN ANGGARAN 2024",
+        "normalized": "Kementerian Agama RI Direktorat Jenderal Penyelenggaraan Haji dan Umrah Tahun Anggaran 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1020.0,
+          70.0,
+          1250.0,
+          220.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-proyek-title"
+        ]
+      },
+      {
+        "raw": "Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "normalized": "Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1020.0,
+          240.0,
+          1250.0,
+          270.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-proyek-name"
+        ]
+      },
+      {
+        "raw": "Jalan Ki Mangun Sarkoro No.115 Kota Surakarta",
+        "normalized": "Jalan Ki Mangun Sarkoro No.115 Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1020.0,
+          280.0,
+          1250.0,
+          310.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-lokasi"
+        ]
+      },
+      {
+        "raw": "KEPALA KANTOR WILAYAH JAWA TENGAH SELAKU KUASA PENGGUNA ANGGARAN",
+        "normalized": "Kepala Kantor Wilayah Jawa Tengah selaku Kuasa Pengguna Anggaran",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1020.0,
+          330.0,
+          1250.0,
+          360.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pengesahan"
+        ]
+      },
+      {
+        "raw": "MENGETAHUI / MENYETUJUI PEJABAT PEMBUAT KOMITMEN",
+        "normalized": "Mengetahui / Menyetujui Pejabat Pembuat Komitmen",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1020.0,
+          430.0,
+          1250.0,
+          460.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pengesahan2"
+        ]
+      },
+      {
+        "raw": "KONSULTAN PERENCANA",
+        "normalized": "Konsultan Perencana",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1020.0,
+          510.0,
+          1250.0,
+          530.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-konsultan"
+        ]
+      },
+      {
+        "raw": "TEAM LEADER",
+        "normalized": "Team Leader",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1020.0,
+          570.0,
+          1250.0,
+          590.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-team-leader"
+        ]
+      },
+      {
+        "raw": "NAMA TANDA TANGAN",
+        "normalized": "Nama Tanda Tangan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1020.0,
+          610.0,
+          1250.0,
+          630.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-nama-ttd"
+        ]
+      },
+      {
+        "raw": "SIPIL DIGAMBAR JUDUL GAMBAR SKALA DENAH BALOK LT. ATAP 1:100",
+        "normalized": "Sipil Digambar Judul Gambar Skala Denah Balok Lt. Atap 1:100",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1020.0,
+          640.0,
+          1250.0,
+          710.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-details-gambar"
+        ]
+      },
+      {
+        "raw": "TANGGAL: JANUARI 2024",
+        "normalized": "Tanggal: Januari 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1020.0,
+          720.0,
+          1250.0,
+          740.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-tanggal"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "T=120mm",
+        "normalized": "Tebal balok: 120 mm",
+        "numeric_value": 120.0,
+        "unit": "mm",
+        "bbox": [
+          310.0,
+          230.0,
+          420.0,
+          260.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimensi-blok1"
+        ]
+      },
+      {
+        "raw": "T=120mm",
+        "normalized": "Tebal balok: 120 mm",
+        "numeric_value": 120.0,
+        "unit": "mm",
+        "bbox": [
+          580.0,
+          230.0,
+          690.0,
+          260.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimensi-blok2"
+        ]
+      },
+      {
+        "raw": "T=120mm",
+        "normalized": "Tebal balok: 120 mm",
+        "numeric_value": 120.0,
+        "unit": "mm",
+        "bbox": [
+          310.0,
+          490.0,
+          420.0,
+          520.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimensi-blok3"
+        ]
+      },
+      {
+        "raw": "T=120mm",
+        "normalized": "Tebal balok: 120 mm",
+        "numeric_value": 120.0,
+        "unit": "mm",
+        "bbox": [
+          580.0,
+          490.0,
+          690.0,
+          520.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimensi-blok4"
+        ]
+      },
+      {
+        "raw": "20000",
+        "normalized": "Total dimensi horizontal: 20000",
+        "numeric_value": 20000.0,
+        "unit": "mm",
+        "bbox": [
+          480.0,
+          680.0,
+          550.0,
+          710.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimensi-horizontal"
+        ]
+      },
+      {
+        "raw": "3000",
+        "normalized": "Dimensi vertikal: 3000",
+        "numeric_value": 3000.0,
+        "unit": "mm",
+        "bbox": [
+          90.0,
+          230.0,
+          140.0,
+          260.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimensi-vertikal1"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": "Dimensi vertikal: 2000",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          90.0,
+          310.0,
+          140.0,
+          340.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimensi-vertikal2"
+        ]
+      },
+      {
+        "raw": "10000",
+        "normalized": "Dimensi vertikal: 10000",
+        "numeric_value": 10000.0,
+        "unit": "mm",
+        "bbox": [
+          90.0,
+          390.0,
+          140.0,
+          420.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimensi-vertikal3"
+        ]
+      },
+      {
+        "raw": "5000",
+        "normalized": "Dimensi vertikal: 5000",
+        "numeric_value": 5000.0,
+        "unit": "mm",
+        "bbox": [
+          90.0,
+          470.0,
+          140.0,
+          500.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimensi-vertikal4"
+        ]
+      },
+      {
+        "raw": "1580",
+        "normalized": "Dimensi vertikal: 1580",
+        "numeric_value": 1580.0,
+        "unit": "mm",
+        "bbox": [
+          90.0,
+          550.0,
+          140.0,
+          580.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimensi-vertikal5"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi horizontal: 4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          270.0,
+          700.0,
+          320.0,
+          730.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimensi-horizontal1"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi horizontal: 4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          350.0,
+          700.0,
+          400.0,
+          730.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimensi-horizontal2"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi horizontal: 4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          430.0,
+          700.0,
+          480.0,
+          730.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimensi-horizontal3"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi horizontal: 4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          510.0,
+          700.0,
+          560.0,
+          730.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimensi-horizontal4"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi horizontal: 4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          590.0,
+          700.0,
+          640.0,
+          730.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimensi-horizontal5"
+        ]
+      }
+    ],
+    "grids": [
+      {
+        "raw": "A",
+        "normalized": "Grid A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          220.0,
+          760.0,
+          260.0,
+          800.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-a"
+        ]
+      },
+      {
+        "raw": "B",
+        "normalized": "Grid B",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          760.0,
+          340.0,
+          800.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-b"
+        ]
+      },
+      {
+        "raw": "C",
+        "normalized": "Grid C",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          380.0,
+          760.0,
+          420.0,
+          800.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-c"
+        ]
+      },
+      {
+        "raw": "D",
+        "normalized": "Grid D",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          460.0,
+          760.0,
+          500.0,
+          800.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-d"
+        ]
+      },
+      {
+        "raw": "E",
+        "normalized": "Grid E",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          540.0,
+          760.0,
+          580.0,
+          800.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-e"
+        ]
+      },
+      {
+        "raw": "F",
+        "normalized": "Grid F",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          620.0,
+          760.0,
+          660.0,
+          800.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-f"
+        ]
+      },
+      {
+        "raw": "1",
+        "normalized": "Grid 1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          180.0,
+          550.0,
+          220.0,
+          590.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-1"
+        ]
+      },
+      {
+        "raw": "2",
+        "normalized": "Grid 2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          180.0,
+          400.0,
+          220.0,
+          440.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-2"
+        ]
+      },
+      {
+        "raw": "3",
+        "normalized": "Grid 3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          180.0,
+          340.0,
+          220.0,
+          380.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-3"
+        ]
+      },
+      {
+        "raw": "4",
+        "normalized": "Grid 4",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          180.0,
+          190.0,
+          220.0,
+          230.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-4"
+        ]
+      }
+    ],
+    "levels": [
+      {
+        "raw": "SFL+8.250",
+        "normalized": "Struktur finish lantai +8.250",
+        "numeric_value": 8.25,
+        "unit": "m",
+        "bbox": [
+          430.0,
+          230.0,
+          520.0,
+          260.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-sfl1"
+        ]
+      },
+      {
+        "raw": "SFL+8.250",
+        "normalized": "Struktur finish lantai +8.250",
+        "numeric_value": 8.25,
+        "unit": "m",
+        "bbox": [
+          430.0,
+          490.0,
+          520.0,
+          520.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-sfl2"
+        ]
+      },
+      {
+        "raw": "SFL+8.320",
+        "normalized": "Struktur finish lantai +8.320",
+        "numeric_value": 8.32,
+        "unit": "m",
+        "bbox": [
+          580.0,
+          610.0,
+          670.0,
+          640.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-sfl3"
+        ]
+      }
+    ],
+    "spaces": [
+      {
+        "raw": "AREA A",
+        "normalized": "Area A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          100.0,
+          400.0,
+          140.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-a"
+        ]
+      },
+      {
+        "raw": "AREA B",
+        "normalized": "Area B",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          200.0,
+          400.0,
+          240.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-b"
+        ]
+      },
+      {
+        "raw": "AREA C",
+        "normalized": "Area C",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          300.0,
+          400.0,
+          340.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-c"
+        ]
+      },
+      {
+        "raw": "AREA D",
+        "normalized": "Area D",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          400.0,
+          400.0,
+          440.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-d"
+        ]
+      },
+      {
+        "raw": "AREA E",
+        "normalized": "Area E",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          500.0,
+          400.0,
+          540.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-e"
+        ]
+      }
+    ],
+    "element_labels": [
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          220.0,
+          320.0,
+          260.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd1"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          260.0,
+          320.0,
+          300.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd2"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          320.0,
+          340.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd3"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          340.0,
+          320.0,
+          380.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd4"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          380.0,
+          320.0,
+          420.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd5"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          420.0,
+          320.0,
+          460.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd6"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          460.0,
+          320.0,
+          500.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd7"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          500.0,
+          320.0,
+          540.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd8"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          540.0,
+          320.0,
+          580.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd9"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          580.0,
+          320.0,
+          620.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd10"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          620.0,
+          320.0,
+          660.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd11"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          660.0,
+          320.0,
+          700.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd12"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          320.0,
+          740.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd13"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          740.0,
+          320.0,
+          780.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd14"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          780.0,
+          320.0,
+          820.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd15"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          320.0,
+          860.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd16"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          860.0,
+          320.0,
+          900.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd17"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          320.0,
+          940.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd18"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          940.0,
+          320.0,
+          980.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd19"
+        ]
+      },
+      {
+        "raw": "K.PD",
+        "normalized": "Kolom Pendek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          980.0,
+          320.0,
+          1020.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-kpd20"
+        ]
+      }
+    ],
+    "symbols": [
+      {
+        "raw": "BALOK",
+        "normalized": "Balok",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          250.0,
+          180.0,
+          290.0,
+          210.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-balok"
+        ]
+      },
+      {
+        "raw": "KOLOM",
+        "normalized": "Kolom",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          280.0,
+          240.0,
+          310.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-kolom"
+        ]
+      }
+    ],
+    "tables": [],
+    "materials": [],
+    "notes": [],
+    "references": [
+      {
+        "raw": "S2",
+        "normalized": "Detail S2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          450.0,
+          230.0,
+          490.0,
+          260.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-reference-s2"
+        ]
+      },
+      {
+        "raw": "S2",
+        "normalized": "Detail S2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          450.0,
+          490.0,
+          490.0,
+          520.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-reference-s2-2"
+        ]
+      },
+      {
+        "raw": "S2",
+        "normalized": "Detail S2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          490.0,
+          590.0,
+          520.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-reference-s2-3"
+        ]
+      },
+      {
+        "raw": "SFK",
+        "normalized": "Detail SFK",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          580.0,
+          580.0,
+          620.0,
+          610.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-reference-sfk"
+        ]
+      }
+    ],
+    "patterns": [
+      {
+        "raw": "ARBIR BALOK",
+        "normalized": "Arbir Balok",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          350.0,
+          150.0,
+          430.0,
+          180.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-arbir-balok"
+        ]
+      }
+    ],
+    "geometry_descriptions": [
+      {
+        "raw": "DENAH BALOK LANTAI ATAP",
+        "normalized": "Denah balok lantai atap",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          800.0,
+          700.0,
+          850.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geometry-denah-balok"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-sheet-45",
+      "kind": "Sheet Number",
+      "raw": "45",
+      "bbox": [
+        10.0,
+        10.0,
+        100.0,
+        50.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-title-block",
+      "kind": "Title Block",
+      "raw": "DENAH BALOK LANTAI ATAP",
+      "bbox": [
+        300.0,
+        800.0,
+        700.0,
+        850.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-scale-1-100",
+      "kind": "Scale",
+      "raw": "1:100",
+      "bbox": [
+        710.0,
+        830.0,
+        760.0,
+        860.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-proyek-title",
+      "kind": "Text",
+      "raw": "KEMENTERIAN AGAMA RI DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMROH TAHUN ANGGARAN 2024",
+      "bbox": [
+        1020.0,
+        70.0,
+        1250.0,
+        220.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-proyek-name",
+      "kind": "Text",
+      "raw": "Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+      "bbox": [
+        1020.0,
+        240.0,
+        1250.0,
+        270.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-lokasi",
+      "kind": "Text",
+      "raw": "Jalan Ki Mangun Sarkoro No.115 Kota Surakarta",
+      "bbox": [
+        1020.0,
+        280.0,
+        1250.0,
+        310.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-pengesahan",
+      "kind": "Text",
+      "raw": "KEPALA KANTOR WILAYAH JAWA TENGAH SELAKU KUASA PENGGUNA ANGGARAN",
+      "bbox": [
+        1020.0,
+        330.0,
+        1250.0,
+        360.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-pengesahan2",
+      "kind": "Text",
+      "raw": "MENGETAHUI / MENYETUJUI PEJABAT PEMBUAT KOMITMEN",
+      "bbox": [
+        1020.0,
+        430.0,
+        1250.0,
+        460.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-konsultan",
+      "kind": "Text",
+      "raw": "KONSULTAN PERENCANA",
+      "bbox": [
+        1020.0,
+        510.0,
+        1250.0,
+        530.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-team-leader",
+      "kind": "Text",
+      "raw": "TEAM LEADER",
+      "bbox": [
+        1020.0,
+        570.0,
+        1250.0,
+        590.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-nama-ttd",
+      "kind": "Text",
+      "raw": "NAMA TANDA TANGAN",
+      "bbox": [
+        1020.0,
+        610.0,
+        1250.0,
+        630.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-details-gambar",
+      "kind": "Text",
+      "raw": "SIPIL DIGAMBAR JUDUL GAMBAR SKALA DENAH BALOK LT. ATAP 1:100",
+      "bbox": [
+        1020.0,
+        640.0,
+        1250.0,
+        710.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-tanggal",
+      "kind": "Text",
+      "raw": "TANGGAL: JANUARI 2024",
+      "bbox": [
+        1020.0,
+        720.0,
+        1250.0,
+        740.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimensi-blok1",
+      "kind": "Dimension",
+      "raw": "T=120mm",
+      "bbox": [
+        310.0,
+        230.0,
+        420.0,
+        260.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimensi-blok2",
+      "kind": "Dimension",
+      "raw": "T=120mm",
+      "bbox": [
+        580.0,
+        230.0,
+        690.0,
+        260.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimensi-blok3",
+      "kind": "Dimension",
+      "raw": "T=120mm",
+      "bbox": [
+        310.0,
+        490.0,
+        420.0,
+        520.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimensi-blok4",
+      "kind": "Dimension",
+      "raw": "T=120mm",
+      "bbox": [
+        580.0,
+        490.0,
+        690.0,
+        520.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimensi-horizontal",
+      "kind": "Dimension",
+      "raw": "20000",
+      "bbox": [
+        480.0,
+        680.0,
+        550.0,
+        710.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimensi-vertikal1",
+      "kind": "Dimension",
+      "raw": "3000",
+      "bbox": [
+        90.0,
+        230.0,
+        140.0,
+        260.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimensi-vertikal2",
+      "kind": "Dimension",
+      "raw": "2000",
+      "bbox": [
+        90.0,
+        310.0,
+        140.0,
+        340.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimensi-vertikal3",
+      "kind": "Dimension",
+      "raw": "10000",
+      "bbox": [
+        90.0,
+        390.0,
+        140.0,
+        420.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimensi-vertikal4",
+      "kind": "Dimension",
+      "raw": "5000",
+      "bbox": [
+        90.0,
+        470.0,
+        140.0,
+        500.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimensi-vertikal5",
+      "kind": "Dimension",
+      "raw": "1580",
+      "bbox": [
+        90.0,
+        550.0,
+        140.0,
+        580.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimensi-horizontal1",
+      "kind": "Dimension",
+      "raw": "4000",
+      "bbox": [
+        270.0,
+        700.0,
+        320.0,
+        730.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimensi-horizontal2",
+      "kind": "Dimension",
+      "raw": "4000",
+      "bbox": [
+        350.0,
+        700.0,
+        400.0,
+        730.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimensi-horizontal3",
+      "kind": "Dimension",
+      "raw": "4000",
+      "bbox": [
+        430.0,
+        700.0,
+        480.0,
+        730.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimensi-horizontal4",
+      "kind": "Dimension",
+      "raw": "4000",
+      "bbox": [
+        510.0,
+        700.0,
+        560.0,
+        730.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dimensi-horizontal5",
+      "kind": "Dimension",
+      "raw": "4000",
+      "bbox": [
+        590.0,
+        700.0,
+        640.0,
+        730.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-a",
+      "kind": "Grid",
+      "raw": "A",
+      "bbox": [
+        220.0,
+        760.0,
+        260.0,
+        800.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-b",
+      "kind": "Grid",
+      "raw": "B",
+      "bbox": [
+        300.0,
+        760.0,
+        340.0,
+        800.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-c",
+      "kind": "Grid",
+      "raw": "C",
+      "bbox": [
+        380.0,
+        760.0,
+        420.0,
+        800.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-d",
+      "kind": "Grid",
+      "raw": "D",
+      "bbox": [
+        460.0,
+        760.0,
+        500.0,
+        800.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-e",
+      "kind": "Grid",
+      "raw": "E",
+      "bbox": [
+        540.0,
+        760.0,
+        580.0,
+        800.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-f",
+      "kind": "Grid",
+      "raw": "F",
+      "bbox": [
+        620.0,
+        760.0,
+        660.0,
+        800.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-1",
+      "kind": "Grid",
+      "raw": "1",
+      "bbox": [
+        180.0,
+        550.0,
+        220.0,
+        590.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-2",
+      "kind": "Grid",
+      "raw": "2",
+      "bbox": [
+        180.0,
+        400.0,
+        220.0,
+        440.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-3",
+      "kind": "Grid",
+      "raw": "3",
+      "bbox": [
+        180.0,
+        340.0,
+        220.0,
+        380.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-4",
+      "kind": "Grid",
+      "raw": "4",
+      "bbox": [
+        180.0,
+        190.0,
+        220.0,
+        230.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-level-sfl1",
+      "kind": "Level",
+      "raw": "SFL+8.250",
+      "bbox": [
+        430.0,
+        230.0,
+        520.0,
+        260.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-level-sfl2",
+      "kind": "Level",
+      "raw": "SFL+8.250",
+      "bbox": [
+        430.0,
+        490.0,
+        520.0,
+        520.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-level-sfl3",
+      "kind": "Level",
+      "raw": "SFL+8.320",
+      "bbox": [
+        580.0,
+        610.0,
+        670.0,
+        640.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-space-a",
+      "kind": "Space",
+      "raw": "AREA A",
+      "bbox": [
+        300.0,
+        100.0,
+        400.0,
+        140.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-space-b",
+      "kind": "Space",
+      "raw": "AREA B",
+      "bbox": [
+        300.0,
+        200.0,
+        400.0,
+        240.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-space-c",
+      "kind": "Space",
+      "raw": "AREA C",
+      "bbox": [
+        300.0,
+        300.0,
+        400.0,
+        340.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-space-d",
+      "kind": "Space",
+      "raw": "AREA D",
+      "bbox": [
+        300.0,
+        400.0,
+        400.0,
+        440.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-space-e",
+      "kind": "Space",
+      "raw": "AREA E",
+      "bbox": [
+        300.0,
+        500.0,
+        400.0,
+        540.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd1",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        220.0,
+        320.0,
+        260.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd2",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        260.0,
+        320.0,
+        300.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd3",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        300.0,
+        320.0,
+        340.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd4",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        340.0,
+        320.0,
+        380.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd5",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        380.0,
+        320.0,
+        420.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd6",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        420.0,
+        320.0,
+        460.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd7",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        460.0,
+        320.0,
+        500.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd8",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        500.0,
+        320.0,
+        540.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd9",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        540.0,
+        320.0,
+        580.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd10",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        580.0,
+        320.0,
+        620.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd11",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        620.0,
+        320.0,
+        660.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd12",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        660.0,
+        320.0,
+        700.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd13",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        700.0,
+        320.0,
+        740.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd14",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        740.0,
+        320.0,
+        780.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd15",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        780.0,
+        320.0,
+        820.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd16",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        820.0,
+        320.0,
+        860.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd17",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        860.0,
+        320.0,
+        900.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd18",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        900.0,
+        320.0,
+        940.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd19",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        940.0,
+        320.0,
+        980.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-element-kpd20",
+      "kind": "Element Label",
+      "raw": "K.PD",
+      "bbox": [
+        980.0,
+        320.0,
+        1020.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-symbol-balok",
+      "kind": "Symbol",
+      "raw": "BALOK",
+      "bbox": [
+        250.0,
+        180.0,
+        290.0,
+        210.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-symbol-kolom",
+      "kind": "Symbol",
+      "raw": "KOLOM",
+      "bbox": [
+        200.0,
+        280.0,
+        240.0,
+        310.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-reference-s2",
+      "kind": "Reference",
+      "raw": "S2",
+      "bbox": [
+        450.0,
+        230.0,
+        490.0,
+        260.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-reference-s2-2",
+      "kind": "Reference",
+      "raw": "S2",
+      "bbox": [
+        450.0,
+        490.0,
+        490.0,
+        520.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-reference-s2-3",
+      "kind": "Reference",
+      "raw": "S2",
+      "bbox": [
+        550.0,
+        490.0,
+        590.0,
+        520.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-reference-sfk",
+      "kind": "Reference",
+      "raw": "SFK",
+      "bbox": [
+        580.0,
+        580.0,
+        620.0,
+        610.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-pattern-arbir-balok",
+      "kind": "Pattern",
+      "raw": "ARBIR BALOK",
+      "bbox": [
+        350.0,
+        150.0,
+        430.0,
+        180.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-geometry-denah-balok",
+      "kind": "Geometry Description",
+      "raw": "DENAH BALOK LANTAI ATAP",
+      "bbox": [
+        300.0,
+        800.0,
+        700.0,
+        850.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 8,
+    "sections_completed": 8,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

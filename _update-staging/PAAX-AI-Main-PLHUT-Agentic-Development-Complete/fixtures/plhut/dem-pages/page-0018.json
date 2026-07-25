@@ -1,0 +1,1858 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 18,
+    "page_number": 19,
+    "render_uri": "local://plhut-88pg-run-1/page-0018.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T21:04:33.129154+00:00",
+    "completed_at": "2026-07-14T21:04:33.129190+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "DENAH PLAFOND LT.1",
+      "raw": "DENAH PLAFOND LT.1",
+      "confidence": 0.98,
+      "evidence_refs": [
+        "ev-title-block-sheet-number"
+      ]
+    },
+    "title": {
+      "value": "DENAH PLAFOND LANTAI 1",
+      "raw": "DENAH PLAFOND LANTAI 1",
+      "confidence": 0.98,
+      "evidence_refs": [
+        "ev-title-block-title"
+      ]
+    },
+    "discipline": {
+      "value": "arsitektur",
+      "confidence": 0.95,
+      "status": "extracted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "SKALA 1 : 100",
+        "normalized": "1:100",
+        "confidence": 0.98,
+        "evidence_refs": [
+          "ev-title-block-scale"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "denah-plafond-lt1-main",
+      "type": "floor_plan",
+      "title": "DENAH PLAFOND LANTAI 1",
+      "bbox": [
+        64.0,
+        52.0,
+        1750.0,
+        1140.0
+      ],
+      "confidence": 0.97
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "normalized": "Judul Proyek: Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1530.0,
+          270.0,
+          1820.0,
+          320.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-project-title"
+        ]
+      },
+      {
+        "raw": "Jalan Ki Mangun Sarkoro No.115 Kota Surakarta",
+        "normalized": "Lokasi Proyek: Jalan Ki Mangun Sarkoro No.115, Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1530.0,
+          350.0,
+          1820.0,
+          390.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-location"
+        ]
+      },
+      {
+        "raw": "Kepala Kantor Wilayah Jawa Tengah Selaku Kuasa Pengguna Anggaran",
+        "normalized": "Disetujui oleh Kepala Kantor Wilayah Jawa Tengah selaku kuasa pengguna anggaran",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1530.0,
+          420.0,
+          1820.0,
+          480.0
+        ],
+        "confidence": 0.94,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-approver"
+        ]
+      },
+      {
+        "raw": "Januari 2024",
+        "normalized": "Tanggal: Januari 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1530.0,
+          1090.0,
+          1700.0,
+          1110.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-date"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "20250",
+        "normalized": "Dimensi total panjang bangunan: 20250 mm",
+        "numeric_value": 20250.0,
+        "unit": "mm",
+        "bbox": [
+          280.0,
+          60.0,
+          820.0,
+          90.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-total-length"
+        ]
+      },
+      {
+        "raw": "1625",
+        "normalized": "Dimensi bagian kiri: 1625 mm",
+        "numeric_value": 1625.0,
+        "unit": "mm",
+        "bbox": [
+          240.0,
+          100.0,
+          300.0,
+          120.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-left-section"
+        ]
+      },
+      {
+        "raw": "1500",
+        "normalized": "Dimensi segmen tengah-kiri: 1500 mm",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          310.0,
+          100.0,
+          370.0,
+          120.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-mid-left"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": "Dimensi segmen tengah: 2000 mm",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          470.0,
+          100.0,
+          530.0,
+          120.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-mid"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi segmen tengah-kanan: 4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          560.0,
+          100.0,
+          620.0,
+          120.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-mid-right"
+        ]
+      },
+      {
+        "raw": "4125",
+        "normalized": "Dimensi bagian kanan: 4125 mm",
+        "numeric_value": 4125.0,
+        "unit": "mm",
+        "bbox": [
+          850.0,
+          100.0,
+          910.0,
+          120.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-right-section"
+        ]
+      },
+      {
+        "raw": "3000",
+        "normalized": "Dimensi vertikal atas: 3000 mm",
+        "numeric_value": 3000.0,
+        "unit": "mm",
+        "bbox": [
+          200.0,
+          140.0,
+          260.0,
+          160.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-vertical-top"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": "Dimensi vertikal tengah: 2000 mm",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          200.0,
+          200.0,
+          260.0,
+          220.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-vertical-mid"
+        ]
+      },
+      {
+        "raw": "5000",
+        "normalized": "Dimensi vertikal bawah: 5000 mm",
+        "numeric_value": 5000.0,
+        "unit": "mm",
+        "bbox": [
+          200.0,
+          280.0,
+          260.0,
+          300.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-vertical-bottom"
+        ]
+      },
+      {
+        "raw": "10200",
+        "normalized": "Dimensi total vertikal: 10200 mm",
+        "numeric_value": 10200.0,
+        "unit": "mm",
+        "bbox": [
+          880.0,
+          140.0,
+          940.0,
+          300.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-total-height"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi horizontal bawah (segmen 1): 4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          240.0,
+          670.0,
+          300.0,
+          690.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-bottom-segment-1"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi horizontal bawah (segmen 2): 4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          380.0,
+          670.0,
+          440.0,
+          690.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-bottom-segment-2"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi horizontal bawah (segmen 3): 4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          520.0,
+          670.0,
+          580.0,
+          690.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-bottom-segment-3"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi horizontal bawah (segmen 4): 4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          660.0,
+          670.0,
+          720.0,
+          690.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-bottom-segment-4"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi horizontal bawah (segmen 5): 4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          800.0,
+          670.0,
+          860.0,
+          690.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-bottom-segment-5"
+        ]
+      },
+      {
+        "raw": "20000",
+        "normalized": "Dimensi total horizontal bawah: 20000 mm",
+        "numeric_value": 20000.0,
+        "unit": "mm",
+        "bbox": [
+          500.0,
+          700.0,
+          560.0,
+          720.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-total-bottom"
+        ]
+      }
+    ],
+    "grids": [
+      {
+        "raw": "Grid 1",
+        "normalized": "As Grid 1",
+        "numeric_value": 1.0,
+        "unit": "unit",
+        "bbox": [
+          180.0,
+          500.0,
+          220.0,
+          540.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-1"
+        ]
+      },
+      {
+        "raw": "Grid 2",
+        "normalized": "As Grid 2",
+        "numeric_value": 2.0,
+        "unit": "unit",
+        "bbox": [
+          180.0,
+          270.0,
+          220.0,
+          310.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-2"
+        ]
+      },
+      {
+        "raw": "Grid 3",
+        "normalized": "As Grid 3",
+        "numeric_value": 3.0,
+        "unit": "unit",
+        "bbox": [
+          180.0,
+          190.0,
+          220.0,
+          230.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-3"
+        ]
+      },
+      {
+        "raw": "Grid 4",
+        "normalized": "As Grid 4",
+        "numeric_value": 4.0,
+        "unit": "unit",
+        "bbox": [
+          180.0,
+          110.0,
+          220.0,
+          150.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-4"
+        ]
+      },
+      {
+        "raw": "Grid A",
+        "normalized": "As Grid A",
+        "numeric_value": null,
+        "unit": "unit",
+        "bbox": [
+          220.0,
+          730.0,
+          260.0,
+          770.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-A"
+        ]
+      },
+      {
+        "raw": "Grid B",
+        "normalized": "As Grid B",
+        "numeric_value": null,
+        "unit": "unit",
+        "bbox": [
+          350.0,
+          730.0,
+          390.0,
+          770.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-B"
+        ]
+      },
+      {
+        "raw": "Grid C",
+        "normalized": "As Grid C",
+        "numeric_value": null,
+        "unit": "unit",
+        "bbox": [
+          480.0,
+          730.0,
+          520.0,
+          770.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-C"
+        ]
+      },
+      {
+        "raw": "Grid D",
+        "normalized": "As Grid D",
+        "numeric_value": null,
+        "unit": "unit",
+        "bbox": [
+          630.0,
+          730.0,
+          670.0,
+          770.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-D"
+        ]
+      },
+      {
+        "raw": "Grid E",
+        "normalized": "As Grid E",
+        "numeric_value": null,
+        "unit": "unit",
+        "bbox": [
+          770.0,
+          730.0,
+          810.0,
+          770.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-E"
+        ]
+      },
+      {
+        "raw": "Grid F",
+        "normalized": "As Grid F",
+        "numeric_value": null,
+        "unit": "unit",
+        "bbox": [
+          920.0,
+          730.0,
+          960.0,
+          770.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-F"
+        ]
+      }
+    ],
+    "levels": [
+      {
+        "raw": "CH+3.500",
+        "normalized": "Elevasi Plafond C1: +3.500 m",
+        "numeric_value": 3.5,
+        "unit": "m",
+        "bbox": [
+          680.0,
+          870.0,
+          780.0,
+          890.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-c1"
+        ]
+      },
+      {
+        "raw": "CH+2.800",
+        "normalized": "Elevasi Plafond C2: +2.800 m",
+        "numeric_value": 2.8,
+        "unit": "m",
+        "bbox": [
+          680.0,
+          910.0,
+          780.0,
+          930.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-c2"
+        ]
+      }
+    ],
+    "spaces": [
+      {
+        "raw": "Ruang C1",
+        "normalized": "Area Plafond PVC (C1)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          350.0,
+          220.0,
+          400.0,
+          260.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-c1-1"
+        ]
+      },
+      {
+        "raw": "Ruang C1",
+        "normalized": "Area Plafond PVC (C1)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          220.0,
+          600.0,
+          260.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-c1-2"
+        ]
+      },
+      {
+        "raw": "Ruang C1",
+        "normalized": "Area Plafond PVC (C1)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          220.0,
+          750.0,
+          260.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-c1-3"
+        ]
+      },
+      {
+        "raw": "Ruang C1",
+        "normalized": "Area Plafond PVC (C1)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          220.0,
+          900.0,
+          260.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-c1-4"
+        ]
+      },
+      {
+        "raw": "Ruang C2",
+        "normalized": "Area Plafond Gypsum (C2)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          180.0,
+          350.0,
+          220.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-c2-1"
+        ]
+      },
+      {
+        "raw": "Ruang C2",
+        "normalized": "Area Plafond Gypsum (C2)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          330.0,
+          350.0,
+          370.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-c2-2"
+        ]
+      }
+    ],
+    "element_labels": [
+      {
+        "raw": "C1",
+        "normalized": "Elemen Plafond: C1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          370.0,
+          230.0,
+          390.0,
+          250.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-c1-1"
+        ]
+      },
+      {
+        "raw": "C1",
+        "normalized": "Elemen Plafond: C1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          570.0,
+          230.0,
+          590.0,
+          250.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-c1-2"
+        ]
+      },
+      {
+        "raw": "C1",
+        "normalized": "Elemen Plafond: C1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          720.0,
+          230.0,
+          740.0,
+          250.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-c1-3"
+        ]
+      },
+      {
+        "raw": "C1",
+        "normalized": "Elemen Plafond: C1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          870.0,
+          230.0,
+          890.0,
+          250.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-c1-4"
+        ]
+      },
+      {
+        "raw": "C2",
+        "normalized": "Elemen Plafond: C2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          320.0,
+          190.0,
+          340.0,
+          210.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-c2-1"
+        ]
+      },
+      {
+        "raw": "C2",
+        "normalized": "Elemen Plafond: C2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          320.0,
+          340.0,
+          340.0,
+          360.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-c2-2"
+        ]
+      }
+    ],
+    "symbols": [
+      {
+        "raw": "NOTASI PINTU: X = TYPE DAN JENIS BAHAN",
+        "normalized": "Notasi pintu: kode X menunjukkan tipe dan bahan pintu",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          480.0,
+          580.0,
+          600.0,
+          620.0
+        ],
+        "confidence": 0.92,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-door"
+        ]
+      },
+      {
+        "raw": "SIMBOL TANGGA: PANAH + ANGKA LANGKAH",
+        "normalized": "Simbol tangga: panah arah naik/turun dan penomoran langkah (1-11)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          380.0,
+          580.0,
+          460.0,
+          660.0
+        ],
+        "confidence": 0.94,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-stair"
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "raw": "TABEL KETERANGAN PLAFOND:\nC1 = PLAFOND PVC\nRANGKA HOLLO 19x39 & 39x39 (CH+3.500)\nC2 = PLAFOND Gypsum 9mm\nRANGKA HOLLO 19x39 & 39x39 (CH+2.800)",
+        "normalized": "Tabel Keterangan Plafond:\n- C1: Plafond PVC, Rangka Hollo 19x39 & 39x39, Elevasi +3.500m\n- C2: Plafond Gypsum 9mm, Rangka Hollo 19x39 & 39x39, Elevasi +2.800m",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          840.0,
+          1100.0,
+          940.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-table-ceiling-legend"
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "raw": "C1 = PLAFOND PVC",
+        "normalized": "Jenis Material Plafond C1: PVC",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          740.0,
+          850.0,
+          900.0,
+          870.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-c1-type"
+        ]
+      },
+      {
+        "raw": "RANGKA HOLLO 19x39 & 39x39 (CH+3.500)",
+        "normalized": "Rangka Plafond C1: Hollo 19x39mm & 39x39mm, Elevasi +3.500m",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          740.0,
+          870.0,
+          1000.0,
+          890.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-c1-frame"
+        ]
+      },
+      {
+        "raw": "C2 = PLAFOND Gypsum 9mm",
+        "normalized": "Jenis Material Plafond C2: Gypsum ketebalan 9mm",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          740.0,
+          890.0,
+          920.0,
+          910.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-c2-type"
+        ]
+      },
+      {
+        "raw": "RANGKA HOLLO 19x39 & 39x39 (CH+2.800)",
+        "normalized": "Rangka Plafond C2: Hollo 19x39mm & 39x39mm, Elevasi +2.800m",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          740.0,
+          910.0,
+          1000.0,
+          930.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-c2-frame"
+        ]
+      }
+    ],
+    "notes": [
+      {
+        "raw": "KETERANGAN :",
+        "normalized": "Judul section: KETERANGAN",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          740.0,
+          830.0,
+          850.0,
+          850.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-section-title"
+        ]
+      },
+      {
+        "raw": "DENAH PLAFOND LANTAI 1",
+        "normalized": "Judul gambar: DENAH PLAFOND LANTAI 1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          900.0,
+          1700.0,
+          930.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-drawing-title"
+        ]
+      }
+    ],
+    "references": [
+      {
+        "raw": "JUDUL GAMBAR: DENAH PLAFOND LT.1",
+        "normalized": "Referensi Judul Gambar: DENAH PLAFOND LT.1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1530.0,
+          1030.0,
+          1720.0,
+          1060.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-ref-drawing-title"
+        ]
+      },
+      {
+        "raw": "SKALA : 1:100",
+        "normalized": "Referensi Skala Gambar: 1:100",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1530.0,
+          1060.0,
+          1650.0,
+          1080.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-ref-scale"
+        ]
+      }
+    ],
+    "patterns": [
+      {
+        "raw": "HATCH PLAFOND C1",
+        "normalized": "Pola arsir Plafond C1: garis sejajar miring",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          370.0,
+          230.0,
+          420.0,
+          280.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-c1-hatch"
+        ]
+      },
+      {
+        "raw": "HATCH PLAFOND C2",
+        "normalized": "Pola arsir Plafond C2: kotak-kotak kecil",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          320.0,
+          190.0,
+          370.0,
+          240.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-c2-hatch"
+        ]
+      }
+    ],
+    "geometry_descriptions": [
+      {
+        "raw": "TANGGA DENGAN 11 LANGKAH",
+        "normalized": "Tangga dengan 11 anak tangga, arah naik ke atas",
+        "numeric_value": 11.0,
+        "unit": "langkah",
+        "bbox": [
+          380.0,
+          560.0,
+          460.0,
+          680.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geometry-stair"
+        ]
+      },
+      {
+        "raw": "RUANG C1 BERBENTUK PERSEGI PANJANG",
+        "normalized": "Ruang C1 berbentuk persegi panjang dengan dimensi 4000x3000mm",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          350.0,
+          200.0,
+          750.0,
+          280.0
+        ],
+        "confidence": 0.94,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geometry-room-c1"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-title-block-sheet-number",
+      "kind": "text",
+      "raw": "DENAH PLAFOND LT.1",
+      "bbox": [
+        1530.0,
+        1030.0,
+        1720.0,
+        1060.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-title-block-title",
+      "kind": "text",
+      "raw": "DENAH PLAFOND LANTAI 1",
+      "bbox": [
+        1400.0,
+        900.0,
+        1700.0,
+        930.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-title-block-scale",
+      "kind": "text",
+      "raw": "SKALA 1 : 100",
+      "bbox": [
+        1530.0,
+        1060.0,
+        1650.0,
+        1080.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-text-project-title",
+      "kind": "text",
+      "raw": "Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+      "bbox": [
+        1530.0,
+        270.0,
+        1820.0,
+        320.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-text-location",
+      "kind": "text",
+      "raw": "Jalan Ki Mangun Sarkoro No.115 Kota Surakarta",
+      "bbox": [
+        1530.0,
+        350.0,
+        1820.0,
+        390.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-text-approver",
+      "kind": "text",
+      "raw": "Kepala Kantor Wilayah Jawa Tengah Selaku Kuasa Pengguna Anggaran",
+      "bbox": [
+        1530.0,
+        420.0,
+        1820.0,
+        480.0
+      ],
+      "confidence": 0.94
+    },
+    {
+      "evidence_id": "ev-text-date",
+      "kind": "text",
+      "raw": "Januari 2024",
+      "bbox": [
+        1530.0,
+        1090.0,
+        1700.0,
+        1110.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-dim-total-length",
+      "kind": "dimension",
+      "raw": "20250",
+      "bbox": [
+        280.0,
+        60.0,
+        820.0,
+        90.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-dim-left-section",
+      "kind": "dimension",
+      "raw": "1625",
+      "bbox": [
+        240.0,
+        100.0,
+        300.0,
+        120.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-mid-left",
+      "kind": "dimension",
+      "raw": "1500",
+      "bbox": [
+        310.0,
+        100.0,
+        370.0,
+        120.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-mid",
+      "kind": "dimension",
+      "raw": "2000",
+      "bbox": [
+        470.0,
+        100.0,
+        530.0,
+        120.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-mid-right",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        560.0,
+        100.0,
+        620.0,
+        120.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-right-section",
+      "kind": "dimension",
+      "raw": "4125",
+      "bbox": [
+        850.0,
+        100.0,
+        910.0,
+        120.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-vertical-top",
+      "kind": "dimension",
+      "raw": "3000",
+      "bbox": [
+        200.0,
+        140.0,
+        260.0,
+        160.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-dim-vertical-mid",
+      "kind": "dimension",
+      "raw": "2000",
+      "bbox": [
+        200.0,
+        200.0,
+        260.0,
+        220.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-dim-vertical-bottom",
+      "kind": "dimension",
+      "raw": "5000",
+      "bbox": [
+        200.0,
+        280.0,
+        260.0,
+        300.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-dim-total-height",
+      "kind": "dimension",
+      "raw": "10200",
+      "bbox": [
+        880.0,
+        140.0,
+        940.0,
+        300.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-dim-bottom-segment-1",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        240.0,
+        670.0,
+        300.0,
+        690.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-bottom-segment-2",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        380.0,
+        670.0,
+        440.0,
+        690.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-bottom-segment-3",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        520.0,
+        670.0,
+        580.0,
+        690.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-bottom-segment-4",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        660.0,
+        670.0,
+        720.0,
+        690.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-bottom-segment-5",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        800.0,
+        670.0,
+        860.0,
+        690.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-total-bottom",
+      "kind": "dimension",
+      "raw": "20000",
+      "bbox": [
+        500.0,
+        700.0,
+        560.0,
+        720.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-grid-1",
+      "kind": "grid",
+      "raw": "Grid 1",
+      "bbox": [
+        180.0,
+        500.0,
+        220.0,
+        540.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-grid-2",
+      "kind": "grid",
+      "raw": "Grid 2",
+      "bbox": [
+        180.0,
+        270.0,
+        220.0,
+        310.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-grid-3",
+      "kind": "grid",
+      "raw": "Grid 3",
+      "bbox": [
+        180.0,
+        190.0,
+        220.0,
+        230.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-grid-4",
+      "kind": "grid",
+      "raw": "Grid 4",
+      "bbox": [
+        180.0,
+        110.0,
+        220.0,
+        150.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-grid-A",
+      "kind": "grid",
+      "raw": "Grid A",
+      "bbox": [
+        220.0,
+        730.0,
+        260.0,
+        770.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-grid-B",
+      "kind": "grid",
+      "raw": "Grid B",
+      "bbox": [
+        350.0,
+        730.0,
+        390.0,
+        770.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-grid-C",
+      "kind": "grid",
+      "raw": "Grid C",
+      "bbox": [
+        480.0,
+        730.0,
+        520.0,
+        770.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-grid-D",
+      "kind": "grid",
+      "raw": "Grid D",
+      "bbox": [
+        630.0,
+        730.0,
+        670.0,
+        770.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-grid-E",
+      "kind": "grid",
+      "raw": "Grid E",
+      "bbox": [
+        770.0,
+        730.0,
+        810.0,
+        770.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-grid-F",
+      "kind": "grid",
+      "raw": "Grid F",
+      "bbox": [
+        920.0,
+        730.0,
+        960.0,
+        770.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-level-c1",
+      "kind": "level",
+      "raw": "CH+3.500",
+      "bbox": [
+        680.0,
+        870.0,
+        780.0,
+        890.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-level-c2",
+      "kind": "level",
+      "raw": "CH+2.800",
+      "bbox": [
+        680.0,
+        910.0,
+        780.0,
+        930.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-space-c1-1",
+      "kind": "space",
+      "raw": "Ruang C1",
+      "bbox": [
+        350.0,
+        220.0,
+        400.0,
+        260.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-space-c1-2",
+      "kind": "space",
+      "raw": "Ruang C1",
+      "bbox": [
+        550.0,
+        220.0,
+        600.0,
+        260.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-space-c1-3",
+      "kind": "space",
+      "raw": "Ruang C1",
+      "bbox": [
+        700.0,
+        220.0,
+        750.0,
+        260.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-space-c1-4",
+      "kind": "space",
+      "raw": "Ruang C1",
+      "bbox": [
+        850.0,
+        220.0,
+        900.0,
+        260.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-space-c2-1",
+      "kind": "space",
+      "raw": "Ruang C2",
+      "bbox": [
+        300.0,
+        180.0,
+        350.0,
+        220.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-space-c2-2",
+      "kind": "space",
+      "raw": "Ruang C2",
+      "bbox": [
+        300.0,
+        330.0,
+        350.0,
+        370.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-element-c1-1",
+      "kind": "element_label",
+      "raw": "C1",
+      "bbox": [
+        370.0,
+        230.0,
+        390.0,
+        250.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-element-c1-2",
+      "kind": "element_label",
+      "raw": "C1",
+      "bbox": [
+        570.0,
+        230.0,
+        590.0,
+        250.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-element-c1-3",
+      "kind": "element_label",
+      "raw": "C1",
+      "bbox": [
+        720.0,
+        230.0,
+        740.0,
+        250.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-element-c1-4",
+      "kind": "element_label",
+      "raw": "C1",
+      "bbox": [
+        870.0,
+        230.0,
+        890.0,
+        250.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-element-c2-1",
+      "kind": "element_label",
+      "raw": "C2",
+      "bbox": [
+        320.0,
+        190.0,
+        340.0,
+        210.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-element-c2-2",
+      "kind": "element_label",
+      "raw": "C2",
+      "bbox": [
+        320.0,
+        340.0,
+        340.0,
+        360.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-symbol-door",
+      "kind": "symbol",
+      "raw": "NOTASI PINTU: X = TYPE DAN JENIS BAHAN",
+      "bbox": [
+        480.0,
+        580.0,
+        600.0,
+        620.0
+      ],
+      "confidence": 0.92
+    },
+    {
+      "evidence_id": "ev-symbol-stair",
+      "kind": "symbol",
+      "raw": "SIMBOL TANGGA: PANAH + ANGKA LANGKAH",
+      "bbox": [
+        380.0,
+        580.0,
+        460.0,
+        660.0
+      ],
+      "confidence": 0.94
+    },
+    {
+      "evidence_id": "ev-table-ceiling-legend",
+      "kind": "table",
+      "raw": "TABEL KETERANGAN PLAFOND:\nC1 = PLAFOND PVC\nRANGKA HOLLO 19x39 & 39x39 (CH+3.500)\nC2 = PLAFOND Gypsum 9mm\nRANGKA HOLLO 19x39 & 39x39 (CH+2.800)",
+      "bbox": [
+        700.0,
+        840.0,
+        1100.0,
+        940.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-material-c1-type",
+      "kind": "material",
+      "raw": "C1 = PLAFOND PVC",
+      "bbox": [
+        740.0,
+        850.0,
+        900.0,
+        870.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-material-c1-frame",
+      "kind": "material",
+      "raw": "RANGKA HOLLO 19x39 & 39x39 (CH+3.500)",
+      "bbox": [
+        740.0,
+        870.0,
+        1000.0,
+        890.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-material-c2-type",
+      "kind": "material",
+      "raw": "C2 = PLAFOND Gypsum 9mm",
+      "bbox": [
+        740.0,
+        890.0,
+        920.0,
+        910.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-material-c2-frame",
+      "kind": "material",
+      "raw": "RANGKA HOLLO 19x39 & 39x39 (CH+2.800)",
+      "bbox": [
+        740.0,
+        910.0,
+        1000.0,
+        930.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-note-section-title",
+      "kind": "note",
+      "raw": "KETERANGAN :",
+      "bbox": [
+        740.0,
+        830.0,
+        850.0,
+        850.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-note-drawing-title",
+      "kind": "note",
+      "raw": "DENAH PLAFOND LANTAI 1",
+      "bbox": [
+        1400.0,
+        900.0,
+        1700.0,
+        930.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-ref-drawing-title",
+      "kind": "reference",
+      "raw": "JUDUL GAMBAR: DENAH PLAFOND LT.1",
+      "bbox": [
+        1530.0,
+        1030.0,
+        1720.0,
+        1060.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-ref-scale",
+      "kind": "reference",
+      "raw": "SKALA : 1:100",
+      "bbox": [
+        1530.0,
+        1060.0,
+        1650.0,
+        1080.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-pattern-c1-hatch",
+      "kind": "pattern",
+      "raw": "HATCH PLAFOND C1",
+      "bbox": [
+        370.0,
+        230.0,
+        420.0,
+        280.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-pattern-c2-hatch",
+      "kind": "pattern",
+      "raw": "HATCH PLAFOND C2",
+      "bbox": [
+        320.0,
+        190.0,
+        370.0,
+        240.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-geometry-stair",
+      "kind": "geometry_description",
+      "raw": "TANGGA DENGAN 11 LANGKAH",
+      "bbox": [
+        380.0,
+        560.0,
+        460.0,
+        680.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-geometry-room-c1",
+      "kind": "geometry_description",
+      "raw": "RUANG C1 BERBENTUK PERSEGI PANJANG",
+      "bbox": [
+        350.0,
+        200.0,
+        750.0,
+        280.0
+      ],
+      "confidence": 0.94
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

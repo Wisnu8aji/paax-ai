@@ -1,0 +1,14 @@
+{
+  "extends": "@paax/tsconfig/base.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "incremental": false,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "resolveJsonModule": true,
+    "noUncheckedIndexedAccess": false,
+    "types": ["jest"]
+  },
+  "include": ["src"],
+  "exclude": ["dist", "node_modules"]
+}

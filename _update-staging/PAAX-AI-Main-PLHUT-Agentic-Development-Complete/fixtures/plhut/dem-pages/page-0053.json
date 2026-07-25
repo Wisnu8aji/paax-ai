@@ -1,0 +1,1675 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 53,
+    "page_number": 54,
+    "render_uri": "local://plhut-88pg-run-1/page-0053.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T22:14:15.287670+00:00",
+    "completed_at": "2026-07-14T22:14:15.287714+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "54",
+      "raw": null,
+      "confidence": 0.98,
+      "evidence_refs": []
+    },
+    "title": {
+      "value": "POTONGAN - B",
+      "raw": "POTONGAN - B",
+      "confidence": 0.97,
+      "evidence_refs": [
+        "ev-title-cut-b"
+      ]
+    },
+    "discipline": {
+      "value": "Struktur",
+      "confidence": 0.95,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "SKALA 1 : 100",
+        "normalized": "1:100",
+        "confidence": 0.96,
+        "evidence_refs": [
+          "ev-scale-main"
+        ]
+      },
+      {
+        "raw": "SKALA 1:25",
+        "normalized": "1:25",
+        "confidence": 0.94,
+        "evidence_refs": [
+          "ev-scale-detail-tangga"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-cut-b",
+      "type": "section",
+      "title": "POTONGAN - B",
+      "bbox": [
+        50.0,
+        50.0,
+        750.0,
+        950.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "view_id": "view-detail-tangga",
+      "type": "detail",
+      "title": "DETAIL.1 TANGGA",
+      "bbox": [
+        620.0,
+        280.0,
+        820.0,
+        460.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "view_id": "view-detail-balok",
+      "type": "detail",
+      "title": "DETAIL.2 BALOK CG2A",
+      "bbox": [
+        620.0,
+        500.0,
+        820.0,
+        650.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "view_id": "view-potongan-detail",
+      "type": "detail",
+      "title": "DET.POT I / DET.POT II",
+      "bbox": [
+        620.0,
+        660.0,
+        820.0,
+        760.0
+      ],
+      "confidence": 0.94
+    },
+    {
+      "view_id": "view-titleblock",
+      "type": "title_block",
+      "title": "KETERANGAN",
+      "bbox": [
+        830.0,
+        0.0,
+        1180.0,
+        1650.0
+      ],
+      "confidence": 0.99
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "Trexstang Ø12mm",
+        "normalized": "Trexstang diameter 12mm",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          240.0,
+          80.0,
+          450.0,
+          110.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-roof-trexstang"
+        ]
+      },
+      {
+        "raw": "Gording 150x50x20x2.3",
+        "normalized": "Gording profil 150x50x20x2.3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          240.0,
+          110.0,
+          450.0,
+          140.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-roof-gording"
+        ]
+      },
+      {
+        "raw": "RAFTER 200X100X5.5X8",
+        "normalized": "Rafter profil 200x100x5.5x8",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          290.0,
+          140.0,
+          520.0,
+          170.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-roof-rafter"
+        ]
+      },
+      {
+        "raw": "Kolom Rafter H 150X150X7X10",
+        "normalized": "Kolom Rafter profil H 150x150x7x10",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          340.0,
+          170.0,
+          620.0,
+          200.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-roof-kolom-rafter"
+        ]
+      },
+      {
+        "raw": "Ø8-150",
+        "normalized": "Diameter 8 mm, jarak 150 mm",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          660.0,
+          290.0,
+          740.0,
+          320.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-detail-stair-reinf"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "1200",
+        "normalized": "1200",
+        "numeric_value": 1200.0,
+        "unit": "mm",
+        "bbox": [
+          140.0,
+          140.0,
+          180.0,
+          170.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-roof-1"
+        ]
+      },
+      {
+        "raw": "1200",
+        "normalized": "1200",
+        "numeric_value": 1200.0,
+        "unit": "mm",
+        "bbox": [
+          180.0,
+          170.0,
+          220.0,
+          200.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-roof-2"
+        ]
+      },
+      {
+        "raw": "1000",
+        "normalized": "1000",
+        "numeric_value": 1000.0,
+        "unit": "mm",
+        "bbox": [
+          100.0,
+          200.0,
+          140.0,
+          230.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-roof-3"
+        ]
+      },
+      {
+        "raw": "3000",
+        "normalized": "3000",
+        "numeric_value": 3000.0,
+        "unit": "mm",
+        "bbox": [
+          130.0,
+          920.0,
+          230.0,
+          960.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-floor-1"
+        ]
+      },
+      {
+        "raw": "7000",
+        "normalized": "7000",
+        "numeric_value": 7000.0,
+        "unit": "mm",
+        "bbox": [
+          270.0,
+          920.0,
+          370.0,
+          960.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-floor-2"
+        ]
+      },
+      {
+        "raw": "1580",
+        "normalized": "1580",
+        "numeric_value": 1580.0,
+        "unit": "mm",
+        "bbox": [
+          450.0,
+          920.0,
+          550.0,
+          960.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-floor-3"
+        ]
+      },
+      {
+        "raw": "10000",
+        "normalized": "10000",
+        "numeric_value": 10000.0,
+        "unit": "mm",
+        "bbox": [
+          200.0,
+          980.0,
+          320.0,
+          1020.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-total"
+        ]
+      },
+      {
+        "raw": "3900",
+        "normalized": "3900",
+        "numeric_value": 3900.0,
+        "unit": "mm",
+        "bbox": [
+          580.0,
+          350.0,
+          610.0,
+          450.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-height-1"
+        ]
+      },
+      {
+        "raw": "4400",
+        "normalized": "4400",
+        "numeric_value": 4400.0,
+        "unit": "mm",
+        "bbox": [
+          580.0,
+          550.0,
+          610.0,
+          750.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-height-2"
+        ]
+      }
+    ],
+    "grids": [
+      {
+        "raw": "4",
+        "normalized": "Grid 4",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          130.0,
+          1050.0,
+          180.0,
+          1130.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-4"
+        ]
+      },
+      {
+        "raw": "3",
+        "normalized": "Grid 3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          230.0,
+          1050.0,
+          280.0,
+          1130.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-3"
+        ]
+      },
+      {
+        "raw": "1",
+        "normalized": "Grid 1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          450.0,
+          1050.0,
+          500.0,
+          1130.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-1"
+        ]
+      }
+    ],
+    "levels": [
+      {
+        "raw": "EL. +8.300 LANTAI ATAP",
+        "normalized": "Lantai Atap",
+        "numeric_value": 8.3,
+        "unit": "m",
+        "bbox": [
+          570.0,
+          330.0,
+          720.0,
+          370.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-roof"
+        ]
+      },
+      {
+        "raw": "EL. +4.400 LANTAI 2",
+        "normalized": "Lantai 2",
+        "numeric_value": 4.4,
+        "unit": "m",
+        "bbox": [
+          570.0,
+          520.0,
+          720.0,
+          560.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-floor-2"
+        ]
+      },
+      {
+        "raw": "EL. ±0.000 LANTAI 1",
+        "normalized": "Lantai 1",
+        "numeric_value": 0.0,
+        "unit": "m",
+        "bbox": [
+          570.0,
+          730.0,
+          720.0,
+          770.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-floor-1"
+        ]
+      }
+    ],
+    "spaces": [],
+    "element_labels": [
+      {
+        "raw": "RB3",
+        "normalized": "RB3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          130.0,
+          330.0,
+          170.0,
+          360.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-rb3-1"
+        ]
+      },
+      {
+        "raw": "RB4",
+        "normalized": "RB4",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          330.0,
+          240.0,
+          360.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-rb4"
+        ]
+      },
+      {
+        "raw": "RB1",
+        "normalized": "RB1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          330.0,
+          340.0,
+          360.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-rb1"
+        ]
+      },
+      {
+        "raw": "RB3",
+        "normalized": "RB3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          470.0,
+          310.0,
+          510.0,
+          340.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-rb3-2"
+        ]
+      },
+      {
+        "raw": "RB4",
+        "normalized": "RB4",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          470.0,
+          360.0,
+          510.0,
+          390.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-rb4-2"
+        ]
+      },
+      {
+        "raw": "RB3",
+        "normalized": "RB3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          500.0,
+          380.0,
+          540.0,
+          410.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-rb3-3"
+        ]
+      },
+      {
+        "raw": "RB5",
+        "normalized": "RB5",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          530.0,
+          380.0,
+          570.0,
+          410.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-rb5"
+        ]
+      },
+      {
+        "raw": "K2",
+        "normalized": "K2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          130.0,
+          400.0,
+          160.0,
+          430.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-k2-1"
+        ]
+      },
+      {
+        "raw": "K2",
+        "normalized": "K2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          130.0,
+          620.0,
+          160.0,
+          650.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-k2-2"
+        ]
+      },
+      {
+        "raw": "K1",
+        "normalized": "K1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          270.0,
+          620.0,
+          300.0,
+          650.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-k1"
+        ]
+      },
+      {
+        "raw": "K1A",
+        "normalized": "K1A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          510.0,
+          410.0,
+          550.0,
+          440.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-k1a-1"
+        ]
+      },
+      {
+        "raw": "K1A",
+        "normalized": "K1A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          510.0,
+          620.0,
+          550.0,
+          650.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-k1a-2"
+        ]
+      },
+      {
+        "raw": "K3",
+        "normalized": "K3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          540.0,
+          430.0,
+          570.0,
+          460.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-k3-1"
+        ]
+      },
+      {
+        "raw": "K3",
+        "normalized": "K3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          540.0,
+          660.0,
+          570.0,
+          690.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-k3-2"
+        ]
+      },
+      {
+        "raw": "G2",
+        "normalized": "G2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          130.0,
+          580.0,
+          160.0,
+          610.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-g2-1"
+        ]
+      },
+      {
+        "raw": "G2",
+        "normalized": "G2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          270.0,
+          580.0,
+          300.0,
+          610.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-g2-2"
+        ]
+      },
+      {
+        "raw": "B3",
+        "normalized": "B3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          580.0,
+          230.0,
+          610.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-b3"
+        ]
+      },
+      {
+        "raw": "B2",
+        "normalized": "B2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          340.0,
+          580.0,
+          370.0,
+          610.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-b2"
+        ]
+      },
+      {
+        "raw": "G1",
+        "normalized": "G1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          410.0,
+          580.0,
+          440.0,
+          610.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-g1"
+        ]
+      },
+      {
+        "raw": "B2",
+        "normalized": "B2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          470.0,
+          580.0,
+          500.0,
+          610.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-b2-2"
+        ]
+      },
+      {
+        "raw": "G1",
+        "normalized": "G1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          510.0,
+          580.0,
+          540.0,
+          610.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-g1-2"
+        ]
+      },
+      {
+        "raw": "G2",
+        "normalized": "G2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          560.0,
+          580.0,
+          590.0,
+          610.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-g2-3"
+        ]
+      },
+      {
+        "raw": "BL",
+        "normalized": "BL",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          610.0,
+          580.0,
+          640.0,
+          610.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-bl"
+        ]
+      },
+      {
+        "raw": "CG2A",
+        "normalized": "CG2A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          500.0,
+          530.0,
+          550.0,
+          560.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-cg2a"
+        ]
+      }
+    ],
+    "symbols": [],
+    "tables": [
+      {
+        "raw": "TUL ATAS 5D16\nTUL BAWAH 2D16\nTUL SENGG D10-100",
+        "normalized": "Tulangan Atas: 5D16, Tulangan Bawah: 2D16, Tulangan Senggang: D10-100",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          620.0,
+          710.0,
+          750.0,
+          760.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-table-reinf-pot-1"
+        ]
+      }
+    ],
+    "materials": [],
+    "notes": [
+      {
+        "raw": "D13-150",
+        "normalized": "Tulangan D13 jarak 150",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          380.0,
+          780.0,
+          410.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-stair-reinf-1"
+        ]
+      },
+      {
+        "raw": "D13-150",
+        "normalized": "Tulangan D13 jarak 150",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          400.0,
+          780.0,
+          430.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-stair-reinf-2"
+        ]
+      }
+    ],
+    "references": [
+      {
+        "raw": "DETAIL.1 TANGGA",
+        "normalized": "Detail 1 Tangga",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          620.0,
+          460.0,
+          760.0,
+          480.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-ref-detail-1"
+        ]
+      },
+      {
+        "raw": "DETAIL.2 BALOK CG2A",
+        "normalized": "Detail 2 Balok CG2A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          620.0,
+          660.0,
+          780.0,
+          680.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-ref-detail-2"
+        ]
+      },
+      {
+        "raw": "DET.POT I",
+        "normalized": "Detail Potongan I",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          620.0,
+          760.0,
+          700.0,
+          780.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-ref-det-pot-1"
+        ]
+      },
+      {
+        "raw": "DET.POT II",
+        "normalized": "Detail Potongan II",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          760.0,
+          800.0,
+          780.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-ref-det-pot-2"
+        ]
+      }
+    ],
+    "patterns": [],
+    "geometry_descriptions": []
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-title-cut-b",
+      "kind": "text",
+      "raw": "POTONGAN - B",
+      "bbox": [
+        220.0,
+        1200.0,
+        400.0,
+        1260.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-scale-main",
+      "kind": "text",
+      "raw": "SKALA 1 : 100",
+      "bbox": [
+        220.0,
+        1260.0,
+        380.0,
+        1290.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-scale-detail-tangga",
+      "kind": "text",
+      "raw": "SKALA 1:25",
+      "bbox": [
+        660.0,
+        480.0,
+        740.0,
+        500.0
+      ],
+      "confidence": 0.94
+    },
+    {
+      "evidence_id": "ev-roof-trexstang",
+      "kind": "text",
+      "raw": "Trexstang Ø12mm",
+      "bbox": [
+        240.0,
+        80.0,
+        450.0,
+        110.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-roof-gording",
+      "kind": "text",
+      "raw": "Gording 150x50x20x2.3",
+      "bbox": [
+        240.0,
+        110.0,
+        450.0,
+        140.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-roof-rafter",
+      "kind": "text",
+      "raw": "RAFTER 200X100X5.5X8",
+      "bbox": [
+        290.0,
+        140.0,
+        520.0,
+        170.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-roof-kolom-rafter",
+      "kind": "text",
+      "raw": "Kolom Rafter H 150X150X7X10",
+      "bbox": [
+        340.0,
+        170.0,
+        620.0,
+        200.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-detail-stair-reinf",
+      "kind": "text",
+      "raw": "Ø8-150",
+      "bbox": [
+        660.0,
+        290.0,
+        740.0,
+        320.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-roof-1",
+      "kind": "dimension",
+      "raw": "1200",
+      "bbox": [
+        140.0,
+        140.0,
+        180.0,
+        170.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-dim-roof-2",
+      "kind": "dimension",
+      "raw": "1200",
+      "bbox": [
+        180.0,
+        170.0,
+        220.0,
+        200.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-dim-roof-3",
+      "kind": "dimension",
+      "raw": "1000",
+      "bbox": [
+        100.0,
+        200.0,
+        140.0,
+        230.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-dim-floor-1",
+      "kind": "dimension",
+      "raw": "3000",
+      "bbox": [
+        130.0,
+        920.0,
+        230.0,
+        960.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-floor-2",
+      "kind": "dimension",
+      "raw": "7000",
+      "bbox": [
+        270.0,
+        920.0,
+        370.0,
+        960.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-floor-3",
+      "kind": "dimension",
+      "raw": "1580",
+      "bbox": [
+        450.0,
+        920.0,
+        550.0,
+        960.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-total",
+      "kind": "dimension",
+      "raw": "10000",
+      "bbox": [
+        200.0,
+        980.0,
+        320.0,
+        1020.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-height-1",
+      "kind": "dimension",
+      "raw": "3900",
+      "bbox": [
+        580.0,
+        350.0,
+        610.0,
+        450.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-dim-height-2",
+      "kind": "dimension",
+      "raw": "4400",
+      "bbox": [
+        580.0,
+        550.0,
+        610.0,
+        750.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-grid-4",
+      "kind": "grid",
+      "raw": "4",
+      "bbox": [
+        130.0,
+        1050.0,
+        180.0,
+        1130.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-grid-3",
+      "kind": "grid",
+      "raw": "3",
+      "bbox": [
+        230.0,
+        1050.0,
+        280.0,
+        1130.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-grid-1",
+      "kind": "grid",
+      "raw": "1",
+      "bbox": [
+        450.0,
+        1050.0,
+        500.0,
+        1130.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-level-roof",
+      "kind": "level",
+      "raw": "EL. +8.300 LANTAI ATAP",
+      "bbox": [
+        570.0,
+        330.0,
+        720.0,
+        370.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-level-floor-2",
+      "kind": "level",
+      "raw": "EL. +4.400 LANTAI 2",
+      "bbox": [
+        570.0,
+        520.0,
+        720.0,
+        560.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-level-floor-1",
+      "kind": "level",
+      "raw": "EL. ±0.000 LANTAI 1",
+      "bbox": [
+        570.0,
+        730.0,
+        720.0,
+        770.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-label-rb3-1",
+      "kind": "element_label",
+      "raw": "RB3",
+      "bbox": [
+        130.0,
+        330.0,
+        170.0,
+        360.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-rb4",
+      "kind": "element_label",
+      "raw": "RB4",
+      "bbox": [
+        200.0,
+        330.0,
+        240.0,
+        360.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-rb1",
+      "kind": "element_label",
+      "raw": "RB1",
+      "bbox": [
+        300.0,
+        330.0,
+        340.0,
+        360.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-rb3-2",
+      "kind": "element_label",
+      "raw": "RB3",
+      "bbox": [
+        470.0,
+        310.0,
+        510.0,
+        340.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-rb4-2",
+      "kind": "element_label",
+      "raw": "RB4",
+      "bbox": [
+        470.0,
+        360.0,
+        510.0,
+        390.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-rb3-3",
+      "kind": "element_label",
+      "raw": "RB3",
+      "bbox": [
+        500.0,
+        380.0,
+        540.0,
+        410.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-rb5",
+      "kind": "element_label",
+      "raw": "RB5",
+      "bbox": [
+        530.0,
+        380.0,
+        570.0,
+        410.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-k2-1",
+      "kind": "element_label",
+      "raw": "K2",
+      "bbox": [
+        130.0,
+        400.0,
+        160.0,
+        430.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-k2-2",
+      "kind": "element_label",
+      "raw": "K2",
+      "bbox": [
+        130.0,
+        620.0,
+        160.0,
+        650.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-k1",
+      "kind": "element_label",
+      "raw": "K1",
+      "bbox": [
+        270.0,
+        620.0,
+        300.0,
+        650.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-k1a-1",
+      "kind": "element_label",
+      "raw": "K1A",
+      "bbox": [
+        510.0,
+        410.0,
+        550.0,
+        440.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-k1a-2",
+      "kind": "element_label",
+      "raw": "K1A",
+      "bbox": [
+        510.0,
+        620.0,
+        550.0,
+        650.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-k3-1",
+      "kind": "element_label",
+      "raw": "K3",
+      "bbox": [
+        540.0,
+        430.0,
+        570.0,
+        460.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-k3-2",
+      "kind": "element_label",
+      "raw": "K3",
+      "bbox": [
+        540.0,
+        660.0,
+        570.0,
+        690.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-g2-1",
+      "kind": "element_label",
+      "raw": "G2",
+      "bbox": [
+        130.0,
+        580.0,
+        160.0,
+        610.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-g2-2",
+      "kind": "element_label",
+      "raw": "G2",
+      "bbox": [
+        270.0,
+        580.0,
+        300.0,
+        610.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-b3",
+      "kind": "element_label",
+      "raw": "B3",
+      "bbox": [
+        200.0,
+        580.0,
+        230.0,
+        610.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-b2",
+      "kind": "element_label",
+      "raw": "B2",
+      "bbox": [
+        340.0,
+        580.0,
+        370.0,
+        610.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-g1",
+      "kind": "element_label",
+      "raw": "G1",
+      "bbox": [
+        410.0,
+        580.0,
+        440.0,
+        610.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-b2-2",
+      "kind": "element_label",
+      "raw": "B2",
+      "bbox": [
+        470.0,
+        580.0,
+        500.0,
+        610.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-g1-2",
+      "kind": "element_label",
+      "raw": "G1",
+      "bbox": [
+        510.0,
+        580.0,
+        540.0,
+        610.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-g2-3",
+      "kind": "element_label",
+      "raw": "G2",
+      "bbox": [
+        560.0,
+        580.0,
+        590.0,
+        610.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-bl",
+      "kind": "element_label",
+      "raw": "BL",
+      "bbox": [
+        610.0,
+        580.0,
+        640.0,
+        610.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-cg2a",
+      "kind": "element_label",
+      "raw": "CG2A",
+      "bbox": [
+        500.0,
+        530.0,
+        550.0,
+        560.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-table-reinf-pot-1",
+      "kind": "table",
+      "raw": "TUL ATAS 5D16\nTUL BAWAH 2D16\nTUL SENGG D10-100",
+      "bbox": [
+        620.0,
+        710.0,
+        750.0,
+        760.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-note-stair-reinf-1",
+      "kind": "note",
+      "raw": "D13-150",
+      "bbox": [
+        700.0,
+        380.0,
+        780.0,
+        410.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-note-stair-reinf-2",
+      "kind": "note",
+      "raw": "D13-150",
+      "bbox": [
+        700.0,
+        400.0,
+        780.0,
+        430.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-ref-detail-1",
+      "kind": "reference",
+      "raw": "DETAIL.1 TANGGA",
+      "bbox": [
+        620.0,
+        460.0,
+        760.0,
+        480.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-ref-detail-2",
+      "kind": "reference",
+      "raw": "DETAIL.2 BALOK CG2A",
+      "bbox": [
+        620.0,
+        660.0,
+        780.0,
+        680.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-ref-det-pot-1",
+      "kind": "reference",
+      "raw": "DET.POT I",
+      "bbox": [
+        620.0,
+        760.0,
+        700.0,
+        780.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-ref-det-pot-2",
+      "kind": "reference",
+      "raw": "DET.POT II",
+      "bbox": [
+        700.0,
+        760.0,
+        800.0,
+        780.0
+      ],
+      "confidence": 0.96
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

@@ -1,0 +1,71 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build
+.next/
+dist/
+build/
+.turbo/
+out/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.pytest_tmp/
+
+# Environment
+.env
+.env.local
+.env.*
+!.env.example
+
+# Security / Secrets
+*.pem
+*.key
+secrets.toml
+.streamlit/secrets.toml
+
+# Private data
+data/private/
+data_private/
+legacy/**/data_private/
+
+# Private / proprietary concept & strategy — keep LOCAL, do NOT upload (owner's decision)
+# These files stay on your machine but are never tracked/pushed to the public repo.
+/docs/BUILD_v0.6.md
+PAAX_AI_Blueprint*
+*.docx
+
+# Saya Code (personal/local settings)
+.saya/settings.local.json
+
+# IDE & OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Legacy artifacts
+*.zip
+*.tsbuildinfo
+
+# Temp files
+ci_log.txt
+fix-genkit.js
+.saya-*.log
+/.AI-*.log
+reports/
+
+# Graphify's generated knowledge graph (regenerated via hook/graphify update)
+graphify-out/
+
+.saya/
+skills-lock.json

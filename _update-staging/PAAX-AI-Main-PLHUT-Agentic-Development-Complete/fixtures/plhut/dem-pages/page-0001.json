@@ -1,0 +1,1254 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 1,
+    "page_number": 2,
+    "render_uri": "local://plhut-88pg-run-1/page-0001.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T20:19:31.767844+00:00",
+    "completed_at": "2026-07-14T20:19:31.767880+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "2",
+      "raw": "2",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-sheet-2"
+      ]
+    },
+    "title": {
+      "value": "DAFTAR SINGKATAN DAN NOTASI GAMBAR",
+      "raw": "DAFTAR SINGKATAN DAN NOTASI GAMBAR",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-title-main"
+      ]
+    },
+    "discipline": {
+      "value": "Arsitektur",
+      "confidence": 0.95,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "NTS",
+        "normalized": "NTS",
+        "confidence": 1.0,
+        "evidence_refs": [
+          "ev-scale-nts"
+        ]
+      }
+    ]
+  },
+  "views": [],
+  "observations": {
+    "texts": [
+      {
+        "raw": "PEKERJAAN JASA KONSULTANSI PERENCANAAN PEMBANGUNAN GEDUNG KELAS",
+        "normalized": "Pekerjaan Jasa Konsultansi Perencanaan Pembangunan Gedung Kelas",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          50.0,
+          110.0,
+          750.0,
+          140.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-subtitle"
+        ]
+      },
+      {
+        "raw": "KETERANGAN",
+        "normalized": "Keterangan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          20.0,
+          950.0,
+          40.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-keterangan"
+        ]
+      },
+      {
+        "raw": "KEMENTERIAN AGAMA RI",
+        "normalized": "Kementerian Agama RI",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          180.0,
+          980.0,
+          195.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-ministry"
+        ]
+      },
+      {
+        "raw": "DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH",
+        "normalized": "Direktorat Jenderal Penyelenggaraan Haji dan Umrah",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          200.0,
+          980.0,
+          220.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-directorate"
+        ]
+      },
+      {
+        "raw": "TAHUN ANGGARAN 2024",
+        "normalized": "Tahun Anggaran 2024",
+        "numeric_value": 2024.0,
+        "unit": "tahun",
+        "bbox": [
+          850.0,
+          225.0,
+          980.0,
+          240.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-year"
+        ]
+      },
+      {
+        "raw": "JUDUL PROYEK : GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+        "normalized": "Judul Proyek: Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          250.0,
+          980.0,
+          280.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-project-title"
+        ]
+      },
+      {
+        "raw": "LOKASI : JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+        "normalized": "Lokasi: Jalan Ki Mangun Sarkoro No.115 Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          290.0,
+          980.0,
+          320.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-location"
+        ]
+      },
+      {
+        "raw": "MENYETUJUI KEPALA KANTOR WILAYAH JAWA TENGAH SELAKU KUASA PENGGUNA ANGGARAN",
+        "normalized": "Menyetujui Kepala Kantor Wilayah Jawa Tengah selaku Kuasa Pengguna Anggaran",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          330.0,
+          980.0,
+          360.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-approval"
+        ]
+      },
+      {
+        "raw": "MENGETAHUI/ MENYETUJUI PEJABAT PEMBUAT KOMITMEN",
+        "normalized": "Mengetahui/Menyetujui Pejabat Pembuat Komitmen",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          370.0,
+          980.0,
+          390.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-approver"
+        ]
+      },
+      {
+        "raw": "KONSULTAN PERENCANA TEAM LEADER",
+        "normalized": "Konsultan Perencana Team Leader",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          400.0,
+          980.0,
+          420.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-consultant"
+        ]
+      },
+      {
+        "raw": "NAMA TANDA TANGAN",
+        "normalized": "Nama Tanda Tangan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          430.0,
+          980.0,
+          440.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-signature"
+        ]
+      },
+      {
+        "raw": "SIPIL DIGAMBAR",
+        "normalized": "Sipil Digambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          450.0,
+          900.0,
+          470.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-draftsman"
+        ]
+      },
+      {
+        "raw": "JUDUL GAMBAR DAFTAR SINGKATAN DAN SIMBOL GAMBAR",
+        "normalized": "Judul Gambar: Daftar Singkatan Dan Simbol Gambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          480.0,
+          980.0,
+          510.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-drawing-title"
+        ]
+      },
+      {
+        "raw": "TANGGAL: JANUARI 2024",
+        "normalized": "Tanggal: Januari 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          520.0,
+          980.0,
+          530.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-date"
+        ]
+      },
+      {
+        "raw": "SKALA GBR KODE GBR NO. GBR",
+        "normalized": "Skala Gbr Kode Gbr No. Gbr",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          540.0,
+          980.0,
+          550.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-scaling"
+        ]
+      },
+      {
+        "raw": "A",
+        "normalized": "A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          180.0,
+          200.0,
+          200.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-a"
+        ]
+      },
+      {
+        "raw": "B",
+        "normalized": "B",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          250.0,
+          180.0,
+          270.0,
+          200.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-b"
+        ]
+      },
+      {
+        "raw": "C",
+        "normalized": "C",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          180.0,
+          420.0,
+          200.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-c"
+        ]
+      },
+      {
+        "raw": "D",
+        "normalized": "D",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          180.0,
+          570.0,
+          200.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-d"
+        ]
+      },
+      {
+        "raw": "E",
+        "normalized": "E",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          180.0,
+          720.0,
+          200.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-e"
+        ]
+      },
+      {
+        "raw": "F",
+        "normalized": "F",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          180.0,
+          870.0,
+          200.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-f"
+        ]
+      },
+      {
+        "raw": "G",
+        "normalized": "G",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          220.0,
+          120.0,
+          240.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-g"
+        ]
+      },
+      {
+        "raw": "H",
+        "normalized": "H",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          250.0,
+          220.0,
+          270.0,
+          240.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-h"
+        ]
+      },
+      {
+        "raw": "I",
+        "normalized": "I",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          220.0,
+          420.0,
+          240.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-i"
+        ]
+      },
+      {
+        "raw": "J",
+        "normalized": "J",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          220.0,
+          570.0,
+          240.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-j"
+        ]
+      },
+      {
+        "raw": "K",
+        "normalized": "K",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          220.0,
+          720.0,
+          240.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-k"
+        ]
+      },
+      {
+        "raw": "L",
+        "normalized": "L",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          220.0,
+          870.0,
+          240.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-l"
+        ]
+      },
+      {
+        "raw": "M",
+        "normalized": "M",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          260.0,
+          120.0,
+          280.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-m"
+        ]
+      },
+      {
+        "raw": "N",
+        "normalized": "N",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          250.0,
+          260.0,
+          270.0,
+          280.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-n"
+        ]
+      },
+      {
+        "raw": "O",
+        "normalized": "O",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          260.0,
+          420.0,
+          280.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-o"
+        ]
+      },
+      {
+        "raw": "P",
+        "normalized": "P",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          260.0,
+          570.0,
+          280.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-p"
+        ]
+      },
+      {
+        "raw": "Q",
+        "normalized": "Q",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          260.0,
+          720.0,
+          280.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-q"
+        ]
+      },
+      {
+        "raw": "R",
+        "normalized": "R",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          260.0,
+          870.0,
+          280.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-r"
+        ]
+      },
+      {
+        "raw": "S",
+        "normalized": "S",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          300.0,
+          120.0,
+          320.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-s"
+        ]
+      },
+      {
+        "raw": "T",
+        "normalized": "T",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          250.0,
+          300.0,
+          270.0,
+          320.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-t"
+        ]
+      },
+      {
+        "raw": "U",
+        "normalized": "U",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          300.0,
+          420.0,
+          320.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-u"
+        ]
+      },
+      {
+        "raw": "V",
+        "normalized": "V",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          300.0,
+          570.0,
+          320.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-v"
+        ]
+      },
+      {
+        "raw": "W",
+        "normalized": "W",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          300.0,
+          720.0,
+          320.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-column-w"
+        ]
+      }
+    ],
+    "dimensions": [],
+    "grids": [],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [],
+    "symbols": [],
+    "tables": [
+      {
+        "raw": "DAFTAR SINGKATAN",
+        "normalized": "Daftar Singkatan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          160.0,
+          850.0,
+          560.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-table-abbreviations"
+        ]
+      }
+    ],
+    "materials": [],
+    "notes": [],
+    "references": [],
+    "patterns": [],
+    "geometry_descriptions": []
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-sheet-2",
+      "kind": "sheet_number",
+      "raw": "2",
+      "bbox": [
+        540.0,
+        560.0,
+        560.0,
+        580.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-title-main",
+      "kind": "text",
+      "raw": "DAFTAR SINGKATAN DAN NOTASI GAMBAR",
+      "bbox": [
+        400.0,
+        80.0,
+        800.0,
+        110.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-subtitle",
+      "kind": "text",
+      "raw": "Pekerjaan Jasa Konsultansi Perencanaan Pembangunan Gedung Kelas",
+      "bbox": [
+        400.0,
+        115.0,
+        800.0,
+        135.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-keterangan",
+      "kind": "text",
+      "raw": "Keterangan",
+      "bbox": [
+        860.0,
+        25.0,
+        940.0,
+        35.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-ministry",
+      "kind": "text",
+      "raw": "Kementerian Agama RI",
+      "bbox": [
+        860.0,
+        182.0,
+        970.0,
+        192.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-directorate",
+      "kind": "text",
+      "raw": "Direktorat Jenderal Penyelenggaraan Haji dan Umrah",
+      "bbox": [
+        860.0,
+        202.0,
+        970.0,
+        217.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-year",
+      "kind": "text",
+      "raw": "Tahun Anggaran 2024",
+      "bbox": [
+        860.0,
+        227.0,
+        970.0,
+        237.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-project-title",
+      "kind": "text",
+      "raw": "Judul Proyek: Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+      "bbox": [
+        860.0,
+        252.0,
+        970.0,
+        277.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-location",
+      "kind": "text",
+      "raw": "Lokasi: Jalan Ki Mangun Sarkoro No.115 Kota Surakarta",
+      "bbox": [
+        860.0,
+        292.0,
+        970.0,
+        317.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-approval",
+      "kind": "text",
+      "raw": "Menyetujui Kepala Kantor Wilayah Jawa Tengah selaku Kuasa Pengguna Anggaran",
+      "bbox": [
+        860.0,
+        332.0,
+        970.0,
+        357.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-approver",
+      "kind": "text",
+      "raw": "Mengetahui/Menyetujui Pejabat Pembuat Komitmen",
+      "bbox": [
+        860.0,
+        372.0,
+        970.0,
+        387.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-consultant",
+      "kind": "text",
+      "raw": "Konsultan Perencana Team Leader",
+      "bbox": [
+        860.0,
+        402.0,
+        970.0,
+        417.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-signature",
+      "kind": "text",
+      "raw": "Nama Tanda Tangan",
+      "bbox": [
+        860.0,
+        432.0,
+        970.0,
+        437.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-draftsman",
+      "kind": "text",
+      "raw": "Sipil Digambar",
+      "bbox": [
+        860.0,
+        452.0,
+        890.0,
+        467.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-drawing-title",
+      "kind": "text",
+      "raw": "Judul Gambar: Daftar Singkatan Dan Simbol Gambar",
+      "bbox": [
+        860.0,
+        482.0,
+        970.0,
+        507.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-date",
+      "kind": "text",
+      "raw": "Tanggal: Januari 2024",
+      "bbox": [
+        860.0,
+        522.0,
+        970.0,
+        527.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-scaling",
+      "kind": "text",
+      "raw": "Skala Gbr Kode Gbr No. Gbr",
+      "bbox": [
+        860.0,
+        542.0,
+        970.0,
+        547.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-a",
+      "kind": "column_header",
+      "raw": "A",
+      "bbox": [
+        110.0,
+        182.0,
+        190.0,
+        197.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-b",
+      "kind": "column_header",
+      "raw": "B",
+      "bbox": [
+        260.0,
+        182.0,
+        265.0,
+        197.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-c",
+      "kind": "column_header",
+      "raw": "C",
+      "bbox": [
+        410.0,
+        182.0,
+        415.0,
+        197.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-d",
+      "kind": "column_header",
+      "raw": "D",
+      "bbox": [
+        560.0,
+        182.0,
+        565.0,
+        197.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-e",
+      "kind": "column_header",
+      "raw": "E",
+      "bbox": [
+        710.0,
+        182.0,
+        715.0,
+        197.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-f",
+      "kind": "column_header",
+      "raw": "F",
+      "bbox": [
+        860.0,
+        182.0,
+        865.0,
+        197.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-g",
+      "kind": "column_header",
+      "raw": "G",
+      "bbox": [
+        110.0,
+        222.0,
+        115.0,
+        237.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-h",
+      "kind": "column_header",
+      "raw": "H",
+      "bbox": [
+        260.0,
+        222.0,
+        265.0,
+        237.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-i",
+      "kind": "column_header",
+      "raw": "I",
+      "bbox": [
+        410.0,
+        222.0,
+        415.0,
+        237.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-j",
+      "kind": "column_header",
+      "raw": "J",
+      "bbox": [
+        560.0,
+        222.0,
+        565.0,
+        237.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-k",
+      "kind": "column_header",
+      "raw": "K",
+      "bbox": [
+        710.0,
+        222.0,
+        715.0,
+        237.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-l",
+      "kind": "column_header",
+      "raw": "L",
+      "bbox": [
+        860.0,
+        222.0,
+        865.0,
+        237.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-m",
+      "kind": "column_header",
+      "raw": "M",
+      "bbox": [
+        110.0,
+        262.0,
+        115.0,
+        277.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-n",
+      "kind": "column_header",
+      "raw": "N",
+      "bbox": [
+        260.0,
+        262.0,
+        265.0,
+        277.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-o",
+      "kind": "column_header",
+      "raw": "O",
+      "bbox": [
+        410.0,
+        262.0,
+        415.0,
+        277.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-p",
+      "kind": "column_header",
+      "raw": "P",
+      "bbox": [
+        560.0,
+        262.0,
+        565.0,
+        277.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-q",
+      "kind": "column_header",
+      "raw": "Q",
+      "bbox": [
+        710.0,
+        262.0,
+        715.0,
+        277.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-r",
+      "kind": "column_header",
+      "raw": "R",
+      "bbox": [
+        860.0,
+        262.0,
+        865.0,
+        277.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-s",
+      "kind": "column_header",
+      "raw": "S",
+      "bbox": [
+        110.0,
+        302.0,
+        115.0,
+        317.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-t",
+      "kind": "column_header",
+      "raw": "T",
+      "bbox": [
+        260.0,
+        302.0,
+        265.0,
+        317.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-u",
+      "kind": "column_header",
+      "raw": "U",
+      "bbox": [
+        410.0,
+        302.0,
+        415.0,
+        317.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-v",
+      "kind": "column_header",
+      "raw": "V",
+      "bbox": [
+        560.0,
+        302.0,
+        565.0,
+        317.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-column-w",
+      "kind": "column_header",
+      "raw": "W",
+      "bbox": [
+        710.0,
+        302.0,
+        715.0,
+        317.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-table-abbreviations",
+      "kind": "table",
+      "raw": "Daftar Singkatan",
+      "bbox": [
+        110.0,
+        162.0,
+        840.0,
+        557.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-scale-nts",
+      "kind": "scale",
+      "raw": "NTS",
+      "bbox": [
+        900.0,
+        490.0,
+        920.0,
+        500.0
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 8,
+    "sections_completed": 8,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

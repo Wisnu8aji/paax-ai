@@ -1,0 +1,413 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 72,
+    "page_number": 73,
+    "render_uri": "local://plhut-88pg-run-1/page-0072.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T22:23:28.263353+00:00",
+    "completed_at": "2026-07-14T22:23:28.263384+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "73",
+      "raw": "73",
+      "confidence": 1.0,
+      "evidence_refs": []
+    },
+    "title": {
+      "value": "DETAIL PEMASANGAN AC",
+      "raw": "DETAIL PEMASANGAN AC",
+      "confidence": 1.0,
+      "evidence_refs": []
+    },
+    "discipline": {
+      "value": "MEP",
+      "confidence": 0.95,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1:100",
+        "normalized": "1:100",
+        "confidence": 1.0,
+        "evidence_refs": []
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-73-main",
+      "type": "technical_drawing",
+      "title": "DETAIL PEMASANGAN AC",
+      "bbox": [
+        0.0,
+        0.0,
+        1000.0,
+        1000.0
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "CU. 1-5A",
+        "normalized": "CU. 1-5A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          150.0,
+          250.0,
+          180.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-1"
+        ]
+      },
+      {
+        "raw": "AIR OUTLET DISCHARGE GRILLE",
+        "normalized": "AIR OUTLET DISCHARGE GRILLE",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          200.0,
+          400.0,
+          220.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-2"
+        ]
+      },
+      {
+        "raw": "AIR INLET SUCTION GRILLE",
+        "normalized": "AIR INLET SUCTION GRILLE",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          250.0,
+          400.0,
+          270.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-3"
+        ]
+      },
+      {
+        "raw": "INDOOR",
+        "normalized": "INDOOR",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          350.0,
+          300.0,
+          400.0,
+          320.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-4"
+        ]
+      },
+      {
+        "raw": "OUTDOOR",
+        "normalized": "OUTDOOR",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          500.0,
+          150.0,
+          550.0,
+          170.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-5"
+        ]
+      },
+      {
+        "raw": "AIR INLET",
+        "normalized": "AIR INLET",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          500.0,
+          200.0,
+          550.0,
+          220.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-6"
+        ]
+      },
+      {
+        "raw": "GROUND WIRE OR TO EBB",
+        "normalized": "GROUND WIRE OR TO EBB",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          450.0,
+          250.0,
+          550.0,
+          270.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-7"
+        ]
+      },
+      {
+        "raw": "OUTLET AIR",
+        "normalized": "OUTLET AIR",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          500.0,
+          300.0,
+          550.0,
+          320.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-8"
+        ]
+      },
+      {
+        "raw": "BREAKER TO CIRCUIT",
+        "normalized": "BREAKER TO CIRCUIT",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          500.0,
+          350.0,
+          600.0,
+          370.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-9"
+        ]
+      },
+      {
+        "raw": "CU",
+        "normalized": "CU",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          600.0,
+          300.0,
+          620.0,
+          320.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-10"
+        ]
+      },
+      {
+        "raw": "DRAIN PIPE",
+        "normalized": "DRAIN PIPE",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          400.0,
+          450.0,
+          420.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-11"
+        ]
+      }
+    ],
+    "dimensions": [],
+    "grids": [],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [
+      {
+        "raw": "CU. 1-5A",
+        "normalized": "CU. 1-5A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          150.0,
+          250.0,
+          180.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-1"
+        ]
+      },
+      {
+        "raw": "CU",
+        "normalized": "CU",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          600.0,
+          300.0,
+          620.0,
+          320.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-2"
+        ]
+      }
+    ],
+    "symbols": [
+      {
+        "raw": "DISCHARGE GRILLE",
+        "normalized": "Simbol: Grille untuk pengeluaran udara",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          200.0,
+          400.0,
+          220.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-1"
+        ]
+      },
+      {
+        "raw": "SUCTION GRILLE",
+        "normalized": "Simbol: Grille untuk penyerapan udara",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          250.0,
+          400.0,
+          270.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-2"
+        ]
+      },
+      {
+        "raw": "GROUND WIRE",
+        "normalized": "Simbol: Kabel grounding",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          450.0,
+          250.0,
+          550.0,
+          270.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-3"
+        ]
+      },
+      {
+        "raw": "BREAKER TO CIRCUIT",
+        "normalized": "Simbol: Pemutus sirkuit",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          500.0,
+          350.0,
+          600.0,
+          370.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-4"
+        ]
+      },
+      {
+        "raw": "DRAIN PIPE",
+        "normalized": "Simbol: Pipa drainase",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          400.0,
+          450.0,
+          420.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-5"
+        ]
+      }
+    ],
+    "tables": [],
+    "materials": [],
+    "notes": [],
+    "references": [],
+    "patterns": [],
+    "geometry_descriptions": [
+      {
+        "raw": "Detail pemasangan AC (indoor dan outdoor unit)",
+        "normalized": "Gambar teknik menunjukkan detail pemasangan unit AC indoor dan outdoor beserta komponen pendukung seperti grille, kabel grounding, breaker, dan pipa drainase.",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.98,
+        "status": "ai_interpreted",
+        "evidence_refs": [
+          "geometry-desc-1"
+        ]
+      }
+    ]
+  },
+  "evidence": [],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "schema_version": "paax.release-certificate.v2",
+  "created_at": "2026-07-25T11:19:44.744666+00:00",
+  "release_class": "development integration complete",
+  "professional_production_certification": "CONDITIONAL",
+  "project_id": "PLHUT-SURAKARTA",
+  "source_pdf_sha256": "bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+  "plan_phase_count": 64,
+  "tests": {
+    "PHASE62_COMPLETION.json": {
+      "sha256": "1c2fd8ee61fdb44ed85a15b11655d39e4ac44edb5aee8b9859a8eb79b6be69fb",
+      "size_bytes": 5288
+    },
+    "PHASE64_COMPLETION_FINAL.txt": {
+      "sha256": "a215782ea631105fbdad69549e0dad5a2c64f1c5a3f58486f248f3ddc2d49405",
+      "size_bytes": 6746
+    },
+    "AGENTIC_RUNTIME.json": {
+      "sha256": "0f4bdf553c52cb160a49d7b42d23f18dc03a1b5c409692425d48c19a4187bcf3",
+      "size_bytes": 801
+    },
+    "CONCURRENCY_TEST.json": {
+      "sha256": "f5cc875893112be1d3fa217005e3fab1c1d59290eb463f051718dcc4e8e4e2ca",
+      "size_bytes": 157
+    },
+    "CONCURRENCY_TEST_FINAL.txt": {
+      "sha256": "f5cc875893112be1d3fa217005e3fab1c1d59290eb463f051718dcc4e8e4e2ca",
+      "size_bytes": 157
+    },
+    "PERFORMANCE_BENCHMARK.json": {
+      "sha256": "8a34290212b7ab73351f4e91182c4437f2f03b1b9db95b35137b5796165dea08",
+      "size_bytes": 446
+    },
+    "PERFORMANCE_BENCHMARK_FINAL.txt": {
+      "sha256": "af07cd509c58a89339e581a722d20cabec5a0124df1d6852162d006142ec4e84",
+      "size_bytes": 446
+    },
+    "LIVE_PHASE30_RUNTIME_FINAL.txt": {
+      "sha256": "090ce375230ca9ce70d18b7a614dc5ef3bc2e7d28ad12378e4cd8c168703a723",
+      "size_bytes": 11261
+    },
+    "LIVE_PHASE62_ENDPOINTS.json": {
+      "sha256": "ff83d2c23715dbee55121e728ad0a5f62e08fe0560b42d30b53ac9e3d0919876",
+      "size_bytes": 8508
+    },
+    "LIVE_TAKEOFF_PERSISTENCE.json": {
+      "sha256": "d9b2460d7bf1ff976e9e42157a51591349881288a650a85ebc8a9d69db4869e8",
+      "size_bytes": 183
+    },
+    "PLHUT_IDEMPOTENT_RESTART.json": {
+      "sha256": "4ab238810912b578962d8ddf95b423c19bb0e3661e599a3749c47771aca0c91c",
+      "size_bytes": 159
+    },
+    "UPDATE_INTEGRATION_TEST.json": {
+      "sha256": "63d93214e4b91214aa9364ba2cdedbd7b79e8ba5ed801d2ae8acf0c0188b36b6",
+      "size_bytes": 63608
+    },
+    "UPDATE_ROLLBACK_FINAL.json": {
+      "sha256": "b3564ad484186970b129e27bd57b97831b3126771b3f423406810a66bed57709",
+      "size_bytes": 1182
+    },
+    "TYPESCRIPT_SYNTAX.json": {
+      "sha256": "300e34085c88001d19326e7cd95203fd8397aa29003c7dd61e54f33388eb99cf",
+      "size_bytes": 163
+    },
+    "TYPESCRIPT_SYNTAX_FINAL.txt": {
+      "sha256": "300e34085c88001d19326e7cd95203fd8397aa29003c7dd61e54f33388eb99cf",
+      "size_bytes": 163
+    },
+    "SECURITY_AUDIT_FINAL.txt": {
+      "sha256": "3d143ea234150426c8afc6a97d9d275ce7f762e5e2c19572cd6ee9a1c5914dfc",
+      "size_bytes": 112
+    },
+    "ADVANCED_PHASE_TESTS_FINAL.txt": {
+      "sha256": "dfb5fa336942ca03191ed5bd674d114ded9212105d21321b1d0f94de8fdbfc04",
+      "size_bytes": 100
+    },
+    "CORE_ENGINE_PYTEST_FINAL.txt": {
+      "sha256": "73f6b1b3cc5c132d59b87cfe4e2a43250ea266355f2f89a9cb017ecac347ea6c",
+      "size_bytes": 420
+    },
+    "release/PAAX_FINAL_TEST_SUMMARY.json": {
+      "sha256": "0efe27ae7f75c63dae612dac4fb9a7c853c0d66b0ffa909cc527543a935cfe94",
+      "size_bytes": 3689
+    },
+    "release/PAAX_64_PHASE_IMPLEMENTATION_MATRIX.json": {
+      "sha256": "f39f94b22c4a383906a84982b843870d464a326ef191f5ecbb98080e9e7794cc",
+      "size_bytes": 17985
+    },
+    "release/PAAX_SBOM.json": {
+      "sha256": "4ae0d86bdd5ff1b6162e2a874ade32f41dfb24b380217091b8dd831bcab860b4",
+      "size_bytes": 2787
+    }
+  },
+  "known_limits": [
+    "Full Next.js production build/browser flow was not executed in this sandbox because pnpm dependencies could not be installed from the registry.",
+    "External multi-project benchmark packs require downloadable licensed bytes and independent object-level ground truth.",
+    "Indonesian professional pilot/shadow operation requires real engineers and projects.",
+    "External solver adapters are fail-closed contracts; ETABS/MIDAS/HEC/SWMM/EPANET integrations require licensed/runtime environments."
+  ],
+  "release_decision": "GO for continued local development and controlled pilot preparation; NO-GO for universal unattended professional production claims."
+}

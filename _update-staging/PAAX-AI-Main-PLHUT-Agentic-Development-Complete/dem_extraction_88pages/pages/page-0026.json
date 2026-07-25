@@ -1,0 +1,2123 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 26,
+    "page_number": 27,
+    "render_uri": "local://plhut-88pg-run-1/page-0026.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T21:22:17.669938+00:00",
+    "completed_at": "2026-07-14T21:22:17.669980+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "27",
+      "raw": "27",
+      "confidence": 0.9,
+      "evidence_refs": [
+        "text-001"
+      ]
+    },
+    "title": {
+      "value": "DETAIL KUSEN",
+      "raw": "DETAIL KUSEN",
+      "confidence": 0.9,
+      "evidence_refs": [
+        "text-002"
+      ]
+    },
+    "discipline": {
+      "value": "ARSITEKTUR",
+      "confidence": 0.9,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1:25",
+        "normalized": "1:25",
+        "confidence": 0.95,
+        "evidence_refs": [
+          "scale-001"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-001",
+      "type": "detail",
+      "title": "JENDELA (J1) dan JENDELA (J2)",
+      "bbox": [
+        200.0,
+        400.0,
+        1200.0,
+        750.0
+      ],
+      "confidence": 0.9
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KEMENTERIAN AGAMA RI\nDIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH\nTAHUN ANGGARAN 2024",
+        "normalized": "Kementerian Agama RI, Direktorat Jenderal Penyelenggaraan Haji dan Umrah, Tahun Anggaran 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          150.0,
+          1350.0,
+          250.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-003"
+        ]
+      },
+      {
+        "raw": "JUDUL PROYEK :\nGEDUNG PUSAT LAYANAN\nHAJI DAN UMRAH TERPADU\nKOTA SURAKARTA",
+        "normalized": "Judul Proyek: Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          260.0,
+          1350.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-004"
+        ]
+      },
+      {
+        "raw": "LOKASI :\nJALAN KI MANGUN SARKORO NO.115\nKOTA SURAKARTA",
+        "normalized": "Lokasi: Jalan Ki Mangun Sarkoro No.115, Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          360.0,
+          1350.0,
+          420.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-005"
+        ]
+      },
+      {
+        "raw": "MENYETUJUI\nKEPALA KANTOR WILAYAH JAWA TENGAH\nSELAKU KUASA PENGGUNA ANGGARAN",
+        "normalized": "Menyetujui, Kepala Kantor Wilayah Jawa Tengah selaku Kuasa Pengguna Anggaran",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          430.0,
+          1350.0,
+          500.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-006"
+        ]
+      },
+      {
+        "raw": "MENGETAHUI / MENYETUJUI\nPEJABAT PEMBUAT KOMITMEN",
+        "normalized": "Mengetahui / Menyetujui, Pejabat Pembuat Komitmen",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          510.0,
+          1350.0,
+          560.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-007"
+        ]
+      },
+      {
+        "raw": "KONSULTAN PERENCANA",
+        "normalized": "Konsultan Perencana",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          570.0,
+          1350.0,
+          600.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-008"
+        ]
+      },
+      {
+        "raw": "TEAM LEADER",
+        "normalized": "Team Leader",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          610.0,
+          1350.0,
+          640.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-009"
+        ]
+      },
+      {
+        "raw": "NAMA TANDA TANGAN",
+        "normalized": "Nama Tanda Tangan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          650.0,
+          1350.0,
+          680.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-010"
+        ]
+      },
+      {
+        "raw": "SIPIL",
+        "normalized": "Sipil",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          690.0,
+          1270.0,
+          710.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-011"
+        ]
+      },
+      {
+        "raw": "DIGAMBAR",
+        "normalized": "Digambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          720.0,
+          1270.0,
+          740.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-012"
+        ]
+      },
+      {
+        "raw": "JUDUL GAMBAR",
+        "normalized": "Judul Gambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          750.0,
+          1300.0,
+          780.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-013"
+        ]
+      },
+      {
+        "raw": "SKALA\n1:25",
+        "normalized": "Skala: 1:25",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          790.0,
+          1300.0,
+          830.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-014"
+        ]
+      },
+      {
+        "raw": "TANGGAL: JANUARI 2024",
+        "normalized": "Tanggal: Januari 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          840.0,
+          1300.0,
+          870.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-015"
+        ]
+      },
+      {
+        "raw": "SKALA GBR KODE GBR NO. GBR",
+        "normalized": "Skala Gbr, Kode Gbr, No. Gbr",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          880.0,
+          1350.0,
+          920.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-016"
+        ]
+      },
+      {
+        "raw": "±0.000",
+        "normalized": "Elevasi ±0.000",
+        "numeric_value": 0.0,
+        "unit": "m",
+        "bbox": [
+          300.0,
+          750.0,
+          350.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "level-001"
+        ]
+      },
+      {
+        "raw": "±0.000",
+        "normalized": "Elevasi ±0.000",
+        "numeric_value": 0.0,
+        "unit": "m",
+        "bbox": [
+          650.0,
+          750.0,
+          700.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "level-002"
+        ]
+      },
+      {
+        "raw": "JENDELA (J1)\nSkala 1 : 25",
+        "normalized": "Jendela (J1), Skala 1:25",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          950.0,
+          450.0,
+          980.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-017"
+        ]
+      },
+      {
+        "raw": "JENDELA (J2)\nSkala 1 : 25",
+        "normalized": "Jendela (J2), Skala 1:25",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          950.0,
+          800.0,
+          980.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-018"
+        ]
+      },
+      {
+        "raw": "TYPE : JENDELA (J1)",
+        "normalized": "Type: Jendela (J1)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          1020.0,
+          450.0,
+          1050.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-019"
+        ]
+      },
+      {
+        "raw": "-KUSEN ALUMUNIUM 45x100 MM HITAM",
+        "normalized": "Kusen aluminium 45x100 mm hitam",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          1060.0,
+          520.0,
+          1080.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-020"
+        ]
+      },
+      {
+        "raw": "-KACA BENING CLEAR T = 5 MM",
+        "normalized": "Kaca bening clear, tebal = 5 mm",
+        "numeric_value": 5.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          1090.0,
+          500.0,
+          1110.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-021"
+        ]
+      },
+      {
+        "raw": "LOKASI : PERBANKAN",
+        "normalized": "Lokasi: Perbankan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          1120.0,
+          450.0,
+          1140.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-022"
+        ]
+      },
+      {
+        "raw": "JUMLAH : 1 BH",
+        "normalized": "Jumlah: 1 buah",
+        "numeric_value": 1.0,
+        "unit": "bh",
+        "bbox": [
+          300.0,
+          1150.0,
+          420.0,
+          1170.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-023"
+        ]
+      },
+      {
+        "raw": "TYPE : JENDELA (J2)",
+        "normalized": "Type: Jendela (J2)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          1020.0,
+          800.0,
+          1050.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-024"
+        ]
+      },
+      {
+        "raw": "BAHAN : -KUSEN ALUMUNIUM 45x100 MM HITAM",
+        "normalized": "Bahan: Kusen aluminium 45x100 mm hitam",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          1060.0,
+          870.0,
+          1080.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-025"
+        ]
+      },
+      {
+        "raw": "-KACA BENING CLEAR T = 5 MM",
+        "normalized": "Kaca bening clear, tebal = 5 mm",
+        "numeric_value": 5.0,
+        "unit": "mm",
+        "bbox": [
+          650.0,
+          1090.0,
+          850.0,
+          1110.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-026"
+        ]
+      },
+      {
+        "raw": "LOKASI : R.STAFF, R.TUNGGU, R.SIDIK JARI, PERBANKAN",
+        "normalized": "Lokasi: R.Staff, R.Tunggu, R.Sidik Jari, Perbankan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          1120.0,
+          900.0,
+          1140.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-027"
+        ]
+      },
+      {
+        "raw": "JUMLAH : 6 BH",
+        "normalized": "Jumlah: 6 buah",
+        "numeric_value": 6.0,
+        "unit": "bh",
+        "bbox": [
+          650.0,
+          1150.0,
+          770.0,
+          1170.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-028"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "50",
+        "normalized": "50",
+        "numeric_value": 50.0,
+        "unit": "mm",
+        "bbox": [
+          200.0,
+          500.0,
+          220.0,
+          800.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-001"
+        ]
+      },
+      {
+        "raw": "1000",
+        "normalized": "1000",
+        "numeric_value": 1000.0,
+        "unit": "mm",
+        "bbox": [
+          230.0,
+          500.0,
+          260.0,
+          800.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-002"
+        ]
+      },
+      {
+        "raw": "1000",
+        "normalized": "1000",
+        "numeric_value": 1000.0,
+        "unit": "mm",
+        "bbox": [
+          270.0,
+          500.0,
+          300.0,
+          800.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-003"
+        ]
+      },
+      {
+        "raw": "50",
+        "normalized": "50",
+        "numeric_value": 50.0,
+        "unit": "mm",
+        "bbox": [
+          310.0,
+          500.0,
+          330.0,
+          800.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-004"
+        ]
+      },
+      {
+        "raw": "3500",
+        "normalized": "3500",
+        "numeric_value": 3500.0,
+        "unit": "mm",
+        "bbox": [
+          200.0,
+          900.0,
+          440.0,
+          920.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-005"
+        ]
+      },
+      {
+        "raw": "1100",
+        "normalized": "1100",
+        "numeric_value": 1100.0,
+        "unit": "mm",
+        "bbox": [
+          200.0,
+          750.0,
+          280.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-006"
+        ]
+      },
+      {
+        "raw": "1100",
+        "normalized": "1100",
+        "numeric_value": 1100.0,
+        "unit": "mm",
+        "bbox": [
+          320.0,
+          750.0,
+          400.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-007"
+        ]
+      },
+      {
+        "raw": "600",
+        "normalized": "600",
+        "numeric_value": 600.0,
+        "unit": "mm",
+        "bbox": [
+          440.0,
+          900.0,
+          460.0,
+          920.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-008"
+        ]
+      },
+      {
+        "raw": "2750",
+        "normalized": "2750",
+        "numeric_value": 2750.0,
+        "unit": "mm",
+        "bbox": [
+          470.0,
+          500.0,
+          490.0,
+          900.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-009"
+        ]
+      },
+      {
+        "raw": "50",
+        "normalized": "50",
+        "numeric_value": 50.0,
+        "unit": "mm",
+        "bbox": [
+          550.0,
+          500.0,
+          570.0,
+          800.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-010"
+        ]
+      },
+      {
+        "raw": "1000",
+        "normalized": "1000",
+        "numeric_value": 1000.0,
+        "unit": "mm",
+        "bbox": [
+          580.0,
+          500.0,
+          610.0,
+          800.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-011"
+        ]
+      },
+      {
+        "raw": "1000",
+        "normalized": "1000",
+        "numeric_value": 1000.0,
+        "unit": "mm",
+        "bbox": [
+          620.0,
+          500.0,
+          650.0,
+          800.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-012"
+        ]
+      },
+      {
+        "raw": "50",
+        "normalized": "50",
+        "numeric_value": 50.0,
+        "unit": "mm",
+        "bbox": [
+          660.0,
+          500.0,
+          680.0,
+          800.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-013"
+        ]
+      },
+      {
+        "raw": "3600",
+        "normalized": "3600",
+        "numeric_value": 3600.0,
+        "unit": "mm",
+        "bbox": [
+          550.0,
+          900.0,
+          790.0,
+          920.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-014"
+        ]
+      },
+      {
+        "raw": "660",
+        "normalized": "660",
+        "numeric_value": 660.0,
+        "unit": "mm",
+        "bbox": [
+          550.0,
+          750.0,
+          600.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-015"
+        ]
+      },
+      {
+        "raw": "660",
+        "normalized": "660",
+        "numeric_value": 660.0,
+        "unit": "mm",
+        "bbox": [
+          640.0,
+          750.0,
+          690.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-016"
+        ]
+      },
+      {
+        "raw": "660",
+        "normalized": "660",
+        "numeric_value": 660.0,
+        "unit": "mm",
+        "bbox": [
+          730.0,
+          750.0,
+          780.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-017"
+        ]
+      },
+      {
+        "raw": "600",
+        "normalized": "600",
+        "numeric_value": 600.0,
+        "unit": "mm",
+        "bbox": [
+          790.0,
+          900.0,
+          810.0,
+          920.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-018"
+        ]
+      },
+      {
+        "raw": "2750",
+        "normalized": "2750",
+        "numeric_value": 2750.0,
+        "unit": "mm",
+        "bbox": [
+          820.0,
+          500.0,
+          840.0,
+          900.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-019"
+        ]
+      }
+    ],
+    "grids": [],
+    "levels": [
+      {
+        "raw": "±0.000",
+        "normalized": "Elevasi ±0.000",
+        "numeric_value": 0.0,
+        "unit": "m",
+        "bbox": [
+          300.0,
+          750.0,
+          350.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "level-001"
+        ]
+      },
+      {
+        "raw": "±0.000",
+        "normalized": "Elevasi ±0.000",
+        "numeric_value": 0.0,
+        "unit": "m",
+        "bbox": [
+          650.0,
+          750.0,
+          700.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "level-002"
+        ]
+      }
+    ],
+    "spaces": [
+      {
+        "raw": "PERBANKAN",
+        "normalized": "Perbankan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          1.0,
+          120.0,
+          450.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "space-001"
+        ]
+      },
+      {
+        "raw": "R.STAFF",
+        "normalized": "R.Staff",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          1120.0,
+          720.0,
+          1140.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "s pa c e-0 0 2"
+        ]
+      },
+      {
+        "raw": "R.TUNGGU",
+        "normalized": "R.Tunggu",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          720.0,
+          1120.0,
+          780.0,
+          1140.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "s pa c e-0 0 3"
+        ]
+      },
+      {
+        "raw": "R.SIDIK JARI",
+        "normalized": "R.Sidik Jari",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          780.0,
+          1120.0,
+          850.0,
+          1140.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "s pa c e-0 0 4"
+        ]
+      },
+      {
+        "raw": "PERBANKAN",
+        "normalized": "Perbankan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          1120.0,
+          900.0,
+          1140.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "s pa c e-0 0 5"
+        ]
+      }
+    ],
+    "element_labels": [
+      {
+        "raw": "JENDELA (J1)",
+        "normalized": "J1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          950.0,
+          400.0,
+          980.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "elem-001"
+        ]
+      },
+      {
+        "raw": "JENDELA (J2)",
+        "normalized": "J2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          950.0,
+          750.0,
+          980.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "elem-002"
+        ]
+      }
+    ],
+    "symbols": [
+      {
+        "raw": "NOTASI PINTU: X = TYPE DAN JENIS BAHAN",
+        "normalized": "Notasi pintu: kode X menunjukkan tipe dan bahan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "sym-001"
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "raw": "TYPE : JENDELA (J1)\n-KUSEN ALUMUNIUM 45x100 MM HITAM\n-KACA BENING CLEAR T = 5 MM\nLOKASI : PERBANKAN\nJUMLAH : 1 BH",
+        "normalized": "Tabel spesifikasi Jendela (J1): Kusen aluminium 45x100 mm hitam, kaca bening clear tebal 5 mm, lokasi: perbankan, jumlah: 1 buah",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          1020.0,
+          520.0,
+          1170.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "tab-001"
+        ]
+      },
+      {
+        "raw": "TYPE : JENDELA (J2)\nBAHAN : -KUSEN ALUMUNIUM 45x100 MM HITAM\n-KACA BENING CLEAR T = 5 MM\nLOKASI : R.STAFF, R.TUNGGU, R.SIDIK JARI, PERBANKAN\nJUMLAH : 6 BH",
+        "normalized": "Tabel spesifikasi Jendela (J2): Kusen aluminium 45x100 mm hitam, kaca bening clear tebal 5 mm, lokasi: R.Staff, R.Tunggu, R.Sidik Jari, Perbankan, jumlah: 6 buah",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          1020.0,
+          900.0,
+          1170.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "tab-002"
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "raw": "KUSEN ALUMUNIUM 45x100 MM HITAM",
+        "normalized": "Kusen aluminium 45x100 mm, warna hitam",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          1060.0,
+          520.0,
+          1080.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "mat-001"
+        ]
+      },
+      {
+        "raw": "KACA BENING CLEAR T = 5 MM",
+        "normalized": "Kaca bening clear, tebal 5 mm",
+        "numeric_value": 5.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          1090.0,
+          500.0,
+          1110.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "mat-002"
+        ]
+      },
+      {
+        "raw": "KUSEN ALUMUNIUM 45x100 MM HITAM",
+        "normalized": "Kusen aluminium 45x100 mm, warna hitam",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          1060.0,
+          870.0,
+          1080.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "mat-003"
+        ]
+      },
+      {
+        "raw": "KACA BENING CLEAR T = 5 MM",
+        "normalized": "Kaca bening clear, tebal 5 mm",
+        "numeric_value": 5.0,
+        "unit": "mm",
+        "bbox": [
+          650.0,
+          1090.0,
+          850.0,
+          1110.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "mat-004"
+        ]
+      }
+    ],
+    "notes": [
+      {
+        "raw": "SKALA GBR KODE GBR NO. GBR",
+        "normalized": "Skala gambar, kode gambar, nomor gambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          880.0,
+          1350.0,
+          920.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "note-001"
+        ]
+      }
+    ],
+    "references": [
+      {
+        "raw": "JUDUL PROYEK :\nGEDUNG PUSAT LAYANAN\nHAJI DAN UMRAH TERPADU\nKOTA SURAKARTA",
+        "normalized": "Judul Proyek: Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          260.0,
+          1350.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ref-001"
+        ]
+      },
+      {
+        "raw": "LOKASI :\nJALAN KI MANGUN SARKORO NO.115\nKOTA SURAKARTA",
+        "normalized": "Lokasi: Jalan Ki Mangun Sarkoro No.115, Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          360.0,
+          1350.0,
+          420.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ref-002"
+        ]
+      }
+    ],
+    "patterns": [
+      {
+        "raw": "ARSIR DIAGIONAL PADA KACA",
+        "normalized": "Arsir diagonal pada kaca",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          400.0,
+          1200.0,
+          750.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "pat-001"
+        ]
+      }
+    ],
+    "geometry_descriptions": [
+      {
+        "raw": "JENDELA (J1) DENGAN 3 PANEL",
+        "normalized": "Jendela (J1) terdiri dari 3 panel",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          400.0,
+          500.0,
+          750.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "geo-001"
+        ]
+      },
+      {
+        "raw": "JENDELA (J2) DENGAN 4 PANEL",
+        "normalized": "Jendela (J2) terdiri dari 4 panel",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          500.0,
+          400.0,
+          1200.0,
+          750.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "geo-002"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "text-001",
+      "kind": "text",
+      "raw": "27",
+      "bbox": [
+        1400.0,
+        100.0,
+        1450.0,
+        120.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "text-002",
+      "kind": "text",
+      "raw": "DETAIL KUSEN",
+      "bbox": [
+        1250.0,
+        750.0,
+        1300.0,
+        780.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "text-003",
+      "kind": "text",
+      "raw": "KEMENTERIAN AGAMA RI\nDIREKTORAT JENDERAL\nPENYELENGGARAAN HAJI DAN UMRAH\nTAHUN ANGGARAN 2024",
+      "bbox": [
+        1250.0,
+        150.0,
+        1350.0,
+        250.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-004",
+      "kind": "text",
+      "raw": "JUDUL PROYEK :\nGEDUNG PUSAT LAYANAN\nHAJI DAN UMRAH TERPADU\nKOTA SURAKARTA",
+      "bbox": [
+        1250.0,
+        260.0,
+        1350.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-005",
+      "kind": "text",
+      "raw": "LOKASI :\nJALAN KI MANGUN SARKORO NO.115\nKOTA SURAKARTA",
+      "bbox": [
+        1250.0,
+        360.0,
+        1350.0,
+        420.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-006",
+      "kind": "text",
+      "raw": "MENYETUJUI\nKEPALA KANTOR WILAYAH JAWA TENGAH\nSELAKU KUASA PENGGUNA ANGGARAN",
+      "bbox": [
+        1250.0,
+        430.0,
+        1350.0,
+        500.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-007",
+      "kind": "text",
+      "raw": "MENGETAHUI / MENYETUJUI\nPEJABAT PEMBUAT KOMITMEN",
+      "bbox": [
+        1250.0,
+        510.0,
+        1350.0,
+        560.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-008",
+      "kind": "text",
+      "raw": "KONSULTAN PERENCANA",
+      "bbox": [
+        1250.0,
+        570.0,
+        1350.0,
+        600.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-009",
+      "kind": "text",
+      "raw": "TEAM LEADER",
+      "bbox": [
+        1250.0,
+        610.0,
+        1350.0,
+        640.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-010",
+      "kind": "text",
+      "raw": "NAMA TANDA TANGAN",
+      "bbox": [
+        1250.0,
+        650.0,
+        1350.0,
+        680.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-011",
+      "kind": "text",
+      "raw": "SIPIL",
+      "bbox": [
+        1250.0,
+        690.0,
+        1270.0,
+        710.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-012",
+      "kind": "text",
+      "raw": "DIGAMBAR",
+      "bbox": [
+        1250.0,
+        720.0,
+        1270.0,
+        740.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-013",
+      "kind": "text",
+      "raw": "JUDUL GAMBAR",
+      "bbox": [
+        1250.0,
+        750.0,
+        1300.0,
+        780.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-014",
+      "kind": "text",
+      "raw": "SKALA\n1:25",
+      "bbox": [
+        1250.0,
+        790.0,
+        1300.0,
+        830.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-015",
+      "kind": "text",
+      "raw": "TANGGAL: JANUARI 2024",
+      "bbox": [
+        1250.0,
+        840.0,
+        1300.0,
+        870.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-016",
+      "kind": "text",
+      "raw": "SKALA GBR KODE GBR NO. GBR",
+      "bbox": [
+        1250.0,
+        880.0,
+        1350.0,
+        920.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "level-001",
+      "kind": "level",
+      "raw": "±0.000",
+      "bbox": [
+        300.0,
+        750.0,
+        350.0,
+        770.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "level-002",
+      "kind": "level",
+      "raw": "±0.000",
+      "bbox": [
+        650.0,
+        750.0,
+        700.0,
+        770.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-017",
+      "kind": "text",
+      "raw": "JENDELA (J1)\nSkala 1 : 25",
+      "bbox": [
+        300.0,
+        950.0,
+        450.0,
+        980.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-018",
+      "kind": "text",
+      "raw": "JENDELA (J2)\nSkala 1 : 25",
+      "bbox": [
+        650.0,
+        950.0,
+        800.0,
+        980.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-019",
+      "kind": "text",
+      "raw": "TYPE : JENDELA (J1)",
+      "bbox": [
+        300.0,
+        1020.0,
+        450.0,
+        1050.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-020",
+      "kind": "text",
+      "raw": "-KUSEN ALUMUNIUM 45x100 MM HITAM",
+      "bbox": [
+        300.0,
+        1060.0,
+        520.0,
+        1080.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-021",
+      "kind": "text",
+      "raw": "-KACA BENING CLEAR T = 5 MM",
+      "bbox": [
+        300.0,
+        1090.0,
+        500.0,
+        1110.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-022",
+      "kind": "text",
+      "raw": "LOKASI : PERBANKAN",
+      "bbox": [
+        300.0,
+        1120.0,
+        450.0,
+        1140.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-023",
+      "kind": "text",
+      "raw": "JUMLAH : 1 BH",
+      "bbox": [
+        300.0,
+        1150.0,
+        420.0,
+        1170.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-024",
+      "kind": "text",
+      "raw": "TYPE : JENDELA (J2)",
+      "bbox": [
+        650.0,
+        1020.0,
+        800.0,
+        1050.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-025",
+      "kind": "text",
+      "raw": "BAHAN : -KUSEN ALUMUNIUM 45x100 MM HITAM",
+      "bbox": [
+        650.0,
+        1060.0,
+        870.0,
+        1080.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-026",
+      "kind": "text",
+      "raw": "-KACA BENING CLEAR T = 5 MM",
+      "bbox": [
+        650.0,
+        1090.0,
+        850.0,
+        1110.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-027",
+      "kind": "text",
+      "raw": "LOKASI : R.STAFF, R.TUNGGU, R.SIDIK JARI, PERBANKAN",
+      "bbox": [
+        650.0,
+        1120.0,
+        900.0,
+        1140.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-028",
+      "kind": "text",
+      "raw": "JUMLAH : 6 BH",
+      "bbox": [
+        650.0,
+        1150.0,
+        770.0,
+        1170.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-001",
+      "kind": "dimension",
+      "raw": "50",
+      "bbox": [
+        200.0,
+        500.0,
+        220.0,
+        800.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-002",
+      "kind": "dimension",
+      "raw": "1000",
+      "bbox": [
+        230.0,
+        500.0,
+        260.0,
+        800.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-003",
+      "kind": "dimension",
+      "raw": "1000",
+      "bbox": [
+        270.0,
+        500.0,
+        300.0,
+        800.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-004",
+      "kind": "dimension",
+      "raw": "50",
+      "bbox": [
+        310.0,
+        500.0,
+        330.0,
+        800.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-005",
+      "kind": "dimension",
+      "raw": "3500",
+      "bbox": [
+        200.0,
+        900.0,
+        440.0,
+        920.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-006",
+      "kind": "dimension",
+      "raw": "1100",
+      "bbox": [
+        200.0,
+        750.0,
+        280.0,
+        770.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-007",
+      "kind": "dimension",
+      "raw": "1100",
+      "bbox": [
+        320.0,
+        750.0,
+        400.0,
+        770.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-008",
+      "kind": "dimension",
+      "raw": "600",
+      "bbox": [
+        440.0,
+        900.0,
+        460.0,
+        920.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-009",
+      "kind": "dimension",
+      "raw": "2750",
+      "bbox": [
+        470.0,
+        500.0,
+        490.0,
+        900.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-010",
+      "kind": "dimension",
+      "raw": "50",
+      "bbox": [
+        550.0,
+        500.0,
+        570.0,
+        800.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-011",
+      "kind": "dimension",
+      "raw": "1000",
+      "bbox": [
+        580.0,
+        500.0,
+        610.0,
+        800.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-012",
+      "kind": "dimension",
+      "raw": "1000",
+      "bbox": [
+        620.0,
+        500.0,
+        650.0,
+        800.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-013",
+      "kind": "dimension",
+      "raw": "50",
+      "bbox": [
+        660.0,
+        500.0,
+        680.0,
+        800.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-014",
+      "kind": "dimension",
+      "raw": "3600",
+      "bbox": [
+        550.0,
+        900.0,
+        790.0,
+        920.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-015",
+      "kind": "dimension",
+      "raw": "660",
+      "bbox": [
+        550.0,
+        750.0,
+        600.0,
+        770.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-016",
+      "kind": "dimension",
+      "raw": "660",
+      "bbox": [
+        640.0,
+        750.0,
+        690.0,
+        770.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-017",
+      "kind": "dimension",
+      "raw": "660",
+      "bbox": [
+        730.0,
+        750.0,
+        780.0,
+        770.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-018",
+      "kind": "dimension",
+      "raw": "600",
+      "bbox": [
+        790.0,
+        900.0,
+        810.0,
+        920.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-019",
+      "kind": "dimension",
+      "raw": "2750",
+      "bbox": [
+        820.0,
+        500.0,
+        840.0,
+        900.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "space-001",
+      "kind": "space",
+      "raw": "PERBANKAN",
+      "bbox": [
+        300.0,
+        1120.0,
+        450.0,
+        1140.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "space-002",
+      "kind": "space",
+      "raw": "R.STAFF",
+      "bbox": [
+        650.0,
+        1120.0,
+        720.0,
+        1140.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "space-003",
+      "kind": "space",
+      "raw": "R.TUNGGU",
+      "bbox": [
+        720.0,
+        1120.0,
+        780.0,
+        1140.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "space-004",
+      "kind": "space",
+      "raw": "R.SIDIK JARI",
+      "bbox": [
+        780.0,
+        1120.0,
+        850.0,
+        1140.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "space-005",
+      "kind": "space",
+      "raw": "PERBANKAN",
+      "bbox": [
+        850.0,
+        1120.0,
+        900.0,
+        1140.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "elem-001",
+      "kind": "element_label",
+      "raw": "JENDELA (J1)",
+      "bbox": [
+        300.0,
+        950.0,
+        400.0,
+        980.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "elem-002",
+      "kind": "element_label",
+      "raw": "JENDELA (J2)",
+      "bbox": [
+        650.0,
+        950.0,
+        750.0,
+        980.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "sym-001",
+      "kind": "symbol",
+      "raw": "NOTASI PINTU: X = TYPE DAN JENIS BAHAN",
+      "bbox": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "tab-001",
+      "kind": "table",
+      "raw": "TYPE : JENDELA (J1)\n-KUSEN ALUMUNIUM 45x100 MM HITAM\n-KACA BENING CLEAR T = 5 MM\nLOKASI : PERBANKAN\nJUMLAH : 1 BH",
+      "bbox": [
+        300.0,
+        1020.0,
+        520.0,
+        1170.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "tab-002",
+      "kind": "table",
+      "raw": "TYPE : JENDELA (J2)\nBAHAN : -KUSEN ALUMUNIUM 45x100 MM HITAM\n-KACA BENING CLEAR T = 5 MM\nLOKASI : R.STAFF, R.TUNGGU, R.SIDIK JARI, PERBANKAN\nJUMLAH : 6 BH",
+      "bbox": [
+        650.0,
+        1020.0,
+        900.0,
+        1170.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "mat-001",
+      "kind": "material",
+      "raw": "KUSEN ALUMUNIUM 45x100 MM HITAM",
+      "bbox": [
+        300.0,
+        1060.0,
+        520.0,
+        1080.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "mat-002",
+      "kind": "material",
+      "raw": "KACA BENING CLEAR T = 5 MM",
+      "bbox": [
+        300.0,
+        1090.0,
+        500.0,
+        1110.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "mat-003",
+      "kind": "material",
+      "raw": "KUSEN ALUMUNIUM 45x100 MM HITAM",
+      "bbox": [
+        650.0,
+        1060.0,
+        870.0,
+        1080.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "mat-004",
+      "kind": "material",
+      "raw": "KACA BENING CLEAR T = 5 MM",
+      "bbox": [
+        650.0,
+        1090.0,
+        850.0,
+        1110.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "note-001",
+      "kind": "note",
+      "raw": "SKALA GBR KODE GBR NO. GBR",
+      "bbox": [
+        1250.0,
+        880.0,
+        1350.0,
+        920.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ref-001",
+      "kind": "reference",
+      "raw": "JUDUL PROYEK :\nGEDUNG PUSAT LAYANAN\nHAJI DAN UMRAH TERPADU\nKOTA SURAKARTA",
+      "bbox": [
+        1250.0,
+        260.0,
+        1350.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ref-002",
+      "kind": "reference",
+      "raw": "LOKASI :\nJALAN KI MANGUN SARKORO NO.115\nKOTA SURAKARTA",
+      "bbox": [
+        1250.0,
+        360.0,
+        1350.0,
+        420.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "pat-001",
+      "kind": "pattern",
+      "raw": "ARSIR DIAGIONAL PADA KACA",
+      "bbox": [
+        200.0,
+        400.0,
+        1200.0,
+        750.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "geo-001",
+      "kind": "geometry_description",
+      "raw": "JENDELA (J1) DENGAN 3 PANEL",
+      "bbox": [
+        200.0,
+        400.0,
+        500.0,
+        750.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "geo-002",
+      "kind": "geometry_description",
+      "raw": "JENDELA (J2) DENGAN 4 PANEL",
+      "bbox": [
+        500.0,
+        400.0,
+        1200.0,
+        750.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "scale-001",
+      "kind": "scale",
+      "raw": "1:25",
+      "bbox": [
+        1250.0,
+        790.0,
+        1300.0,
+        830.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

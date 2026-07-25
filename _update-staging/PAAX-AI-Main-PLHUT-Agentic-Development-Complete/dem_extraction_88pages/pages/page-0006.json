@@ -1,0 +1,1663 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 6,
+    "page_number": 7,
+    "render_uri": "local://plhut-88pg-run-1/page-0006.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T20:33:48.080654+00:00",
+    "completed_at": "2026-07-14T20:33:48.080702+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "LT.1",
+      "raw": "DENAH LT.1",
+      "confidence": 0.98,
+      "evidence_refs": [
+        "ev-title-block"
+      ]
+    },
+    "title": {
+      "value": "DENAH LANTAI 1",
+      "raw": "DENAH LANTAI 1",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-main-title"
+      ]
+    },
+    "discipline": {
+      "value": "ARSITEKTUR",
+      "confidence": 0.9,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1:100",
+        "normalized": "1:100",
+        "confidence": 1.0,
+        "evidence_refs": [
+          "ev-scale-main",
+          "ev-scale-titleblock"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "v-floor-plan",
+      "type": "floor_plan",
+      "title": "Denah Lantai 1",
+      "bbox": [
+        200.0,
+        100.0,
+        1600.0,
+        850.0
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "observations": {
+    "texts": [],
+    "dimensions": [
+      {
+        "raw": "1625",
+        "normalized": "1625",
+        "numeric_value": 1625.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          150.0,
+          400.0,
+          180.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-1"
+        ]
+      },
+      {
+        "raw": "1500",
+        "normalized": "1500",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          410.0,
+          150.0,
+          510.0,
+          180.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-2"
+        ]
+      },
+      {
+        "raw": "1500",
+        "normalized": "1500",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          520.0,
+          150.0,
+          620.0,
+          180.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "grids": [
+      {
+        "raw": "A",
+        "normalized": "Grid A",
+        "numeric_value": null,
+        "unit": "grid",
+        "bbox": [
+          250.0,
+          900.0,
+          300.0,
+          950.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-a"
+        ]
+      },
+      {
+        "raw": "B",
+        "normalized": "Grid B",
+        "numeric_value": null,
+        "unit": "grid",
+        "bbox": [
+          450.0,
+          900.0,
+          500.0,
+          950.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-b"
+        ]
+      },
+      {
+        "raw": "C",
+        "normalized": "Grid C",
+        "numeric_value": null,
+        "unit": "grid",
+        "bbox": [
+          650.0,
+          900.0,
+          700.0,
+          950.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-c"
+        ]
+      },
+      {
+        "raw": "D",
+        "normalized": "Grid D",
+        "numeric_value": null,
+        "unit": "grid",
+        "bbox": [
+          850.0,
+          900.0,
+          900.0,
+          950.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-d"
+        ]
+      },
+      {
+        "raw": "E",
+        "normalized": "Grid E",
+        "numeric_value": null,
+        "unit": "grid",
+        "bbox": [
+          1050.0,
+          900.0,
+          1100.0,
+          950.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "levels": [
+      {
+        "raw": "±0.000",
+        "normalized": "Main Floor",
+        "numeric_value": 0.0,
+        "unit": "m",
+        "bbox": [
+          500.0,
+          300.0,
+          550.0,
+          330.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-elev-0"
+        ]
+      },
+      {
+        "raw": "-0.030",
+        "normalized": "Terrace",
+        "numeric_value": -0.03,
+        "unit": "m",
+        "bbox": [
+          700.0,
+          700.0,
+          750.0,
+          730.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-elev-terrace"
+        ]
+      },
+      {
+        "raw": "-0.200",
+        "normalized": "Ramp Level 1",
+        "numeric_value": -0.2,
+        "unit": "m",
+        "bbox": [
+          720.0,
+          740.0,
+          770.0,
+          770.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-elev-r1"
+        ]
+      },
+      {
+        "raw": "-0.370",
+        "normalized": "Ramp Level 2",
+        "numeric_value": -0.37,
+        "unit": "m",
+        "bbox": [
+          720.0,
+          780.0,
+          770.0,
+          810.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-elev-r2"
+        ]
+      },
+      {
+        "raw": "-0.540",
+        "normalized": "Ramp Level 3",
+        "numeric_value": -0.54,
+        "unit": "m",
+        "bbox": [
+          720.0,
+          820.0,
+          770.0,
+          850.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-elev-r3"
+        ]
+      },
+      {
+        "raw": "-0.710",
+        "normalized": "Ramp Level 4",
+        "numeric_value": -0.71,
+        "unit": "m",
+        "bbox": [
+          720.0,
+          860.0,
+          770.0,
+          890.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-elev-r4"
+        ]
+      },
+      {
+        "raw": "-0.880",
+        "normalized": "Ramp Level 5",
+        "numeric_value": -0.88,
+        "unit": "m",
+        "bbox": [
+          720.0,
+          900.0,
+          770.0,
+          930.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-elev-r5"
+        ]
+      },
+      {
+        "raw": "-0.1000",
+        "normalized": "Ramp Level 6",
+        "numeric_value": -1.0,
+        "unit": "m",
+        "bbox": [
+          720.0,
+          940.0,
+          770.0,
+          970.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-elev-r6"
+        ]
+      }
+    ],
+    "spaces": [
+      {
+        "raw": "WC",
+        "normalized": "Restroom",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          350.0,
+          200.0,
+          400.0,
+          250.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-wc1"
+        ]
+      },
+      {
+        "raw": "R.PENDATAAN HAJI REGULER",
+        "normalized": "Hajj Registration Room",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          600.0,
+          350.0,
+          750.0,
+          380.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-reg"
+        ]
+      },
+      {
+        "raw": "R.STAFF",
+        "normalized": "Staff Room",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          250.0,
+          720.0,
+          280.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-staff"
+        ]
+      },
+      {
+        "raw": "R.FOTO SIDIK JARI",
+        "normalized": "Fingerprint Photo Room",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          250.0,
+          950.0,
+          280.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-fp"
+        ]
+      },
+      {
+        "raw": "R.DOKUMEN",
+        "normalized": "Document Room",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1050.0,
+          250.0,
+          1150.0,
+          280.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-doc"
+        ]
+      },
+      {
+        "raw": "R.LAKTASI",
+        "normalized": "Lactation Room",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          350.0,
+          450.0,
+          450.0,
+          480.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-lac"
+        ]
+      },
+      {
+        "raw": "R.TUNGGU",
+        "normalized": "Waiting Room",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          550.0,
+          800.0,
+          580.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-wait"
+        ]
+      },
+      {
+        "raw": "PERBANKAN SYARIAH",
+        "normalized": "Sharia Banking",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1050.0,
+          550.0,
+          1150.0,
+          580.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-bank"
+        ]
+      },
+      {
+        "raw": "TERAS",
+        "normalized": "Terrace",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          700.0,
+          800.0,
+          730.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-terrace"
+        ]
+      },
+      {
+        "raw": "RAMP",
+        "normalized": "Ramp",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          700.0,
+          1000.0,
+          730.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-ramp"
+        ]
+      },
+      {
+        "raw": "R.PLHUT",
+        "normalized": "Utility Room",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          600.0,
+          300.0,
+          680.0,
+          330.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-utility"
+        ]
+      }
+    ],
+    "element_labels": [
+      {
+        "raw": "D-01",
+        "normalized": "Door D-01",
+        "numeric_value": null,
+        "unit": "door",
+        "bbox": [
+          350.0,
+          250.0,
+          400.0,
+          280.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-el-door1"
+        ]
+      },
+      {
+        "raw": "W-01",
+        "normalized": "Window W-01",
+        "numeric_value": null,
+        "unit": "window",
+        "bbox": [
+          450.0,
+          200.0,
+          500.0,
+          230.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-el-win1"
+        ]
+      },
+      {
+        "raw": "K-01",
+        "normalized": "Column K-01",
+        "numeric_value": null,
+        "unit": "column",
+        "bbox": [
+          250.0,
+          300.0,
+          300.0,
+          350.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-el-col1"
+        ]
+      },
+      {
+        "raw": "P-01",
+        "normalized": "Partition P-01",
+        "numeric_value": null,
+        "unit": "partition",
+        "bbox": [
+          600.0,
+          400.0,
+          800.0,
+          420.0
+        ],
+        "confidence": 0.85,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-el-part1"
+        ]
+      }
+    ],
+    "symbols": [
+      {
+        "raw": "NOTASI PINTU: X = TYPE DAN JENIS BAHAN",
+        "normalized": "Door notation: code X indicates type and material",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          100.0,
+          1600.0,
+          150.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-sym-door"
+        ]
+      },
+      {
+        "raw": "NOTASI JENDELA: Y = TYPE DAN BAHAN",
+        "normalized": "Window notation: code Y indicates type and material",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          160.0,
+          1600.0,
+          210.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-sym-win"
+        ]
+      },
+      {
+        "raw": "SIMBOL KOLAM: Z = DEPTH",
+        "normalized": "Pool symbol: code Z indicates depth",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          220.0,
+          1600.0,
+          270.0
+        ],
+        "confidence": 0.85,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-sym-pool"
+        ]
+      },
+      {
+        "raw": "ARAH UTARA",
+        "normalized": "North direction",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1500.0,
+          50.0,
+          1600.0,
+          100.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-sym-north"
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "raw": "JADWAL RUANG: NO | NAMA RUANG | LUAS | FUNGSI",
+        "normalized": "Room schedule: No | Name | Area | Function",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          300.0,
+          1600.0,
+          500.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-tbl-room"
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "raw": "L1 = GRANITE TILE",
+        "normalized": "L1: Granite Tile",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          510.0,
+          1600.0,
+          530.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-mat-l1"
+        ]
+      },
+      {
+        "raw": "L2 = CERAMIC TILE 60x60",
+        "normalized": "L2: Ceramic Tile 60x60",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          540.0,
+          1600.0,
+          560.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-mat-l2"
+        ]
+      },
+      {
+        "raw": "L3 = VINYL FLOORING",
+        "normalized": "L3: Vinyl Flooring",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          570.0,
+          1600.0,
+          590.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-mat-l3"
+        ]
+      },
+      {
+        "raw": "P1 = CEILING GYPSUM",
+        "normalized": "P1: Gypsum Ceiling",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          600.0,
+          1600.0,
+          620.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-mat-p1"
+        ]
+      },
+      {
+        "raw": "P2 = CEILING METAL",
+        "normalized": "P2: Metal Ceiling",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          630.0,
+          1600.0,
+          650.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-mat-p2"
+        ]
+      },
+      {
+        "raw": "D1 = WALL PAINT",
+        "normalized": "D1: Wall Paint",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          660.0,
+          1600.0,
+          680.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-mat-d1"
+        ]
+      },
+      {
+        "raw": "D2 = WALL TILE",
+        "normalized": "D2: Wall Tile",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          690.0,
+          1600.0,
+          710.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-mat-d2"
+        ]
+      },
+      {
+        "raw": "D3 = WALL CLADDING",
+        "normalized": "D3: Wall Cladding",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          720.0,
+          1600.0,
+          740.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-mat-d3"
+        ]
+      }
+    ],
+    "notes": [
+      {
+        "raw": "Semua dimensi dalam mm kecuali dinyatakan lain",
+        "normalized": "All dimensions in mm unless stated otherwise",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          750.0,
+          1600.0,
+          780.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-dim"
+        ]
+      },
+      {
+        "raw": "Perhatikan elevasi lantai pada area ramp",
+        "normalized": "Note floor levels in ramp area",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          790.0,
+          1600.0,
+          820.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-elev"
+        ]
+      }
+    ],
+    "references": [
+      {
+        "raw": "Detail Ramp -> Lihat D.02",
+        "normalized": "Ramp detail -> See D.02",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          830.0,
+          1600.0,
+          850.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-ref-ramp"
+        ]
+      },
+      {
+        "raw": "Detail WC -> Lihat D.01",
+        "normalized": "Restroom detail -> See D.01",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          860.0,
+          1600.0,
+          880.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-ref-wc"
+        ]
+      }
+    ],
+    "patterns": [
+      {
+        "raw": "HATCH DINDING BATU BATA",
+        "normalized": "Brick wall hatch",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          200.0,
+          400.0,
+          300.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pat-brick"
+        ]
+      },
+      {
+        "raw": "HATCH LANTAI KERAMIK",
+        "normalized": "Ceramic floor hatch",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          500.0,
+          400.0,
+          700.0,
+          500.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pat-ceramic"
+        ]
+      }
+    ],
+    "geometry_descriptions": [
+      {
+        "raw": "Terhubung dengan koridor utama di grid C-D",
+        "normalized": "Connected to main corridor at grid C-D",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          400.0,
+          900.0,
+          450.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geo-corridor"
+        ]
+      },
+      {
+        "raw": "Area ramp membentuk pola zigzag dari grid E-F",
+        "normalized": "Ramp area forms a zigzag pattern from grid E-F",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          700.0,
+          1100.0,
+          800.0
+        ],
+        "confidence": 0.85,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geo-ramp"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-title-block",
+      "kind": "text",
+      "raw": "DENAH LT.1",
+      "bbox": [
+        1600.0,
+        850.0,
+        1700.0,
+        880.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-main-title",
+      "kind": "text",
+      "raw": "DENAH LANTAI 1",
+      "bbox": [
+        800.0,
+        850.0,
+        1000.0,
+        880.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-scale-main",
+      "kind": "text",
+      "raw": "1:100",
+      "bbox": [
+        1100.0,
+        850.0,
+        1200.0,
+        880.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-scale-titleblock",
+      "kind": "text",
+      "raw": "1:100",
+      "bbox": [
+        1600.0,
+        820.0,
+        1700.0,
+        850.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-1",
+      "kind": "number",
+      "raw": "1625",
+      "bbox": [
+        300.0,
+        150.0,
+        400.0,
+        180.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-2",
+      "kind": "number",
+      "raw": "1500",
+      "bbox": [
+        410.0,
+        150.0,
+        510.0,
+        180.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-3",
+      "kind": "number",
+      "raw": "1500",
+      "bbox": [
+        520.0,
+        150.0,
+        620.0,
+        180.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-a",
+      "kind": "text",
+      "raw": "A",
+      "bbox": [
+        250.0,
+        900.0,
+        300.0,
+        950.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-b",
+      "kind": "text",
+      "raw": "B",
+      "bbox": [
+        450.0,
+        900.0,
+        500.0,
+        950.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-c",
+      "kind": "text",
+      "raw": "C",
+      "bbox": [
+        650.0,
+        900.0,
+        700.0,
+        950.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-d",
+      "kind": "text",
+      "raw": "D",
+      "bbox": [
+        850.0,
+        900.0,
+        900.0,
+        950.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-e",
+      "kind": "text",
+      "raw": "E",
+      "bbox": [
+        1050.0,
+        900.0,
+        1100.0,
+        950.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-elev-0",
+      "kind": "number",
+      "raw": "±0.000",
+      "bbox": [
+        500.0,
+        300.0,
+        550.0,
+        330.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-elev-terrace",
+      "kind": "number",
+      "raw": "-0.030",
+      "bbox": [
+        700.0,
+        700.0,
+        750.0,
+        730.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-elev-r1",
+      "kind": "number",
+      "raw": "-0.200",
+      "bbox": [
+        720.0,
+        740.0,
+        770.0,
+        770.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-elev-r2",
+      "kind": "number",
+      "raw": "-0.370",
+      "bbox": [
+        720.0,
+        780.0,
+        770.0,
+        810.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-elev-r3",
+      "kind": "number",
+      "raw": "-0.540",
+      "bbox": [
+        720.0,
+        820.0,
+        770.0,
+        850.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-elev-r4",
+      "kind": "number",
+      "raw": "-0.710",
+      "bbox": [
+        720.0,
+        860.0,
+        770.0,
+        890.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-elev-r5",
+      "kind": "number",
+      "raw": "-0.880",
+      "bbox": [
+        720.0,
+        900.0,
+        770.0,
+        930.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-elev-r6",
+      "kind": "number",
+      "raw": "-0.1000",
+      "bbox": [
+        720.0,
+        940.0,
+        770.0,
+        970.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-space-wc1",
+      "kind": "text",
+      "raw": "WC",
+      "bbox": [
+        350.0,
+        200.0,
+        400.0,
+        250.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-space-reg",
+      "kind": "text",
+      "raw": "R.PENDATAAN HAJI REGULER",
+      "bbox": [
+        600.0,
+        350.0,
+        750.0,
+        380.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-space-staff",
+      "kind": "text",
+      "raw": "R.STAFF",
+      "bbox": [
+        650.0,
+        250.0,
+        720.0,
+        280.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-space-fp",
+      "kind": "text",
+      "raw": "R.FOTO SIDIK JARI",
+      "bbox": [
+        850.0,
+        250.0,
+        950.0,
+        280.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-space-doc",
+      "kind": "text",
+      "raw": "R.DOKUMEN",
+      "bbox": [
+        1050.0,
+        250.0,
+        1150.0,
+        280.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-space-lac",
+      "kind": "text",
+      "raw": "R.LAKTASI",
+      "bbox": [
+        350.0,
+        450.0,
+        450.0,
+        480.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-space-wait",
+      "kind": "text",
+      "raw": "R.TUNGGU",
+      "bbox": [
+        700.0,
+        550.0,
+        800.0,
+        580.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-space-bank",
+      "kind": "text",
+      "raw": "PERBANKAN SYARIAH",
+      "bbox": [
+        1050.0,
+        550.0,
+        1150.0,
+        580.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-space-terrace",
+      "kind": "text",
+      "raw": "TERAS",
+      "bbox": [
+        700.0,
+        700.0,
+        800.0,
+        730.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-space-ramp",
+      "kind": "text",
+      "raw": "RAMP",
+      "bbox": [
+        900.0,
+        700.0,
+        1000.0,
+        730.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-space-utility",
+      "kind": "text",
+      "raw": "R.PLHUT",
+      "bbox": [
+        600.0,
+        300.0,
+        680.0,
+        330.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-el-door1",
+      "kind": "element",
+      "raw": "D-01",
+      "bbox": [
+        350.0,
+        250.0,
+        400.0,
+        280.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-el-win1",
+      "kind": "element",
+      "raw": "W-01",
+      "bbox": [
+        450.0,
+        200.0,
+        500.0,
+        230.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-el-col1",
+      "kind": "element",
+      "raw": "K-01",
+      "bbox": [
+        250.0,
+        300.0,
+        300.0,
+        350.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-el-part1",
+      "kind": "element",
+      "raw": "P-01",
+      "bbox": [
+        600.0,
+        400.0,
+        800.0,
+        420.0
+      ],
+      "confidence": 0.85
+    },
+    {
+      "evidence_id": "ev-sym-door",
+      "kind": "symbol",
+      "raw": "NOTASI PINTU: X = TYPE DAN JENIS BAHAN",
+      "bbox": [
+        1400.0,
+        100.0,
+        1600.0,
+        150.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-sym-win",
+      "kind": "symbol",
+      "raw": "NOTASI JENDELA: Y = TYPE DAN BAHAN",
+      "bbox": [
+        1400.0,
+        160.0,
+        1600.0,
+        210.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-sym-pool",
+      "kind": "symbol",
+      "raw": "SIMBOL KOLAM: Z = DEPTH",
+      "bbox": [
+        1400.0,
+        220.0,
+        1600.0,
+        270.0
+      ],
+      "confidence": 0.85
+    },
+    {
+      "evidence_id": "ev-sym-north",
+      "kind": "symbol",
+      "raw": "ARAH UTARA",
+      "bbox": [
+        1500.0,
+        50.0,
+        1600.0,
+        100.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-tbl-room",
+      "kind": "table",
+      "raw": "JADWAL RUANG: NO | NAMA RUANG | LUAS | FUNGSI",
+      "bbox": [
+        1400.0,
+        300.0,
+        1600.0,
+        500.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-mat-l1",
+      "kind": "material",
+      "raw": "L1 = GRANITE TILE",
+      "bbox": [
+        1400.0,
+        510.0,
+        1600.0,
+        530.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-mat-l2",
+      "kind": "material",
+      "raw": "L2 = CERAMIC TILE 60x60",
+      "bbox": [
+        1400.0,
+        540.0,
+        1600.0,
+        560.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-mat-l3",
+      "kind": "material",
+      "raw": "L3 = VINYL FLOORING",
+      "bbox": [
+        1400.0,
+        570.0,
+        1600.0,
+        590.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-mat-p1",
+      "kind": "material",
+      "raw": "P1 = CEILING GYPSUM",
+      "bbox": [
+        1400.0,
+        600.0,
+        1600.0,
+        620.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-mat-p2",
+      "kind": "material",
+      "raw": "P2 = CEILING METAL",
+      "bbox": [
+        1400.0,
+        630.0,
+        1600.0,
+        650.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-mat-d1",
+      "kind": "material",
+      "raw": "D1 = WALL PAINT",
+      "bbox": [
+        1400.0,
+        660.0,
+        1600.0,
+        680.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-mat-d2",
+      "kind": "material",
+      "raw": "D2 = WALL TILE",
+      "bbox": [
+        1400.0,
+        690.0,
+        1600.0,
+        710.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-mat-d3",
+      "kind": "material",
+      "raw": "D3 = WALL CLADDING",
+      "bbox": [
+        1400.0,
+        720.0,
+        1600.0,
+        740.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-note-dim",
+      "kind": "note",
+      "raw": "Semua dimensi dalam mm kecuali dinyatakan lain",
+      "bbox": [
+        1400.0,
+        750.0,
+        1600.0,
+        780.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-note-elev",
+      "kind": "note",
+      "raw": "Perhatikan elevasi lantai pada area ramp",
+      "bbox": [
+        1400.0,
+        790.0,
+        1600.0,
+        820.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-ref-ramp",
+      "kind": "reference",
+      "raw": "Detail Ramp -> Lihat D.02",
+      "bbox": [
+        1400.0,
+        830.0,
+        1600.0,
+        850.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-ref-wc",
+      "kind": "reference",
+      "raw": "Detail WC -> Lihat D.01",
+      "bbox": [
+        1400.0,
+        860.0,
+        1600.0,
+        880.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-pat-brick",
+      "kind": "pattern",
+      "raw": "HATCH DINDING BATU BATA",
+      "bbox": [
+        300.0,
+        200.0,
+        400.0,
+        300.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-pat-ceramic",
+      "kind": "pattern",
+      "raw": "HATCH LANTAI KERAMIK",
+      "bbox": [
+        500.0,
+        400.0,
+        700.0,
+        500.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-geo-corridor",
+      "kind": "geometry",
+      "raw": "Terhubung dengan koridor utama di grid C-D",
+      "bbox": [
+        700.0,
+        400.0,
+        900.0,
+        450.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-geo-ramp",
+      "kind": "geometry",
+      "raw": "Area ramp membentuk pola zigzag dari grid E-F",
+      "bbox": [
+        900.0,
+        700.0,
+        1100.0,
+        800.0
+      ],
+      "confidence": 0.85
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

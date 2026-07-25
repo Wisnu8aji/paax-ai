@@ -1,0 +1,470 @@
+{
+  "schema_version": "1.0",
+  "project_id": "PLHUT-SURAKARTA",
+  "source_document_sha256": "bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+  "generated_from": "independent_ground_truth",
+  "items": [
+    {
+      "id": "work-column-K1-L1",
+      "display_name": "Kolom Beton Bertulang K1",
+      "technical_code": "K1",
+      "discipline": "STR",
+      "lbs_path": [
+        "Bangunan Utama",
+        "Lantai 1",
+        "Kolom K1"
+      ],
+      "wbs_section": "03 30 00 – Beton Struktural",
+      "wbs_group": "Struktur / Lantai 1",
+      "category": "column",
+      "location": "Lantai 1",
+      "unit": "m³",
+      "dimensions": {
+        "length_m": 0.4,
+        "width_m": 0.4,
+        "height_m": 4.4
+      },
+      "dimensions_display": "0,400 × 0,400 × 4,400 m",
+      "count": 4,
+      "formula": "0,400 × 0,400 × 4,400 × 4",
+      "result": 2.816,
+      "result_display": "2,816 m³",
+      "status": "engine_verified",
+      "source_authority": "core_engine",
+      "source_pages": [
+        42,
+        50,
+        54
+      ],
+      "source_refs": [
+        {
+          "role": "jumlah fisik",
+          "page": 42,
+          "label": "Denah Kolom Lantai 1"
+        },
+        {
+          "role": "dimensi",
+          "page": 50,
+          "label": "Tabel Kolom"
+        },
+        {
+          "role": "tinggi",
+          "page": 54,
+          "label": "Potongan / Elevasi Tingkat"
+        }
+      ],
+      "evidence_refs": [
+        "plhut-page-42-count-K1",
+        "plhut-page-50-dimension-K1",
+        "plhut-page-54-height-L1"
+      ],
+      "readiness": "ready",
+      "conflicts": [],
+      "notes": [
+        "Ground truth independen dari PDF asli PLHUT; bukan hasil inferensi bebas LLM."
+      ]
+    },
+    {
+      "id": "work-column-K1A-L1",
+      "display_name": "Kolom Beton Bertulang K1A",
+      "technical_code": "K1A",
+      "discipline": "STR",
+      "lbs_path": [
+        "Bangunan Utama",
+        "Lantai 1",
+        "Kolom K1A"
+      ],
+      "wbs_section": "03 30 00 – Beton Struktural",
+      "wbs_group": "Struktur / Lantai 1",
+      "category": "column",
+      "location": "Lantai 1",
+      "unit": "m³",
+      "dimensions": {
+        "length_m": 0.4,
+        "width_m": 0.4,
+        "height_m": 4.4
+      },
+      "dimensions_display": "0,400 × 0,400 × 4,400 m",
+      "count": 8,
+      "formula": "0,400 × 0,400 × 4,400 × 8",
+      "result": 5.632,
+      "result_display": "5,632 m³",
+      "status": "engine_verified",
+      "source_authority": "core_engine",
+      "source_pages": [
+        42,
+        50,
+        54
+      ],
+      "source_refs": [
+        {
+          "role": "jumlah fisik",
+          "page": 42,
+          "label": "Denah Kolom Lantai 1"
+        },
+        {
+          "role": "dimensi",
+          "page": 50,
+          "label": "Tabel Kolom"
+        },
+        {
+          "role": "tinggi",
+          "page": 54,
+          "label": "Potongan / Elevasi Tingkat"
+        }
+      ],
+      "evidence_refs": [
+        "plhut-page-42-count-K1A",
+        "plhut-page-50-dimension-K1A",
+        "plhut-page-54-height-L1"
+      ],
+      "readiness": "ready",
+      "conflicts": [],
+      "notes": [
+        "Ground truth independen dari PDF asli PLHUT; bukan hasil inferensi bebas LLM."
+      ]
+    },
+    {
+      "id": "work-column-K2-L1",
+      "display_name": "Kolom Beton Bertulang K2",
+      "technical_code": "K2",
+      "discipline": "STR",
+      "lbs_path": [
+        "Bangunan Utama",
+        "Lantai 1",
+        "Kolom K2"
+      ],
+      "wbs_section": "03 30 00 – Beton Struktural",
+      "wbs_group": "Struktur / Lantai 1",
+      "category": "column",
+      "location": "Lantai 1",
+      "unit": "m³",
+      "dimensions": {
+        "length_m": 0.25,
+        "width_m": 0.6,
+        "height_m": 4.4
+      },
+      "dimensions_display": "0,250 × 0,600 × 4,400 m",
+      "count": 4,
+      "formula": "0,250 × 0,600 × 4,400 × 4",
+      "result": 2.64,
+      "result_display": "2,640 m³",
+      "status": "engine_verified",
+      "source_authority": "core_engine",
+      "source_pages": [
+        42,
+        50,
+        54
+      ],
+      "source_refs": [
+        {
+          "role": "jumlah fisik",
+          "page": 42,
+          "label": "Denah Kolom Lantai 1"
+        },
+        {
+          "role": "dimensi",
+          "page": 50,
+          "label": "Tabel Kolom"
+        },
+        {
+          "role": "tinggi",
+          "page": 54,
+          "label": "Potongan / Elevasi Tingkat"
+        }
+      ],
+      "evidence_refs": [
+        "plhut-page-42-count-K2",
+        "plhut-page-50-dimension-K2",
+        "plhut-page-54-height-L1"
+      ],
+      "readiness": "ready",
+      "conflicts": [],
+      "notes": [
+        "Ground truth independen dari PDF asli PLHUT; bukan hasil inferensi bebas LLM."
+      ]
+    },
+    {
+      "id": "work-column-K3-L1",
+      "display_name": "Kolom Beton Bertulang K3",
+      "technical_code": "K3",
+      "discipline": "STR",
+      "lbs_path": [
+        "Bangunan Utama",
+        "Lantai 1",
+        "Kolom K3"
+      ],
+      "wbs_section": "03 30 00 – Beton Struktural",
+      "wbs_group": "Struktur / Lantai 1",
+      "category": "column",
+      "location": "Lantai 1",
+      "unit": "m³",
+      "dimensions": {
+        "length_m": 0.25,
+        "width_m": 0.4,
+        "height_m": 4.4
+      },
+      "dimensions_display": "0,250 × 0,400 × 4,400 m",
+      "count": 5,
+      "formula": "0,250 × 0,400 × 4,400 × 5",
+      "result": 2.2,
+      "result_display": "2,200 m³",
+      "status": "engine_verified",
+      "source_authority": "core_engine",
+      "source_pages": [
+        42,
+        50,
+        54
+      ],
+      "source_refs": [
+        {
+          "role": "jumlah fisik",
+          "page": 42,
+          "label": "Denah Kolom Lantai 1"
+        },
+        {
+          "role": "dimensi",
+          "page": 50,
+          "label": "Tabel Kolom"
+        },
+        {
+          "role": "tinggi",
+          "page": 54,
+          "label": "Potongan / Elevasi Tingkat"
+        }
+      ],
+      "evidence_refs": [
+        "plhut-page-42-count-K3",
+        "plhut-page-50-dimension-K3",
+        "plhut-page-54-height-L1"
+      ],
+      "readiness": "ready",
+      "conflicts": [],
+      "notes": [
+        "Ground truth independen dari PDF asli PLHUT; bukan hasil inferensi bebas LLM."
+      ]
+    },
+    {
+      "id": "work-column-K1A-L2",
+      "display_name": "Kolom Beton Bertulang K1A",
+      "technical_code": "K1A",
+      "discipline": "STR",
+      "lbs_path": [
+        "Bangunan Utama",
+        "Lantai 2",
+        "Kolom K1A"
+      ],
+      "wbs_section": "03 30 00 – Beton Struktural",
+      "wbs_group": "Struktur / Lantai 2",
+      "category": "column",
+      "location": "Lantai 2",
+      "unit": "m³",
+      "dimensions": {
+        "length_m": 0.4,
+        "width_m": 0.4,
+        "height_m": 3.9
+      },
+      "dimensions_display": "0,400 × 0,400 × 3,900 m",
+      "count": 8,
+      "formula": "0,400 × 0,400 × 3,900 × 8",
+      "result": 4.992,
+      "result_display": "4,992 m³",
+      "status": "engine_verified",
+      "source_authority": "core_engine",
+      "source_pages": [
+        43,
+        50,
+        54
+      ],
+      "source_refs": [
+        {
+          "role": "jumlah fisik",
+          "page": 43,
+          "label": "Denah Kolom Lantai 2"
+        },
+        {
+          "role": "dimensi",
+          "page": 50,
+          "label": "Tabel Kolom"
+        },
+        {
+          "role": "tinggi",
+          "page": 54,
+          "label": "Potongan / Elevasi Tingkat"
+        }
+      ],
+      "evidence_refs": [
+        "plhut-page-43-count-K1A",
+        "plhut-page-50-dimension-K1A",
+        "plhut-page-54-height-L2"
+      ],
+      "readiness": "ready",
+      "conflicts": [],
+      "notes": [
+        "Ground truth independen dari PDF asli PLHUT; bukan hasil inferensi bebas LLM."
+      ]
+    },
+    {
+      "id": "work-column-K2-L2",
+      "display_name": "Kolom Beton Bertulang K2",
+      "technical_code": "K2",
+      "discipline": "STR",
+      "lbs_path": [
+        "Bangunan Utama",
+        "Lantai 2",
+        "Kolom K2"
+      ],
+      "wbs_section": "03 30 00 – Beton Struktural",
+      "wbs_group": "Struktur / Lantai 2",
+      "category": "column",
+      "location": "Lantai 2",
+      "unit": "m³",
+      "dimensions": {
+        "length_m": 0.25,
+        "width_m": 0.6,
+        "height_m": 3.9
+      },
+      "dimensions_display": "0,250 × 0,600 × 3,900 m",
+      "count": 4,
+      "formula": "0,250 × 0,600 × 3,900 × 4",
+      "result": 2.34,
+      "result_display": "2,340 m³",
+      "status": "engine_verified",
+      "source_authority": "core_engine",
+      "source_pages": [
+        43,
+        50,
+        54
+      ],
+      "source_refs": [
+        {
+          "role": "jumlah fisik",
+          "page": 43,
+          "label": "Denah Kolom Lantai 2"
+        },
+        {
+          "role": "dimensi",
+          "page": 50,
+          "label": "Tabel Kolom"
+        },
+        {
+          "role": "tinggi",
+          "page": 54,
+          "label": "Potongan / Elevasi Tingkat"
+        }
+      ],
+      "evidence_refs": [
+        "plhut-page-43-count-K2",
+        "plhut-page-50-dimension-K2",
+        "plhut-page-54-height-L2"
+      ],
+      "readiness": "ready",
+      "conflicts": [],
+      "notes": [
+        "Ground truth independen dari PDF asli PLHUT; bukan hasil inferensi bebas LLM."
+      ]
+    },
+    {
+      "id": "work-column-K3-L2",
+      "display_name": "Kolom Beton Bertulang K3",
+      "technical_code": "K3",
+      "discipline": "STR",
+      "lbs_path": [
+        "Bangunan Utama",
+        "Lantai 2",
+        "Kolom K3"
+      ],
+      "wbs_section": "03 30 00 – Beton Struktural",
+      "wbs_group": "Struktur / Lantai 2",
+      "category": "column",
+      "location": "Lantai 2",
+      "unit": "m³",
+      "dimensions": {
+        "length_m": 0.25,
+        "width_m": 0.4,
+        "height_m": 3.9
+      },
+      "dimensions_display": "0,250 × 0,400 × 3,900 m",
+      "count": 5,
+      "formula": "0,250 × 0,400 × 3,900 × 5",
+      "result": 1.95,
+      "result_display": "1,950 m³",
+      "status": "engine_verified",
+      "source_authority": "core_engine",
+      "source_pages": [
+        43,
+        50,
+        54
+      ],
+      "source_refs": [
+        {
+          "role": "jumlah fisik",
+          "page": 43,
+          "label": "Denah Kolom Lantai 2"
+        },
+        {
+          "role": "dimensi",
+          "page": 50,
+          "label": "Tabel Kolom"
+        },
+        {
+          "role": "tinggi",
+          "page": 54,
+          "label": "Potongan / Elevasi Tingkat"
+        }
+      ],
+      "evidence_refs": [
+        "plhut-page-43-count-K3",
+        "plhut-page-50-dimension-K3",
+        "plhut-page-54-height-L2"
+      ],
+      "readiness": "ready",
+      "conflicts": [],
+      "notes": [
+        "Ground truth independen dari PDF asli PLHUT; bukan hasil inferensi bebas LLM."
+      ]
+    },
+    {
+      "id": "work-column-KP-L2",
+      "display_name": "Kolom Praktis KP",
+      "technical_code": "KP",
+      "discipline": "STR",
+      "lbs_path": [
+        "Bangunan Utama",
+        "Lantai 2",
+        "Kolom Praktis"
+      ],
+      "wbs_section": "04 20 00 – Pasangan dan Elemen Praktis",
+      "wbs_group": "Struktur / Lantai 2",
+      "category": "column",
+      "location": "Lantai 2",
+      "unit": "unit",
+      "dimensions": null,
+      "dimensions_display": "Belum tersedia",
+      "count": 18,
+      "formula": "Jumlah terverifikasi; dimensi belum ditemukan",
+      "result": 18,
+      "result_display": "18 unit",
+      "status": "needs_review",
+      "source_authority": "measurement_fact",
+      "source_pages": [
+        43
+      ],
+      "source_refs": [
+        {
+          "role": "jumlah fisik",
+          "page": 43,
+          "label": "Denah Kolom Lantai 2"
+        }
+      ],
+      "evidence_refs": [
+        "plhut-page-43-count-KP"
+      ],
+      "readiness": "needs_review",
+      "conflicts": [],
+      "notes": [
+        "Dipisahkan dari kolom struktur utama. Volume tidak dihitung sebelum dimensi dan tinggi terverifikasi."
+      ]
+    }
+  ]
+}

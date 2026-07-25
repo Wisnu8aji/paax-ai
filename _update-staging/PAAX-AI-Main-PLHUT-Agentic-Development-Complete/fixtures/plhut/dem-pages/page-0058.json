@@ -1,0 +1,755 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 58,
+    "page_number": 59,
+    "render_uri": "local://plhut-88pg-run-1/page-0058.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T22:15:29.518666+00:00",
+    "completed_at": "2026-07-14T22:15:29.518698+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "59",
+      "raw": "59",
+      "confidence": 0.95,
+      "evidence_refs": [
+        "ev-sheet-num-59"
+      ]
+    },
+    "title": {
+      "value": "DENAH STOP KONTAK LANTAI 1",
+      "raw": "DENAH STOP KONTAK LANTAI 1",
+      "confidence": 0.98,
+      "evidence_refs": [
+        "ev-title-block-main"
+      ]
+    },
+    "discipline": {
+      "value": "MEP",
+      "confidence": 0.97,
+      "status": "extracted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "SKALA 1 : 100",
+        "normalized": "1:100",
+        "confidence": 0.96,
+        "evidence_refs": [
+          "ev-scale-titleblock"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-floor-plan-lt1",
+      "type": "floor_plan",
+      "title": "Denah Stop Kontak Lantai 1",
+      "bbox": [
+        0.0,
+        0.0,
+        841.0,
+        595.0
+      ],
+      "confidence": 0.99
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KEMENTERIAN AGAMA RI DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH TAHUN ANGGARAN 2024",
+        "normalized": "Kementerian Agama RI Direktorat Jenderal Penyelenggaraan Haji dan Umrah Tahun Anggaran 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          720.0,
+          50.0,
+          840.0,
+          150.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-header"
+        ]
+      },
+      {
+        "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+        "normalized": "Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          720.0,
+          160.0,
+          840.0,
+          190.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-project-title"
+        ]
+      },
+      {
+        "raw": "LOKASI: JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+        "normalized": "Lokasi: Jalan Ki Mangun Sarkoro No. 115, Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          720.0,
+          200.0,
+          840.0,
+          230.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-location"
+        ]
+      },
+      {
+        "raw": "MENYETUJUI KEPALA KANTOR WILAYAH JAWA TENGAH SELAKU KUASA PENGGUNA ANGGARAN",
+        "normalized": "Menyetujui Kepala Kantor Wilayah Jawa Tengah selaku Kuasa Pengguna Anggaran",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          720.0,
+          240.0,
+          840.0,
+          280.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-approval"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "20250",
+        "normalized": "20250",
+        "numeric_value": 20250.0,
+        "unit": "mm",
+        "bbox": [
+          150.0,
+          30.0,
+          670.0,
+          40.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-overall-width"
+        ]
+      },
+      {
+        "raw": "1625",
+        "normalized": "1625",
+        "numeric_value": 1625.0,
+        "unit": "mm",
+        "bbox": [
+          80.0,
+          30.0,
+          120.0,
+          40.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-part1"
+        ]
+      },
+      {
+        "raw": "1500",
+        "normalized": "1500",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          125.0,
+          30.0,
+          155.0,
+          40.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-part2"
+        ]
+      },
+      {
+        "raw": "1500",
+        "normalized": "1500",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          160.0,
+          30.0,
+          200.0,
+          40.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-part3"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": "2000",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          210.0,
+          30.0,
+          240.0,
+          40.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-part4"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          250.0,
+          30.0,
+          310.0,
+          40.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-part5"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          320.0,
+          30.0,
+          380.0,
+          40.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-part6"
+        ]
+      },
+      {
+        "raw": "4125",
+        "normalized": "4125",
+        "numeric_value": 4125.0,
+        "unit": "mm",
+        "bbox": [
+          390.0,
+          30.0,
+          460.0,
+          40.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-part7"
+        ]
+      },
+      {
+        "raw": "3200",
+        "normalized": "3200",
+        "numeric_value": 3200.0,
+        "unit": "mm",
+        "bbox": [
+          660.0,
+          100.0,
+          720.0,
+          110.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-vertical-top"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": "2000",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          660.0,
+          220.0,
+          720.0,
+          230.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-vertical-mid"
+        ]
+      },
+      {
+        "raw": "5000",
+        "normalized": "5000",
+        "numeric_value": 5000.0,
+        "unit": "mm",
+        "bbox": [
+          660.0,
+          340.0,
+          720.0,
+          350.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-vertical-bottom"
+        ]
+      },
+      {
+        "raw": "10200",
+        "normalized": "10200",
+        "numeric_value": 10200.0,
+        "unit": "mm",
+        "bbox": [
+          660.0,
+          100.0,
+          720.0,
+          450.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-total-height"
+        ]
+      }
+    ],
+    "grids": [
+      {
+        "raw": "4",
+        "normalized": "4",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          10.0,
+          100.0,
+          25.0,
+          125.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-4"
+        ]
+      },
+      {
+        "raw": "3",
+        "normalized": "3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          10.0,
+          220.0,
+          25.0,
+          245.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-3"
+        ]
+      },
+      {
+        "raw": "2",
+        "normalized": "2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          10.0,
+          340.0,
+          25.0,
+          365.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-2"
+        ]
+      },
+      {
+        "raw": "1",
+        "normalized": "1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          10.0,
+          460.0,
+          25.0,
+          485.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-1"
+        ]
+      },
+      {
+        "raw": "C",
+        "normalized": "C",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          240.0,
+          500.0,
+          260.0,
+          520.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-C"
+        ]
+      },
+      {
+        "raw": "D",
+        "normalized": "D",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          340.0,
+          500.0,
+          360.0,
+          520.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-D"
+        ]
+      },
+      {
+        "raw": "E",
+        "normalized": "E",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          440.0,
+          500.0,
+          460.0,
+          520.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-E"
+        ]
+      },
+      {
+        "raw": "F",
+        "normalized": "F",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          540.0,
+          500.0,
+          560.0,
+          520.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-F"
+        ]
+      }
+    ],
+    "levels": [],
+    "spaces": [
+      {
+        "raw": "Kamar Mandi",
+        "normalized": "Kamar Mandi",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          120.0,
+          100.0,
+          180.0,
+          180.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-bathroom1"
+        ]
+      },
+      {
+        "raw": "Ruang Tamu",
+        "normalized": "Ruang Tamu",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          250.0,
+          100.0,
+          400.0,
+          180.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-space-livingroom"
+        ]
+      }
+    ],
+    "element_labels": [
+      {
+        "raw": "STK-1",
+        "normalized": "STK-1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          100.0,
+          200.0,
+          110.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-elem-stk1"
+        ]
+      },
+      {
+        "raw": "STK-2",
+        "normalized": "STK-2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          250.0,
+          350.0,
+          260.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-elem-stk2"
+        ]
+      },
+      {
+        "raw": "STK-3",
+        "normalized": "STK-3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          250.0,
+          250.0,
+          300.0,
+          260.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-elem-stk3"
+        ]
+      },
+      {
+        "raw": "NK",
+        "normalized": "NK",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          400.0,
+          130.0,
+          410.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-elem-nk"
+        ]
+      }
+    ],
+    "symbols": [
+      {
+        "raw": "TL1",
+        "normalized": "Lampu TL, LED 2x8W",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          50.0,
+          300.0,
+          100.0,
+          310.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-sym-tl1"
+        ]
+      },
+      {
+        "raw": "DL1",
+        "normalized": "Recessed Downlight, LED 9W",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          50.0,
+          320.0,
+          100.0,
+          330.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-sym-dl1"
+        ]
+      },
+      {
+        "raw": "SL1",
+        "normalized": "Spot Light Outdoor, LED 10W",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          50.0,
+          340.0,
+          100.0,
+          350.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-sym-sl1"
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "raw": "NO SIMBOL DESKRIPSI 1 TL1 LAMPU TL, LED 2X8W, KAP TIPE RM, 1 POLE, 250V/300V 2 DL1 RECESSED DOWNLIGHT, LED 9 W, 5 INCH, FITTING E27, 1 POLE, 250V/300V 3 SL1 SPOT LIGHT, OUTDOOR, LED 10 W, 1 POLE, 250V/300V",
+        "normalized": "Tabel Notasi Lampu",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          30.0,
+          280.0,
+          400.0,
+          370.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-table-lighting"
+        ]
+      }
+    ],
+    "materials": [],
+    "notes": [
+      {
+        "raw": "DENAH STOP KONTAK LANTAI 1 SKALA 1 : 100",
+        "normalized": "Denah Stop Kontak Lantai 1 Skala 1:100",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          530.0,
+          500.0,
+          540.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-scale"
+        ]
+      }
+    ],
+    "references": [],
+    "patterns": [],
+    "geometry_descriptions": [
+      {
+        "raw": "Tangga dengan anak tangga bernomor 1 hingga 11",
+        "normalized": "Tangga nomor 1-11",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          380.0,
+          200.0,
+          420.0
+        ],
+        "confidence": 0.94,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geom-stairs"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-sheet-num-59",
+      "kind": "text",
+      "raw": "59",
+      "bbox": [
+        780.0,
+        50.0,
+        800.0,
+        70.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-title-block-main",
+      "kind": "text",
+      "raw": "DENAH STOP KONTAK LANTAI 1",
+      "bbox": [
+        400.0,
+        520.0,
+        550.0,
+        530.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-scale-titleblock",
+      "kind": "text",
+      "raw": "SKALA 1 : 100",
+      "bbox": [
+        480.0,
+        530.0,
+        530.0,
+        540.0
+      ],
+      "confidence": 0.96
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

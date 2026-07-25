@@ -1,0 +1,2393 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 20,
+    "page_number": 21,
+    "render_uri": "local://plhut-88pg-run-1/page-0020.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T21:09:24.342192+00:00",
+    "completed_at": "2026-07-14T21:09:24.342275+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "PLHUT-SURAKARTA-88PG_21",
+      "raw": "Denah Pintu & Jendela Lt.1",
+      "confidence": 0.99,
+      "evidence_refs": [
+        "ev-title-block-sheet"
+      ]
+    },
+    "title": {
+      "value": "DENAH PINTU & JENDELA LANTAI 1",
+      "raw": "DENAH PINTU & JENDELA LANTAI 1",
+      "confidence": 0.99,
+      "evidence_refs": [
+        "ev-title-block-title"
+      ]
+    },
+    "discipline": {
+      "value": "Architecture",
+      "confidence": 0.98,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "SKALA 1 : 100",
+        "normalized": "1:100",
+        "confidence": 0.99,
+        "evidence_refs": [
+          "ev-title-block-scale"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-floor-plan-lt1",
+      "type": "Floor Plan",
+      "title": "Denah Pintu & Jendela Lantai 1",
+      "bbox": [
+        212.0,
+        110.0,
+        1825.0,
+        770.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "view_id": "view-title-block",
+      "type": "Title Block",
+      "title": "Judul Proyek",
+      "bbox": [
+        1850.0,
+        30.0,
+        1950.0,
+        1140.0
+      ],
+      "confidence": 0.99
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KEMENTERIAN AGAMA RI DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH TAHUN ANGGARAN 2024",
+        "normalized": "Kementerian Agama RI - Direktorat Jenderal Penyelenggaraan Haji dan Umrah, Tahun Anggaran 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1865.0,
+          230.0,
+          1945.0,
+          295.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-org"
+        ]
+      },
+      {
+        "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+        "normalized": "Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1875.0,
+          330.0,
+          1935.0,
+          390.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-project"
+        ]
+      },
+      {
+        "raw": "LOKASI : JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+        "normalized": "Lokasi: Jl. Ki Mangun Sarkoro No. 115, Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1865.0,
+          400.0,
+          1945.0,
+          445.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-loc"
+        ]
+      },
+      {
+        "raw": "MENYETUJUI KEPALA KANTOR WILAYAH JAWA TENGAH SELAKU KUASA PENGGUNA ANGGARAN",
+        "normalized": "Menyetujui: Kepala Kantor Wilayah Jawa Tengah selaku Kuasa Pengguna Anggaran",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1865.0,
+          460.0,
+          1945.0,
+          540.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-approval"
+        ]
+      },
+      {
+        "raw": "MENGETAHUI / MENYETUJUI PEJABAT PEMBUAT KOMITMEN",
+        "normalized": "Mengetahui/Menyetujui: Pejabat Pembuat Komitmen",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1865.0,
+          550.0,
+          1945.0,
+          590.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-commitment-officer"
+        ]
+      },
+      {
+        "raw": "KONSULTAN PERENCANA",
+        "normalized": "Konsultan Perencana",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1865.0,
+          610.0,
+          1945.0,
+          630.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-consultant"
+        ]
+      },
+      {
+        "raw": "NAMA TANDA TANGAN SIPIL DIGAMBAR",
+        "normalized": "Nama, Tanda Tangan (Sipil, Digambar)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1865.0,
+          730.0,
+          1945.0,
+          810.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-signatures"
+        ]
+      },
+      {
+        "raw": "JUDUL GAMBAR DENAH PINTU & JENDELA LT.1",
+        "normalized": "Judul Gambar: Denah Pintu & Jendela Lt.1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1865.0,
+          850.0,
+          1945.0,
+          890.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-dwg-title"
+        ]
+      },
+      {
+        "raw": "TANGGAL : JANUARI 2024",
+        "normalized": "Tanggal: Januari 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1865.0,
+          900.0,
+          1945.0,
+          920.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-block-date"
+        ]
+      },
+      {
+        "raw": "DENAH PINTU & JENDELA LANTAI 1",
+        "normalized": "Denah Pintu & Jendela Lantai 1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1050.0,
+          825.0,
+          1450.0,
+          845.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-main-title"
+        ]
+      },
+      {
+        "raw": "SKALA 1 : 100",
+        "normalized": "Skala: 1:100",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1300.0,
+          845.0,
+          1400.0,
+          860.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-scale-lt1"
+        ]
+      },
+      {
+        "raw": "NK",
+        "normalized": "Notasi Konstruksi",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          680.0,
+          460.0,
+          700.0,
+          475.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-nk"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "20250",
+        "normalized": "20250",
+        "numeric_value": 20250.0,
+        "unit": "mm",
+        "bbox": [
+          740.0,
+          115.0,
+          800.0,
+          130.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-top-total"
+        ]
+      },
+      {
+        "raw": "1625",
+        "normalized": "1625",
+        "numeric_value": 1625.0,
+        "unit": "mm",
+        "bbox": [
+          370.0,
+          135.0,
+          405.0,
+          150.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-top-1"
+        ]
+      },
+      {
+        "raw": "1500",
+        "normalized": "1500",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          455.0,
+          135.0,
+          490.0,
+          150.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-top-2"
+        ]
+      },
+      {
+        "raw": "1500",
+        "normalized": "1500",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          530.0,
+          135.0,
+          565.0,
+          150.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-top-3"
+        ]
+      },
+      {
+        "raw": "1500",
+        "normalized": "1500",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          615.0,
+          135.0,
+          650.0,
+          150.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-top-4"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": "2000",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          690.0,
+          135.0,
+          725.0,
+          150.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-top-5"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          860.0,
+          135.0,
+          895.0,
+          150.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-top-6"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          1100.0,
+          135.0,
+          1135.0,
+          150.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-top-7"
+        ]
+      },
+      {
+        "raw": "4125",
+        "normalized": "4125",
+        "numeric_value": 4125.0,
+        "unit": "mm",
+        "bbox": [
+          1330.0,
+          135.0,
+          1375.0,
+          150.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-top-8"
+        ]
+      },
+      {
+        "raw": "3000",
+        "normalized": "3000",
+        "numeric_value": 3000.0,
+        "unit": "mm",
+        "bbox": [
+          330.0,
+          200.0,
+          365.0,
+          270.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-left-1"
+        ]
+      },
+      {
+        "raw": "10000",
+        "normalized": "10000",
+        "numeric_value": 10000.0,
+        "unit": "mm",
+        "bbox": [
+          340.0,
+          380.0,
+          365.0,
+          410.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-left-total"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": "2000",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          360.0,
+          300.0,
+          395.0,
+          370.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-left-2"
+        ]
+      },
+      {
+        "raw": "5000",
+        "normalized": "5000",
+        "numeric_value": 5000.0,
+        "unit": "mm",
+        "bbox": [
+          350.0,
+          420.0,
+          385.0,
+          500.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-left-3"
+        ]
+      },
+      {
+        "raw": "3200",
+        "normalized": "3200",
+        "numeric_value": 3200.0,
+        "unit": "mm",
+        "bbox": [
+          1670.0,
+          280.0,
+          1690.0,
+          350.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-right-1"
+        ]
+      },
+      {
+        "raw": "10200",
+        "normalized": "10200",
+        "numeric_value": 10200.0,
+        "unit": "mm",
+        "bbox": [
+          1680.0,
+          370.0,
+          1700.0,
+          410.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-right-total"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": "2000",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          1670.0,
+          280.0,
+          1690.0,
+          350.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-right-2"
+        ]
+      },
+      {
+        "raw": "5000",
+        "normalized": "5000",
+        "numeric_value": 5000.0,
+        "unit": "mm",
+        "bbox": [
+          1680.0,
+          420.0,
+          1710.0,
+          500.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-right-3"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          530.0,
+          675.0,
+          565.0,
+          690.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-bot-1"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          725.0,
+          675.0,
+          760.0,
+          690.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-bot-2"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          930.0,
+          675.0,
+          965.0,
+          690.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-bot-3"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          1140.0,
+          675.0,
+          1175.0,
+          690.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-bot-4"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          1350.0,
+          675.0,
+          1385.0,
+          690.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-bot-5"
+        ]
+      },
+      {
+        "raw": "20000",
+        "normalized": "20000",
+        "numeric_value": 20000.0,
+        "unit": "mm",
+        "bbox": [
+          910.0,
+          695.0,
+          980.0,
+          710.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-bot-total"
+        ]
+      }
+    ],
+    "grids": [
+      {
+        "raw": "1",
+        "normalized": "Axis 1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          220.0,
+          550.0,
+          240.0,
+          570.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-1"
+        ]
+      },
+      {
+        "raw": "2",
+        "normalized": "Axis 2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          220.0,
+          360.0,
+          240.0,
+          380.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-2"
+        ]
+      },
+      {
+        "raw": "3",
+        "normalized": "Axis 3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          220.0,
+          290.0,
+          240.0,
+          310.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-3"
+        ]
+      },
+      {
+        "raw": "4",
+        "normalized": "Axis 4",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          220.0,
+          200.0,
+          240.0,
+          220.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-4"
+        ]
+      },
+      {
+        "raw": "A",
+        "normalized": "Axis A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          420.0,
+          740.0,
+          440.0,
+          760.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-A"
+        ]
+      },
+      {
+        "raw": "B",
+        "normalized": "Axis B",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          620.0,
+          740.0,
+          640.0,
+          760.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-B"
+        ]
+      },
+      {
+        "raw": "C",
+        "normalized": "Axis C",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          830.0,
+          740.0,
+          850.0,
+          760.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-C"
+        ]
+      },
+      {
+        "raw": "D",
+        "normalized": "Axis D",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1030.0,
+          740.0,
+          1050.0,
+          760.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-D"
+        ]
+      },
+      {
+        "raw": "E",
+        "normalized": "Axis E",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1240.0,
+          740.0,
+          1260.0,
+          760.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-E"
+        ]
+      },
+      {
+        "raw": "F",
+        "normalized": "Axis F",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1440.0,
+          740.0,
+          1460.0,
+          760.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-F"
+        ]
+      }
+    ],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [
+      {
+        "raw": "BV1",
+        "normalized": "BV1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          455.0,
+          170.0,
+          490.0,
+          190.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-bv1-1"
+        ]
+      },
+      {
+        "raw": "BV1",
+        "normalized": "BV1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          530.0,
+          170.0,
+          565.0,
+          190.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-bv1-2"
+        ]
+      },
+      {
+        "raw": "BV1",
+        "normalized": "BV1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          600.0,
+          170.0,
+          635.0,
+          190.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-bv1-3"
+        ]
+      },
+      {
+        "raw": "BV1",
+        "normalized": "BV1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          395.0,
+          230.0,
+          430.0,
+          250.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-bv1-4"
+        ]
+      },
+      {
+        "raw": "BV1",
+        "normalized": "BV1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          395.0,
+          300.0,
+          430.0,
+          320.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-bv1-5"
+        ]
+      },
+      {
+        "raw": "J3",
+        "normalized": "J3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          730.0,
+          165.0,
+          765.0,
+          185.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-j3"
+        ]
+      },
+      {
+        "raw": "J2",
+        "normalized": "J2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          890.0,
+          230.0,
+          925.0,
+          250.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-j2-1"
+        ]
+      },
+      {
+        "raw": "J2",
+        "normalized": "J2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1060.0,
+          230.0,
+          1095.0,
+          250.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-j2-2"
+        ]
+      },
+      {
+        "raw": "J4",
+        "normalized": "J4",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1280.0,
+          230.0,
+          1315.0,
+          250.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-j4-1"
+        ]
+      },
+      {
+        "raw": "P2",
+        "normalized": "P2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          745.0,
+          220.0,
+          780.0,
+          240.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-p2"
+        ]
+      },
+      {
+        "raw": "P3",
+        "normalized": "P3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          515.0,
+          260.0,
+          550.0,
+          280.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-p3-1"
+        ]
+      },
+      {
+        "raw": "P3",
+        "normalized": "P3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          625.0,
+          260.0,
+          660.0,
+          280.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-p3-2"
+        ]
+      },
+      {
+        "raw": "P4",
+        "normalized": "P4",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          560.0,
+          300.0,
+          595.0,
+          320.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-p4"
+        ]
+      },
+      {
+        "raw": "P1",
+        "normalized": "P1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          590.0,
+          310.0,
+          625.0,
+          330.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-p1-1"
+        ]
+      },
+      {
+        "raw": "P1",
+        "normalized": "P1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          670.0,
+          310.0,
+          705.0,
+          330.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-p1-2"
+        ]
+      },
+      {
+        "raw": "P1",
+        "normalized": "P1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1150.0,
+          310.0,
+          1185.0,
+          330.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-p1-3"
+        ]
+      },
+      {
+        "raw": "P1",
+        "normalized": "P1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1240.0,
+          310.0,
+          1275.0,
+          330.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-p1-4"
+        ]
+      },
+      {
+        "raw": "P1",
+        "normalized": "P1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1420.0,
+          300.0,
+          1455.0,
+          320.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-p1-5"
+        ]
+      },
+      {
+        "raw": "J6",
+        "normalized": "J6",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          325.0,
+          450.0,
+          360.0,
+          470.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-j6"
+        ]
+      },
+      {
+        "raw": "NK",
+        "normalized": "NK",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          680.0,
+          460.0,
+          700.0,
+          475.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-nk"
+        ]
+      },
+      {
+        "raw": "J4",
+        "normalized": "J4",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          705.0,
+          480.0,
+          740.0,
+          500.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-j4-2"
+        ]
+      },
+      {
+        "raw": "PJ1",
+        "normalized": "PJ1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          870.0,
+          490.0,
+          910.0,
+          510.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pj1"
+        ]
+      },
+      {
+        "raw": "J2",
+        "normalized": "J2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1075.0,
+          490.0,
+          1110.0,
+          510.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-j2-3"
+        ]
+      },
+      {
+        "raw": "J1",
+        "normalized": "J1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          490.0,
+          1435.0,
+          510.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-j1"
+        ]
+      },
+      {
+        "raw": "J4",
+        "normalized": "J4",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1275.0,
+          500.0,
+          1310.0,
+          520.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-j4-3"
+        ]
+      },
+      {
+        "raw": "J5",
+        "normalized": "J5",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          510.0,
+          590.0,
+          545.0,
+          610.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-j5"
+        ]
+      }
+    ],
+    "symbols": [
+      {
+        "raw": "J (Jendela)",
+        "normalized": "Simbol J: Jendela",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          730.0,
+          180.0,
+          800.0,
+          200.0
+        ],
+        "confidence": 0.97,
+        "status": "ai_interpreted",
+        "evidence_refs": [
+          "ev-symbol-j"
+        ]
+      },
+      {
+        "raw": "P (Pintu)",
+        "normalized": "Simbol P: Pintu",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          745.0,
+          240.0,
+          815.0,
+          260.0
+        ],
+        "confidence": 0.97,
+        "status": "ai_interpreted",
+        "evidence_refs": [
+          "ev-symbol-p"
+        ]
+      },
+      {
+        "raw": "BV (Bovenlight)",
+        "normalized": "Simbol BV: Bovenlight (Jendela Atas)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          395.0,
+          190.0,
+          480.0,
+          210.0
+        ],
+        "confidence": 0.97,
+        "status": "ai_interpreted",
+        "evidence_refs": [
+          "ev-symbol-bv"
+        ]
+      },
+      {
+        "raw": "PJ (Pintu-Jendela)",
+        "normalized": "Simbol PJ: Pintu-Jendela",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          870.0,
+          510.0,
+          955.0,
+          530.0
+        ],
+        "confidence": 0.97,
+        "status": "ai_interpreted",
+        "evidence_refs": [
+          "ev-symbol-pj"
+        ]
+      }
+    ],
+    "tables": [],
+    "materials": [],
+    "notes": [
+      {
+        "raw": "NK",
+        "normalized": "Notasi Konstruksi",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          680.0,
+          460.0,
+          700.0,
+          475.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-nk"
+        ]
+      },
+      {
+        "raw": "KEMENTERIAN AGAMA RI",
+        "normalized": "Kementerian Agama Republik Indonesia",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1875.0,
+          230.0,
+          1945.0,
+          245.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-inst"
+        ]
+      },
+      {
+        "raw": "TAHUN ANGGARAN 2024",
+        "normalized": "Year Budget 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1880.0,
+          280.0,
+          1940.0,
+          295.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-budget"
+        ]
+      },
+      {
+        "raw": "Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "normalized": "Pusat Layanan Haji dan Umrah Terpadu di Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1875.0,
+          345.0,
+          1935.0,
+          375.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-building"
+        ]
+      },
+      {
+        "raw": "Jl. Ki Mangun Sarkoro No. 115, Surakarta",
+        "normalized": "Alamat Proyek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1865.0,
+          420.0,
+          1945.0,
+          435.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-address"
+        ]
+      },
+      {
+        "raw": "Januari 2024",
+        "normalized": "Bulan Publikasi: Januari 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1865.0,
+          900.0,
+          1945.0,
+          920.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-date"
+        ]
+      }
+    ],
+    "references": [],
+    "patterns": [],
+    "geometry_descriptions": []
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-title-block-sheet",
+      "kind": "text",
+      "raw": "Denah Pintu & Jendela Lt.1",
+      "bbox": [
+        1865.0,
+        870.0,
+        1945.0,
+        885.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-title-block-title",
+      "kind": "text",
+      "raw": "DENAH PINTU & JENDELA LANTAI 1",
+      "bbox": [
+        1050.0,
+        825.0,
+        1450.0,
+        845.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-scale-lt1",
+      "kind": "text",
+      "raw": "SKALA 1 : 100",
+      "bbox": [
+        1300.0,
+        845.0,
+        1400.0,
+        860.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-bv1-1",
+      "kind": "text",
+      "raw": "BV1",
+      "bbox": [
+        455.0,
+        170.0,
+        490.0,
+        190.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-bv1-2",
+      "kind": "text",
+      "raw": "BV1",
+      "bbox": [
+        530.0,
+        170.0,
+        565.0,
+        190.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-bv1-3",
+      "kind": "text",
+      "raw": "BV1",
+      "bbox": [
+        600.0,
+        170.0,
+        635.0,
+        190.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-bv1-4",
+      "kind": "text",
+      "raw": "BV1",
+      "bbox": [
+        395.0,
+        230.0,
+        430.0,
+        250.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-bv1-5",
+      "kind": "text",
+      "raw": "BV1",
+      "bbox": [
+        395.0,
+        300.0,
+        430.0,
+        320.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-j3",
+      "kind": "text",
+      "raw": "J3",
+      "bbox": [
+        730.0,
+        165.0,
+        765.0,
+        185.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-j2-1",
+      "kind": "text",
+      "raw": "J2",
+      "bbox": [
+        890.0,
+        230.0,
+        925.0,
+        250.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-j2-2",
+      "kind": "text",
+      "raw": "J2",
+      "bbox": [
+        1060.0,
+        230.0,
+        1095.0,
+        250.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-j2-3",
+      "kind": "text",
+      "raw": "J2",
+      "bbox": [
+        1075.0,
+        490.0,
+        1110.0,
+        510.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-j4-1",
+      "kind": "text",
+      "raw": "J4",
+      "bbox": [
+        1280.0,
+        230.0,
+        1315.0,
+        250.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-j4-2",
+      "kind": "text",
+      "raw": "J4",
+      "bbox": [
+        705.0,
+        480.0,
+        740.0,
+        500.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-j4-3",
+      "kind": "text",
+      "raw": "J4",
+      "bbox": [
+        1275.0,
+        500.0,
+        1310.0,
+        520.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-j5",
+      "kind": "text",
+      "raw": "J5",
+      "bbox": [
+        510.0,
+        590.0,
+        545.0,
+        610.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-j6",
+      "kind": "text",
+      "raw": "J6",
+      "bbox": [
+        325.0,
+        450.0,
+        360.0,
+        470.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-j1",
+      "kind": "text",
+      "raw": "J1",
+      "bbox": [
+        1400.0,
+        490.0,
+        1435.0,
+        510.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-p2",
+      "kind": "text",
+      "raw": "P2",
+      "bbox": [
+        745.0,
+        220.0,
+        780.0,
+        240.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-p3-1",
+      "kind": "text",
+      "raw": "P3",
+      "bbox": [
+        515.0,
+        260.0,
+        550.0,
+        280.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-p3-2",
+      "kind": "text",
+      "raw": "P3",
+      "bbox": [
+        625.0,
+        260.0,
+        660.0,
+        280.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-p4",
+      "kind": "text",
+      "raw": "P4",
+      "bbox": [
+        560.0,
+        300.0,
+        595.0,
+        320.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-p1-1",
+      "kind": "text",
+      "raw": "P1",
+      "bbox": [
+        590.0,
+        310.0,
+        625.0,
+        330.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-p1-2",
+      "kind": "text",
+      "raw": "P1",
+      "bbox": [
+        670.0,
+        310.0,
+        705.0,
+        330.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-p1-3",
+      "kind": "text",
+      "raw": "P1",
+      "bbox": [
+        1150.0,
+        310.0,
+        1185.0,
+        330.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-p1-4",
+      "kind": "text",
+      "raw": "P1",
+      "bbox": [
+        1240.0,
+        310.0,
+        1275.0,
+        330.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-p1-5",
+      "kind": "text",
+      "raw": "P1",
+      "bbox": [
+        1420.0,
+        300.0,
+        1455.0,
+        320.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-pj1",
+      "kind": "text",
+      "raw": "PJ1",
+      "bbox": [
+        870.0,
+        490.0,
+        910.0,
+        510.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-1",
+      "kind": "text",
+      "raw": "1",
+      "bbox": [
+        220.0,
+        550.0,
+        240.0,
+        570.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-2",
+      "kind": "text",
+      "raw": "2",
+      "bbox": [
+        220.0,
+        360.0,
+        240.0,
+        380.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-3",
+      "kind": "text",
+      "raw": "3",
+      "bbox": [
+        220.0,
+        290.0,
+        240.0,
+        310.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-4",
+      "kind": "text",
+      "raw": "4",
+      "bbox": [
+        220.0,
+        200.0,
+        240.0,
+        220.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-A",
+      "kind": "text",
+      "raw": "A",
+      "bbox": [
+        420.0,
+        740.0,
+        440.0,
+        760.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-B",
+      "kind": "text",
+      "raw": "B",
+      "bbox": [
+        620.0,
+        740.0,
+        640.0,
+        760.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-C",
+      "kind": "text",
+      "raw": "C",
+      "bbox": [
+        830.0,
+        740.0,
+        850.0,
+        760.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-D",
+      "kind": "text",
+      "raw": "D",
+      "bbox": [
+        1030.0,
+        740.0,
+        1050.0,
+        760.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-E",
+      "kind": "text",
+      "raw": "E",
+      "bbox": [
+        1240.0,
+        740.0,
+        1260.0,
+        760.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-F",
+      "kind": "text",
+      "raw": "F",
+      "bbox": [
+        1440.0,
+        740.0,
+        1460.0,
+        760.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-top-total",
+      "kind": "dimension",
+      "raw": "20250",
+      "bbox": [
+        740.0,
+        115.0,
+        800.0,
+        130.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-top-1",
+      "kind": "dimension",
+      "raw": "1625",
+      "bbox": [
+        370.0,
+        135.0,
+        405.0,
+        150.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-top-2",
+      "kind": "dimension",
+      "raw": "1500",
+      "bbox": [
+        455.0,
+        135.0,
+        490.0,
+        150.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-top-3",
+      "kind": "dimension",
+      "raw": "1500",
+      "bbox": [
+        530.0,
+        135.0,
+        565.0,
+        150.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-top-4",
+      "kind": "dimension",
+      "raw": "1500",
+      "bbox": [
+        615.0,
+        135.0,
+        650.0,
+        150.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-top-5",
+      "kind": "dimension",
+      "raw": "2000",
+      "bbox": [
+        690.0,
+        135.0,
+        725.0,
+        150.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-top-6",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        860.0,
+        135.0,
+        895.0,
+        150.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-top-7",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        1100.0,
+        135.0,
+        1135.0,
+        150.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-top-8",
+      "kind": "dimension",
+      "raw": "4125",
+      "bbox": [
+        1330.0,
+        135.0,
+        1375.0,
+        150.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-left-total",
+      "kind": "dimension",
+      "raw": "10000",
+      "bbox": [
+        340.0,
+        380.0,
+        365.0,
+        410.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-left-1",
+      "kind": "dimension",
+      "raw": "3000",
+      "bbox": [
+        330.0,
+        200.0,
+        365.0,
+        270.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-left-2",
+      "kind": "dimension",
+      "raw": "2000",
+      "bbox": [
+        360.0,
+        300.0,
+        395.0,
+        370.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-left-3",
+      "kind": "dimension",
+      "raw": "5000",
+      "bbox": [
+        350.0,
+        420.0,
+        385.0,
+        500.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-right-total",
+      "kind": "dimension",
+      "raw": "10200",
+      "bbox": [
+        1680.0,
+        370.0,
+        1700.0,
+        410.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-right-1",
+      "kind": "dimension",
+      "raw": "3200",
+      "bbox": [
+        1670.0,
+        280.0,
+        1690.0,
+        350.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-right-2",
+      "kind": "dimension",
+      "raw": "2000",
+      "bbox": [
+        1670.0,
+        280.0,
+        1690.0,
+        350.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-right-3",
+      "kind": "dimension",
+      "raw": "5000",
+      "bbox": [
+        1680.0,
+        420.0,
+        1710.0,
+        500.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-bot-total",
+      "kind": "dimension",
+      "raw": "20000",
+      "bbox": [
+        910.0,
+        695.0,
+        980.0,
+        710.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-bot-1",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        530.0,
+        675.0,
+        565.0,
+        690.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-bot-2",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        725.0,
+        675.0,
+        760.0,
+        690.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-bot-3",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        930.0,
+        675.0,
+        965.0,
+        690.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-bot-4",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        1140.0,
+        675.0,
+        1175.0,
+        690.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-bot-5",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        1350.0,
+        675.0,
+        1385.0,
+        690.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-title-block-org",
+      "kind": "text",
+      "raw": "KEMENTERIAN AGAMA RI",
+      "bbox": [
+        1875.0,
+        230.0,
+        1945.0,
+        245.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-title-block-budget",
+      "kind": "text",
+      "raw": "TAHUN ANGGARAN 2024",
+      "bbox": [
+        1880.0,
+        280.0,
+        1940.0,
+        295.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-title-block-project",
+      "kind": "text",
+      "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+      "bbox": [
+        1875.0,
+        345.0,
+        1935.0,
+        375.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-title-block-loc",
+      "kind": "text",
+      "raw": "Jl. Ki Mangun Sarkoro No. 115, Surakarta",
+      "bbox": [
+        1865.0,
+        420.0,
+        1945.0,
+        435.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-title-block-approval",
+      "kind": "text",
+      "raw": "MENYETUJUI",
+      "bbox": [
+        1865.0,
+        460.0,
+        1945.0,
+        475.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-title-block-commitment-officer",
+      "kind": "text",
+      "raw": "PEJABAT PEMBUAT KOMITMEN",
+      "bbox": [
+        1865.0,
+        490.0,
+        1945.0,
+        505.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-title-block-consultant",
+      "kind": "text",
+      "raw": "KONSULTAN PERENCANA",
+      "bbox": [
+        1865.0,
+        610.0,
+        1945.0,
+        630.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-title-block-signatures",
+      "kind": "text",
+      "raw": "NAMA TANDA TANGAN SIPIL DIGAMBAR",
+      "bbox": [
+        1865.0,
+        730.0,
+        1945.0,
+        810.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-title-block-dwg-title",
+      "kind": "text",
+      "raw": "JUDUL GAMBAR DENAH PINTU & JENDELA LT.1",
+      "bbox": [
+        1865.0,
+        850.0,
+        1945.0,
+        890.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-title-block-date",
+      "kind": "text",
+      "raw": "TANGGAL : JANUARI 2024",
+      "bbox": [
+        1865.0,
+        900.0,
+        1945.0,
+        920.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-main-title",
+      "kind": "text",
+      "raw": "DENAH PINTU & JENDELA LANTAI 1",
+      "bbox": [
+        1050.0,
+        825.0,
+        1450.0,
+        845.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-scale",
+      "kind": "text",
+      "raw": "SKALA",
+      "bbox": [
+        1300.0,
+        845.0,
+        1340.0,
+        860.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-scale-ratio",
+      "kind": "text",
+      "raw": "1 : 100",
+      "bbox": [
+        1350.0,
+        845.0,
+        1400.0,
+        860.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-nk",
+      "kind": "text",
+      "raw": "NK",
+      "bbox": [
+        680.0,
+        460.0,
+        700.0,
+        475.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 1,
+    "sections_completed": 1,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

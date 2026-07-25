@@ -1,0 +1,1094 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 32,
+    "page_number": 33,
+    "render_uri": "local://plhut-88pg-run-1/page-0032.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T21:36:00.648476+00:00",
+    "completed_at": "2026-07-14T21:36:00.648521+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "33",
+      "raw": "33",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-sheet-number"
+      ]
+    },
+    "title": {
+      "value": "DETAIL BACKDROP LT.1",
+      "raw": "DETAIL BACKDROP LT.1",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-sheet-title"
+      ]
+    },
+    "discipline": {
+      "value": "Arsitektur",
+      "confidence": 0.95,
+      "status": "extracted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1 : 50",
+        "normalized": "1:50",
+        "confidence": 1.0,
+        "evidence_refs": [
+          "ev-scale-1-50"
+        ]
+      },
+      {
+        "raw": "NTS",
+        "normalized": "NTS",
+        "confidence": 1.0,
+        "evidence_refs": [
+          "ev-scale-nts"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-3d-backdrop",
+      "type": "3D Perspective",
+      "title": "3D BACKDROP LT 1",
+      "bbox": [
+        300.0,
+        200.0,
+        700.0,
+        400.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "view_id": "view-design-backdrop",
+      "type": "Elevation",
+      "title": "DESAIN BACKDROP LT 1",
+      "bbox": [
+        200.0,
+        500.0,
+        800.0,
+        700.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "view_id": "view-detail-section",
+      "type": "Section Detail",
+      "title": "Detail Konstruksi",
+      "bbox": [
+        150.0,
+        500.0,
+        300.0,
+        700.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "view_id": "view-title-block",
+      "type": "Title Block",
+      "title": "Keterangan Proyek",
+      "bbox": [
+        850.0,
+        50.0,
+        1000.0,
+        800.0
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KANTOR PELAYANAN HAJI DAN UMROH TERPADU KOTA SURAKARTA",
+        "normalized": "Kantor Pelayanan Haji dan Umroh Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          450.0,
+          250.0,
+          650.0,
+          280.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-signage"
+        ]
+      },
+      {
+        "raw": "KEMENTERIAN AGAMA RI",
+        "normalized": "Kementerian Agama RI",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          860.0,
+          180.0,
+          990.0,
+          200.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-ministry"
+        ]
+      },
+      {
+        "raw": "DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH",
+        "normalized": "Direktorat Jenderal Penyelenggaraan Haji dan Umrah",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          860.0,
+          200.0,
+          990.0,
+          220.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-directorate"
+        ]
+      },
+      {
+        "raw": "TAHUN ANGGARAN 2024",
+        "normalized": "Tahun Anggaran 2024",
+        "numeric_value": 2024.0,
+        "unit": null,
+        "bbox": [
+          860.0,
+          220.0,
+          990.0,
+          235.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-year"
+        ]
+      },
+      {
+        "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+        "normalized": "Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          860.0,
+          260.0,
+          990.0,
+          300.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-project-title"
+        ]
+      },
+      {
+        "raw": "JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+        "normalized": "Jalan Ki Mangun Sarkoro No.115, Kota Surakarta",
+        "numeric_value": 115.0,
+        "unit": null,
+        "bbox": [
+          860.0,
+          320.0,
+          990.0,
+          340.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-location"
+        ]
+      },
+      {
+        "raw": "MENYETUJUI",
+        "normalized": "Menyetujui",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          860.0,
+          350.0,
+          990.0,
+          365.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-approval-1"
+        ]
+      },
+      {
+        "raw": "KEPALA KANTOR WILAYAH JAWA TENGAH SELAKU KUASA PENGGUNA ANGGARAN",
+        "normalized": "Kepala Kantor Wilayah Jawa Tengah selaku Kuasa Pengguna Anggaran",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          860.0,
+          365.0,
+          990.0,
+          390.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-approval-2"
+        ]
+      },
+      {
+        "raw": "MENGETAHUI / MENYETUJUI",
+        "normalized": "Mengetahui / Menyetujui",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          860.0,
+          450.0,
+          990.0,
+          465.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-approval-3"
+        ]
+      },
+      {
+        "raw": "PEJABAT PEMBUAT KOMITMEN",
+        "normalized": "Pejabat Pembuat Komitmen",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          860.0,
+          465.0,
+          990.0,
+          480.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-approval-4"
+        ]
+      },
+      {
+        "raw": "KONSULTAN PERENCANA",
+        "normalized": "Konsultan Perencana",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          860.0,
+          550.0,
+          990.0,
+          565.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-consultant"
+        ]
+      },
+      {
+        "raw": "TEAM LEADER",
+        "normalized": "Team Leader",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          860.0,
+          650.0,
+          990.0,
+          665.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-team-leader"
+        ]
+      },
+      {
+        "raw": "NAMA TANDA TANGAN",
+        "normalized": "Nama Tanda Tangan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          860.0,
+          700.0,
+          990.0,
+          715.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-signatures"
+        ]
+      },
+      {
+        "raw": "SIPIL",
+        "normalized": "Sipil",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          860.0,
+          730.0,
+          900.0,
+          745.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-discipline-civil"
+        ]
+      },
+      {
+        "raw": "DIGAMBAR",
+        "normalized": "Digambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          860.0,
+          745.0,
+          900.0,
+          760.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-drawn-by"
+        ]
+      },
+      {
+        "raw": "JUDUL GAMBAR",
+        "normalized": "Judul Gambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          860.0,
+          770.0,
+          930.0,
+          785.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-drawing-title"
+        ]
+      },
+      {
+        "raw": "SKALA",
+        "normalized": "Skala",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          940.0,
+          770.0,
+          980.0,
+          785.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-scale-label"
+        ]
+      },
+      {
+        "raw": "TANGGAL : JANUARI 2024",
+        "normalized": "Tanggal: Januari 2024",
+        "numeric_value": 2024.0,
+        "unit": null,
+        "bbox": [
+          860.0,
+          830.0,
+          990.0,
+          840.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-date"
+        ]
+      },
+      {
+        "raw": "SKALA GBR KODE GBR NO. GBR",
+        "normalized": "Skala Gambar Kode Gambar Nomor Gambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          860.0,
+          850.0,
+          990.0,
+          870.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-footer"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "6183",
+        "normalized": "Lebar total fasad",
+        "numeric_value": 6183.0,
+        "unit": "mm",
+        "bbox": [
+          450.0,
+          700.0,
+          550.0,
+          720.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-width"
+        ]
+      },
+      {
+        "raw": "3200",
+        "normalized": "Tinggi fasad",
+        "numeric_value": 3200.0,
+        "unit": "mm",
+        "bbox": [
+          780.0,
+          600.0,
+          800.0,
+          680.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-height"
+        ]
+      },
+      {
+        "raw": "100",
+        "normalized": "Ketebalan struktur samping",
+        "numeric_value": 100.0,
+        "unit": "mm",
+        "bbox": [
+          220.0,
+          680.0,
+          240.0,
+          700.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-thickness-1"
+        ]
+      },
+      {
+        "raw": "200",
+        "normalized": "Jarak antar elemen",
+        "numeric_value": 200.0,
+        "unit": "mm",
+        "bbox": [
+          220.0,
+          700.0,
+          240.0,
+          720.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-thickness-2"
+        ]
+      },
+      {
+        "raw": "350",
+        "normalized": "Lebar kolom samping detail",
+        "numeric_value": 350.0,
+        "unit": "mm",
+        "bbox": [
+          220.0,
+          720.0,
+          250.0,
+          740.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-column-width"
+        ]
+      },
+      {
+        "raw": "1227",
+        "normalized": "Tinggi elemen atas",
+        "numeric_value": 1227.0,
+        "unit": "mm",
+        "bbox": [
+          550.0,
+          550.0,
+          580.0,
+          600.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-upper-height"
+        ]
+      },
+      {
+        "raw": "545",
+        "normalized": "Tinggi elemen tengah",
+        "numeric_value": 545.0,
+        "unit": "mm",
+        "bbox": [
+          550.0,
+          600.0,
+          580.0,
+          650.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-middle-height"
+        ]
+      },
+      {
+        "raw": "1.8",
+        "normalized": "Ketebalan Material Multiplex",
+        "numeric_value": 1.8,
+        "unit": "mm",
+        "bbox": [
+          180.0,
+          520.0,
+          210.0,
+          540.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-multiplex-thickness"
+        ]
+      },
+      {
+        "raw": "1.8",
+        "normalized": "Ketebalan Material Multiplex",
+        "numeric_value": 1.8,
+        "unit": "mm",
+        "bbox": [
+          180.0,
+          560.0,
+          210.0,
+          580.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-multiplex-thickness-2"
+        ]
+      }
+    ],
+    "grids": [],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [],
+    "symbols": [
+      {
+        "raw": "HURUF STAINLESS STEEL",
+        "normalized": "Material huruf logo: Stainless Steel",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          580.0,
+          250.0,
+          600.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-material-letters"
+        ]
+      },
+      {
+        "raw": "MULTIPLEX RANGKA GALVANIZE 1.8 FIN.HPL",
+        "normalized": "Material dinding/cladding: Multiplex rangka Galvanize tebal 1.8mm Finishing HPL",
+        "numeric_value": 1.8,
+        "unit": "mm",
+        "bbox": [
+          100.0,
+          510.0,
+          250.0,
+          540.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-material-cladding"
+        ]
+      },
+      {
+        "raw": "WPC PLANK",
+        "normalized": "Material penutup dinding samping: WPC Plank",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          580.0,
+          750.0,
+          600.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-material-wpc"
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "raw": "KEMENTERIAN AGAMA RI ... NOMOR ... SKALA ... 1:50",
+        "normalized": "Title Block Informasi Proyek",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          50.0,
+          1000.0,
+          800.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-table-title-block"
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "raw": "MULTIPLEX RANGKA GALVANIZE 1.8 FIN.HPL",
+        "normalized": "Multiplex dengan rangka Galvanize tebal 1.8mm, Finishing HPL",
+        "numeric_value": 1.8,
+        "unit": "mm",
+        "bbox": [
+          100.0,
+          510.0,
+          250.0,
+          540.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-multiplex"
+        ]
+      },
+      {
+        "raw": "HURUF STAINLESS STEEL",
+        "normalized": "Huruf Logo dari bahan Stainless Steel",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          580.0,
+          250.0,
+          600.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-steel"
+        ]
+      },
+      {
+        "raw": "WPC PLANK",
+        "normalized": "Wood Plastic Composite Plank",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          580.0,
+          750.0,
+          600.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-wpc"
+        ]
+      },
+      {
+        "raw": "KANTOR PELAYANAN HAJI DAN UMROH TERPADU (Marble texture)",
+        "normalized": "Aplikasi Tulisan pada背景墙 (Tampak seperti material batu marmer atau sejenisnya)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          450.0,
+          250.0,
+          650.0,
+          280.0
+        ],
+        "confidence": 0.85,
+        "status": "ambiguous",
+        "evidence_refs": [
+          "ev-material-stone-wall"
+        ]
+      },
+      {
+        "raw": "VERTICAL LOUVERS/WOODEN BATONS",
+        "normalized": "List profil vertikal (kemungkinan kayu atau WPC) pada dinding kanan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          220.0,
+          750.0,
+          380.0
+        ],
+        "confidence": 0.8,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-wood-batons"
+        ]
+      },
+      {
+        "raw": "ARCAH GLASS / FROSTED WINDOW",
+        "normalized": "Jendela kaca buram/frosted pada sisi kiri dan kanan backdrop",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          410.0,
+          240.0,
+          450.0,
+          360.0
+        ],
+        "confidence": 0.85,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-glass"
+        ]
+      },
+      {
+        "raw": "DARK HORIZONTAL SLATS",
+        "normalized": "List horizontal gelap (kemungkinan kayu atau metal) pada bagian bawah tengah",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          520.0,
+          320.0,
+          650.0,
+          380.0
+        ],
+        "confidence": 0.8,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-dark-slats"
+        ]
+      }
+    ],
+    "notes": [
+      {
+        "raw": "SKALA : 1 : 50",
+        "normalized": "Skala gambar denah/desain adalah 1:50",
+        "numeric_value": 50.0,
+        "unit": null,
+        "bbox": [
+          680.0,
+          850.0,
+          760.0,
+          870.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-scale"
+        ]
+      },
+      {
+        "raw": "SKALA : NTS",
+        "normalized": "Skala gambar 3D perspektif Tidak Terukur Skala (NTS)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          450.0,
+          750.0,
+          470.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-scale-nts"
+        ]
+      }
+    ],
+    "references": [],
+    "patterns": [
+      {
+        "raw": "VERTICAL LINE PATTERN",
+        "normalized": "Pola garis vertikal rapat merepresentasikan material WPC Plank",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          580.0,
+          750.0,
+          700.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-wpc"
+        ]
+      },
+      {
+        "raw": "HORIZONTAL LINE PATTERN",
+        "normalized": "Pola garis horizontal rapat merepresentasikan list profil horizontal",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          520.0,
+          320.0,
+          650.0,
+          380.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-slats"
+        ]
+      },
+      {
+        "raw": "MARBLE TEXTURE PATTERN",
+        "normalized": "Pola corak batu marmer/acak pada dinding tengah",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          450.0,
+          250.0,
+          650.0,
+          350.0
+        ],
+        "confidence": 0.85,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-marble"
+        ]
+      },
+      {
+        "raw": "DIAGONAL HATCH",
+        "normalized": "Arsir diagonal pada detail potongan (section) kiri",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          550.0,
+          280.0,
+          680.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-section-hatch"
+        ]
+      }
+    ],
+    "geometry_descriptions": [
+      {
+        "raw": "CURVED WALL ELEMENT",
+        "normalized": "Elemen dinding dengan bentuk lengkung/kurva pada bagian tengah bawah fasad",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          480.0,
+          320.0,
+          620.0,
+          380.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geom-curved-wall"
+        ]
+      },
+      {
+        "raw": "RECESSED SIGNAGE AREA",
+        "normalized": "Area logo yang masuk ke dalam (recessed) dengan dinding belakang bertekstur",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          450.0,
+          250.0,
+          650.0,
+          280.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geom-recessed-signage"
+        ]
+      },
+      {
+        "raw": "SYMMETRICAL LAYOUT",
+        "normalized": "Tata letak fasad secara umum asimetris namun memiliki keseimbangan visual antara blok kiri dan kanan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          200.0,
+          750.0,
+          400.0
+        ],
+        "confidence": 0.85,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geom-layout"
+        ]
+      },
+      {
+        "raw": "LAYERED CLADDING SYSTEM",
+        "normalized": "Sistem pelapis dinding berlapis seperti terlihat pada detail potongan section kiri",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          500.0,
+          300.0,
+          700.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geom-layers"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-sheet-number",
+      "kind": "text",
+      "raw": "33",
+      "bbox": [
+        900.0,
+        870.0,
+        920.0,
+        890.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-sheet-title",
+      "kind": "text",
+      "raw": "DETAIL BACKDROP LT.1",
+      "bbox": [
+        860.0,
+        780.0,
+        950.0,
+        800.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-scale-1-50",
+      "kind": "text",
+      "raw": "1 : 50",
+      "bbox": [
+        680.0,
+        870.0,
+        720.0,
+        890.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-scale-nts",
+      "kind": "text",
+      "raw": "NTS",
+      "bbox": [
+        700.0,
+        470.0,
+        720.0,
+        490.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-signage",
+      "kind": "text",
+      "raw": "KANTOR PELAYANAN HAJI DAN UMROH TERPADU KOTA SURAKARTA",
+      "bbox": [
+        450.0,
+        250.0,
+        650.0,
+        280.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-width",
+      "kind": "dimension",
+      "raw": "6183",
+      "bbox": [
+        450.0,
+        700.0,
+        550.0,
+        720.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-height",
+      "kind": "dimension",
+      "raw": "3200",
+      "bbox": [
+        780.0,
+        600.0,
+        800.0,
+        680.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-material-wpc",
+      "kind": "text",
+      "raw": "WPC PLANK",
+      "bbox": [
+        650.0,
+        580.0,
+        750.0,
+        600.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-material-multiplex",
+      "kind": "text",
+      "raw": "MULTIPLEX RANGKA GALVANIZE 1.8 FIN.HPL",
+      "bbox": [
+        100.0,
+        510.0,
+        250.0,
+        540.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "ambiguities": [
+    "Materail dinding belakang signage tidak disebutkan secara eksplisit (hanya terlihat tekstur marmer/batu)",
+    "Tebal profil WPC plank tidak disebutkan secara detail, hanya tertulis 'WPC PLANK'"
+  ],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 1,
+    "sections_completed": 1,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}
