@@ -8,6 +8,9 @@ import {
   AlertTriangle,
   CheckCircle2,
   ChevronDown,
+  Calculator,
+  ExternalLink,
+  FileWarning,
   Flag,
   Info,
   PanelRightClose,
@@ -28,6 +31,13 @@ import {
   type ElementProperty,
   type VerificationStatus,
 } from '../di-types';
+import {
+  calculateDrawingIntelligenceWorkItem,
+  fetchPackageIntelligence,
+  submitDrawingIntelligenceReview,
+  type DrawingConflict,
+  type PackageIntelligenceWorkItem,
+} from '../../drawing-intelligence-api';
 
 const CATEGORY_DOT: Record<string, string> = {
   column: 'var(--di-ov-column)',
@@ -148,6 +158,144 @@ export function IntelligenceInspector() {
   const sheet = useActiveSheet();
   const el = useSelectedElement();
   const [showReclassify, setShowReclassify] = useState(false);
+  const [reviewingWorkItemId, setReviewingWorkItemId] = useState<string | null>(null);
+  const [reviewMessage, setReviewMessage] = useState<string | null>(null);
+  const [conflictDrafts, setConflictDrafts] = useState<Record<string, { source?: string; manual?: string }>>({});
+  const [calculatingWorkItemId, setCalculatingWorkItemId] = useState<string | null>(null);
+  const packageIntelligence = state.analysis.packageIntelligence;
+  const activeRunId = state.upload.entries.find((entry) => entry.runId)?.runId ?? null;
+
+  const recordPackageReview = async (
+    item: PackageIntelligenceWorkItem,
+    action: 'accept' | 'reject',
+  ) => {
+    if (!activeRunId || !packageIntelligence) {
+      setReviewMessage('Run Drawing Intelligence belum tersedia.');
+      return;
+    }
+    setReviewingWorkItemId(item.work_item_id);
+    setReviewMessage(null);
+    try {
+      await submitDrawingIntelligenceReview(activeRunId, {
+        work_item_id: item.work_item_id,
+        action,
+        expected_version: packageIntelligence.review_ledger.version ?? 0,
+        reason: action === 'accept'
+          ? 'Klasifikasi, sumber lembar, dan evidence item telah ditinjau pada workspace.'
+          : 'Kandidat ditinjau dan dinyatakan bukan item pekerjaan yang valid.',
+      });
+      const refreshed = await fetchPackageIntelligence(activeRunId);
+      dispatch({ type: 'analysis', patch: { packageIntelligence: refreshed } });
+      setReviewMessage(action === 'accept'
+        ? 'Klasifikasi diterima. Jumlah dan ukuran mengikuti authority yang terlihat pada item.'
+        : 'Kandidat ditolak dan tersimpan pada audit review.');
+    } catch (error) {
+      setReviewMessage(error instanceof Error ? error.message : 'Gagal menyimpan keputusan review.');
+    } finally {
+      setReviewingWorkItemId(null);
+    }
+  };
+
+  const openSourcePage = (pageIndex: number) => {
+    const sourceSheet = state.sheets.find((candidate) => candidate.pageNumber === pageIndex + 1);
+    if (!sourceSheet) {
+      setReviewMessage(`Lembar halaman ${pageIndex + 1} belum tersedia di navigator.`);
+      return;
+    }
+    dispatch({ type: 'set-active-sheet', sheetId: sourceSheet.id });
+    dispatch({ type: 'set-mode', mode: 'review' });
+  };
+
+  const recordConflictResolution = async (item: PackageIntelligenceWorkItem, conflict: DrawingConflict) => {
+    if (!activeRunId || !packageIntelligence) return;
+    const draft = conflictDrafts[conflict.conflict_id] ?? {};
+    const decision: Parameters<typeof submitDrawingIntelligenceReview>[1] = {
+      work_item_id: item.work_item_id,
+      action: 'resolve_conflict',
+      expected_version: packageIntelligence.review_ledger.version ?? 0,
+      reason: 'Konflik lintas lembar ditinjau dan diselesaikan pada Drawing Intelligence workspace.',
+      conflict_id: conflict.conflict_id,
+    };
+    if (draft.source) decision.selected_source_value_id = draft.source;
+    const manual = draft.manual?.trim();
+    if (manual) {
+      if (conflict.field === 'dimensions') {
+        const match = manual.match(/([0-9]+(?:[.,][0-9]+)?)\s*[x×]\s*([0-9]+(?:[.,][0-9]+)?)/i);
+        if (!match) { setReviewMessage('Masukkan ukuran seperti 200 × 300 mm.'); return; }
+        decision.corrected_width = Number(match[1].replace(',', '.'));
+        decision.corrected_depth = Number(match[2].replace(',', '.'));
+        decision.corrected_dimension_unit = 'mm';
+      } else if (conflict.field === 'count') {
+        const value = Number(manual.replace(',', '.'));
+        if (!Number.isInteger(value) || value < 0) { setReviewMessage('Jumlah fisik harus berupa bilangan bulat.'); return; }
+        decision.verified_physical_count = value;
+      } else if (conflict.field === 'height') {
+        const value = Number(manual.replace(',', '.'));
+        if (!(value > 0)) { setReviewMessage('Tinggi efektif harus lebih besar dari nol.'); return; }
+        decision.corrected_height = value;
+        decision.corrected_height_unit = 'mm';
+      } else if (conflict.field === 'elevation') {
+        const value = Number(manual.replace(',', '.'));
+        if (!Number.isFinite(value)) { setReviewMessage('Elevasi tidak valid.'); return; }
+        decision.corrected_elevation = value;
+        decision.corrected_elevation_unit = 'm';
+      }
+    }
+    if (!decision.selected_source_value_id && !manual) {
+      setReviewMessage('Pilih sumber yang benar atau masukkan nilai koreksi.');
+      return;
+    }
+    setReviewingWorkItemId(item.work_item_id);
+    setReviewMessage(null);
+    try {
+      await submitDrawingIntelligenceReview(activeRunId, decision);
+      const refreshed = await fetchPackageIntelligence(activeRunId);
+      dispatch({ type: 'analysis', patch: { packageIntelligence: refreshed } });
+      setReviewMessage('Data rancu berhasil diselesaikan dan audit trail tersimpan.');
+    } catch (error) {
+      setReviewMessage(error instanceof Error ? error.message : 'Gagal menyelesaikan konflik.');
+    } finally {
+      setReviewingWorkItemId(null);
+    }
+  };
+
+  const requestConflictReupload = async (item: PackageIntelligenceWorkItem, conflict: DrawingConflict) => {
+    if (!activeRunId || !packageIntelligence) return;
+    setReviewingWorkItemId(item.work_item_id);
+    try {
+      await submitDrawingIntelligenceReview(activeRunId, {
+        work_item_id: item.work_item_id, action: 'request_reupload',
+        expected_version: packageIntelligence.review_ledger.version ?? 0,
+        reason: 'Lembar sumber tidak konsisten dan perlu diunggah ulang.',
+        reupload_page_indices: conflict.affected_page_indices,
+      });
+      const refreshed = await fetchPackageIntelligence(activeRunId);
+      dispatch({ type: 'analysis', patch: { packageIntelligence: refreshed } });
+      setReviewMessage('Permintaan unggah ulang telah dicatat pada lembar yang rancu.');
+    } catch (error) {
+      setReviewMessage(error instanceof Error ? error.message : 'Gagal mencatat permintaan unggah ulang.');
+    } finally {
+      setReviewingWorkItemId(null);
+    }
+  };
+
+  const calculateWorkItem = async (item: PackageIntelligenceWorkItem) => {
+    if (!activeRunId) return;
+    setCalculatingWorkItemId(item.work_item_id);
+    setReviewMessage(null);
+    try {
+      const calculation = await calculateDrawingIntelligenceWorkItem(activeRunId, item.work_item_id);
+      const refreshed = await fetchPackageIntelligence(activeRunId);
+      dispatch({ type: 'analysis', patch: { packageIntelligence: refreshed } });
+      setReviewMessage(calculation.result !== null
+        ? `Volume terhitung ${calculation.result.toLocaleString('id-ID')} ${calculation.unit ?? ''} melalui Core Engine.`
+        : 'Perhitungan selesai tanpa hasil numerik.');
+    } catch (error) {
+      setReviewMessage(error instanceof Error ? error.message : 'Gagal menjalankan Core Engine.');
+    } finally {
+      setCalculatingWorkItemId(null);
+    }
+  };
 
   const verifiedCount = useMemo(
     () => state.quantities.filter((q) => q.status === 'verified').length,
@@ -168,6 +316,23 @@ export function IntelligenceInspector() {
   );
 
   const detectedSummary = useMemo(() => {
+    if (packageIntelligence && sheet) {
+      const items = packageIntelligence.work_items
+        .filter((item) => item.source_sheets.some((source) => source.page_index === sheet.pageNumber - 1))
+        .slice(0, 8)
+        .map((item) => {
+          const category = (item.category === 'column' || item.category === 'beam' || item.category === 'slab'
+            || item.category === 'wall' || item.category === 'door' || item.category === 'window'
+            ? item.category : 'room') as ElementCategory;
+          return {
+            category,
+            count: item.count_is_final && item.verified_physical_count !== null
+              ? item.verified_physical_count : item.observed_label_count,
+            label: item.code || item.display_name,
+          };
+        });
+      if (items.length > 0) return items;
+    }
     if (state.summaryViews && state.summaryViews.length > 0) {
       const view = state.summaryViews[0];
       if (view && view.summary && view.summary.element_type_index) {
@@ -190,7 +355,7 @@ export function IntelligenceInspector() {
       counts.set(e.category, (counts.get(e.category) ?? 0) + 1);
     }
     return Array.from(counts, ([category, count]) => ({ category, count, label: ELEMENT_CATEGORY_LABELS[category] }));
-  }, [state.summaryViews, state.elements]);
+  }, [packageIntelligence, sheet, state.summaryViews, state.elements]);
 
   if (state.inspector.collapsed) {
     return (
@@ -269,20 +434,213 @@ export function IntelligenceInspector() {
         </Section>
 
         <Section>
-          <SectionTitle>AI Confidence</SectionTitle>
+          <SectionTitle>Analysis Confidence</SectionTitle>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <ConfidenceRing value={sheet.aiConfidence ?? 0} />
+            {sheet.aiConfidence !== null && sheet.aiConfidence !== undefined ? (
+              <ConfidenceRing value={sheet.aiConfidence} />
+            ) : (
+              <div
+                className="di-mono"
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: '50%',
+                  border: '6px solid var(--di-panel2)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  fontSize: 11,
+                  color: 'var(--di-text3)',
+                }}
+              >
+                —
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--di-ok)' }}>High Confidence</span>
+              <span
+                style={{
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  color: sheet.aiConfidence === null || sheet.aiConfidence === undefined
+                    ? 'var(--di-text3)'
+                    : sheet.aiConfidence >= 80 ? 'var(--di-ok)' : 'var(--di-warn)',
+                }}
+              >
+                {sheet.aiConfidence === null || sheet.aiConfidence === undefined
+                  ? 'Awaiting persisted confidence'
+                  : sheet.aiConfidence >= 80 ? 'High Confidence' : 'Review Suggested'}
+              </span>
               <span
                 style={{ fontSize: 10.5, color: 'var(--di-text3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                title="Model klasifikasi & ekstraksi internal — lihat AI Notes untuk detail actionable."
+                title="Confidence comes from persisted Drawing Intelligence output; no frontend estimate is substituted."
               >
-                AI model: PAAX-Struct v2.3 <Info size={11} />
+                Source: persisted analysis <Info size={11} />
               </span>
             </div>
           </div>
         </Section>
+
+        {packageIntelligence && (
+          <Section>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <SectionTitle>Package Intelligence</SectionTitle>
+              <span className="di-pill" data-tone="info">
+                {String(packageIntelligence.metrics.analysis_mode ?? 'fast')}
+              </span>
+            </div>
+            <Row label="Lembar dianalisis" value={String(packageIntelligence.metrics.analyzed_pages ?? '—')} />
+            <Row label="Item dikenali" value={String(packageIntelligence.review_summary.recognized_work_items)} />
+            <Row label="Perlu klarifikasi" value={String(packageIntelligence.review_summary.needs_clarification)} />
+            <Row label="Noise disaring" value={String(packageIntelligence.review_summary.suppressed_audit_candidates ?? 0)} />
+            <Row label="Tugas review terbuka" value={String(packageIntelligence.review_summary.open_review_tasks)} />
+            <Row label="Batch review" value={String(packageIntelligence.review_summary.review_batches)} />
+            <Row label="Kesiapan rata-rata" value={`${packageIntelligence.review_summary.average_readiness_score}%`} />
+            <div
+              style={{
+                padding: '7px 9px',
+                borderRadius: 7,
+                background: 'var(--di-warn-bg)',
+                border: '1px solid var(--di-warn-bd)',
+                fontSize: 10.5,
+                color: 'var(--di-text2)',
+                lineHeight: 1.45,
+              }}
+            >
+              Jumlah fisik bertanda “Terkonfirmasi sistem” berasal dari rekonstruksi objek pada lembar utama. Perbedaan antarlembar ditampilkan sebagai Data rancu dan tidak disembunyikan.
+            </div>
+            {packageIntelligence.work_items
+              .filter((item) => item.source_sheets.some((source) => source.page_index === sheet.pageNumber - 1))
+              .slice(0, 4)
+              .map((item) => (
+                <div
+                  key={item.work_item_id}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 3,
+                    padding: '7px 8px',
+                    borderRadius: 7,
+                    border: '1px solid var(--di-border)',
+                    background: 'var(--di-panel2)',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--di-text)' }}>{item.display_name}</span>
+                    <span className="di-pill" data-tone={item.readiness_score >= 80 ? 'ok' : 'warn'}>{item.readiness_score}%</span>
+                  </div>
+                  <span style={{ fontSize: 10.5, color: 'var(--di-text3)' }}>
+                    {item.dimensions_text ? `${item.dimensions_text} · ` : ''}{item.count_label}
+                  </span>
+                  <span style={{ fontSize: 10, color: 'var(--di-text2)' }}>{item.status_label}</span>
+                  <span style={{ fontSize: 9.5, color: 'var(--di-text3)' }}>{item.level_label}</span>
+                  {item.calculation?.status === 'complete' && item.calculation.result !== null && (
+                    <div style={{ padding: '6px 7px', borderRadius: 6, background: 'var(--di-ok-bg)', border: '1px solid var(--di-ok-bd)' }}>
+                      <div style={{ fontSize: 10, color: 'var(--di-text3)' }}>Volume terhitung Core Engine</div>
+                      <div className="di-mono" style={{ fontSize: 12, fontWeight: 700, color: 'var(--di-ok)' }}>
+                        {item.calculation.result.toLocaleString('id-ID')} {item.calculation.unit}
+                      </div>
+                      {item.calculation.substituted_formula && (
+                        <div className="di-mono" style={{ fontSize: 9, color: 'var(--di-text3)', marginTop: 2 }}>
+                          {item.calculation.substituted_formula}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {item.conflicts?.filter((conflict) => conflict.status === 'open').map((conflict) => {
+                    const draft = conflictDrafts[conflict.conflict_id] ?? {};
+                    return (
+                      <div key={conflict.conflict_id} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 7, borderRadius: 7, background: 'var(--di-warn-bg)', border: '1px solid var(--di-warn-bd)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--di-warn)' }}>
+                          <FileWarning size={13} />
+                          <strong style={{ fontSize: 10.5 }}>Data rancu — {conflict.title}</strong>
+                        </div>
+                        <div style={{ fontSize: 9.5, lineHeight: 1.4, color: 'var(--di-text2)' }}>{conflict.explanation}</div>
+                        {conflict.source_values.map((source) => (
+                          <label key={source.value_id} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 9.5, color: 'var(--di-text2)' }}>
+                            <input
+                              type="radio"
+                              name={conflict.conflict_id}
+                              checked={draft.source === source.value_id}
+                              onChange={() => setConflictDrafts((previous) => ({ ...previous, [conflict.conflict_id]: { ...previous[conflict.conflict_id], source: source.value_id } }))}
+                            />
+                            <span style={{ flex: 1 }}>
+                              {typeof source.value === 'object' && source.value !== null
+                                ? `${String((source.value as Record<string, unknown>).width ?? '—')} × ${String((source.value as Record<string, unknown>).depth ?? '—')} ${source.unit ?? ''}`
+                                : `${String(source.value)} ${source.unit ?? ''}`}
+                              <br />
+                              <span style={{ color: 'var(--di-text3)' }}>{source.sheet_title ?? `Halaman ${source.page_index + 1}`} · {source.source_channel}</span>
+                            </span>
+                            <button type="button" className="di-icon-btn" title="Buka lembar sumber" onClick={() => openSourcePage(source.page_index)}>
+                              <ExternalLink size={12} />
+                            </button>
+                          </label>
+                        ))}
+                        <input
+                          className="di-input"
+                          value={draft.manual ?? ''}
+                          placeholder={conflict.field === 'dimensions' ? 'Koreksi: 200 × 300 mm' : conflict.field === 'count' ? 'Koreksi jumlah unit' : conflict.field === 'height' ? 'Koreksi tinggi (mm)' : 'Koreksi nilai'}
+                          onChange={(event) => setConflictDrafts((previous) => ({ ...previous, [conflict.conflict_id]: { ...previous[conflict.conflict_id], manual: event.target.value } }))}
+                        />
+                        <div style={{ display: 'flex', gap: 5 }}>
+                          <button type="button" className="di-btn di-btn-primary" style={{ flex: 1, minHeight: 25, fontSize: 9.5 }} disabled={reviewingWorkItemId !== null} onClick={() => void recordConflictResolution(item, conflict)}>
+                            Terapkan & approve
+                          </button>
+                          <button type="button" className="di-btn-ghost" style={{ flex: 1, minHeight: 25, fontSize: 9.5 }} disabled={reviewingWorkItemId !== null} onClick={() => void requestConflictReupload(item, conflict)}>
+                            Minta reupload
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {item.calculation_readiness === 'ready' && !item.calculation && (
+                    <button
+                      type="button"
+                      className="di-btn di-btn-primary"
+                      style={{ minHeight: 27, padding: '4px 8px', fontSize: 10 }}
+                      disabled={!activeRunId || calculatingWorkItemId !== null}
+                      onClick={() => void calculateWorkItem(item)}
+                    >
+                      <Calculator size={12} />
+                      {calculatingWorkItemId === item.work_item_id ? 'Menghitung…' : 'Hitung volume'}
+                    </button>
+                  )}
+                  {item.status !== 'accepted' && item.status !== 'rejected' && item.conflict_status !== 'open' && (
+                    <div style={{ display: 'flex', gap: 6, marginTop: 3 }}>
+                      <button
+                        type="button"
+                        className="di-btn di-btn-primary"
+                        style={{ flex: 1, minHeight: 25, padding: '3px 7px', fontSize: 10 }}
+                        disabled={!activeRunId || reviewingWorkItemId !== null}
+                        title="Menerima klasifikasi dan evidence, bukan mengesahkan jumlah fisik"
+                        onClick={() => void recordPackageReview(item, 'accept')}
+                      >
+                        {reviewingWorkItemId === item.work_item_id ? 'Menyimpan…' : 'Terima klasifikasi'}
+                      </button>
+                      <button
+                        type="button"
+                        className="di-btn-ghost"
+                        style={{ flex: 1, minHeight: 25, padding: '3px 7px', fontSize: 10 }}
+                        disabled={!activeRunId || reviewingWorkItemId !== null}
+                        onClick={() => void recordPackageReview(item, 'reject')}
+                      >
+                        Bukan item
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            {reviewMessage && (
+              <div
+                role="status"
+                style={{
+                  padding: '7px 8px', borderRadius: 7, border: '1px solid var(--di-border)',
+                  background: 'var(--di-panel2)', fontSize: 10, color: 'var(--di-text2)', lineHeight: 1.4,
+                }}
+              >
+                {reviewMessage}
+              </div>
+            )}
+          </Section>
+        )}
 
         <Section>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

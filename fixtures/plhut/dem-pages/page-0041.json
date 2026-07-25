@@ -1,0 +1,902 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 41,
+    "page_number": 42,
+    "render_uri": "local://plhut-88pg-run-1/page-0041.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T21:50:40.097130+00:00",
+    "completed_at": "2026-07-14T21:50:40.097159+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "42",
+      "raw": "42",
+      "confidence": 0.99,
+      "evidence_refs": [
+        "ev-loc-sheet"
+      ]
+    },
+    "title": {
+      "value": "DENAH KOLOM LANTAI 1",
+      "raw": "DENAH KOLOM LANTAI 1",
+      "confidence": 0.99,
+      "evidence_refs": [
+        "ev-loc-title"
+      ]
+    },
+    "discipline": {
+      "value": "STRUKTUR",
+      "confidence": 0.95,
+      "status": "extracted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1 : 100",
+        "normalized": "1:100",
+        "confidence": 0.95,
+        "evidence_refs": [
+          "ev-loc-scale"
+        ]
+      }
+    ]
+  },
+  "views": [],
+  "observations": {
+    "texts": [
+      {
+        "raw": "DENAH KOLOM LANTAI 1",
+        "normalized": "Denah Kolom Lantai 1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          760.0,
+          1450.0,
+          1250.0,
+          1500.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-txt-title"
+        ]
+      },
+      {
+        "raw": "KETERANGAN",
+        "normalized": "Keterangan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1470.0,
+          40.0,
+          1900.0,
+          80.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-txt-titleblock"
+        ]
+      },
+      {
+        "raw": "JUDUL GAMBAR : DENAH KOLOM LT.1",
+        "normalized": "Judul Gambar: Denah Kolom LT.1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1470.0,
+          1550.0,
+          1700.0,
+          1600.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-txt-titleblock"
+        ]
+      },
+      {
+        "raw": "KEMENTERIAN AGAMA RI",
+        "normalized": "Kementerian Agama RI",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1470.0,
+          200.0,
+          1900.0,
+          230.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-txt-titleblock"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "20000",
+        "normalized": "20000",
+        "numeric_value": 20000.0,
+        "unit": "mm",
+        "bbox": [
+          750.0,
+          1350.0,
+          900.0,
+          1380.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-main"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          450.0,
+          1350.0,
+          500.0,
+          1380.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-main"
+        ]
+      },
+      {
+        "raw": "10000",
+        "normalized": "10000",
+        "numeric_value": 10000.0,
+        "unit": "mm",
+        "bbox": [
+          200.0,
+          550.0,
+          220.0,
+          800.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-vert"
+        ]
+      },
+      {
+        "raw": "1580",
+        "normalized": "1580",
+        "numeric_value": 1580.0,
+        "unit": "mm",
+        "bbox": [
+          200.0,
+          1150.0,
+          220.0,
+          1200.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-vert"
+        ]
+      },
+      {
+        "raw": "3000",
+        "normalized": "3000",
+        "numeric_value": 3000.0,
+        "unit": "mm",
+        "bbox": [
+          200.0,
+          300.0,
+          220.0,
+          315.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-vert"
+        ]
+      },
+      {
+        "raw": "5000",
+        "normalized": "5000",
+        "numeric_value": 5000.0,
+        "unit": "mm",
+        "bbox": [
+          200.0,
+          850.0,
+          220.0,
+          900.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-vert"
+        ]
+      },
+      {
+        "raw": "200",
+        "normalized": "200",
+        "numeric_value": 200.0,
+        "unit": "mm",
+        "bbox": [
+          400.0,
+          250.0,
+          415.0,
+          265.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-col"
+        ]
+      },
+      {
+        "raw": "400",
+        "normalized": "400",
+        "numeric_value": 400.0,
+        "unit": "mm",
+        "bbox": [
+          450.0,
+          250.0,
+          465.0,
+          265.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-col"
+        ]
+      },
+      {
+        "raw": "250",
+        "normalized": "250",
+        "numeric_value": 250.0,
+        "unit": "mm",
+        "bbox": [
+          400.0,
+          200.0,
+          415.0,
+          215.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-col"
+        ]
+      }
+    ],
+    "grids": [
+      {
+        "raw": "A",
+        "normalized": "Grid A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          450.0,
+          1600.0,
+          480.0,
+          1630.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-a"
+        ]
+      },
+      {
+        "raw": "B",
+        "normalized": "Grid B",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          650.0,
+          1600.0,
+          680.0,
+          1630.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-b"
+        ]
+      },
+      {
+        "raw": "C",
+        "normalized": "Grid C",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          1600.0,
+          880.0,
+          1630.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-c"
+        ]
+      },
+      {
+        "raw": "D",
+        "normalized": "Grid D",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1050.0,
+          1600.0,
+          1080.0,
+          1630.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-d"
+        ]
+      },
+      {
+        "raw": "E",
+        "normalized": "Grid E",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1250.0,
+          1600.0,
+          1280.0,
+          1630.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-e"
+        ]
+      },
+      {
+        "raw": "F",
+        "normalized": "Grid F",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1450.0,
+          1600.0,
+          1480.0,
+          1630.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-f"
+        ]
+      },
+      {
+        "raw": "1",
+        "normalized": "Grid 1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          1150.0,
+          220.0,
+          1180.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-1"
+        ]
+      },
+      {
+        "raw": "2",
+        "normalized": "Grid 2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          600.0,
+          220.0,
+          630.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-2"
+        ]
+      },
+      {
+        "raw": "3",
+        "normalized": "Grid 3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          400.0,
+          220.0,
+          430.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-3"
+        ]
+      },
+      {
+        "raw": "4",
+        "normalized": "Grid 4",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          200.0,
+          220.0,
+          230.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-4"
+        ]
+      }
+    ],
+    "levels": [
+      {
+        "raw": "SFL.+0.050",
+        "normalized": "SFL +0.050",
+        "numeric_value": 0.05,
+        "unit": "m",
+        "bbox": [
+          900.0,
+          750.0,
+          1000.0,
+          780.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-1"
+        ]
+      }
+    ],
+    "spaces": [],
+    "element_labels": [
+      {
+        "raw": "K1",
+        "normalized": "K1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          490.0,
+          550.0,
+          510.0,
+          570.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-el-k1"
+        ]
+      },
+      {
+        "raw": "K1A",
+        "normalized": "K1A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          390.0,
+          800.0,
+          410.0,
+          820.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-el-k1a"
+        ]
+      },
+      {
+        "raw": "K2",
+        "normalized": "K2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          440.0,
+          350.0,
+          460.0,
+          370.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-el-k2"
+        ]
+      },
+      {
+        "raw": "K3",
+        "normalized": "K3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          570.0,
+          320.0,
+          590.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-el-k3"
+        ]
+      }
+    ],
+    "symbols": [],
+    "tables": [],
+    "materials": [],
+    "notes": [],
+    "references": [],
+    "patterns": [],
+    "geometry_descriptions": []
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-loc-sheet",
+      "kind": "text",
+      "raw": "42",
+      "bbox": [
+        2200.0,
+        40.0,
+        2250.0,
+        80.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-loc-title",
+      "kind": "text",
+      "raw": "DENAH KOLOM LANTAI 1",
+      "bbox": [
+        760.0,
+        1450.0,
+        1250.0,
+        1500.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-loc-scale",
+      "kind": "text",
+      "raw": "1 : 100",
+      "bbox": [
+        900.0,
+        1520.0,
+        1000.0,
+        1540.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-txt-titleblock",
+      "kind": "text",
+      "raw": "KEMENTERIAN AGAMA RI",
+      "bbox": [
+        1470.0,
+        200.0,
+        1900.0,
+        230.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-main",
+      "kind": "text",
+      "raw": "20000",
+      "bbox": [
+        750.0,
+        1350.0,
+        900.0,
+        1380.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-main-4000",
+      "kind": "text",
+      "raw": "4000",
+      "bbox": [
+        450.0,
+        1350.0,
+        500.0,
+        1380.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-vert-10000",
+      "kind": "text",
+      "raw": "10000",
+      "bbox": [
+        200.0,
+        550.0,
+        220.0,
+        800.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-vert-1580",
+      "kind": "text",
+      "raw": "1580",
+      "bbox": [
+        200.0,
+        1150.0,
+        220.0,
+        1200.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-vert-3000",
+      "kind": "text",
+      "raw": "3000",
+      "bbox": [
+        200.0,
+        300.0,
+        220.0,
+        315.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-vert-5000",
+      "kind": "text",
+      "raw": "5000",
+      "bbox": [
+        200.0,
+        850.0,
+        220.0,
+        900.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-dim-col-200",
+      "kind": "text",
+      "raw": "200",
+      "bbox": [
+        400.0,
+        250.0,
+        415.0,
+        265.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-col-400",
+      "kind": "text",
+      "raw": "400",
+      "bbox": [
+        450.0,
+        250.0,
+        465.0,
+        265.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-col-250",
+      "kind": "text",
+      "raw": "250",
+      "bbox": [
+        400.0,
+        200.0,
+        415.0,
+        215.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-grid-a",
+      "kind": "text",
+      "raw": "A",
+      "bbox": [
+        450.0,
+        1600.0,
+        480.0,
+        1630.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-b",
+      "kind": "text",
+      "raw": "B",
+      "bbox": [
+        650.0,
+        1600.0,
+        680.0,
+        1630.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-c",
+      "kind": "text",
+      "raw": "C",
+      "bbox": [
+        850.0,
+        1600.0,
+        880.0,
+        1630.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-d",
+      "kind": "text",
+      "raw": "D",
+      "bbox": [
+        1050.0,
+        1600.0,
+        1080.0,
+        1630.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-e",
+      "kind": "text",
+      "raw": "E",
+      "bbox": [
+        1250.0,
+        1600.0,
+        1280.0,
+        1630.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-f",
+      "kind": "text",
+      "raw": "F",
+      "bbox": [
+        1450.0,
+        1600.0,
+        1480.0,
+        1630.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-1",
+      "kind": "text",
+      "raw": "1",
+      "bbox": [
+        200.0,
+        1150.0,
+        220.0,
+        1180.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-2",
+      "kind": "text",
+      "raw": "2",
+      "bbox": [
+        200.0,
+        600.0,
+        220.0,
+        630.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-3",
+      "kind": "text",
+      "raw": "3",
+      "bbox": [
+        200.0,
+        400.0,
+        220.0,
+        430.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-grid-4",
+      "kind": "text",
+      "raw": "4",
+      "bbox": [
+        200.0,
+        200.0,
+        220.0,
+        230.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-level-1",
+      "kind": "text",
+      "raw": "SFL.+0.050",
+      "bbox": [
+        900.0,
+        750.0,
+        1000.0,
+        780.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-el-k1",
+      "kind": "text",
+      "raw": "K1",
+      "bbox": [
+        490.0,
+        550.0,
+        510.0,
+        570.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-el-k1a",
+      "kind": "text",
+      "raw": "K1A",
+      "bbox": [
+        390.0,
+        800.0,
+        410.0,
+        820.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-el-k2",
+      "kind": "text",
+      "raw": "K2",
+      "bbox": [
+        440.0,
+        350.0,
+        460.0,
+        370.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "ev-el-k3",
+      "kind": "text",
+      "raw": "K3",
+      "bbox": [
+        300.0,
+        570.0,
+        320.0,
+        590.0
+      ],
+      "confidence": 0.99
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 10,
+    "sections_completed": 10,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

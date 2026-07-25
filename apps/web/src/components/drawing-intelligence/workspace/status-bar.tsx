@@ -43,7 +43,7 @@ export function TechnicalStatusBar() {
       {state.mode === 'handoff' ? (
         <>
           <span>
-            Project: <span style={{ color: 'var(--di-text2)' }}>PLHUT Campus – Building A</span>
+            Project: <span style={{ color: 'var(--di-text2)' }}>{state.projectId || 'Proyek aktif'}</span>
           </span>
           <span>Scale: {sheet?.scale ?? '—'}</span>
           <span>Units: Mixed</span>
@@ -54,8 +54,8 @@ export function TechnicalStatusBar() {
             Page: <span style={{ color: 'var(--di-text2)' }}>{sheet ? `${sheet.code} – ${sheet.title}` : '—'}</span>
           </span>
           <span>Scale: {sheet?.scale ?? '—'}</span>
-          <span>X: 12345.67</span>
-          <span>Y: 6789.01</span>
+          <span>X: —</span>
+          <span>Y: —</span>
           <span>
             Zoom: {Math.round(state.canvas.zoom * 100)}%
           </span>

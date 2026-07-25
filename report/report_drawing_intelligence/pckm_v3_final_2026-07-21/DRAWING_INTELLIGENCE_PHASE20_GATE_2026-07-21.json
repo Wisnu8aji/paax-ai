@@ -1,0 +1,178 @@
+{
+  "schema_version": "paax.drawing-intelligence.phase20-gate.v1",
+  "scope": "PLHUT pilot plus generic classification fixtures",
+  "passed": 20,
+  "total": 20,
+  "status": "PASS",
+  "production_status": "CONDITIONAL",
+  "checks": [
+    {
+      "phase": 1,
+      "name": "Secure ingestion and complete package manifest",
+      "passed": true,
+      "evidence": {
+        "pdf_pages": 88,
+        "dem_pages": 88
+      }
+    },
+    {
+      "phase": 2,
+      "name": "Modality routing",
+      "passed": true,
+      "evidence": {
+        "vector": 88
+      }
+    },
+    {
+      "phase": 3,
+      "name": "Unified coordinate and evidence validity",
+      "passed": true,
+      "evidence": 0.9855072463768116
+    },
+    {
+      "phase": 4,
+      "name": "Native vector extraction",
+      "passed": true,
+      "evidence": 5450
+    },
+    {
+      "phase": 5,
+      "name": "Generic sheet identity",
+      "passed": true,
+      "evidence": {
+        "cover": 1,
+        "legend": 3,
+        "site_plan": 2,
+        "floor_plan": 3,
+        "roof_plan": 2,
+        "elevation": 4,
+        "section": 6,
+        "finish_plan": 2,
+        "ceiling_plan": 2,
+        "door_window_plan": 2,
+        "partition_plan": 2,
+        "detail": 22,
+        "foundation_plan": 2,
+        "beam_plan": 5,
+        "column_plan": 2,
+        "schedule": 4,
+        "lighting_plan": 2,
+        "power_plan": 2,
+        "single_line_diagram": 1,
+        "lightning_protection": 2,
+        "fire_safety_plan": 2,
+        "hvac_plan": 2,
+        "drainage_plan": 7,
+        "plumbing_plan": 3,
+        "schematic": 3
+      }
+    },
+    {
+      "phase": 6,
+      "name": "Plan-zone mapping",
+      "passed": true,
+      "evidence": 268
+    },
+    {
+      "phase": 7,
+      "name": "Engineering text index",
+      "passed": true,
+      "evidence": 13227
+    },
+    {
+      "phase": 8,
+      "name": "DEM and native evidence fusion",
+      "passed": true,
+      "evidence": {
+        "coverage": 1.0,
+        "repaired": 166
+      }
+    },
+    {
+      "phase": 9,
+      "name": "Legend, schedule, and vocabulary resolution",
+      "passed": true,
+      "evidence": 142
+    },
+    {
+      "phase": 10,
+      "name": "Cross-sheet references",
+      "passed": true,
+      "evidence": 436
+    },
+    {
+      "phase": 11,
+      "name": "Vector symbol descriptors",
+      "passed": true,
+      "evidence": "implemented_with_stroke_topology_baseline"
+    },
+    {
+      "phase": 12,
+      "name": "Versioned project-specific prototypes",
+      "passed": true,
+      "evidence": "implemented_with_versioned_project_prototypes"
+    },
+    {
+      "phase": 13,
+      "name": "Vector-assisted area tool",
+      "passed": true,
+      "evidence": "implemented_vector_assisted_baseline"
+    },
+    {
+      "phase": 14,
+      "name": "Connected line topology",
+      "passed": true,
+      "evidence": "implemented_vector_assisted_baseline"
+    },
+    {
+      "phase": 15,
+      "name": "Geometry reconstruction",
+      "passed": true,
+      "evidence": "implemented_topology_and_connected_path_baseline"
+    },
+    {
+      "phase": 16,
+      "name": "Conflict-aware physical instance reconstruction",
+      "passed": true,
+      "evidence": {
+        "confirmed_instances": 128,
+        "K2_L2": 4
+      }
+    },
+    {
+      "phase": 17,
+      "name": "Versioned reviewer conflict workflow",
+      "passed": true,
+      "evidence": "implemented_versioned_review_ledger_with_canonical_persistence"
+    },
+    {
+      "phase": 18,
+      "name": "Persisted project memory",
+      "passed": true,
+      "evidence": "implemented_offline_versioned_project_memory_with_canonical_persistence"
+    },
+    {
+      "phase": 19,
+      "name": "Human frontend conflict and calculation actions",
+      "passed": true,
+      "evidence": "conflict editor + calculation button present"
+    },
+    {
+      "phase": 20,
+      "name": "Release benchmark and Command Room contract",
+      "passed": true,
+      "evidence": {
+        "technical": "20/20",
+        "human": "10/10",
+        "arete": "16/16",
+        "K2_volume_m3": 2.34
+      }
+    }
+  ],
+  "limitations": [
+    "The 99% target applies to the calibrated auto-confirm subset, not every possible drawing worldwide.",
+    "Universal release still requires object-level ground truth and at least one independent non-PLHUT project.",
+    "No live AI provider key was used in this verification.",
+    "The Next.js build compiles and type-checks but the local worker remains stuck during page-data collection."
+  ]
+}

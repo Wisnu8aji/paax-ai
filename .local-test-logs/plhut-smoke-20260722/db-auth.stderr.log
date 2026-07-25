@@ -1,0 +1,27 @@
+At line:1 char:140
++ ... ralPath G:\paax-ai-main\.env.local | Where-Object { $_ -match ^INTERN ...
++                                                                  ~
+You must provide a value expression following the '-match' operator.
+At line:1 char:141
++ ... \.env.local | Where-Object { $_ -match ^INTERNAL_SERVICE_KEY= } | Sel ...
++                                            ~~~~~~~~~~~~~~~~~~~~~~
+Unexpected token '^INTERNAL_SERVICE_KEY=' in expression or statement.
+At line:1 char:208
++ ... NAL_SERVICE_KEY= } | Select-Object -First 1; if ($line -match ^INTERN ...
++                                                                  ~
+You must provide a value expression following the '-match' operator.
+At line:1 char:209
++ ... lect-Object -First 1; if ($line -match ^INTERNAL_SERVICE_KEY=(.*)$) { ...
++                                            ~~~~~~~~~~~~~~~~~~~~~~
+Unexpected token '^INTERNAL_SERVICE_KEY=' in expression or statement.
+At line:1 char:209
++ ... lect-Object -First 1; if ($line -match ^INTERNAL_SERVICE_KEY=(.*)$) { ...
++                                            ~~~~~~~~~~~~~~~~~~~~~~
+Missing closing ')' after expression in 'if' statement.
+At line:1 char:236
++ ... bject -First 1; if ($line -match ^INTERNAL_SERVICE_KEY=(.*)$) { $env: ...
++                                                                 ~
+Unexpected token ')' in expression or statement.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : ExpectedValueExpression
+ 

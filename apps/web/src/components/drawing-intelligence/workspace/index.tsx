@@ -29,7 +29,7 @@ export interface DrawingIntelligenceWorkspaceV2Props {
   projectName: string;
   /** id proyek nyata — bila ada, review queue disinkronkan dari backend */
   projectId?: string | null;
-  /** mulai dengan data mock PLHUT (default) atau kosong (empty state §7) */
+  /** data demo hanya untuk story/test eksplisit; runtime proyek selalu mulai dari data backend */
   withMockData?: boolean;
 }
 
@@ -76,7 +76,7 @@ function WorkspaceBody({ projectId }: { projectId: string | null }) {
 export function DrawingIntelligenceWorkspaceV2({
   projectName,
   projectId = null,
-  withMockData = true,
+  withMockData = false,
 }: DrawingIntelligenceWorkspaceV2Props) {
   return (
     <WorkspaceProvider withMockData={withMockData} projectId={projectId}>

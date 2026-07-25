@@ -112,6 +112,8 @@ export interface ProjectDemSheetResponse {
   scale?: string | null;
   revision?: string | null;
   confidence?: number | null;
+  width_px?: number | null;
+  height_px?: number | null;
   thumbnail_url?: string | null;
 }
 
@@ -200,9 +202,12 @@ export async function fetchDemRunStatus(runId: string): Promise<DemRunStatusResp
   return res.json();
 }
 
-export async function triggerSynthesis(runId: string): Promise<{ run_id: string; status: string }> {
+export async function triggerSynthesis(
+  runId: string,
+  analysisMode: 'fast' | 'balanced' | 'deep' = 'fast',
+): Promise<{ run_id: string; status: string; analysis_mode?: string }> {
   // Menggunakan proxy document-intelligence
-  const res = await fetch(`/api/document-intelligence/drawings/dem/${encodeURIComponent(runId)}/synthesize`, {
+  const res = await fetch(`/api/document-intelligence/drawings/dem/${encodeURIComponent(runId)}/synthesize?analysis_mode=${encodeURIComponent(analysisMode)}`, {
     method: 'POST',
     cache: 'no-store',
   });
@@ -292,3 +297,307 @@ export async function materializeRabBridgeProposal(
 }
 
 
+
+
+export interface PackageIntelligenceSourceSheet {
+  page_index: number;
+  page_number: number;
+  sheet_number: string | null;
+  title: string | null;
+  discipline: string;
+  drawing_type: string;
+  level: string | null;
+  readiness: 'ready' | 'review' | 'blocked';
+}
+
+
+export interface DrawingConflictSourceValue {
+  value_id: string;
+  field: 'count' | 'dimensions' | 'elevation' | 'height' | 'classification' | 'revision';
+  value: unknown;
+  unit: string | null;
+  page_index: number;
+  sheet_title: string | null;
+  evidence_refs: string[];
+  source_channel: 'native_pdf' | 'dem' | 'schedule' | 'legend' | 'section' | 'user' | 'engine';
+  confidence: number;
+  authority_rank: number;
+}
+
+export interface DrawingConflict {
+  conflict_id: string;
+  work_item_id: string;
+  field: 'count' | 'dimensions' | 'elevation' | 'height' | 'classification' | 'revision';
+  title: string;
+  explanation: string;
+  source_values: DrawingConflictSourceValue[];
+  affected_page_indices: number[];
+  affected_pages?: PackageIntelligenceSourceSheet[];
+  status: 'open' | 'system_resolved' | 'human_resolved' | 'superseded';
+  selected_value_id: string | null;
+  resolution_note: string | null;
+}
+
+export interface DrawingMeasurementFact {
+  measurement_id: string;
+  work_item_id: string;
+  field: 'count' | 'width' | 'depth' | 'height' | 'elevation' | 'area' | 'length' | 'volume';
+  value: number;
+  unit: string;
+  source_method: string;
+  verification_status: string;
+  evidence_refs: string[];
+  source_page_indices: number[];
+  formula_input: string | null;
+}
+
+export interface DrawingWorkItemCalculation {
+  calculation_id: string;
+  work_item_id: string;
+  calculation_type: string;
+  status: 'complete' | 'blocked' | 'needs_input' | 'stale';
+  formula: string | null;
+  substituted_formula: string | null;
+  result: number | null;
+  unit: string | null;
+  measurement_fact_ids: string[];
+  warnings: string[];
+  engine_version: string | null;
+}
+
+export interface PackageIntelligenceWorkItem {
+  work_item_id: string;
+  category: string;
+  source_category?: string;
+  discipline: string;
+  code: string | null;
+  display_name: string;
+  technical_name: string;
+  plain_name: string;
+  plain_description: string;
+  level: string | null;
+  level_label: string;
+  status: string;
+  status_label: string;
+  maturity: string;
+  readiness_score: number;
+  confidence: number;
+  confidence_percent: number;
+  observed_label_count: number;
+  verified_physical_count: number | null;
+  count_authority: 'candidate' | 'engine_confirmed' | 'human_confirmed' | 'conflicting';
+  count_label: string;
+  count_is_final: boolean;
+  dimensions_text: string | null;
+  geometry_kind: string;
+  known_facts: string[];
+  blockers: string[];
+  recommended_actions: string[];
+  page_indices?: number[];
+  source_sheets: PackageIntelligenceSourceSheet[];
+  occurrences: Array<Record<string, unknown>>;
+  evidence_count: number;
+  evidence_refs: string[];
+  review_task_ids: string[];
+  attributes: Record<string, unknown>;
+  conflicts: DrawingConflict[];
+  conflict_status: 'open' | 'none';
+  measurement_facts: DrawingMeasurementFact[];
+  calculation_readiness: 'blocked' | 'needs_input' | 'ready' | 'calculated';
+  calculation: DrawingWorkItemCalculation | null;
+  reupload_page_indices?: number[];
+  user_accepted: boolean;
+}
+
+export interface PackageIntelligenceWorkGroup {
+  group_id: string;
+  discipline: string;
+  level: string | null;
+  level_label: string;
+  item_count: number;
+  observed_label_count: number;
+  average_readiness_score: number;
+  category_summary: Record<string, number>;
+  items: PackageIntelligenceWorkItem[];
+}
+
+export interface PackageIntelligenceReviewSummary {
+  recognized_work_items: number;
+  needs_clarification: number;
+  suppressed_audit_candidates: number;
+  open_review_tasks: number;
+  accepted_drawing_objects: number;
+  disciplines: Record<string, number>;
+  levels: Record<string, number>;
+  average_readiness_score: number;
+  review_batches: number;
+}
+
+export interface PackageIntelligenceReviewBatch {
+  batch_id: string;
+  severity: 'info' | 'review' | 'blocking';
+  issue: string;
+  title: string;
+  task_count: number;
+  page_indices: number[];
+  page_numbers: number[];
+  recommended_action: string;
+  task_ids: string[];
+  sample_titles: string[];
+}
+
+export interface PackageIntelligenceSummary {
+  schema_version: string;
+  package_id: string;
+  document_name: string;
+  metrics: Record<string, any>;
+  phase_status: Record<string, string>;
+  warnings: string[];
+  work_items: PackageIntelligenceWorkItem[];
+  work_groups: PackageIntelligenceWorkGroup[];
+  needs_clarification: PackageIntelligenceWorkItem[];
+  suppressed_candidate_count?: number;
+  review_summary: PackageIntelligenceReviewSummary;
+  review_batches: PackageIntelligenceReviewBatch[];
+  accepted_drawing_objects: Array<Record<string, unknown>>;
+  review_task_count: number;
+  review_ledger: { version?: number; event_count?: number };
+}
+
+export async function fetchPackageIntelligence(runId: string): Promise<PackageIntelligenceSummary | null> {
+  const res = await fetch(
+    `/api/document-intelligence/drawings/dem/${encodeURIComponent(runId)}/intelligence?view=summary`,
+    { cache: 'no-store' },
+  );
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Gagal memuat package intelligence (status ${res.status})`);
+  return res.json();
+}
+
+export interface DrawingReviewDecision {
+  work_item_id: string;
+  action: 'accept' | 'reject' | 'edit' | 'reopen' | 'resolve_conflict' | 'request_reupload';
+  expected_version: number;
+  reason: string;
+  corrected_category?: string;
+  corrected_code?: string;
+  corrected_label?: string;
+  corrected_level?: string;
+  verified_physical_count?: number;
+  conflict_id?: string;
+  selected_source_value_id?: string;
+  corrected_width?: number;
+  corrected_depth?: number;
+  corrected_dimension_unit?: string;
+  corrected_height?: number;
+  corrected_height_unit?: string;
+  corrected_elevation?: number;
+  corrected_elevation_unit?: string;
+  reupload_page_indices?: number[];
+}
+
+export async function submitDrawingIntelligenceReview(
+  runId: string,
+  decision: DrawingReviewDecision,
+): Promise<{ status: string; ledger_version: number; event: Record<string, unknown>; accepted_drawing_objects: Array<Record<string, unknown>> }> {
+  const res = await fetch(
+    `/api/document-intelligence/drawings/dem/${encodeURIComponent(runId)}/intelligence/reviews`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(decision),
+      cache: 'no-store',
+    },
+  );
+  if (!res.ok) throw new Error(`Gagal menyimpan review Drawing Intelligence (status ${res.status})`);
+  return res.json();
+}
+
+export async function calculateDrawingIntelligenceWorkItem(
+  runId: string,
+  workItemId: string,
+): Promise<DrawingWorkItemCalculation> {
+  const res = await fetch(
+    `/api/document-intelligence/drawings/dem/${encodeURIComponent(runId)}/intelligence/items/${encodeURIComponent(workItemId)}/calculate`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store' },
+  );
+  if (!res.ok) {
+    const payload = await res.json().catch(() => null);
+    throw new Error(payload?.detail || `Gagal menghitung item pekerjaan (status ${res.status})`);
+  }
+  return res.json();
+}
+
+export interface InteractiveMeasurementCandidate {
+  measurement_id: string;
+  page_index: number;
+  kind: 'area' | 'line';
+  geometry: [number, number][];
+  geometry_space: 'normalized' | 'pdf_point' | 'pixel';
+  raw_value: number | null;
+  raw_unit: string | null;
+  scaled_value: number | null;
+  scaled_unit: string | null;
+  confidence: number;
+  status: 'candidate' | 'needs_review' | 'accepted' | 'rejected';
+  review_reason: string | null;
+  authority: 'measurement_candidate';
+  final_quantity: false;
+}
+
+async function postRunTool<T>(runId: string, tool: string, body: unknown): Promise<T> {
+  const res = await fetch(
+    `/api/document-intelligence/drawings/dem/${encodeURIComponent(runId)}/tools/${tool}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+    },
+  );
+  if (!res.ok) throw new Error(`Drawing tool ${tool} failed (status ${res.status})`);
+  return res.json();
+}
+
+export function runOneClickArea(
+  runId: string,
+  pageIndex: number,
+  positivePoints: [number, number][],
+  negativePoints: [number, number][] = [],
+): Promise<InteractiveMeasurementCandidate> {
+  return postRunTool(runId, 'one-click-area', {
+    page_index: pageIndex,
+    positive_points: positivePoints,
+    negative_points: negativePoints,
+  });
+}
+
+export function runOneClickLine(
+  runId: string,
+  pageIndex: number,
+  point: [number, number],
+): Promise<InteractiveMeasurementCandidate> {
+  return postRunTool(runId, 'one-click-line', { page_index: pageIndex, point });
+}
+
+export interface FindSimilarCandidateResponse {
+  page_index: number;
+  threshold: number;
+  count_semantics: 'candidate_detection_not_verified_physical_count';
+  candidates: Array<Record<string, unknown>>;
+}
+
+export function runFindSimilar(
+  runId: string,
+  pageIndex: number,
+  positiveBboxes: Array<{ x0: number; y0: number; x1: number; y1: number; space: 'normalized' }>,
+  negativeBboxes: Array<{ x0: number; y0: number; x1: number; y1: number; space: 'normalized' }> = [],
+  threshold = 0.78,
+): Promise<FindSimilarCandidateResponse> {
+  return postRunTool(runId, 'find-similar', {
+    page_index: pageIndex,
+    positive_bboxes: positiveBboxes,
+    negative_bboxes: negativeBboxes,
+    threshold,
+  });
+}

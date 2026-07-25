@@ -1,0 +1,562 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 4,
+    "page_number": 5,
+    "render_uri": "local://plhut-88pg-run-1/page-0004.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T20:27:43.772447+00:00",
+    "completed_at": "2026-07-14T20:27:43.772503+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "PLHUT-SURAKARTA-88PG",
+      "raw": null,
+      "confidence": 0.95,
+      "evidence_refs": [
+        "ev-title-block-sheet-number"
+      ]
+    },
+    "title": {
+      "value": "SITUASI",
+      "raw": "SITUASI",
+      "confidence": 0.98,
+      "evidence_refs": [
+        "ev-title-block-drawing-title"
+      ]
+    },
+    "discipline": {
+      "value": "arsitektur",
+      "confidence": 0.9,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1 : 500",
+        "normalized": "1:500",
+        "confidence": 0.96,
+        "evidence_refs": [
+          "ev-scale-main"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-site-plan-001",
+      "type": "site_plan",
+      "title": "SITUASI",
+      "bbox": [
+        380.0,
+        160.0,
+        1050.0,
+        640.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KETERANGAN",
+        "normalized": "Keterangan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1650.0,
+          50.0,
+          1850.0,
+          80.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-keterangan-box"
+        ]
+      },
+      {
+        "raw": "KEMENTERIAN AGAMA RI\nDIREKTORAT JENDERAL\nPENYELENGGARAAN HAJI DAN UMRAH\nTAHUN ANGGARAN 2024",
+        "normalized": "Kementerian Agama RI, Direktorat Jenderal Penyelenggaraan Haji dan Umrah, Tahun Anggaran 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1580.0,
+          280.0,
+          1920.0,
+          390.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-project-owner"
+        ]
+      },
+      {
+        "raw": "JUDUL PROYEK :\nGEDUNG PUSAT LAYANAN\nHAJI DAN UMRAH TERPADU\nKOTA SURAKARTA",
+        "normalized": "Judul Proyek: Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1580.0,
+          410.0,
+          1920.0,
+          490.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-project-title"
+        ]
+      },
+      {
+        "raw": "LOKASI :\nJALAN KI MANGUN SARKORO NO.115\nKOTA SURAKARTA",
+        "normalized": "Lokasi: Jalan Ki Mangun Sarkoro No.115, Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1580.0,
+          510.0,
+          1920.0,
+          560.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-project-location"
+        ]
+      },
+      {
+        "raw": "MENYETUJUI\nKEPALA KANTOR WILAYAH JAWA TENGAH\nSELAKU KUASA PENGGUNA ANGGARAN",
+        "normalized": "Menyetujui: Kepala Kantor Wilayah Jawa Tengah selaku Kuasa Pengguna Anggaran",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1580.0,
+          580.0,
+          1920.0,
+          640.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-approval-kppa"
+        ]
+      },
+      {
+        "raw": "MENGETAHUI / MENYETUJUI\nPEJABAT PEMBUAT KOMITMEN",
+        "normalized": "Mengetahui / Menyetujui: Pejabat Pembuat Komitmen",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1580.0,
+          700.0,
+          1920.0,
+          750.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-approval-ppk"
+        ]
+      },
+      {
+        "raw": "KONSULTAN PERENCANA\n\n\n\nTEAM LEADER\n\n\n\nKETUA TIM\n\nNAMA    TANDA TANGAN\nSIPIL\nDIGAMBAR",
+        "normalized": "Konsultan Perencana, Team Leader, Ketua Tim, Nama, Tanda Tangan, Sipil, Digambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1580.0,
+          800.0,
+          1920.0,
+          1200.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-consultant-signatures"
+        ]
+      },
+      {
+        "raw": "JUDUL GAMBAR\nSITUASI",
+        "normalized": "Judul Gambar: SITUASI",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1580.0,
+          1250.0,
+          1760.0,
+          1290.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-title-box"
+        ]
+      },
+      {
+        "raw": "SKALA\n1:500",
+        "normalized": "Skala: 1:500",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1770.0,
+          1250.0,
+          1920.0,
+          1290.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-scale-box"
+        ]
+      },
+      {
+        "raw": "TANGGAL : JANUARI 2024",
+        "normalized": "Tanggal: Januari 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1580.0,
+          1310.0,
+          1760.0,
+          1330.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-date"
+        ]
+      },
+      {
+        "raw": "SKALA GBR   KODE GBR   NO. GBR",
+        "normalized": "Skala Gbr, Kode Gbr, No. Gbr",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1580.0,
+          1350.0,
+          1920.0,
+          1390.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-meta-box"
+        ]
+      },
+      {
+        "raw": "SITE PLAN",
+        "normalized": "Site Plan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          350.0,
+          850.0,
+          460.0,
+          880.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-site-plan-label"
+        ]
+      },
+      {
+        "raw": "EXISTING SITE\nSKALA   1 : 500",
+        "normalized": "Existing Site, Skala 1:500",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          330.0,
+          920.0,
+          510.0,
+          970.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-existing-site-label"
+        ]
+      },
+      {
+        "raw": "SITUASI\nSKALA      1 : 500",
+        "normalized": "SITUASI, Skala 1:500",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          1050.0,
+          1110.0,
+          1100.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-situasi-label"
+        ]
+      },
+      {
+        "raw": "TITIK BENCH MARK   : UJUNG TENGGARA GEDUNG KANTOR STAFF DI BAGIAN PERKERASAN HALAMAN\nTITIK (0,0,0)   : AS KOLOM UJUNG BARAT LAUT GEDUNG YANG DIRENCANAKAN",
+        "normalized": "Titik Bench Mark : Ujung Tenggara Gedung Kantor Staff Di Bagian Perkerasan Halaman; Titik (0,0,0) : As Kolom Ujung Barat Laut Gedung Yang Direncanakan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          900.0,
+          1130.0,
+          1600.0,
+          1190.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-benchmark-notes"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "7200",
+        "normalized": "7200",
+        "numeric_value": 7200.0,
+        "unit": "mm",
+        "bbox": [
+          1080.0,
+          660.0,
+          1140.0,
+          680.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-x-offset"
+        ]
+      },
+      {
+        "raw": "1500",
+        "normalized": "1500",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          1330.0,
+          620.0,
+          1350.0,
+          690.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-y-offset"
+        ]
+      }
+    ],
+    "grids": [],
+    "levels": [
+      {
+        "raw": "TITIK BENCHMARK\n-1.300",
+        "normalized": "Titik Benchmark",
+        "numeric_value": -1.3,
+        "unit": "m",
+        "bbox": [
+          1360.0,
+          610.0,
+          1490.0,
+          650.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-benchmark"
+        ]
+      }
+    ],
+    "spaces": [],
+    "element_labels": [],
+    "symbols": [
+      {
+        "raw": ": SITE PLAN",
+        "normalized": "Simbol area existing site untuk Site Plan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          850.0,
+          340.0,
+          875.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symb-site-plan-legend"
+        ]
+      },
+      {
+        "raw": "Compass Rose (N, S, E, W)",
+        "normalized": "Arah mata angin (Utara, Selatan, Timur, Barat)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          240.0,
+          830.0,
+          290.0,
+          890.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symb-compass-1"
+        ]
+      },
+      {
+        "raw": "Compass Rose (N, S, E, W)",
+        "normalized": "Arah mata angin (Utara, Selatan, Timur, Barat)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          860.0,
+          1030.0,
+          910.0,
+          1090.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symb-compass-2"
+        ]
+      },
+      {
+        "raw": "Circle with horizontal line (Existing Site / Situasi)",
+        "normalized": "Simbol lingkaran dengan garis horizontal untuk Existing Site dan Situasi",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          465.0,
+          935.0,
+          500.0,
+          965.0
+        ],
+        "confidence": 0.92,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symb-circle-hline-site"
+        ]
+      },
+      {
+        "raw": "Circle with horizontal line (Existing Site / Situasi)",
+        "normalized": "Simbol lingkaran dengan garis horizontal untuk Existing Site dan Situasi",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1025.0,
+          1100.0,
+          1060.0,
+          1130.0
+        ],
+        "confidence": 0.92,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symb-circle-hline-situasi"
+        ]
+      }
+    ],
+    "tables": [],
+    "materials": [],
+    "notes": [],
+    "references": [],
+    "patterns": [
+      {
+        "raw": "Dot/Stippling pattern inside rectangular area",
+        "normalized": "Pola titik (stippling) menunjukkan area perkerasan/batu",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          390.0,
+          380.0,
+          580.0,
+          470.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-dots-rectangle"
+        ]
+      },
+      {
+        "raw": "Dense dark crosshatch pattern",
+        "normalized": "Pola arsir silang gelap padat (mungkin vegetasi atau paving)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          980.0,
+          840.0,
+          1220.0,
+          980.0
+        ],
+        "confidence": 0.85,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-crosshatch-dark"
+        ]
+      }
+    ],
+    "geometry_descriptions": [
+      {
+        "raw": "Pyramid/Tetrahedron shapes scattered around",
+        "normalized": "Bentuk piramida/tetrahedron yang tersebar di peta site",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          50.0,
+          1500.0,
+          900.0
+        ],
+        "confidence": 0.8,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geo-pyramids"
+        ]
+      },
+      {
+        "raw": "Curved boundary lines",
+        "normalized": "Garis batas lengkung menunjukkan pagar atau jalan melengkung",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          50.0,
+          1600.0,
+          950.0
+        ],
+        "confidence": 0.85,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geo-curves"
+        ]
+      }
+    ]
+  },
+  "evidence": [],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

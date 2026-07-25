@@ -20,6 +20,8 @@ import {
   type ChatContext,
   type ToolDefinition,
 } from "@paax/ai-orchestrator/tools";
+import type { CommandRoomConnector } from "./connector-permissions";
+import { allowedCommandRoomTools } from "./connector-permissions";
 import type { ModelAlias, ReasoningEffort, ThinkingMode } from "@/lib/paax-models";
 import { getModel } from "@/lib/paax-models";
 import { CHAT_CONTEXT_LIMITS } from "./context";
@@ -104,7 +106,13 @@ const PROJECT_SCOPED_TOOLS = new Set([
   "export_rab_xlsx",
 ]);
 
-function buildToolRegistry(context?: ChatContext): ToolDefinition[] {
+function buildToolRegistry(
+  context: ChatContext | undefined,
+  connectors: readonly CommandRoomConnector[],
+  explicitToolNames?: readonly string[],
+): ToolDefinition[] {
+  const allowedTools = new Set(explicitToolNames ?? allowedCommandRoomTools(connectors));
+  if (allowedTools.size === 0) return [];
   const tools = createToolRegistry({
     coreEngineUrl: getCoreEngineUrl(),
     documentIntelligenceUrl: getDocumentIntelligenceUrl(),
@@ -120,10 +128,10 @@ function buildToolRegistry(context?: ChatContext): ToolDefinition[] {
   // analisa gambar lama (ConsolidatedExtraction/perception pipeline), digantikan
   // DEM/PCKM (docs/plans/drawing intelligence/). Aktifkan lagi tool pengganti
   // setelah Fase 2-5 (job orchestrator + synthesis + query tool) selesai.
-  const hasProjectContext = Boolean(context?.project_id || context?.rab_lines);
   return tools.filter((t) => {
     if (t.declaration.name === "search_knowledge" || t.declaration.name === "analyze_drawing") return false;
-    if (!hasProjectContext && PROJECT_SCOPED_TOOLS.has(t.declaration.name)) return false;
+    if (!allowedTools.has(t.declaration.name)) return false;
+    if (PROJECT_SCOPED_TOOLS.has(t.declaration.name) && !context?.project_id) return false;
     return true;
   });
 }
@@ -238,27 +246,19 @@ async function executeTool(
   }
 }
 
-// Tool yang SELALU tersedia (tidak butuh projectId/rabLines) -- lookup_ahsp
-// murni cari kode dari kata kunci, run_scenario simulasi generik core-engine.
-const TOOL_SYSTEM_SUFFIX_BASE =
-  "\n\nAnda punya akses ke tool: lookup_ahsp (cari kode AHSP dari kata kunci), run_scenario (simulasi skenario waktu-biaya via core-engine -- SATU panggilan sudah mengembalikan SEMUA kandidat skenario sekaligus: baseline, tambah_crew, lembur, paralel; jangan memanggilnya berkali-kali untuk tiap skenario). WAJIB gunakan tool ini kalau pertanyaan butuh data proyek nyata -- JANGAN PERNAH mengarang/mengira-ngira angka RAB, HSP, volume, durasi, atau hasil analisa gambar sendiri. Kalau tool mengembalikan data tidak tersedia, katakan itu apa adanya ke user -- jangan ditutupi dengan estimasi sendiri. PENTING: tool call HANYA boleh dilakukan lewat mekanisme function-calling asli yang disediakan API -- JANGAN PERNAH menuliskan niat memanggil tool sebagai teks/JSON di dalam jawaban Anda (mis. menulis blok kode berisi {\"name\": \"run_scenario\", ...}).\n\nATURAN JAWABAN AKHIR (paling penting, sering dilanggar): jawaban akhir yang Anda tulis untuk user adalah SATU-SATUNYA yang mereka lihat -- mereka TIDAK melihat reasoning/pemikiran internal Anda. Karena itu jawaban akhir WAJIB memuat ulang semua angka konkret secara eksplisit (kode AHSP, durasi hari, biaya rupiah, dst) dalam bentuk tabel atau daftar -- JANGAN PERNAH menulis kalimat seperti 'hasil di atas', 'seperti sudah dihitung', 'sesuai analisis sebelumnya', atau 'lihat data yang sudah ditampilkan' karena user tidak melihat apa pun sebelum jawaban akhir ini. Bayangkan jawaban akhir Anda adalah laporan tertulis lengkap yang berdiri sendiri, bukan kesimpulan dari sesuatu yang sudah ditunjukkan.";
+const DRAWING_TOOL_INSTRUCTIONS = " query_project_graph (baca fakta DEM/PCKM dari gambar kerja proyek yang dipilih; kutip sheet/halaman untuk setiap fakta; jangan memakai atau menyebut RAB, AHSP, atau Schedule kecuali konektor tersebut juga aktif),";
 
-// Deskripsi tool project-scoped -- HANYA disisipkan kalau connector (Gambar
-// Kerja/RAB/Jadwal) aktif DAN project di-attach (context.project_id/rab_lines
-// terisi, lihat buildToolRegistry/PROJECT_SCOPED_TOOLS). Tanpa guard ini,
-// system prompt menyebut tool yang sudah difilter dari skema API -- model bisa
-// tetap mencoba memanggilnya (dan gagal), atau bingung kenapa tool yang
-// disebutkan tidak ada. Root cause live-test 2026-07-18: Lucent memanggil
-// query_rab/query_schedule/project_diagnostics berkali-kali untuk pertanyaan
-// umum tanpa project dibuka sama sekali, semuanya gagal, buang waktu & token.
-const TOOL_SYSTEM_SUFFIX_PROJECT =
-  " query_rab (baca snapshot RAB proyek), query_schedule (baca snapshot jadwal proyek), project_diagnostics (cross-check konsistensi RAB dan jadwal dalam satu snapshot -- item RAB tanpa kode AHSP/volume, task jadwal tidak konsisten, dst; gunakan ini kalau user bertanya kenapa ada masalah/ketidaksesuaian di proyeknya, BUKAN untuk membandingkan revisi RAB dari waktu ke waktu karena data historis revisi tidak tersedia), query_project_graph (cari fakta tentang elemen/komponen di gambar kerja proyek -- pintu, jendela, kolom, instalasi listrik, dst -- dari hasil analisis gambar yang sudah tersimpan; kirim pertanyaan user apa adanya dalam bahasa natural, backend memahami sendiri maksud lokasi/disiplin/jenis kalkulasinya, JANGAN memecah atau menyederhanakan frasa jadi satu kata kunci; SETIAP hasil dari tool ini membawa sitasi sumber [sheet_id p.halaman] yang WAJIB Anda kutip persis di jawaban akhir untuk setiap klaim faktual tentang gambar kerja; jika tool bilang data tidak tersedia atau elemen yang ditanya tidak muncul di hasil, katakan tidak ditemukan ke user -- JANGAN PERNAH mengarang detail gambar kerja dari pengetahuan umum; jika hasil membawa data_status \"calculation_required\" (pertanyaan volume/biaya/kebutuhan material), JANGAN PERNAH menghitung angka itu sendiri -- sampaikan guidance yang tool berikan apa adanya dan arahkan user ke fitur RAB/Core Engine dengan approval untuk angka final; jika data_status \"unknown_level\", katakan ke user level/lantai yang disebut tidak dikenali di gambar kerja proyek ini, jangan menebak lantai mana yang dimaksud), export_rab_xlsx (buat file Excel RAB siap unduh -- HANYA panggil kalau user eksplisit minta file/export/unduh, bukan untuk sekadar melihat data),";
-
-export function withToolSystemPrompt(systemPrompt: string, hasProjectContext: boolean): string {
-  const toolList = hasProjectContext
-    ? TOOL_SYSTEM_SUFFIX_BASE.replace("Anda punya akses ke tool:", `Anda punya akses ke tool:${TOOL_SYSTEM_SUFFIX_PROJECT}`)
-    : TOOL_SYSTEM_SUFFIX_BASE;
-  return `${systemPrompt}${toolList}`;
+export function withToolSystemPrompt(systemPrompt: string, toolNames: readonly string[]): string {
+  const tools = new Set(toolNames);
+  if (tools.size === 0) return systemPrompt;
+  const descriptions: string[] = [];
+  if (tools.has("query_project_graph")) descriptions.push(DRAWING_TOOL_INSTRUCTIONS);
+  if (tools.has("query_rab")) descriptions.push(" query_rab (baca snapshot RAB proyek yang dipilih),");
+  if (tools.has("lookup_ahsp")) descriptions.push(" lookup_ahsp (cari kode AHSP yang relevan),");
+  if (tools.has("export_rab_xlsx")) descriptions.push(" export_rab_xlsx (hanya bila user eksplisit meminta file/unduh),");
+  if (tools.has("query_schedule")) descriptions.push(" query_schedule (baca snapshot jadwal proyek yang dipilih),");
+  if (tools.has("run_scenario")) descriptions.push(" run_scenario (simulasi waktu-biaya deterministik melalui Core Engine),");
+  return `${systemPrompt}\n\nAnda hanya boleh memakai sumber data yang diaktifkan pengguna untuk proyek yang dipilih. Tool yang tersedia:${descriptions.join("")}`;
 }
 
 // ─── OpenRouter / DeepSeek / DashScope (OpenAI-compatible tool_calls) ─────────
@@ -278,12 +278,14 @@ async function runOpenAiCompatibleToolLoop(params: {
   buildPayload: (messages: ToolChatMessage[], toolsSchema: Record<string, unknown>[]) => Record<string, unknown>;
   messages: ToolChatMessage[];
   context: ChatContext | undefined;
+  connectors: readonly CommandRoomConnector[];
+  toolNames: readonly string[];
   req: NextRequest;
   sendEvent: SendEvent;
   runId: string | undefined;
   conversationId: string | undefined;
 }): Promise<{ finalMessages: ToolChatMessage[]; usedTool: boolean }> {
-  const tools = buildToolRegistry(params.context);
+  const tools = buildToolRegistry(params.context, params.connectors, params.toolNames);
   const toolsSchema = tools.map((t) => toOpenRouterTool(t.declaration));
   let currentMessages = [...params.messages];
   let usedTool = false;
@@ -321,7 +323,7 @@ async function runOpenAiCompatibleToolLoop(params: {
       try { args = JSON.parse(call.function.arguments || "{}"); } catch { /* args kosong/invalid */ }
       params.sendEvent("message", {
         type: "tool_call", runId: params.runId, conversationId: params.conversationId,
-        tool: call.function.name, timestamp: new Date().toISOString(),
+        tool: call.function.name, toolCallId: call.id, timestamp: new Date().toISOString(),
       });
       const { result, summary, artifact } = await executeTool(tools, call.function.name, args, params.context, { modelAlias: params.modelAlias, conversationId: params.conversationId });
       params.sendEvent("message", {
@@ -331,7 +333,7 @@ async function runOpenAiCompatibleToolLoop(params: {
         // client as part of the outgoing SSE payload, only `summary` is
         // client-facing; the wrapper strips `result` before forwarding.
         type: "tool_result", runId: params.runId, conversationId: params.conversationId,
-        tool: call.function.name, summary, result, timestamp: new Date().toISOString(),
+        tool: call.function.name, toolCallId: call.id, summary, result, timestamp: new Date().toISOString(),
       });
       if (artifact) {
         params.sendEvent("message", {
@@ -353,6 +355,8 @@ export async function runOpenRouterWithTools(params: {
   apiKey: string;
   messages: ToolChatMessage[];
   context: ChatContext | undefined;
+  connectors: readonly CommandRoomConnector[];
+  toolNames: readonly string[];
   req: NextRequest;
   sendEvent: SendEvent;
   runId: string | undefined;
@@ -371,6 +375,8 @@ export async function runOpenRouterWithTools(params: {
     }),
     messages: params.messages,
     context: params.context,
+    connectors: params.connectors,
+    toolNames: params.toolNames,
     req: params.req,
     sendEvent: params.sendEvent,
     runId: params.runId,
@@ -386,6 +392,8 @@ export async function runDeepSeekNativeWithTools(params: {
   apiKey: string;
   messages: ToolChatMessage[];
   context: ChatContext | undefined;
+  connectors: readonly CommandRoomConnector[];
+  toolNames: readonly string[];
   req: NextRequest;
   sendEvent: SendEvent;
   runId: string | undefined;
@@ -404,6 +412,8 @@ export async function runDeepSeekNativeWithTools(params: {
     }),
     messages: params.messages,
     context: params.context,
+    connectors: params.connectors,
+    toolNames: params.toolNames,
     req: params.req,
     sendEvent: params.sendEvent,
     runId: params.runId,
@@ -429,13 +439,15 @@ export async function runAnthropicWithTools(params: {
   system: string | undefined;
   messages: { role: "user" | "assistant"; content: string }[];
   context: ChatContext | undefined;
+  connectors: readonly CommandRoomConnector[];
+  toolNames: readonly string[];
   req: NextRequest;
   sendEvent: SendEvent;
   runId: string | undefined;
   conversationId: string | undefined;
 }): Promise<{ messages: { role: "user" | "assistant"; content: string }[]; usedTool: boolean }> {
   const client = new Anthropic({ apiKey: params.apiKey });
-  const tools = buildToolRegistry(params.context);
+  const tools = buildToolRegistry(params.context, params.connectors, params.toolNames);
   const toolsSchema = tools.map((t) => toAnthropicTool(t.declaration));
   let currentMessages: AnthropicMsg[] = [...params.messages];
   let usedTool = false;
@@ -467,7 +479,7 @@ export async function runAnthropicWithTools(params: {
     for (const block of toolUseBlocks) {
       params.sendEvent("message", {
         type: "tool_call", runId: params.runId, conversationId: params.conversationId,
-        tool: block.name, timestamp: new Date().toISOString(),
+        tool: block.name, toolCallId: block.id, timestamp: new Date().toISOString(),
       });
       const { result, summary, artifact } = await executeTool(tools, block.name, block.input as Record<string, unknown>, params.context, { modelAlias: params.modelAlias, conversationId: params.conversationId });
       params.sendEvent("message", {
@@ -475,7 +487,7 @@ export async function runAnthropicWithTools(params: {
         // captured for per-claim provenance binding and stripped by route.ts
         // before the event reaches the client.
         type: "tool_result", runId: params.runId, conversationId: params.conversationId,
-        tool: block.name, summary, result, timestamp: new Date().toISOString(),
+        tool: block.name, toolCallId: block.id, summary, result, timestamp: new Date().toISOString(),
       });
       if (artifact) {
         params.sendEvent("message", {

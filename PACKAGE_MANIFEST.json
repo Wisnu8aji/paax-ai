@@ -1,0 +1,113 @@
+{
+  "schema_version": "paax.package-manifest.pckm-v3-final.v1",
+  "package_name": "paax-ai-main-drawing-intelligence-pckm-v3-final-2026-07-21.zip",
+  "created_at": "2026-07-21",
+  "source_basis": "paax-ai-main-di-generic-arete-timeline-2026-07-21.zip",
+  "file_count_excluding_manifest": 1074,
+  "uncompressed_size_excluding_manifest": 85382677,
+  "tree_sha256_excluding_manifest": "aef1e4fafb577dc5c8da89020a56120a2de86e0edf22db67f5100a816102a3b7",
+  "python_syntax": {
+    "files": 479,
+    "errors": [],
+    "status": "PASS"
+  },
+  "drawing_intelligence": {
+    "pdf_pages": 88,
+    "dem_pages": 88,
+    "technical_benchmark": "20/20 PASS",
+    "human_benchmark": "10/10 PASS",
+    "arete_offline": "16/16 PASS",
+    "phase_gate": "20/20 PASS",
+    "physical_instances_engine_confirmed": 128,
+    "work_items_count_engine_confirmed": 19,
+    "work_items_ready_for_calculation": 3,
+    "K2_L2": {
+      "count": 4,
+      "width_mm": 250,
+      "depth_mm": 600,
+      "height_mm": 3900,
+      "volume_m3": 2.34
+    }
+  },
+  "tests": {
+    "drawing_intelligence_effective": "656 passed, 6 skipped",
+    "core_engine": "296 passed",
+    "database": "156 passed, 1 skipped",
+    "pckm_db_benchmark": "14/14 PASS",
+    "schemas_jest": "32 passed",
+    "ai_orchestrator_vitest": "54 passed",
+    "web_vitest": "140 passed",
+    "typecheck": "PASS",
+    "focused_final_rerun": "41 DI/API/review + 8 Core Engine boundary passed"
+  },
+  "build": {
+    "schemas": "PASS",
+    "types": "PASS",
+    "ai_orchestrator": "PASS",
+    "web_compile": "PASS",
+    "web_type_validation": "PASS",
+    "next_page_data": "INCOMPLETE in local environment"
+  },
+  "security": {
+    "live_ai_calls": 0,
+    "credentials_included": false,
+    "raw_plhut_pdf_included_for_owner_testing": true
+  },
+  "changes": {
+    "added": [
+      "docs/PAAX_DRAWING_INTELLIGENCE_PCKM_V3_LOCAL_TESTING_GUIDE_2026-07-21.md",
+      "docs/plans/drawing intelligence/PAAX_DRAWING_INTELLIGENCE_PCKM_V3_FINAL_IMPLEMENTATION_REPORT_2026-07-21.md",
+      "report/report_drawing_intelligence/pckm_v3_final_2026-07-21/DRAWING_INTELLIGENCE_BENCHMARK_88P_2026-07-21.json",
+      "report/report_drawing_intelligence/pckm_v3_final_2026-07-21/DRAWING_INTELLIGENCE_HUMAN_BENCHMARK_88P_2026-07-21.json",
+      "report/report_drawing_intelligence/pckm_v3_final_2026-07-21/DRAWING_INTELLIGENCE_HUMAN_DELIVERY_88P_2026-07-21.json",
+      "report/report_drawing_intelligence/pckm_v3_final_2026-07-21/DRAWING_INTELLIGENCE_PACKAGE_ANALYSIS_88P_2026-07-21.json",
+      "report/report_drawing_intelligence/pckm_v3_final_2026-07-21/DRAWING_INTELLIGENCE_PAGE_SCORECARD_88P_2026-07-21.json",
+      "report/report_drawing_intelligence/pckm_v3_final_2026-07-21/DRAWING_INTELLIGENCE_PAGE_SCORECARD_88P_2026-07-21.md",
+      "report/report_drawing_intelligence/pckm_v3_final_2026-07-21/DRAWING_INTELLIGENCE_PHASE20_GATE_2026-07-21.json",
+      "report/report_drawing_intelligence/pckm_v3_final_2026-07-21/DRAWING_INTELLIGENCE_PHASE20_GATE_2026-07-21.md",
+      "report/report_drawing_intelligence/pckm_v3_final_2026-07-21/K2_L2_CORE_ENGINE_CALCULATION_2026-07-21.json",
+      "report/report_drawing_intelligence/pckm_v3_final_2026-07-21/PAAX_DRAWING_INTELLIGENCE_PCKM_V3_FINAL_IMPLEMENTATION_REPORT_2026-07-21.md",
+      "report/report_drawing_intelligence/pckm_v3_final_2026-07-21/PAAX_DRAWING_INTELLIGENCE_PCKM_V3_LOCAL_TESTING_GUIDE_2026-07-21.md",
+      "report/report_drawing_intelligence/pckm_v3_final_2026-07-21/PAAX_PCKM_V3_FINAL_TEST_RESULTS_2026-07-21.json",
+      "scripts/verify_drawing_intelligence_phase20.py",
+      "scripts/verify_pckm_v3_final_package.py",
+      "services/document-intelligence/app/drawing_intelligence/calculation_bridge.py",
+      "services/document-intelligence/app/drawing_intelligence/construction_graph_v3.py",
+      "services/document-intelligence/app/drawing_intelligence/definition_resolution.py",
+      "services/document-intelligence/app/drawing_intelligence/measurement_resolution.py",
+      "services/document-intelligence/app/drawing_intelligence/physical_instances.py",
+      "services/document-intelligence/app/drawing_intelligence/spatial_resolution.py",
+      "services/document-intelligence/tests/test_drawing_intelligence_review_ledger_v2.py"
+    ],
+    "changed": [
+      "apps/web/src/components/drawing-intelligence/drawing-intelligence-api.ts",
+      "apps/web/src/components/drawing-intelligence/workspace/inspector/intelligence-inspector.tsx",
+      "apps/web/src/components/drawing-intelligence/workspace/navigator/file-sheet-navigator.tsx",
+      "report/report_drawing_intelligence/BENCHMARK_SCORECARD_2026-07-21.md",
+      "report/report_drawing_intelligence/COMMAND_ROOM_ARETE_OFFLINE_QA_2026-07-21.json",
+      "report/report_drawing_intelligence/COMMAND_ROOM_ARETE_OFFLINE_QA_2026-07-21.md",
+      "scripts/run_drawing_intelligence_benchmark.py",
+      "scripts/verify_arete_command_room_offline.py",
+      "services/core-engine/app/calculation_boundary.py",
+      "services/core-engine/tests/test_calculation_boundary.py",
+      "services/document-intelligence/app/api/dem_routes.py",
+      "services/document-intelligence/app/drawing_intelligence/benchmark.py",
+      "services/document-intelligence/app/drawing_intelligence/cross_reference.py",
+      "services/document-intelligence/app/drawing_intelligence/human_benchmark.py",
+      "services/document-intelligence/app/drawing_intelligence/human_delivery.py",
+      "services/document-intelligence/app/drawing_intelligence/models.py",
+      "services/document-intelligence/app/drawing_intelligence/pipeline.py",
+      "services/document-intelligence/app/drawing_intelligence/review_ledger.py",
+      "services/document-intelligence/tests/test_dem_routes.py",
+      "services/document-intelligence/tests/test_drawing_intelligence_human_delivery.py",
+      "services/document-intelligence/tests/test_drawing_intelligence_kreo_runtime.py"
+    ],
+    "removed": [],
+    "counts": {
+      "added": 23,
+      "changed": 21,
+      "removed": 0
+    }
+  },
+  "universal_production_status": "CONDITIONAL"
+}

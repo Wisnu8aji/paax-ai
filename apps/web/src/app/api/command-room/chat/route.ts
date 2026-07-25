@@ -38,8 +38,14 @@ import {
   validateChatPayload,
 } from "./context";
 import { verifyAndComposeClaims } from "./claim-pipeline";
+import { shouldStreamRawReasoningToClient } from "./reasoning-visibility";
 import { persistConversationSummary } from "./memory-runtime";
-import { createStatusSummaryScheduler } from "./status-summarizer";
+import {
+  canRetrieveProjectGraph,
+  hasProjectConnector,
+  selectCommandRoomTools,
+  type CommandRoomConnector,
+} from "./connector-permissions";
 
 export const runtime = "nodejs";
 export const maxDuration = 600; // 10 menit
@@ -57,6 +63,7 @@ const CommandRoomChatSchema = z.object({
   // compatible: tidak dikirim = tool tetap fallback "data tidak tersedia"
   // seperti perilaku sebelumnya, TIDAK merusak apa pun yang sudah jalan.
   projectId: z.string().optional(),
+  connectors: z.array(z.enum(["gambarKerja", "rab", "jadwal"])).max(3).default([]),
   snapshotId: z.string().optional(),
   // rabLines opsional -- alternatif projectId+DB_API_URL untuk kirim data RAB
   // langsung tanpa services/db (mis. client sudah punya draft RAB di state lokal).
@@ -102,75 +109,6 @@ function withSystemPrompt(messages: ChatMessage[]): ChatMessage[] {
 
 type SendEvent = (type: string, data: Record<string, unknown>) => void;
 
-// ─── Status summarizer (Mistral Small 3 via OpenRouter) ───────────────────────
-
-/**
- * Ringkas cuplikan reasoning jadi status super pendek (maks ~8 kata) via
- * Mistral Small 3 (OpenRouter, key sama dengan DEEPSEEK_API_KEY/getSharedKey()
- * yang sudah dipakai Command Room -- TIDAK perlu key/provider baru) --
- * menggantikan label regex generik supaya status benar-benar mencerminkan
- * topik yang sedang dipikirkan model (mis. "Membandingkan HSPK galian tanah
- * dan pondasi batu kali"), bukan sekadar fase abstrak ("Weighing the
- * options..."). Dipanggil server-side, TIDAK di-stream -- harus cepat (model
- * kecil, tanpa reasoning) dan tidak boleh pernah menggagalkan chat utama:
- * kalau gagal/timeout, caller wajib fallback ke label lama (lihat
- * getReasoningContextStatus di chat-run-store.ts, tapi versi servernya di sini).
- */
-async function summarizeReasoningStatus(
-  reasoningSnippet: string,
-  req: NextRequest,
-): Promise<string | null> {
-  const apiKey = getSharedKey();
-  if (!apiKey || !isOpenRouterKey(apiKey)) return null;
-  try {
-    const controller = new AbortController();
-    // 4s awalnya terlalu ketat -- live-test 2026-07-18 menunjukkan hampir
-    // SEMUA panggilan Mistral timeout (AbortError) sebelum sempat selesai,
-    // sehingga label kontekstual nyaris tidak pernah sampai ke user meski
-    // request-nya tercatat di dashboard OpenRouter. 12s memberi ruang untuk
-    // model kecil yang sedang antre di provider tanpa menahan stream utama
-    // terlalu lama (dipanggil fire-and-forget, tidak pernah di-await di jalur
-    // kritis kecuali saat penutupan stream lewat pendingStatusSummaries).
-    const timeout = setTimeout(() => controller.abort(), 12000);
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: STATUS_SUMMARY_MODEL,
-        messages: [
-          {
-            role: "system",
-            content: "Summarize the following AI reasoning excerpt into ONE short English phrase (max 8 words), present tense, describing WHAT is currently being thought about/worked on -- not a conclusion, no trailing punctuation, no quotes. Example: 'Comparing HSPK for earthwork and stone foundation'. Reply with ONLY that phrase, nothing else.",
-          },
-          { role: "user", content: reasoningSnippet.slice(-1500) },
-        ],
-        max_tokens: 32,
-        temperature: 0.3,
-        stream: false,
-        reasoning: { enabled: false, effort: "none", exclude: true },
-      }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    if (!res.ok) {
-      const errBody = await res.text().catch(() => "");
-      console.error(`[status-summary] HTTP ${res.status}: ${errBody.slice(0, 500)}`);
-      return null;
-    }
-    const data = await res.json();
-    const text = data.choices?.[0]?.message?.content;
-    if (typeof text !== "string") {
-      console.error(`[status-summary] no content in response: ${JSON.stringify(data).slice(0, 500)}`);
-      return null;
-    }
-    const trimmed = text.trim().replace(/^["']|["']$/g, "");
-    return trimmed.length > 0 && trimmed.length < 200 ? trimmed : null;
-  } catch (err) {
-    console.error(`[status-summary] exception:`, err); // timeout/error apa pun -- diamkan, caller fallback ke label lama
-    return null;
-  }
-}
-
 // ─── Helper: baca env ──────────
 
 function getSharedKey(): string | undefined {
@@ -198,12 +136,6 @@ function getDashScopeBaseUrl(): string {
 function getAnthropicKey(): string | undefined {
   return process.env.ANTHROPIC_API_KEY?.trim() || undefined;
 }
-
-// Slug OpenRouter untuk Mistral Small 3 -- model kecil/cepat khusus meringkas
-// status, TIDAK dipakai untuk jawaban chat utama. Override via env kalau slug
-// OpenRouter berubah.
-const STATUS_SUMMARY_MODEL =
-  process.env.STATUS_SUMMARY_MODEL?.trim() || "mistralai/mistral-small-3.1-24b-instruct";
 
 function isOpenRouterKey(apiKey: string): boolean {
   return apiKey.trim().startsWith("sk-or-v1-");
@@ -267,7 +199,6 @@ function resolveKeyForModel(modelAlias: ModelAlias): KeyResolution | null {
 async function consumeOpenAiCompatibleStream(
   res: Response,
   sendEvent: SendEvent,
-  pendingStatusSummaries: Promise<unknown>[],
   runId: string | undefined,
   conversationId: string | undefined,
   modelAlias?: ModelAlias,
@@ -279,24 +210,7 @@ async function consumeOpenAiCompatibleStream(
   let buffer = "";
   let fullContent = "";
   let finishedOnLength = false;
-  const statusScheduler = createStatusSummaryScheduler({
-    enabled: process.env.COMMAND_ROOM_STATUS_SUMMARY_ENABLED?.trim().toLowerCase() !== "false",
-    minIntervalMs: Number.parseInt(process.env.COMMAND_ROOM_STATUS_SUMMARY_MIN_INTERVAL_MS ?? "15000", 10) || 15_000,
-    executor: async (snippet) => req ? summarizeReasoningStatus(snippet, req) : null,
-  });
-
-  // Akumulasi reasoning + throttle status-summary setiap ~500 karakter baru
-  // (fire-and-forget, TIDAK menahan stream utama). Awalnya berbasis hitung
-  // kalimat (titik/tanda tanya), tapi reasoning model kerap berbentuk outline
-  // terstruktur ("1. **Analyze...**", "* User wants...") tanpa banyak kalimat
-  // naratif berakhiran titik+spasi -- ditemukan lewat live-test 2026-07-18:
-  // Arete 613 reasoning delta tapi 0 event reasoning_summary karena threshold
-  // kalimat tidak pernah tercapai. Hitung karakter jauh lebih andal lintas gaya
-  // reasoning (naratif maupun bullet list).
-  let reasoningAccumulator = "";
-  let charsSinceLastSummary = 0;
-  const SUMMARY_TRIGGER_CHARS = 500;
-
+  let reasoningActivityStarted = false;
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -319,24 +233,26 @@ async function consumeOpenAiCompatibleStream(
 
         const { content, reasoning } = extractDelta(delta);
         if (reasoning) {
-          sendEvent("message", { type: "reasoning", runId, conversationId, delta: reasoning, timestamp: new Date().toISOString() });
-
-          // Status-summary (Mistral Small 3) HANYA untuk Lucent/Arete, BUKAN Noir.
-          if (modelAlias && (modelAlias === "lucent" || modelAlias === "arete") && req) {
-            reasoningAccumulator += reasoning;
-            charsSinceLastSummary += reasoning.length;
-
-            // Trigger status-summary setiap ~500 karakter baru, TIDAK menahan stream utama.
-            if (charsSinceLastSummary >= SUMMARY_TRIGGER_CHARS) {
-              charsSinceLastSummary = 0;
-              const snippet = reasoningAccumulator;
-              statusScheduler.schedule(runId ?? "anonymous", snippet, (label) => {
-                sendEvent("message", {
-                  type: "status", phase: "reasoning_summary", statusLabel: label,
-                  runId, conversationId, timestamp: new Date().toISOString(),
-                });
-              });
-            }
+          if (!reasoningActivityStarted) {
+            reasoningActivityStarted = true;
+            sendEvent("message", {
+              type: "activity", runId, conversationId,
+              activity: {
+                action: "start",
+                step: {
+                  id: "model:reasoning", kind: "reason",
+                  label: "Menganalisis konteks, evidence, dan kemungkinan jawaban",
+                  detail: "Menilai hubungan fakta, ketidakpastian, dan batas authority jawaban.",
+                },
+              },
+              timestamp: new Date().toISOString(),
+            });
+          }
+          // Only Noir has an explicit product mode for provider-supplied
+          // reasoning. Arete/Lucent never send raw reasoning text to the
+          // browser; their UI is built from safe observable activities.
+          if (shouldStreamRawReasoningToClient(modelAlias)) {
+            sendEvent("message", { type: "reasoning", runId, conversationId, delta: reasoning, timestamp: new Date().toISOString() });
           }
         }
         if (content) {
@@ -381,7 +297,6 @@ async function streamOpenRouter(
   apiKey: string,
   req: NextRequest,
   sendEvent: SendEvent,
-  pendingStatusSummaries: Promise<unknown>[],
   runId: string | undefined,
   conversationId: string | undefined,
 ): Promise<void> {
@@ -426,7 +341,7 @@ async function streamOpenRouter(
     }
 
     const res = await fetchOrThrow("https://openrouter.ai/api/v1/chat/completions", apiKey, currentPayload, req);
-    const { finishedOnLength, fullContent } = await consumeOpenAiCompatibleStream(res, sendEvent, pendingStatusSummaries, runId, conversationId, modelAlias, req);
+    const { finishedOnLength, fullContent } = await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId, modelAlias, req);
     hitLengthLimit = finishedOnLength;
 
     if (hitLengthLimit) {
@@ -439,7 +354,7 @@ async function streamOpenRouter(
       if (fullContent.trim().length > 0) {
         currentMessages.push({ role: "assistant", content: fullContent });
       }
-      sendEvent("message", { type: "status", phase: "streaming_response", statusLabel: `Auto-continuing (part ${continuationCount + 1})...` });
+      sendEvent("message", { type: "status", phase: "streaming_response", statusLabel: `Melanjutkan jawaban bagian ${continuationCount + 1}` });
     }
   }
 }
@@ -475,14 +390,13 @@ async function streamDeepSeekNative(
   apiKey: string,
   req: NextRequest,
   sendEvent: SendEvent,
-  pendingStatusSummaries: Promise<unknown>[],
   runId: string | undefined,
   conversationId: string | undefined,
   modelAlias?: ModelAlias,
 ): Promise<void> {
   const payload = buildDeepSeekPayload(messages, thinking, effort);
   const res = await fetchOrThrow(`${getDeepSeekBaseUrl()}/chat/completions`, apiKey, payload, req);
-  await consumeOpenAiCompatibleStream(res, sendEvent, pendingStatusSummaries, runId, conversationId, modelAlias, req);
+  await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId, modelAlias, req);
 }
 
 // ─── Arete — Qwen3.7-Plus via DashScope native (OpenAI-compatible mode) ───────
@@ -521,14 +435,13 @@ async function streamDashScopeNative(
   apiKey: string,
   req: NextRequest,
   sendEvent: SendEvent,
-  pendingStatusSummaries: Promise<unknown>[],
   runId: string | undefined,
   conversationId: string | undefined,
   modelAlias?: ModelAlias,
 ): Promise<void> {
   const payload = buildDashScopePayload(messages, thinking, effort);
   const res = await fetchOrThrow(`${getDashScopeBaseUrl()}/chat/completions`, apiKey, payload, req);
-  await consumeOpenAiCompatibleStream(res, sendEvent, pendingStatusSummaries, runId, conversationId, modelAlias, req);
+  await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId, modelAlias, req);
 }
 
 // ─── Noir — provider native SDK resmi (native key saja) ─────────
@@ -620,28 +533,30 @@ async function resolveToolsForModel(
   conversationId: string | undefined,
   projectId: string | undefined,
   rabLines: RabLineSnapshotInput[] | undefined,
+  connectors: readonly CommandRoomConnector[],
+  toolNames: readonly string[],
 ): Promise<ChatMessage[]> {
   const withPrompt = withSystemPrompt(messages) as ToolChatMessage[];
   // Fase 10 (PLAN.md §9): projectId/rabLines opsional dari request body ->
   // ChatContext untuk tool query_rab/query_schedule/export_rab_xlsx/
   // project_diagnostics. undefined kalau client tidak mengirim (perilaku lama
   // tetap sama). rabLines dikirim langsung TIDAK butuh services/db.
-  const toolContext = (projectId || rabLines)
+  const toolContext = (projectId || (connectors.includes("rab") && rabLines))
     ? {
         project_id: projectId,
         conversation_id: conversationId,
-        rab_lines: rabLines?.map((line) => ({ ...line, duration_days: line.duration_days ?? null })),
+        rab_lines: connectors.includes("rab") ? rabLines?.map((line) => ({ ...line, duration_days: line.duration_days ?? null })) : undefined,
       }
     : undefined;
-  const hasProjectContext = Boolean(toolContext);
-
   if (viaOpenRouter) {
     const { messages: resolved, usedTool } = await runOpenRouterWithTools({
       modelSlug: OPENROUTER_MODEL_SLUG[modelAlias],
       modelAlias,
       apiKey,
-      messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "", hasProjectContext) }, ...withPrompt.slice(1)],
+      messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "", toolNames) }, ...withPrompt.slice(1)],
       context: toolContext,
+      connectors,
+      toolNames,
       req, sendEvent, runId, conversationId,
     });
     return usedTool ? flattenToolHistoryToChatMessages(resolved) : messages;
@@ -653,8 +568,10 @@ async function resolveToolsForModel(
       modelAlias,
       baseUrl: getDeepSeekBaseUrl(),
       apiKey,
-      messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "", hasProjectContext) }, ...withPrompt.slice(1)],
+      messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "", toolNames) }, ...withPrompt.slice(1)],
       context: toolContext,
+      connectors,
+      toolNames,
       req, sendEvent, runId, conversationId,
     });
     return usedTool ? flattenToolHistoryToChatMessages(resolved) : messages;
@@ -668,8 +585,10 @@ async function resolveToolsForModel(
       modelAlias,
       baseUrl: getDashScopeBaseUrl(),
       apiKey,
-      messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "", hasProjectContext) }, ...withPrompt.slice(1)],
+      messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "", toolNames) }, ...withPrompt.slice(1)],
       context: toolContext,
+      connectors,
+      toolNames,
       req, sendEvent, runId, conversationId,
     });
     return usedTool ? flattenToolHistoryToChatMessages(resolved) : messages;
@@ -681,9 +600,11 @@ async function resolveToolsForModel(
     apiModel: getModel("noir").apiModel,
     modelAlias,
     apiKey,
-    system: withToolSystemPrompt(system ?? SYSTEM_PROMPT, hasProjectContext),
+    system: withToolSystemPrompt(system ?? SYSTEM_PROMPT, toolNames),
     messages: anthropicMessages,
     context: toolContext,
+    connectors,
+    toolNames,
     req, sendEvent, runId, conversationId,
   });
   if (!usedTool) return messages;
@@ -706,7 +627,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { runId, conversationId, projectId, snapshotId, rabLines, messages, modelAlias, reasoningEffort, thinking } = parsed.data;
+  const { runId, conversationId, projectId: requestedProjectId, snapshotId, rabLines, messages, modelAlias, reasoningEffort, thinking, connectors } = parsed.data;
+  const projectId = hasProjectConnector(connectors) ? requestedProjectId : undefined;
   const incomingCorrelation = req.headers.get("x-correlation-id");
   const correlationId = incomingCorrelation && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(incomingCorrelation)
     ? incomingCorrelation : crypto.randomUUID();
@@ -725,8 +647,11 @@ export async function POST(req: NextRequest) {
 
   const resolvedThinking = resolveThinking(modelAlias, thinking);
   const effort = reasoningEffort as ReasoningEffort;
+  const currentUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
+  const toolNames = selectCommandRoomTools(connectors, currentUserMessage);
   const serverContext = await buildServerChatContext({
     projectId,
+    allowProjectGraphRetrieval: canRetrieveProjectGraph(connectors),
     conversationId,
     messages,
     loaders: createDbContextLoaders({ authorization: req.headers.get("authorization") }),
@@ -744,14 +669,6 @@ export async function POST(req: NextRequest) {
       // (claim-provenance.ts) -- never forwarded to the client as part of
       // the SSE payload; sendEvent below strips `result` before enqueueing.
       const toolResultsThisTurn: import("./claim-provenance").ToolResultRecord[] = [];
-      // Status-summary (Mistral) dipanggil fire-and-forget di dalam
-      // consumeOpenAiCompatibleStream -- TANPA pelacak ini, controller.close()
-      // di finally (di bawah) langsung dieksekusi begitu stream utama selesai,
-      // memutus SSE sebelum promise Mistral yang masih in-flight sempat resolve
-      // dan mengirim event-nya (root cause "Mistral kepanggil di log OpenRouter
-      // tapi label tidak pernah sampai ke UI", dilaporkan user 2026-07-18).
-      // Setiap panggilan mendaftarkan promise-nya ke sini; di-await sebelum close.
-      const pendingStatusSummaries: Promise<unknown>[] = [];
       const sendEvent: SendEvent = (_type, data) => {
         // Only opaque identifiers flow to clients/observability; never messages, prompts, or credentials.
         data.correlationId = correlationId;
@@ -781,6 +698,27 @@ export async function POST(req: NextRequest) {
       };
 
       try {
+        sendEvent("message", {
+          type: "activity", runId, conversationId,
+          activity: {
+            action: "complete",
+            step: { id: "request:inspect", kind: "inspect", label: "Memeriksa permintaan, konteks, dan batasan" },
+          },
+          timestamp: new Date().toISOString(),
+        });
+        sendEvent("message", {
+          type: "activity", runId, conversationId,
+          activity: {
+            action: "complete",
+            step: {
+              id: "context:load", kind: "context",
+              label: projectId ? "Memuat konteks proyek dan sumber data aktif" : "Menyiapkan konteks percakapan",
+              detail: projectId ? "Project context tersedia untuk retrieval terarah" : "Tidak ada proyek yang dihubungkan",
+            },
+          },
+          timestamp: new Date().toISOString(),
+        });
+
         // Fase 3 Capability Router/Intent Architect primitif (PLAN.md §9 Fase 3):
         // klasifikasi plan_depth heuristik dari pesan user terakhir, tampilkan
         // "Pendekatan" singkat untuk structured/controlled saja (blueprint §5 --
@@ -790,7 +728,14 @@ export async function POST(req: NextRequest) {
           const intentFrame = buildIntentFrame(lastUserMessage.content);
           const statusMessage = planDepthStatusMessage(intentFrame);
           if (statusMessage) {
-            sendEvent("message", { type: "status", phase: "planning", statusLabel: statusMessage });
+            sendEvent("message", {
+              type: "activity", runId, conversationId,
+              activity: {
+                action: "complete",
+                step: { id: "plan:approach", kind: "inspect", label: statusMessage },
+              },
+              timestamp: new Date().toISOString(),
+            });
           }
           // Fase 6 Plan Executor (PLAN.md §9 Fase 6): ExecutionPlan DESKRIPTIF,
           // dikirim sebagai event observability -- tidak membatasi tool_choice
@@ -807,9 +752,9 @@ export async function POST(req: NextRequest) {
         // Command Room tidak boleh pernah error total gara-gara jalur tools ini.
         let effectiveMessages: ChatMessage[] = serverMessages;
         let toolsWereUsed = false;
-        if (isToolsEnabled()) {
+        if (isToolsEnabled() && toolNames.length > 0) {
           try {
-            effectiveMessages = await resolveToolsForModel(modelAlias, serverMessages, resolved.apiKey, resolved.viaOpenRouter, req, sendEvent, runId, conversationId, projectId, rabLines);
+            effectiveMessages = await resolveToolsForModel(modelAlias, serverMessages, resolved.apiKey, resolved.viaOpenRouter, req, sendEvent, runId, conversationId, projectId, rabLines, connectors, toolNames);
             toolsWereUsed = effectiveMessages !== serverMessages;
           } catch (toolErr) {
             sendEvent("message", {
@@ -828,40 +773,46 @@ export async function POST(req: NextRequest) {
         // mematikan thinking di giliran final untuk Lucent/Arete -- tapi itu
         // berbenturan dengan fitur status-label berbasis fase reasoning: hampir
         // semua pertanyaan Command Room nyata memicu tool call, jadi thinking
-        // mati persis di titik paling relevan untuk ditampilkan sebagai label.
-        // Diputuskan (owner, 2026-07-13): thinking TETAP ON pasca-tool untuk
-        // SEMUA model, termasuk Lucent/Arete/Noir -- instruksi "laporan lengkap"
-        // di bawah ini yang jadi pencegah jawaban pendek, bukan mematikan
-        // thinking. Noir menampilkan reasoning ini mentah (RunStatus.tsx),
-        // Lucent/Arete meringkasnya jadi label fase (getReasoningContextStatus).
+        // mati persis di titik paling relevan. Thinking tetap ON pasca-tool untuk
+        // semua model. Arete/Lucent hanya menampilkan activity timeline aman yang
+        // berasal dari milestone server/tool; reasoning mentah tidak dipublikasikan.
+        // Noir mempertahankan panel reasoning eksplisit sesuai mode produknya.
         let finalMessages = effectiveMessages;
         if (toolsWereUsed) {
           finalMessages = [
             ...effectiveMessages,
             {
               role: "user",
-              content: "Tuliskan sekarang laporan jawaban akhir yang LENGKAP dan BERDIRI SENDIRI untuk pertanyaan saya di atas, memuat semua angka konkret (kode AHSP, durasi, biaya, dst) dari hasil tool yang sudah didapat -- dalam tabel/daftar bila membandingkan beberapa opsi. Jangan merujuk ke 'hasil di atas' atau 'sudah dihitung sebelumnya', tulis ulang angkanya langsung.",
+              content: "Tuliskan sekarang jawaban akhir yang LENGKAP dan BERDIRI SENDIRI berdasarkan hasil tool. Untuk Drawing Intelligence, prioritaskan human_drawing_view, gunakan istilah 'label/simbol teramati' persis seperti sumber, JANGAN mengubahnya menjadi jumlah fisik, dan sertakan citation lembar/halaman pada setiap fakta. Untuk tool deterministik lain, tulis ulang angka konkret beserta authority-nya. Jangan merujuk ke 'hasil di atas'.",
             },
           ];
         }
         const finalThinking = resolvedThinking;
 
         if (resolved.viaOpenRouter) {
-          await streamOpenRouter(modelAlias, finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, pendingStatusSummaries, runId, conversationId);
+          await streamOpenRouter(modelAlias, finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId);
         } else if (modelAlias === "lucent") {
-          await streamDeepSeekNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, pendingStatusSummaries, runId, conversationId, modelAlias);
+          await streamDeepSeekNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId, modelAlias);
         } else if (modelAlias === "arete") {
-          await streamDashScopeNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, pendingStatusSummaries, runId, conversationId, modelAlias);
+          await streamDashScopeNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId, modelAlias);
         } else {
           await streamAnthropicNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId);
         }
 
-        // Status summary bersifat observability: scheduler berjalan fire-and-forget
-        // dan tidak pernah menahan answer composer atau completion chat.
+        // Activity timeline berasal dari milestone aktual di route/tool pipeline.
+        // Tidak ada secondary model atau summarizer reasoning murah.
 
         // Fase 10: candidate claims diverifikasi deterministik SEBELUM answer composer
         // mengirim konten ke klien. Provider tidak pernah diberi wewenang menampilkan
         // kuantitas tanpa provenance/authority yang cukup.
+        sendEvent("message", {
+          type: "activity", runId, conversationId,
+          activity: {
+            action: "start",
+            step: { id: "answer:verify", kind: "verify", label: "Memeriksa angka, authority, dan sumber evidence" },
+          },
+          timestamp: new Date().toISOString(),
+        });
         const claimResult = verifyAndComposeClaims({
           responseText: finalContent,
           toolsCalled: toolsCalledThisTurn,
@@ -873,6 +824,22 @@ export async function POST(req: NextRequest) {
           sendEvent("message", { type: "content", runId, conversationId, delta: claimResult.responseText, timestamp: new Date().toISOString() });
           emittingComposedAnswer = false;
         }
+        sendEvent("message", {
+          type: "activity", runId, conversationId,
+          activity: {
+            action: "complete",
+            step: { id: "answer:verify", kind: "verify", label: "Memeriksa angka, authority, dan sumber evidence" },
+          },
+          timestamp: new Date().toISOString(),
+        });
+        sendEvent("message", {
+          type: "activity", runId, conversationId,
+          activity: {
+            action: "start",
+            step: { id: "memory:save", kind: "save", label: "Menyimpan ringkasan percakapan" },
+          },
+          timestamp: new Date().toISOString(),
+        });
         void persistConversationSummary({
           dbApiUrl: process.env.DB_API_URL?.trim(), authorization: req.headers.get("authorization"),
           conversationId, content: claimResult.responseText,
@@ -899,6 +866,14 @@ export async function POST(req: NextRequest) {
           }
         } catch { /* evidence gate tidak boleh pernah menggagalkan response */ }
 
+        sendEvent("message", {
+          type: "activity", runId, conversationId,
+          activity: {
+            action: "complete",
+            step: { id: "memory:save", kind: "save", label: "Menyimpan ringkasan percakapan" },
+          },
+          timestamp: new Date().toISOString(),
+        });
         sendEvent("message", { type: "done", runId, conversationId, timestamp: new Date().toISOString() });
       } catch (err) {
         const aborted = (err instanceof Error && err.name === "AbortError") || req.signal.aborted;

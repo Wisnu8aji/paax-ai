@@ -1,0 +1,4 @@
+INFO:     127.0.0.1:63907 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63909 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63936 - "GET /projects/PLHUT-SURAKARTA/project-graph/snapshot HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:63937 - "GET /projects/PLHUT-SURAKARTA/dem/runs HTTP/1.1" 401 Unauthorized

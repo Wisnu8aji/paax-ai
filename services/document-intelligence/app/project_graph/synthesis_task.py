@@ -127,7 +127,11 @@ def _edge_evidence_items(snapshot, evidence_ids):
     return items
 
 
-async def synthesize_and_post_snapshot_task(run_id: str, project_id: str, run_status: dict, db_client: DemDbClient):
+async def synthesize_and_post_snapshot_task(
+    run_id: str, project_id: str, run_status: dict, db_client: DemDbClient,
+    *, drawing_analysis=None, drawing_analysis_artifact_key: str | None = None,
+    drawing_analysis_error: str | None = None,
+):
     try:
         sheets = []
         for page in run_status.get("pages", []):
@@ -370,6 +374,22 @@ async def synthesize_and_post_snapshot_task(run_id: str, project_id: str, run_st
                 "source": "synthesize_and_post_snapshot_task",
                 "run_id": run_id,
                 "typed_observation_audit": typed_observation_audit,
+                "drawing_intelligence": (
+                    {
+                        "status": "complete",
+                        "artifact_key": drawing_analysis_artifact_key,
+                        "schema_version": drawing_analysis.schema_version,
+                        "metrics": drawing_analysis.metrics,
+                        "phase_status": drawing_analysis.phase_status,
+                        "work_item_candidate_count": len(drawing_analysis.work_items),
+                        "review_task_count": len(drawing_analysis.review_queue),
+                    }
+                    if drawing_analysis is not None
+                    else {
+                        "status": "not_available" if not drawing_analysis_error else "failed",
+                        "error": drawing_analysis_error,
+                    }
+                ),
             },
             "effective_sheet_revision_ids": effective_sheet_revision_ids,
             "nodes": [_node_to_dict(n, level_map) for n in snapshot.nodes],

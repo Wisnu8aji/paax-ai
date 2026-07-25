@@ -23,6 +23,7 @@ import { ZoomBar } from './zoom-bar';
 import { Minimap } from './minimap';
 import { SelectionContextBar } from './selection-context-bar';
 import { RealPageSvg } from './real-page-svg';
+import type { InteractiveMeasurementCandidate } from '../../drawing-intelligence-api';
 
 /** lebar dasar render SVG pada zoom=1 (px) — 100% ≈ lebar A1 landscape wajar */
 const BASE_WIDTH_PX = 1400;
@@ -37,6 +38,10 @@ export function DrawingCanvas() {
   const realImageUrl = mappedSheet?.imageUrl ?? null;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [spaceDown, setSpaceDown] = useState(false);
+  const [toolBusy, setToolBusy] = useState(false);
+  const [toolResult, setToolResult] = useState<InteractiveMeasurementCandidate | null>(null);
+  const toolRunId = sheet?.runId ?? mappedSheet?.runId ?? null;
+  const toolPageIndex = sheet?.pageIndex ?? mappedSheet?.pageIndex ?? null;
   const dragRef = useRef<{ startX: number; startY: number; panX: number; panY: number; button: number } | null>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -158,6 +163,40 @@ export function DrawingCanvas() {
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
+      if (e.button === 0 && (tool === 'measure' || tool === 'takeoff')) {
+        e.preventDefault();
+        const el = containerRef.current;
+        if (!el || !toolRunId || toolPageIndex === null) {
+          dispatch({ type: 'set-status', message: 'This sheet is not linked to a persisted DEM run.' });
+          return;
+        }
+        const rect = el.getBoundingClientRect();
+        const x = Math.max(0, Math.min(1, (e.clientX - rect.left - panX) / zoom / baseW));
+        const y = Math.max(0, Math.min(1, (e.clientY - rect.top - panY) / zoom / baseH));
+        setToolBusy(true);
+        setToolResult(null);
+        const action = tool === 'takeoff' ? 'One-Click Area' : 'One-Click Line';
+        dispatch({ type: 'set-status', message: `${action} is analyzing local vector geometry…` });
+        import('../../drawing-intelligence-api')
+          .then(({ runOneClickArea, runOneClickLine }) => (
+            tool === 'takeoff'
+              ? runOneClickArea(toolRunId, toolPageIndex, [[x, y]])
+              : runOneClickLine(toolRunId, toolPageIndex, [x, y])
+          ))
+          .then((result) => {
+            setToolResult(result);
+            dispatch({
+              type: 'set-status',
+              message: `${action} created a review candidate; scale/approval is still required for final quantity.`,
+            });
+          })
+          .catch((error) => {
+            dispatch({ type: 'set-status', message: error instanceof Error ? error.message : `${action} failed.` });
+          })
+          .finally(() => setToolBusy(false));
+        return;
+      }
+
       const isPan = e.button === 1 || spaceDown || tool === 'pan';
       if (!isPan) return;
       e.preventDefault();
@@ -165,7 +204,7 @@ export function DrawingCanvas() {
       dragRef.current = { startX: e.clientX, startY: e.clientY, panX, panY, button: e.button };
       setDragging(true);
     },
-    [spaceDown, tool, panX, panY],
+    [spaceDown, tool, panX, panY, zoom, baseW, baseH, toolRunId, toolPageIndex, dispatch],
   );
 
   const onPointerMove = useCallback(
@@ -218,7 +257,7 @@ export function DrawingCanvas() {
     ? 'grabbing'
     : spaceDown || tool === 'pan'
       ? 'grab'
-      : tool === 'measure' || tool === 'calibrate'
+      : tool === 'measure' || tool === 'takeoff' || tool === 'calibrate'
         ? 'crosshair'
         : 'default';
 
@@ -262,6 +301,46 @@ export function DrawingCanvas() {
             onSelectElement={(id) => dispatch({ type: 'select-element', elementId: id })}
           /> : null}
         </div>
+
+        {(toolBusy || toolResult) && (
+          <div
+            className="di-panel di-rise"
+            style={{
+              position: 'absolute',
+              top: 12,
+              left: 12,
+              zIndex: 25,
+              width: 250,
+              padding: 10,
+              borderRadius: 8,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 5,
+              boxShadow: '0 8px 22px rgba(0,0,0,.28)',
+            }}
+          >
+            <div style={{ fontSize: 11.5, fontWeight: 650, color: 'var(--di-text)' }}>
+              {toolBusy ? 'Analyzing geometry…' : toolResult?.kind === 'area' ? 'Area candidate' : 'Line candidate'}
+            </div>
+            {toolResult && (
+              <>
+                <div className="di-mono" style={{ fontSize: 12, color: 'var(--di-text2)' }}>
+                  {toolResult.raw_value === null ? 'No closed geometry found' : `${toolResult.raw_value.toFixed(2)} ${toolResult.raw_unit ?? ''}`}
+                </div>
+                <div style={{ fontSize: 10.5, lineHeight: 1.4, color: 'var(--di-text3)' }}>
+                  Raw PDF geometry only. This is not a final quantity; confirm scale, boundary, and reviewer approval first.
+                </div>
+                <button
+                  className="di-btn-ghost"
+                  style={{ alignSelf: 'flex-end', border: 'none', padding: 0, color: 'var(--di-action)', fontSize: 10.5 }}
+                  onClick={() => setToolResult(null)}
+                >
+                  Dismiss
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
         {selectedElement && <SelectionContextBar element={selectedElement} />}
 

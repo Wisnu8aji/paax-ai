@@ -1,0 +1,136 @@
+{
+  "schema_version": "paax.command-room.arete-offline-qa.v1",
+  "mode": "offline_deterministic_contract_simulation",
+  "live_ai_called": false,
+  "source_delivery": "report/report_drawing_intelligence/pckm_v3_final_2026-07-21/DRAWING_INTELLIGENCE_HUMAN_DELIVERY_88P_2026-07-21.json",
+  "query": "kolom lantai 2 ada apa saja jumlah berapa ukuran berapa",
+  "volume_query": "berapa volume kolom lantai 2",
+  "relevant_item_count": 4,
+  "relevant_codes": [
+    "K-01",
+    "K1A",
+    "K2",
+    "K3"
+  ],
+  "expected_arete_answer": "Berdasarkan rekonstruksi objek fisik dan penyambungan lintas lembar, kolom pada Lantai 2 adalah:\n\n| Tipe | Jumlah | Dimensi penampang | Status | Sumber |\n|---|---:|---|---|---|\n| K-01 | 1 kandidat terdeteksi | Definisi ukuran belum ditemukan | Sudah terklasifikasi | [DENAH DIN. PARTISI LANTAI 2 p.24] |\n| K1A | 8 unit | 400 × 400 mm | Terkonfirmasi sistem | [DENAH KOLOM LANTAI 2 p.43] |\n| K2 | 4 unit | 250 × 600 mm | Siap dihitung Core Engine | [DENAH KOLOM LANTAI 2 p.43] |\n| K3 | 5 unit | 250 × 400 mm | Terkonfirmasi sistem | [DENAH KOLOM LANTAI 2 p.43] |\n\nJumlah berstatus terkonfirmasi sistem berasal dari rekonstruksi instance pada denah utama, deduplikasi geometri, dan pengecekan lintas schedule/detail. Data yang tidak konsisten tidak disembunyikan; item tersebut ditandai Data rancu untuk dikoreksi atau di-approve reviewer.",
+  "expected_volume_answer": "Item berikut sudah siap dihitung oleh Core Engine karena jumlah fisik, dimensi, dan tinggi efektif memiliki authority: K2: 4 unit, 250 × 600 mm, tinggi efektif 3900.0 mm. Model AI tidak melakukan perkalian; Command Room harus memanggil Core Engine dan menampilkan hasil beserta formula serta sumber input.",
+  "activity_timeline": [
+    {
+      "kind": "context",
+      "label": "Memuat projection Drawing Intelligence untuk 88 lembar"
+    },
+    {
+      "kind": "graph",
+      "label": "Menemukan tipe kolom Lantai 2: K1A, K2, K3"
+    },
+    {
+      "kind": "evidence",
+      "label": "Menghubungkan K2 ke 2 lembar sumber denah, tabel, dan potongan"
+    },
+    {
+      "kind": "geometry",
+      "label": "Memeriksa rekonstruksi fisik K2: 4 unit"
+    },
+    {
+      "kind": "measurement",
+      "label": "Memeriksa penampang 250 × 600 mm dan tinggi efektif 3900.0 mm"
+    },
+    {
+      "kind": "authority",
+      "label": "Memastikan authority jumlah=engine_confirmed dan readiness=ready"
+    },
+    {
+      "kind": "compose",
+      "label": "Menyusun jawaban teknik sipil dengan sitasi lembar yang dapat dibuka"
+    }
+  ],
+  "checks": [
+    {
+      "name": "delivery_schema_is_human_view",
+      "passed": true,
+      "detail": "paax.drawing-intelligence.human-delivery.v2"
+    },
+    {
+      "name": "all_88_pages_available",
+      "passed": true,
+      "detail": "page_count=88"
+    },
+    {
+      "name": "core_l2_column_types_found",
+      "passed": true,
+      "detail": "codes=['K-01', 'K1A', 'K2', 'K3']"
+    },
+    {
+      "name": "k1a_dimension",
+      "passed": true,
+      "detail": "400 × 400 mm"
+    },
+    {
+      "name": "k2_dimension",
+      "passed": true,
+      "detail": "250 × 600 mm"
+    },
+    {
+      "name": "k3_dimension",
+      "passed": true,
+      "detail": "250 × 400 mm"
+    },
+    {
+      "name": "physical_counts_are_authorized",
+      "passed": true,
+      "detail": "items=[('K-01', None, 'candidate'), ('K1A', 8, 'engine_confirmed'), ('K2', 4, 'engine_confirmed'), ('K3', 5, 'engine_confirmed')]"
+    },
+    {
+      "name": "answer_uses_civil_engineering_wording",
+      "passed": true,
+      "detail": "mature civil-engineering wording present"
+    },
+    {
+      "name": "answer_has_sheet_page_citations",
+      "passed": true,
+      "detail": "human-readable citations present"
+    },
+    {
+      "name": "volume_answer_routes_to_core_engine",
+      "passed": true,
+      "detail": "golden rule and readiness preserved"
+    },
+    {
+      "name": "no_live_provider_call",
+      "passed": true,
+      "detail": "script has no HTTP/provider client"
+    },
+    {
+      "name": "generic_hospital_level_12",
+      "passed": true,
+      "detail": "expected=('column_plan', 'L12', 'structure'); actual=('column_plan', 'L12', 'structure')"
+    },
+    {
+      "name": "generic_bridge_abutment",
+      "passed": true,
+      "detail": "expected=('bridge_plan', 'substructure', 'structure'); actual=('bridge_plan', 'substructure', 'structure')"
+    },
+    {
+      "name": "generic_road_alignment",
+      "passed": true,
+      "detail": "expected=('road_plan_profile', 'alignment', 'civil'); actual=('road_plan_profile', 'alignment', 'civil')"
+    },
+    {
+      "name": "generic_unknown_vendor_sheet",
+      "passed": true,
+      "detail": "expected=('unknown', None, 'unknown'); actual=('unknown', None, 'unknown')"
+    },
+    {
+      "name": "timeline_is_stacked_and_contextual",
+      "passed": true,
+      "detail": "steps=7"
+    }
+  ],
+  "passed": 16,
+  "total": 16,
+  "status": "PASS",
+  "limitations": [
+    "No provider API was called; this validates retrieval, prompt, authority, citation, and output contracts.",
+    "Natural-language variation of a live model still requires a controlled staging run with a dedicated non-production key."
+  ]
+}

@@ -34,6 +34,7 @@ export interface ContextLoaders {
 
 export interface ServerContextInput {
   projectId?: string;
+  allowProjectGraphRetrieval?: boolean;
   conversationId?: string;
   messages: ContextChatMessage[];
   loaders?: ContextLoaders;
@@ -93,8 +94,8 @@ export async function buildServerChatContext(input: ServerContextInput): Promise
   const currentQuery = [...clientTurns].reverse().find((message) => message.role === "user")?.content ?? "";
   const recentTurns = clientTurns.slice(-CHAT_CONTEXT_LIMITS.maxRecentTurns);
   const [projectContext, memories, summary] = await Promise.all([
-    input.projectId && currentQuery ? loaders.projectRetrieval({ projectId: input.projectId, query: currentQuery }) : null,
-    loaders.durableMemory({ projectId: input.projectId, conversationId: input.conversationId, query: currentQuery }),
+    input.projectId && input.allowProjectGraphRetrieval && currentQuery ? loaders.projectRetrieval({ projectId: input.projectId, query: currentQuery }) : null,
+    loaders.durableMemory({ conversationId: input.conversationId, query: currentQuery }),
     input.conversationId ? loaders.conversationSummary({ conversationId: input.conversationId }) : null,
   ]);
 

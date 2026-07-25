@@ -57,9 +57,9 @@ export function CanvasToolbar() {
   const tools: { id: typeof state.canvas.tool; label: string; icon: typeof MousePointer }[] = [
     { id: 'select', label: 'Select', icon: MousePointer },
     { id: 'pan', label: 'Pan', icon: Hand },
-    { id: 'measure', label: 'Measure', icon: Ruler },
+    { id: 'measure', label: 'One-Click Line', icon: Ruler },
     { id: 'markup', label: 'Markup', icon: PenTool },
-    { id: 'takeoff', label: 'Takeoff', icon: Layers },
+    { id: 'takeoff', label: 'One-Click Area', icon: Layers },
     { id: 'calibrate', label: 'Calibrate', icon: Scale },
   ];
 

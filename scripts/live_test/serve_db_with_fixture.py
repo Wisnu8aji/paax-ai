@@ -11,12 +11,15 @@ from __future__ import annotations
 import asyncio
 import sys
 import os
+import uuid
 from pathlib import Path
 
 # Setup paths — REPO_ROOT dihitung dari lokasi file ini
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "services" / "document-intelligence"))
 sys.path.insert(0, str(REPO_ROOT / "services" / "db" / "src"))
+
+from fixture_paths import resolve_plhut_fixture_dir
 
 os.environ.setdefault("INTERNAL_SERVICE_KEY", "live-test-key")
 
@@ -27,13 +30,14 @@ from httpx import ASGITransport, AsyncClient  # noqa: E402
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine  # noqa: E402
 
 from paax_db.database import Base, get_db  # noqa: E402
+from paax_db import models  # noqa: E402
 from paax_db.main import app  # noqa: E402
 
 import uvicorn  # noqa: E402
 
 # ─── Setup ─────────────────────────────────────────────────────────────────
 
-FIXTURE_DIR = REPO_ROOT / "report" / "report_drawing_intelligence" / "dem_extraction_88pages" / "pages"
+FIXTURE_DIR = resolve_plhut_fixture_dir(REPO_ROOT)
 DB_FILE = Path(__file__).resolve().parent / "live_test.db"
 
 # File-based SQLite (aiosqlite, tidak perlu StaticPool)
@@ -134,6 +138,37 @@ async def load_fixture() -> None:
         for p in sorted(FIXTURE_DIR.glob("page-*.json"))
     ]
     print(f"Loaded {len(sheets)} fixture sheets")
+
+    # Persist the already-produced DEM artifacts so the Drawing Intelligence
+    # workspace can list the uploaded PLHUT document and its 88 sheets. This
+    # only copies stored JSON into the fixture database; it never opens the PDF
+    # or invokes a vision provider.
+    fixture_run_id = uuid.uuid5(uuid.NAMESPACE_URL, "PLHUT-88PG-RUN-1")
+    first_sheet = sheets[0]
+    async with Session() as session:
+        session.add(models.DemRun(
+            id=fixture_run_id,
+            project_id="PLHUT-SURAKARTA",
+            document_id=first_sheet.document_id,
+            document_hash=first_sheet.source.document_hash,
+            file_name=first_sheet.source.file_name,
+            total_pages=len(sheets),
+            status="synthesis_complete",
+            provider=first_sheet.generation.provider,
+            prompt_version=first_sheet.generation.prompt_version,
+            artifact_key="fixture://plhut-88pages",
+        ))
+        for sheet in sheets:
+            session.add(models.DemPage(
+                run_id=fixture_run_id,
+                page_index=sheet.source.page_index,
+                status="completed",
+                attempt_count=1,
+                input_hash=sheet.source.document_hash,
+                result=sheet.model_dump(mode="json"),
+            ))
+        await session.commit()
+    print(f"Seeded DEM run with {len(sheets)} stored pages")
 
     # Synthesize graph
     snapshot = synthesize_project_graph(sheets).snapshot

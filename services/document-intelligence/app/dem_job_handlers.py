@@ -87,12 +87,51 @@ class DemJobHandlers:
         )
 
     async def handle_dem_synthesize(self, payload: dict[str, Any]) -> None:
+        from app.drawing_intelligence.pipeline import analyze_drawing_package
         from app.project_graph.synthesis_task import synthesize_and_post_snapshot_task
 
         run_id = payload["run_id"]
         project_id = payload["project_id"]
         run_status = await self.db_client.get_run_status(run_id)
-        await synthesize_and_post_snapshot_task(run_id, project_id, run_status, self.db_client)
+        drawing_analysis = None
+        drawing_analysis_artifact_key = None
+        drawing_analysis_error = None
+        try:
+            run = await self.db_client.get_run(run_id)
+            if not isinstance(run, dict):
+                run = {}
+            artifact_key = payload.get("artifact_key") or run.get("artifact_key")
+            if artifact_key:
+                pdf_bytes = self.artifact_store.get(artifact_key)
+                dem_pages = {
+                    int(page.get("page_index", index)): page["result"]
+                    for index, page in enumerate(run_status.get("pages", []))
+                    if page.get("status") == "complete" and page.get("result")
+                }
+                drawing_analysis = analyze_drawing_package(
+                    pdf_bytes,
+                    document_name=run.get("file_name") or payload.get("file_name") or "drawing.pdf",
+                    dem_pages_data=dem_pages,
+                    package_id=f"run-{run_id}",
+                    mode=payload.get("analysis_mode") or os.environ.get("DI_PACKAGE_ANALYSIS_MODE", "fast"),
+                )
+                drawing_analysis_artifact_key = self.artifact_store.put(
+                    "drawing-intelligence",
+                    drawing_analysis.model_dump_json(indent=2).encode("utf-8"),
+                    content_type="application/json",
+                    object_key=f"runs/{run_id}/package-analysis.json",
+                )
+        except Exception as exc:
+            # Package intelligence is additive. Existing DEM→PCKM synthesis is
+            # preserved, while the failure is persisted in snapshot metadata.
+            drawing_analysis_error = f"{type(exc).__name__}: {exc}"
+
+        await synthesize_and_post_snapshot_task(
+            run_id, project_id, run_status, self.db_client,
+            drawing_analysis=drawing_analysis,
+            drawing_analysis_artifact_key=drawing_analysis_artifact_key,
+            drawing_analysis_error=drawing_analysis_error,
+        )
 
     def as_handler_map(self) -> dict[str, Any]:
         return {

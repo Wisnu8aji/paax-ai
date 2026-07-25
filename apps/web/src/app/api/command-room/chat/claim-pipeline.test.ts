@@ -184,4 +184,62 @@ describe("Command Room claim pipeline", () => {
     });
     expect(result.responseText).not.toContain("jumlah fisik kolom adalah 12");
   });
+
+  it("treats Drawing Intelligence label counts and dimensions as written facts, never Core Engine results", () => {
+    const toolResults: ToolResultRecord[] = [{
+      result_id: "query_project_graph:0",
+      tool: "query_project_graph",
+      result: {
+        human_drawing_view: {
+          work_items: [{
+            code: "K2", observed_label_count: 3, count_label: "3 label/simbol teramati",
+            dimensions_text: "250 × 600 mm", count_is_final: false,
+          }],
+        },
+      },
+    }];
+    const result = verifyAndComposeClaims({
+      responseText: "K2 memiliki 3 label/simbol teramati dan ukuran tertulis 250 mm × 600 mm.",
+      toolsCalled: ["query_project_graph"],
+      authority: { quantityAuthority: "none", evidenceCount: 2 },
+      toolResults,
+    });
+    const byType = Object.fromEntries(result.structuredClaims.map((claim) => [claim.claim_type, claim]));
+    expect(byType.label_observation_count).toMatchObject({ authority_class: "written_fact", verification_status: "manual_review_required" });
+    expect(result.structuredClaims.filter((claim) => claim.claim_type === "dimension").every((claim) => claim.authority_class === "written_fact")).toBe(true);
+    expect(result.rejected).toHaveLength(0);
+  });
+
+  it("rejects a physical column count even when the same number exists as a Drawing Intelligence label observation", () => {
+    const result = verifyAndComposeClaims({
+      responseText: "Lantai 2 memiliki 3 kolom K2.",
+      toolsCalled: ["query_project_graph"],
+      authority: { quantityAuthority: "none", evidenceCount: 1 },
+      toolResults: [{
+        result_id: "query_project_graph:0", tool: "query_project_graph",
+        result: { observed_label_count: 3, count_is_final: false },
+      }],
+    });
+    expect(result.rejected).toHaveLength(1);
+    expect(result.responseText).not.toContain("3 kolom");
+  });
+
+});
+
+
+it("binds both sides of a compound written dimension to Drawing Intelligence provenance", () => {
+  const result = verifyAndComposeClaims({
+    responseText: "Ukuran tertulis K2 adalah 250 × 600 mm.",
+    toolsCalled: ["query_project_graph"],
+    authority: { quantityAuthority: "none", evidenceCount: 4 },
+    toolResults: [{
+      result_id: "query_project_graph:0",
+      tool: "query_project_graph",
+      result: { human_drawing_view: { work_items: [{ code: "K2", dimensions_text: "250 × 600 mm" }] } },
+    }],
+  });
+  const dimensions = result.structuredClaims.filter((claim) => claim.claim_type === "dimension");
+  expect(dimensions.map((claim) => claim.value).sort((a, b) => Number(a) - Number(b))).toEqual([250, 600]);
+  expect(dimensions.every((claim) => claim.authority_class === "written_fact")).toBe(true);
+  expect(result.rejected).toHaveLength(0);
 });

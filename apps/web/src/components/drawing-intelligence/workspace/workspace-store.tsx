@@ -50,6 +50,7 @@ import {
   fetchProjectDemSheets,
   fetchProjectDemRuns,
 } from '../drawing-intelligence-api';
+import type { PackageIntelligenceSummary } from '../drawing-intelligence-api';
 import type { ProjectGraphSummaryView, QuantityReadinessItem } from '@paax/schemas';
 import type { MappedProjectSheet } from './sheet-mapping';
 import { canUseWorkspaceMocks, resolveWorkspaceEnvironmentMode } from './environment';
@@ -129,6 +130,7 @@ export interface WorkspaceState {
     progress: number; // 0..100 progres UI simulasi
     currentMessage: string;
     config: AnalysisConfig;
+    packageIntelligence: PackageIntelligenceSummary | null;
   };
 
   handoff: {
@@ -167,54 +169,6 @@ const DEFAULT_OVERLAYS: Record<string, boolean> = {
 };
 
 import { makeGeometry } from './di-mock-data';
-
-function getFloorInfo(code: string, title: string) {
-  const combined = `${code} ${title}`.toLowerCase();
-  if (combined.includes('ground') || combined.includes('floor 0') || combined.includes('floorplan 0') || combined.includes('a2-100')) {
-    return { floorId: 'F00', floorLabel: 'Ground Floor' };
-  } else if (combined.includes('first') || combined.includes('floor 1') || combined.includes('a2-101')) {
-    return { floorId: 'F01', floorLabel: 'Floor 1' };
-  } else if (combined.includes('second') || combined.includes('floor 2') || combined.includes('a2-102')) {
-    return { floorId: 'F02', floorLabel: 'Floor 2' };
-  } else if (combined.includes('third') || combined.includes('floor 3') || combined.includes('a2-103')) {
-    return { floorId: 'F03', floorLabel: 'Floor 3' };
-  } else if (combined.includes('fourth') || combined.includes('floor 4') || combined.includes('a2-104')) {
-    return { floorId: 'F04', floorLabel: 'Floor 4' };
-  } else if (combined.includes('roof') || combined.includes('a2-105')) {
-    return { floorId: 'ROOF', floorLabel: 'Roof Plan' };
-  }
-  return { floorId: 'F02', floorLabel: 'Floor 2' };
-}
-
-function mapDemSheetToSheet(item: any): Sheet {
-  const match = item.sheet_title ? item.sheet_title.match(/^([A-Za-z0-9\-]+)\s*[-–]\s*(.*)$/) : null;
-  const code = match ? match[1].trim() : (item.sheet_title ? 'A2-' + (100 + item.page_index) : 'A2-' + (100 + item.page_index));
-  const title = match ? match[2].trim() : (item.sheet_title || `Page ${item.page_index + 1}`);
-  const floorInfo = getFloorInfo(code, title);
-  const isRoof = title.toLowerCase().includes('roof');
-  
-  return {
-    id: `${item.run_id}-page-${item.page_index}`,
-    fileId: item.run_id,
-    code,
-    title,
-    originalPageName: item.file_name,
-    pageNumber: item.page_index + 1,
-    floorId: floorInfo.floorId,
-    floorLabel: floorInfo.floorLabel,
-    disciplines: isRoof ? ['STR', 'ARC', 'MEP'] : ['STR', 'ARC', 'MEP', 'CIV'],
-    drawingType: isRoof ? 'Roof Plan' : 'Floor Plan',
-    scale: null,        // WP5: backend tidak mengembalikan scale — tampilkan null, jangan hardcode '1:100'
-    scaleConfirmed: false,
-    revision: null,     // WP5: backend tidak mengembalikan revision — tampilkan null, jangan hardcode 'R1'
-    status: item.status === 'complete' ? 'analyzed' : 'queued',
-    reviewIssueCount: 0,
-    sheetSize: 'A1 (841 x 594 mm)',
-    analyzedOn: '2026-07-17',
-    aiConfidence: null, // WP5: confidence dihitung backend — tampilkan null saat belum tersedia
-    geometry: makeGeometry(item.page_index, isRoof),
-  };
-}
 
 function mapDemRunToDrawingFile(run: any): DrawingFile {
   let status: DrawingFile['status'] = 'processing';
@@ -290,6 +244,7 @@ export function initialWorkspaceState(withData: boolean): WorkspaceState {
       progress: useMocks ? 100 : 0,
       currentMessage: '',
       config: { ...DEFAULT_CONFIG },
+      packageIntelligence: null,
     },
     handoff: { confirmOpen: false, sent: false, proposalId: null, sentAt: null, reviewPanelOpen: false, proposalItems: null },
     askPaax: { open: false, messages: [], busy: false },
@@ -463,7 +418,7 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
       return {
         ...loaded,
         mode: 'sheets',
-        statusMessage: 'Upload complete. 6 sheets are ready for classification and analysis.',
+        statusMessage: `Upload complete. ${loaded.sheets.length} demo sheet(s) are ready for classification and analysis.`,
         upload: { modalOpen: false, entries: state.upload.entries, running: false },
         backendConnected: state.backendConnected,
       };
@@ -622,7 +577,7 @@ const UPLOAD_PHASES: { label: string; at: number }[] = [
 
 export function WorkspaceProvider({
   children,
-  withMockData = true,
+  withMockData = false,
   projectId = null,
 }: {
   children: ReactNode;
@@ -763,14 +718,14 @@ export function WorkspaceProvider({
             dispatch({ type: 'load-mock-data' });
             dispatch({
               type: 'push-activity',
-              entry: { time: 'Now', message: `${entries.length} file(s) uploaded — 6 sheets prepared`, kind: 'upload' },
+              entry: { time: 'Now', message: `${entries.length} file(s) uploaded — demo sheets prepared`, kind: 'upload' },
             });
           }
         }, 220);
         timers.current.push(interval);
       }
     },
-    [projectId, dispatch]
+    [projectId, dispatch, state.analysis.config.mode]
   );
 
 
@@ -917,8 +872,11 @@ export function WorkspaceProvider({
       });
 
       try {
-        const { triggerSynthesis, fetchDemRunStatus, fetchReviewQueue, fetchQuantityReadiness, fetchProjectDemSheets, fetchProjectDemRuns } = await import('../drawing-intelligence-api');
-        await triggerSynthesis(runId);
+        const {
+          triggerSynthesis, fetchDemRunStatus, fetchReviewQueue, fetchQuantityReadiness,
+          fetchProjectDemSheets, fetchProjectDemRuns, fetchPackageIntelligence,
+        } = await import('../drawing-intelligence-api');
+        await triggerSynthesis(runId, state.analysis.config.mode);
         dispatch({ type: 'set-status', message: 'Synthesis triggered' });
 
         const poll = setInterval(async () => {
@@ -953,6 +911,9 @@ export function WorkspaceProvider({
                 entry: { time: 'Now', message: 'Analysis completed — review workspace ready', kind: 'analysis' },
               });
               dispatch({ type: 'set-status', message: 'PCKM synthesis completed successfully' });
+
+              const packageIntelligence = await fetchPackageIntelligence(runId).catch(() => null);
+              dispatch({ type: 'analysis', patch: { packageIntelligence } });
 
               if (projectId) {
                 const [queue, readiness, sheetsData, runsData] = await Promise.all([
@@ -1022,40 +983,7 @@ export function WorkspaceProvider({
                 }
 
                 if (readiness.items.length > 0) {
-                  const mappedQuantities: any[] = readiness.items.map((item: any) => {
-                    const nameLower = item.name.toLowerCase();
-                    const isBeam = nameLower.includes('beam') || nameLower.includes('balok');
-                    const isSlab = nameLower.includes('slab') || nameLower.includes('plat');
-                    const category = isBeam ? 'beam' : isSlab ? 'slab' : 'column';
-
-                    return {
-                      id: item.element_type_id,
-                      itemCode: item.element_type_id,
-                      workItem: item.name,
-                      floorId: 'F02',
-                      floorLabel: 'Floor 2',
-                      lbsPath: ['Building A', 'Floor 2'],
-                      wbsSection: '03 30 00 – Superstructure',
-                      wbsGroup: 'Superstructure / Floor 2',
-                      category,
-                      formulaBasis: 'Count',
-                      // WP2: occurrence_count = jumlah referensi dalam project graph —
-                      // BUKAN kuantitas fisik (pcs/ea). Label "Detected References" agar
-                      // tidak disalahartikan sebagai hasil pengukuran teknik.
-                      formula: `${item.occurrence_count ?? 0} Detected References`,
-                      formulaEvidence: item.reasons.map((r: any) => r.message),
-                      unit: 'ref', // bukan satuan fisik — konteks group
-                      qty: String(item.occurrence_count ?? 0),
-                      status: item.readiness === 'ready' ? 'verified' : item.readiness === 'needs_review' ? 'needs-review' : 'conflict',
-                      source: item.reasons?.[0]?.evidence_refs?.[0] || 'Unknown',
-                      sourceSheetId: null,
-                      linkedElementIds: [],
-                      confidence: 90,
-                      ahspCandidate: null,
-                      reviewerNote: item.reasons.map((r: any) => r.message).join('; '),
-                    };
-                  });
-                  dispatch({ type: 'replace-quantities', quantities: mappedQuantities });
+                  dispatch({ type: 'replace-quantities', quantities: mapQuantityReadinessToItems(readiness.items) });
                 }
               }
             } else if (synStatus === 'synthesis_failed') {

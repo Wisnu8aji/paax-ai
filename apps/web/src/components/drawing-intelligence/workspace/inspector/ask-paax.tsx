@@ -9,7 +9,7 @@ import { useWorkspace, useActiveSheet, useSelectedElement } from '../workspace-s
 const SUGGESTED_PROMPTS = [
   'Explain why this column needs review.',
   'Show all source sheets used for this quantity.',
-  'Compare Floor 1 and Floor 2 column types.',
+  'Compare column types across the detected levels.',
   'Summarize unresolved structural issues.',
 ];
 

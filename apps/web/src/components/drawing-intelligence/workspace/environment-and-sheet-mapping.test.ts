@@ -13,7 +13,8 @@ describe('Drawing Intelligence environment modes', () => {
 describe('real DEM sheet mapping', () => {
   it('preserves unknown fields instead of inventing sheet metadata', () => {
     expect(mapProjectDemSheet({ run_id: 'run-1', page_index: 0, file_name: 'drawing.pdf', status: 'completed' })).toEqual({
-      id: 'run-1-page-0', number: null, title: null, discipline: null, level: null,
+      id: 'run-1-page-0', runId: 'run-1', pageIndex: 0,
+      number: null, title: null, discipline: null, level: null,
       scale: null, revision: null, confidence: null, status: 'completed', imageUrl: null,
     });
   });

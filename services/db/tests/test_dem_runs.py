@@ -118,8 +118,14 @@ async def test_list_project_dem_sheets():
             json={
                 "status": "complete",
                 "result": {
+                    "source": {"width_px": 4961, "height_px": 3508},
                     "sheet_identity": {
-                        "title": {"value": "Ground Floor Plan"}
+                        "sheet_number": {"value": "A-101", "confidence": 0.98},
+                        "title": {"value": "Ground Floor Plan", "confidence": 0.96},
+                        "discipline": {"value": "architecture", "confidence": 0.94},
+                        "level": {"value": "L1"},
+                        "revision": {"value": "R1"},
+                        "scale_candidates": [{"raw": "1:100", "normalized": "1:100"}]
                     }
                 }
             },
@@ -167,6 +173,14 @@ async def test_list_project_dem_sheets():
         assert sheets[0]["page_index"] == 0
         assert sheets[0]["file_name"] == "first_drawing.pdf"
         assert sheets[0]["sheet_title"] == "Ground Floor Plan"
+        assert sheets[0]["sheet_number"] == "A-101"
+        assert sheets[0]["discipline"] == "architecture"
+        assert sheets[0]["level"] == "L1"
+        assert sheets[0]["revision"] == "R1"
+        assert sheets[0]["scale"] == "1:100"
+        assert sheets[0]["confidence"] == 0.94
+        assert sheets[0]["width_px"] == 4961
+        assert sheets[0]["height_px"] == 3508
         assert sheets[0]["thumbnail_url"] == f"/drawings/dem/{run1['id']}/pages/0/image"
 
         empty_proj_res = await ac.post(

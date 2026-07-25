@@ -1,0 +1,376 @@
+{
+  "elapsed_seconds": 18.339,
+  "metrics": {
+    "page_count_analyzed": 88,
+    "analyzed_pages": 88,
+    "analysis_mode": "fast",
+    "ai_provider_calls": 0,
+    "vector_descriptor_policy": "deferred",
+    "dem_page_count": 88,
+    "dem_coverage": 1.0,
+    "modality_counts": {
+      "vector": 88
+    },
+    "drawing_type_counts": {
+      "cover": 1,
+      "legend": 3,
+      "site_plan": 2,
+      "floor_plan": 3,
+      "roof_plan": 2,
+      "unknown": 4,
+      "elevation": 4,
+      "section": 5,
+      "finish_plan": 2,
+      "ceiling_plan": 2,
+      "door_window_plan": 2,
+      "partition_plan": 2,
+      "detail": 15,
+      "foundation_plan": 2,
+      "beam_plan": 5,
+      "column_plan": 2,
+      "schedule": 4,
+      "lighting_plan": 2,
+      "power_plan": 5,
+      "single_line_diagram": 1,
+      "lightning_protection": 3,
+      "fire_safety_plan": 2,
+      "hvac_plan": 2,
+      "drainage_plan": 8,
+      "plumbing_plan": 3,
+      "schematic": 2
+    },
+    "discipline_counts": {
+      "architecture": 36,
+      "multidiscipline": 24,
+      "structure": 20,
+      "civil": 2,
+      "electrical": 2,
+      "plumbing": 2,
+      "unknown": 1,
+      "mechanical": 1
+    },
+    "page_ready_ratio": 0.8522727272727273,
+    "vocabulary_entries": 147,
+    "cross_references": 285,
+    "detection_candidates": 285,
+    "work_item_candidates": 82,
+    "review_tasks": 96,
+    "physical_counts_auto_accepted": 0,
+    "final_quantities_calculated": 0
+  },
+  "warnings": [
+    "page 10: drawing type could not be resolved deterministically",
+    "page 30: drawing type could not be resolved deterministically",
+    "page 56: drawing type could not be resolved deterministically",
+    "page 84: discipline could not be resolved deterministically",
+    "page 84: drawing type could not be resolved deterministically"
+  ],
+  "selected_work_items": {
+    "K1": {
+      "work_item_id": "work-column-K1-L1",
+      "category": "column",
+      "code": "K1",
+      "label": "K1 - 400 x 400 mm",
+      "page_indices": [
+        41
+      ],
+      "maturity": "classified",
+      "occurrence_count_observed": 1,
+      "accepted_detection_count": 0,
+      "geometry_kind": "count",
+      "evidence_refs": [
+        "ev-el-k1",
+        "ev-label-k1"
+      ],
+      "source_candidate_ids": [
+        "candidate-xref-p41-element_labels-0-K1"
+      ],
+      "attributes": {
+        "level": "L1",
+        "count_semantics": "drawing_label_observation",
+        "definition_entry_id": "vocab-p49-element_labels-0-K1",
+        "definition_page_index": 49,
+        "definition_page_type": "schedule",
+        "sheet_title": "TABEL KOLOM",
+        "raw": "K1 - 400 x 400 mm",
+        "dimensions": {
+          "width": 400,
+          "depth": 400,
+          "a": 400,
+          "b": 400,
+          "unit": "mm",
+          "raw": "K1 - 400 x 400 mm"
+        },
+        "alternate_definition_ids": [
+          "vocab-p53-element_labels-9-K1"
+        ],
+        "definition_count": 2
+      },
+      "missing_information": [
+        "physical_count_verification",
+        "human verification of physical-instance count"
+      ],
+      "review_task_ids": [
+        "review-column-K1-L1"
+      ],
+      "user_accepted": false
+    },
+    "K1A": {
+      "work_item_id": "work-column-K1A-L2",
+      "category": "column",
+      "code": "K1A",
+      "label": "K1A - 400 x 400 mm",
+      "page_indices": [
+        42
+      ],
+      "maturity": "classified",
+      "occurrence_count_observed": 12,
+      "accepted_detection_count": 0,
+      "geometry_kind": "count",
+      "evidence_refs": [
+        "ev-element-k1a",
+        "p49-w00017",
+        "p49-w00019",
+        "p49-w00023",
+        "p49-w00025",
+        "p49-w00031",
+        "p49-w00035"
+      ],
+      "source_candidate_ids": [
+        "candidate-xref-p42-element_labels-5-K1A",
+        "candidate-xref-p42-element_labels-6-K1A",
+        "candidate-xref-p42-element_labels-7-K1A",
+        "candidate-xref-p42-element_labels-8-K1A",
+        "candidate-xref-p42-element_labels-9-K1A",
+        "candidate-xref-p42-element_labels-10-K1A",
+        "candidate-xref-p42-element_labels-11-K1A",
+        "candidate-xref-p42-element_labels-12-K1A",
+        "candidate-xref-p42-element_labels-13-K1A",
+        "candidate-xref-p42-element_labels-14-K1A",
+        "candidate-xref-p42-element_labels-15-K1A",
+        "candidate-xref-p42-element_labels-16-K1A"
+      ],
+      "attributes": {
+        "level": "L2",
+        "count_semantics": "drawing_label_observation",
+        "definition_entry_id": "native-vocab-p49-b5-l0-K1A",
+        "definition_page_index": 49,
+        "definition_page_type": "schedule",
+        "sheet_title": "TABEL KOLOM",
+        "raw": "K1A - 400 x 400 mm",
+        "dimensions": {
+          "width": 400,
+          "depth": 400,
+          "a": 400,
+          "b": 400,
+          "unit": "mm",
+          "raw": "K1A - 400 x 400 mm"
+        }
+      },
+      "missing_information": [
+        "physical_count_verification",
+        "human verification of physical-instance count"
+      ],
+      "review_task_ids": [
+        "review-column-K1A-L2"
+      ],
+      "user_accepted": false
+    },
+    "K2": {
+      "work_item_id": "work-column-K2-L2",
+      "category": "column",
+      "code": "K2",
+      "label": "K2 - 250 x 600 mm",
+      "page_indices": [
+        42
+      ],
+      "maturity": "classified",
+      "occurrence_count_observed": 3,
+      "accepted_detection_count": 0,
+      "geometry_kind": "count",
+      "evidence_refs": [
+        "ev-element-k2",
+        "ev-label-k2",
+        "ev-label-k2-1",
+        "ev-label-k2-2"
+      ],
+      "source_candidate_ids": [
+        "candidate-xref-p42-element_labels-1-K2",
+        "candidate-xref-p42-element_labels-2-K2",
+        "candidate-xref-p42-element_labels-3-K2"
+      ],
+      "attributes": {
+        "level": "L2",
+        "count_semantics": "drawing_label_observation",
+        "definition_entry_id": "vocab-p49-element_labels-1-K2",
+        "definition_page_index": 49,
+        "definition_page_type": "schedule",
+        "sheet_title": "TABEL KOLOM",
+        "raw": "K2 - 250 x 600 mm",
+        "dimensions": {
+          "width": 250,
+          "depth": 600,
+          "a": 250,
+          "b": 600,
+          "unit": "mm",
+          "raw": "K2 - 250 x 600 mm"
+        },
+        "alternate_definition_ids": [
+          "vocab-p53-element_labels-7-K2",
+          "vocab-p53-element_labels-8-K2"
+        ],
+        "definition_count": 3
+      },
+      "missing_information": [
+        "physical_count_verification",
+        "human verification of physical-instance count"
+      ],
+      "review_task_ids": [
+        "review-column-K2-L2"
+      ],
+      "user_accepted": false
+    },
+    "K3": {
+      "work_item_id": "work-column-K3-L2",
+      "category": "column",
+      "code": "K3",
+      "label": "K3 - 250 x 400 mm",
+      "page_indices": [
+        42
+      ],
+      "maturity": "classified",
+      "occurrence_count_observed": 2,
+      "accepted_detection_count": 0,
+      "geometry_kind": "count",
+      "evidence_refs": [
+        "ev-element-k3",
+        "ev-label-k3",
+        "ev-label-k3-1",
+        "ev-label-k3-2"
+      ],
+      "source_candidate_ids": [
+        "candidate-xref-p42-element_labels-0-K3",
+        "candidate-xref-p42-element_labels-4-K3"
+      ],
+      "attributes": {
+        "level": "L2",
+        "count_semantics": "drawing_label_observation",
+        "definition_entry_id": "vocab-p49-element_labels-2-K3",
+        "definition_page_index": 49,
+        "definition_page_type": "schedule",
+        "sheet_title": "TABEL KOLOM",
+        "raw": "K3 - 250 x 400 mm",
+        "dimensions": {
+          "width": 250,
+          "depth": 400,
+          "a": 250,
+          "b": 400,
+          "unit": "mm",
+          "raw": "K3 - 250 x 400 mm"
+        },
+        "alternate_definition_ids": [
+          "vocab-p53-element_labels-12-K3",
+          "vocab-p53-element_labels-13-K3"
+        ],
+        "definition_count": 3
+      },
+      "missing_information": [
+        "physical_count_verification",
+        "human verification of physical-instance count"
+      ],
+      "review_task_ids": [
+        "review-column-K3-L2"
+      ],
+      "user_accepted": false
+    },
+    "D1": {
+      "work_item_id": "work-door-D1-roof",
+      "category": "door",
+      "code": "D1",
+      "label": "D1",
+      "page_indices": [
+        45
+      ],
+      "maturity": "classified",
+      "occurrence_count_observed": 4,
+      "accepted_detection_count": 0,
+      "geometry_kind": "count",
+      "evidence_refs": [
+        "ev-label-d1",
+        "p45-w00022",
+        "p45-w00029",
+        "p45-w00046",
+        "p45-w00051"
+      ],
+      "source_candidate_ids": [
+        "candidate-xref-native-p45-p45-w00022-D1",
+        "candidate-xref-native-p45-p45-w00029-D1",
+        "candidate-xref-native-p45-p45-w00046-D1",
+        "candidate-xref-native-p45-p45-w00051-D1"
+      ],
+      "attributes": {
+        "level": "roof",
+        "count_semantics": "drawing_label_observation",
+        "definition_entry_id": "vocab-p22-element_labels-4-D1",
+        "definition_page_index": 22,
+        "definition_page_type": "partition_plan",
+        "sheet_title": "DENAH DIN.PASRTISI LANTAI 1",
+        "raw": "D1",
+        "alternate_definition_ids": [],
+        "definition_count": 1
+      },
+      "missing_information": [
+        "type_dimensions",
+        "physical_count_verification",
+        "human verification of physical-instance count"
+      ],
+      "review_task_ids": [
+        "review-door-D1-roof"
+      ],
+      "user_accepted": false
+    },
+    "P1": {
+      "work_item_id": "work-door-P1-unknown",
+      "category": "door",
+      "code": "P1",
+      "label": "PINTU (P1)",
+      "page_indices": [
+        86
+      ],
+      "maturity": "classified",
+      "occurrence_count_observed": 1,
+      "accepted_detection_count": 0,
+      "geometry_kind": "count",
+      "evidence_refs": [
+        "ev-door-p1",
+        "p24-w00052",
+        "p24-w00053"
+      ],
+      "source_candidate_ids": [
+        "candidate-xref-p86-element_labels-1-P1"
+      ],
+      "attributes": {
+        "level": "unknown",
+        "count_semantics": "drawing_label_observation",
+        "definition_entry_id": "native-vocab-p24-b0-l0-P1",
+        "definition_page_index": 24,
+        "definition_page_type": "detail",
+        "sheet_title": "DETAIL KUSEN",
+        "raw": "PINTU (P1)"
+      },
+      "missing_information": [
+        "type_dimensions",
+        "level",
+        "physical_count_verification",
+        "human verification of physical-instance count"
+      ],
+      "review_task_ids": [
+        "review-door-P1-unknown"
+      ],
+      "user_accepted": false
+    }
+  },
+  "zone_review_tasks": 12,
+  "work_item_review_tasks": 71,
+  "analysis_json_size": 8204860
+}

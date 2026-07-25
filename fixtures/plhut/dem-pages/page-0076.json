@@ -1,0 +1,614 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 76,
+    "page_number": 77,
+    "render_uri": "local://plhut-88pg-run-1/page-0076.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T22:25:35.948947+00:00",
+    "completed_at": "2026-07-14T22:25:35.948977+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "77",
+      "raw": null,
+      "confidence": 0.95,
+      "evidence_refs": []
+    },
+    "title": {
+      "value": "DENAH AIR BEKAS LT 2",
+      "raw": "DENAH AIR BEKAS LT 2",
+      "confidence": 0.99,
+      "evidence_refs": [
+        "title-block"
+      ]
+    },
+    "discipline": {
+      "value": "MEP",
+      "confidence": 0.95,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1 : 100",
+        "normalized": "1:100",
+        "confidence": 0.98,
+        "evidence_refs": [
+          "title-block-scale"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-77-denah-air-bekas-lt2",
+      "type": "floor_plan",
+      "title": "DENAH AIR BEKAS LT 2",
+      "bbox": [
+        2000.0,
+        2000.0,
+        19000.0,
+        16000.0
+      ],
+      "confidence": 0.97
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KEMENTERIAN AGAMA RI DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH TAHUN ANGGARAN 2024",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "LOKASI : JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.85,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "DENAH AIR BEKAS LT 2",
+        "normalized": "Floor Plan - Second Level Waste Water",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "20250",
+        "normalized": "20250 mm",
+        "numeric_value": 20250.0,
+        "unit": "mm",
+        "bbox": null,
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "1625",
+        "normalized": "1625 mm",
+        "numeric_value": 1625.0,
+        "unit": "mm",
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "1500",
+        "normalized": "1500 mm",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "2000",
+        "normalized": "2000 mm",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "4125",
+        "normalized": "4125 mm",
+        "numeric_value": 4125.0,
+        "unit": "mm",
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "3200",
+        "normalized": "3200 mm",
+        "numeric_value": 3200.0,
+        "unit": "mm",
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "2000",
+        "normalized": "2000 mm",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "10200",
+        "normalized": "10200 mm",
+        "numeric_value": 10200.0,
+        "unit": "mm",
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "5000",
+        "normalized": "5000 mm",
+        "numeric_value": 5000.0,
+        "unit": "mm",
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "20000",
+        "normalized": "20000 mm",
+        "numeric_value": 20000.0,
+        "unit": "mm",
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "4000",
+        "normalized": "4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "grids": [
+      {
+        "raw": "A",
+        "normalized": "Grid A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "B",
+        "normalized": "Grid B",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "C",
+        "normalized": "Grid C",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "D",
+        "normalized": "Grid D",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "E",
+        "normalized": "Grid E",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "F",
+        "normalized": "Grid F",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "1",
+        "normalized": "Grid 1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "2",
+        "normalized": "Grid 2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "3",
+        "normalized": "Grid 3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "4",
+        "normalized": "Grid 4",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [],
+    "symbols": [
+      {
+        "raw": "MENUJU LANTAI 1 (arrow symbol)",
+        "normalized": "Direction indicator to level 1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.85,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "Staircase (graphical representation)",
+        "normalized": "Staircase symbol",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.85,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "tables": [],
+    "materials": [],
+    "notes": [
+      {
+        "raw": "MENYETUJUI",
+        "normalized": "Approving authority section",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.7,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "PEJABAT PEMBUAT KOMITMEN",
+        "normalized": "Commitment making officer section",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.7,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "KONSULTAN PERENCANA",
+        "normalized": "Planning consultant section",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.7,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "TEAM LEADER",
+        "normalized": "Team leader section",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.7,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "NAMA TANDA TANGAN",
+        "normalized": "Name and signature section",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.7,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "SIPIL",
+        "normalized": "Civil engineering section",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.7,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "DIGAMBAR",
+        "normalized": "Drawn by section",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.7,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "JUDUL GAMBAR",
+        "normalized": "Drawing title section",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.7,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "JANUARI 2024",
+        "normalized": "January 2024 date",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.7,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "SKALA GBR",
+        "normalized": "Drawing scale section",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.7,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "KODE GBR",
+        "normalized": "Drawing code section",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.7,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "NO. GBR",
+        "normalized": "Drawing number section",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.7,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "references": [],
+    "patterns": [
+      {
+        "raw": "Solid hatching pattern on structural elements",
+        "normalized": "Structural element hatching",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.8,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "geometry_descriptions": [
+      {
+        "raw": "Rectangular floor plan with multiple grid divisions",
+        "normalized": "Rectangular building layout divided by axes",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.85,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "Staircase with numbered steps (11-22 visible)",
+        "normalized": "Staircase with step numbering",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": null,
+        "confidence": 0.85,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "title-block",
+      "kind": "text",
+      "raw": "DENAH AIR BEKAS LT 2",
+      "bbox": [
+        15000.0,
+        17000.0,
+        18000.0,
+        17500.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "title-block-scale",
+      "kind": "text",
+      "raw": "SKALA 1 : 100",
+      "bbox": [
+        15500.0,
+        17550.0,
+        16500.0,
+        17650.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "grid-a",
+      "kind": "text",
+      "raw": "A",
+      "bbox": [
+        2500.0,
+        15500.0,
+        2800.0,
+        15900.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "dimension-20250",
+      "kind": "text",
+      "raw": "20250",
+      "bbox": [
+        6000.0,
+        2200.0,
+        7000.0,
+        2500.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [
+    "Numbered elements on staircase (11-22)",
+    "Hatched areas on walls/columns"
+  ],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

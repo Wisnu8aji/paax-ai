@@ -1,0 +1,505 @@
+{
+  "schema_version": "paax.drawing-intelligence.benchmark.v1",
+  "benchmark": "PLHUT-88-pages",
+  "passed": 19,
+  "total": 19,
+  "score": 1.0,
+  "status": "PASS",
+  "checks": [
+    {
+      "id": "B01",
+      "description": "All 88 PDF pages are analyzed",
+      "passed": true,
+      "detail": 88
+    },
+    {
+      "id": "B02",
+      "description": "All 88 DEM pages are fused",
+      "passed": true,
+      "detail": 88
+    },
+    {
+      "id": "B03",
+      "description": "Every page has semantic identity",
+      "passed": true,
+      "detail": 88
+    },
+    {
+      "id": "B04",
+      "description": "At least 95% of pages have a known drawing type",
+      "passed": true,
+      "detail": {
+        "elevation": 6,
+        "legend": 3,
+        "site_plan": 2,
+        "floor_plan": 3,
+        "roof_plan": 2,
+        "section": 6,
+        "finish_plan": 2,
+        "ceiling_plan": 2,
+        "door_window_plan": 2,
+        "partition_plan": 2,
+        "detail": 16,
+        "foundation_plan": 2,
+        "beam_plan": 5,
+        "column_plan": 2,
+        "schedule": 4,
+        "lighting_plan": 2,
+        "power_plan": 5,
+        "single_line_diagram": 1,
+        "lightning_protection": 3,
+        "fire_safety_plan": 2,
+        "hvac_plan": 2,
+        "drainage_plan": 8,
+        "plumbing_plan": 3,
+        "schematic": 3
+      }
+    },
+    {
+      "id": "B05",
+      "description": "At least 95% of DEM bounding boxes are valid on every page",
+      "passed": true,
+      "detail": 0.9855072463768116
+    },
+    {
+      "id": "B06",
+      "description": "Project vocabulary is non-empty",
+      "passed": true,
+      "detail": 155
+    },
+    {
+      "id": "B07",
+      "description": "Cross-sheet references are produced",
+      "passed": true,
+      "detail": 279
+    },
+    {
+      "id": "B08",
+      "description": "Work-item candidates are produced",
+      "passed": true,
+      "detail": 79
+    },
+    {
+      "id": "B09",
+      "description": "No physical count is auto-accepted",
+      "passed": true,
+      "detail": 0
+    },
+    {
+      "id": "B10",
+      "description": "No final quantity is calculated by Drawing Intelligence",
+      "passed": true,
+      "detail": 0
+    },
+    {
+      "id": "B11",
+      "description": "Page 43 is classified as second-floor column plan",
+      "passed": true,
+      "detail": {
+        "page_index": 42,
+        "sheet_number": "PLHUT-SURAKARTA-88PG",
+        "title": "DENAH KOLOM LANTAI 2",
+        "discipline": "structure",
+        "drawing_type": "column_plan",
+        "level": "L2",
+        "scale_candidates": [
+          "1:100",
+          "Scale indicated in title block"
+        ],
+        "source": "fused",
+        "confidence": 0.97,
+        "evidence_refs": [
+          "ev-title-block-project-id",
+          "ev-title-drawing"
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "id": "B12",
+      "description": "K2 column definition resolves 250x600 mm",
+      "passed": true,
+      "detail": {
+        "entry_id": "vocab-p49-element_labels-1-K2",
+        "key": "K2",
+        "canonical_key": "K2",
+        "category": "column",
+        "description": "K2 - 250 x 600 mm",
+        "attributes": {
+          "definition_page_type": "schedule",
+          "sheet_title": "TABEL KOLOM",
+          "raw": "K2 - 250 x 600 mm",
+          "dimensions": {
+            "width": 250,
+            "depth": 600,
+            "a": 250,
+            "b": 600,
+            "unit": "mm",
+            "raw": "K2 - 250 x 600 mm"
+          },
+          "alternate_definition_ids": [
+            "vocab-p53-element_labels-7-K2",
+            "vocab-p53-element_labels-8-K2"
+          ],
+          "definition_count": 3
+        },
+        "page_index": 49,
+        "bbox": {
+          "x0": 0.21756647864625303,
+          "y0": 0.17663817663817663,
+          "x1": 0.25382755842062854,
+          "y1": 0.18803418803418803,
+          "space": "normalized"
+        },
+        "evidence_refs": [
+          "ev-label-k2",
+          "ev-label-k2-1",
+          "ev-label-k2-2"
+        ],
+        "source": "schedule",
+        "confidence": 1.0
+      }
+    },
+    {
+      "id": "B13",
+      "description": "K3 column definition resolves 250x400 mm",
+      "passed": true,
+      "detail": {
+        "entry_id": "vocab-p49-element_labels-2-K3",
+        "key": "K3",
+        "canonical_key": "K3",
+        "category": "column",
+        "description": "K3 - 250 x 400 mm",
+        "attributes": {
+          "definition_page_type": "schedule",
+          "sheet_title": "TABEL KOLOM",
+          "raw": "K3 - 250 x 400 mm",
+          "dimensions": {
+            "width": 250,
+            "depth": 400,
+            "a": 250,
+            "b": 400,
+            "unit": "mm",
+            "raw": "K3 - 250 x 400 mm"
+          },
+          "alternate_definition_ids": [
+            "vocab-p53-element_labels-12-K3",
+            "vocab-p53-element_labels-13-K3"
+          ],
+          "definition_count": 3
+        },
+        "page_index": 49,
+        "bbox": {
+          "x0": 0.28203062046736505,
+          "y0": 0.17663817663817663,
+          "x1": 0.3182917002417405,
+          "y1": 0.18803418803418803,
+          "space": "normalized"
+        },
+        "evidence_refs": [
+          "ev-label-k3",
+          "ev-label-k3-1",
+          "ev-label-k3-2"
+        ],
+        "source": "schedule",
+        "confidence": 1.0
+      }
+    },
+    {
+      "id": "B14",
+      "description": "K2 is observed three times on L2",
+      "passed": true,
+      "detail": {
+        "work_item_id": "work-column-K2-L2",
+        "category": "column",
+        "code": "K2",
+        "label": "K2 - 250 x 600 mm",
+        "page_indices": [
+          42
+        ],
+        "maturity": "classified",
+        "occurrence_count_observed": 3,
+        "accepted_detection_count": 0,
+        "geometry_kind": "count",
+        "evidence_refs": [
+          "ev-element-k2",
+          "ev-label-k2",
+          "ev-label-k2-1",
+          "ev-label-k2-2"
+        ],
+        "source_candidate_ids": [
+          "candidate-xref-p42-element_labels-1-K2",
+          "candidate-xref-p42-element_labels-2-K2",
+          "candidate-xref-p42-element_labels-3-K2"
+        ],
+        "attributes": {
+          "level": "L2",
+          "count_semantics": "drawing_label_observation",
+          "definition_entry_id": "vocab-p49-element_labels-1-K2",
+          "definition_page_index": 49,
+          "definition_page_type": "schedule",
+          "sheet_title": "TABEL KOLOM",
+          "raw": "K2 - 250 x 600 mm",
+          "dimensions": {
+            "width": 250,
+            "depth": 600,
+            "a": 250,
+            "b": 600,
+            "unit": "mm",
+            "raw": "K2 - 250 x 600 mm"
+          },
+          "alternate_definition_ids": [
+            "vocab-p53-element_labels-7-K2",
+            "vocab-p53-element_labels-8-K2"
+          ],
+          "definition_count": 3
+        },
+        "missing_information": [
+          "physical_count_verification",
+          "human verification of physical-instance count"
+        ],
+        "review_task_ids": [
+          "review-column-K2-L2"
+        ],
+        "user_accepted": false
+      }
+    },
+    {
+      "id": "B15",
+      "description": "K3 is observed twice on L2",
+      "passed": true,
+      "detail": {
+        "work_item_id": "work-column-K3-L2",
+        "category": "column",
+        "code": "K3",
+        "label": "K3 - 250 x 400 mm",
+        "page_indices": [
+          42
+        ],
+        "maturity": "classified",
+        "occurrence_count_observed": 2,
+        "accepted_detection_count": 0,
+        "geometry_kind": "count",
+        "evidence_refs": [
+          "ev-element-k3",
+          "ev-label-k3",
+          "ev-label-k3-1",
+          "ev-label-k3-2"
+        ],
+        "source_candidate_ids": [
+          "candidate-xref-p42-element_labels-0-K3",
+          "candidate-xref-p42-element_labels-4-K3"
+        ],
+        "attributes": {
+          "level": "L2",
+          "count_semantics": "drawing_label_observation",
+          "definition_entry_id": "vocab-p49-element_labels-2-K3",
+          "definition_page_index": 49,
+          "definition_page_type": "schedule",
+          "sheet_title": "TABEL KOLOM",
+          "raw": "K3 - 250 x 400 mm",
+          "dimensions": {
+            "width": 250,
+            "depth": 400,
+            "a": 250,
+            "b": 400,
+            "unit": "mm",
+            "raw": "K3 - 250 x 400 mm"
+          },
+          "alternate_definition_ids": [
+            "vocab-p53-element_labels-12-K3",
+            "vocab-p53-element_labels-13-K3"
+          ],
+          "definition_count": 3
+        },
+        "missing_information": [
+          "physical_count_verification",
+          "human verification of physical-instance count"
+        ],
+        "review_task_ids": [
+          "review-column-K3-L2"
+        ],
+        "user_accepted": false
+      }
+    },
+    {
+      "id": "B16",
+      "description": "Column observations still require physical-count verification",
+      "passed": true,
+      "detail": [
+        "physical_count_verification",
+        "human verification of physical-instance count"
+      ]
+    },
+    {
+      "id": "B17",
+      "description": "All twenty development phases are represented",
+      "passed": true,
+      "detail": {
+        "01_ingestion": "implemented",
+        "02_modality_routing": "implemented",
+        "03_coordinate_unification": "implemented",
+        "04_native_vector_extraction": "implemented",
+        "05_page_semantics": "implemented_baseline",
+        "06_plan_zones": "implemented_deterministic_baseline",
+        "07_native_text_index": "implemented",
+        "08_dem_fusion": "implemented",
+        "09_legend_schedule_vocabulary": "implemented_baseline",
+        "10_cross_sheet_reference": "implemented_baseline",
+        "11_vector_symbol_descriptor": "implemented_baseline",
+        "12_project_specific_similarity": "implemented_assisted_baseline",
+        "13_area_segmentation": "implemented_vector_assisted_baseline",
+        "14_line_topology": "implemented_vector_assisted_baseline",
+        "15_geometry_reconstruction": "partial",
+        "16_work_item_maturation": "implemented_baseline",
+        "17_human_review_queue": "implemented_baseline",
+        "18_active_learning": "partial_project_prototypes",
+        "19_frontend_delivery": "implemented_api_and_canvas_baseline",
+        "20_benchmark_observability": "implemented_baseline"
+      }
+    },
+    {
+      "id": "B18",
+      "description": "K1A is observed twelve times on L2",
+      "passed": true,
+      "detail": {
+        "work_item_id": "work-column-K1A-L2",
+        "category": "column",
+        "code": "K1A",
+        "label": "K1A - 400 x 400 mm",
+        "page_indices": [
+          42
+        ],
+        "maturity": "classified",
+        "occurrence_count_observed": 12,
+        "accepted_detection_count": 0,
+        "geometry_kind": "count",
+        "evidence_refs": [
+          "ev-element-k1a",
+          "p49-w00017",
+          "p49-w00019",
+          "p49-w00023",
+          "p49-w00025",
+          "p49-w00031",
+          "p49-w00035"
+        ],
+        "source_candidate_ids": [
+          "candidate-xref-p42-element_labels-5-K1A",
+          "candidate-xref-p42-element_labels-6-K1A",
+          "candidate-xref-p42-element_labels-7-K1A",
+          "candidate-xref-p42-element_labels-8-K1A",
+          "candidate-xref-p42-element_labels-9-K1A",
+          "candidate-xref-p42-element_labels-10-K1A",
+          "candidate-xref-p42-element_labels-11-K1A",
+          "candidate-xref-p42-element_labels-12-K1A",
+          "candidate-xref-p42-element_labels-13-K1A",
+          "candidate-xref-p42-element_labels-14-K1A",
+          "candidate-xref-p42-element_labels-15-K1A",
+          "candidate-xref-p42-element_labels-16-K1A"
+        ],
+        "attributes": {
+          "level": "L2",
+          "count_semantics": "drawing_label_observation",
+          "definition_entry_id": "native-vocab-p49-b5-l0-K1A",
+          "definition_page_index": 49,
+          "definition_page_type": "schedule",
+          "sheet_title": "TABEL KOLOM",
+          "raw": "K1A - 400 x 400 mm",
+          "dimensions": {
+            "width": 400,
+            "depth": 400,
+            "a": 400,
+            "b": 400,
+            "unit": "mm",
+            "raw": "K1A - 400 x 400 mm"
+          }
+        },
+        "missing_information": [
+          "physical_count_verification",
+          "human verification of physical-instance count"
+        ],
+        "review_task_ids": [
+          "review-column-K1A-L2"
+        ],
+        "user_accepted": false
+      }
+    },
+    {
+      "id": "B19",
+      "description": "Door/window plan levels come from their titles rather than unrelated roof notes",
+      "passed": true,
+      "detail": [
+        [
+          20,
+          "DENAH PINTU & JENDELA LANTAI 1",
+          "L1"
+        ],
+        [
+          21,
+          "Denah Pintu & Jendela Lantai 2",
+          "L2"
+        ]
+      ]
+    }
+  ],
+  "metrics": {
+    "page_count_analyzed": 88,
+    "analyzed_pages": 88,
+    "analysis_mode": "fast",
+    "input_kind": "pdf",
+    "ai_provider_calls": 0,
+    "vector_descriptor_policy": "deferred",
+    "dem_page_count": 88,
+    "dem_coverage": 1.0,
+    "evidence_refs_repaired": 85,
+    "unresolved_evidence_links": 448,
+    "modality_counts": {
+      "vector": 88
+    },
+    "drawing_type_counts": {
+      "elevation": 6,
+      "legend": 3,
+      "site_plan": 2,
+      "floor_plan": 3,
+      "roof_plan": 2,
+      "section": 6,
+      "finish_plan": 2,
+      "ceiling_plan": 2,
+      "door_window_plan": 2,
+      "partition_plan": 2,
+      "detail": 16,
+      "foundation_plan": 2,
+      "beam_plan": 5,
+      "column_plan": 2,
+      "schedule": 4,
+      "lighting_plan": 2,
+      "power_plan": 5,
+      "single_line_diagram": 1,
+      "lightning_protection": 3,
+      "fire_safety_plan": 2,
+      "hvac_plan": 2,
+      "drainage_plan": 8,
+      "plumbing_plan": 3,
+      "schematic": 3
+    },
+    "discipline_counts": {
+      "architecture": 36,
+      "multidiscipline": 24,
+      "structure": 20,
+      "civil": 2,
+      "electrical": 2,
+      "plumbing": 3,
+      "mechanical": 1
+    },
+    "page_ready_ratio": 0.8636363636363636,
+    "vocabulary_entries": 155,
+    "cross_references": 279,
+    "detection_candidates": 279,
+    "work_item_candidates": 79,
+    "review_tasks": 92,
+    "physical_counts_auto_accepted": 0,
+    "final_quantities_calculated": 0
+  },
+  "elapsed_seconds": 19.984013,
+  "ai_provider_calls": 0
+}

@@ -1,0 +1,434 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 49,
+    "page_number": 50,
+    "render_uri": "local://plhut-88pg-run-1/page-0049.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-15T01:49:38.060961+00:00",
+    "completed_at": "2026-07-15T01:49:38.061014+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "PLHUT-SURAKARTA-88PG-50",
+      "raw": "Halaman 50 dari dokumen PLHUT-SURAKARTA-88PG",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-sheet-number"
+      ]
+    },
+    "title": {
+      "value": "TABEL KOLOM",
+      "raw": "TABEL KOLOM",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-title-block"
+      ]
+    },
+    "discipline": {
+      "value": "Struktur",
+      "confidence": 0.95,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "SKALA 1:20",
+        "normalized": "1:20",
+        "confidence": 1.0,
+        "evidence_refs": [
+          "ev-scale"
+        ]
+      }
+    ]
+  },
+  "views": [],
+  "observations": {
+    "texts": [
+      {
+        "raw": "DET.KOLOM Lantai 1",
+        "normalized": "Detail Kolom Lantai 1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          130.0,
+          460.0,
+          240.0,
+          480.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-lantai1-k1"
+        ]
+      },
+      {
+        "raw": "DET.KOLOM Lantai 2",
+        "normalized": "Detail Kolom Lantai 2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          270.0,
+          180.0,
+          380.0,
+          200.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-lantai2-k1"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "400 x 400 mm",
+        "normalized": "400x400 mm",
+        "numeric_value": 400.0,
+        "unit": "mm",
+        "bbox": [
+          390.0,
+          310.0,
+          470.0,
+          330.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-k1"
+        ]
+      },
+      {
+        "raw": "250 x 600 mm",
+        "normalized": "250x600 mm",
+        "numeric_value": 250.0,
+        "unit": "mm",
+        "bbox": [
+          540.0,
+          310.0,
+          630.0,
+          330.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-k2"
+        ]
+      },
+      {
+        "raw": "250 x 400 mm",
+        "normalized": "250x400 mm",
+        "numeric_value": 250.0,
+        "unit": "mm",
+        "bbox": [
+          700.0,
+          310.0,
+          790.0,
+          330.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-k3"
+        ]
+      }
+    ],
+    "grids": [],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [
+      {
+        "raw": "K1 - 400 x 400 mm",
+        "normalized": "K1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          390.0,
+          310.0,
+          470.0,
+          330.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-k1"
+        ]
+      },
+      {
+        "raw": "K2 - 250 x 600 mm",
+        "normalized": "K2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          540.0,
+          310.0,
+          630.0,
+          330.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-k2"
+        ]
+      },
+      {
+        "raw": "K3 - 250 x 400 mm",
+        "normalized": "K3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          700.0,
+          310.0,
+          790.0,
+          330.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-k3"
+        ]
+      }
+    ],
+    "symbols": [],
+    "tables": [
+      {
+        "raw": "TABEL KOLOM",
+        "normalized": "Tabel Kolom",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          450.0,
+          720.0,
+          550.0,
+          750.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-table-title"
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "raw": "MUTU BETON: FC'.29.05",
+        "normalized": "Beton Mutu FC29.05",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          270.0,
+          290.0,
+          380.0,
+          310.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-material-beton"
+        ]
+      }
+    ],
+    "notes": [
+      {
+        "raw": "SKALA 1:20",
+        "normalized": "Skala 1:20",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          480.0,
+          760.0,
+          550.0,
+          780.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-scale"
+        ]
+      }
+    ],
+    "references": [],
+    "patterns": [],
+    "geometry_descriptions": []
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-sheet-number",
+      "kind": "text",
+      "raw": "Halaman 50 dari dokumen PLHUT-SURAKARTA-88PG",
+      "bbox": [
+        950.0,
+        780.0,
+        1050.0,
+        800.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-title-block",
+      "kind": "text",
+      "raw": "TABEL KOLOM",
+      "bbox": [
+        450.0,
+        720.0,
+        550.0,
+        750.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-scale",
+      "kind": "text",
+      "raw": "SKALA 1:20",
+      "bbox": [
+        480.0,
+        760.0,
+        550.0,
+        780.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-lantai1-k1",
+      "kind": "text",
+      "raw": "DET.KOLOM Lantai 1",
+      "bbox": [
+        130.0,
+        460.0,
+        240.0,
+        480.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-text-lantai2-k1",
+      "kind": "text",
+      "raw": "DET.KOLOM Lantai 2",
+      "bbox": [
+        270.0,
+        180.0,
+        380.0,
+        200.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-dim-k1",
+      "kind": "dimension",
+      "raw": "400 x 400 mm",
+      "bbox": [
+        390.0,
+        310.0,
+        470.0,
+        330.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-k2",
+      "kind": "dimension",
+      "raw": "250 x 600 mm",
+      "bbox": [
+        540.0,
+        310.0,
+        630.0,
+        330.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dim-k3",
+      "kind": "dimension",
+      "raw": "250 x 400 mm",
+      "bbox": [
+        700.0,
+        310.0,
+        790.0,
+        330.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-k1",
+      "kind": "label",
+      "raw": "K1 - 400 x 400 mm",
+      "bbox": [
+        390.0,
+        310.0,
+        470.0,
+        330.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-k2",
+      "kind": "label",
+      "raw": "K2 - 250 x 600 mm",
+      "bbox": [
+        540.0,
+        310.0,
+        630.0,
+        330.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-k3",
+      "kind": "label",
+      "raw": "K3 - 250 x 400 mm",
+      "bbox": [
+        700.0,
+        310.0,
+        790.0,
+        330.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-material-beton",
+      "kind": "material",
+      "raw": "MUTU BETON: FC'.29.05",
+      "bbox": [
+        270.0,
+        290.0,
+        380.0,
+        310.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-note-scale",
+      "kind": "note",
+      "raw": "SKALA 1:20",
+      "bbox": [
+        480.0,
+        760.0,
+        550.0,
+        780.0
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 8,
+    "sections_completed": 8,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

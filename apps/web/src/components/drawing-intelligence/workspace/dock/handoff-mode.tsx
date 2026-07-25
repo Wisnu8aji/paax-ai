@@ -16,9 +16,6 @@ import { HandoffConfirmModal } from './handoff-confirm-modal';
 import { useDockToast, DockToastHost } from './dock-toast';
 import { RabProposalReviewPanel } from './rab-proposal-review-panel';
 
-const TOTAL_SHEETS = 6;
-const TOTAL_FLOORS = 6;
-
 function disciplineFromCategory(category: QuantityItem['category']): 'STR' | 'ARC' | 'MEP' {
   if (category === 'door' || category === 'window' || category === 'room') return 'ARC';
   if (category === 'mep-point') return 'MEP';
@@ -35,7 +32,7 @@ function topLevelGroup(wbsGroup: string): string {
   return 'ARCHITECTURE';
 }
 
-export function HandoffMode({ projectName = 'PLHUT Campus – Building A' }: { projectName?: string }) {
+export function HandoffMode({ projectName = 'Proyek aktif' }: { projectName?: string }) {
   const { state, dispatch } = useWorkspace();
   const { quantities } = state;
   const { toasts, showToast } = useDockToast();
@@ -52,10 +49,10 @@ export function HandoffMode({ projectName = 'PLHUT Campus – Building A' }: { p
   const pctVerified = total > 0 ? Math.round((nVerified / total) * 100) : 0;
   const pctReview = total > 0 ? Math.round((nReview / total) * 100) : 0;
 
-  const totalSheets = state.sheets.length || 6;
+  const totalSheets = state.sheets.length;
   const totalFloors = useMemo(() => {
     const floors = new Set(state.sheets.map(s => s.floorId).filter(Boolean));
-    return floors.size || 6;
+    return floors.size;
   }, [state.sheets]);
 
   const groups = useMemo(() => {
@@ -144,10 +141,10 @@ export function HandoffMode({ projectName = 'PLHUT Campus – Building A' }: { p
 
         {/* 5 stat cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
-          <HandoffStat title="Sheets analyzed" value={String(totalSheets)} sub="100% of project" ok />
+          <HandoffStat title="Sheets analyzed" value={String(totalSheets)} sub={totalSheets > 0 ? projectName : "Belum ada gambar"} ok={totalSheets > 0} />
           <HandoffStat title="Verified items" value={String(nVerified)} sub={`${pctVerified}% of total items`} ok />
           <HandoffStat title="Needs review" value={String(nReview)} sub={`${pctReview}% of total items`} warn />
-          <HandoffStat title="Total floors grouped" value={String(totalFloors)} sub="F00 – Roof Plan" ok />
+          <HandoffStat title="Total levels grouped" value={String(totalFloors)} sub={totalFloors > 0 ? "Berdasarkan metadata gambar" : "Level belum tersedia"} ok={totalFloors > 0} />
           <HandoffStat title="Ready for Cost & Quantity" value="100%" sub="Deterministic handoff" ok />
         </div>
 

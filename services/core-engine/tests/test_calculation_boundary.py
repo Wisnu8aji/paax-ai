@@ -113,3 +113,23 @@ def test_length_operation_rejects_a_mismatched_measurement_type():
     }
     body = client.post("/calculations", json=payload).json()
     assert body["status"] == "blocked"
+
+
+def test_total_column_volume_multiplies_only_verified_count():
+    payload = {
+        "project_id": "P-1", "snapshot_id": "S-1",
+        "measurement_fact_ids": ["W", "D", "H", "C"],
+        "calculation_type": "concrete_column_total_volume",
+        "inputs": [
+            _typed_fact("W", "length", 250, "mm", "width"),
+            _typed_fact("D", "length", 600, "mm", "depth"),
+            _typed_fact("H", "length", 3900, "mm", "height"),
+            _typed_fact("C", "count", 4, "unit", "count"),
+        ],
+        "requested_by": "OWNER",
+    }
+    body = client.post("/calculations", json=payload).json()
+    assert body["status"] == "complete"
+    assert body["result"] == 2.34
+    assert body["unit"] == "m3"
+    assert body["formula"] == "width × depth × height × verified_count"

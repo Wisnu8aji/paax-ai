@@ -1,0 +1,160 @@
+{
+  "schema_version": "paax.drawing-intelligence.continuation-goals.v1",
+  "date": "2026-07-21",
+  "scope": "Drawing Intelligence only; RAB and schedule excluded",
+  "current_wave_goal": "Transform technical Drawing Intelligence output into evidence-backed, human-readable work items aligned with the existing frontend.",
+  "current_wave_status": "PASS",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Secure Drawing Ingestion",
+      "status": "functional_baseline_complete",
+      "completed_in_current_system": "Source checksum, manifest, PDF/raster routing, CAD fail-closed.",
+      "remaining_production_gate": "Encrypted/malware quarantine and enterprise upload resume remain production gates."
+    },
+    {
+      "phase": 2,
+      "name": "Modality Routing and Quality Profiling",
+      "status": "functional_baseline_complete",
+      "completed_in_current_system": "Vector/raster/hybrid decision and explainable page profile; PLHUT 88/88 routed.",
+      "remaining_production_gate": "Zone-level learned routing on mixed scan/vector documents remains."
+    },
+    {
+      "phase": 3,
+      "name": "Canonical Coordinate System",
+      "status": "functional_baseline_complete",
+      "completed_in_current_system": "Normalized evidence and viewport-safe geometry are versioned.",
+      "remaining_production_gate": "Full DWG world-coordinate round trip awaits production CAD adapter."
+    },
+    {
+      "phase": 4,
+      "name": "Native Vector Primitive Extraction",
+      "status": "functional_baseline_complete",
+      "completed_in_current_system": "Native PDF text/vector primitives are the deterministic spine.",
+      "remaining_production_gate": "Dedicated hatch/layer schema and CAD-layer fidelity remain."
+    },
+    {
+      "phase": 5,
+      "name": "Sheet Identity and Page Semantics",
+      "status": "plhut_goal_complete",
+      "completed_in_current_system": "Human scopes L1/L2/Atap/Fondasi/Area Tapak; no invented floor defaults.",
+      "remaining_production_gate": "More title-block families and revision-conflict evaluation remain."
+    },
+    {
+      "phase": 6,
+      "name": "Plan Zones and Layout Intelligence",
+      "status": "functional_baseline_complete",
+      "completed_in_current_system": "Drawing/title/legend/table/note zoning prevents obvious legend counts.",
+      "remaining_production_gate": "Learned layout candidate generator and editable zone UI remain."
+    },
+    {
+      "phase": 7,
+      "name": "Engineering Text, Dimensions, Tables and OCR",
+      "status": "functional_baseline_complete",
+      "completed_in_current_system": "Native text first; OCR fallback; profile dimensions no longer become opening dimensions.",
+      "remaining_production_gate": "Engineering OCR ensemble and character-level benchmark remain."
+    },
+    {
+      "phase": 8,
+      "name": "Canonical DEM Evidence and Repair",
+      "status": "plhut_goal_complete",
+      "completed_in_current_system": "DEM/native evidence fusion and conservative repair; no fabricated evidence.",
+      "remaining_production_gate": "Strict typed DEM gate for all new providers remains rollout work."
+    },
+    {
+      "phase": 9,
+      "name": "Project Vocabulary",
+      "status": "plhut_goal_complete",
+      "completed_in_current_system": "Context-ranked vocabulary; code identity uses definition source, discipline and sheet type.",
+      "remaining_production_gate": "Vocabulary conflict-resolution UI remains."
+    },
+    {
+      "phase": 10,
+      "name": "Cross-Sheet Entity Resolution",
+      "status": "plhut_goal_complete",
+      "completed_in_current_system": "Discipline-scoped links join occurrences to schedules/details; K2 joins to 250×600 mm.",
+      "remaining_production_gate": "Generalized entity-resolution metrics require a second project."
+    },
+    {
+      "phase": 11,
+      "name": "Vector Symbol Descriptors",
+      "status": "functional_baseline_complete",
+      "completed_in_current_system": "Stroke/topology descriptors and explainable candidates exist.",
+      "remaining_production_gate": "Per-class precision/recall and rotation/scale stress corpus remain."
+    },
+    {
+      "phase": 12,
+      "name": "Project-Specific Similarity",
+      "status": "functional_baseline_complete",
+      "completed_in_current_system": "Positive/negative project prototypes with versioned storage exist.",
+      "remaining_production_gate": "Distributed persistence and multi-user conflict handling remain."
+    },
+    {
+      "phase": 13,
+      "name": "Area Segmentation",
+      "status": "functional_baseline_complete",
+      "completed_in_current_system": "Vector-assisted One-Click Area returns review candidates, never final quantity.",
+      "remaining_production_gate": "Nested voids, raster masks and complex hatch reconstruction remain."
+    },
+    {
+      "phase": 14,
+      "name": "Line Topology",
+      "status": "functional_baseline_complete",
+      "completed_in_current_system": "One-Click Line and connected-path baseline exist.",
+      "remaining_production_gate": "Curves, occlusion and noisy scan topology require broader fixtures."
+    },
+    {
+      "phase": 15,
+      "name": "Geometry Reconstruction",
+      "status": "functional_baseline_complete",
+      "completed_in_current_system": "Connected vector geometry is deterministic and evidence-linked.",
+      "remaining_production_gate": "Object topology validation and CAD-scale round trip remain."
+    },
+    {
+      "phase": 16,
+      "name": "Work-Item Maturation",
+      "status": "plhut_goal_complete",
+      "completed_in_current_system": "64 human-readable items, 5 clarifications, 4 audit-suppressed candidates; no raw JSON in primary delivery.",
+      "remaining_production_gate": "Civil/MEP item taxonomy expansion requires additional project drawings."
+    },
+    {
+      "phase": 17,
+      "name": "Human Review Queue",
+      "status": "plhut_goal_complete",
+      "completed_in_current_system": "Versioned accept/reject/edit ledger, canonical storage, batched review and frontend actions.",
+      "remaining_production_gate": "Database-backed multi-reviewer locking remains a production gate."
+    },
+    {
+      "phase": 18,
+      "name": "Active Learning and Project Memory",
+      "status": "functional_baseline_complete",
+      "completed_in_current_system": "Accepted/rejected prototypes persist locally with legacy-key fallback.",
+      "remaining_production_gate": "Training/re-ranking evaluation across projects remains."
+    },
+    {
+      "phase": 19,
+      "name": "Frontend Delivery",
+      "status": "plhut_goal_complete",
+      "completed_in_current_system": "Existing visual design preserved; human item cards, level labels, evidence, blockers and review actions wired.",
+      "remaining_production_gate": "Full browser E2E awaits pnpm dependencies and running services."
+    },
+    {
+      "phase": 20,
+      "name": "Benchmark, Observability and Release Gates",
+      "status": "plhut_release_gate_passed",
+      "completed_in_current_system": "19/19 package, 10/10 human, 18/18 user-ready; 88 pages; no live AI calls.",
+      "remaining_production_gate": "Universal production release requires object-level ground truth, second project, Node build and PostgreSQL/pgvector CI."
+    }
+  ],
+  "release_policy": {
+    "plhut_user_review_pilot": "PASS",
+    "universal_production": "NOT_YET",
+    "reasons": [
+      "No object-level manual ground truth for all 88 pages",
+      "No independent second project benchmark",
+      "Full Node/Vitest/typecheck/build unavailable because pnpm is absent",
+      "PostgreSQL/pgvector integration test requires external service",
+      "Production CAD converter not configured"
+    ]
+  }
+}

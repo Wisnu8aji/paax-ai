@@ -1,0 +1,658 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 2,
+    "page_number": 3,
+    "render_uri": "local://plhut-88pg-run-1/page-0002.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T20:21:07.663767+00:00",
+    "completed_at": "2026-07-14T20:21:07.663817+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "halaman ke-3",
+      "raw": "halaman ke-3 (index 2) dari dokumen PLHUT-SURAKARTA-88PG",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "user-prompt"
+      ]
+    },
+    "title": {
+      "value": "DAFTAR SINGKATAN DAN NOTASI GAMBAR",
+      "raw": "DAFTAR SINGKATAN DAN NOTASI GAMBAR",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "title-block-header"
+      ]
+    },
+    "discipline": {
+      "value": "arsitektur",
+      "confidence": 0.95,
+      "status": "extracted"
+    },
+    "scale_candidates": []
+  },
+  "views": [],
+  "observations": {
+    "texts": [
+      {
+        "raw": "DAFTAR SINGKATAN DAN NOTASI GAMBAR",
+        "normalized": "Judul Halaman: Daftar Singkatan dan Notasi Gambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          40.0,
+          30.0,
+          570.0,
+          50.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "title-block-header"
+        ]
+      },
+      {
+        "raw": "PEKERJAAN JASA KONSULTANSI PERENCANAAN PEMBANGUNAN GEDUNG KELAS",
+        "normalized": "Sub-judul Pekerjaan: Konsultansi Perencanaan Gedung Kelas",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          50.0,
+          60.0,
+          560.0,
+          90.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "title-block-subtitle"
+        ]
+      },
+      {
+        "raw": "KEMENTERIAN AGAMA RI",
+        "normalized": "Instansi: Kementerian Agama RI",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          800.0,
+          50.0,
+          920.0,
+          70.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "title-block-right-logo"
+        ]
+      },
+      {
+        "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+        "normalized": "Nama Proyek: Gedung Pusat Layanan Haji dan Umrah Terpadu Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          800.0,
+          140.0,
+          920.0,
+          170.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "title-block-project-name"
+        ]
+      },
+      {
+        "raw": "JUDUL GAMBAR: DAFTAR SINGKATAN DAN SIMBOL GAMBAR",
+        "normalized": "Judul Gambar: Daftar Singkatan dan Simbol Gambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          800.0,
+          620.0,
+          920.0,
+          635.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "title-block-drawing-title"
+        ]
+      }
+    ],
+    "dimensions": [],
+    "grids": [],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [],
+    "symbols": [
+      {
+        "raw": "BETON COR DITEMPAT (SKALA : 1/20, 1/10, 1/5, 1/2)",
+        "normalized": "Simbol Material: Beton Cor Ditempat; Skala: 1:20, 1:10, 1:5, 1:2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          370.0,
+          330.0,
+          410.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "material-symbol-concrete"
+        ]
+      },
+      {
+        "raw": "BETON COR DITEMPAT (SKALA : 1/200, 1/100, 1/50)",
+        "normalized": "Simbol Material: Beton Cor Ditempat; Skala: 1:200, 1:100, 1:50",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          420.0,
+          330.0,
+          460.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-symbol-concrete"
+        ]
+      },
+      {
+        "raw": "BETON CETAK (SKALA : 1/20, 1/10, 1/5, 1/2)",
+        "normalized": "Simbol Material: Beton Cetakan; Skala: 1:20, 1:10, 1:5, 1:2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          470.0,
+          330.0,
+          510.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "material-symbol-precast-concrete"
+        ]
+      },
+      {
+        "raw": "PASANGAN BATU BATA (SKALA : 1/200, 1/100, 1/50)",
+        "normalized": "Simbol Material: Pasangan Batu Bata; Skala: 1:200, 1:100, 1:50",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          520.0,
+          330.0,
+          560.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-symbol-brickwork"
+        ]
+      },
+      {
+        "raw": "PLESTER (SKALA : 1/20, 1/10, 1/5, 1/2)",
+        "normalized": "Simbol Material: Plester; Skala: 1:20, 1:10, 1:5, 1:2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          570.0,
+          330.0,
+          620.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "material-symbol-plaster"
+        ]
+      },
+      {
+        "raw": "BATU ALAM (SPT : MARMER, GRANIT, SANDSTONE, BATU ANDESIT DLL)",
+        "normalized": "Simbol Material: Batu Alam; Contoh material: Marmer, Granit, Sandstone, Batu Andesit",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          630.0,
+          330.0,
+          670.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "material-symbol-natural-stone"
+        ]
+      },
+      {
+        "raw": "KAYU (SKALA : 1/10,1/5)",
+        "normalized": "Simbol Material: Kayu; Skala: 1:10, 1:5",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          630.0,
+          330.0,
+          690.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-symbol-wood"
+        ]
+      },
+      {
+        "raw": "PLYWOOD (SKALA : 1/5, 1/2)",
+        "normalized": "Simbol Material: Plywood (Kayu Lapis); Skala: 1:5, 1:2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          690.0,
+          330.0,
+          740.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-symbol-plywood"
+        ]
+      },
+      {
+        "raw": "MUKA TANAH",
+        "normalized": "Simbol Material: Muka Tanah",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          740.0,
+          330.0,
+          790.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-symbol-soil"
+        ]
+      },
+      {
+        "raw": "ISOLASI",
+        "normalized": "Simbol Material: Isolasi",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          790.0,
+          330.0,
+          840.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-symbol-waterproofing"
+        ]
+      },
+      {
+        "raw": "WATER PROOFING",
+        "normalized": "Simbol Material: Kedap Air",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          840.0,
+          330.0,
+          890.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-symbol-waterproofing"
+        ]
+      },
+      {
+        "raw": "METAL (SKALA : 1/5)",
+        "normalized": "Simbol Material: Logam; Skala: 1:5",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          890.0,
+          330.0,
+          940.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-symbol-metal"
+        ]
+      },
+      {
+        "raw": "KACA (SKALA : 1/5)",
+        "normalized": "Simbol Material: Kaca; Skala: 1:5",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          940.0,
+          330.0,
+          990.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-symbol-glass"
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "raw": "KETERANGAN DAN SIMBOL\n\nSIMBOL BAHAN\n| BETON COR DITEMPAT (SKALA : 1/20, 1/10, 1/5, 1/2) | \n| BETON COR DITEMPAT (SKALA : 1/200, 1/100, 1/50) | \n| BETON CETAK (SKALA : 1/20, 1/10, 1/5, 1/2) | \n| PASANGAN BATU BATA (SKALA : 1/200, 1/100, 1/50) | \n| PLESTER (SKALA : 1/20, 1/10, 1/5, 1/2) | \n| BATU ALAM (SPT : MARMER,GRANIT,SANDSTONE,BATU ANDESIT DLL) | \n| KAYU (SKALA : 1/10,1/5) | \n| PLYWOOD (SKALA : 1/5, 1/2) | \n| MUKA TANAH | \n| ISOLASI | \n| WATER PROOFING | \n| METAL (SKALA : 1/5) | \n| KACA (SKALA : 1/5) |",
+        "normalized": "Tabel: Keterangan dan Simbol Bahan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          90.0,
+          350.0,
+          350.0,
+          1000.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "material-symbol-table"
+        ]
+      },
+      {
+        "raw": "KETERANGAN GAMBAR\n| 1. KOLOM DAN GARIS AS | \n| 2. REFERENSI DETAIL | \n| 3. TANDA POTONGAN\n- IDENTIFIKASI POTONGAN\n- LBR.DIMANA DETAIL DIGAMBAR | \n| 4. TANDA ELEVASI\n- ELEVASI ARSITEKTUR\n| ELEVASI STRUKUR | \n| 5. IDENTIFIKASI PINTU\nIDENTIFIKASI PINTU/JENDELA/GRIL\n| NO.PINTU/JENDELA/GRIL\n| 6. IDENTIFIKASI PINTU / JENDELA\n| NO JENDELA | \n| 7. IDENTIFIKASI PLAFOND\n| BAHAN PLAFOND\nCH\n| TINGGI PLAFOND\n| 8. TAMPAK INTERIOR\n| A ARAH TAMPAK INTERIOR\n| D IDENTIFIKASI TAMPAK INTERIOR\n| B LBR.DIMANA TAMPAK INTERIOR DIGAMBAR\n| C\n| 9. JUDUL GAMBAR REFERENSI\n| IDENTIFIKASI DETAIL\n| JUDUL GAMBAR\nSKALA ...\n| SKALA\nLBR.DIMANA DETAIL DIGAMBAR\n| 10. IDENTIFIKASI BAHAN\n| NO JENIS BAHAN",
+        "normalized": "Tabel: Keterangan Gambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          370.0,
+          400.0,
+          780.0,
+          1000.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "description-table"
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "raw": "BETON COR DITEMPAT",
+        "normalized": "Material: Beton Cor Ditempat",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          370.0,
+          330.0,
+          390.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "material-label-concrete-1"
+        ]
+      },
+      {
+        "raw": "BETON COR DITEMPAT",
+        "normalized": "Material: Beton Cor Ditempat",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          420.0,
+          330.0,
+          440.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-material-label-concrete-2"
+        ]
+      },
+      {
+        "raw": "BETON CETAK",
+        "normalized": "Material: Beton Cetakan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          470.0,
+          330.0,
+          490.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-material-label-precast-concrete"
+        ]
+      },
+      {
+        "raw": "PASANGAN BATU BATA",
+        "normalized": "Material: Pasangan Batu Bata",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          520.0,
+          330.0,
+          540.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-material-label-brickwork"
+        ]
+      },
+      {
+        "raw": "PLESTER",
+        "normalized": "Material: Plester",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          570.0,
+          330.0,
+          590.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-material-label-plaster"
+        ]
+      },
+      {
+        "raw": "BATU ALAM",
+        "normalized": "Material: Batu Alam",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          630.0,
+          330.0,
+          650.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-material-label-natural-stone"
+        ]
+      },
+      {
+        "raw": "KAYU",
+        "normalized": "Material: Kayu",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          690.0,
+          330.0,
+          710.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-material-label-wood"
+        ]
+      },
+      {
+        "raw": "PLYWOOD",
+        "normalized": "Material: Plywood (Kayu Lapis)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          740.0,
+          330.0,
+          760.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-material-label-plywood"
+        ]
+      },
+      {
+        "raw": "MUKA TANAH",
+        "normalized": "Material: Muka Tanah",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          790.0,
+          330.0,
+          810.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-material-label-soil"
+        ]
+      },
+      {
+        "raw": "ISOLASI",
+        "normalized": "Material: Isolasi",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          840.0,
+          330.0,
+          860.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-material-label-insulation"
+        ]
+      },
+      {
+        "raw": "WATER PROOFING",
+        "normalized": "Material: Kedap Air",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          890.0,
+          330.0,
+          910.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-material-label-waterproofing"
+        ]
+      },
+      {
+        "raw": "METAL",
+        "normalized": "Material: Logam",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          940.0,
+          330.0,
+          960.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-material-label-metal"
+        ]
+      },
+      {
+        "raw": "KACA",
+        "normalized": "Material: Kaca",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          150.0,
+          1000.0,
+          330.0,
+          1020.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "detailed-material-label-glass"
+        ]
+      }
+    ],
+    "notes": [
+      {
+        "raw": "SKALA GBR: NTS",
+        "normalized": "Catatan: Skala Gambar - Tidak Terukur dari Skala",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          800.0,
+          680.0,
+          920.0,
+          695.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "title-block-scale-note"
+        ]
+      }
+    ],
+    "references": [],
+    "patterns": [],
+    "geometry_descriptions": []
+  },
+  "evidence": [],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 1,
+    "sections_completed": 1,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

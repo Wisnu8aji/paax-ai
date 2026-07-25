@@ -7,12 +7,31 @@
  * "Project Percakapan" (folder) — pola yang sama dengan workspace percakapan.
  */
 
+export interface StoredProcessingStep {
+  id: string;
+  kind: 'inspect' | 'context' | 'search' | 'graph' | 'tool' | 'reason' | 'verify' | 'compose' | 'save' | 'warning' | 'complete';
+  label: string;
+  detail?: string;
+  state: 'active' | 'completed' | 'warning' | 'failed';
+  startedAt: string;
+  completedAt?: string;
+}
+
+export interface StoredProcessingTrace {
+  modelName: string;
+  durationMs: number;
+  durationLabel: string;
+  steps: StoredProcessingStep[];
+}
+
 export interface StoredChatMessage {
   id: string;
   role: 'user' | 'assistant';
   text: string;
   /** Label jam tampilan (HH:mm) */
   time: string;
+  /** Ringkasan aktivitas yang aman ditampilkan; bukan chain-of-thought mentah. */
+  processing?: StoredProcessingTrace;
 }
 
 export interface ConversationConnectors {

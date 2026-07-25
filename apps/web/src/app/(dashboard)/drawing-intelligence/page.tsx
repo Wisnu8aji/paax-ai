@@ -4,15 +4,16 @@ import { useEffect, useState } from 'react';
 import { useProjects } from '@/lib/projects/projects-context';
 import { LocalStorage } from '@/lib/local-storage';
 import { DrawingIntelligenceWorkspaceV2 } from '@/components/drawing-intelligence/workspace';
+import { resolveDrawingProject } from './drawing-project-selection';
 
 /**
  * Route Drawing Intelligence — workspace teknik full-height (blueprint
  * PAAX_DRAWING_INTELLIGENCE_UI_BLUEPRINT). Proyek aktif diambil dari
- * konteks proyek existing; tanpa proyek pun workspace tetap berfungsi
- * dengan konteks default (dummy data realistis).
+ * konteks proyek existing. Tanpa proyek aktif, workspace memakai label
+ * netral dan menunggu file/proyek nyata; data demo hanya aktif secara eksplisit.
  */
 export default function DrawingIntelligencePage() {
-  const { getProject } = useProjects();
+  const { projects } = useProjects();
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -23,8 +24,8 @@ export default function DrawingIntelligencePage() {
 
   if (!ready) return null;
 
-  const project = activeProjectId ? getProject(activeProjectId) : null;
-  const projectName = project?.name ?? 'PLHUT Campus – Building A';
+  const project = resolveDrawingProject(activeProjectId, projects);
+  const projectName = project?.name ?? 'Proyek aktif';
 
   return <DrawingIntelligenceWorkspaceV2 projectName={projectName} projectId={project?.id ?? null} />;
 }

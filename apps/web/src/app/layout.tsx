@@ -1,36 +1,6 @@
 import type { Metadata } from 'next';
-import { Inter, JetBrains_Mono, Lora, Outfit } from 'next/font/google';
 import './globals.css';
 import '@/components/command-room/command-room.css';
-
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-inter',
-  display: 'swap',
-});
-
-const outfit = Outfit({
-  subsets: ['latin'],
-  weight: ['500', '600', '700', '800'],
-  variable: '--font-outfit',
-  display: 'swap',
-});
-
-const lora = Lora({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  style: ['normal', 'italic'],
-  variable: '--font-lora',
-  display: 'swap',
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-jetbrains',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: 'PAAX AI — Civil Engineering AI Workspace',
@@ -44,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className={`${inter.variable} ${outfit.variable} ${lora.variable} ${jetbrainsMono.variable}`}>
+    <html lang="id">
       <body className="antialiased">
         {children}
       </body>

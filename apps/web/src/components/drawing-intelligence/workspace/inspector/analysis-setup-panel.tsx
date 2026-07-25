@@ -35,7 +35,7 @@ const OUTPUT_OPTIONS: {
 }[] = [
   { key: 'classifySheets', label: 'Classify sheets', sub: 'Identify disciplines and sheet types' },
   { key: 'detectItems', label: 'Detect items', sub: 'Locate and classify building elements' },
-  { key: 'extractQuantities', label: 'Extract quantities', sub: 'Measure and calculate takeoffs' },
+  { key: 'extractQuantities', label: 'Prepare measurement candidates', sub: 'Geometry and evidence for human-approved takeoff' },
   { key: 'buildFloorGrouping', label: 'Build floor grouping', sub: 'Group sheets by floors and levels' },
 ];
 
@@ -184,7 +184,7 @@ export function AnalysisSetupPanel() {
         </div>
 
         <div style={{ padding: '8px 12px', background: 'var(--di-warn-bg)', border: '1px solid var(--di-warn-bd)', borderRadius: 8, fontSize: 11, color: 'var(--di-text2)' }}>
-          <strong>Note:</strong> Scope, Detection Mode, and Output toggles are saved in configuration but do not filter backend processing in this MVP.
+          <strong>Runtime:</strong> Detection Mode now controls package analysis. Fast indexes the full set; Balanced adds vector descriptors; Deep enables table and geometry review on the selected scope. Final quantities still require approval and Core Engine.
         </div>
 
         {/* Scope */}
@@ -319,9 +319,9 @@ export function AnalysisSetupPanel() {
             <span className="di-mono" style={{ fontSize: 15, fontWeight: 700, color: 'var(--di-text)' }}>
               {selectedSheets.length} selected sheets
             </span>
-            <span style={{ fontSize: 11, color: 'var(--di-text2)' }}>3m 40s estimated time</span>
-            <span style={{ fontSize: 11, color: 'var(--di-text3)' }}>Vector PDF detected · High quality source</span>
-            <span style={{ fontSize: 11, color: 'var(--di-text3)' }}>AI stack ready · All models available</span>
+            <span style={{ fontSize: 11, color: 'var(--di-text2)' }}>Mode: {cfg.mode === 'deep' ? 'Deep Review' : cfg.mode === 'fast' ? 'Fast package index' : 'Balanced'}</span>
+            <span style={{ fontSize: 11, color: 'var(--di-text3)' }}>Vector-first routing · Raster fallback only when required</span>
+            <span style={{ fontSize: 11, color: 'var(--di-text3)' }}>Low-confidence results enter human review; no quantity is auto-approved</span>
             <button className="di-btn" style={{ alignSelf: 'flex-start', marginTop: 4, height: 26, fontSize: 11 }}>
               Details
             </button>

@@ -102,3 +102,22 @@ export async function buildProjectContextPack(
   if (!bagian.length) return null;
   return potong(bagian.join('\n\n'), MAX_PACK_CHARS);
 }
+
+/** RAB-only context; Drawing Intelligence must use DEM/PCKM retrieval instead. */
+export async function buildRabContextPack(projectId: string): Promise<string | null> {
+  try {
+    const draft = await rabRepository.get(projectId);
+    const lines = draft.lines.filter((line) => line.ahsp_code || line.volume != null);
+    if (!lines.length) return null;
+    const items = lines.map((line, index) =>
+      `${index + 1}. ${line.ahsp_code || '(AHSP belum dipilih)'} vol=${line.volume ?? '?'}` +
+      (line.duration_days != null ? ` durasi=${line.duration_days}h` : ''),
+    ).join('\n');
+    const total = draft.lastTotal != null
+      ? `Total terakhir (hasil engine, cache ${draft.lastCalculatedAt ?? '-'}): Rp ${draft.lastTotal.toLocaleString('id-ID')}`
+      : 'Total belum dihitung engine.';
+    return potong(`== DRAFT RAB (wilayah ${draft.regionCode}, PPN ${(draft.ppnRate * 100).toFixed(0)}%) ==\n${items}\n${total}`, MAX_PACK_CHARS);
+  } catch {
+    return null;
+  }
+}

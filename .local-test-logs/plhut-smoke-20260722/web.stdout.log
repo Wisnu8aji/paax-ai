@@ -1,0 +1,73 @@
+
+> @paax/web@0.6.0 dev G:\paax-ai-main\apps\web
+> next dev --port 3000 "--hostname" "127.0.0.1"
+
+   ▲ Next.js 15.5.19
+   - Local:        http://127.0.0.1:3000
+   - Network:      http://127.0.0.1:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 12s
+ ○ Compiling / ...
+ ✓ Compiled / in 11.5s (593 modules)
+ GET / 307 in 14335ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 8.9s (900 modules)
+ GET / 307 in 494ms
+ GET /dashboard 200 in 812ms
+ GET /dashboard 200 in 1174ms
+ ○ Compiling /api/command-room/chat ...
+ ✓ Compiled /api/command-room/chat in 4.7s (606 modules)
+ POST /api/command-room/chat 200 in 19403ms
+ POST /api/command-room/chat 200 in 59055ms
+ POST /api/command-room/chat 200 in 39175ms
+ POST /api/command-room/chat 200 in 20388ms
+ POST /api/command-room/chat 200 in 43303ms
+ ○ Compiling /api/document-intelligence/[...path] ...
+ ✓ Compiled /_not-found in 4.3s (669 modules)
+ GET /dashboard/drawing-intelligence 404 in 5063ms
+ GET /api/document-intelligence/health 200 in 10655ms
+ ○ Compiling /drawing-intelligence ...
+ ✓ Compiled /drawing-intelligence in 8.7s (1098 modules)
+ GET /drawing-intelligence 200 in 11244ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1920ms (364 modules)
+ GET / 307 in 3937ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 1386ms (581 modules)
+ GET /dashboard 200 in 2589ms
+ ○ Compiling /proyek ...
+ ✓ Compiled /proyek in 2.2s (1013 modules)
+ GET /proyek 200 in 2587ms
+ ○ Compiling /proyek/[projectId] ...
+ ✓ Compiled /proyek/[projectId] in 1560ms (1101 modules)
+ GET /proyek/f606cb90-ac73-40f7-b5dc-2f0195a79a75 200 in 4240ms
+ ○ Compiling /command-room ...
+ ✓ Compiled /command-room in 4.9s (1708 modules)
+ GET /command-room 200 in 5459ms
+ ○ Compiling /api/command-room/chat ...
+ ✓ Compiled /api/command-room/chat in 1851ms (1140 modules)
+ POST /api/command-room/chat 200 in 35786ms
+ POST /api/command-room/chat 200 in 49047ms
+ POST /api/command-room/chat 200 in 35961ms
+ GET /proyek 200 in 182ms
+ GET /command-room 200 in 109ms
+ GET /proyek 200 in 112ms
+ GET /proyek/33c66419-d633-499d-87d3-f83d7b1acff3 200 in 263ms
+ ○ Compiling /drawing-intelligence ...
+ ✓ Compiled /drawing-intelligence in 5.1s (1069 modules)
+ GET /drawing-intelligence 200 in 6264ms
+ ○ Compiling /api/drawing-intelligence/[...path] ...
+ ✓ Compiled /api/drawing-intelligence/[...path] in 4s (1816 modules)
+ GET /api/drawing-intelligence/projects/33c66419-d633-499d-87d3-f83d7b1acff3/project-graph/quantity-readiness 500 in 9378ms
+ GET /api/drawing-intelligence/projects/33c66419-d633-499d-87d3-f83d7b1acff3/dem/sheets 500 in 8232ms
+ GET /api/drawing-intelligence/projects/33c66419-d633-499d-87d3-f83d7b1acff3/dem/runs 500 in 8236ms
+ GET /api/drawing-intelligence/projects/33c66419-d633-499d-87d3-f83d7b1acff3/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 500 in 8241ms
+ GET /api/drawing-intelligence/projects/33c66419-d633-499d-87d3-f83d7b1acff3/project-graph/review-queue 500 in 8245ms
+ GET /api/drawing-intelligence/projects/33c66419-d633-499d-87d3-f83d7b1acff3/project-graph/review-queue 500 in 9406ms
+ GET /api/drawing-intelligence/projects/33c66419-d633-499d-87d3-f83d7b1acff3/project-graph/quantity-readiness 500 in 206ms
+ GET /api/drawing-intelligence/projects/33c66419-d633-499d-87d3-f83d7b1acff3/dem/sheets 500 in 294ms
+ GET /api/drawing-intelligence/projects/33c66419-d633-499d-87d3-f83d7b1acff3/dem/runs 500 in 301ms
+ GET /api/drawing-intelligence/projects/33c66419-d633-499d-87d3-f83d7b1acff3/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 500 in 307ms
+[?25h

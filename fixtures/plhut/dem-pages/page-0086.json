@@ -1,0 +1,538 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 86,
+    "page_number": 87,
+    "render_uri": "local://plhut-88pg-run-1/page-0086.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T22:31:06.417731+00:00",
+    "completed_at": "2026-07-14T22:31:06.417761+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "87",
+      "raw": "87",
+      "confidence": 0.98,
+      "evidence_refs": [
+        "ev-sheet-num-87"
+      ]
+    },
+    "title": {
+      "value": "DENAH SALURAN AIR HUJAN",
+      "raw": "DENAH SALURAN AIR HUJAN",
+      "confidence": 0.97,
+      "evidence_refs": [
+        "ev-title-rain-drain"
+      ]
+    },
+    "discipline": {
+      "value": "Arsitektur",
+      "confidence": 0.92,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1:100",
+        "normalized": "1:100",
+        "confidence": 0.96,
+        "evidence_refs": [
+          "ev-scale-1-100"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-floor-plan",
+      "type": "Floor Plan",
+      "title": "DENAH SALURAN AIR HUJAN",
+      "bbox": [
+        50.0,
+        30.0,
+        1600.0,
+        1050.0
+      ],
+      "confidence": 0.99
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KEMENTERIAN AGAMA RI\nDIREKTORAT JENDERAL\nPENYELENGGARAAN HAJI DAN UMRAH\nTAHUN ANGGARAN 2024",
+        "normalized": "Kementerian Agama RI, Direktorat Jenderal Penyelenggaraan Haji dan Umrah, Tahun Anggaran 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          50.0,
+          1700.0,
+          120.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-header-title-block"
+        ]
+      },
+      {
+        "raw": "GEDUNG PUSAT LAYANAN\nHAJI DAN UMRAH TERPADU\nKOTA SURAKARTA",
+        "normalized": "Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          130.0,
+          1700.0,
+          220.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-project-title"
+        ]
+      },
+      {
+        "raw": "LOKASI:\nJALAN KI MANGUN SARKORO NO.115\nKOTA SURAKARTA",
+        "normalized": "Lokasi: Jalan Ki Mangun Sarkoro No.115, Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          230.0,
+          1700.0,
+          300.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-location-text"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "1625",
+        "normalized": "1625 mm",
+        "numeric_value": 1625.0,
+        "unit": "mm",
+        "bbox": [
+          190.0,
+          180.0,
+          260.0,
+          200.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-1625"
+        ]
+      },
+      {
+        "raw": "20400",
+        "normalized": "20400 mm",
+        "numeric_value": 20400.0,
+        "unit": "mm",
+        "bbox": [
+          700.0,
+          1120.0,
+          800.0,
+          1140.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-total-width"
+        ]
+      },
+      {
+        "raw": "60 x 60",
+        "normalized": "600 mm x 600 mm",
+        "numeric_value": null,
+        "unit": "mm",
+        "bbox": [
+          210.0,
+          310.0,
+          300.0,
+          330.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-col-size-60x60"
+        ]
+      }
+    ],
+    "grids": [
+      {
+        "raw": "A",
+        "normalized": "Grid A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          90.0,
+          450.0,
+          120.0,
+          480.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-A"
+        ]
+      },
+      {
+        "raw": "1",
+        "normalized": "Grid 1",
+        "numeric_value": 1.0,
+        "unit": null,
+        "bbox": [
+          90.0,
+          1080.0,
+          120.0,
+          1110.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-1"
+        ]
+      }
+    ],
+    "levels": [
+      {
+        "raw": "±0.000",
+        "normalized": "±0.000",
+        "numeric_value": 0.0,
+        "unit": "m",
+        "bbox": [
+          1050.0,
+          420.0,
+          1120.0,
+          440.0
+        ],
+        "confidence": 0.99,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-elev-zero"
+        ]
+      },
+      {
+        "raw": "-0.030",
+        "normalized": "-0.030",
+        "numeric_value": -0.03,
+        "unit": "m",
+        "bbox": [
+          1200.0,
+          950.0,
+          1270.0,
+          970.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-elev-neg30"
+        ]
+      }
+    ],
+    "spaces": [
+      {
+        "raw": "R.PERBUKAN SYARIAH",
+        "normalized": "Ruang Perbankan Syariah",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          850.0,
+          1500.0,
+          900.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-room-bank-syariah"
+        ]
+      },
+      {
+        "raw": "TOILET",
+        "normalized": "Toilet",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          400.0,
+          500.0,
+          420.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-room-toilet"
+        ]
+      }
+    ],
+    "element_labels": [
+      {
+        "raw": "K-01",
+        "normalized": "Kolom K-01",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          600.0,
+          500.0,
+          650.0,
+          520.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-col-k01"
+        ]
+      },
+      {
+        "raw": "P1",
+        "normalized": "Pintu P1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          850.0,
+          600.0,
+          880.0,
+          620.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-door-p1"
+        ]
+      }
+    ],
+    "symbols": [
+      {
+        "raw": "NOTASI PINTU: X = TYPE DAN JENIS BAHAN",
+        "normalized": "Notasi pintu: kode X menunjukkan tipe dan bahan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          100.0,
+          400.0,
+          120.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-notasi-pintu"
+        ]
+      },
+      {
+        "raw": "SALURAN A (25 CM)",
+        "normalized": "Saluran A diameter 25 cm",
+        "numeric_value": 25.0,
+        "unit": "cm",
+        "bbox": [
+          140.0,
+          900.0,
+          300.0,
+          920.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-drain-a"
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "raw": "BAK KONTROL\n60x60 | 60x60 | 60x60",
+        "normalized": "Bak Kontrol dengan ukuran 600x600 mm",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          250.0,
+          400.0,
+          350.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-table-bak-kontrol"
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "raw": "L1 = GRANITE TILE",
+        "normalized": "L1: Granite Tile",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          700.0,
+          1700.0,
+          720.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-mat-L1"
+        ]
+      },
+      {
+        "raw": "P1 = MARBLE TILE",
+        "normalized": "P1: Marble Tile",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          730.0,
+          1700.0,
+          750.0
+        ],
+        "confidence": 0.94,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-mat-P1"
+        ]
+      }
+    ],
+    "notes": [
+      {
+        "raw": "MENYETUJUI\nKEPALA KANTOR WILAYAH JAWA TENGAH\nSELAKU KUASA PENGGUNA ANGGARAN",
+        "normalized": "Menyetujui oleh Kepala Kantor Wilayah Jawa Tengah selaku kuasa pengguna anggaran",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          320.0,
+          1700.0,
+          420.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-approval"
+        ]
+      }
+    ],
+    "references": [
+      {
+        "raw": "A3.01",
+        "normalized": "Referensi ke Sheet A3.01",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          90.0,
+          360.0,
+          130.0,
+          380.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-ref-A301"
+        ]
+      }
+    ],
+    "patterns": [
+      {
+        "raw": "Pola titik-titik di area tanah",
+        "normalized": "Hatch poligon untuk area tanah/lantai luar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          800.0,
+          1300.0,
+          1100.0
+        ],
+        "confidence": 0.93,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-ground"
+        ]
+      }
+    ],
+    "geometry_descriptions": [
+      {
+        "raw": "Denah lantai dengan saluran air hujan persegi panjang",
+        "normalized": "Layout lantai dengan saluran air hujan berbentuk persegi panjang",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          200.0,
+          1300.0,
+          1000.0
+        ],
+        "confidence": 0.92,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geo-layout"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-sheet-num-87",
+      "kind": "Text",
+      "raw": "87",
+      "bbox": [
+        1480.0,
+        1120.0,
+        1510.0,
+        1140.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-title-rain-drain",
+      "kind": "Text",
+      "raw": "DENAH SALURAN AIR HUJAN",
+      "bbox": [
+        1470.0,
+        1090.0,
+        1600.0,
+        1110.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-header-title-block",
+      "kind": "Text",
+      "raw": "KEMENTERIAN AGAMA RI\nDIREKTORAT JENDERAL\nPENYELENGGARAAN HAJI DAN UMRAH\nTAHUN ANGGARAN 2024",
+      "bbox": [
+        1400.0,
+        50.0,
+        1700.0,
+        120.0
+      ],
+      "confidence": 0.98
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

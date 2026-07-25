@@ -42,7 +42,13 @@ export type DrawingType =
   | 'Section'
   | 'Detail'
   | 'Schedule'
-  | 'Diagram / Schematic';
+  | 'Diagram / Schematic'
+  | 'General Arrangement'
+  | 'Bridge Plan'
+  | 'Road Plan / Profile'
+  | 'Cross Section'
+  | 'Reinforcement Detail'
+  | 'Other / Unclassified';
 
 // ── File & sheet lifecycle (blueprint §27) ───────────────────────────────────
 
@@ -127,7 +133,7 @@ export interface Sheet {
   originalPageName: string;
   pageNumber: number;
   floorId: string; // ex: F02
-  floorLabel: string; // ex: Floor 2
+  floorLabel: string; // contoh: Lantai 12, Basement 3, Substruktur
   disciplines: Discipline[];
   drawingType: DrawingType;
   scale: string | null; // ex: '1:100'
@@ -144,6 +150,8 @@ export interface Sheet {
 /** Server-mapped DEM metadata. `null` means the backend did not provide it. */
 export interface ProjectSheetMapping {
   id: string;
+  runId: string;
+  pageIndex: number;
   number: string | null;
   title: string | null;
   discipline: string | null;
@@ -239,9 +247,9 @@ export interface QuantityItem {
   workItem: string; // ex: Reinforced Concrete Column
   floorId: string;
   floorLabel: string;
-  lbsPath: string[]; // Location Breakdown ex: ['Building A','Floor 2','Grid B-3']
+  lbsPath: string[]; // contoh: ['Zona Timur','Lantai 12','Grid B-3'] atau ['Jembatan','Substruktur','Abutment A1']
   wbsSection: string; // ex: '03 30 00 – Superstructure'
-  wbsGroup: string; // ex: 'Superstructure / Floor 2'
+  wbsGroup: string; // contoh: 'Struktur / Lantai 12' atau 'Substruktur / Abutment A1'
   category: ElementCategory;
   formulaBasis: 'Count' | 'Length' | 'Area' | 'Volume';
   formula: string; // teks rumus dari engine — hanya ditampilkan

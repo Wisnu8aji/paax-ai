@@ -15,13 +15,13 @@ import {
   fetchReviewQueue,
   fetchProjectDemSheets,
   fetchProjectDemRuns,
-  retrieveProjectGraph,
   fetchSummaryViews,
+  fetchPackageIntelligence,
 } from '../drawing-intelligence-api';
 import { useWorkspace, mapQuantityReadinessToItems, mapGraphNodesToElements } from './workspace-store';
-import { makeGeometry } from './di-mock-data';
 import type { ReviewQueueItem, Sheet, DrawingFile } from './di-types';
 import { mapProjectDemSheet } from './sheet-mapping';
+import { mapRawDemSheetToSheet } from './sheet-view-mapping';
 
 const CATEGORY_LABELS: Record<string, string> = {
   conflict: 'Dimension conflict',
@@ -30,54 +30,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   possibly_same: 'Possible duplicate element',
   needs_review: 'Needs review',
 };
-
-function getFloorInfo(code: string, title: string) {
-  const combined = `${code} ${title}`.toLowerCase();
-  if (combined.includes('ground') || combined.includes('floor 0') || combined.includes('floorplan 0') || combined.includes('a2-100')) {
-    return { floorId: 'F00', floorLabel: 'Ground Floor' };
-  } else if (combined.includes('first') || combined.includes('floor 1') || combined.includes('a2-101')) {
-    return { floorId: 'F01', floorLabel: 'Floor 1' };
-  } else if (combined.includes('second') || combined.includes('floor 2') || combined.includes('a2-102')) {
-    return { floorId: 'F02', floorLabel: 'Floor 2' };
-  } else if (combined.includes('third') || combined.includes('floor 3') || combined.includes('a2-103')) {
-    return { floorId: 'F03', floorLabel: 'Floor 3' };
-  } else if (combined.includes('fourth') || combined.includes('floor 4') || combined.includes('a2-104')) {
-    return { floorId: 'F04', floorLabel: 'Floor 4' };
-  } else if (combined.includes('roof') || combined.includes('a2-105')) {
-    return { floorId: 'ROOF', floorLabel: 'Roof Plan' };
-  }
-  return { floorId: 'F02', floorLabel: 'Floor 2' };
-}
-
-function mapDemSheetToSheet(item: any): Sheet {
-  const match = item.sheet_title ? item.sheet_title.match(/^([A-Za-z0-9\-]+)\s*[-–]\s*(.*)$/) : null;
-  const code = match ? match[1].trim() : (item.sheet_title ? 'A2-' + (100 + item.page_index) : 'A2-' + (100 + item.page_index));
-  const title = match ? match[2].trim() : (item.sheet_title || `Page ${item.page_index + 1}`);
-  const floorInfo = getFloorInfo(code, title);
-  const isRoof = title.toLowerCase().includes('roof');
-  
-  return {
-    id: `${item.run_id}-page-${item.page_index}`,
-    fileId: item.run_id,
-    code,
-    title,
-    originalPageName: item.file_name,
-    pageNumber: item.page_index + 1,
-    floorId: floorInfo.floorId,
-    floorLabel: floorInfo.floorLabel,
-    disciplines: isRoof ? ['STR', 'ARC', 'MEP'] : ['STR', 'ARC', 'MEP', 'CIV'],
-    drawingType: isRoof ? 'Roof Plan' : 'Floor Plan',
-    scale: null,        // WP5: backend tidak mengembalikan scale — tampilkan null, jangan hardcode '1:100'
-    scaleConfirmed: false,
-    revision: null,     // WP5: backend tidak mengembalikan revision — tampilkan null, jangan hardcode 'R1'
-    status: item.status === 'complete' ? 'analyzed' : 'queued',
-    reviewIssueCount: 0,
-    sheetSize: 'A1 (841 x 594 mm)',
-    analyzedOn: '2026-07-17',
-    aiConfidence: null, // WP5: confidence dihitung backend — tampilkan null saat belum tersedia
-    geometry: makeGeometry(item.page_index, isRoof),
-  };
-}
 
 function mapDemRunToDrawingFile(run: any): DrawingFile {
   let status: DrawingFile['status'] = 'processing';
@@ -89,7 +41,7 @@ function mapDemRunToDrawingFile(run: any): DrawingFile {
   return {
     id: run.id,
     name: run.file_name,
-    sizeBytes: 2.4 * 1024 * 1024, // fallback default size
+    sizeBytes: 0, // unknown until backend exposes uploaded size
     kind: (run.file_name.split('.').pop()?.toUpperCase() as any) || 'PDF',
     status,
     sheetCount: run.total_pages,
@@ -138,7 +90,7 @@ export function useBackendSync(projectId: string | null) {
         // prior bug declared `mappedSheets` (this local, Sheet[]-typed) as an
         // always-empty array and never actually assigned it, so every real
         // graph node/evidence lookup below silently found nothing.
-        const mappedSheets: Sheet[] = sheetsData.map(mapDemSheetToSheet);
+        const mappedSheets: Sheet[] = sheetsData.map(mapRawDemSheetToSheet);
         if (mappedSheets.length > 0) {
           dispatch({ type: 'replace-sheets', sheets: mappedSheets });
         }
@@ -147,6 +99,19 @@ export function useBackendSync(projectId: string | null) {
 
         if (mappedFiles.length > 0) {
           dispatch({ type: 'replace-files', files: mappedFiles });
+        }
+
+        // Load the persisted package-level intelligence for the newest run
+        // that has passed synthesis. Failure/absence is an honest null state,
+        // never a reason to fabricate package metrics in the frontend.
+        const intelligenceRun = runsData.find((run: any) =>
+          run.status === 'synthesis_complete' || run.status === 'completed'
+        );
+        if (intelligenceRun?.id) {
+          const packageIntelligence = await fetchPackageIntelligence(intelligenceRun.id).catch(() => null);
+          if (!cancelled) {
+            dispatch({ type: 'analysis', patch: { packageIntelligence } });
+          }
         }
 
         const findSheetIdForEvidence = (evidenceId: string | null): string | null => {
@@ -193,7 +158,10 @@ export function useBackendSync(projectId: string | null) {
         // Map elements from project graph retrieval
         let allMappedElements: any[] = [];
         try {
-          const graphData = await retrieveProjectGraph(projectId, ' ');
+          // Never retrieve a whole project graph merely because the workspace
+          // opened. It is large, unnecessary for sheet navigation, and graph
+          // retrieval belongs to an explicit user question/tool invocation.
+          const graphData: any = null;
           if (graphData && graphData.nodes && graphData.nodes.length > 0) {
             const nodesList = graphData.nodes as any[];
             const edgesList = (graphData.edges || []) as any[];

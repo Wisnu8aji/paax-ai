@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createQueryProjectGraphTool } from "../../src/tools/query_project_graph";
@@ -332,6 +334,9 @@ describe("query_project_graph", () => {
     expect(
       queryProjectGraphTool.summarize?.({ available: true, nodes: [{ node_id: "A" }, { node_id: "B" }] }),
     ).toBe("2 elemen ditemukan di gambar kerja");
+    expect(queryProjectGraphTool.summarize?.({
+      available: true, nodes: [], human_drawing_view: { work_items: [{ code: "K2" }, { code: "K3" }] },
+    })).toBe("2 item Drawing Intelligence relevan ditemukan dengan sumber gambar");
     expect(queryProjectGraphTool.summarize?.({ available: false })).toBe(
       "data gambar kerja tidak tersedia untuk query ini",
     );
@@ -344,3 +349,166 @@ describe("query_project_graph", () => {
   });
 });
 
+
+describe("query_project_graph human drawing projection", () => {
+  it("enriches technical graph results with latest human-readable Drawing Intelligence items", async () => {
+    vi.stubEnv("DB_API_URL", "http://test-db");
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/projects/PROJ-1/project-graph/retrieve")) {
+        return {
+          ok: true,
+          json: async () => ({
+            status: "success", data_status: "grounded", intent: "LIST_FILTER",
+            nodes: [{ node_id: "TYPE-K2", type: "element_type", name: "KOLOM K2", discipline: "structure", confidence: 0.96 }],
+            evidence: [], notes: [],
+          }),
+        } as Response;
+      }
+      if (url.endsWith("/projects/PROJ-1/dem/runs")) {
+        return { ok: true, json: async () => [{ id: "RUN-9", status: "completed" }] } as Response;
+      }
+      if (url.endsWith("/drawings/dem/RUN-9/intelligence?view=human")) {
+        return {
+          ok: true,
+          json: async () => ({
+            document_name: "Hospital Tower.pdf",
+            summary: { recognized_work_items: 3 },
+            safety: { physical_counts_auto_accepted: false, final_quantities_calculated: false },
+            work_items: [
+              {
+                work_item_id: "K2-L2", category: "column", discipline: "Struktur", code: "K2",
+                display_name: "Kolom K2", plain_name: "Kolom struktur", plain_description: "Elemen vertikal pemikul beban",
+                level: "L2", level_label: "Lantai 2", status: "review", status_label: "Perlu verifikasi",
+                readiness_score: 88, observed_label_count: 3, verified_physical_count: null,
+                count_label: "3 label/simbol teramati", count_is_final: false, dimensions_text: "250 × 600 mm",
+                known_facts: ["Ukuran tertulis 250 × 600 mm"], blockers: ["Jumlah fisik belum diverifikasi"],
+                recommended_actions: ["Periksa overlay"], source_sheets: [{ sheet_number: "S-202", page_number: 44 }],
+                evidence_refs: ["EV-K2"], user_accepted: false,
+              },
+              {
+                work_item_id: "K3-L2", category: "column", discipline: "Struktur", code: "K3",
+                display_name: "Kolom K3", plain_name: "Kolom struktur", level: "L2", level_label: "Lantai 2",
+                status: "review", status_label: "Perlu verifikasi", readiness_score: 84,
+                observed_label_count: 2, verified_physical_count: null, count_label: "2 label/simbol teramati",
+                count_is_final: false, dimensions_text: "250 × 400 mm", source_sheets: [], evidence_refs: ["EV-K3"],
+              },
+              {
+                work_item_id: "D1-L1", category: "door", discipline: "Arsitektur", code: "D1",
+                display_name: "Pintu D1", level: "L1", level_label: "Lantai 1", readiness_score: 90,
+                observed_label_count: 4, count_is_final: false,
+              },
+            ],
+            needs_clarification: [],
+          }),
+        } as Response;
+      }
+      return { ok: false, json: async () => ({}) } as Response;
+    });
+
+    const tool = createQueryProjectGraphTool({ fetchImpl: fetchImpl as typeof fetch, documentIntelligenceUrl: "http://doc-intel" });
+    const result = await tool.execute({ query: "kolom lantai 2 ada apa saja jumlah berapa ukuran berapa" }, { context });
+    const human = result.human_drawing_view as { work_items: Array<Record<string, unknown>> };
+
+    expect(result.available).toBe(true);
+    expect(human.work_items.map((item) => item.code)).toEqual(["K2", "K3"]);
+    expect(human.work_items[0].count_is_final).toBe(false);
+    expect(human.work_items[0].count_label).toBe("3 label/simbol teramati");
+    expect(human.work_items[0].citations).toEqual(["[S-202 p.44]"]);
+    expect(result.nodes).toEqual([]);
+    expect(result.audit_node_count).toBe(1);
+    expect(result.audit_nodes_included).toBe(false);
+    expect(JSON.stringify(human.work_items)).not.toContain("Pintu D1");
+  });
+});
+
+
+describe("query_project_graph projection-first and audit behavior", () => {
+  it("uses the human projection when PCKM is not ready", async () => {
+    vi.stubEnv("DB_API_URL", "http://test-db");
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/project-graph/retrieve")) {
+        return { ok: true, json: async () => ({ status: "not_ready" }) } as Response;
+      }
+      if (url.endsWith("/dem/runs")) {
+        return { ok: true, json: async () => [{ id: "RUN-NEW", status: "completed", completed_at: "2026-07-21T12:00:00Z" }] } as Response;
+      }
+      if (url.includes("/drawings/dem/RUN-NEW/intelligence?view=human")) {
+        return { ok: true, json: async () => ({
+          document_name: "Bridge Project.pdf", summary: {}, safety: {},
+          work_items: [{
+            work_item_id: "A1", category: "abutment", discipline: "structure", code: "A1",
+            display_name: "Abutment A1", level: "substructure", level_label: "Substruktur",
+            readiness_score: 91, observed_label_count: 1, count_label: "1 label/simbol teramati",
+            count_is_final: false, source_sheets: [{ sheet_number: "S-01", page_number: 2 }], evidence_refs: ["EV-A1"],
+          }], needs_clarification: [],
+        }) } as Response;
+      }
+      return { ok: false, json: async () => ({}) } as Response;
+    });
+    const tool = createQueryProjectGraphTool({ fetchImpl: fetchImpl as typeof fetch, documentIntelligenceUrl: "http://doc-intel" });
+    const result = await tool.execute({ query: "abutment A1" }, { context });
+    expect(result.available).toBe(true);
+    expect(result.data_status).toBe("human_projection_only");
+    expect((result.human_drawing_view as any).work_items[0].citations).toEqual(["[S-01 p.2]"]);
+  });
+
+  it("includes raw nodes only when the user explicitly asks for audit evidence", async () => {
+    vi.stubEnv("DB_API_URL", "http://test-db");
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/project-graph/retrieve")) return { ok: true, json: async () => ({
+        status: "success", data_status: "grounded",
+        nodes: [{ node_id: "N1", type: "element_type", name: "K2", discipline: "structure", confidence: 0.9 }],
+        evidence: [{ evidence_id: "EV-K2", sheet_id: "S-2", page_index: 4, raw_text: "K2" }],
+      }) } as Response;
+      if (url.endsWith("/dem/runs")) return { ok: true, json: async () => [{ id: "R1", status: "completed" }] } as Response;
+      if (url.includes("/drawings/dem/R1/intelligence?view=human")) return { ok: true, json: async () => ({
+        document_name: "X.pdf", summary: {}, safety: {},
+        work_items: [{ work_item_id: "K2", category: "column", code: "K2", level: "L2", level_label: "Lantai 2", readiness_score: 90, observed_label_count: 3, count_label: "3 label/simbol teramati", count_is_final: false, source_sheets: [{ sheet_number: "S-2", page_number: 5 }], evidence_refs: ["EV-K2"] }], needs_clarification: [],
+      }) } as Response;
+      return { ok: false, json: async () => ({}) } as Response;
+    });
+    const tool = createQueryProjectGraphTool({ fetchImpl: fetchImpl as typeof fetch, documentIntelligenceUrl: "http://doc-intel" });
+    const result = await tool.execute({ query: "audit evidence kolom K2 lantai 2" }, { context });
+    expect(result.audit_nodes_included).toBe(true);
+    expect(Array.isArray(result.nodes) ? result.nodes : []).toHaveLength(1);
+    expect(Array.isArray(result.evidence) ? result.evidence : []).toHaveLength(1);
+  });
+});
+
+
+describe("query_project_graph real 88-page human-delivery fixture", () => {
+  it("returns civil-engineering-ready L2 column items instead of raw PCKM noise", async () => {
+    vi.stubEnv("DB_API_URL", "http://test-db");
+    const delivery = JSON.parse(readFileSync(resolve(
+      __dirname,
+      "../../../../report/report_drawing_intelligence/DRAWING_INTELLIGENCE_HUMAN_DELIVERY_88P_CONTINUED_2026-07-21.json",
+    ), "utf8"));
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/project-graph/retrieve")) return { ok: true, json: async () => ({
+        status: "success", data_status: "grounded", intent: "LIST_FILTER",
+        nodes: Array.from({ length: 20 }, (_, index) => ({
+          node_id: `RAW-${index}`, type: "drawing_reference", name: `raw ${index}`, discipline: null, confidence: 0.5,
+        })),
+        evidence: [], notes: [],
+      }) } as Response;
+      if (url.endsWith("/dem/runs")) return { ok: true, json: async () => [{ id: "RUN-88", status: "completed" }] } as Response;
+      if (url.includes("/drawings/dem/RUN-88/intelligence?view=human")) return { ok: true, json: async () => delivery } as Response;
+      return { ok: false, json: async () => ({}) } as Response;
+    });
+    const tool = createQueryProjectGraphTool({ fetchImpl: fetchImpl as typeof fetch, documentIntelligenceUrl: "http://doc-intel" });
+    const result = await tool.execute({ query: "kolom lantai 2 ada apa saja jumlah berapa ukuran berapa" }, { context });
+    const items = (result.human_drawing_view as any).work_items;
+    const codes = items.map((item: any) => item.code);
+    expect(codes).toEqual(expect.arrayContaining(["K1A", "K2", "K3"]));
+    expect(items.every((item: any) => item.count_is_final === false)).toBe(true);
+    expect(items.find((item: any) => item.code === "K2").dimensions_text).toBe("250 × 600 mm");
+    expect(items.find((item: any) => item.code === "K2").citations).toContain("[DENAH KOLOM LANTAI 2 p.43]");
+    expect(result.nodes).toEqual([]);
+    expect(result.audit_node_count).toBe(20);
+    expect(JSON.stringify(items)).not.toContain('"category":"door"');
+  });
+});

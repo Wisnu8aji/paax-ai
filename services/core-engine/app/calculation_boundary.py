@@ -12,7 +12,7 @@ class CalculationRequest(BaseModel):
     project_id: str
     snapshot_id: str
     measurement_fact_ids: list[str] = Field(min_length=1)
-    calculation_type: Literal["concrete_column_volume", "length", "area", "count"]
+    calculation_type: Literal["concrete_column_volume", "concrete_column_total_volume", "length", "area", "count"]
     inputs: list[MeasurementFact] = Field(min_length=1)
     requested_by: str
 
@@ -47,6 +47,30 @@ def _concrete_column_volume(request: CalculationRequest, digest: str, sources: l
     values = [convert(dimensions[key].typed_quantity, "m").value for key in ("width", "depth", "height")]
     result = values[0] * values[1] * values[2]
     return CalculationResponse(calculation_id=digest, status="complete", formula="width × depth × height", substituted_formula=f"{values[0]} × {values[1]} × {values[2]}", result=float(result), unit="m3", input_sources=sources)
+
+
+def _concrete_column_total_volume(request: CalculationRequest, digest: str, sources: list[dict[str, str]]) -> CalculationResponse:
+    facts = {fact.formula_inputs[0]: fact for fact in request.inputs if len(fact.formula_inputs) == 1}
+    required = {"width", "depth", "height", "count"}
+    if set(facts) != required:
+        return CalculationResponse(
+            calculation_id=digest, status="needs_input", input_sources=sources,
+            warnings=["width, depth, height, and verified count are required"],
+        )
+    if facts["count"].measurement_type.value != "count":
+        return CalculationResponse(
+            calculation_id=digest, status="blocked", input_sources=sources,
+            warnings=["count input must use measurement_type='count' and unit='unit'"],
+        )
+    lengths = [convert(facts[key].typed_quantity, "m").value for key in ("width", "depth", "height")]
+    count = facts["count"].typed_quantity.value
+    result = lengths[0] * lengths[1] * lengths[2] * count
+    return CalculationResponse(
+        calculation_id=digest, status="complete",
+        formula="width × depth × height × verified_count",
+        substituted_formula=f"{lengths[0]} × {lengths[1]} × {lengths[2]} × {count}",
+        result=float(result), unit="m3", input_sources=sources,
+    )
 
 
 def _summed_typed_operation(
@@ -89,6 +113,8 @@ def calculate(request: CalculationRequest) -> CalculationResponse:
     sources = [{"measurement_id": fact.measurement_id, "source_method": fact.source_method.value, "unit": fact.unit} for fact in request.inputs]
     if request.calculation_type == "concrete_column_volume":
         return _concrete_column_volume(request, digest, sources)
+    if request.calculation_type == "concrete_column_total_volume":
+        return _concrete_column_total_volume(request, digest, sources)
     if request.calculation_type == "length":
         return _summed_typed_operation(request, digest, sources, expected_measurement_type="length", formula_input_key="length", target_unit="m")
     if request.calculation_type == "area":

@@ -601,21 +601,43 @@ async def list_project_dem_sheets(id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(query)
     rows = result.all()
     
+    def value_of(record: dict | None):
+        return record.get("value") if isinstance(record, dict) else None
+
     sheets = []
     for run, page in rows:
-        sheet_title = None
-        if page.result:
-            sheet_identity = page.result.get("sheet_identity") or {}
-            title_obj = sheet_identity.get("title") or {}
-            sheet_title = title_obj.get("value")
-            
+        result_payload = page.result or {}
+        sheet_identity = result_payload.get("sheet_identity") or {}
+        source = result_payload.get("source") or {}
+        scales = sheet_identity.get("scale_candidates") or []
+        scale = next(
+            (candidate.get("normalized") or candidate.get("raw") for candidate in scales if isinstance(candidate, dict)),
+            None,
+        )
+        confidence_values = [
+            candidate.get("confidence") for candidate in [
+                sheet_identity.get("sheet_number"), sheet_identity.get("title"), sheet_identity.get("discipline")
+            ] if isinstance(candidate, dict) and isinstance(candidate.get("confidence"), (int, float))
+        ]
         sheets.append(schemas.ProjectDemSheetResponse(
             run_id=str(run.id),
             page_index=page.page_index,
             file_name=run.file_name,
             status=page.status,
-            sheet_title=sheet_title,
-            thumbnail_url=f"/drawings/dem/{run.id}/pages/{page.page_index}/image"
+            sheet_title=value_of(sheet_identity.get("title")),
+            sheet_number=value_of(sheet_identity.get("sheet_number")),
+            discipline=value_of(sheet_identity.get("discipline")),
+            level=value_of(sheet_identity.get("level")),
+            scale=scale,
+            revision=value_of(sheet_identity.get("revision")),
+            confidence=min(confidence_values) if confidence_values else None,
+            width_px=source.get("width_px") if isinstance(source.get("width_px"), int) else None,
+            height_px=source.get("height_px") if isinstance(source.get("height_px"), int) else None,
+            thumbnail_url=(
+                None
+                if (run.artifact_key or "").startswith("fixture://")
+                else f"/drawings/dem/{run.id}/pages/{page.page_index}/image"
+            ),
         ))
     return sheets
 

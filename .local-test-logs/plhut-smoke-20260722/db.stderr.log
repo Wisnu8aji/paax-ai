@@ -1,0 +1,13 @@
+=src;..\..\packages\schemas\python : The term '=src;..\..\packages\schemas\python' is not recognized as the name of a 
+cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify 
+that the path is correct and try again.
+At line:1 char:1
++ ='src;..\..\packages\schemas\python'; python -m uvicorn paax_db.main: ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (=src;..\..\packages\schemas\python:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+INFO:     Started server process [14000]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8084 (Press CTRL+C to quit)

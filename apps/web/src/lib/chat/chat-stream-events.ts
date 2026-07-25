@@ -1,3 +1,5 @@
+import type { ActivityEventPayload } from "./activity-timeline";
+
 export type RunPhase =
   | "queued"
   | "receiving_message"
@@ -46,6 +48,30 @@ export type CommandRoomStreamEvent =
       runId: string;
       conversationId: string;
       errorMessage: string;
+      timestamp: string;
+    }
+  | {
+      type: "activity";
+      runId: string;
+      conversationId: string;
+      activity: ActivityEventPayload;
+      timestamp: string;
+    }
+  | {
+      type: "tool_call";
+      runId: string;
+      conversationId: string;
+      tool: string;
+      toolCallId?: string;
+      timestamp: string;
+    }
+  | {
+      type: "tool_result";
+      runId: string;
+      conversationId: string;
+      tool: string;
+      toolCallId?: string;
+      summary?: string;
       timestamp: string;
     }
   | {

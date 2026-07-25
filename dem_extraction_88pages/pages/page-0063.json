@@ -1,0 +1,1255 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 63,
+    "page_number": 64,
+    "render_uri": "local://plhut-88pg-run-1/page-0063.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T22:19:44.970077+00:00",
+    "completed_at": "2026-07-14T22:19:44.970109+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "64",
+      "raw": "64",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "id-meta"
+      ]
+    },
+    "title": {
+      "value": "DETAIL PEMASANGAN STOP KONTAK & SAKLAR",
+      "raw": "DETAIL PEMASANGAN STOP KONTAK & SAKLAR",
+      "confidence": 0.99,
+      "evidence_refs": [
+        "id-titleblock"
+      ]
+    },
+    "discipline": {
+      "value": "MEP",
+      "confidence": 0.95,
+      "status": "extracted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "NTS",
+        "normalized": "NTS",
+        "confidence": 0.99,
+        "evidence_refs": [
+          "id-scale"
+        ]
+      }
+    ]
+  },
+  "views": [],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KEMENTERIAN AGAMA RI",
+        "normalized": "KEMENTERIAN AGAMA RI",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          28.0,
+          980.0,
+          38.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-org"
+        ]
+      },
+      {
+        "raw": "DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH",
+        "normalized": "DIRECTORATE GENERAL OF HAJJ AND UMRAH ORGANIZATION",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          39.0,
+          980.0,
+          55.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-subtitle"
+        ]
+      },
+      {
+        "raw": "TAHUN ANGGARAN 2024",
+        "normalized": "FISCAL YEAR 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          56.0,
+          980.0,
+          64.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-year"
+        ]
+      },
+      {
+        "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+        "normalized": "INTEGRATED HAJJ AND UMRAH SERVICE CENTER BUILDING SURAKARTA CITY",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          85.0,
+          980.0,
+          105.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-project"
+        ]
+      },
+      {
+        "raw": "JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+        "normalized": "KI MANGUN SARKORO STREET NO.115 SURAKARTA CITY",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          125.0,
+          980.0,
+          135.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-location"
+        ]
+      },
+      {
+        "raw": "KEPALA KANTOR WILAYAH JAWA TENGAH",
+        "normalized": "HEAD OF CENTRAL JAVA REGIONAL OFFICE",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          145.0,
+          980.0,
+          155.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-manager"
+        ]
+      },
+      {
+        "raw": "SELAKU KUASA PENGGUNA ANGGARAN",
+        "normalized": "AS THE AUTHORIZED BUDGET USER",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          156.0,
+          980.0,
+          164.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-manager-role"
+        ]
+      },
+      {
+        "raw": "MENGETAHUI / MENYETUJUI",
+        "normalized": "ACKNOWLEDGE / APPROVE",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          180.0,
+          980.0,
+          190.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-approval"
+        ]
+      },
+      {
+        "raw": "PEJABAT PEMBUAT KOMITMEN",
+        "normalized": "COMMITMENT MAKING OFFICIAL",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          195.0,
+          980.0,
+          205.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-officer"
+        ]
+      },
+      {
+        "raw": "KONSULTAN PERENCANA",
+        "normalized": "PLANNING CONSULTANT",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          220.0,
+          980.0,
+          230.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-consultant"
+        ]
+      },
+      {
+        "raw": "TEAM LEADER",
+        "normalized": "TEAM LEADER",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          260.0,
+          980.0,
+          270.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-teamleader"
+        ]
+      },
+      {
+        "raw": "KETUA TIM",
+        "normalized": "TEAM CHAIRMAN",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          275.0,
+          980.0,
+          283.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-chairman-role"
+        ]
+      },
+      {
+        "raw": "NAMA TANDA TANGAN",
+        "normalized": "NAME SIGNATURE",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          295.0,
+          980.0,
+          305.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-table-header"
+        ]
+      },
+      {
+        "raw": "SIPIL",
+        "normalized": "CIVIL ENGINEERING",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          315.0,
+          835.0,
+          325.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-discipline-civil"
+        ]
+      },
+      {
+        "raw": "DIGAMBAR",
+        "normalized": "DRAWN BY",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          330.0,
+          840.0,
+          340.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-drawing-role"
+        ]
+      },
+      {
+        "raw": "DETAIL PAS. STOP KONTAK DAN SAKLAR",
+        "normalized": "DETAIL INSTALLATION OF SOCKETS AND SWITCHES",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          350.0,
+          980.0,
+          368.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-drawing-title"
+        ]
+      },
+      {
+        "raw": "JANUARI 2024",
+        "normalized": "JANUARY 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          865.0,
+          400.0,
+          910.0,
+          410.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-date"
+        ]
+      },
+      {
+        "raw": "NTS",
+        "normalized": "NO SCALE",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          940.0,
+          350.0,
+          960.0,
+          360.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-tb-scale"
+        ]
+      },
+      {
+        "raw": "tepi dinding",
+        "normalized": "wall edge",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          380.0,
+          220.0,
+          435.0,
+          230.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-label-1"
+        ]
+      },
+      {
+        "raw": "dinding",
+        "normalized": "wall",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          395.0,
+          235.0,
+          420.0,
+          245.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-label-2"
+        ]
+      },
+      {
+        "raw": "saklar",
+        "normalized": "switch",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          270.0,
+          425.0,
+          280.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-label-3"
+        ]
+      },
+      {
+        "raw": "sesuaikan dari gambar rencana",
+        "normalized": "adjust according to layout drawing",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          510.0,
+          320.0,
+          590.0,
+          340.0
+        ],
+        "confidence": 0.94,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-note-1"
+        ]
+      },
+      {
+        "raw": "lantai",
+        "normalized": "floor",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          395.0,
+          450.0,
+          420.0,
+          460.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-label-4"
+        ]
+      },
+      {
+        "raw": "saklar AC",
+        "normalized": "AC switch",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          570.0,
+          270.0,
+          610.0,
+          280.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-label-5"
+        ]
+      },
+      {
+        "raw": "saklar standar",
+        "normalized": "standard switch",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          570.0,
+          390.0,
+          630.0,
+          400.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "text-label-6"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "150 cm",
+        "normalized": "150 cm",
+        "numeric_value": 150.0,
+        "unit": "cm",
+        "bbox": [
+          415.0,
+          330.0,
+          440.0,
+          340.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-1"
+        ]
+      },
+      {
+        "raw": "260 cm",
+        "normalized": "260 cm",
+        "numeric_value": 260.0,
+        "unit": "cm",
+        "bbox": [
+          595.0,
+          340.0,
+          620.0,
+          350.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-2"
+        ]
+      },
+      {
+        "raw": "40 cm",
+        "normalized": "40 cm",
+        "numeric_value": 40.0,
+        "unit": "cm",
+        "bbox": [
+          345.0,
+          310.0,
+          365.0,
+          320.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-3"
+        ]
+      },
+      {
+        "raw": "40 cm",
+        "normalized": "40 cm",
+        "numeric_value": 40.0,
+        "unit": "cm",
+        "bbox": [
+          515.0,
+          380.0,
+          535.0,
+          390.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-4"
+        ]
+      },
+      {
+        "raw": "40 cm",
+        "normalized": "40 cm",
+        "numeric_value": 40.0,
+        "unit": "cm",
+        "bbox": [
+          535.0,
+          400.0,
+          555.0,
+          410.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "dim-5"
+        ]
+      }
+    ],
+    "grids": [],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [],
+    "symbols": [
+      {
+        "raw": "Simbol saklar (persegi dengan garis miring)",
+        "normalized": "Switch symbol (rectangle with diagonal line)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          405.0,
+          270.0,
+          420.0,
+          285.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "sym-switch"
+        ]
+      },
+      {
+        "raw": "Simbol stop kontak (lingkaran dengan dua lingkaran kecil)",
+        "normalized": "Socket outlet symbol (circle with two small circles)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          580.0,
+          270.0,
+          595.0,
+          285.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "sym-socket"
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "raw": "NAMA TANDA TANGAN\nSIPIL\nDIGAMBAR",
+        "normalized": "Signatures Table (Civil Engineering, Drawing)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          820.0,
+          295.0,
+          980.0,
+          340.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "table-signatures"
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "raw": "Arsiran pada dinding (hatching pattern on walls)",
+        "normalized": "Wall hatching pattern",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          270.0,
+          240.0,
+          330.0,
+          450.0
+        ],
+        "confidence": 0.85,
+        "status": "extracted",
+        "evidence_refs": [
+          "mat-wall"
+        ]
+      }
+    ],
+    "notes": [
+      {
+        "raw": "SKALA NTS",
+        "normalized": "Scale: NTS (No Scale)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          510.0,
+          510.0,
+          530.0,
+          520.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "note-scale"
+        ]
+      },
+      {
+        "raw": "DETIIL PEMASANGAN STOP KONTAK & SAKLAR",
+        "normalized": "DETAIL INSTALLATION OF SOCKETS AND SWITCHES",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          390.0,
+          510.0,
+          570.0,
+          520.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "note-title"
+        ]
+      },
+      {
+        "raw": "sesuaikan dari gambar rencana",
+        "normalized": "adjust according to layout drawing",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          510.0,
+          320.0,
+          590.0,
+          340.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "note-adjustment"
+        ]
+      }
+    ],
+    "references": [],
+    "patterns": [
+      {
+        "raw": "Arsiran pada dinding (hatching pattern on walls)",
+        "normalized": "Wall hatching pattern",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          270.0,
+          240.0,
+          330.0,
+          450.0
+        ],
+        "confidence": 0.85,
+        "status": "extracted",
+        "evidence_refs": [
+          "pattern-wall"
+        ]
+      }
+    ],
+    "geometry_descriptions": [
+      {
+        "raw": "Penampang dinding dengan instalasi stop kontak dan saklar",
+        "normalized": "Wall section with socket and switch installation",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          270.0,
+          240.0,
+          650.0,
+          450.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "desc-wall-section"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "id-meta",
+      "kind": "text",
+      "raw": "64",
+      "bbox": null,
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "id-titleblock",
+      "kind": "text",
+      "raw": "DETAIL PEMASANGAN STOP KONTAK & SAKLAR",
+      "bbox": [
+        390.0,
+        510.0,
+        570.0,
+        520.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "id-scale",
+      "kind": "text",
+      "raw": "NTS",
+      "bbox": [
+        940.0,
+        350.0,
+        960.0,
+        360.0
+      ],
+      "confidence": 0.99
+    },
+    {
+      "evidence_id": "text-tb-org",
+      "kind": "text",
+      "raw": "KEMENTERIAN AGAMA RI",
+      "bbox": [
+        820.0,
+        28.0,
+        980.0,
+        38.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-subtitle",
+      "kind": "text",
+      "raw": "DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH",
+      "bbox": [
+        820.0,
+        39.0,
+        980.0,
+        55.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-year",
+      "kind": "text",
+      "raw": "TAHUN ANGGARAN 2024",
+      "bbox": [
+        820.0,
+        56.0,
+        980.0,
+        64.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-project",
+      "kind": "text",
+      "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+      "bbox": [
+        820.0,
+        85.0,
+        980.0,
+        105.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-location",
+      "kind": "text",
+      "raw": "JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+      "bbox": [
+        820.0,
+        125.0,
+        980.0,
+        135.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-manager",
+      "kind": "text",
+      "raw": "KEPALA KANTOR WILAYAH JAWA TENGAH",
+      "bbox": [
+        820.0,
+        145.0,
+        980.0,
+        155.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-manager-role",
+      "kind": "text",
+      "raw": "SELAKU KUASA PENGGUNA ANGGARAN",
+      "bbox": [
+        820.0,
+        156.0,
+        980.0,
+        164.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-approval",
+      "kind": "text",
+      "raw": "MENGETAHUI / MENYETUJUI",
+      "bbox": [
+        820.0,
+        180.0,
+        980.0,
+        190.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-officer",
+      "kind": "text",
+      "raw": "PEJABAT PEMBUAT KOMITMEN",
+      "bbox": [
+        820.0,
+        195.0,
+        980.0,
+        205.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-consultant",
+      "kind": "text",
+      "raw": "KONSULTAN PERENCANA",
+      "bbox": [
+        820.0,
+        220.0,
+        980.0,
+        230.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-teamleader",
+      "kind": "text",
+      "raw": "TEAM LEADER",
+      "bbox": [
+        820.0,
+        260.0,
+        980.0,
+        270.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-chairman-role",
+      "kind": "text",
+      "raw": "KETUA TIM",
+      "bbox": [
+        820.0,
+        275.0,
+        980.0,
+        283.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-table-header",
+      "kind": "text",
+      "raw": "NAMA TANDA TANGAN",
+      "bbox": [
+        820.0,
+        295.0,
+        980.0,
+        305.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-discipline-civil",
+      "kind": "text",
+      "raw": "SIPIL",
+      "bbox": [
+        820.0,
+        315.0,
+        835.0,
+        325.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-drawing-role",
+      "kind": "text",
+      "raw": "DIGAMBAR",
+      "bbox": [
+        820.0,
+        330.0,
+        840.0,
+        340.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-drawing-title",
+      "kind": "text",
+      "raw": "DETAIL PAS. STOP KONTAK DAN SAKLAR",
+      "bbox": [
+        820.0,
+        350.0,
+        980.0,
+        368.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-date",
+      "kind": "text",
+      "raw": "JANUARI 2024",
+      "bbox": [
+        865.0,
+        400.0,
+        910.0,
+        410.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-tb-scale",
+      "kind": "text",
+      "raw": "NTS",
+      "bbox": [
+        940.0,
+        350.0,
+        960.0,
+        360.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "text-label-1",
+      "kind": "text",
+      "raw": "tepi dinding",
+      "bbox": [
+        380.0,
+        220.0,
+        435.0,
+        230.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-label-2",
+      "kind": "text",
+      "raw": "dinding",
+      "bbox": [
+        395.0,
+        235.0,
+        420.0,
+        245.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-label-3",
+      "kind": "text",
+      "raw": "saklar",
+      "bbox": [
+        400.0,
+        270.0,
+        425.0,
+        280.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-note-1",
+      "kind": "text",
+      "raw": "sesuaikan dari gambar rencana",
+      "bbox": [
+        510.0,
+        320.0,
+        590.0,
+        340.0
+      ],
+      "confidence": 0.94
+    },
+    {
+      "evidence_id": "text-label-4",
+      "kind": "text",
+      "raw": "lantai",
+      "bbox": [
+        395.0,
+        450.0,
+        420.0,
+        460.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-label-5",
+      "kind": "text",
+      "raw": "saklar AC",
+      "bbox": [
+        570.0,
+        270.0,
+        610.0,
+        280.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "text-label-6",
+      "kind": "text",
+      "raw": "saklar standar",
+      "bbox": [
+        570.0,
+        390.0,
+        630.0,
+        400.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-1",
+      "kind": "dimension",
+      "raw": "150 cm",
+      "bbox": [
+        415.0,
+        330.0,
+        440.0,
+        340.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-2",
+      "kind": "dimension",
+      "raw": "260 cm",
+      "bbox": [
+        595.0,
+        340.0,
+        620.0,
+        350.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-3",
+      "kind": "dimension",
+      "raw": "40 cm",
+      "bbox": [
+        345.0,
+        310.0,
+        365.0,
+        320.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-4",
+      "kind": "dimension",
+      "raw": "40 cm",
+      "bbox": [
+        515.0,
+        380.0,
+        535.0,
+        390.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "dim-5",
+      "kind": "dimension",
+      "raw": "40 cm",
+      "bbox": [
+        535.0,
+        400.0,
+        555.0,
+        410.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "sym-switch",
+      "kind": "symbol",
+      "raw": "Simbol saklar (persegi dengan garis miring)",
+      "bbox": [
+        405.0,
+        270.0,
+        420.0,
+        285.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "sym-socket",
+      "kind": "symbol",
+      "raw": "Simbol stop kontak (lingkaran dengan dua lingkaran kecil)",
+      "bbox": [
+        580.0,
+        270.0,
+        595.0,
+        285.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "table-signatures",
+      "kind": "table",
+      "raw": "NAMA TANDA TANGAN\nSIPIL\nDIGAMBAR",
+      "bbox": [
+        820.0,
+        295.0,
+        980.0,
+        340.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "mat-wall",
+      "kind": "material",
+      "raw": "Arsiran pada dinding (hatching pattern on walls)",
+      "bbox": [
+        270.0,
+        240.0,
+        330.0,
+        450.0
+      ],
+      "confidence": 0.85
+    },
+    {
+      "evidence_id": "note-scale",
+      "kind": "note",
+      "raw": "SKALA NTS",
+      "bbox": [
+        510.0,
+        510.0,
+        530.0,
+        520.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "note-title",
+      "kind": "note",
+      "raw": "DETIIL PEMASANGAN STOP KONTAK & SAKLAR",
+      "bbox": [
+        390.0,
+        510.0,
+        570.0,
+        520.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "note-adjustment",
+      "kind": "note",
+      "raw": "sesuaikan dari gambar rencana",
+      "bbox": [
+        510.0,
+        320.0,
+        590.0,
+        340.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "pattern-wall",
+      "kind": "pattern",
+      "raw": "Arsiran pada dinding (hatching pattern on walls)",
+      "bbox": [
+        270.0,
+        240.0,
+        330.0,
+        450.0
+      ],
+      "confidence": 0.85
+    },
+    {
+      "evidence_id": "desc-wall-section",
+      "kind": "geometry_description",
+      "raw": "Penampang dinding dengan instalasi stop kontak dan saklar",
+      "bbox": [
+        270.0,
+        240.0,
+        650.0,
+        450.0
+      ],
+      "confidence": 0.9
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

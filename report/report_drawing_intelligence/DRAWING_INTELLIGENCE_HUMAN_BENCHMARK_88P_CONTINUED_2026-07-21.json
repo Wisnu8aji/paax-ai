@@ -1,0 +1,91 @@
+{
+  "schema_version": "paax.drawing-intelligence.human-benchmark.v1",
+  "benchmark": "PLHUT-88-pages-human-delivery",
+  "passed": 10,
+  "total": 10,
+  "score": 1.0,
+  "status": "PASS",
+  "checks": [
+    {
+      "id": "H01",
+      "description": "Human delivery contains recognized work items",
+      "passed": true,
+      "detail": 64
+    },
+    {
+      "id": "H02",
+      "description": "Title-block address is not shown as a work item",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "id": "H03",
+      "description": "Every presented item has a known discipline",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "id": "H04",
+      "description": "Every presented item has evidence",
+      "passed": true,
+      "detail": 1
+    },
+    {
+      "id": "H05",
+      "description": "Every item explains observed counts as non-final",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "id": "H06",
+      "description": "Every item provides a next action",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "id": "H07",
+      "description": "Every item links to at least one source sheet",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "id": "H08",
+      "description": "K2 L2 is understandable and dimensioned",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "id": "H09",
+      "description": "No drawing object is auto-accepted",
+      "passed": true,
+      "detail": 0
+    },
+    {
+      "id": "H10",
+      "description": "Clarification candidates remain auditable",
+      "passed": true,
+      "detail": 5
+    }
+  ],
+  "summary": {
+    "recognized_work_items": 64,
+    "needs_clarification": 5,
+    "suppressed_audit_candidates": 4,
+    "open_review_tasks": 76,
+    "review_batches": 6,
+    "accepted_drawing_objects": 0,
+    "disciplines": {
+      "architecture": 24,
+      "electrical": 6,
+      "structure": 34
+    },
+    "levels": {
+      "Lantai 1": 25,
+      "Lantai 2": 23,
+      "Belum diketahui": 1,
+      "Atap": 9,
+      "Fondasi/Substruktur": 6
+    },
+    "average_readiness_score": 85
+  }
+}

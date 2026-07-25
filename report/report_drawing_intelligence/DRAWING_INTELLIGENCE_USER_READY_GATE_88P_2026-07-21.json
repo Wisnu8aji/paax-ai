@@ -1,0 +1,282 @@
+{
+  "schema_version": "paax.drawing-intelligence.user-ready-gate.v1",
+  "status": "PASS",
+  "passed": 18,
+  "total": 18,
+  "checks": [
+    {
+      "id": "U01",
+      "description": "All 88 pages are represented",
+      "passed": true,
+      "detail": 88
+    },
+    {
+      "id": "U02",
+      "description": "Package benchmark passes",
+      "passed": true,
+      "detail": "PASS"
+    },
+    {
+      "id": "U03",
+      "description": "Human benchmark passes",
+      "passed": true,
+      "detail": "PASS"
+    },
+    {
+      "id": "U04",
+      "description": "At least 60 user-presentable items are available",
+      "passed": true,
+      "detail": 64
+    },
+    {
+      "id": "U05",
+      "description": "Clarification queue remains bounded",
+      "passed": true,
+      "detail": 5
+    },
+    {
+      "id": "U06",
+      "description": "Audit noise is retained separately",
+      "passed": true,
+      "detail": 4
+    },
+    {
+      "id": "U07",
+      "description": "Known noise codes are hidden from user lists",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "id": "U08",
+      "description": "Known noise codes remain auditable",
+      "passed": true,
+      "detail": [
+        "D-01",
+        "E27",
+        "K-01",
+        "LT1"
+      ]
+    },
+    {
+      "id": "U09",
+      "description": "Every item has a human name and explanation",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "id": "U10",
+      "description": "Every item links to source evidence",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "id": "U11",
+      "description": "Every item has a recommended next action",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "id": "U12",
+      "description": "No presented count is final by default",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "id": "U13",
+      "description": "No drawing object is auto-accepted",
+      "passed": true,
+      "detail": 0
+    },
+    {
+      "id": "U14",
+      "description": "K2 L2 remains correctly joined across sheets",
+      "passed": true,
+      "detail": {
+        "work_item_id": "work-column-K2-L2",
+        "category": "column",
+        "source_category": "column",
+        "discipline": "structure",
+        "code": "K2",
+        "technical_name": "Kolom",
+        "plain_name": "Kolom struktur",
+        "plain_description": "Elemen vertikal yang menyalurkan beban bangunan ke struktur di bawahnya.",
+        "display_name": "Kolom K2",
+        "level": "L2",
+        "level_label": "Lantai 2",
+        "status": "siap_ditinjau",
+        "status_label": "Siap ditinjau",
+        "maturity": "classified",
+        "readiness_score": 96,
+        "confidence": 0.964,
+        "confidence_percent": 96,
+        "observed_label_count": 3,
+        "verified_physical_count": null,
+        "count_label": "3 label/simbol teramati",
+        "count_is_final": false,
+        "dimensions_text": "250 × 600 mm",
+        "geometry_kind": "object",
+        "known_facts": [
+          "Jenis elemen: Kolom.",
+          "Kode pada gambar: K2.",
+          "Lokasi level: L2.",
+          "Ukuran tertulis: 250 × 600 mm.",
+          "Teramati 3 label/simbol pada gambar; angka ini belum menjadi jumlah fisik terverifikasi.",
+          "Sumber utama: PLHUT-SURAKARTA-88PG."
+        ],
+        "blockers": [
+          "Jumlah fisik belum diverifikasi.",
+          "Perlu pemeriksaan manusia untuk memastikan jumlah objek sebenarnya."
+        ],
+        "recommended_actions": [
+          "Periksa overlay pada lembar sumber lalu verifikasi jumlah objek fisik."
+        ],
+        "source_sheets": [
+          {
+            "page_index": 42,
+            "page_number": 43,
+            "sheet_number": "PLHUT-SURAKARTA-88PG",
+            "title": "DENAH KOLOM LANTAI 2",
+            "discipline": "structure",
+            "drawing_type": "column_plan",
+            "level": "L2",
+            "readiness": "ready"
+          }
+        ],
+        "occurrences": [
+          {
+            "page_index": 42,
+            "page_number": 43,
+            "sheet_number": "PLHUT-SURAKARTA-88PG",
+            "sheet_title": "DENAH KOLOM LANTAI 2",
+            "bbox": {
+              "x0": 0.24174053182917002,
+              "y0": 0.18803418803418803,
+              "x1": 0.25382755842062854,
+              "y1": 0.19943019943019943,
+              "space": "normalized"
+            },
+            "confidence": 0.964,
+            "evidence_refs": [
+              "ev-element-k2",
+              "ev-label-k2",
+              "ev-label-k2-1",
+              "ev-label-k2-2"
+            ],
+            "definition_page_index": 49
+          },
+          {
+            "page_index": 42,
+            "page_number": 43,
+            "sheet_number": "PLHUT-SURAKARTA-88PG",
+            "sheet_title": "DENAH KOLOM LANTAI 2",
+            "bbox": {
+              "x0": 0.32232070910556004,
+              "y0": 0.18803418803418803,
+              "x1": 0.33440773569701854,
+              "y1": 0.19943019943019943,
+              "space": "normalized"
+            },
+            "confidence": 0.964,
+            "evidence_refs": [
+              "ev-element-k2",
+              "ev-label-k2",
+              "ev-label-k2-1",
+              "ev-label-k2-2"
+            ],
+            "definition_page_index": 49
+          },
+          {
+            "page_index": 42,
+            "page_number": 43,
+            "sheet_number": "PLHUT-SURAKARTA-88PG",
+            "sheet_title": "DENAH KOLOM LANTAI 2",
+            "bbox": {
+              "x0": 0.40290088638195004,
+              "y0": 0.18803418803418803,
+              "x1": 0.41498791297340853,
+              "y1": 0.19943019943019943,
+              "space": "normalized"
+            },
+            "confidence": 0.964,
+            "evidence_refs": [
+              "ev-element-k2",
+              "ev-label-k2",
+              "ev-label-k2-1",
+              "ev-label-k2-2"
+            ],
+            "definition_page_index": 49
+          }
+        ],
+        "evidence_count": 4,
+        "evidence_refs": [
+          "ev-element-k2",
+          "ev-label-k2",
+          "ev-label-k2-1",
+          "ev-label-k2-2"
+        ],
+        "review_task_ids": [
+          "review-column-K2-L2"
+        ],
+        "attributes": {
+          "level": "L2",
+          "count_semantics": "drawing_label_observation",
+          "definition_entry_id": "vocab-p49-element_labels-1-K2",
+          "definition_page_index": 49,
+          "definition_page_type": "schedule",
+          "sheet_title": "TABEL KOLOM",
+          "raw": "K2 - 250 x 600 mm",
+          "dimensions": {
+            "width": 250,
+            "depth": 600,
+            "a": 250,
+            "b": 600,
+            "unit": "mm",
+            "raw": "K2 - 250 x 600 mm"
+          },
+          "alternate_definition_ids": [
+            "vocab-p53-element_labels-7-K2",
+            "vocab-p53-element_labels-8-K2"
+          ],
+          "definition_count": 3
+        },
+        "user_accepted": false,
+        "presentation_quality_reasons": [],
+        "suppression_reasons": []
+      }
+    },
+    {
+      "id": "U15",
+      "description": "K2 count remains an observation, not physical quantity",
+      "passed": true,
+      "detail": {
+        "count_is_final": false,
+        "verified_physical_count": null
+      }
+    },
+    {
+      "id": "U16",
+      "description": "Review tasks are grouped for humans",
+      "passed": true,
+      "detail": 6
+    },
+    {
+      "id": "U17",
+      "description": "No live AI call was used by benchmark",
+      "passed": true,
+      "detail": 0
+    },
+    {
+      "id": "U18",
+      "description": "Drawing Intelligence calculates no final quantities",
+      "passed": true,
+      "detail": 0
+    }
+  ],
+  "summary": {
+    "recognized_work_items": 64,
+    "needs_clarification": 5,
+    "suppressed_audit_candidates": 4,
+    "review_tasks": 76,
+    "review_batches": 6
+  }
+}

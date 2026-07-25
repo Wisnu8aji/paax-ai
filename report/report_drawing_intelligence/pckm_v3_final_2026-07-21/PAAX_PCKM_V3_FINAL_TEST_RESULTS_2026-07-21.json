@@ -1,0 +1,44 @@
+{
+  "schema_version": "paax.pckm-v3.final-test-results.v1",
+  "date": "2026-07-21",
+  "live_ai_calls": 0,
+  "drawing_intelligence": {
+    "focused_di_api_review": "48 passed",
+    "additional_human_review": "10 passed",
+    "remainder": "608 passed, 6 skipped",
+    "effective_total": "656 passed, 6 skipped"
+  },
+  "core_engine": "296 passed",
+  "database": "156 passed, 1 skipped",
+  "pckm_db_benchmark": "14/14 PASS",
+  "schemas_jest": "32 passed",
+  "ai_orchestrator_vitest": "54 passed",
+  "web_vitest": "140 passed",
+  "typecheck": {
+    "schemas": "PASS",
+    "ai_orchestrator": "PASS",
+    "web": "PASS"
+  },
+  "build": {
+    "schemas": "PASS",
+    "types": "PASS",
+    "ai_orchestrator": "PASS",
+    "web_compile": "PASS",
+    "web_type_validation": "PASS",
+    "next_page_data": "INCOMPLETE - worker stuck in local environment"
+  },
+  "benchmarks": {
+    "technical_88_pages": "20/20 PASS",
+    "human_delivery": "10/10 PASS",
+    "arete_offline": "16/16 PASS",
+    "phase_gate": "20/20 PASS"
+  },
+  "reference_result": {
+    "work_item": "K2 Lantai 2",
+    "count": 4,
+    "width_mm": 250,
+    "depth_mm": 600,
+    "height_mm": 3900,
+    "volume_m3": 2.34
+  }
+}

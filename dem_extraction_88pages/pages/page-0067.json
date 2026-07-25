@@ -1,0 +1,1528 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 67,
+    "page_number": 68,
+    "render_uri": "local://plhut-88pg-run-1/page-0067.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T22:22:37.617664+00:00",
+    "completed_at": "2026-07-14T22:22:37.617706+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "68",
+      "raw": "68",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-sheet-number"
+      ]
+    },
+    "title": {
+      "value": "DETAIL PENANGKAL PETIR DAN GROUNDING",
+      "raw": "DETAIL PENANGKAL PETIR DAN GROUNDING",
+      "confidence": 1.0,
+      "evidence_refs": [
+        "ev-title"
+      ]
+    },
+    "discipline": {
+      "value": "MEP",
+      "confidence": 1.0,
+      "status": "extracted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1:100",
+        "normalized": "1:100",
+        "confidence": 1.0,
+        "evidence_refs": [
+          "ev-scale-1"
+        ]
+      },
+      {
+        "raw": "NTS",
+        "normalized": "NTS",
+        "confidence": 0.9,
+        "evidence_refs": [
+          "ev-scale-2"
+        ]
+      },
+      {
+        "raw": "NTS",
+        "normalized": "NTS",
+        "confidence": 0.9,
+        "evidence_refs": [
+          "ev-scale-3"
+        ]
+      },
+      {
+        "raw": "NTS",
+        "normalized": "NTS",
+        "confidence": 0.9,
+        "evidence_refs": [
+          "ev-scale-4"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-detail-penangkal-petir",
+      "type": "detail",
+      "title": "DETAIL PENANGKAL PETIR",
+      "bbox": [
+        100.0,
+        150.0,
+        700.0,
+        600.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "view_id": "view-detail-clamp",
+      "type": "detail",
+      "title": "DETAIL CLAMP",
+      "bbox": [
+        100.0,
+        600.0,
+        500.0,
+        800.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "view_id": "view-detail-grounding",
+      "type": "detail",
+      "title": "DETAIL GROUNDING",
+      "bbox": [
+        500.0,
+        600.0,
+        900.0,
+        800.0
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "DETAIL PENANGKAL PETIR",
+        "normalized": "Detail Penangkal Petir",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          120.0,
+          760.0,
+          350.0,
+          780.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-1"
+        ]
+      },
+      {
+        "raw": "SKALA 1 : NTS",
+        "normalized": "Skala 1:NTS",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          120.0,
+          780.0,
+          180.0,
+          790.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-2"
+        ]
+      },
+      {
+        "raw": "DETAIL CLAMP",
+        "normalized": "Detail Clamp",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          120.0,
+          820.0,
+          250.0,
+          840.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-3"
+        ]
+      },
+      {
+        "raw": "SKALA 1 : NTS",
+        "normalized": "Skala 1:NTS",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          120.0,
+          840.0,
+          180.0,
+          850.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-4"
+        ]
+      },
+      {
+        "raw": "DETAIL GROUNDING",
+        "normalized": "Detail Grounding",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          520.0,
+          820.0,
+          700.0,
+          840.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-5"
+        ]
+      },
+      {
+        "raw": "SKALA 1 : NTS",
+        "normalized": "Skala 1:NTS",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          520.0,
+          840.0,
+          580.0,
+          850.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-6"
+        ]
+      },
+      {
+        "raw": "TEMABAGA BULAT Ø5/8\"",
+        "normalized": "Temabaga Bulat Ø5/8\"",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          480.0,
+          700.0,
+          650.0,
+          720.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-7"
+        ]
+      },
+      {
+        "raw": "400 CM",
+        "normalized": "400 cm",
+        "numeric_value": 400.0,
+        "unit": "cm",
+        "bbox": [
+          500.0,
+          720.0,
+          550.0,
+          730.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-8"
+        ]
+      },
+      {
+        "raw": "VARIABLE",
+        "normalized": "Variable",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          780.0,
+          740.0,
+          820.0,
+          750.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-9"
+        ]
+      },
+      {
+        "raw": "DILAS",
+        "normalized": "Dilas",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          800.0,
+          230.0,
+          810.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-10"
+        ]
+      },
+      {
+        "raw": "8 cm",
+        "normalized": "8 cm",
+        "numeric_value": 8.0,
+        "unit": "cm",
+        "bbox": [
+          180.0,
+          810.0,
+          200.0,
+          820.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-11"
+        ]
+      },
+      {
+        "raw": "12 CM",
+        "normalized": "12 cm",
+        "numeric_value": 12.0,
+        "unit": "cm",
+        "bbox": [
+          200.0,
+          780.0,
+          220.0,
+          790.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-12"
+        ]
+      },
+      {
+        "raw": "KABEL HVSC 50 mm2 (Core)",
+        "normalized": "Kabel HVSC 50 mm2 (Core)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          750.0,
+          300.0,
+          760.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-text-13"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "100 CM",
+        "normalized": "100 cm",
+        "numeric_value": 100.0,
+        "unit": "cm",
+        "bbox": [
+          100.0,
+          380.0,
+          120.0,
+          400.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-1"
+        ]
+      },
+      {
+        "raw": "70 CM",
+        "normalized": "70 cm",
+        "numeric_value": 70.0,
+        "unit": "cm",
+        "bbox": [
+          100.0,
+          500.0,
+          120.0,
+          520.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-2"
+        ]
+      },
+      {
+        "raw": "30 CM",
+        "normalized": "30 cm",
+        "numeric_value": 30.0,
+        "unit": "cm",
+        "bbox": [
+          100.0,
+          350.0,
+          120.0,
+          370.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-3"
+        ]
+      },
+      {
+        "raw": "40 CM",
+        "normalized": "40 cm",
+        "numeric_value": 40.0,
+        "unit": "cm",
+        "bbox": [
+          580.0,
+          500.0,
+          600.0,
+          520.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-4"
+        ]
+      },
+      {
+        "raw": "15 CM",
+        "normalized": "15 cm",
+        "numeric_value": 15.0,
+        "unit": "cm",
+        "bbox": [
+          580.0,
+          600.0,
+          600.0,
+          620.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-5"
+        ]
+      },
+      {
+        "raw": "400 CM",
+        "normalized": "400 cm",
+        "numeric_value": 400.0,
+        "unit": "cm",
+        "bbox": [
+          500.0,
+          720.0,
+          550.0,
+          730.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-6"
+        ]
+      },
+      {
+        "raw": "8 cm",
+        "normalized": "8 cm",
+        "numeric_value": 8.0,
+        "unit": "cm",
+        "bbox": [
+          180.0,
+          810.0,
+          200.0,
+          820.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-7"
+        ]
+      },
+      {
+        "raw": "12 CM",
+        "normalized": "12 cm",
+        "numeric_value": 12.0,
+        "unit": "cm",
+        "bbox": [
+          200.0,
+          780.0,
+          220.0,
+          790.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dimension-8"
+        ]
+      }
+    ],
+    "grids": [],
+    "levels": [],
+    "spaces": [],
+    "element_labels": [
+      {
+        "raw": "PIPA GIP Ø1\"",
+        "normalized": "Pipa GIP Ø1\"",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          580.0,
+          300.0,
+          650.0,
+          310.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-label-1"
+        ]
+      },
+      {
+        "raw": "PAS BATA TRASRAM",
+        "normalized": "Pas Bata Trasram",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          580.0,
+          320.0,
+          670.0,
+          330.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-label-2"
+        ]
+      },
+      {
+        "raw": "PLAT BETON BERTULANG T.6cm",
+        "normalized": "Plat Beton Bertulang T.6cm",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          580.0,
+          340.0,
+          720.0,
+          350.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-label-3"
+        ]
+      },
+      {
+        "raw": "BAJA Ø12mm",
+        "normalized": "Baja Ø12mm",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          580.0,
+          360.0,
+          640.0,
+          370.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-label-4"
+        ]
+      },
+      {
+        "raw": "KABEL HVSC 50 mm2 (Core)",
+        "normalized": "Kabel HVSC 50 mm2 (Core)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          580.0,
+          380.0,
+          700.0,
+          390.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-label-5"
+        ]
+      },
+      {
+        "raw": "SEPATU KABEL",
+        "normalized": "Sepatu Kabel",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          580.0,
+          400.0,
+          650.0,
+          410.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-label-6"
+        ]
+      },
+      {
+        "raw": "KLEM TEMBAGA 50x2,5 mm",
+        "normalized": "Klem Tembaga 50x2.5 mm",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          580.0,
+          420.0,
+          720.0,
+          430.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-label-7"
+        ]
+      },
+      {
+        "raw": "WATER DRAIN GIP Ø1\"",
+        "normalized": "Water Drain GIP Ø1\"",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          580.0,
+          440.0,
+          710.0,
+          450.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-label-8"
+        ]
+      },
+      {
+        "raw": "TEMABAGA BULAT Ø5/8\"",
+        "normalized": "Temabaga Bulat Ø5/8\"",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          480.0,
+          700.0,
+          650.0,
+          720.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-label-9"
+        ]
+      },
+      {
+        "raw": "KABEL HVSC 50 mm2 (Core)",
+        "normalized": "Kabel HVSC 50 mm2 (Core)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          750.0,
+          300.0,
+          760.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-label-10"
+        ]
+      },
+      {
+        "raw": "DILAS",
+        "normalized": "Dilas",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          800.0,
+          230.0,
+          810.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-label-11"
+        ]
+      },
+      {
+        "raw": "KLEM KABEL PENANGKAL PETIR",
+        "normalized": "Klem Kabel Penangkal Petir",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          180.0,
+          670.0,
+          280.0,
+          690.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-label-12"
+        ]
+      },
+      {
+        "raw": "PIPA TIANG PENANGKAL PETIR",
+        "normalized": "Pipa Tiang Penangkal Petir",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          180.0,
+          630.0,
+          290.0,
+          650.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-label-13"
+        ]
+      },
+      {
+        "raw": "TEMABAGA",
+        "normalized": "Temabaga",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          180.0,
+          430.0,
+          230.0,
+          440.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-label-14"
+        ]
+      },
+      {
+        "raw": "BESI BETON Ø 5/8\"",
+        "normalized": "Besi Beton Ø5/8\"",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          320.0,
+          200.0,
+          400.0,
+          210.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-label-15"
+        ]
+      },
+      {
+        "raw": "BETON CONCRETE",
+        "normalized": "Beton Concrete",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          420.0,
+          220.0,
+          490.0,
+          230.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-element-label-16"
+        ]
+      }
+    ],
+    "symbols": [
+      {
+        "raw": "DETAL 1-1",
+        "normalized": "Detail 1-1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          180.0,
+          700.0,
+          230.0,
+          710.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-1"
+        ]
+      },
+      {
+        "raw": "Ø",
+        "normalized": "Diameter",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          280.0,
+          450.0,
+          290.0,
+          460.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-2"
+        ]
+      },
+      {
+        "raw": "mm",
+        "normalized": "Milimeter",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          250.0,
+          450.0,
+          260.0,
+          460.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-3"
+        ]
+      },
+      {
+        "raw": "cm",
+        "normalized": "Sentimeter",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          120.0,
+          380.0,
+          130.0,
+          390.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-symbol-4"
+        ]
+      }
+    ],
+    "tables": [],
+    "materials": [],
+    "notes": [],
+    "references": [],
+    "patterns": [],
+    "geometry_descriptions": [
+      {
+        "raw": "Detail tiang penangkal petir dengan klem kabel dan kabel HVSC 50 mm2 (Core)",
+        "normalized": "Detail tiang penangkal petir dengan klem kabel dan kabel HVSC 50 mm2 (Core)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          600.0,
+          300.0,
+          700.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geometry-description-1"
+        ]
+      },
+      {
+        "raw": "Detail clamp dengan las dan kabel HVSC 50 mm2 (Core)",
+        "normalized": "Detail clamp dengan las dan kabel HVSC 50 mm2 (Core)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          100.0,
+          750.0,
+          300.0,
+          850.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geometry-description-2"
+        ]
+      },
+      {
+        "raw": "Detail grounding dengan pipa GIP, pas bata trasram, plat beton bertulang, baja, kabel HVSC, sepatu kabel, klem tembaga, dan water drain GIP",
+        "normalized": "Detail grounding dengan pipa GIP, pas bata trasram, plat beton bertulang, baja, kabel HVSC, sepatu kabel, klem tembaga, dan water drain GIP",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          300.0,
+          800.0,
+          700.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geometry-description-3"
+        ]
+      },
+      {
+        "raw": "Detail penampang dengan besi beton dan beton concrete",
+        "normalized": "Detail penampang dengan besi beton dan beton concrete",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          300.0,
+          200.0,
+          500.0,
+          300.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geometry-description-4"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-sheet-number",
+      "kind": "text",
+      "raw": "68",
+      "bbox": [
+        900.0,
+        50.0,
+        920.0,
+        60.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-title",
+      "kind": "text",
+      "raw": "DETAIL PENANGKAL PETIR DAN GROUNDING",
+      "bbox": [
+        850.0,
+        500.0,
+        950.0,
+        520.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-scale-1",
+      "kind": "text",
+      "raw": "1:100",
+      "bbox": [
+        900.0,
+        520.0,
+        930.0,
+        530.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-scale-2",
+      "kind": "text",
+      "raw": "NTS",
+      "bbox": [
+        120.0,
+        780.0,
+        140.0,
+        790.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-scale-3",
+      "kind": "text",
+      "raw": "NTS",
+      "bbox": [
+        120.0,
+        840.0,
+        140.0,
+        850.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-scale-4",
+      "kind": "text",
+      "raw": "NTS",
+      "bbox": [
+        520.0,
+        840.0,
+        540.0,
+        850.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-text-1",
+      "kind": "text",
+      "raw": "DETAIL PENANGKAL PETIR",
+      "bbox": [
+        120.0,
+        760.0,
+        350.0,
+        780.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-2",
+      "kind": "text",
+      "raw": "SKALA 1 : NTS",
+      "bbox": [
+        120.0,
+        780.0,
+        180.0,
+        790.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-3",
+      "kind": "text",
+      "raw": "DETAIL CLAMP",
+      "bbox": [
+        120.0,
+        820.0,
+        250.0,
+        840.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-4",
+      "kind": "text",
+      "raw": "SKALA 1 : NTS",
+      "bbox": [
+        120.0,
+        840.0,
+        180.0,
+        850.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-5",
+      "kind": "text",
+      "raw": "DETAIL GROUNDING",
+      "bbox": [
+        520.0,
+        820.0,
+        700.0,
+        840.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-6",
+      "kind": "text",
+      "raw": "SKALA 1 : NTS",
+      "bbox": [
+        520.0,
+        840.0,
+        580.0,
+        850.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-7",
+      "kind": "text",
+      "raw": "TEMABAGA BULAT Ø5/8\"",
+      "bbox": [
+        480.0,
+        700.0,
+        650.0,
+        720.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-8",
+      "kind": "text",
+      "raw": "400 CM",
+      "bbox": [
+        500.0,
+        720.0,
+        550.0,
+        730.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-9",
+      "kind": "text",
+      "raw": "VARIABLE",
+      "bbox": [
+        780.0,
+        740.0,
+        820.0,
+        750.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-10",
+      "kind": "text",
+      "raw": "DILAS",
+      "bbox": [
+        200.0,
+        800.0,
+        230.0,
+        810.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-11",
+      "kind": "text",
+      "raw": "8 cm",
+      "bbox": [
+        180.0,
+        810.0,
+        200.0,
+        820.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-12",
+      "kind": "text",
+      "raw": "12 CM",
+      "bbox": [
+        200.0,
+        780.0,
+        220.0,
+        790.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-13",
+      "kind": "text",
+      "raw": "KABEL HVSC 50 mm2 (Core)",
+      "bbox": [
+        200.0,
+        750.0,
+        300.0,
+        760.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimension-1",
+      "kind": "dimension",
+      "raw": "100 CM",
+      "bbox": [
+        100.0,
+        380.0,
+        120.0,
+        400.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimension-2",
+      "kind": "dimension",
+      "raw": "70 CM",
+      "bbox": [
+        100.0,
+        500.0,
+        120.0,
+        520.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimension-3",
+      "kind": "dimension",
+      "raw": "30 CM",
+      "bbox": [
+        100.0,
+        350.0,
+        120.0,
+        370.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimension-4",
+      "kind": "dimension",
+      "raw": "40 CM",
+      "bbox": [
+        580.0,
+        500.0,
+        600.0,
+        520.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimension-5",
+      "kind": "dimension",
+      "raw": "15 CM",
+      "bbox": [
+        580.0,
+        600.0,
+        600.0,
+        620.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimension-6",
+      "kind": "dimension",
+      "raw": "400 CM",
+      "bbox": [
+        500.0,
+        720.0,
+        550.0,
+        730.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimension-7",
+      "kind": "dimension",
+      "raw": "8 cm",
+      "bbox": [
+        180.0,
+        810.0,
+        200.0,
+        820.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimension-8",
+      "kind": "dimension",
+      "raw": "12 CM",
+      "bbox": [
+        200.0,
+        780.0,
+        220.0,
+        790.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-label-1",
+      "kind": "element_label",
+      "raw": "PIPA GIP Ø1\"",
+      "bbox": [
+        580.0,
+        300.0,
+        650.0,
+        310.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-label-2",
+      "kind": "element_label",
+      "raw": "PAS BATA TRASRAM",
+      "bbox": [
+        580.0,
+        320.0,
+        670.0,
+        330.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-label-3",
+      "kind": "element_label",
+      "raw": "PLAT BETON BERTULANG T.6cm",
+      "bbox": [
+        580.0,
+        340.0,
+        720.0,
+        350.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-label-4",
+      "kind": "element_label",
+      "raw": "BAJA Ø12mm",
+      "bbox": [
+        580.0,
+        360.0,
+        640.0,
+        370.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-label-5",
+      "kind": "element_label",
+      "raw": "KABEL HVSC 50 mm2 (Core)",
+      "bbox": [
+        580.0,
+        380.0,
+        700.0,
+        390.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-label-6",
+      "kind": "element_label",
+      "raw": "SEPATU KABEL",
+      "bbox": [
+        580.0,
+        400.0,
+        650.0,
+        410.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-label-7",
+      "kind": "element_label",
+      "raw": "KLEM TEMBAGA 50x2,5 mm",
+      "bbox": [
+        580.0,
+        420.0,
+        720.0,
+        430.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-label-8",
+      "kind": "element_label",
+      "raw": "WATER DRAIN GIP Ø1\"",
+      "bbox": [
+        580.0,
+        440.0,
+        710.0,
+        450.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-label-9",
+      "kind": "element_label",
+      "raw": "TEMABAGA BULAT Ø5/8\"",
+      "bbox": [
+        480.0,
+        700.0,
+        650.0,
+        720.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-label-10",
+      "kind": "element_label",
+      "raw": "KABEL HVSC 50 mm2 (Core)",
+      "bbox": [
+        200.0,
+        750.0,
+        300.0,
+        760.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-label-11",
+      "kind": "element_label",
+      "raw": "DILAS",
+      "bbox": [
+        200.0,
+        800.0,
+        230.0,
+        810.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-label-12",
+      "kind": "element_label",
+      "raw": "KLEM KABEL PENANGKAL PETIR",
+      "bbox": [
+        180.0,
+        670.0,
+        280.0,
+        690.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-label-13",
+      "kind": "element_label",
+      "raw": "PIPA TIANG PENANGKAL PETIR",
+      "bbox": [
+        180.0,
+        630.0,
+        290.0,
+        650.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-label-14",
+      "kind": "element_label",
+      "raw": "TEMABAGA",
+      "bbox": [
+        180.0,
+        430.0,
+        230.0,
+        440.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-label-15",
+      "kind": "element_label",
+      "raw": "BESI BETON Ø 5/8\"",
+      "bbox": [
+        320.0,
+        200.0,
+        400.0,
+        210.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-element-label-16",
+      "kind": "element_label",
+      "raw": "BETON CONCRETE",
+      "bbox": [
+        420.0,
+        220.0,
+        490.0,
+        230.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-symbol-1",
+      "kind": "symbol",
+      "raw": "DETAL 1-1",
+      "bbox": [
+        180.0,
+        700.0,
+        230.0,
+        710.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-symbol-2",
+      "kind": "symbol",
+      "raw": "Ø",
+      "bbox": [
+        280.0,
+        450.0,
+        290.0,
+        460.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-symbol-3",
+      "kind": "symbol",
+      "raw": "mm",
+      "bbox": [
+        250.0,
+        450.0,
+        260.0,
+        460.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-symbol-4",
+      "kind": "symbol",
+      "raw": "cm",
+      "bbox": [
+        120.0,
+        380.0,
+        130.0,
+        390.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-geometry-description-1",
+      "kind": "geometry_description",
+      "raw": "Detail tiang penangkal petir dengan klem kabel dan kabel HVSC 50 mm2 (Core)",
+      "bbox": [
+        100.0,
+        600.0,
+        300.0,
+        700.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-geometry-description-2",
+      "kind": "geometry_description",
+      "raw": "Detail clamp dengan las dan kabel HVSC 50 mm2 (Core)",
+      "bbox": [
+        100.0,
+        750.0,
+        300.0,
+        850.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-geometry-description-3",
+      "kind": "geometry_description",
+      "raw": "Detail grounding dengan pipa GIP, pas bata trasram, plat beton bertulang, baja, kabel HVSC, sepatu kabel, klem tembaga, dan water drain GIP",
+      "bbox": [
+        400.0,
+        300.0,
+        800.0,
+        700.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-geometry-description-4",
+      "kind": "geometry_description",
+      "raw": "Detail penampang dengan besi beton dan beton concrete",
+      "bbox": [
+        300.0,
+        200.0,
+        500.0,
+        300.0
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 8,
+    "sections_completed": 8,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

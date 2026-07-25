@@ -1,0 +1,2656 @@
+{
+  "schema_version": "paax.drawing-intelligence.page-scorecard.v1",
+  "document_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+  "page_count": 88,
+  "status_counts": {
+    "pass": 56,
+    "review": 32
+  },
+  "all_pages_structurally_analyzed": true,
+  "pages": [
+    {
+      "page_number": 1,
+      "page_index": 0,
+      "title": "GAMBAR KERJA",
+      "sheet_number": "1",
+      "discipline": "architecture",
+      "drawing_type": "cover",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 20,
+      "token_count": 39,
+      "zone_types": [
+        "drawing"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 2,
+      "page_index": 1,
+      "title": "DAFTAR SINGKATAN DAN NOTASI GAMBAR",
+      "sheet_number": "2",
+      "discipline": "architecture",
+      "drawing_type": "legend",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 5038,
+      "token_count": 132,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 2,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 3,
+      "page_index": 2,
+      "title": "DAFTAR SINGKATAN DAN NOTASI GAMBAR",
+      "sheet_number": "halaman ke-3",
+      "discipline": "architecture",
+      "drawing_type": "legend",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 2323,
+      "token_count": 146,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 2,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 4,
+      "page_index": 3,
+      "title": "DAFTAR SINGKATAN DAN NOTASI GAMBAR",
+      "sheet_number": "Halaman 4",
+      "discipline": "multidiscipline",
+      "drawing_type": "legend",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 1006,
+      "token_count": 653,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 2,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 5,
+      "page_index": 4,
+      "title": "SITUASI",
+      "sheet_number": "PLHUT-SURAKARTA-88PG",
+      "discipline": "civil",
+      "drawing_type": "site_plan",
+      "level": "site",
+      "modality": "vector",
+      "vector_paths": 20067,
+      "token_count": 108,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 6,
+      "page_index": 5,
+      "title": "RENCANA PAVING",
+      "sheet_number": "6",
+      "discipline": "civil",
+      "drawing_type": "site_plan",
+      "level": "site",
+      "modality": "vector",
+      "vector_paths": 20803,
+      "token_count": 131,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 7,
+      "page_index": 6,
+      "title": "DENAH LANTAI 1",
+      "sheet_number": "LT.1",
+      "discipline": "architecture",
+      "drawing_type": "floor_plan",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 6153,
+      "token_count": 132,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 4,
+      "review_task_count": 2,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 8,
+      "page_index": 7,
+      "title": "DENAH LANTAI 2",
+      "sheet_number": "DENAH LT.2",
+      "discipline": "architecture",
+      "drawing_type": "floor_plan",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 10463,
+      "token_count": 120,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 9,
+      "page_index": 8,
+      "title": "DENAH ATAP",
+      "sheet_number": "9",
+      "discipline": "architecture",
+      "drawing_type": "roof_plan",
+      "level": "roof",
+      "modality": "vector",
+      "vector_paths": 4032,
+      "token_count": 107,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 10,
+      "page_index": 9,
+      "title": "TAMPAK DEPAN",
+      "sheet_number": "9",
+      "discipline": "architecture",
+      "drawing_type": "elevation",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 41811,
+      "token_count": 112,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 1,
+      "quality_readiness": "review",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 11,
+      "page_index": 10,
+      "title": "TAMPAK BELAKANG",
+      "sheet_number": "PLHUT-SURAKARTA-88PG",
+      "discipline": "architecture",
+      "drawing_type": "elevation",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 4798,
+      "token_count": 108,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 1,
+      "quality_readiness": "review",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 12,
+      "page_index": 11,
+      "title": "TAMPAK SAMPING KIRI",
+      "sheet_number": "12",
+      "discipline": "structure",
+      "drawing_type": "elevation",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 2605,
+      "token_count": 118,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 13,
+      "page_index": 12,
+      "title": "TAMPAK SAMPING KANAN",
+      "sheet_number": "13",
+      "discipline": "architecture",
+      "drawing_type": "elevation",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 921,
+      "token_count": 100,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 14,
+      "page_index": 13,
+      "title": "POTONGAN A",
+      "sheet_number": "14",
+      "discipline": "architecture",
+      "drawing_type": "section",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 40832,
+      "token_count": 165,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 15,
+      "page_index": 14,
+      "title": "POTONGAN B",
+      "sheet_number": "15",
+      "discipline": "architecture",
+      "drawing_type": "section",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 30381,
+      "token_count": 183,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 16,
+      "page_index": 15,
+      "title": "POTONGAN C",
+      "sheet_number": "16",
+      "discipline": "structure",
+      "drawing_type": "section",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 45759,
+      "token_count": 165,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 1,
+      "quality_readiness": "review",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 17,
+      "page_index": 16,
+      "title": "Denah Pola Lantai 1",
+      "sheet_number": "17",
+      "discipline": "architecture",
+      "drawing_type": "finish_plan",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 4272,
+      "token_count": 150,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 18,
+      "page_index": 17,
+      "title": "DENAH POLA LANTAI 2",
+      "sheet_number": "18",
+      "discipline": "architecture",
+      "drawing_type": "finish_plan",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 7947,
+      "token_count": 100,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 19,
+      "page_index": 18,
+      "title": "DENAH PLAFOND LANTAI 1",
+      "sheet_number": "DENAH PLAFOND LT.1",
+      "discipline": "architecture",
+      "drawing_type": "ceiling_plan",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 3927,
+      "token_count": 132,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 18,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 20,
+      "page_index": 19,
+      "title": "DENAH PLAFOND LT.2",
+      "sheet_number": "20",
+      "discipline": "architecture",
+      "drawing_type": "ceiling_plan",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 7771,
+      "token_count": 107,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 21,
+      "page_index": 20,
+      "title": "DENAH PINTU & JENDELA LANTAI 1",
+      "sheet_number": "PLHUT-SURAKARTA-88PG_21",
+      "discipline": "architecture",
+      "drawing_type": "door_window_plan",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 4036,
+      "token_count": 171,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 52,
+      "review_task_count": 21,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 22,
+      "page_index": 21,
+      "title": "Denah Pintu & Jendela Lantai 2",
+      "sheet_number": "22",
+      "discipline": "architecture",
+      "drawing_type": "door_window_plan",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 7781,
+      "token_count": 130,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 28,
+      "review_task_count": 10,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 23,
+      "page_index": 22,
+      "title": "DENAH DIN.PASRTISI LANTAI 1",
+      "sheet_number": "LT.1",
+      "discipline": "architecture",
+      "drawing_type": "partition_plan",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 3987,
+      "token_count": 139,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 41,
+      "review_task_count": 6,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 24,
+      "page_index": 23,
+      "title": "DENAH DIN. PARTISI LANTAI 2",
+      "sheet_number": "24",
+      "discipline": "architecture",
+      "drawing_type": "partition_plan",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 7661,
+      "token_count": 132,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 31,
+      "review_task_count": 6,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 25,
+      "page_index": 24,
+      "title": "DETAIL KUSEN",
+      "sheet_number": "25",
+      "discipline": "architecture",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 1050,
+      "token_count": 102,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 26,
+      "page_index": 25,
+      "title": "DETAIL KUSEN",
+      "sheet_number": "26",
+      "discipline": "architecture",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 1176,
+      "token_count": 119,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 1,
+      "quality_readiness": "review",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 27,
+      "page_index": 26,
+      "title": "DETAIL KUSEN",
+      "sheet_number": "27",
+      "discipline": "architecture",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 1412,
+      "token_count": 125,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 28,
+      "page_index": 27,
+      "title": "JENDELA (J3) - POTONGAN ATAS",
+      "sheet_number": "28",
+      "discipline": "architecture",
+      "drawing_type": "section",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 1264,
+      "token_count": 117,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 29,
+      "page_index": 28,
+      "title": "DETAIL KUSEN",
+      "sheet_number": "29",
+      "discipline": "architecture",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 1405,
+      "token_count": 112,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 30,
+      "page_index": 29,
+      "title": "DETAIL KUSEN",
+      "sheet_number": "29",
+      "discipline": "architecture",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 4913,
+      "token_count": 106,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 1,
+      "quality_readiness": "review",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 31,
+      "page_index": 30,
+      "title": "DETAIL KUSEN",
+      "sheet_number": "KODE GBR",
+      "discipline": "architecture",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 1521,
+      "token_count": 124,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 32,
+      "page_index": 31,
+      "title": "DENAH KM/WC LANTAI 1",
+      "sheet_number": "32",
+      "discipline": "architecture",
+      "drawing_type": "floor_plan",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 2006,
+      "token_count": 130,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 1,
+      "quality_readiness": "review",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 33,
+      "page_index": 32,
+      "title": "DETAIL BACKDROP LT.1",
+      "sheet_number": "33",
+      "discipline": "architecture",
+      "drawing_type": "detail",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 3083,
+      "token_count": 124,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 34,
+      "page_index": 33,
+      "title": "DETAIL BACKGROUND LT.2",
+      "sheet_number": "34",
+      "discipline": "architecture",
+      "drawing_type": "detail",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 355,
+      "token_count": 105,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 35,
+      "page_index": 34,
+      "title": "DETAIL SHOPSIGN TAMPAK DEPAN",
+      "sheet_number": "35",
+      "discipline": "architecture",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 24083,
+      "token_count": 106,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 36,
+      "page_index": 35,
+      "title": "DETAIL STANDARD UNTUK PEKERJAAN STRUKTUR",
+      "sheet_number": "36",
+      "discipline": "structure",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 16725,
+      "token_count": 148,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 37,
+      "page_index": 36,
+      "title": "DETAIL STANDARD UNTUK PEKERJAAN STRUKTUR",
+      "sheet_number": "37",
+      "discipline": "structure",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 9100,
+      "token_count": 130,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 1,
+      "quality_readiness": "review",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 38,
+      "page_index": 37,
+      "title": "STANDAR DETAIL GAMBAR",
+      "sheet_number": "38",
+      "discipline": "structure",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 27360,
+      "token_count": 168,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 39,
+      "page_index": 38,
+      "title": "DENAH FOOTPLAT",
+      "sheet_number": "39",
+      "discipline": "structure",
+      "drawing_type": "foundation_plan",
+      "level": "foundation",
+      "modality": "vector",
+      "vector_paths": 336,
+      "token_count": 169,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 42,
+      "review_task_count": 3,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 40,
+      "page_index": 39,
+      "title": "DENAH PONDASI BATU KALI",
+      "sheet_number": "",
+      "discipline": "structure",
+      "drawing_type": "foundation_plan",
+      "level": "foundation",
+      "modality": "vector",
+      "vector_paths": 3156,
+      "token_count": 113,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 41,
+      "page_index": 40,
+      "title": "DENAH SLOOP",
+      "sheet_number": "41",
+      "discipline": "structure",
+      "drawing_type": "beam_plan",
+      "level": "foundation",
+      "modality": "vector",
+      "vector_paths": 297,
+      "token_count": 144,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 39,
+      "review_task_count": 1,
+      "quality_readiness": "review",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 42,
+      "page_index": 41,
+      "title": "DENAH KOLOM LANTAI 1",
+      "sheet_number": "42",
+      "discipline": "structure",
+      "drawing_type": "column_plan",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 525,
+      "token_count": 191,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 25,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 43,
+      "page_index": 42,
+      "title": "DENAH KOLOM LANTAI 2",
+      "sheet_number": "PLHUT-SURAKARTA-88PG",
+      "discipline": "structure",
+      "drawing_type": "column_plan",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 599,
+      "token_count": 357,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 34,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 44,
+      "page_index": 43,
+      "title": "DENAH BALOK LANTAI 2",
+      "sheet_number": "44",
+      "discipline": "structure",
+      "drawing_type": "beam_plan",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 436,
+      "token_count": 182,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 66,
+      "review_task_count": 8,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 45,
+      "page_index": 44,
+      "title": "DENAH BALOK LANTAI ATAP",
+      "sheet_number": "PLHUT-SURAKARTA-88PG-45",
+      "discipline": "structure",
+      "drawing_type": "beam_plan",
+      "level": "roof",
+      "modality": "vector",
+      "vector_paths": 1772,
+      "token_count": 219,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 34,
+      "review_task_count": 10,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 46,
+      "page_index": 45,
+      "title": "DENAH ATAP",
+      "sheet_number": "46",
+      "discipline": "architecture",
+      "drawing_type": "roof_plan",
+      "level": "roof",
+      "modality": "vector",
+      "vector_paths": 1011,
+      "token_count": 150,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 10,
+      "review_task_count": 2,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 47,
+      "page_index": 46,
+      "title": "DENAH BALOK LINTEL LT.1",
+      "sheet_number": "47",
+      "discipline": "structure",
+      "drawing_type": "beam_plan",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 341,
+      "token_count": 176,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 1,
+      "review_task_count": 2,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 48,
+      "page_index": 47,
+      "title": "DENAH BALOK LINTEL LT-2",
+      "sheet_number": "48",
+      "discipline": "structure",
+      "drawing_type": "beam_plan",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 724,
+      "token_count": 164,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 49,
+      "page_index": 48,
+      "title": "DETAIL PONDASI",
+      "sheet_number": "49",
+      "discipline": "structure",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 32081,
+      "token_count": 126,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 50,
+      "page_index": 49,
+      "title": "TABEL KOLOM",
+      "sheet_number": "PLHUT-SURAKARTA-88PG-50",
+      "discipline": "structure",
+      "drawing_type": "schedule",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 1953,
+      "token_count": 178,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "schedule",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 51,
+      "page_index": 50,
+      "title": "TABEL BALOK LANTAI 1 & SLOOF",
+      "sheet_number": "51",
+      "discipline": "structure",
+      "drawing_type": "schedule",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 1618,
+      "token_count": 372,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "schedule",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 52,
+      "page_index": 51,
+      "title": "TABEL BALOK LANTAI 2",
+      "sheet_number": "52",
+      "discipline": "structure",
+      "drawing_type": "schedule",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 1898,
+      "token_count": 376,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "schedule",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 53,
+      "page_index": 52,
+      "title": "TABEL PELAT",
+      "sheet_number": "53",
+      "discipline": "structure",
+      "drawing_type": "schedule",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 460,
+      "token_count": 102,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "schedule",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 54,
+      "page_index": 53,
+      "title": "POTONGAN - B",
+      "sheet_number": "54",
+      "discipline": "structure",
+      "drawing_type": "section",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 30708,
+      "token_count": 219,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 55,
+      "page_index": 54,
+      "title": "POTONGAN - 1/2 KD1",
+      "sheet_number": "55",
+      "discipline": "structure",
+      "drawing_type": "section",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 4460,
+      "token_count": 218,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 56,
+      "page_index": 55,
+      "title": "DETAIL PD.1 DAN BASEPLATE",
+      "sheet_number": "ST.06-01",
+      "discipline": "structure",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 4482,
+      "token_count": 322,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 57,
+      "page_index": 56,
+      "title": "DENAH TITIK LAMPU LANTAI 1",
+      "sheet_number": "DENAH TITIK LAMPU LT.1",
+      "discipline": "electrical",
+      "drawing_type": "lighting_plan",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 4123,
+      "token_count": 171,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 4,
+      "review_task_count": 5,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 58,
+      "page_index": 57,
+      "title": "DENAH TITIK LAMPU LANTAI 2",
+      "sheet_number": "58",
+      "discipline": "electrical",
+      "drawing_type": "lighting_plan",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 7881,
+      "token_count": 164,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 1,
+      "review_task_count": 1,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 59,
+      "page_index": 58,
+      "title": "DENAH STOP KONTAK LANTAI 1",
+      "sheet_number": "59",
+      "discipline": "electrical",
+      "drawing_type": "power_plan",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 3956,
+      "token_count": 161,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 1,
+      "review_task_count": 3,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 60,
+      "page_index": 59,
+      "title": "DENAH STOP KONTAK LANTAI 2",
+      "sheet_number": "88PG",
+      "discipline": "electrical",
+      "drawing_type": "power_plan",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 7949,
+      "token_count": 166,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 2,
+      "review_task_count": 3,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 61,
+      "page_index": 60,
+      "title": "DETAIL LAMPU TL RMML - 218",
+      "sheet_number": "61",
+      "discipline": "multidiscipline",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 1555,
+      "token_count": 95,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 62,
+      "page_index": 61,
+      "title": "DETAIL SAKLAR",
+      "sheet_number": "62",
+      "discipline": "electrical",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 1204,
+      "token_count": 111,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 1,
+      "quality_readiness": "review",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 63,
+      "page_index": 62,
+      "title": "DETAIL STOP KONTAK",
+      "sheet_number": "63",
+      "discipline": "electrical",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 1785,
+      "token_count": 135,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 1,
+      "quality_readiness": "review",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 64,
+      "page_index": 63,
+      "title": "DETAIL PEMASANGAN STOP KONTAK & SAKLAR",
+      "sheet_number": "64",
+      "discipline": "electrical",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 3118,
+      "token_count": 118,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 65,
+      "page_index": 64,
+      "title": "SINGLE LINE DIAGRAM",
+      "sheet_number": "65",
+      "discipline": "electrical",
+      "drawing_type": "single_line_diagram",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 1552,
+      "token_count": 113,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 66,
+      "page_index": 65,
+      "title": "DENAH PENANGKAL PETIR",
+      "sheet_number": "66",
+      "discipline": "electrical",
+      "drawing_type": "lightning_protection",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 4024,
+      "token_count": 107,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 67,
+      "page_index": 66,
+      "title": "TAMPAK INSTALASI PENANGKAL PETIR",
+      "sheet_number": "67",
+      "discipline": "electrical",
+      "drawing_type": "lightning_protection",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 5205,
+      "token_count": 94,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 68,
+      "page_index": 67,
+      "title": "DETAIL PENANGKAL PETIR DAN GROUNDING",
+      "sheet_number": "68",
+      "discipline": "electrical",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 3047,
+      "token_count": 207,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 69,
+      "page_index": 68,
+      "title": "DENAH APAR, BELL ALARM & HEAT DETECTOR LT.1",
+      "sheet_number": "Sheet 69",
+      "discipline": "electrical",
+      "drawing_type": "fire_safety_plan",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 4421,
+      "token_count": 109,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 1,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 70,
+      "page_index": 69,
+      "title": "DENAH APAR, BELL ALARM & HEAT DETECTOR LT 2",
+      "sheet_number": "70",
+      "discipline": "electrical",
+      "drawing_type": "fire_safety_plan",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 8323,
+      "token_count": 122,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 1,
+      "review_task_count": 1,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 71,
+      "page_index": 70,
+      "title": "DENAH INSTALASI AC LT.1",
+      "sheet_number": "71",
+      "discipline": "mechanical",
+      "drawing_type": "hvac_plan",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 4180,
+      "token_count": 112,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 72,
+      "page_index": 71,
+      "title": "DENAH INSTALASI AC LT.2",
+      "sheet_number": "72",
+      "discipline": "mechanical",
+      "drawing_type": "hvac_plan",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 9390,
+      "token_count": 124,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 73,
+      "page_index": 72,
+      "title": "DETAIL PEMASANGAN AC",
+      "sheet_number": "73",
+      "discipline": "mechanical",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 1537,
+      "token_count": 99,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 74,
+      "page_index": 73,
+      "title": "DENAH AIR KOTOR LT 1",
+      "sheet_number": "Sheet 73",
+      "discipline": "plumbing",
+      "drawing_type": "drainage_plan",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 15780,
+      "token_count": 117,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 75,
+      "page_index": 74,
+      "title": "DENAH AIR KOTOR LT 2",
+      "sheet_number": "PLHUT-SURAKARTA-88PG",
+      "discipline": "plumbing",
+      "drawing_type": "drainage_plan",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 14539,
+      "token_count": 102,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 76,
+      "page_index": 75,
+      "title": "DENAH AIR BEKAS LT 1",
+      "sheet_number": "76",
+      "discipline": "plumbing",
+      "drawing_type": "drainage_plan",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 4674,
+      "token_count": 107,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 77,
+      "page_index": 76,
+      "title": "DENAH AIR BEKAS LT 2",
+      "sheet_number": "77",
+      "discipline": "plumbing",
+      "drawing_type": "drainage_plan",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 7908,
+      "token_count": 94,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 1,
+      "quality_readiness": "review",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 78,
+      "page_index": 77,
+      "title": "DENAH INST. AIR HUJAN LT 1",
+      "sheet_number": "78",
+      "discipline": "plumbing",
+      "drawing_type": "drainage_plan",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 3922,
+      "token_count": 155,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 79,
+      "page_index": 78,
+      "title": "DENAH INST. AIR HUJAN LT ATAP",
+      "sheet_number": "79",
+      "discipline": "plumbing",
+      "drawing_type": "drainage_plan",
+      "level": "roof",
+      "modality": "vector",
+      "vector_paths": 4043,
+      "token_count": 123,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 80,
+      "page_index": 79,
+      "title": "DENAH AIR BERSIH LT 1",
+      "sheet_number": "80",
+      "discipline": "plumbing",
+      "drawing_type": "plumbing_plan",
+      "level": "L1",
+      "modality": "vector",
+      "vector_paths": 3768,
+      "token_count": 133,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 81,
+      "page_index": 80,
+      "title": "DENAH AIR BERSIH LT 2",
+      "sheet_number": "81",
+      "discipline": "plumbing",
+      "drawing_type": "plumbing_plan",
+      "level": "L2",
+      "modality": "vector",
+      "vector_paths": 7682,
+      "token_count": 147,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 82,
+      "page_index": 81,
+      "title": "DENAH AIR BERSIH LT ATAP",
+      "sheet_number": "82",
+      "discipline": "plumbing",
+      "drawing_type": "plumbing_plan",
+      "level": "roof",
+      "modality": "vector",
+      "vector_paths": 3881,
+      "token_count": 111,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 1,
+      "quality_readiness": "review",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 83,
+      "page_index": 82,
+      "title": "DIAGRAM SKEMATIK AIR BERSIH 1",
+      "sheet_number": "No. GBR tidak tercantum",
+      "discipline": "plumbing",
+      "drawing_type": "schematic",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 138,
+      "token_count": 213,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "notes",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 84,
+      "page_index": 83,
+      "title": "DIAGRAM SKEMATIK AIR BERSIH 2",
+      "sheet_number": "",
+      "discipline": "plumbing",
+      "drawing_type": "schematic",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 1227,
+      "token_count": 164,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "notes",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 85,
+      "page_index": 84,
+      "title": "SKEMATIK DIAGRAM INSTALASI AIR BERSIH (3)",
+      "sheet_number": "85",
+      "discipline": "plumbing",
+      "drawing_type": "schematic",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 800,
+      "token_count": 133,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 86,
+      "page_index": 85,
+      "title": "DETAIL BIO SEPTICTANK",
+      "sheet_number": "86",
+      "discipline": "plumbing",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 23165,
+      "token_count": 108,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    },
+    {
+      "page_number": 87,
+      "page_index": 86,
+      "title": "DENAH SALURAN AIR HUJAN",
+      "sheet_number": "87",
+      "discipline": "plumbing",
+      "drawing_type": "drainage_plan",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 27411,
+      "token_count": 105,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 2,
+      "review_task_count": 2,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "review"
+    },
+    {
+      "page_number": 88,
+      "page_index": 87,
+      "title": "DETAIL SALURAN AIR HUJAN",
+      "sheet_number": "88",
+      "discipline": "plumbing",
+      "drawing_type": "detail",
+      "level": null,
+      "modality": "vector",
+      "vector_paths": 5431,
+      "token_count": 133,
+      "zone_types": [
+        "drawing",
+        "legend",
+        "title_block"
+      ],
+      "cross_reference_count": 0,
+      "review_task_count": 0,
+      "quality_readiness": "ready",
+      "checks": {
+        "modality_identified": true,
+        "drawing_type_identified": true,
+        "discipline_identified": true,
+        "drawing_zone_present": true,
+        "dem_bbox_valid": true,
+        "text_or_dem_tokens_present": true
+      },
+      "blocking_checks": [],
+      "status": "pass"
+    }
+  ]
+}

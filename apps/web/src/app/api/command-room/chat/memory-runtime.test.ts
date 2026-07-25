@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { canPersistDurableMemory, selectRelevantMemories } from "./memory-runtime";
-import { createStatusSummaryScheduler } from "./status-summarizer";
 
 describe("Command Room durable memory runtime", () => {
   it("keeps preferences, project facts, corrections, decisions, and temporary state separated", () => {
@@ -20,29 +19,5 @@ describe("Command Room durable memory runtime", () => {
     expect(canPersistDurableMemory({ scope: "project", type: "fact", source_type: "model_output" })).toBe(false);
     expect(canPersistDurableMemory({ scope: "project", type: "fact", source_type: "evidence" })).toBe(true);
     expect(canPersistDurableMemory({ scope: "project", type: "correction", source_type: "user_message" })).toBe(true);
-  });
-});
-
-describe("status summarizer scheduler", () => {
-  it("is disabled without invoking the executor", async () => {
-    const executor = vi.fn(async () => "ignored");
-    const scheduler = createStatusSummaryScheduler({ enabled: false, executor });
-    scheduler.schedule("run", "reasoning", vi.fn());
-    await Promise.resolve();
-    expect(executor).not.toHaveBeenCalled();
-  });
-
-  it("is asynchronous and rate limits each run", async () => {
-    let resolve!: (value: string | null) => void;
-    const executor = vi.fn(() => new Promise<string | null>((done) => { resolve = done; }));
-    const onSummary = vi.fn();
-    const scheduler = createStatusSummaryScheduler({ enabled: true, minIntervalMs: 60_000, executor, now: () => 100 });
-    scheduler.schedule("run", "first", onSummary);
-    scheduler.schedule("run", "second", onSummary);
-    expect(executor).toHaveBeenCalledTimes(1);
-    expect(onSummary).not.toHaveBeenCalled();
-    resolve("Menganalisis pondasi");
-    await Promise.resolve();
-    expect(onSummary).toHaveBeenCalledWith("Menganalisis pondasi");
   });
 });

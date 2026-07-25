@@ -14,6 +14,8 @@ function optionalNumber(value: unknown): number | null {
 export function mapProjectDemSheet(sheet: ProjectDemSheetResponse): ProjectSheetMapping {
   return {
     id: `${sheet.run_id}-page-${sheet.page_index}`,
+    runId: sheet.run_id,
+    pageIndex: sheet.page_index,
     number: optionalString(sheet.sheet_number),
     title: optionalString(sheet.sheet_title),
     discipline: optionalString(sheet.discipline),

@@ -74,7 +74,7 @@ import { useProjects } from '@/lib/projects/projects-context';
 import type { Project } from '@/lib/projects/types';
 import { chatRunStore } from '@/lib/chat/chat-run-store';
 import { useActiveChatRuns, useChatRuns } from '@/lib/chat/use-chat-runs';
-import { RunStatus } from '@/components/command-room/RunStatus';
+import { ProcessingTrace, RunStatus } from '@/components/command-room/RunStatus';
 import {
   clampComposerHeight,
   COMMAND_COMPOSER_MAX_HEIGHT,
@@ -85,7 +85,8 @@ import {
   COMMAND_THINKING_OPTIONS,
   getDefaultCommandModelSettings,
 } from '@/components/command-room/command-room-ui';
-import { buildProjectContextPack } from '@/lib/ai/project-context';
+import { buildRabContextPack } from '@/lib/ai/project-context';
+import type { CommandRoomConnector } from '@/app/api/command-room/chat/connector-permissions';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -497,12 +498,14 @@ export default function CommandRoomPage() {
       content: m.text,
     }));
 
-    // Connector aktif (Gambar Kerja/RAB) + project di-attach → sisipkan
-    // konteks terstruktur di giliran terakhir saja (bubble tetap bersih).
     const connectors = next.connectors;
-    if (next.folderId && (connectors.gambarKerja || connectors.rab || connectors.jadwal)) {
+    const enabledConnectors = (Object.entries(connectors)
+      .filter(([, enabled]) => enabled)
+      .map(([connector]) => connector)) as CommandRoomConnector[];
+    // Drawing Intelligence relies exclusively on server-side DEM/PCKM retrieval.
+    if (next.folderId && connectors.rab) {
       try {
-        const contextPack = await buildProjectContextPack(next.folderId);
+        const contextPack = await buildRabContextPack(next.folderId);
         if (contextPack) {
           const last = historyMessages[historyMessages.length - 1];
           historyMessages[historyMessages.length - 1] = {
@@ -522,11 +525,8 @@ export default function CommandRoomPage() {
       modelName: activeModelDef.displayName as 'Lucent' | 'Arete' | 'Noir',
       effort: reasoningEffort,
       thinking: resolvedThinking,
-      // Fix 2026-07-18: projectId HANYA dikirim kalau connector aktif -- sebelumnya
-      // selalu terkirim asal project dibuka, membuat SEMUA tool (termasuk
-      // query_project_graph/gambar kerja) terdaftar ke model walau user tidak minta
-      // context apa pun (root cause token membludak + jawaban tidak relevan).
-      projectId: connectors.gambarKerja || connectors.rab || connectors.jadwal ? (next.folderId ?? undefined) : undefined,
+      projectId: enabledConnectors.length > 0 ? (next.folderId ?? undefined) : undefined,
+      connectors: enabledConnectors,
     });
   }
 
@@ -1608,6 +1608,7 @@ export default function CommandRoomPage() {
                         <span style={{ color: 'var(--cr-orange)', display: 'flex' }}><PaaxMark size={13} /></span>
                         <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--cr-text2)' }}>PAAX · {activeModelDef.displayName}</span>
                       </div>
+                      {m.processing && <ProcessingTrace trace={m.processing} />}
                       <div className="cr-markdown" style={{ fontSize: 15, lineHeight: 1.68, color: 'var(--cr-text)' }}>
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.text}</ReactMarkdown>
                       </div>
@@ -1635,14 +1636,12 @@ export default function CommandRoomPage() {
                       <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--cr-text2)' }}>PAAX · {run.modelName}</span>
                     </div>
 
+                    <RunStatus run={run} onStop={() => chatRunStore.cancelRun(run.runId)} />
+
                     {run.answerBuffer && (
                       <div className="cr-markdown" style={{ fontSize: 15, lineHeight: 1.68, color: 'var(--cr-text)' }}>
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{run.answerBuffer}</ReactMarkdown>
                       </div>
-                    )}
-
-                    {run.state !== 'completed' && (
-                      <RunStatus run={run} onStop={() => chatRunStore.cancelRun(run.runId)} />
                     )}
                   </div>
                 ))}

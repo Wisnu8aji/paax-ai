@@ -412,6 +412,14 @@ class ProjectDemSheetResponse(BaseModel):
     file_name: str
     status: str
     sheet_title: Optional[str] = None
+    sheet_number: Optional[str] = None
+    discipline: Optional[str] = None
+    level: Optional[str] = None
+    scale: Optional[str] = None
+    revision: Optional[str] = None
+    confidence: Optional[float] = None
+    width_px: Optional[int] = None
+    height_px: Optional[int] = None
     thumbnail_url: str
 
 

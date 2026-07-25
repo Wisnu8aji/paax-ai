@@ -65,26 +65,26 @@ export function verifyAndComposeClaims(input: {
   const claims = structuredClaims.map(toVerifiedClaim);
   const rejected = claims.filter((claim) => claim.status === "rejected");
   const rejectedStructured = structuredClaims.filter((claim) => claim.verification_status === "rejected");
-  const isContextualPhysicalClaim = rejectedStructured.some((claim) => claim.claim_type === "contextual_occurrence");
+  const contextualRejected = rejectedStructured.filter((claim) => claim.claim_type === "contextual_occurrence");
+  const isContextualPhysicalClaim = contextualRejected.length > 0;
 
   let responseText = input.responseText;
   if (rejected.length) {
-    if (isContextualPhysicalClaim) {
-      // The whole sentence asserts a fabricated physical count from a
-      // contextual occurrence -- there is no salvageable verified claim
-      // sharing that sentence, so sentence-level removal is correct here.
-      responseText = responseText.split("\n")
-        .filter((line) => !rejected.some((claim) => line.includes(claim.claim)))
-        .join("\n").trim();
-    } else {
-      // Redact only the rejected claim's own text, not the whole line/
-      // sentence it appears in -- a verified claim (e.g. a real Core Engine
-      // dimension) can legitimately share a sentence with an unrelated
-      // rejected one (e.g. a fabricated count), and must survive composition.
-      for (const claim of rejected) {
-        responseText = responseText.split(claim.claim).join("[klaim ditolak]");
-      }
+    // Remove the unsupported physical-quantity clause itself rather than the
+    // whole line. A sentence may contain a legitimate drawing observation
+    // followed by an invalid inference ("3 simbol ..., jadi 3 kolom fisik").
+    // The observation must be allowed to survive when evidence-backed.
+    for (const claim of contextualRejected) {
+      responseText = responseText.split(claim.text).join("");
     }
+    for (const claim of rejectedStructured) {
+      if (claim.claim_type === "contextual_occurrence") continue;
+      responseText = responseText.split(claim.text).join("[klaim ditolak]");
+    }
+    responseText = responseText
+      .replace(/\s+([,.;!?])/g, "$1")
+      .replace(/[,;]\s*$/g, "")
+      .trim();
     const refusal = isContextualPhysicalClaim
       ? "Kelompok konteks pada gambar bukan jumlah fisik terpasang; kuantitas final harus diverifikasi/routed melalui Core Engine."
       : "Klaim angka proyek tanpa evidence dan authority tidak ditampilkan; kuantitas final harus diverifikasi/routed melalui Core Engine.";

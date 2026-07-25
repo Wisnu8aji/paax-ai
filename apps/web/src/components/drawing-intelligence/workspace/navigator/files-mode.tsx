@@ -72,10 +72,10 @@ function FileMenu({ onAction }: { onAction: (label: string) => void }) {
 /** Ilustrasi wireframe sederhana: file bertumpuk + denah kotak (blueprint gambar 2). */
 function IntakeIllustration() {
   const stackFiles = [
-    { name: 'A2-102.pdf', color: 'var(--di-err)' },
-    { name: 'S1-201.dwg', color: 'var(--di-info)' },
-    { name: 'E2-101.pdf', color: 'var(--di-ok)' },
-    { name: 'M1-101.pdf', color: 'var(--di-accent)' },
+    { name: 'Architectural-Plan.pdf', color: 'var(--di-err)' },
+    { name: 'Structural-Plan.dwg', color: 'var(--di-info)' },
+    { name: 'Electrical-Plan.pdf', color: 'var(--di-ok)' },
+    { name: 'Mechanical-Plan.pdf', color: 'var(--di-accent)' },
   ];
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 26, marginBottom: 8 }}>

@@ -1,0 +1,2785 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 80,
+    "page_number": 81,
+    "render_uri": "local://plhut-88pg-run-1/page-0080.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T22:30:31.696877+00:00",
+    "completed_at": "2026-07-14T22:30:31.696910+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "81",
+      "raw": null,
+      "confidence": 0.95,
+      "evidence_refs": [
+        "ev-sheet-81"
+      ]
+    },
+    "title": {
+      "value": "DENAH AIR BERSIH LT 2",
+      "raw": "DENAH AIR BERSIH LT 2",
+      "confidence": 0.97,
+      "evidence_refs": [
+        "ev-title-block"
+      ]
+    },
+    "discipline": {
+      "value": "MEP",
+      "confidence": 0.98,
+      "status": "ai_interpreted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1:100",
+        "normalized": "1:100",
+        "confidence": 0.96,
+        "evidence_refs": [
+          "ev-scale-1-100"
+        ]
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-floor-plan-lt2",
+      "type": "floor_plan",
+      "title": "Denah Air Bersih LT 2",
+      "bbox": [
+        130.0,
+        130.0,
+        1810.0,
+        1140.0
+      ],
+      "confidence": 0.98
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "DENAH AIR BERSIH LT 2",
+        "normalized": "Judul gambar: Denah Air Bersih Lantai 2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          975.0,
+          1090.0,
+          1220.0,
+          1110.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-title-text"
+        ]
+      },
+      {
+        "raw": "SKALA 1:100",
+        "normalized": "Skala gambar: 1:100",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1150.0,
+          1120.0,
+          1250.0,
+          1135.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-scale-text"
+        ]
+      },
+      {
+        "raw": "AB - Ø25mm KE ROOF TANK",
+        "normalized": "Pipa AB diameter 25mm menuju Roof Tank",
+        "numeric_value": null,
+        "unit": "mm",
+        "bbox": [
+          310.0,
+          245.0,
+          470.0,
+          275.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pipa-roof-tank"
+        ]
+      },
+      {
+        "raw": "DARI ROOF TANK AB - Ø25mm",
+        "normalized": "Dari Roof Tank pipa AB diameter 25mm",
+        "numeric_value": null,
+        "unit": "mm",
+        "bbox": [
+          255.0,
+          290.0,
+          410.0,
+          320.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pipa-dari-roof-tank"
+        ]
+      },
+      {
+        "raw": "KEMENTERIAN AGAMA RI",
+        "normalized": "Instansi: Kementerian Agama RI",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          100.0,
+          1870.0,
+          115.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-header-institusi"
+        ]
+      },
+      {
+        "raw": "DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH",
+        "normalized": "Direktorat Jenderal Penyelenggaraan Haji dan Umrah",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          115.0,
+          1870.0,
+          140.0
+        ],
+        "confidence": 0.94,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-sub-institusi"
+        ]
+      },
+      {
+        "raw": "TAHUN ANGGARAN 2024",
+        "normalized": "Tahun anggaran: 2024",
+        "numeric_value": 2024.0,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          140.0,
+          1870.0,
+          155.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-tahun-anggaran"
+        ]
+      },
+      {
+        "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+        "normalized": "Judul proyek: Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          170.0,
+          1870.0,
+          210.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-judul-proyek"
+        ]
+      },
+      {
+        "raw": "JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+        "normalized": "Alamat proyek: Jalan Ki Mangun Sarkoro No. 115, Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          230.0,
+          1870.0,
+          260.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-lokasi-proyek"
+        ]
+      },
+      {
+        "raw": "MENYETUJUI",
+        "normalized": "Label persetujuan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          275.0,
+          1870.0,
+          290.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-menyetujui"
+        ]
+      },
+      {
+        "raw": "KEPALA KANTOR WILAYAH JAWA TENGAH SELAKU KUASA PENGGUNA ANGGARAN",
+        "normalized": "Jabatan penanggung jawab: Kepala Kantor Wilayah Jawa Tengah selaku Kuasa Pengguna Anggaran",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          295.0,
+          1870.0,
+          335.0
+        ],
+        "confidence": 0.93,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-jabatan-kpa"
+        ]
+      },
+      {
+        "raw": "MENGETAHUI/MENYETUJUI",
+        "normalized": "Label mengetahui/menyetujui",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          370.0,
+          1870.0,
+          385.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-mengetahui"
+        ]
+      },
+      {
+        "raw": "PEJABAT PEMBUAT KOMITMEN",
+        "normalized": "Jabatan Pejabat Pembuat Komitmen",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          390.0,
+          1870.0,
+          405.0
+        ],
+        "confidence": 0.91,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-jabatan-ppk"
+        ]
+      },
+      {
+        "raw": "KONSULTAN PERENCANA",
+        "normalized": "Konsultan perencana",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          450.0,
+          1870.0,
+          465.0
+        ],
+        "confidence": 0.92,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-konsultan"
+        ]
+      },
+      {
+        "raw": "TEAM LEADER",
+        "normalized": "Team Leader",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          565.0,
+          1870.0,
+          580.0
+        ],
+        "confidence": 0.93,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-team-leader"
+        ]
+      },
+      {
+        "raw": "NAMA TANDA TANGAN",
+        "normalized": "Kolom nama dan tanda tangan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          610.0,
+          1870.0,
+          625.0
+        ],
+        "confidence": 0.91,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-kolom-ttd"
+        ]
+      },
+      {
+        "raw": "SIPIL",
+        "normalized": "Bagian Sipil",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          630.0,
+          1780.0,
+          645.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-sipil"
+        ]
+      },
+      {
+        "raw": "DIGAMBAR",
+        "normalized": "Digambar oleh",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          650.0,
+          1780.0,
+          665.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-digambar"
+        ]
+      },
+      {
+        "raw": "JUDUL GAMBAR",
+        "normalized": "Kolom judul gambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          675.0,
+          1870.0,
+          690.0
+        ],
+        "confidence": 0.92,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-kolom-judul-gambar"
+        ]
+      },
+      {
+        "raw": "DENAH AIR BERSIH LT.2",
+        "normalized": "Isi judul gambar: Denah Air Bersih Lantai 2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          695.0,
+          1870.0,
+          710.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-isi-judul-gambar"
+        ]
+      },
+      {
+        "raw": "SKALA",
+        "normalized": "Kolom skala",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1810.0,
+          675.0,
+          1870.0,
+          690.0
+        ],
+        "confidence": 0.91,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-kolom-skala"
+        ]
+      },
+      {
+        "raw": "1:100",
+        "normalized": "Skala 1:100",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1810.0,
+          695.0,
+          1870.0,
+          710.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-isi-skala"
+        ]
+      },
+      {
+        "raw": "TANGGAL : JANUARI 2024",
+        "normalized": "Tanggal gambar: Januari 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          720.0,
+          1870.0,
+          735.0
+        ],
+        "confidence": 0.94,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-tanggal-gambar"
+        ]
+      },
+      {
+        "raw": "SKALA GBR",
+        "normalized": "Kolom skala gambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          740.0,
+          1790.0,
+          755.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-kolom-skala-gbr"
+        ]
+      },
+      {
+        "raw": "KODE GBR",
+        "normalized": "Kolom kode gambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1800.0,
+          740.0,
+          1840.0,
+          755.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-kolom-kode-gbr"
+        ]
+      },
+      {
+        "raw": "NO. GBR",
+        "normalized": "Kolom nomor gambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1850.0,
+          740.0,
+          1890.0,
+          755.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-kolom-no-gbr"
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "20250",
+        "normalized": "Dimensi total horizontal atas: 20250 mm",
+        "numeric_value": 20250.0,
+        "unit": "mm",
+        "bbox": [
+          615.0,
+          160.0,
+          685.0,
+          175.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-total-h-atas"
+        ]
+      },
+      {
+        "raw": "1625",
+        "normalized": "Dimensi segmen horizontal: 1625 mm",
+        "numeric_value": 1625.0,
+        "unit": "mm",
+        "bbox": [
+          400.0,
+          200.0,
+          435.0,
+          215.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-seg-1"
+        ]
+      },
+      {
+        "raw": "1500",
+        "normalized": "Dimensi segmen horizontal: 1500 mm",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          460.0,
+          200.0,
+          495.0,
+          215.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-seg-2"
+        ]
+      },
+      {
+        "raw": "1500",
+        "normalized": "Dimensi segmen horizontal: 1500 mm",
+        "numeric_value": 1500.0,
+        "unit": "mm",
+        "bbox": [
+          520.0,
+          200.0,
+          555.0,
+          215.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-seg-3"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": "Dimensi segmen horizontal: 2000 mm",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          625.0,
+          200.0,
+          660.0,
+          215.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-seg-4"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi segmen horizontal: 4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          730.0,
+          200.0,
+          765.0,
+          215.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-seg-5"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi segmen horizontal: 4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          975.0,
+          200.0,
+          1010.0,
+          215.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-seg-6"
+        ]
+      },
+      {
+        "raw": "4125",
+        "normalized": "Dimensi segmen horizontal: 4125 mm",
+        "numeric_value": 4125.0,
+        "unit": "mm",
+        "bbox": [
+          1245.0,
+          200.0,
+          1280.0,
+          215.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-seg-7"
+        ]
+      },
+      {
+        "raw": "3200",
+        "normalized": "Dimensi vertikal kanan atas: 3200 mm",
+        "numeric_value": 3200.0,
+        "unit": "mm",
+        "bbox": [
+          1845.0,
+          270.0,
+          1880.0,
+          285.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-vert-kanan-atas"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": "Dimensi vertikal kanan tengah: 2000 mm",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          1845.0,
+          410.0,
+          1880.0,
+          425.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-vert-kanan-tengah"
+        ]
+      },
+      {
+        "raw": "5000",
+        "normalized": "Dimensi vertikal kanan bawah: 5000 mm",
+        "numeric_value": 5000.0,
+        "unit": "mm",
+        "bbox": [
+          1845.0,
+          530.0,
+          1880.0,
+          545.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-vert-kanan-bawah"
+        ]
+      },
+      {
+        "raw": "10200",
+        "normalized": "Dimensi total vertikal kanan: 10200 mm",
+        "numeric_value": 10200.0,
+        "unit": "mm",
+        "bbox": [
+          1845.0,
+          380.0,
+          1895.0,
+          460.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-total-v-kanan"
+        ]
+      },
+      {
+        "raw": "3000",
+        "normalized": "Dimensi vertikal kiri atas: 3000 mm",
+        "numeric_value": 3000.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          290.0,
+          335.0,
+          305.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-vert-kiri-atas"
+        ]
+      },
+      {
+        "raw": "2000",
+        "normalized": "Dimensi vertikal kiri tengah: 2000 mm",
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          410.0,
+          335.0,
+          425.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-vert-kiri-tengah"
+        ]
+      },
+      {
+        "raw": "5000",
+        "normalized": "Dimensi vertikal kiri bawah: 5000 mm",
+        "numeric_value": 5000.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          530.0,
+          335.0,
+          545.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-vert-kiri-bawah"
+        ]
+      },
+      {
+        "raw": "10000",
+        "normalized": "Dimensi total vertikal kiri: 10000 mm",
+        "numeric_value": 10000.0,
+        "unit": "mm",
+        "bbox": [
+          260.0,
+          380.0,
+          310.0,
+          460.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-total-v-kiri"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi segmen horizontal bawah: 4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          430.0,
+          1040.0,
+          465.0,
+          1055.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-seg-bawah-1"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi segmen horizontal bawah: 4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          670.0,
+          1040.0,
+          705.0,
+          1055.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-seg-bawah-2"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi segmen horizontal bawah: 4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          910.0,
+          1040.0,
+          945.0,
+          1055.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-seg-bawah-3"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi segmen horizontal bawah: 4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          1150.0,
+          1040.0,
+          1185.0,
+          1055.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-seg-bawah-4"
+        ]
+      },
+      {
+        "raw": "4000",
+        "normalized": "Dimensi segmen horizontal bawah: 4000 mm",
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          1390.0,
+          1040.0,
+          1425.0,
+          1055.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-seg-bawah-5"
+        ]
+      },
+      {
+        "raw": "20000",
+        "normalized": "Dimensi total horizontal bawah: 20000 mm",
+        "numeric_value": 20000.0,
+        "unit": "mm",
+        "bbox": [
+          795.0,
+          1070.0,
+          870.0,
+          1085.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-dim-total-h-bawah"
+        ]
+      }
+    ],
+    "grids": [
+      {
+        "raw": "A",
+        "normalized": "Grid A",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          1150.0,
+          230.0,
+          1180.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-A"
+        ]
+      },
+      {
+        "raw": "B",
+        "normalized": "Grid B",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          440.0,
+          1150.0,
+          470.0,
+          1180.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-B"
+        ]
+      },
+      {
+        "raw": "C",
+        "normalized": "Grid C",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          680.0,
+          1150.0,
+          710.0,
+          1180.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-C"
+        ]
+      },
+      {
+        "raw": "D",
+        "normalized": "Grid D",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          920.0,
+          1150.0,
+          950.0,
+          1180.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-D"
+        ]
+      },
+      {
+        "raw": "E",
+        "normalized": "Grid E",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1160.0,
+          1150.0,
+          1190.0,
+          1180.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-E"
+        ]
+      },
+      {
+        "raw": "F",
+        "normalized": "Grid F",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          1150.0,
+          1430.0,
+          1180.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-F"
+        ]
+      },
+      {
+        "raw": "1",
+        "normalized": "Grid 1",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          180.0,
+          850.0,
+          210.0,
+          880.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-1"
+        ]
+      },
+      {
+        "raw": "2",
+        "normalized": "Grid 2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          180.0,
+          530.0,
+          210.0,
+          560.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-2"
+        ]
+      },
+      {
+        "raw": "3",
+        "normalized": "Grid 3",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          180.0,
+          370.0,
+          210.0,
+          400.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-3"
+        ]
+      },
+      {
+        "raw": "4",
+        "normalized": "Grid 4",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          180.0,
+          230.0,
+          210.0,
+          260.0
+        ],
+        "confidence": 0.98,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-grid-4"
+        ]
+      }
+    ],
+    "levels": [
+      {
+        "raw": "LT 2",
+        "normalized": "Lantai 2",
+        "numeric_value": 2.0,
+        "unit": "lantai",
+        "bbox": [
+          1190.0,
+          1090.0,
+          1230.0,
+          1105.0
+        ],
+        "confidence": 0.97,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-level-lt2"
+        ]
+      }
+    ],
+    "spaces": [
+      {
+        "raw": "RUANG MEKANIKAL LT 2",
+        "normalized": "Ruang Mekanikal Lantai 2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          330.0,
+          250.0,
+          410.0,
+          330.0
+        ],
+        "confidence": 0.93,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-ruang-mekanikal"
+        ]
+      },
+      {
+        "raw": "KORIDOR",
+        "normalized": "Koridor",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          550.0,
+          300.0,
+          610.0,
+          320.0
+        ],
+        "confidence": 0.92,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-ruang-koridor"
+        ]
+      },
+      {
+        "raw": "TANGGA",
+        "normalized": "Area tangga",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          350.0,
+          500.0,
+          390.0,
+          600.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-ruang-tangga"
+        ]
+      },
+      {
+        "raw": "VOID",
+        "normalized": "Area void/terbuka",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          600.0,
+          800.0,
+          700.0,
+          850.0
+        ],
+        "confidence": 0.88,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-ruang-void"
+        ]
+      }
+    ],
+    "element_labels": [
+      {
+        "raw": "AB",
+        "normalized": "Pipa Air Bersih",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          315.0,
+          250.0,
+          335.0,
+          265.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-pipa-ab"
+        ]
+      },
+      {
+        "raw": "P",
+        "normalized": "Pompa",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          360.0,
+          260.0,
+          375.0,
+          275.0
+        ],
+        "confidence": 0.94,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-pompa"
+        ]
+      },
+      {
+        "raw": "11",
+        "normalized": "Nomor anak tangga 11",
+        "numeric_value": 11.0,
+        "unit": null,
+        "bbox": [
+          385.0,
+          660.0,
+          395.0,
+          670.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-tangga-11"
+        ]
+      },
+      {
+        "raw": "12",
+        "normalized": "Nomor anak tangga 12",
+        "numeric_value": 12.0,
+        "unit": null,
+        "bbox": [
+          385.0,
+          645.0,
+          395.0,
+          655.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-tangga-12"
+        ]
+      },
+      {
+        "raw": "13",
+        "normalized": "Nomor anak tangga 13",
+        "numeric_value": 13.0,
+        "unit": null,
+        "bbox": [
+          385.0,
+          630.0,
+          395.0,
+          640.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-tangga-13"
+        ]
+      },
+      {
+        "raw": "14",
+        "normalized": "Nomor anak tangga 14",
+        "numeric_value": 14.0,
+        "unit": null,
+        "bbox": [
+          385.0,
+          615.0,
+          395.0,
+          625.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-tangga-14"
+        ]
+      },
+      {
+        "raw": "15",
+        "normalized": "Nomor anak tangga 15",
+        "numeric_value": 15.0,
+        "unit": null,
+        "bbox": [
+          385.0,
+          600.0,
+          395.0,
+          610.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-tangga-15"
+        ]
+      },
+      {
+        "raw": "16",
+        "normalized": "Nomor anak tangga 16",
+        "numeric_value": 16.0,
+        "unit": null,
+        "bbox": [
+          385.0,
+          585.0,
+          395.0,
+          595.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-tangga-16"
+        ]
+      },
+      {
+        "raw": "17",
+        "normalized": "Nomor anak tangga 17",
+        "numeric_value": 17.0,
+        "unit": null,
+        "bbox": [
+          385.0,
+          570.0,
+          395.0,
+          580.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-tangga-17"
+        ]
+      },
+      {
+        "raw": "18",
+        "normalized": "Nomor anak tangga 18",
+        "numeric_value": 18.0,
+        "unit": null,
+        "bbox": [
+          385.0,
+          555.0,
+          395.0,
+          565.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-tangga-18"
+        ]
+      },
+      {
+        "raw": "19",
+        "normalized": "Nomor anak tangga 19",
+        "numeric_value": 19.0,
+        "unit": null,
+        "bbox": [
+          385.0,
+          540.0,
+          395.0,
+          550.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-tangga-19"
+        ]
+      },
+      {
+        "raw": "20",
+        "normalized": "Nomor anak tangga 20",
+        "numeric_value": 20.0,
+        "unit": null,
+        "bbox": [
+          385.0,
+          525.0,
+          395.0,
+          535.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-tangga-20"
+        ]
+      },
+      {
+        "raw": "21",
+        "normalized": "Nomor anak tangga 21",
+        "numeric_value": 21.0,
+        "unit": null,
+        "bbox": [
+          385.0,
+          510.0,
+          395.0,
+          520.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-tangga-21"
+        ]
+      },
+      {
+        "raw": "22",
+        "normalized": "Nomor anak tangga 22",
+        "numeric_value": 22.0,
+        "unit": null,
+        "bbox": [
+          385.0,
+          495.0,
+          395.0,
+          505.0
+        ],
+        "confidence": 0.96,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-label-tangga-22"
+        ]
+      }
+    ],
+    "symbols": [
+      {
+        "raw": "LINGKARAN DENGAN GARIS DI TENGAH (SIMBOL PIPA AB)",
+        "normalized": "Simbol pipa air bersih (AB)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          315.0,
+          250.0,
+          335.0,
+          265.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-simbol-pipa-ab"
+        ]
+      },
+      {
+        "raw": "LINGKARAN DENGAN 'P' DI TENGAH (SIMBOL POMPA)",
+        "normalized": "Simbol pompa (P)",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          360.0,
+          260.0,
+          375.0,
+          275.0
+        ],
+        "confidence": 0.94,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-simbol-pompa"
+        ]
+      },
+      {
+        "raw": "GARIS PUTUS-PUTUS DENGAN PANAH (ARAH ALIRAN PIPA)",
+        "normalized": "Simbol arah aliran pipa",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          330.0,
+          270.0,
+          470.0,
+          290.0
+        ],
+        "confidence": 0.92,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-simbol-aliran"
+        ]
+      },
+      {
+        "raw": "TANGGA DENGAN GARIS DAN ANGKA (SIMBOL TANGGA)",
+        "normalized": "Simbol tangga dengan penomoran anak tangga",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          350.0,
+          490.0,
+          410.0,
+          670.0
+        ],
+        "confidence": 0.93,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-simbol-tangga"
+        ]
+      },
+      {
+        "raw": "KOTAK DENGAN GARIS DI TENGAH (SIMBOL VOID/OPENING)",
+        "normalized": "Simbol void atau opening lantai",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          600.0,
+          800.0,
+          700.0,
+          850.0
+        ],
+        "confidence": 0.91,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-simbol-void"
+        ]
+      }
+    ],
+    "tables": [],
+    "materials": [],
+    "notes": [
+      {
+        "raw": "AB - Ø25mm KE ROOF TANK",
+        "normalized": "Pipa air bersih diameter 25mm menuju tangki atap",
+        "numeric_value": null,
+        "unit": "mm",
+        "bbox": [
+          310.0,
+          245.0,
+          470.0,
+          275.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-pipa-roof-tank"
+        ]
+      },
+      {
+        "raw": "DARI ROOF TANK AB - Ø25mm",
+        "normalized": "Dari tangki atap pipa air bersih diameter 25mm",
+        "numeric_value": null,
+        "unit": "mm",
+        "bbox": [
+          255.0,
+          290.0,
+          410.0,
+          320.0
+        ],
+        "confidence": 0.9,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-note-pipa-dari-roof-tank"
+        ]
+      }
+    ],
+    "references": [
+      {
+        "raw": "ROOF TANK",
+        "normalized": "Referensi ke tangki atap",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          375.0,
+          250.0,
+          440.0,
+          265.0
+        ],
+        "confidence": 0.93,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-ref-roof-tank"
+        ]
+      }
+    ],
+    "patterns": [
+      {
+        "raw": "ARSIR DIAGONAL PADA DINDING",
+        "normalized": "Pola arsir diagonal menunjukkan dinding beton/bata",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          330.0,
+          250.0,
+          1400.0,
+          850.0
+        ],
+        "confidence": 0.94,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-dinding"
+        ]
+      },
+      {
+        "raw": "ARSIR TITIK-TITIK PADA LANTAI",
+        "normalized": "Pola titik-titik menunjukkan lantai keramik/finishing tertentu",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          330.0,
+          250.0,
+          1400.0,
+          850.0
+        ],
+        "confidence": 0.93,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-lantai"
+        ]
+      },
+      {
+        "raw": "GARIS TERPUTUS PADA VOID",
+        "normalized": "Pola garis terputus menunjukkan area terbuka/void",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          600.0,
+          800.0,
+          700.0,
+          850.0
+        ],
+        "confidence": 0.92,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-pattern-void"
+        ]
+      }
+    ],
+    "geometry_descriptions": [
+      {
+        "raw": "DENAH LANTAI 2 BENTUK PERSEGI PANJANG DENGAN PEMBAGIAN RUANG DI SEBELAH KIRI",
+        "normalized": "Denah lantai berbentuk persegi panjang dengan pembagian ruang di sisi kiri",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          330.0,
+          250.0,
+          1400.0,
+          850.0
+        ],
+        "confidence": 0.95,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geo-denah-lt2"
+        ]
+      },
+      {
+        "raw": "TANGGA BERADA DI SISI KIRI TENGAH DENGAN 12 ANAK TANGGA",
+        "normalized": "Tangga terletak di sisi kiri tengah dengan 12 anak tangga",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          350.0,
+          490.0,
+          410.0,
+          670.0
+        ],
+        "confidence": 0.94,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geo-tangga"
+        ]
+      },
+      {
+        "raw": "VOID BERBENTUK PERSEGI PANJANG DI TENGAH BAWAH",
+        "normalized": "Void berbentuk persegi panjang di bagian tengah bawah",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          600.0,
+          800.0,
+          700.0,
+          850.0
+        ],
+        "confidence": 0.93,
+        "status": "extracted",
+        "evidence_refs": [
+          "ev-geo-void"
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-sheet-81",
+      "kind": "text",
+      "raw": "81",
+      "bbox": null,
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-title-block",
+      "kind": "text",
+      "raw": "DENAH AIR BERSIH LT 2",
+      "bbox": [
+        975.0,
+        1090.0,
+        1220.0,
+        1110.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-scale-1-100",
+      "kind": "text",
+      "raw": "1:100",
+      "bbox": [
+        1150.0,
+        1120.0,
+        1250.0,
+        1135.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-title-text",
+      "kind": "text",
+      "raw": "DENAH AIR BERSIH LT 2",
+      "bbox": [
+        975.0,
+        1090.0,
+        1220.0,
+        1110.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-scale-text",
+      "kind": "text",
+      "raw": "SKALA 1:100",
+      "bbox": [
+        1150.0,
+        1120.0,
+        1250.0,
+        1135.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-pipa-roof-tank",
+      "kind": "text",
+      "raw": "AB - Ø25mm KE ROOF TANK",
+      "bbox": [
+        310.0,
+        245.0,
+        470.0,
+        275.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-pipa-dari-roof-tank",
+      "kind": "text",
+      "raw": "DARI ROOF TANK AB - Ø25mm",
+      "bbox": [
+        255.0,
+        290.0,
+        410.0,
+        320.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-header-institusi",
+      "kind": "text",
+      "raw": "KEMENTERIAN AGAMA RI",
+      "bbox": [
+        1730.0,
+        100.0,
+        1870.0,
+        115.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-sub-institusi",
+      "kind": "text",
+      "raw": "DIREKTORAT JENDERAL PENYELENGGARAAN HAJI DAN UMRAH",
+      "bbox": [
+        1730.0,
+        115.0,
+        1870.0,
+        140.0
+      ],
+      "confidence": 0.94
+    },
+    {
+      "evidence_id": "ev-tahun-anggaran",
+      "kind": "text",
+      "raw": "TAHUN ANGGARAN 2024",
+      "bbox": [
+        1730.0,
+        140.0,
+        1870.0,
+        155.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-judul-proyek",
+      "kind": "text",
+      "raw": "GEDUNG PUSAT LAYANAN HAJI DAN UMRAH TERPADU KOTA SURAKARTA",
+      "bbox": [
+        1730.0,
+        170.0,
+        1870.0,
+        210.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-lokasi-proyek",
+      "kind": "text",
+      "raw": "JALAN KI MANGUN SARKORO NO.115 KOTA SURAKARTA",
+      "bbox": [
+        1730.0,
+        230.0,
+        1870.0,
+        260.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-label-menyetujui",
+      "kind": "text",
+      "raw": "MENYETUJUI",
+      "bbox": [
+        1730.0,
+        275.0,
+        1870.0,
+        290.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-jabatan-kpa",
+      "kind": "text",
+      "raw": "KEPALA KANTOR WILAYAH JAWA TENGAH SELAKU KUASA PENGGUNA ANGGARAN",
+      "bbox": [
+        1730.0,
+        295.0,
+        1870.0,
+        335.0
+      ],
+      "confidence": 0.93
+    },
+    {
+      "evidence_id": "ev-label-mengetahui",
+      "kind": "text",
+      "raw": "MENGETAHUI/MENYETUJUI",
+      "bbox": [
+        1730.0,
+        370.0,
+        1870.0,
+        385.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-jabatan-ppk",
+      "kind": "text",
+      "raw": "PEJABAT PEMBUAT KOMITMEN",
+      "bbox": [
+        1730.0,
+        390.0,
+        1870.0,
+        405.0
+      ],
+      "confidence": 0.91
+    },
+    {
+      "evidence_id": "ev-label-konsultan",
+      "kind": "text",
+      "raw": "KONSULTAN PERENCANA",
+      "bbox": [
+        1730.0,
+        450.0,
+        1870.0,
+        465.0
+      ],
+      "confidence": 0.92
+    },
+    {
+      "evidence_id": "ev-label-team-leader",
+      "kind": "text",
+      "raw": "TEAM LEADER",
+      "bbox": [
+        1730.0,
+        565.0,
+        1870.0,
+        580.0
+      ],
+      "confidence": 0.93
+    },
+    {
+      "evidence_id": "ev-kolom-ttd",
+      "kind": "text",
+      "raw": "NAMA TANDA TANGAN",
+      "bbox": [
+        1730.0,
+        610.0,
+        1870.0,
+        625.0
+      ],
+      "confidence": 0.91
+    },
+    {
+      "evidence_id": "ev-label-sipil",
+      "kind": "text",
+      "raw": "SIPIL",
+      "bbox": [
+        1730.0,
+        630.0,
+        1780.0,
+        645.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-label-digambar",
+      "kind": "text",
+      "raw": "DIGAMBAR",
+      "bbox": [
+        1730.0,
+        650.0,
+        1780.0,
+        665.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-kolom-judul-gambar",
+      "kind": "text",
+      "raw": "JUDUL GAMBAR",
+      "bbox": [
+        1730.0,
+        675.0,
+        1870.0,
+        690.0
+      ],
+      "confidence": 0.92
+    },
+    {
+      "evidence_id": "ev-isi-judul-gambar",
+      "kind": "text",
+      "raw": "DENAH AIR BERSIH LT.2",
+      "bbox": [
+        1730.0,
+        695.0,
+        1870.0,
+        710.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-kolom-skala",
+      "kind": "text",
+      "raw": "SKALA",
+      "bbox": [
+        1810.0,
+        675.0,
+        1870.0,
+        690.0
+      ],
+      "confidence": 0.91
+    },
+    {
+      "evidence_id": "ev-isi-skala",
+      "kind": "text",
+      "raw": "1:100",
+      "bbox": [
+        1810.0,
+        695.0,
+        1870.0,
+        710.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-tanggal-gambar",
+      "kind": "text",
+      "raw": "TANGGAL : JANUARI 2024",
+      "bbox": [
+        1730.0,
+        720.0,
+        1870.0,
+        735.0
+      ],
+      "confidence": 0.94
+    },
+    {
+      "evidence_id": "ev-kolom-skala-gbr",
+      "kind": "text",
+      "raw": "SKALA GBR",
+      "bbox": [
+        1730.0,
+        740.0,
+        1790.0,
+        755.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-kolom-kode-gbr",
+      "kind": "text",
+      "raw": "KODE GBR",
+      "bbox": [
+        1800.0,
+        740.0,
+        1840.0,
+        755.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-kolom-no-gbr",
+      "kind": "text",
+      "raw": "NO. GBR",
+      "bbox": [
+        1850.0,
+        740.0,
+        1890.0,
+        755.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-dim-total-h-atas",
+      "kind": "dimension",
+      "raw": "20250",
+      "bbox": [
+        615.0,
+        160.0,
+        685.0,
+        175.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-dim-seg-1",
+      "kind": "dimension",
+      "raw": "1625",
+      "bbox": [
+        400.0,
+        200.0,
+        435.0,
+        215.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-seg-2",
+      "kind": "dimension",
+      "raw": "1500",
+      "bbox": [
+        460.0,
+        200.0,
+        495.0,
+        215.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-seg-3",
+      "kind": "dimension",
+      "raw": "1500",
+      "bbox": [
+        520.0,
+        200.0,
+        555.0,
+        215.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-seg-4",
+      "kind": "dimension",
+      "raw": "2000",
+      "bbox": [
+        625.0,
+        200.0,
+        660.0,
+        215.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-seg-5",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        730.0,
+        200.0,
+        765.0,
+        215.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-seg-6",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        975.0,
+        200.0,
+        1010.0,
+        215.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-seg-7",
+      "kind": "dimension",
+      "raw": "4125",
+      "bbox": [
+        1245.0,
+        200.0,
+        1280.0,
+        215.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-vert-kanan-atas",
+      "kind": "dimension",
+      "raw": "3200",
+      "bbox": [
+        1845.0,
+        270.0,
+        1880.0,
+        285.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-vert-kanan-tengah",
+      "kind": "dimension",
+      "raw": "2000",
+      "bbox": [
+        1845.0,
+        410.0,
+        1880.0,
+        425.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-vert-kanan-bawah",
+      "kind": "dimension",
+      "raw": "5000",
+      "bbox": [
+        1845.0,
+        530.0,
+        1880.0,
+        545.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-total-v-kanan",
+      "kind": "dimension",
+      "raw": "10200",
+      "bbox": [
+        1845.0,
+        380.0,
+        1895.0,
+        460.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-dim-vert-kiri-atas",
+      "kind": "dimension",
+      "raw": "3000",
+      "bbox": [
+        300.0,
+        290.0,
+        335.0,
+        305.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-vert-kiri-tengah",
+      "kind": "dimension",
+      "raw": "2000",
+      "bbox": [
+        300.0,
+        410.0,
+        335.0,
+        425.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-vert-kiri-bawah",
+      "kind": "dimension",
+      "raw": "5000",
+      "bbox": [
+        300.0,
+        530.0,
+        335.0,
+        545.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-total-v-kiri",
+      "kind": "dimension",
+      "raw": "10000",
+      "bbox": [
+        260.0,
+        380.0,
+        310.0,
+        460.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-dim-seg-bawah-1",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        430.0,
+        1040.0,
+        465.0,
+        1055.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-seg-bawah-2",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        670.0,
+        1040.0,
+        705.0,
+        1055.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-seg-bawah-3",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        910.0,
+        1040.0,
+        945.0,
+        1055.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-seg-bawah-4",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        1150.0,
+        1040.0,
+        1185.0,
+        1055.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-seg-bawah-5",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        1390.0,
+        1040.0,
+        1425.0,
+        1055.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-dim-total-h-bawah",
+      "kind": "dimension",
+      "raw": "20000",
+      "bbox": [
+        795.0,
+        1070.0,
+        870.0,
+        1085.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-grid-A",
+      "kind": "grid",
+      "raw": "A",
+      "bbox": [
+        200.0,
+        1150.0,
+        230.0,
+        1180.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-grid-B",
+      "kind": "grid",
+      "raw": "B",
+      "bbox": [
+        440.0,
+        1150.0,
+        470.0,
+        1180.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-grid-C",
+      "kind": "grid",
+      "raw": "C",
+      "bbox": [
+        680.0,
+        1150.0,
+        710.0,
+        1180.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-grid-D",
+      "kind": "grid",
+      "raw": "D",
+      "bbox": [
+        920.0,
+        1150.0,
+        950.0,
+        1180.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-grid-E",
+      "kind": "grid",
+      "raw": "E",
+      "bbox": [
+        1160.0,
+        1150.0,
+        1190.0,
+        1180.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-grid-F",
+      "kind": "grid",
+      "raw": "F",
+      "bbox": [
+        1400.0,
+        1150.0,
+        1430.0,
+        1180.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-grid-1",
+      "kind": "grid",
+      "raw": "1",
+      "bbox": [
+        180.0,
+        850.0,
+        210.0,
+        880.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-grid-2",
+      "kind": "grid",
+      "raw": "2",
+      "bbox": [
+        180.0,
+        530.0,
+        210.0,
+        560.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-grid-3",
+      "kind": "grid",
+      "raw": "3",
+      "bbox": [
+        180.0,
+        370.0,
+        210.0,
+        400.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-grid-4",
+      "kind": "grid",
+      "raw": "4",
+      "bbox": [
+        180.0,
+        230.0,
+        210.0,
+        260.0
+      ],
+      "confidence": 0.98
+    },
+    {
+      "evidence_id": "ev-level-lt2",
+      "kind": "level",
+      "raw": "LT 2",
+      "bbox": [
+        1190.0,
+        1090.0,
+        1230.0,
+        1105.0
+      ],
+      "confidence": 0.97
+    },
+    {
+      "evidence_id": "ev-ruang-mekanikal",
+      "kind": "space",
+      "raw": "RUANG MEKANIKAL LT 2",
+      "bbox": [
+        330.0,
+        250.0,
+        410.0,
+        330.0
+      ],
+      "confidence": 0.93
+    },
+    {
+      "evidence_id": "ev-ruang-koridor",
+      "kind": "space",
+      "raw": "KORIDOR",
+      "bbox": [
+        550.0,
+        300.0,
+        610.0,
+        320.0
+      ],
+      "confidence": 0.92
+    },
+    {
+      "evidence_id": "ev-ruang-tangga",
+      "kind": "space",
+      "raw": "TANGGA",
+      "bbox": [
+        350.0,
+        500.0,
+        390.0,
+        600.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-ruang-void",
+      "kind": "space",
+      "raw": "VOID",
+      "bbox": [
+        600.0,
+        800.0,
+        700.0,
+        850.0
+      ],
+      "confidence": 0.88
+    },
+    {
+      "evidence_id": "ev-label-pipa-ab",
+      "kind": "element_label",
+      "raw": "AB",
+      "bbox": [
+        315.0,
+        250.0,
+        335.0,
+        265.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-label-pompa",
+      "kind": "element_label",
+      "raw": "P",
+      "bbox": [
+        360.0,
+        260.0,
+        375.0,
+        275.0
+      ],
+      "confidence": 0.94
+    },
+    {
+      "evidence_id": "ev-label-tangga-11",
+      "kind": "element_label",
+      "raw": "11",
+      "bbox": [
+        385.0,
+        660.0,
+        395.0,
+        670.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-tangga-12",
+      "kind": "element_label",
+      "raw": "12",
+      "bbox": [
+        385.0,
+        645.0,
+        395.0,
+        655.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-tangga-13",
+      "kind": "element_label",
+      "raw": "13",
+      "bbox": [
+        385.0,
+        630.0,
+        395.0,
+        640.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-tangga-14",
+      "kind": "element_label",
+      "raw": "14",
+      "bbox": [
+        385.0,
+        615.0,
+        395.0,
+        625.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-tangga-15",
+      "kind": "element_label",
+      "raw": "15",
+      "bbox": [
+        385.0,
+        600.0,
+        395.0,
+        610.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-tangga-16",
+      "kind": "element_label",
+      "raw": "16",
+      "bbox": [
+        385.0,
+        585.0,
+        395.0,
+        595.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-tangga-17",
+      "kind": "element_label",
+      "raw": "17",
+      "bbox": [
+        385.0,
+        570.0,
+        395.0,
+        580.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-tangga-18",
+      "kind": "element_label",
+      "raw": "18",
+      "bbox": [
+        385.0,
+        555.0,
+        395.0,
+        565.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-tangga-19",
+      "kind": "element_label",
+      "raw": "19",
+      "bbox": [
+        385.0,
+        540.0,
+        395.0,
+        550.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-tangga-20",
+      "kind": "element_label",
+      "raw": "20",
+      "bbox": [
+        385.0,
+        525.0,
+        395.0,
+        535.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-tangga-21",
+      "kind": "element_label",
+      "raw": "21",
+      "bbox": [
+        385.0,
+        510.0,
+        395.0,
+        520.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-label-tangga-22",
+      "kind": "element_label",
+      "raw": "22",
+      "bbox": [
+        385.0,
+        495.0,
+        395.0,
+        505.0
+      ],
+      "confidence": 0.96
+    },
+    {
+      "evidence_id": "ev-simbol-pipa-ab",
+      "kind": "symbol",
+      "raw": "LINGKARAN DENGAN GARIS DI TENGAH (SIMBOL PIPA AB)",
+      "bbox": [
+        315.0,
+        250.0,
+        335.0,
+        265.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-simbol-pompa",
+      "kind": "symbol",
+      "raw": "LINGKARAN DENGAN 'P' DI TENGAH (SIMBOL POMPA)",
+      "bbox": [
+        360.0,
+        260.0,
+        375.0,
+        275.0
+      ],
+      "confidence": 0.94
+    },
+    {
+      "evidence_id": "ev-simbol-aliran",
+      "kind": "symbol",
+      "raw": "GARIS PUTUS-PUTUS DENGAN PANAH (ARAH ALIRAN PIPA)",
+      "bbox": [
+        330.0,
+        270.0,
+        470.0,
+        290.0
+      ],
+      "confidence": 0.92
+    },
+    {
+      "evidence_id": "ev-simbol-tangga",
+      "kind": "symbol",
+      "raw": "TANGGA DENGAN GARIS DAN ANGKA (SIMBOL TANGGA)",
+      "bbox": [
+        350.0,
+        490.0,
+        410.0,
+        670.0
+      ],
+      "confidence": 0.93
+    },
+    {
+      "evidence_id": "ev-simbol-void",
+      "kind": "symbol",
+      "raw": "KOTAK DENGAN GARIS DI TENGAH (SIMBOL VOID/OPENING)",
+      "bbox": [
+        600.0,
+        800.0,
+        700.0,
+        850.0
+      ],
+      "confidence": 0.91
+    },
+    {
+      "evidence_id": "ev-note-pipa-roof-tank",
+      "kind": "note",
+      "raw": "AB - Ø25mm KE ROOF TANK",
+      "bbox": [
+        310.0,
+        245.0,
+        470.0,
+        275.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-note-pipa-dari-roof-tank",
+      "kind": "note",
+      "raw": "DARI ROOF TANK AB - Ø25mm",
+      "bbox": [
+        255.0,
+        290.0,
+        410.0,
+        320.0
+      ],
+      "confidence": 0.9
+    },
+    {
+      "evidence_id": "ev-ref-roof-tank",
+      "kind": "reference",
+      "raw": "ROOF TANK",
+      "bbox": [
+        375.0,
+        250.0,
+        440.0,
+        265.0
+      ],
+      "confidence": 0.93
+    },
+    {
+      "evidence_id": "ev-pattern-dinding",
+      "kind": "pattern",
+      "raw": "ARSIR DIAGONAL PADA DINDING",
+      "bbox": [
+        330.0,
+        250.0,
+        1400.0,
+        850.0
+      ],
+      "confidence": 0.94
+    },
+    {
+      "evidence_id": "ev-pattern-lantai",
+      "kind": "pattern",
+      "raw": "ARSIR TITIK-TITIK PADA LANTAI",
+      "bbox": [
+        330.0,
+        250.0,
+        1400.0,
+        850.0
+      ],
+      "confidence": 0.93
+    },
+    {
+      "evidence_id": "ev-pattern-void",
+      "kind": "pattern",
+      "raw": "GARIS TERPUTUS PADA VOID",
+      "bbox": [
+        600.0,
+        800.0,
+        700.0,
+        850.0
+      ],
+      "confidence": 0.92
+    },
+    {
+      "evidence_id": "ev-geo-denah-lt2",
+      "kind": "geometry_description",
+      "raw": "DENAH LANTAI 2 BENTUK PERSEGI PANJANG DENGAN PEMBAGIAN RUANG DI SEBELAH KIRI",
+      "bbox": [
+        330.0,
+        250.0,
+        1400.0,
+        850.0
+      ],
+      "confidence": 0.95
+    },
+    {
+      "evidence_id": "ev-geo-tangga",
+      "kind": "geometry_description",
+      "raw": "TANGGA BERADA DI SISI KIRI TENGAH DENGAN 12 ANAK TANGGA",
+      "bbox": [
+        350.0,
+        490.0,
+        410.0,
+        670.0
+      ],
+      "confidence": 0.94
+    },
+    {
+      "evidence_id": "ev-geo-void",
+      "kind": "geometry_description",
+      "raw": "VOID BERBENTUK PERSEGI PANJANG DI TENGAH BAWAH",
+      "bbox": [
+        600.0,
+        800.0,
+        700.0,
+        850.0
+      ],
+      "confidence": 0.93
+    }
+  ],
+  "ambiguities": [
+    "Istilah 'AB' pada pipa bisa bermakna Air Bersih atau istilah teknis lain; konteks mendukung Air Bersih tetapi tidak ada legenda eksplisit di halaman ini."
+  ],
+  "conflicts": [
+    "Dimensi total horizontal atas 20250 tidak sama persis dengan total bawah 20000; perbedaan 250 mm kemungkinan akibat ketebalan dinding atau perbedaan batas ukur, namun tidak dijelaskan di halaman."
+  ],
+  "unclassified": [
+    "Beberapa arsiran pada area tertentu tidak memiliki legenda makna di halaman ini, sehingga interpretasi material terbatas."
+  ],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

@@ -98,6 +98,11 @@ function SheetCard({ sheet }: { sheet: Sheet }) {
   const [toast, setToast] = useState<string | null>(null);
   const active = state.activeSheetId === sheet.id;
   const checked = state.selectedSheetIds.includes(sheet.id);
+  const pageIndex = sheet.pageNumber - 1;
+  const openConflictCount = (state.analysis.packageIntelligence?.work_items ?? [])
+    .flatMap((item) => item.conflicts ?? [])
+    .filter((conflict) => conflict.status === 'open' && conflict.affected_page_indices.includes(pageIndex))
+    .length;
 
   const showToast = (label: string) => {
     setToast(`Saved`);
@@ -141,6 +146,16 @@ function SheetCard({ sheet }: { sheet: Sheet }) {
           hoveredElementId={null}
           thumbnail
         />
+        {openConflictCount > 0 && (
+          <span
+            className="di-pill"
+            data-tone="warn"
+            style={{ position: 'absolute', top: 5, right: 5, height: 18, fontSize: 9, fontWeight: 700 }}
+            title={`${openConflictCount} konflik lintas lembar memerlukan keputusan`}
+          >
+            Data rancu · {openConflictCount}
+          </span>
+        )}
         <input
           type="checkbox"
           checked={checked}

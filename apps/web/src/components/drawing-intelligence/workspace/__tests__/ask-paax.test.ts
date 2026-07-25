@@ -24,6 +24,13 @@ function makeResponse(
     data_status: null,
     notes: [],
     missing_information: [],
+    facts: [],
+    relationships: [],
+    conflicts: [],
+    citations: [],
+    allowed_claims: [],
+    forbidden_claims: [],
+    quantity_authority: 'none',
     ...overrides,
   };
 }

@@ -7,7 +7,7 @@ from app.env import load_repo_env_local
 
 load_repo_env_local()
 
-from app.api import health_routes, upload_routes, pdf_routes, excel_routes, tkg_routes, dem_routes
+from app.api import health_routes, upload_routes, pdf_routes, excel_routes, tkg_routes, dem_routes, intelligence_routes
 
 app = FastAPI(title="PAAX Document Intelligence", version="0.5.0")
 
@@ -38,3 +38,4 @@ app.include_router(pdf_routes.router, dependencies=[Depends(get_current_user)])
 app.include_router(excel_routes.router, dependencies=[Depends(get_current_user)])
 app.include_router(tkg_routes.router, dependencies=[Depends(get_current_user)])
 app.include_router(dem_routes.router, dependencies=[Depends(get_current_user)])
+app.include_router(intelligence_routes.router, dependencies=[Depends(get_current_user)])

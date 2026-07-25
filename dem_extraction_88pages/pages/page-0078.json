@@ -1,0 +1,1367 @@
+{
+  "schema_version": "paax.dem.sheet.v1",
+  "run_id": "PLHUT-88PG-RUN-1",
+  "document_id": "PLHUT-SURAKARTA-88PG",
+  "project_id": "PLHUT-SURAKARTA",
+  "source": {
+    "document_hash": "sha256:bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68",
+    "file_name": "GAMBAR KERJA PLHUT SURAKARTA (1).pdf",
+    "page_index": 78,
+    "page_number": 79,
+    "render_uri": "local://plhut-88pg-run-1/page-0078.png",
+    "width_px": 2482,
+    "height_px": 1755
+  },
+  "generation": {
+    "provider": "qwen",
+    "model_alias": "qwen3.7-plus",
+    "prompt_version": "dem-extraction-v1.0.0",
+    "started_at": "2026-07-14T22:27:20.103440+00:00",
+    "completed_at": "2026-07-14T22:27:20.103469+00:00",
+    "continuation_count": 0,
+    "temperature": 0.0,
+    "status": "complete"
+  },
+  "sheet_identity": {
+    "sheet_number": {
+      "value": "79",
+      "raw": "79",
+      "confidence": 1.0,
+      "evidence_refs": []
+    },
+    "title": {
+      "value": "DENAH INST. AIR HUJAN LT ATAP",
+      "raw": "DENAH INST. AIR HUJAN LT ATAP",
+      "confidence": 1.0,
+      "evidence_refs": []
+    },
+    "discipline": {
+      "value": "arsitektur",
+      "confidence": 0.95,
+      "status": "extracted"
+    },
+    "scale_candidates": [
+      {
+        "raw": "1 : 100",
+        "normalized": "1:100",
+        "confidence": 1.0,
+        "evidence_refs": []
+      }
+    ]
+  },
+  "views": [
+    {
+      "view_id": "view-79",
+      "type": "floor_plan",
+      "title": "DENAH INST. AIR HUJAN LT ATAP",
+      "bbox": [
+        50.0,
+        50.0,
+        1970.0,
+        1430.0
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "observations": {
+    "texts": [
+      {
+        "raw": "KEMENTERIAN AGAMA RI\nDIREKTORAT JENDERAL\nPENYELENGGARAAN HAJI DAN UMRAH\nTAHUN ANGGARAN 2024",
+        "normalized": "Kementerian Agama RI - Direktorat Jenderal Penyelenggaraan Haji dan Umrah - Tahun Anggaran 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          100.0,
+          1950.0,
+          200.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "GEDUNG PUSAT LAYANAN\nHAJI DAN UMRAH TERPADU\nKOTA SURAKARTA",
+        "normalized": "Gedung Pusat Layanan Haji dan Umrah Terpadu Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          220.0,
+          1950.0,
+          300.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "LOKASI :\nJALAN KI MANGUN SARKORO NO.115\nKOTA SURAKARTA",
+        "normalized": "Lokasi: Jalan Ki Mangun Sarkoro No.115, Kota Surakarta",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          320.0,
+          1950.0,
+          380.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "MENYETUJUI\nKEPALA KANTOR WILAYAH JAWA TENGAH\nSELAKU KUASA PENGGUNA ANGGARAN",
+        "normalized": "Menyetujui: Kepala Kantor Wilayah Jawa Tengah selaku Kuasa Pengguna Anggaran",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          400.0,
+          1950.0,
+          460.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "MENGETAHUI / MENYETUJUI\nPEJABAT PEMBUAT KOMITMEN",
+        "normalized": "Mengetahui/Menyetujui: Pejabat Pembuat Komitmen",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          480.0,
+          1950.0,
+          540.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "KONSULTAN PERENCANA",
+        "normalized": "Konsultan Perencana",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          560.0,
+          1950.0,
+          600.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "TEAM LEADER",
+        "normalized": "Team Leader",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          680.0,
+          1950.0,
+          720.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "NAMA TANDA TANGAN",
+        "normalized": "Nama dan Tanda Tangan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          740.0,
+          1950.0,
+          780.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "SIPIL",
+        "normalized": "Sipil",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          800.0,
+          1780.0,
+          840.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "DIGAMBAR",
+        "normalized": "Digambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          860.0,
+          1780.0,
+          900.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "JUDUL GAMBAR\nDENAH AIR INST. AIR HUJAN LT.2",
+        "normalized": "Judul Gambar: Denah Air Inst. Air Hujan Lt.2",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          920.0,
+          1950.0,
+          980.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "SKALA\n1:100",
+        "normalized": "Skala: 1:100",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1800.0,
+          920.0,
+          1950.0,
+          980.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "TANGGAL : JANUARI 2024",
+        "normalized": "Tanggal: Januari 2024",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          1000.0,
+          1950.0,
+          1040.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "SKALA GBR KODE GBR NO. GBR",
+        "normalized": "Skala Gambar, Kode Gambar, Nomor Gambar",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1730.0,
+          1060.0,
+          1950.0,
+          1100.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "DENAH INST. AIR HUJAN LT ATAP",
+        "normalized": "Denah Instalasi Air Hujan Lantai Atap",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1000.0,
+          1350.0,
+          1700.0,
+          1390.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "SKALA 1 : 100",
+        "normalized": "Skala 1:100",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1150.0,
+          1390.0,
+          1550.0,
+          1430.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "dimensions": [
+      {
+        "raw": "4000",
+        "normalized": null,
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          300.0,
+          950.0,
+          340.0,
+          970.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "4000",
+        "normalized": null,
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          500.0,
+          950.0,
+          540.0,
+          970.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "4000",
+        "normalized": null,
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          700.0,
+          950.0,
+          740.0,
+          970.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "4000",
+        "normalized": null,
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          900.0,
+          950.0,
+          940.0,
+          970.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "4000",
+        "normalized": null,
+        "numeric_value": 4000.0,
+        "unit": "mm",
+        "bbox": [
+          1100.0,
+          950.0,
+          1140.0,
+          970.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "20000",
+        "normalized": null,
+        "numeric_value": 20000.0,
+        "unit": "mm",
+        "bbox": [
+          900.0,
+          970.0,
+          950.0,
+          990.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "3000",
+        "normalized": null,
+        "numeric_value": 3000.0,
+        "unit": "mm",
+        "bbox": [
+          1600.0,
+          250.0,
+          1640.0,
+          270.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "2000",
+        "normalized": null,
+        "numeric_value": 2000.0,
+        "unit": "mm",
+        "bbox": [
+          1600.0,
+          450.0,
+          1640.0,
+          470.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "10000",
+        "normalized": null,
+        "numeric_value": 10000.0,
+        "unit": "mm",
+        "bbox": [
+          1600.0,
+          550.0,
+          1650.0,
+          570.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "5000",
+        "normalized": null,
+        "numeric_value": 5000.0,
+        "unit": "mm",
+        "bbox": [
+          1600.0,
+          700.0,
+          1640.0,
+          720.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "grids": [
+      {
+        "raw": "A",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1470.0,
+          980.0,
+          1490.0,
+          1000.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "B",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1270.0,
+          980.0,
+          1290.0,
+          1000.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "C",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1070.0,
+          980.0,
+          1090.0,
+          1000.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "D",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          870.0,
+          980.0,
+          890.0,
+          1000.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "E",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          670.0,
+          980.0,
+          690.0,
+          1000.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "F",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          470.0,
+          980.0,
+          490.0,
+          1000.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "1",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1680.0,
+          850.0,
+          1700.0,
+          870.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "2",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1680.0,
+          500.0,
+          1700.0,
+          520.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "3",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1680.0,
+          350.0,
+          1700.0,
+          370.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "4",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1680.0,
+          200.0,
+          1700.0,
+          220.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "levels": [
+      {
+        "raw": "DAK BETON\n+8.400",
+        "normalized": "Dak Beton di +8.400",
+        "numeric_value": 8.4,
+        "unit": "m",
+        "bbox": [
+          600.0,
+          250.0,
+          670.0,
+          280.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "DAK BETON\n+8.400",
+        "normalized": "Dak Beton di +8.400",
+        "numeric_value": 8.4,
+        "unit": "m",
+        "bbox": [
+          600.0,
+          800.0,
+          670.0,
+          830.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "CANOPY\n+7.320",
+        "normalized": "Canopy di +7.320",
+        "numeric_value": 7.32,
+        "unit": "m",
+        "bbox": [
+          900.0,
+          800.0,
+          970.0,
+          830.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "CANOPY\n+7.320",
+        "normalized": "Canopy di +7.320",
+        "numeric_value": 7.32,
+        "unit": "m",
+        "bbox": [
+          1400.0,
+          750.0,
+          1470.0,
+          780.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "spaces": [],
+    "element_labels": [
+      {
+        "raw": "PAH",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          200.0,
+          220.0,
+          220.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "PAH",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          200.0,
+          420.0,
+          220.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "PAH",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          600.0,
+          200.0,
+          620.0,
+          220.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "PAH",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          400.0,
+          800.0,
+          420.0,
+          820.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "PAH",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          600.0,
+          800.0,
+          620.0,
+          820.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      },
+      {
+        "raw": "PAH",
+        "normalized": null,
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          1400.0,
+          800.0,
+          1420.0,
+          820.0
+        ],
+        "confidence": 1.0,
+        "status": "extracted",
+        "evidence_refs": []
+      }
+    ],
+    "symbols": [],
+    "tables": [],
+    "materials": [],
+    "notes": [],
+    "references": [],
+    "patterns": [],
+    "geometry_descriptions": [
+      {
+        "raw": "Bentuk atap canopy dengan kemiringan di sisi kiri dan kanan",
+        "normalized": "Atap canopy berbentuk miring di sisi kiri dan kanan",
+        "numeric_value": null,
+        "unit": null,
+        "bbox": [
+          200.0,
+          300.0,
+          1600.0,
+          900.0
+        ],
+        "confidence": 0.95,
+        "status": "ai_interpreted",
+        "evidence_refs": []
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-text-kemenag",
+      "kind": "text",
+      "raw": "KEMENTERIAN AGAMA RI\nDIREKTORAT JENDERAL\nPENYELENGGARAAN HAJI DAN UMRAH\nTAHUN ANGGARAN 2024",
+      "bbox": [
+        1730.0,
+        100.0,
+        1950.0,
+        200.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-gedung",
+      "kind": "text",
+      "raw": "GEDUNG PUSAT LAYANAN\nHAJI DAN UMRAH TERPADU\nKOTA SURAKARTA",
+      "bbox": [
+        1730.0,
+        220.0,
+        1950.0,
+        300.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-lokasi",
+      "kind": "text",
+      "raw": "LOKASI :\nJALAN KI MANGUN SARKORO NO.115\nKOTA SURAKARTA",
+      "bbox": [
+        1730.0,
+        320.0,
+        1950.0,
+        380.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-setuju",
+      "kind": "text",
+      "raw": "MENYETUJUI\nKEPALA KANTOR WILAYAH JAWA TENGAH\nSELAKU KUASA PENGGUNA ANGGARAN",
+      "bbox": [
+        1730.0,
+        400.0,
+        1950.0,
+        460.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-mengetahui",
+      "kind": "text",
+      "raw": "MENGETAHUI / MENYETUJUI\nPEJABAT PEMBUAT KOMITMEN",
+      "bbox": [
+        1730.0,
+        480.0,
+        1950.0,
+        540.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-konsultan",
+      "kind": "text",
+      "raw": "KONSULTAN PERENCANA",
+      "bbox": [
+        1730.0,
+        560.0,
+        1950.0,
+        600.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-leader",
+      "kind": "text",
+      "raw": "TEAM LEADER",
+      "bbox": [
+        1730.0,
+        680.0,
+        1950.0,
+        720.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-nama",
+      "kind": "text",
+      "raw": "NAMA TANDA TANGAN",
+      "bbox": [
+        1730.0,
+        740.0,
+        1950.0,
+        780.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-sipil",
+      "kind": "text",
+      "raw": "SIPIL",
+      "bbox": [
+        1730.0,
+        800.0,
+        1780.0,
+        840.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-digambar",
+      "kind": "text",
+      "raw": "DIGAMBAR",
+      "bbox": [
+        1730.0,
+        860.0,
+        1780.0,
+        900.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-judul",
+      "kind": "text",
+      "raw": "JUDUL GAMBAR\nDENAH AIR INST. AIR HUJAN LT.2",
+      "bbox": [
+        1730.0,
+        920.0,
+        1950.0,
+        980.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-skala",
+      "kind": "text",
+      "raw": "SKALA\n1:100",
+      "bbox": [
+        1800.0,
+        920.0,
+        1950.0,
+        980.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-tanggal",
+      "kind": "text",
+      "raw": "TANGGAL : JANUARI 2024",
+      "bbox": [
+        1730.0,
+        1000.0,
+        1950.0,
+        1040.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-skala-gbr",
+      "kind": "text",
+      "raw": "SKALA GBR KODE GBR NO. GBR",
+      "bbox": [
+        1730.0,
+        1060.0,
+        1950.0,
+        1100.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-denah",
+      "kind": "text",
+      "raw": "DENAH INST. AIR HUJAN LT ATAP",
+      "bbox": [
+        1000.0,
+        1350.0,
+        1700.0,
+        1390.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-text-skala2",
+      "kind": "text",
+      "raw": "SKALA 1 : 100",
+      "bbox": [
+        1150.0,
+        1390.0,
+        1550.0,
+        1430.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimensi-1",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        300.0,
+        950.0,
+        340.0,
+        970.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimensi-2",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        500.0,
+        950.0,
+        540.0,
+        970.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimensi-3",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        700.0,
+        950.0,
+        740.0,
+        970.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimensi-4",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        900.0,
+        950.0,
+        940.0,
+        970.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimensi-5",
+      "kind": "dimension",
+      "raw": "4000",
+      "bbox": [
+        1100.0,
+        950.0,
+        1140.0,
+        970.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimensi-6",
+      "kind": "dimension",
+      "raw": "20000",
+      "bbox": [
+        900.0,
+        970.0,
+        950.0,
+        990.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimensi-7",
+      "kind": "dimension",
+      "raw": "3000",
+      "bbox": [
+        1600.0,
+        250.0,
+        1640.0,
+        270.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimensi-8",
+      "kind": "dimension",
+      "raw": "2000",
+      "bbox": [
+        1600.0,
+        450.0,
+        1640.0,
+        470.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimensi-9",
+      "kind": "dimension",
+      "raw": "10000",
+      "bbox": [
+        1600.0,
+        550.0,
+        1650.0,
+        570.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-dimensi-10",
+      "kind": "dimension",
+      "raw": "5000",
+      "bbox": [
+        1600.0,
+        700.0,
+        1640.0,
+        720.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-A",
+      "kind": "grid",
+      "raw": "A",
+      "bbox": [
+        1470.0,
+        980.0,
+        1490.0,
+        1000.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-B",
+      "kind": "grid",
+      "raw": "B",
+      "bbox": [
+        1270.0,
+        980.0,
+        1290.0,
+        1000.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-C",
+      "kind": "grid",
+      "raw": "C",
+      "bbox": [
+        1070.0,
+        980.0,
+        1090.0,
+        1000.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-D",
+      "kind": "grid",
+      "raw": "D",
+      "bbox": [
+        870.0,
+        980.0,
+        890.0,
+        1000.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-E",
+      "kind": "grid",
+      "raw": "E",
+      "bbox": [
+        670.0,
+        980.0,
+        690.0,
+        1000.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-F",
+      "kind": "grid",
+      "raw": "F",
+      "bbox": [
+        470.0,
+        980.0,
+        490.0,
+        1000.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-1",
+      "kind": "grid",
+      "raw": "1",
+      "bbox": [
+        1680.0,
+        850.0,
+        1700.0,
+        870.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-2",
+      "kind": "grid",
+      "raw": "2",
+      "bbox": [
+        1680.0,
+        500.0,
+        1700.0,
+        520.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-3",
+      "kind": "grid",
+      "raw": "3",
+      "bbox": [
+        1680.0,
+        350.0,
+        1700.0,
+        370.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-grid-4",
+      "kind": "grid",
+      "raw": "4",
+      "bbox": [
+        1680.0,
+        200.0,
+        1700.0,
+        220.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-level-dak1",
+      "kind": "level",
+      "raw": "DAK BETON\n+8.400",
+      "bbox": [
+        600.0,
+        250.0,
+        670.0,
+        280.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-level-dak2",
+      "kind": "level",
+      "raw": "DAK BETON\n+8.400",
+      "bbox": [
+        600.0,
+        800.0,
+        670.0,
+        830.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-level-canopy1",
+      "kind": "level",
+      "raw": "CANOPY\n+7.320",
+      "bbox": [
+        900.0,
+        800.0,
+        970.0,
+        830.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-level-canopy2",
+      "kind": "level",
+      "raw": "CANOPY\n+7.320",
+      "bbox": [
+        1400.0,
+        750.0,
+        1470.0,
+        780.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-pah1",
+      "kind": "element_label",
+      "raw": "PAH",
+      "bbox": [
+        200.0,
+        200.0,
+        220.0,
+        220.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-pah2",
+      "kind": "element_label",
+      "raw": "PAH",
+      "bbox": [
+        400.0,
+        200.0,
+        420.0,
+        220.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-pah3",
+      "kind": "element_label",
+      "raw": "PAH",
+      "bbox": [
+        600.0,
+        200.0,
+        620.0,
+        220.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-pah4",
+      "kind": "element_label",
+      "raw": "PAH",
+      "bbox": [
+        400.0,
+        800.0,
+        420.0,
+        820.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-pah5",
+      "kind": "element_label",
+      "raw": "PAH",
+      "bbox": [
+        600.0,
+        800.0,
+        620.0,
+        820.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-label-pah6",
+      "kind": "element_label",
+      "raw": "PAH",
+      "bbox": [
+        1400.0,
+        800.0,
+        1420.0,
+        820.0
+      ],
+      "confidence": 1.0
+    },
+    {
+      "evidence_id": "ev-geo-canopy",
+      "kind": "geometry_description",
+      "raw": "Bentuk atap canopy dengan kemiringan di sisi kiri dan kanan",
+      "bbox": [
+        200.0,
+        300.0,
+        1600.0,
+        900.0
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "ambiguities": [],
+  "conflicts": [],
+  "unclassified": [],
+  "completion": {
+    "sections_expected": 13,
+    "sections_completed": 13,
+    "is_complete": true,
+    "next_cursor": null
+  }
+}

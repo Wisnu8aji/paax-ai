@@ -246,20 +246,6 @@ export function WorkspaceTopbar({ projectName }: { projectName: string }) {
         >
           {projectName}
         </a>
-        <span aria-hidden="true">›</span>
-        <a
-          href="#"
-          style={{
-            color: 'var(--di-text3)',
-            textDecoration: 'none',
-            padding: '2px 3px',
-            borderRadius: 4,
-          }}
-          title="Building A"
-          onClick={(e) => e.preventDefault()}
-        >
-          Building A
-        </a>
       </nav>
 
       <span aria-hidden="true" style={{ width: 1, height: 18, background: 'var(--di-border-strong)' }} />

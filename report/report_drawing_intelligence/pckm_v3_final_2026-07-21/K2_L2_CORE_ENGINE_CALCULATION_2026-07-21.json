@@ -1,0 +1,158 @@
+{
+  "work_item_id": "work-column-K2-L2",
+  "code": "K2",
+  "level": "L2",
+  "inputs": [
+    {
+      "measurement_id": "mf-work-column-K2-L2-count",
+      "project_id": "PLHUT-BENCHMARK",
+      "snapshot_id": "pkg-bf582e749513",
+      "measurement_type": "count",
+      "value": 4.0,
+      "unit": "unit",
+      "source_method": "verified_instances",
+      "element_ids": [],
+      "evidence_refs": [
+        "ev-label-k2",
+        "ev-label-k2-1",
+        "ev-label-k2-2",
+        "p42-w00039",
+        "p42-w00048",
+        "p42-w00068",
+        "p42-w00084"
+      ],
+      "formula_inputs": [
+        "count"
+      ],
+      "verification_status": "engine_verified",
+      "created_by": "drawing-intelligence",
+      "audit_metadata": {
+        "work_item_id": "work-column-K2-L2",
+        "source_page_indices": [
+          42
+        ]
+      }
+    },
+    {
+      "measurement_id": "mf-work-column-K2-L2-width",
+      "project_id": "PLHUT-BENCHMARK",
+      "snapshot_id": "pkg-bf582e749513",
+      "measurement_type": "length",
+      "value": 250.0,
+      "unit": "mm",
+      "source_method": "written_dimension",
+      "element_ids": [],
+      "evidence_refs": [
+        "ev-label-k2",
+        "ev-label-k2-1",
+        "ev-label-k2-2",
+        "p49-w00044",
+        "p49-w00046",
+        "p49-w00050",
+        "p49-w00052",
+        "p49-w00060",
+        "p49-w00064"
+      ],
+      "formula_inputs": [
+        "width"
+      ],
+      "verification_status": "engine_verified",
+      "created_by": "drawing-intelligence",
+      "audit_metadata": {
+        "work_item_id": "work-column-K2-L2",
+        "source_page_indices": [
+          49
+        ]
+      }
+    },
+    {
+      "measurement_id": "mf-work-column-K2-L2-depth",
+      "project_id": "PLHUT-BENCHMARK",
+      "snapshot_id": "pkg-bf582e749513",
+      "measurement_type": "length",
+      "value": 600.0,
+      "unit": "mm",
+      "source_method": "written_dimension",
+      "element_ids": [],
+      "evidence_refs": [
+        "ev-label-k2",
+        "ev-label-k2-1",
+        "ev-label-k2-2",
+        "p49-w00044",
+        "p49-w00046",
+        "p49-w00050",
+        "p49-w00052",
+        "p49-w00060",
+        "p49-w00064"
+      ],
+      "formula_inputs": [
+        "depth"
+      ],
+      "verification_status": "engine_verified",
+      "created_by": "drawing-intelligence",
+      "audit_metadata": {
+        "work_item_id": "work-column-K2-L2",
+        "source_page_indices": [
+          49
+        ]
+      }
+    },
+    {
+      "measurement_id": "mf-work-column-K2-L2-height",
+      "project_id": "PLHUT-BENCHMARK",
+      "snapshot_id": "pkg-bf582e749513",
+      "measurement_type": "length",
+      "value": 3900.0,
+      "unit": "mm",
+      "source_method": "written_dimension",
+      "element_ids": [],
+      "evidence_refs": [
+        "ev-dim-height-1",
+        "p53-w00005"
+      ],
+      "formula_inputs": [
+        "height"
+      ],
+      "verification_status": "engine_verified",
+      "created_by": "drawing-intelligence",
+      "audit_metadata": {
+        "work_item_id": "work-column-K2-L2",
+        "source_page_indices": [
+          53
+        ]
+      }
+    }
+  ],
+  "calculation": {
+    "calculation_id": "584db01d56f272cc5352ff29",
+    "status": "complete",
+    "formula": "width × depth × height × verified_count",
+    "substituted_formula": "0.2500 × 0.6000 × 3.9000 × 4.0",
+    "result": 2.34,
+    "unit": "m3",
+    "input_sources": [
+      {
+        "measurement_id": "mf-work-column-K2-L2-count",
+        "source_method": "verified_instances",
+        "unit": "unit"
+      },
+      {
+        "measurement_id": "mf-work-column-K2-L2-width",
+        "source_method": "written_dimension",
+        "unit": "mm"
+      },
+      {
+        "measurement_id": "mf-work-column-K2-L2-depth",
+        "source_method": "written_dimension",
+        "unit": "mm"
+      },
+      {
+        "measurement_id": "mf-work-column-K2-L2-height",
+        "source_method": "written_dimension",
+        "unit": "mm"
+      }
+    ],
+    "engine_version": "0.6.0",
+    "warnings": []
+  }
+}

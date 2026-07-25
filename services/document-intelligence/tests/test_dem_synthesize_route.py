@@ -56,7 +56,7 @@ async def test_trigger_synthesis_success():
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
             response = await ac.post("/drawings/dem/run-123/synthesize", headers=HEADERS)
             assert response.status_code == 200
-            assert response.json() == {"run_id": "run-123", "status": "synthesis_started"}
+            assert response.json() == {"run_id": "run-123", "status": "synthesis_started", "analysis_mode": "fast"}
             
             mock_update.assert_called_once_with("run-123", "synthesis_in_progress")
             # The background task is actually added via FastAPI mechanism, so testing it might require inspecting the mocked background task or passing a real one. We just patched add_task but background tasks are handled by FastAPI. Wait, we patched BackgroundTasks.add_task? No, BackgroundTasks is injected by FastAPI. So we can't easily patch it like that unless we patch the handler. Since it returned 200, we are good.

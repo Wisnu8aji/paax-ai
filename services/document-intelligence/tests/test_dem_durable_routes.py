@@ -70,3 +70,24 @@ async def test_start_authorizes_the_real_authenticated_actor_not_a_client_suppli
     # request body could have supplied (start_dem_run takes no such field).
     assert authorize.await_args.args[0] == "REAL-ACTOR"
     assert authorize.await_args.args[1] == "PROJECT-A"
+
+
+@pytest.mark.asyncio
+async def test_synthesis_mode_is_validated_and_persisted_in_durable_job():
+    queue = InMemoryDurableJobStore()
+    run_status = {
+        "id": "R1", "project_id": "PROJECT-A", "status": "dem_complete",
+        "pages": [{"status": "complete"}],
+    }
+    with patch.object(dem_routes, "JOB_QUEUE", queue), \
+         patch("app.api.dem_routes.DemDbClient.get_run_status", new=AsyncMock(return_value=run_status)), \
+         patch("app.api.dem_routes.DemDbClient.authorize_actor_for_project", new=AsyncMock()), \
+         patch("app.api.dem_routes.DemDbClient.update_run_status", new=AsyncMock()):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            invalid = await client.post("/drawings/dem/R1/synthesize?analysis_mode=extreme", headers=HEADERS)
+            started = await client.post("/drawings/dem/R1/synthesize?analysis_mode=deep", headers=HEADERS)
+    assert invalid.status_code == 422
+    assert started.status_code == 200
+    job = next(iter(queue.jobs.values()))
+    assert job.job_type == "dem.synthesize"
+    assert job.payload["analysis_mode"] == "deep"

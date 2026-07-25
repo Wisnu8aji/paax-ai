@@ -1,0 +1,17 @@
+pages=88
+vocabulary=155
+cross_references=271
+detection_candidates=271
+work_items=77
+review_tasks=90
+evidence_refs_repaired=166
+existing_dem_evidence_refs_repaired=85
+native_pdf_evidence_refs_bridged=81
+unresolved_evidence_links=367
+page_scorecard_pass=51
+page_scorecard_review=37
+benchmark=19/19 PASS
+elapsed_seconds=20.008
+ai_provider_calls=0
+physical_counts_auto_accepted=0
+final_quantities_calculated=0

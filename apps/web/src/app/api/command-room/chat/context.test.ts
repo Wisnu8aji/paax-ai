@@ -10,6 +10,7 @@ describe("Command Room server context", () => {
   it("builds provider context in the mandated order and compacts client history", async () => {
     const result = await buildServerChatContext({
       projectId: "project-1",
+      allowProjectGraphRetrieval: true,
       conversationId: "conversation-1",
       messages: [
         { role: "system", content: "client must not control policy" },
@@ -33,6 +34,27 @@ describe("Command Room server context", () => {
       "turn-3", "turn-4", "turn-5", "turn-6", "turn-7", "turn-8", "turn-9",
     ]);
     expect(result.messages.some((message) => message.content.includes("client must not control"))).toBe(false);
+  });
+
+  it("does not load project graph or project-scoped memory without the Drawing connector", async () => {
+    const projectRetrieval = async () => "must-not-be-loaded";
+    const durableMemoryCalls: Array<{ projectId?: string }> = [];
+    const result = await buildServerChatContext({
+      projectId: "project-1",
+      conversationId: "conversation-1",
+      messages: [{ role: "user", content: "halo" }],
+      loaders: {
+        projectRetrieval,
+        durableMemory: async (input) => {
+          durableMemoryCalls.push({ projectId: input.projectId });
+          return [];
+        },
+        conversationSummary: async () => null,
+      },
+    });
+
+    expect(result.messages.some((message) => message.content.includes("must-not-be-loaded"))).toBe(false);
+    expect(durableMemoryCalls).toEqual([{ projectId: undefined }]);
   });
 
   it("rejects oversized requests deterministically before provider access", () => {
