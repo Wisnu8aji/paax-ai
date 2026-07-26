@@ -320,8 +320,45 @@ async def issue_artifact_url(run_id: str, user: User = Depends(get_current_user)
     return {"project_id": project_id, "artifact_key": key, "expires_at": expiry, "token": sign_artifact_key(key, secret=secret, expires_at=expiry, project_id=project_id)}
 
 
+def _artifact_etag(content: bytes) -> str:
+    return f'"sha256-{hashlib.sha256(content).hexdigest()}"'
+
+
+def _single_byte_range(header: str | None, size: int) -> tuple[int, int] | None:
+    if header is None:
+        return None
+    if size <= 0 or not header.startswith("bytes="):
+        raise ValueError("invalid byte range")
+    spec = header.removeprefix("bytes=")
+    if not spec or "," in spec or "-" not in spec:
+        raise ValueError("invalid byte range")
+    start_text, end_text = spec.split("-", 1)
+    if not start_text and not end_text:
+        raise ValueError("invalid byte range")
+    if not start_text:
+        if not end_text.isdigit() or int(end_text) <= 0:
+            raise ValueError("invalid byte range")
+        return max(0, size - int(end_text)), size - 1
+    if not start_text.isdigit() or (end_text and not end_text.isdigit()):
+        raise ValueError("invalid byte range")
+    start = int(start_text)
+    end = int(end_text) if end_text else size - 1
+    if start >= size or end < start:
+        raise ValueError("invalid byte range")
+    return start, min(end, size - 1)
+
+
+def _artifact_response_headers(content: bytes) -> dict[str, str]:
+    return {
+        "Accept-Ranges": "bytes",
+        "Content-Length": str(len(content)),
+        "ETag": _artifact_etag(content),
+        "Cache-Control": "private, max-age=0, must-revalidate",
+    }
+
+
 @router.get("/{run_id}/artifact")
-async def consume_artifact_url(run_id: str, token: str):
+async def consume_artifact_url(run_id: str, token: str, request: Request):
     """Consume a short-lived signed link; token binds project, key, and expiry."""
     db_client = DemDbClient()
     try:
@@ -337,9 +374,26 @@ async def consume_artifact_url(run_id: str, token: str):
     if not verify_artifact_signature(key, token, secret=secret, project_id=project_id):
         raise HTTPException(status_code=403, detail="invalid or expired artifact token")
     try:
-        return Response(content=ARTIFACT_STORE.get(key), media_type="application/pdf")
+        content = ARTIFACT_STORE.get(key)
     except ArtifactUnavailable:
         raise HTTPException(status_code=404, detail="artifact unavailable")
+    headers = _artifact_response_headers(content)
+    etag = headers["ETag"]
+    if request.headers.get("if-none-match") in {"*", etag}:
+        return Response(status_code=304, headers=headers)
+    try:
+        byte_range = _single_byte_range(request.headers.get("range"), len(content))
+    except ValueError:
+        headers["Content-Range"] = f"bytes */{len(content)}"
+        headers.pop("Content-Length", None)
+        return Response(status_code=416, headers=headers)
+    if byte_range is None:
+        return Response(content=content, media_type="application/pdf", headers=headers)
+    start, end = byte_range
+    partial = content[start:end + 1]
+    headers["Content-Range"] = f"bytes {start}-{end}/{len(content)}"
+    headers["Content-Length"] = str(len(partial))
+    return Response(content=partial, media_type="application/pdf", status_code=206, headers=headers)
 
 
 @router.delete("/{run_id}/artifact")

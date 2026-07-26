@@ -22,6 +22,10 @@ async function proxyDocumentIntelligence(request: Request, context: RouteContext
   const headers = new Headers();
   const contentType = request.headers.get("content-type");
   if (contentType) headers.set("content-type", contentType);
+  for (const name of ["range", "if-range", "if-none-match"]) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
+  }
   headers.set("X-Internal-Key", INTERNAL_SERVICE_KEY);
   headers.set("X-User-Id", process.env.PAAX_PORTABLE_ACTOR_ID?.trim() || "paax-web");
 
@@ -35,8 +39,10 @@ async function proxyDocumentIntelligence(request: Request, context: RouteContext
   });
 
   const responseHeaders = new Headers();
-  const upstreamContentType = upstream.headers.get("content-type");
-  if (upstreamContentType) responseHeaders.set("content-type", upstreamContentType);
+  for (const name of ["content-type", "content-length", "content-range", "accept-ranges", "etag", "cache-control"]) {
+    const value = upstream.headers.get(name);
+    if (value) responseHeaders.set(name, value);
+  }
 
   return new Response(upstream.body, {
     status: upstream.status,
