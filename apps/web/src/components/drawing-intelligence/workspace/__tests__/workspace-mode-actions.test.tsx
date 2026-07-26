@@ -4,6 +4,7 @@ import React from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import { TakeoffInspector } from '../takeoff/takeoff-inspector';
+import { MissionControl } from '../agentic/mission-control';
 import { WorkspaceProvider } from '../workspace-store';
 import * as api from '../../drawing-intelligence-api';
 
@@ -213,3 +214,330 @@ describe('TakeoffInspector — Backend Failure Recovery (Phase 5A)', () => {
     expect(manualPanel).toBeTruthy();
   });
 });
+
+describe('MissionControl — Backend Failure Recovery (Phase 5B)', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    global.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  it('renders initial MissionControl and loads runs successfully', async () => {
+    const mockRuns = [
+      {
+        runId: 'run-1',
+        status: 'running',
+        version: 1,
+        updatedAt: '2026-07-26T22:00:00Z',
+        goalSpec: { request: 'Audit Lantai 2', riskTier: 'high', binding: { projectId: 'proj-123' } },
+        plan: { tasks: [{ id: 't-1', title: 'Task 1', capability: 'audit' }] },
+        completedTaskIds: [],
+        pendingApprovalIds: [],
+      },
+    ];
+
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockRuns,
+    });
+
+    render(
+      <WorkspaceProvider projectId="proj-123">
+        <MissionControl />
+      </WorkspaceProvider>
+    );
+
+    expect(screen.getByText('Mission Control')).toBeTruthy();
+    expect(await screen.findByText('Audit Lantai 2')).toBeTruthy();
+  });
+
+  it('shows error panel and retry button on rejected backend request, then recovers to ready on retry', async () => {
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: false,
+      status: 503,
+      json: async () => ({ error: 'Agent runtime backend 503 unavailable' }),
+    });
+
+    render(
+      <WorkspaceProvider projectId="proj-123">
+        <MissionControl />
+      </WorkspaceProvider>
+    );
+
+    const errorPanel = await screen.findByTestId('mission-error-panel');
+    expect(errorPanel).toBeTruthy();
+    expect(screen.getByTestId('mission-error-message').textContent).toContain('Agent runtime backend 503 unavailable');
+
+    const retryBtn = screen.getByRole('button', { name: /retry mission/i });
+    expect(retryBtn).toBeTruthy();
+
+    const mockRuns = [
+      {
+        runId: 'run-retry',
+        status: 'completed',
+        version: 2,
+        updatedAt: '2026-07-26T22:05:00Z',
+        goalSpec: { request: 'Audit Lantai 2 Selesai', riskTier: 'low', binding: { projectId: 'proj-123' } },
+        plan: { tasks: [{ id: 't-1', title: 'Task 1', capability: 'audit' }] },
+        completedTaskIds: ['t-1'],
+        pendingApprovalIds: [],
+      },
+    ];
+
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockRuns,
+    });
+
+    fireEvent.click(retryBtn);
+
+    expect(await screen.findByText('Audit Lantai 2 Selesai')).toBeTruthy();
+    expect(screen.queryByTestId('mission-error-panel')).toBeNull();
+  });
+
+  it('handles non-string / undefined / malformed error payloads and run objects without crashing', async () => {
+    (global.fetch as any).mockRejectedValueOnce(undefined);
+
+    render(
+      <WorkspaceProvider projectId="proj-123">
+        <MissionControl />
+      </WorkspaceProvider>
+    );
+
+    const errorPanel = await screen.findByTestId('mission-error-panel');
+    expect(errorPanel).toBeTruthy();
+    expect(screen.getByTestId('mission-error-message').textContent).toContain('Mission operation failed');
+
+    const malformedRuns = [
+      {
+        runId: 123,
+        status: null,
+        version: 'invalid',
+        goalSpec: { request: null },
+        plan: { tasks: [{ id: 999, title: undefined }] },
+        completedTaskIds: null,
+      },
+    ];
+
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => malformedRuns,
+    });
+
+    const retryBtn = screen.getByRole('button', { name: /retry mission/i });
+    fireEvent.click(retryBtn);
+
+    expect(await screen.findByText('No goal specified')).toBeTruthy();
+  });
+
+  it('prevents duplicated transport calls on rapid double activation', async () => {
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    });
+
+    render(
+      <WorkspaceProvider projectId="proj-123">
+        <MissionControl />
+      </WorkspaceProvider>
+    );
+
+    await screen.findByText('Belum ada agent run untuk project ini.');
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+
+    let resolveCreate: any;
+    const slowCreatePromise = new Promise((resolve) => {
+      resolveCreate = resolve;
+    });
+    (global.fetch as any).mockImplementation(() => slowCreatePromise);
+
+    const submitBtn = screen.getByRole('button', { name: /buat plan terikat plhut/i });
+    fireEvent.click(submitBtn);
+    fireEvent.click(submitBtn);
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      resolveCreate({
+        ok: true,
+        json: async () => ({ runId: 'r-1' }),
+      });
+    });
+  });
+
+  it('retries failed create POST with exact payload on Retry click', async () => {
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    });
+
+    render(
+      <WorkspaceProvider projectId="proj-123">
+        <MissionControl />
+      </WorkspaceProvider>
+    );
+
+    await screen.findByText('Belum ada agent run untuk project ini.');
+
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: async () => ({ error: 'Create run failed 500' }),
+    });
+
+    const createBtn = screen.getByRole('button', { name: /buat plan terikat plhut/i });
+    fireEvent.click(createBtn);
+
+    const errorPanel = await screen.findByTestId('mission-error-panel');
+    expect(errorPanel).toBeTruthy();
+    expect(screen.getByTestId('mission-error-message').textContent).toContain('Create run failed 500');
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    const [createUrl, createOpts] = (global.fetch as any).mock.calls[1];
+    expect(createUrl).toBe('/api/agent-runs');
+    expect(createOpts.method).toBe('POST');
+    const createBody = JSON.parse(createOpts.body);
+    expect(createBody).toEqual({
+      projectId: 'proj-123',
+      goal: 'Audit data kolom Lantai 2, hitung quantity terverifikasi, dan laporkan konflik.',
+      riskTier: 'high',
+      deliverables: ['engineering audit', 'evidence register'],
+    });
+
+    const newRun = {
+      runId: 'run-created',
+      status: 'queued',
+      version: 1,
+      updatedAt: '2026-07-26T22:10:00Z',
+      goalSpec: { request: 'Audit data kolom Lantai 2', riskTier: 'high', binding: { projectId: 'proj-123' } },
+      plan: { tasks: [] },
+      completedTaskIds: [],
+      pendingApprovalIds: [],
+    };
+
+    (global.fetch as any)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => newRun,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [newRun],
+      });
+
+    const retryBtn = screen.getByRole('button', { name: /retry mission/i });
+    fireEvent.click(retryBtn);
+
+    expect(await screen.findByText('Audit data kolom Lantai 2')).toBeTruthy();
+    expect(screen.queryByTestId('mission-error-panel')).toBeNull();
+
+    expect(global.fetch).toHaveBeenCalledTimes(4);
+    const [retryUrl, retryOpts] = (global.fetch as any).mock.calls[2];
+    expect(retryUrl).toBe('/api/agent-runs');
+    expect(retryOpts.method).toBe('POST');
+    expect(JSON.parse(retryOpts.body)).toEqual(createBody);
+  });
+
+  it('retries failed transition POST with exact payload on Retry click', async () => {
+    const initialRun = {
+      runId: 'run-100',
+      status: 'queued',
+      version: 1,
+      updatedAt: '2026-07-26T22:00:00Z',
+      goalSpec: { request: 'Transition Test Run', riskTier: 'high', binding: { projectId: 'proj-123' } },
+      plan: { tasks: [] },
+      completedTaskIds: [],
+      pendingApprovalIds: [],
+    };
+
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [initialRun],
+    });
+
+    render(
+      <WorkspaceProvider projectId="proj-123">
+        <MissionControl />
+      </WorkspaceProvider>
+    );
+
+    await screen.findByText('Transition Test Run');
+
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({ error: 'Version conflict on transition' }),
+    });
+
+    const transitionBtn = screen.getByRole('button', { name: /mulai planning/i });
+    fireEvent.click(transitionBtn);
+
+    const errorPanel = await screen.findByTestId('mission-error-panel');
+    expect(errorPanel).toBeTruthy();
+    expect(screen.getByTestId('mission-error-message').textContent).toContain('Version conflict on transition');
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    const [transUrl, transOpts] = (global.fetch as any).mock.calls[1];
+    expect(transUrl).toBe('/api/agent-runs/run-100');
+    expect(transOpts.method).toBe('POST');
+    const transBody = JSON.parse(transOpts.body);
+    expect(transBody).toEqual({
+      action: 'transition',
+      projectId: 'proj-123',
+      status: 'planning',
+      expectedVersion: 1,
+    });
+
+    const updatedRun = { ...initialRun, status: 'planning', version: 2 };
+    (global.fetch as any)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => updatedRun,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [updatedRun],
+      });
+
+    const retryBtn = screen.getByRole('button', { name: /retry mission/i });
+    fireEvent.click(retryBtn);
+
+    expect(await screen.findByText('planning')).toBeTruthy();
+    expect(screen.queryByTestId('mission-error-panel')).toBeNull();
+
+    expect(global.fetch).toHaveBeenCalledTimes(4);
+    const [retryTransUrl, retryTransOpts] = (global.fetch as any).mock.calls[2];
+    expect(retryTransUrl).toBe('/api/agent-runs/run-100');
+    expect(retryTransOpts.method).toBe('POST');
+    expect(JSON.parse(retryTransOpts.body)).toEqual(transBody);
+  });
+
+  it('provides a manual recovery path when backend is unavailable', async () => {
+    (global.fetch as any).mockRejectedValueOnce(new Error('Network connection failed'));
+
+    render(
+      <WorkspaceProvider projectId="proj-123">
+        <MissionControl />
+      </WorkspaceProvider>
+    );
+
+    const errorPanel = await screen.findByTestId('mission-error-panel');
+    expect(errorPanel).toBeTruthy();
+
+    const manualBtn = screen.getByRole('button', { name: /manual mission input/i });
+    expect(manualBtn).toBeTruthy();
+
+    fireEvent.click(manualBtn);
+
+    const manualPanel = await screen.findByTestId('mission-manual-panel');
+    expect(manualPanel).toBeTruthy();
+  });
+});
+
+
