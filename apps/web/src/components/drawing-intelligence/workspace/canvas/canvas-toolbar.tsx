@@ -17,7 +17,8 @@ import {
   Route,
   SquareDashed,
   Hash,
-  Box
+  Box,
+  Map,
 } from 'lucide-react';
 import type { ElementCategory } from '../di-types';
 
@@ -169,22 +170,49 @@ export function CanvasToolbar() {
         })}
       </div>
 
-      {/* Kanan: Overlays (Layer Visibility) Dropdown */}
-      <div ref={layersRef} style={{ position: 'relative' }}>
+      {/* Kanan: Overlays (Layer Visibility) Dropdown & Minimap Toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <button
           type="button"
           className="di-btn"
-          onClick={() => setLayersOpen(!layersOpen)}
+          aria-label="Toggle Minimap"
+          aria-pressed={state.canvas.minimap.visible}
+          onClick={() =>
+            dispatch({
+              type: 'canvas',
+              patch: {
+                minimap: {
+                  visible: !state.canvas.minimap.visible,
+                },
+              },
+            })
+          }
           style={{
             height: 28,
             padding: '0 8px',
             gap: 6,
+            background: state.canvas.minimap.visible ? 'var(--di-accent-soft)' : undefined,
           }}
         >
-          <Eye size={13} />
-          <span>Layers</span>
-          <ChevronDown size={11} style={{ opacity: 0.6 }} />
+          <Map size={13} />
+          <span>Minimap</span>
         </button>
+
+        <div ref={layersRef} style={{ position: 'relative' }}>
+          <button
+            type="button"
+            className="di-btn"
+            onClick={() => setLayersOpen(!layersOpen)}
+            style={{
+              height: 28,
+              padding: '0 8px',
+              gap: 6,
+            }}
+          >
+            <Eye size={13} />
+            <span>Layers</span>
+            <ChevronDown size={11} style={{ opacity: 0.6 }} />
+          </button>
 
         {layersOpen && (
           <div
@@ -261,6 +289,7 @@ export function CanvasToolbar() {
         )}
       </div>
     </div>
-  );
+  </div>
+);
 }
 

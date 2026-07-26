@@ -77,11 +77,18 @@ export type DockTab = 'detected' | 'quantities' | 'review-queue' | 'assumptions'
 export type GalleryView = 'grid' | 'list';
 export type GalleryGroupBy = 'floor' | 'discipline' | 'drawing-type' | 'file';
 
+export interface MinimapState {
+  visible: boolean;
+  minimized: boolean;
+  position: { x: number; y: number };
+}
+
 export interface CanvasViewState {
   zoom: number; // 1 = fit-ish baseline; UI menampilkan %
   panX: number;
   panY: number;
   tool: CanvasTool;
+  minimap: MinimapState;
 }
 
 export interface WorkspaceState {
@@ -236,7 +243,13 @@ export function initialWorkspaceState(withData: boolean): WorkspaceState {
     inspector: { collapsed: false, tab: 'sheet' },
     dock: { expanded: useMocks, tab: 'quantities', heightPct: 32 },
     gallery: { view: 'grid', groupBy: 'floor', search: '', showTitles: true },
-    canvas: { zoom: 0.67, panX: 0, panY: 0, tool: 'select' },
+    canvas: {
+      zoom: 0.67,
+      panX: 0,
+      panY: 0,
+      tool: 'select',
+      minimap: { visible: true, minimized: false, position: { x: 16, y: 16 } },
+    },
     overlays: { ...DEFAULT_OVERLAYS },
     upload: { modalOpen: false, entries: [], running: false },
     analysis: {
@@ -270,7 +283,7 @@ export type WorkspaceAction =
   | { type: 'inspector'; patch: Partial<WorkspaceState['inspector']> }
   | { type: 'dock'; patch: Partial<WorkspaceState['dock']> }
   | { type: 'gallery'; patch: Partial<WorkspaceState['gallery']> }
-  | { type: 'canvas'; patch: Partial<CanvasViewState> }
+  | { type: 'canvas'; patch: Partial<Omit<CanvasViewState, 'minimap'>> & { minimap?: Partial<MinimapState> } }
   | { type: 'toggle-overlay'; category: string }
   | { type: 'set-overlays'; overlays: Record<string, boolean> }
   | { type: 'set-active-sheet'; sheetId: string | null }
@@ -338,8 +351,12 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
       return { ...state, dock: { ...state.dock, ...action.patch } };
     case 'gallery':
       return { ...state, gallery: { ...state.gallery, ...action.patch } };
-    case 'canvas':
-      return { ...state, canvas: { ...state.canvas, ...action.patch } };
+    case 'canvas': {
+      const minimapPatch = action.patch.minimap
+        ? { ...state.canvas.minimap, ...action.patch.minimap }
+        : state.canvas.minimap;
+      return { ...state, canvas: { ...state.canvas, ...action.patch, minimap: minimapPatch } };
+    }
     case 'toggle-overlay':
       return {
         ...state,
