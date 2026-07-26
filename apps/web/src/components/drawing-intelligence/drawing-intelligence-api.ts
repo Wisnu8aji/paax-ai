@@ -250,6 +250,8 @@ export async function fetchDemRunStatus(runId: string): Promise<DemRunStatusResp
   return res.json();
 }
 
+export const PDF_ARTIFACT_REFRESH_SKEW_MS = 60_000;
+
 export interface PdfArtifactUrlResponse {
   url: string;
   expiresAt: string;
@@ -264,7 +266,13 @@ export function normalizeArtifactExpiry(expiresAt: string | number): string {
     if (!Number.isFinite(expiresAt) || expiresAt < 0) {
       throw new Error('Masa berlaku URL PDF tidak valid');
     }
-    ms = expiresAt < 1e11 ? expiresAt * 1000 : expiresAt;
+    if (expiresAt <= 9_999_999_999) {
+      ms = expiresAt * 1000;
+    } else if (expiresAt >= 1_000_000_000_000) {
+      ms = expiresAt;
+    } else {
+      throw new Error('Masa berlaku URL PDF ambigu');
+    }
   } else if (typeof expiresAt === 'string') {
     const trimmed = expiresAt.trim();
     if (!trimmed) {
@@ -275,7 +283,13 @@ export function normalizeArtifactExpiry(expiresAt: string | number): string {
       if (!Number.isFinite(num) || num < 0) {
         throw new Error('Masa berlaku URL PDF tidak valid');
       }
-      ms = num < 1e11 ? num * 1000 : num;
+      if (num <= 9_999_999_999) {
+        ms = num * 1000;
+      } else if (num >= 1_000_000_000_000) {
+        ms = num;
+      } else {
+        throw new Error('Masa berlaku URL PDF ambigu');
+      }
     } else {
       ms = new Date(trimmed).getTime();
     }
@@ -283,7 +297,7 @@ export function normalizeArtifactExpiry(expiresAt: string | number): string {
     throw new Error('Masa berlaku URL PDF tidak valid');
   }
 
-  if (Number.isNaN(ms)) {
+  if (Number.isNaN(ms) || !Number.isFinite(ms)) {
     throw new Error('Masa berlaku URL PDF tidak valid');
   }
 
@@ -292,7 +306,11 @@ export function normalizeArtifactExpiry(expiresAt: string | number): string {
     throw new Error('Masa berlaku URL PDF tidak valid');
   }
 
-  return d.toISOString();
+  try {
+    return d.toISOString();
+  } catch {
+    throw new Error('Masa berlaku URL PDF tidak valid');
+  }
 }
 
 /** Issues an in-memory-only signed browser-proxy URL for an original PDF. */
@@ -309,6 +327,10 @@ export async function fetchPdfArtifactUrl(runId: string): Promise<PdfArtifactUrl
     : undefined);
   if (!url || rawExpiresAt === undefined || rawExpiresAt === null) throw new Error('URL PDF sementara tidak lengkap');
   const normalizedExpiry = normalizeArtifactExpiry(rawExpiresAt);
+  const expiryMs = new Date(normalizedExpiry).getTime();
+  if (expiryMs <= Date.now() + PDF_ARTIFACT_REFRESH_SKEW_MS) {
+    throw new Error('URL PDF sementara sudah kadaluarsa atau mendekati kadaluarsa');
+  }
   return { url, expiresAt: normalizedExpiry };
 }
 

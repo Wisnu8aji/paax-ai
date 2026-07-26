@@ -17,13 +17,7 @@ vi.mock('../../drawing-intelligence-api', async (importOriginal) => {
 vi.mock('./pdf-tile-pool', () => {
   return {
     createPdfTilePool: vi.fn(() => ({
-      open: vi.fn().mockImplementation(() => {
-        return new Promise((resolve) => {
-          setTimeout(() => {
-            resolve({ width: 1000, height: 800, rotation: 0 });
-          }, 50);
-        });
-      }),
+      open: vi.fn().mockResolvedValue({ width: 1000, height: 800, rotation: 0 }),
       request: vi.fn().mockReturnValue({
         promise: new Promise(() => {}),
         cancel: vi.fn(),
@@ -35,7 +29,7 @@ vi.mock('./pdf-tile-pool', () => {
 });
 
 describe('Artifact Expiry Normalization', () => {
-  it('artifact expires_at accepts ISO string, epoch seconds number, epoch seconds numeric string, epoch milliseconds number/string, and rejects invalid input', () => {
+  it('artifact expires_at accepts ISO string, epoch seconds number, epoch seconds numeric string, epoch milliseconds number/string, boundary cases, and rejects invalid/ambiguous input', () => {
     // 1785067200 s = 1785067200000 ms = 2026-07-26T12:00:00.000Z
     expect(normalizeArtifactExpiry('2026-07-26T12:00:00.000Z')).toBe('2026-07-26T12:00:00.000Z');
     expect(normalizeArtifactExpiry(1785067200)).toBe('2026-07-26T12:00:00.000Z');
@@ -43,10 +37,26 @@ describe('Artifact Expiry Normalization', () => {
     expect(normalizeArtifactExpiry(1785067200000)).toBe('2026-07-26T12:00:00.000Z');
     expect(normalizeArtifactExpiry('1785067200000')).toBe('2026-07-26T12:00:00.000Z');
 
+    // Boundary tests at 9_999_999_999, 10_000_000_000, 999_999_999_999, 1_000_000_000_000
+    const secIso = new Date(9_999_999_999 * 1000).toISOString();
+    expect(normalizeArtifactExpiry(9_999_999_999)).toBe(secIso);
+    expect(normalizeArtifactExpiry('9999999999')).toBe(secIso);
+
+    expect(() => normalizeArtifactExpiry(10_000_000_000)).toThrow();
+    expect(() => normalizeArtifactExpiry('10000000000')).toThrow();
+    expect(() => normalizeArtifactExpiry(999_999_999_999)).toThrow();
+    expect(() => normalizeArtifactExpiry('999999999999')).toThrow();
+
+    const msIso = new Date(1_000_000_000_000).toISOString();
+    expect(normalizeArtifactExpiry(1_000_000_000_000)).toBe(msIso);
+    expect(normalizeArtifactExpiry('1000000000000')).toBe(msIso);
+
     expect(() => normalizeArtifactExpiry('invalid-date')).toThrow();
     expect(() => normalizeArtifactExpiry('')).toThrow();
     expect(() => normalizeArtifactExpiry(NaN)).toThrow();
     expect(() => normalizeArtifactExpiry(-100)).toThrow();
+    expect(() => normalizeArtifactExpiry(null as unknown as string)).toThrow();
+    expect(() => normalizeArtifactExpiry(undefined as unknown as string)).toThrow();
   });
 
   it('all accepted forms normalize to one canonical ISO string with no 1970 error', () => {
@@ -66,11 +76,17 @@ describe('Artifact Expiry Normalization', () => {
     expect(new Date(epochMsStr).getFullYear()).toBe(2026);
   });
 
-  it('shouldRefreshArtifactUrl correctly handles normalized inputs', () => {
-    expect(shouldRefreshArtifactUrl('2026-07-26T12:00:30.000Z', new Date('2026-07-26T12:00:00.000Z'))).toBe(true);
-    expect(shouldRefreshArtifactUrl(1785067230, new Date('2026-07-26T12:00:00.000Z'))).toBe(true);
-    expect(shouldRefreshArtifactUrl('1785067230', new Date('2026-07-26T12:00:00.000Z'))).toBe(true);
-    expect(shouldRefreshArtifactUrl('2026-07-26T12:10:00.000Z', new Date('2026-07-26T12:00:00.000Z'))).toBe(false);
+  it('shouldRefreshArtifactUrl correctly handles normalized inputs including numeric false case', () => {
+    const now = new Date('2026-07-26T12:00:00.000Z');
+    expect(shouldRefreshArtifactUrl('2026-07-26T12:00:30.000Z', now)).toBe(true);
+    expect(shouldRefreshArtifactUrl(1785067230, now)).toBe(true);
+    expect(shouldRefreshArtifactUrl('1785067230', now)).toBe(true);
+    expect(shouldRefreshArtifactUrl('2026-07-26T12:10:00.000Z', now)).toBe(false);
+
+    // Numeric shouldRefreshArtifactUrl false case (epoch seconds now + 300s)
+    const epochNowSec = Math.floor(now.getTime() / 1000);
+    expect(shouldRefreshArtifactUrl(epochNowSec + 300, now)).toBe(false);
+    expect(shouldRefreshArtifactUrl(String(epochNowSec + 300), now)).toBe(false);
   });
 });
 
@@ -101,7 +117,8 @@ describe('PdfPageLayer Component Mount and Page Transitions', () => {
     expect(screen.getByRole('status').textContent).toContain('Loading original PDF');
 
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 60));
+      await Promise.resolve();
+      await Promise.resolve();
     });
 
     expect(screen.queryByRole('status')).toBeNull();
@@ -126,7 +143,8 @@ describe('PdfPageLayer Component Mount and Page Transitions', () => {
     expect(screen.queryByTestId('pdf-page-layer')).toBeNull();
 
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 60));
+      await Promise.resolve();
+      await Promise.resolve();
     });
 
     expect(screen.queryByRole('status')).toBeNull();
@@ -153,7 +171,8 @@ describe('PdfPageLayer Component Mount and Page Transitions', () => {
     );
 
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 60));
+      await Promise.resolve();
+      await Promise.resolve();
     });
 
     const html = document.body.innerHTML;
@@ -344,6 +363,7 @@ describe('Worker and Document Generation Lifecycle (Phase 2B)', () => {
     expect(createdPools[0].dispose).toHaveBeenCalledTimes(1);
     expect(createdPools[1].dispose).toHaveBeenCalledTimes(0);
     expect(createdPools[0].request).not.toHaveBeenCalled();
+    expect(createdPools[1].open).toHaveBeenCalledWith(expect.objectContaining({ documentKey: 'run-strict:0', pageNumber: 1 }));
 
     unmount();
 
@@ -494,6 +514,7 @@ describe('Worker and Document Generation Lifecycle (Phase 2B)', () => {
 
   it('does not request tiles during signed URL refresh open pending gap when viewport changes', async () => {
     vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-26T12:00:00.000Z'));
     try {
       const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
       const now = Date.now();
@@ -544,6 +565,7 @@ describe('Worker and Document Generation Lifecycle (Phase 2B)', () => {
 
       await act(async () => {
         vi.advanceTimersByTime(60_000);
+        await Promise.resolve();
         await Promise.resolve();
       });
 

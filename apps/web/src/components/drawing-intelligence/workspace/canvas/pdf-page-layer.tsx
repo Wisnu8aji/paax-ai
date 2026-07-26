@@ -1,15 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { fetchPdfArtifactUrl, normalizeArtifactExpiry } from '../../drawing-intelligence-api';
+import { fetchPdfArtifactUrl, normalizeArtifactExpiry, PDF_ARTIFACT_REFRESH_SKEW_MS } from '../../drawing-intelligence-api';
 import { TileLru, PdfTilePyramid, type TileViewport } from './pdf-tile-pyramid';
 import { createPdfTilePool, type PdfPageMetrics } from './pdf-tile-pool';
 
-const REFRESH_SKEW_MS = 60_000;
-
 export function shouldRefreshArtifactUrl(expiresAt: string | number, now = new Date()): boolean {
   const normalized = normalizeArtifactExpiry(expiresAt);
-  return new Date(normalized).getTime() - now.getTime() <= REFRESH_SKEW_MS;
+  return new Date(normalized).getTime() - now.getTime() <= PDF_ARTIFACT_REFRESH_SKEW_MS;
 }
 
 export interface PdfPageLayerProps {
@@ -62,7 +60,7 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
           activeOpenGenRef.current = null;
           pool.close(documentKey);
           void open(gen);
-        }, Math.max(0, new Date(next.expiresAt).getTime() - Date.now() - REFRESH_SKEW_MS));
+        }, Math.max(0, new Date(next.expiresAt).getTime() - Date.now() - PDF_ARTIFACT_REFRESH_SKEW_MS));
       } catch (cause) {
         if (!cancelled && openGenRef.current === gen) {
           setError(cause instanceof Error ? cause.message : 'PDF page could not be opened');
