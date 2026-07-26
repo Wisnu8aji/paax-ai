@@ -70,6 +70,14 @@ export class PdfTilePyramid {
 
   visibleTiles(viewport: TileViewport): PdfTileRequest[] {
     const density = chooseTileDensity(viewport);
+    return this.tilesForDensity(viewport, density);
+  }
+
+  visibleDetailTiles(viewport: TileViewport): PdfTileRequest[] {
+    return this.tilesForDensity(viewport, chooseDetailTileDensity(viewport));
+  }
+
+  private tilesForDensity(viewport: TileViewport, density: number): PdfTileRequest[] {
     const pageWidth = Math.ceil(this.dimensions.width * density);
     const pageHeight = Math.ceil(this.dimensions.height * density);
     const left = Math.max(0, Math.floor(viewport.x * density));

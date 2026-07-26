@@ -102,8 +102,10 @@ async function openDocument(message: OpenMessage): Promise<void> {
       ownerDocument: scope as unknown as Document,
     });
     const document = await loadingTask.promise;
+    const page = await document.getPage(message.pageNumber);
+    const viewport = page.getViewport({ scale: 1 });
     documents.set(message.documentKey, { loadingTask, document, pageNumber: message.pageNumber, chain: Promise.resolve() });
-    post({ type: 'document-ready', documentKey: message.documentKey });
+    post({ type: 'document-ready', documentKey: message.documentKey, metrics: { width: viewport.width, height: viewport.height, rotation: viewport.rotation } });
   } catch (error) {
     await loadingTask?.destroy().catch(() => undefined);
     post({ type: 'document-error', documentKey: message.documentKey, message: String(error) });

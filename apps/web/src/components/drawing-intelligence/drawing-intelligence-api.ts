@@ -250,6 +250,29 @@ export async function fetchDemRunStatus(runId: string): Promise<DemRunStatusResp
   return res.json();
 }
 
+export interface PdfArtifactUrlResponse {
+  url: string;
+  expiresAt: string;
+}
+
+/** Issues an in-memory-only signed browser-proxy URL for an original PDF. */
+export async function fetchPdfArtifactUrl(runId: string): Promise<PdfArtifactUrlResponse> {
+  const res = await fetch(`/api/document-intelligence/drawings/dem/${encodeURIComponent(runId)}/artifact-url`, {
+    method: 'POST',
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`Gagal membuat URL PDF sementara (status ${res.status})`);
+  const payload: { url?: string; artifact_url?: string; token?: string; expires_at?: string | number; expiresAt?: string | number } = await res.json();
+  const expiresAt = payload.expiresAt ?? payload.expires_at;
+  const url = payload.url ?? payload.artifact_url ?? (payload.token
+    ? `/api/document-intelligence/drawings/dem/${encodeURIComponent(runId)}/artifact?token=${encodeURIComponent(payload.token)}`
+    : undefined);
+  if (!url || expiresAt === undefined) throw new Error('URL PDF sementara tidak lengkap');
+  const normalizedExpiry = typeof expiresAt === 'number' ? new Date(expiresAt * 1000).toISOString() : expiresAt;
+  if (Number.isNaN(new Date(normalizedExpiry).getTime())) throw new Error('Masa berlaku URL PDF tidak valid');
+  return { url, expiresAt: normalizedExpiry };
+}
+
 export async function triggerSynthesis(
   runId: string,
   analysisMode: 'fast' | 'balanced' | 'deep' = 'fast',

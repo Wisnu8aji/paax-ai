@@ -7,6 +7,12 @@ export interface PdfTileWorker {
   terminate(): void;
 }
 
+export interface PdfPageMetrics {
+  width: number;
+  height: number;
+  rotation: number;
+}
+
 export interface OpenPdfTileDocument {
   documentKey: string;
   pageNumber: number;
@@ -42,10 +48,11 @@ export interface PdfTilePoolOptions {
 }
 
 interface DocumentState {
-  promise: Promise<void>;
-  resolve: () => void;
+  promise: Promise<PdfPageMetrics>;
+  resolve: (metrics: PdfPageMetrics) => void;
   reject: (error: Error) => void;
   readyWorkers: Set<number>;
+  metrics: PdfPageMetrics | null;
   openedAt: number;
 }
 
@@ -63,7 +70,7 @@ interface PendingTile {
 }
 
 type WorkerMessage =
-  | { type: 'document-ready'; documentKey: string }
+  | { type: 'document-ready'; documentKey: string; metrics: PdfPageMetrics }
   | { type: 'document-error'; documentKey: string; message: string }
   | { type: 'tile'; requestId: number; documentKey: string; width: number; height: number; bitmap: ImageBitmap }
   | { type: 'tile-error'; requestId: number; documentKey: string; message: string };
@@ -147,8 +154,16 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
     if (message.type === 'document-ready') {
       const document = documents.get(message.documentKey);
       if (!document) return;
+      if (!document.metrics) document.metrics = message.metrics;
+      const expected = document.metrics;
+      if (expected.width !== message.metrics.width || expected.height !== message.metrics.height || expected.rotation !== message.metrics.rotation) {
+        documents.delete(message.documentKey);
+        document.reject(new Error('PDF workers disagree about page metrics'));
+        for (const worker of workers) worker.postMessage({ type: 'close-document', documentKey: message.documentKey });
+        return;
+      }
       document.readyWorkers.add(workerIndex);
-      if (document.readyWorkers.size === workerCount) document.resolve();
+      if (document.readyWorkers.size === workerCount) document.resolve(expected);
       return;
     }
     if (message.type === 'document-error') {
@@ -183,7 +198,7 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
     }
   };
 
-  const open = (document: OpenPdfTileDocument): Promise<void> => {
+  const open = (document: OpenPdfTileDocument): Promise<PdfPageMetrics> => {
     if (disposed) return Promise.reject(new Error('PDF tile pool disposed'));
     if (!isAuthorisedArtifactUrl(document.url)) {
       return Promise.reject(new Error('PDF tile pool requires an authorised artifact URL'));
@@ -191,13 +206,14 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
     const existing = documents.get(document.documentKey);
     if (existing) return existing.promise;
     ensureWorkers();
-    let resolve!: () => void;
+    let resolve!: (metrics: PdfPageMetrics) => void;
     let reject!: (error: Error) => void;
     const state: DocumentState = {
-      promise: new Promise<void>((res, rej) => { resolve = res; reject = rej; }),
+      promise: new Promise<PdfPageMetrics>((res, rej) => { resolve = res; reject = rej; }),
       resolve,
       reject,
       readyWorkers: new Set(),
+      metrics: null,
       openedAt: now(),
     };
     documents.set(document.documentKey, state);

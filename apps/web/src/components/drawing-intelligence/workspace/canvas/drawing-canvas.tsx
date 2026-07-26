@@ -23,6 +23,7 @@ import { ZoomBar } from './zoom-bar';
 import { Minimap } from './minimap';
 import { SelectionContextBar } from './selection-context-bar';
 import { RealPageSvg } from './real-page-svg';
+import { PdfPageLayer } from './pdf-page-layer';
 import type { InteractiveMeasurementCandidate } from '../../drawing-intelligence-api';
 
 /** lebar dasar render SVG pada zoom=1 (px) — 100% ≈ lebar A1 landscape wajar */
@@ -36,7 +37,11 @@ export function DrawingCanvas() {
   const selectedElement = useSelectedElement();
   const mappedSheet = state.mappedSheets.find((candidate) => candidate.id === state.activeSheetId) ?? null;
   const realImageUrl = mappedSheet?.imageUrl ?? null;
+  const [pdfMetrics, setPdfMetrics] = useState<{ width: number; height: number } | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const pageTransformRef = useRef<HTMLDivElement | null>(null);
+  const pendingPanRef = useRef<{ panX: number; panY: number } | null>(null);
+  const panFrameRef = useRef<number | null>(null);
   const [spaceDown, setSpaceDown] = useState(false);
   const [toolBusy, setToolBusy] = useState(false);
   const [toolResult, setToolResult] = useState<InteractiveMeasurementCandidate | null>(null);
@@ -47,9 +52,13 @@ export function DrawingCanvas() {
 
   const { zoom, panX, panY, tool } = state.canvas;
 
-  const aspect = sheet
+  const aspect = pdfMetrics
+    ? pdfMetrics.height / pdfMetrics.width
+    : mappedSheet?.widthPx && mappedSheet.heightPx
+      ? mappedSheet.heightPx / mappedSheet.widthPx
+      : sheet
     ? (sheet.geometry.heightMm + (PLAN_MARGIN + 1900) * 2) / (sheet.geometry.widthMm + (PLAN_MARGIN + 1900) * 2)
-    : 1;
+        : 1;
   const baseW = BASE_WIDTH_PX;
   const baseH = BASE_WIDTH_PX * aspect;
 
@@ -96,9 +105,12 @@ export function DrawingCanvas() {
   const userAdjustedRef = useRef(false);
   useEffect(() => {
     userAdjustedRef.current = false;
+    setPdfMetrics(null);
     fitSheet();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.activeSheetId]);
+
+  useEffect(() => () => { if (panFrameRef.current !== null) cancelAnimationFrame(panFrameRef.current); }, []);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -211,15 +223,27 @@ export function DrawingCanvas() {
     (e: React.PointerEvent) => {
       const d = dragRef.current;
       if (!d) return;
-      setCanvas({ panX: d.panX + (e.clientX - d.startX), panY: d.panY + (e.clientY - d.startY) });
+      const next = { panX: d.panX + (e.clientX - d.startX), panY: d.panY + (e.clientY - d.startY) };
+      pendingPanRef.current = next;
+      if (panFrameRef.current === null) {
+        panFrameRef.current = requestAnimationFrame(() => {
+          panFrameRef.current = null;
+          const pending = pendingPanRef.current;
+          if (pending && pageTransformRef.current) pageTransformRef.current.style.transform = `translate(${pending.panX}px, ${pending.panY}px) scale(${zoom})`;
+        });
+      }
     },
-    [setCanvas],
+    [zoom],
   );
 
   const onPointerUp = useCallback(() => {
+    if (panFrameRef.current !== null) cancelAnimationFrame(panFrameRef.current);
+    panFrameRef.current = null;
+    if (pendingPanRef.current) setCanvas(pendingPanRef.current);
+    pendingPanRef.current = null;
     dragRef.current = null;
     setDragging(false);
-  }, []);
+  }, [setCanvas]);
 
   const viewport = useMemo(() => {
     const el = containerRef.current;
@@ -249,9 +273,6 @@ export function DrawingCanvas() {
       </div>
     );
   }
-  if (!sheet && mappedSheet && !realImageUrl) {
-    return <div style={{ flex: 1, display: 'grid', placeItems: 'center', background: 'var(--di-canvas-bg)', color: 'var(--di-text3)', fontSize: 12.5 }}>Source image is unavailable for this sheet. No canvas overlay is shown.</div>;
-  }
 
   const cursor = dragging
     ? 'grabbing'
@@ -272,9 +293,11 @@ export function DrawingCanvas() {
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
         onDoubleClick={fitSheet}
       >
         <div
+          ref={pageTransformRef}
           style={{
             position: 'absolute',
             top: 0,
@@ -286,12 +309,21 @@ export function DrawingCanvas() {
             // tanpa transition — kanvas mengutamakan responsivitas (§23)
           }}
         >
-          {realImageUrl ? <RealPageSvg
-            imageUrl={realImageUrl}
+          {mappedSheet ? <>
+            <PdfPageLayer
+              runId={mappedSheet.runId}
+              pageIndex={mappedSheet.pageIndex}
+              fallbackWidth={mappedSheet.widthPx ?? baseW}
+              fallbackHeight={mappedSheet.heightPx ?? baseH}
+              viewport={{ x: viewport?.x ?? 0, y: viewport?.y ?? 0, width: viewport?.w ?? 1, height: viewport?.h ?? 1, zoom, dpr: typeof window === 'undefined' ? 1 : window.devicePixelRatio }}
+              onMetrics={setPdfMetrics}
+            />
+            <div style={{ position: 'absolute', inset: 0 }}><RealPageSvg
+            imageUrl={null}
             elements={state.elements.filter((element) => element.sheetId === (mappedSheet?.id ?? sheet?.id))}
             selectedElementId={state.selectedElementId}
             onSelectElement={(id) => dispatch({ type: 'select-element', elementId: id })}
-          /> : sheet ? <SheetPlanSvg
+          /></div></> : realImageUrl ? <RealPageSvg imageUrl={realImageUrl} elements={state.elements.filter((element) => element.sheetId === sheet?.id)} selectedElementId={state.selectedElementId} onSelectElement={(id) => dispatch({ type: 'select-element', elementId: id })} /> : sheet ? <SheetPlanSvg
             sheet={sheet}
             elements={state.elements}
             overlays={state.overlays}

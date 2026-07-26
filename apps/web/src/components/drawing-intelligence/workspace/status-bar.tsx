@@ -8,6 +8,10 @@
 import { BookOpen, HelpCircle } from 'lucide-react';
 import { useWorkspace, useActiveSheet } from './workspace-store';
 
+export function normalizeStatusMessage(value: unknown): string {
+  return typeof value === 'string' && value.trim() ? value : 'Workspace ready';
+}
+
 function statusDotColor(message: string, running: boolean): string {
   const m = message.toLowerCase();
   if (running || m.includes('progress') || m.includes('uploading')) return 'var(--di-accent)';
@@ -20,7 +24,8 @@ export function TechnicalStatusBar() {
   const { state } = useWorkspace();
   const sheet = useActiveSheet();
   const busy = state.analysis.running || state.upload.running;
-  const dot = statusDotColor(state.statusMessage, busy);
+  const statusMessage = normalizeStatusMessage(state.statusMessage);
+  const dot = statusDotColor(statusMessage, busy);
 
   return (
     <footer
@@ -74,7 +79,7 @@ export function TechnicalStatusBar() {
             flexShrink: 0,
           }}
         />
-        <span style={{ color: 'var(--di-text2)' }}>{state.statusMessage}</span>
+        <span style={{ color: 'var(--di-text2)' }}>{statusMessage}</span>
       </span>
 
       <span style={{ display: 'inline-flex', gap: 2 }}>

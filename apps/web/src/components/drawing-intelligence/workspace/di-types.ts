@@ -161,6 +161,8 @@ export interface ProjectSheetMapping {
   scale: string | null;
   revision: string | null;
   confidence: number | null;
+  widthPx: number | null;
+  heightPx: number | null;
   status: string;
   imageUrl: string | null;
 }

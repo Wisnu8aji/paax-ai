@@ -23,6 +23,8 @@ export function mapProjectDemSheet(sheet: ProjectDemSheetResponse): ProjectSheet
     scale: optionalString(sheet.scale),
     revision: optionalString(sheet.revision),
     confidence: optionalNumber(sheet.confidence),
+    widthPx: optionalNumber(sheet.width_px),
+    heightPx: optionalNumber(sheet.height_px),
     status: sheet.status,
     imageUrl: (() => {
       const url = optionalString(sheet.thumbnail_url);

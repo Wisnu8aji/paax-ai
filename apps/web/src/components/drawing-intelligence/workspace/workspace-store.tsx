@@ -316,6 +316,8 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
         review: 'Review workspace ready',
         quantities: 'Extraction results ready',
         handoff: 'Ready for handoff',
+        takeoff: 'Takeoff workspace ready',
+        mission: 'Mission workspace ready',
       };
       return {
         ...state,

@@ -14,15 +14,15 @@ export function pagePointAtViewport(input: { x: number; y: number; panX: number;
 }
 
 export function RealPageSvg(props: {
-  imageUrl: string;
+  imageUrl?: string | null;
   elements: DetectedElement[];
   selectedElementId: string | null;
   onSelectElement: (id: string | null) => void;
 }) {
   const overlays = props.elements.filter((element) => isNormalizedEvidenceBox(element.bbox));
   return (
-    <svg viewBox="0 0 1 1" width="100%" height="100%" preserveAspectRatio="none" role="img" aria-label="Drawing page source">
-      <image href={props.imageUrl} x="0" y="0" width="1" height="1" preserveAspectRatio="none" />
+    <svg viewBox="0 0 1 1" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Drawing page source">
+      {props.imageUrl ? <image href={props.imageUrl} x="0" y="0" width="1" height="1" preserveAspectRatio="xMidYMid meet" /> : null}
       {overlays.map((element) => (
         <rect
           key={element.id}

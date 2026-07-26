@@ -13,6 +13,9 @@ class FakeWorker implements PdfTileWorker {
   }
 
   emit(message: unknown): void {
+    if ((message as { type?: string }).type === 'document-ready' && !(message as { metrics?: unknown }).metrics) {
+      message = { ...(message as object), metrics: { width: 100, height: 200, rotation: 0 } };
+    }
     this.onmessage?.({ data: message } as MessageEvent);
   }
 
@@ -28,6 +31,20 @@ const request = {
 };
 
 describe('createPdfTilePool', () => {
+  it('returns verified pdf.js page metrics only when every worker agrees', async () => {
+    const workers: FakeWorker[] = [];
+    const pool = createPdfTilePool({ hardwareConcurrency: 3, workerFactory: () => {
+      const worker = new FakeWorker();
+      workers.push(worker);
+      return worker;
+    } });
+    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' });
+    workers.forEach((worker) => worker.emit({ type: 'document-ready', documentKey: request.documentKey, metrics: { width: 841.89, height: 595.28, rotation: 0 } }));
+
+    await expect(opening).resolves.toEqual({ width: 841.89, height: 595.28, rotation: 0 });
+    pool.dispose();
+  });
+
   it('caps worker creation at three and coalesces duplicate tile requests', async () => {
     const workers: FakeWorker[] = [];
     const pool = createPdfTilePool({ hardwareConcurrency: 12, workerFactory: () => {
@@ -96,7 +113,7 @@ describe('createPdfTilePool', () => {
 
     const retry = pool.open(source);
     workers.forEach((worker) => worker.emit({ type: 'document-ready', documentKey: request.documentKey }));
-    await expect(retry).resolves.toBeUndefined();
+    await expect(retry).resolves.toMatchObject({ width: 100, height: 200, rotation: 0 });
     pool.dispose();
   });
 
@@ -151,7 +168,7 @@ describe('createPdfTilePool', () => {
     const retry = pool.open(source);
     expect(workers).toHaveLength(2);
     workers[1].emit({ type: 'document-ready', documentKey: request.documentKey });
-    await expect(retry).resolves.toBeUndefined();
+    await expect(retry).resolves.toMatchObject({ width: 100, height: 200, rotation: 0 });
     pool.dispose();
   });
 
