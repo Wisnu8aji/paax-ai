@@ -26,18 +26,18 @@ export interface PdfTileRenderRequest {
   tile: PdfTileRequest;
 }
 
-export interface PdfTileResult {
-  width: number;
-  height: number;
+export interface PdfTileDelivery {
+  readonly width: number;
+  readonly height: number;
   /**
-   * Coalesced callers receive this same bitmap. The page-level TileLru is the
-   * sole owner: consumers must not close it independently.
+   * First synchronous claim returns the bitmap; every subsequent claim returns null.
+   * Consumers must call claim() synchronously within their promise resolution handler.
    */
-  bitmap: ImageBitmap;
+  claim(): ImageBitmap | null;
 }
 
 export interface PdfTileRequestHandle {
-  promise: Promise<PdfTileResult>;
+  promise: Promise<PdfTileDelivery>;
   cancel(): void;
 }
 
@@ -57,7 +57,7 @@ interface DocumentState {
 }
 
 interface Consumer {
-  resolve: (result: PdfTileResult) => void;
+  resolve: (delivery: PdfTileDelivery) => void;
   reject: (error: Error) => void;
 }
 
@@ -93,9 +93,37 @@ export function workerCountFor(hardwareConcurrency: number | undefined): number 
   return Math.max(1, Math.min(3, available - 1));
 }
 
+function createPdfTileDelivery(
+  width: number,
+  height: number,
+  bitmap: ImageBitmap,
+): { delivery: PdfTileDelivery; closeIfUnclaimed: () => void } {
+  let rawBitmap: ImageBitmap | null = bitmap;
+  const delivery: PdfTileDelivery = {
+    width,
+    height,
+    claim: () => {
+      const b = rawBitmap;
+      rawBitmap = null;
+      return b;
+    },
+  };
+  const closeIfUnclaimed = () => {
+    if (rawBitmap) {
+      try {
+        rawBitmap.close();
+      } catch {
+        // Stale or already closed
+      }
+      rawBitmap = null;
+    }
+  };
+  return { delivery, closeIfUnclaimed };
+}
+
 /**
  * Owns the worker protocol, not tile memory. Consumers should store successful
- * bitmaps in TileLru, which in turn owns their close() lifecycle.
+ * claimed bitmaps in TileLru, which in turn owns their close() lifecycle.
  */
 export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
   const workerCount = workerCountFor(options.hardwareConcurrency);
@@ -187,9 +215,13 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
       }
       pendingById.delete(pending.requestId);
       pendingByKey.delete(pending.key);
-      const result = { width: message.width, height: message.height, bitmap: message.bitmap };
-      for (const consumer of pending.consumers.values()) consumer.resolve(result);
+
+      const { delivery, closeIfUnclaimed } = createPdfTileDelivery(message.width, message.height, message.bitmap);
+
+      for (const consumer of pending.consumers.values()) consumer.resolve(delivery);
       pending.consumers.clear();
+
+      queueMicrotask(closeIfUnclaimed);
       return;
     }
     if (message.type === 'tile-error') {
@@ -249,7 +281,7 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
     }
     const consumerId = nextConsumerId++;
     let rejectConsumer!: (error: Error) => void;
-    const promise = new Promise<PdfTileResult>((resolve, reject) => {
+    const promise = new Promise<PdfTileDelivery>((resolve, reject) => {
       rejectConsumer = reject;
       pending!.consumers.set(consumerId, { resolve, reject });
     });

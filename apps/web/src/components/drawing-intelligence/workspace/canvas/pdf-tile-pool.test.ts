@@ -77,6 +77,123 @@ describe('createPdfTilePool', () => {
     pool.dispose();
   });
 
+  it('two coalesced consumers, first claim gets bitmap and second returns null', async () => {
+    const workers: FakeWorker[] = [];
+    const pool = createPdfTilePool({ workerFactory: () => {
+      const worker = new FakeWorker();
+      workers.push(worker);
+      return worker;
+    } });
+    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' });
+    workers.forEach((w) => w.emit({ type: 'document-ready', documentKey: request.documentKey }));
+    await opening;
+
+    const first = pool.request(request);
+    const second = pool.request(request);
+    const mockBitmap = { close: vi.fn() } as unknown as ImageBitmap;
+
+    let claimed1: ImageBitmap | null = null;
+    let claimed2: ImageBitmap | null = null;
+    // Promise reaction microtasks are queued when consumers resolve, executing before pool closeIfUnclaimed microtask.
+    first.promise.then((d) => { claimed1 = d.claim(); });
+    second.promise.then((d) => { claimed2 = d.claim(); });
+
+    workers[0].emit({ type: 'tile', requestId: 1, documentKey: request.documentKey, width: 512, height: 512, bitmap: mockBitmap });
+
+    const delivery1 = await first.promise;
+    const delivery2 = await second.promise;
+
+    expect(delivery1).toBe(delivery2);
+    expect(claimed1).toBe(mockBitmap);
+    expect(claimed2).toBeNull();
+    expect([claimed1, claimed2].filter((claimed) => claimed !== null)).toHaveLength(1);
+    expect(mockBitmap.close).not.toHaveBeenCalled();
+
+    pool.dispose();
+  });
+
+  it('all consumers do not claim => deferred pool close exactly once', async () => {
+    const workers: FakeWorker[] = [];
+    const pool = createPdfTilePool({ workerFactory: () => {
+      const worker = new FakeWorker();
+      workers.push(worker);
+      return worker;
+    } });
+    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' });
+    workers.forEach((w) => w.emit({ type: 'document-ready', documentKey: request.documentKey }));
+    await opening;
+
+    const handle = pool.request(request);
+    const mockBitmap = { close: vi.fn() } as unknown as ImageBitmap;
+
+    workers[0].emit({ type: 'tile', requestId: 1, documentKey: request.documentKey, width: 512, height: 512, bitmap: mockBitmap });
+
+    const delivery = await handle.promise;
+    expect(delivery.width).toBe(512);
+    // Do not call claim()
+    await new Promise<void>((r) => queueMicrotask(() => r()));
+
+    expect(mockBitmap.close).toHaveBeenCalledOnce();
+    pool.dispose();
+  });
+
+  it('one stale/no-claim + one active claim => pool does not close', async () => {
+    const workers: FakeWorker[] = [];
+    const pool = createPdfTilePool({ workerFactory: () => {
+      const worker = new FakeWorker();
+      workers.push(worker);
+      return worker;
+    } });
+    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' });
+    workers.forEach((w) => w.emit({ type: 'document-ready', documentKey: request.documentKey }));
+    await opening;
+
+    const consumerStale = pool.request(request);
+    const consumerActive = pool.request(request);
+    const mockBitmap = { close: vi.fn() } as unknown as ImageBitmap;
+
+    let activeClaimed: ImageBitmap | null = null;
+    consumerStale.promise.then(() => {
+      // Stale consumer does not call claim()
+    });
+    consumerActive.promise.then((delivery) => {
+      activeClaimed = delivery.claim();
+    });
+
+    workers[0].emit({ type: 'tile', requestId: 1, documentKey: request.documentKey, width: 512, height: 512, bitmap: mockBitmap });
+
+    await Promise.all([consumerStale.promise, consumerActive.promise]);
+    await new Promise<void>((r) => queueMicrotask(() => r()));
+
+    expect(activeClaimed).toBe(mockBitmap);
+    expect(mockBitmap.close).not.toHaveBeenCalled();
+    pool.dispose();
+  });
+
+  it('cancelled-last then late worker result => discard closes once', async () => {
+    // Covers synchronous discardBitmap when a late tile arrives for a cancelled request, distinct from deferred unclaimed close.
+    const workers: FakeWorker[] = [];
+    const pool = createPdfTilePool({ workerFactory: () => {
+      const worker = new FakeWorker();
+      workers.push(worker);
+      return worker;
+    } });
+    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' });
+    workers.forEach((w) => w.emit({ type: 'document-ready', documentKey: request.documentKey }));
+    await opening;
+
+    const pending = pool.request(request);
+    const mockBitmap = { close: vi.fn() } as unknown as ImageBitmap;
+
+    pending.cancel();
+    await expect(pending.promise).rejects.toMatchObject({ name: 'AbortError' });
+
+    workers[0].emit({ type: 'tile', requestId: 1, documentKey: request.documentKey, width: 512, height: 512, bitmap: mockBitmap });
+
+    expect(mockBitmap.close).toHaveBeenCalledOnce();
+    pool.dispose();
+  });
+
   it('rejects untrusted source URLs before creating a worker and shares document-open failures', async () => {
     const workers: FakeWorker[] = [];
     const pool = createPdfTilePool({ workerFactory: () => {

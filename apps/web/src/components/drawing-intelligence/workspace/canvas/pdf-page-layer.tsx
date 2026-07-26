@@ -113,13 +113,15 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
         return null;
       }
       const handle = pool.request({ documentKey, pageNumber: pageIndex + 1, tile });
-      handle.promise.then((result) => {
+      handle.promise.then((delivery) => {
         if (!activeViewport || openGenRef.current !== currentGen) {
-          try { result.bitmap.close(); } catch {}
+          // Stale request: pool reclaims unclaimed delivery in its deferred microtask.
           return;
         }
-        if (cache.set(tile.key, result.bitmap, result.width * result.height * 4, protectedKeys)) {
-          setPainted((previous) => new Map(previous).set(tile.key, { tile, bitmap: result.bitmap }));
+        const bitmap = delivery.claim();
+        if (!bitmap) return;
+        if (cache.set(tile.key, bitmap, delivery.width * delivery.height * 4, protectedKeys)) {
+          setPainted((previous) => new Map(previous).set(tile.key, { tile, bitmap }));
         }
       }).catch(() => undefined);
       return handle.cancel;
@@ -130,13 +132,15 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
       for (const tile of detailTiles) {
         if (cache.has(tile.key)) continue;
         const handle = pool.request({ documentKey, pageNumber: pageIndex + 1, tile });
-        handle.promise.then((result) => {
+        handle.promise.then((delivery) => {
           if (!activeViewport || openGenRef.current !== currentGen) {
-            try { result.bitmap.close(); } catch {}
+            // Stale request: pool reclaims unclaimed delivery in its deferred microtask.
             return;
           }
-          if (cache.set(tile.key, result.bitmap, result.width * result.height * 4, protectedKeys)) {
-            setPainted((previous) => new Map(previous).set(tile.key, { tile, bitmap: result.bitmap }));
+          const bitmap = delivery.claim();
+          if (!bitmap) return;
+          if (cache.set(tile.key, bitmap, delivery.width * delivery.height * 4, protectedKeys)) {
+            setPainted((previous) => new Map(previous).set(tile.key, { tile, bitmap }));
           }
         }).catch(() => undefined);
         cancellations.push(handle.cancel);
