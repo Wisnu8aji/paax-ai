@@ -37,6 +37,8 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
   const cacheRef = useRef<TileLru | null>(null);
   const openGenRef = useRef(0);
   const activeOpenGenRef = useRef<number | null>(null);
+  const activeRequestsRef = useRef<Map<string, { identity: symbol; cancel: () => void }>>(new Map());
+  const desiredKeysRef = useRef<Set<string>>(new Set());
   const [metrics, setMetrics] = useState<PdfPageMetrics | null>(null);
   const [painted, setPainted] = useState(new Map<string, { tile: PdfTileRequest; revision: number }>());
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +50,10 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
   useEffect(() => {
     const currentGen = ++openGenRef.current;
     activeOpenGenRef.current = null;
+    activeRequestsRef.current.forEach((entry) => entry.cancel());
+    activeRequestsRef.current.clear();
+    desiredKeysRef.current.clear();
+
     const pool = createPdfTilePool();
     const cache = new TileLru();
     poolRef.current = pool;
@@ -70,6 +76,9 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
         refreshTimer = window.setTimeout(() => {
           if (cancelled || openGenRef.current !== gen) return;
           activeOpenGenRef.current = null;
+          activeRequestsRef.current.forEach((entry) => entry.cancel());
+          activeRequestsRef.current.clear();
+          desiredKeysRef.current.clear();
           pool.close(documentKey);
           void open(gen);
         }, Math.max(0, new Date(next.expiresAt).getTime() - Date.now() - PDF_ARTIFACT_REFRESH_SKEW_MS));
@@ -85,6 +94,9 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
     return () => {
       cancelled = true;
       if (refreshTimer !== undefined) window.clearTimeout(refreshTimer);
+      activeRequestsRef.current.forEach((entry) => entry.cancel());
+      activeRequestsRef.current.clear();
+      desiredKeysRef.current.clear();
       pool.close(documentKey);
       cache.dispose();
       pool.dispose();
@@ -100,7 +112,6 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
     const currentGen = openGenRef.current;
     if (!metrics || error || activeOpenGenRef.current !== currentGen) return;
 
-    let activeViewport = true;
     const logicalViewport: TileViewport = {
       ...viewport,
       x: viewport.x * dimensions.width,
@@ -114,11 +125,62 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
 
     const visible = pyramid.visibleTiles(logicalViewport);
     const detailTiles = pyramid.visibleDetailTiles(logicalViewport).filter((tile) => tile.density > 4);
-    const protectedKeys = new Set([...visible, ...detailTiles].map((tile) => tile.key));
+    const desiredKeys = new Set([...visible, ...detailTiles].map((tile) => tile.key));
+    desiredKeysRef.current = desiredKeys;
+    const protectedKeys = desiredKeys;
 
     setPainted((previous) => new Map([...previous].filter(([key]) => protectedKeys.has(key))));
 
-    const cancellations = visible.map((tile) => {
+    for (const [key, entry] of activeRequestsRef.current.entries()) {
+      if (!desiredKeys.has(key)) {
+        entry.cancel();
+        activeRequestsRef.current.delete(key);
+      }
+    }
+
+    const requestTile = (tile: PdfTileRequest) => {
+      if (cache.has(tile.key)) return;
+      if (activeRequestsRef.current.has(tile.key)) return;
+      if (!desiredKeysRef.current.has(tile.key)) return;
+
+      const identity = Symbol();
+      const handle = pool.request({ documentKey, pageNumber: pageIndex + 1, tile });
+      activeRequestsRef.current.set(tile.key, { identity, cancel: handle.cancel });
+
+      handle.promise
+        .then((delivery) => {
+          const entry = activeRequestsRef.current.get(tile.key);
+          if (
+            entry?.identity !== identity ||
+            !desiredKeysRef.current.has(tile.key) ||
+            openGenRef.current !== currentGen ||
+            activeOpenGenRef.current !== currentGen
+          ) {
+            return;
+          }
+
+          const bitmap = delivery.claim();
+          if (!bitmap) return;
+
+          if (cache.set(tile.key, bitmap, delivery.width * delivery.height * 4, protectedKeys)) {
+            setPainted((previous) => {
+              const existing = previous.get(tile.key);
+              const next = new Map(previous);
+              const revision = existing ? existing.revision + 1 : 1;
+              next.set(tile.key, { tile, revision });
+              return next;
+            });
+          }
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          if (activeRequestsRef.current.get(tile.key)?.identity === identity) {
+            activeRequestsRef.current.delete(tile.key);
+          }
+        });
+    };
+
+    for (const tile of visible) {
       const cached = cache.get(tile.key);
       if (cached) {
         setPainted((previous) => {
@@ -135,59 +197,20 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
           next.set(tile.key, { tile, revision: existing.revision });
           return next;
         });
-        return null;
+      } else {
+        requestTile(tile);
       }
-      const handle = pool.request({ documentKey, pageNumber: pageIndex + 1, tile });
-      handle.promise.then((delivery) => {
-        if (!activeViewport || openGenRef.current !== currentGen) {
-          // Stale request: pool reclaims unclaimed delivery in its deferred microtask.
-          return;
-        }
-        const bitmap = delivery.claim();
-        if (!bitmap) return;
-        if (cache.set(tile.key, bitmap, delivery.width * delivery.height * 4, protectedKeys)) {
-          setPainted((previous) => {
-            const existing = previous.get(tile.key);
-            const next = new Map(previous);
-            const revision = existing ? existing.revision + 1 : 1;
-            next.set(tile.key, { tile, revision });
-            return next;
-          });
-        }
-      }).catch(() => undefined);
-      return handle.cancel;
-    });
+    }
 
     const detailTimer = window.setTimeout(() => {
-      if (!activeViewport || openGenRef.current !== currentGen) return;
+      if (openGenRef.current !== currentGen || activeOpenGenRef.current !== currentGen) return;
       for (const tile of detailTiles) {
-        if (cache.has(tile.key)) continue;
-        const handle = pool.request({ documentKey, pageNumber: pageIndex + 1, tile });
-        handle.promise.then((delivery) => {
-          if (!activeViewport || openGenRef.current !== currentGen) {
-            // Stale request: pool reclaims unclaimed delivery in its deferred microtask.
-            return;
-          }
-          const bitmap = delivery.claim();
-          if (!bitmap) return;
-          if (cache.set(tile.key, bitmap, delivery.width * delivery.height * 4, protectedKeys)) {
-            setPainted((previous) => {
-              const existing = previous.get(tile.key);
-              const next = new Map(previous);
-              const revision = existing ? existing.revision + 1 : 1;
-              next.set(tile.key, { tile, revision });
-              return next;
-            });
-          }
-        }).catch(() => undefined);
-        cancellations.push(handle.cancel);
+        requestTile(tile);
       }
     }, 125);
 
     return () => {
-      activeViewport = false;
       window.clearTimeout(detailTimer);
-      cancellations.forEach((cancel) => cancel?.());
     };
   }, [metrics, viewport.x, viewport.y, viewport.width, viewport.height, viewport.zoom, viewport.dpr, error, pyramid, documentKey, pageIndex, dimensions.width, dimensions.height]);
 
