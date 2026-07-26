@@ -255,6 +255,46 @@ export interface PdfArtifactUrlResponse {
   expiresAt: string;
 }
 
+export function normalizeArtifactExpiry(expiresAt: string | number): string {
+  if (expiresAt === null || expiresAt === undefined || expiresAt === '') {
+    throw new Error('Masa berlaku URL PDF tidak valid');
+  }
+  let ms: number;
+  if (typeof expiresAt === 'number') {
+    if (!Number.isFinite(expiresAt) || expiresAt < 0) {
+      throw new Error('Masa berlaku URL PDF tidak valid');
+    }
+    ms = expiresAt < 1e11 ? expiresAt * 1000 : expiresAt;
+  } else if (typeof expiresAt === 'string') {
+    const trimmed = expiresAt.trim();
+    if (!trimmed) {
+      throw new Error('Masa berlaku URL PDF tidak valid');
+    }
+    if (/^\d+$/.test(trimmed)) {
+      const num = Number(trimmed);
+      if (!Number.isFinite(num) || num < 0) {
+        throw new Error('Masa berlaku URL PDF tidak valid');
+      }
+      ms = num < 1e11 ? num * 1000 : num;
+    } else {
+      ms = new Date(trimmed).getTime();
+    }
+  } else {
+    throw new Error('Masa berlaku URL PDF tidak valid');
+  }
+
+  if (Number.isNaN(ms)) {
+    throw new Error('Masa berlaku URL PDF tidak valid');
+  }
+
+  const d = new Date(ms);
+  if (Number.isNaN(d.getTime())) {
+    throw new Error('Masa berlaku URL PDF tidak valid');
+  }
+
+  return d.toISOString();
+}
+
 /** Issues an in-memory-only signed browser-proxy URL for an original PDF. */
 export async function fetchPdfArtifactUrl(runId: string): Promise<PdfArtifactUrlResponse> {
   const res = await fetch(`/api/document-intelligence/drawings/dem/${encodeURIComponent(runId)}/artifact-url`, {
@@ -263,13 +303,12 @@ export async function fetchPdfArtifactUrl(runId: string): Promise<PdfArtifactUrl
   });
   if (!res.ok) throw new Error(`Gagal membuat URL PDF sementara (status ${res.status})`);
   const payload: { url?: string; artifact_url?: string; token?: string; expires_at?: string | number; expiresAt?: string | number } = await res.json();
-  const expiresAt = payload.expiresAt ?? payload.expires_at;
+  const rawExpiresAt = payload.expiresAt ?? payload.expires_at;
   const url = payload.url ?? payload.artifact_url ?? (payload.token
     ? `/api/document-intelligence/drawings/dem/${encodeURIComponent(runId)}/artifact?token=${encodeURIComponent(payload.token)}`
     : undefined);
-  if (!url || expiresAt === undefined) throw new Error('URL PDF sementara tidak lengkap');
-  const normalizedExpiry = typeof expiresAt === 'number' ? new Date(expiresAt * 1000).toISOString() : expiresAt;
-  if (Number.isNaN(new Date(normalizedExpiry).getTime())) throw new Error('Masa berlaku URL PDF tidak valid');
+  if (!url || rawExpiresAt === undefined || rawExpiresAt === null) throw new Error('URL PDF sementara tidak lengkap');
+  const normalizedExpiry = normalizeArtifactExpiry(rawExpiresAt);
   return { url, expiresAt: normalizedExpiry };
 }
 
