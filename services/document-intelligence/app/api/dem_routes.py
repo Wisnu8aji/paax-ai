@@ -11,9 +11,10 @@ from pathlib import Path
 import fitz
 import httpx
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from app.artifact_storage import ArtifactStore, ArtifactUnavailable, LocalArtifactStore, S3ArtifactStore, sign_artifact_key, verify_artifact_signature
+from app.artifact_storage import ArtifactMetadata, ArtifactStore, ArtifactUnavailable, LocalArtifactStore, S3ArtifactStore, sign_artifact_key, verify_artifact_signature
 from app.durable_jobs import DbDurableJobStore, InMemoryDurableJobStore
 from app.security import MAX_UPLOAD_BYTES, MalwareScanner, sanitise_filename, scan_or_reject, validate_pdf_magic, validate_pdf_policy
 from app.transcription.db_client import DemDbClient
@@ -320,10 +321,6 @@ async def issue_artifact_url(run_id: str, user: User = Depends(get_current_user)
     return {"project_id": project_id, "artifact_key": key, "expires_at": expiry, "token": sign_artifact_key(key, secret=secret, expires_at=expiry, project_id=project_id)}
 
 
-def _artifact_etag(content: bytes) -> str:
-    return f'"sha256-{hashlib.sha256(content).hexdigest()}"'
-
-
 def _single_byte_range(header: str | None, size: int) -> tuple[int, int] | None:
     if header is None:
         return None
@@ -348,13 +345,17 @@ def _single_byte_range(header: str | None, size: int) -> tuple[int, int] | None:
     return start, min(end, size - 1)
 
 
-def _artifact_response_headers(content: bytes) -> dict[str, str]:
+def _artifact_response_headers(metadata: ArtifactMetadata) -> dict[str, str]:
     return {
         "Accept-Ranges": "bytes",
-        "Content-Length": str(len(content)),
-        "ETag": _artifact_etag(content),
+        "Content-Length": str(metadata.size),
+        "ETag": metadata.etag,
         "Cache-Control": "private, max-age=0, must-revalidate",
     }
+
+
+def _if_none_match_matches(header: str | None, etag: str) -> bool:
+    return bool(header and any(candidate.strip() in {"*", etag} for candidate in header.split(",")))
 
 
 @router.get("/{run_id}/artifact")
@@ -374,26 +375,33 @@ async def consume_artifact_url(run_id: str, token: str, request: Request):
     if not verify_artifact_signature(key, token, secret=secret, project_id=project_id):
         raise HTTPException(status_code=403, detail="invalid or expired artifact token")
     try:
-        content = ARTIFACT_STORE.get(key)
+        metadata = ARTIFACT_STORE.stat(key)
     except ArtifactUnavailable:
         raise HTTPException(status_code=404, detail="artifact unavailable")
-    headers = _artifact_response_headers(content)
+    headers = _artifact_response_headers(metadata)
     etag = headers["ETag"]
-    if request.headers.get("if-none-match") in {"*", etag}:
+    if _if_none_match_matches(request.headers.get("if-none-match"), etag):
         return Response(status_code=304, headers=headers)
+    range_header = request.headers.get("range")
+    if_range = request.headers.get("if-range")
+    if if_range and if_range != etag:
+        range_header = None
     try:
-        byte_range = _single_byte_range(request.headers.get("range"), len(content))
+        byte_range = _single_byte_range(range_header, metadata.size)
     except ValueError:
-        headers["Content-Range"] = f"bytes */{len(content)}"
+        headers["Content-Range"] = f"bytes */{metadata.size}"
         headers.pop("Content-Length", None)
         return Response(status_code=416, headers=headers)
-    if byte_range is None:
-        return Response(content=content, media_type="application/pdf", headers=headers)
-    start, end = byte_range
-    partial = content[start:end + 1]
-    headers["Content-Range"] = f"bytes {start}-{end}/{len(content)}"
-    headers["Content-Length"] = str(len(partial))
-    return Response(content=partial, media_type="application/pdf", status_code=206, headers=headers)
+    start, end = byte_range if byte_range is not None else (0, metadata.size - 1)
+    if byte_range is not None:
+        headers["Content-Range"] = f"bytes {start}-{end}/{metadata.size}"
+        headers["Content-Length"] = str(end - start + 1)
+    return StreamingResponse(
+        ARTIFACT_STORE.iter_range(key, start, end),
+        media_type=metadata.content_type or "application/pdf",
+        status_code=206 if byte_range is not None else 200,
+        headers=headers,
+    )
 
 
 @router.delete("/{run_id}/artifact")

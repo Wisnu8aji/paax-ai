@@ -17,6 +17,30 @@ HEADERS = {"X-Internal-Key": "test-internal-key"}
 PDF_BYTES = b"%PDF-1.7\nrange-test-payload\n"
 
 
+class _SpyStreamingStore:
+    def __init__(self, payload: bytes) -> None:
+        self.payload = payload
+        self.get_calls = 0
+        self.stat_calls = 0
+        self.range_calls: list[tuple[int, int]] = []
+        self.bytes_yielded = 0
+
+    def stat(self, key: str):
+        self.stat_calls += 1
+        return type("Metadata", (), {"size": len(self.payload), "etag": '"spy-etag"', "content_type": "application/pdf"})()
+
+    def iter_range(self, key: str, start: int, end: int, *, chunk_size: int = 64 * 1024):
+        self.range_calls.append((start, end))
+        for offset in range(start, end + 1, chunk_size):
+            chunk = self.payload[offset:min(end + 1, offset + chunk_size)]
+            self.bytes_yielded += len(chunk)
+            yield chunk
+
+    def get(self, key: str) -> bytes:
+        self.get_calls += 1
+        raise AssertionError("artifact route must not call get()")
+
+
 @pytest.fixture
 def artifact_fixture(tmp_path, monkeypatch):
     monkeypatch.setenv("ARTIFACT_SIGNING_SECRET", "range-test-secret")
@@ -96,6 +120,68 @@ async def test_authorized_artifact_returns_not_modified_before_reading_range(art
     assert response.content == b""
     assert response.headers["etag"] == full.headers["etag"]
     assert response.headers["accept-ranges"] == "bytes"
+
+
+@pytest.mark.asyncio
+async def test_not_modified_uses_metadata_without_any_payload_read(artifact_fixture):
+    _, run, token = artifact_fixture
+    store = _SpyStreamingStore(PDF_BYTES)
+    with patch.object(dem_routes, "ARTIFACT_STORE", store), patch(
+        "app.api.dem_routes.DemDbClient.get_run", new=AsyncMock(return_value=run)
+    ), patch("app.api.dem_routes.DemDbClient.get_artifact_retention", new=AsyncMock(return_value={"deleted_at": None})):
+        response = await get_artifact(token, {"If-None-Match": '"spy-etag"'})
+
+    assert response.status_code == 304
+    assert store.stat_calls == 1
+    assert store.range_calls == []
+    assert store.get_calls == 0
+
+
+@pytest.mark.asyncio
+async def test_partial_artifact_streams_only_requested_bytes_without_full_read(artifact_fixture):
+    _, run, token = artifact_fixture
+    store = _SpyStreamingStore(PDF_BYTES)
+    with patch.object(dem_routes, "ARTIFACT_STORE", store), patch(
+        "app.api.dem_routes.DemDbClient.get_run", new=AsyncMock(return_value=run)
+    ), patch("app.api.dem_routes.DemDbClient.get_artifact_retention", new=AsyncMock(return_value={"deleted_at": None})):
+        response = await get_artifact(token, {"Range": "bytes=4-8"})
+
+    assert response.status_code == 206
+    assert response.content == PDF_BYTES[4:9]
+    assert store.range_calls == [(4, 8)]
+    assert store.bytes_yielded == 5
+    assert store.get_calls == 0
+
+
+@pytest.mark.asyncio
+async def test_full_artifact_streams_all_bytes_without_full_store_get(artifact_fixture):
+    _, run, token = artifact_fixture
+    store = _SpyStreamingStore(PDF_BYTES)
+    with patch.object(dem_routes, "ARTIFACT_STORE", store), patch(
+        "app.api.dem_routes.DemDbClient.get_run", new=AsyncMock(return_value=run)
+    ), patch("app.api.dem_routes.DemDbClient.get_artifact_retention", new=AsyncMock(return_value={"deleted_at": None})):
+        response = await get_artifact(token)
+
+    assert response.status_code == 200
+    assert response.content == PDF_BYTES
+    assert store.range_calls == [(0, len(PDF_BYTES) - 1)]
+    assert store.bytes_yielded == len(PDF_BYTES)
+    assert store.get_calls == 0
+
+
+@pytest.mark.asyncio
+async def test_if_range_validator_mismatch_falls_back_to_full_stream(artifact_fixture):
+    _, run, token = artifact_fixture
+    store = _SpyStreamingStore(PDF_BYTES)
+    with patch.object(dem_routes, "ARTIFACT_STORE", store), patch(
+        "app.api.dem_routes.DemDbClient.get_run", new=AsyncMock(return_value=run)
+    ), patch("app.api.dem_routes.DemDbClient.get_artifact_retention", new=AsyncMock(return_value={"deleted_at": None})):
+        response = await get_artifact(token, {"Range": "bytes=4-8", "If-Range": '"stale-etag"'})
+
+    assert response.status_code == 200
+    assert response.content == PDF_BYTES
+    assert store.range_calls == [(0, len(PDF_BYTES) - 1)]
+    assert store.get_calls == 0
 
 
 @pytest.mark.asyncio

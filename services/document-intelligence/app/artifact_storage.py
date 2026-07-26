@@ -1,8 +1,9 @@
 """Portable artifact-object storage; keys are never host filesystem paths."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Protocol
+from typing import Iterator, Protocol
 import base64
 import hashlib
 import hmac
@@ -17,9 +18,18 @@ class ArtifactUnavailable(FileNotFoundError):
     pass
 
 
+@dataclass(frozen=True)
+class ArtifactMetadata:
+    size: int
+    etag: str
+    content_type: str | None = None
+
+
 class ArtifactStore(Protocol):
     def put(self, kind: str, data: bytes, *, content_type: str, object_key: str) -> str: ...
     def get(self, key: str) -> bytes: ...
+    def stat(self, key: str) -> ArtifactMetadata: ...
+    def iter_range(self, key: str, start: int, end: int, *, chunk_size: int = 64 * 1024) -> Iterator[bytes]: ...
     def exists(self, key: str) -> bool: ...
     def delete(self, key: str) -> None: ...
 
@@ -44,19 +54,50 @@ class LocalArtifactStore:
         return key
 
     def get(self, key: str) -> bytes:
-        source = self.root.joinpath(*PurePosixPath(_safe_key(key)).parts)
+        source = self._source(key)
         if not source.is_file():
             raise ArtifactUnavailable(key)
         return source.read_bytes()
+
+    def stat(self, key: str) -> ArtifactMetadata:
+        source = self._source(key)
+        try:
+            info = source.stat()
+        except FileNotFoundError as exc:
+            raise ArtifactUnavailable(key) from exc
+        if not source.is_file():
+            raise ArtifactUnavailable(key)
+        return ArtifactMetadata(size=info.st_size, etag=f'"local-{info.st_size:x}-{info.st_mtime_ns:x}"')
+
+    def iter_range(self, key: str, start: int, end: int, *, chunk_size: int = 64 * 1024) -> Iterator[bytes]:
+        source = self._source(key)
+        if start < 0 or end < start or chunk_size <= 0:
+            raise ValueError("invalid artifact byte range")
+        try:
+            stream = source.open("rb")
+        except FileNotFoundError as exc:
+            raise ArtifactUnavailable(key) from exc
+        with stream:
+            stream.seek(start)
+            remaining = end - start + 1
+            while remaining:
+                chunk = stream.read(min(chunk_size, remaining))
+                if not chunk:
+                    raise ArtifactUnavailable(key)
+                remaining -= len(chunk)
+                yield chunk
 
     def exists(self, key: str) -> bool:
         return self.root.joinpath(*PurePosixPath(_safe_key(key)).parts).is_file()
 
     def delete(self, key: str) -> None:
-        source = self.root.joinpath(*PurePosixPath(_safe_key(key)).parts)
+        source = self._source(key)
         if not source.is_file():
             raise ArtifactUnavailable(key)
         source.unlink()
+
+    def _source(self, key: str) -> Path:
+        return self.root.joinpath(*PurePosixPath(_safe_key(key)).parts)
 
 
 class S3ArtifactStore:
@@ -97,6 +138,47 @@ class S3ArtifactStore:
                 raise ArtifactUnavailable(key) from exc
             raise
         return response["Body"].read()
+
+    def stat(self, key: str) -> ArtifactMetadata:
+        safe = _safe_key(key)
+        try:
+            response = self._client.head_object(Bucket=self.bucket, Key=safe)
+        except ClientError as exc:
+            if exc.response.get("Error", {}).get("Code") in {"NoSuchKey", "404"}:
+                raise ArtifactUnavailable(key) from exc
+            raise
+        # A provider ETag is stable metadata.  If a compatible provider omits
+        # it, derive an opaque validator from head metadata rather than
+        # leaking the key itself or reading the object body.
+        fallback_fingerprint = f"{safe}:{response['ContentLength']}:{response.get('LastModified', '')}"
+        etag = str(response.get("ETag") or f"s3-{hashlib.sha256(fallback_fingerprint.encode('utf-8')).hexdigest()}")
+        if not etag.startswith('"'):
+            etag = f'"{etag}"'
+        return ArtifactMetadata(
+            size=int(response["ContentLength"]),
+            etag=etag,
+            content_type=response.get("ContentType"),
+        )
+
+    def iter_range(self, key: str, start: int, end: int, *, chunk_size: int = 64 * 1024) -> Iterator[bytes]:
+        if start < 0 or end < start or chunk_size <= 0:
+            raise ValueError("invalid artifact byte range")
+        safe = _safe_key(key)
+        try:
+            response = self._client.get_object(Bucket=self.bucket, Key=safe, Range=f"bytes={start}-{end}")
+        except ClientError as exc:
+            if exc.response.get("Error", {}).get("Code") in {"NoSuchKey", "404"}:
+                raise ArtifactUnavailable(key) from exc
+            raise
+        body = response["Body"]
+        try:
+            for chunk in body.iter_chunks(chunk_size=chunk_size):
+                if chunk:
+                    yield bytes(chunk)
+        finally:
+            close = getattr(body, "close", None)
+            if callable(close):
+                close()
 
     def exists(self, key: str) -> bool:
         try:
