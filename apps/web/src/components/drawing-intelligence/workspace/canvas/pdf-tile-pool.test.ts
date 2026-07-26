@@ -80,6 +80,26 @@ describe('createPdfTilePool', () => {
     pool.dispose();
   });
 
+  it('closes a failed document on every worker and allows a retry to open it', async () => {
+    const workers: FakeWorker[] = [];
+    const pool = createPdfTilePool({ hardwareConcurrency: 3, workerFactory: () => {
+      const worker = new FakeWorker();
+      workers.push(worker);
+      return worker;
+    } });
+    const source = { documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' };
+    const first = pool.open(source);
+    workers[0].emit({ type: 'document-error', documentKey: request.documentKey, message: 'bad pdf' });
+
+    await expect(first).rejects.toThrow('bad pdf');
+    expect(workers.every((worker) => worker.messages.some((message: any) => message.type === 'close-document'))).toBe(true);
+
+    const retry = pool.open(source);
+    workers.forEach((worker) => worker.emit({ type: 'document-ready', documentKey: request.documentKey }));
+    await expect(retry).resolves.toBeUndefined();
+    pool.dispose();
+  });
+
   it('rejects document waiters and pending tile work when a worker errors', async () => {
     const workers: FakeWorker[] = [];
     const pool = createPdfTilePool({ workerFactory: () => {
@@ -112,6 +132,26 @@ describe('createPdfTilePool', () => {
 
     await expect(first.promise).rejects.toThrow('worker crashed');
     await expect(second.promise).rejects.toThrow('worker crashed');
+    pool.dispose();
+  });
+
+  it('recreates failed workers so the same document can be opened deterministically', async () => {
+    const workers: FakeWorker[] = [];
+    const pool = createPdfTilePool({ hardwareConcurrency: 2, workerFactory: () => {
+      const worker = new FakeWorker();
+      workers.push(worker);
+      return worker;
+    } });
+    const source = { documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' };
+    const first = pool.open(source);
+    workers[0].emitError('worker crashed');
+    await expect(first).rejects.toThrow('worker crashed');
+    expect(workers[0].terminate).toHaveBeenCalledOnce();
+
+    const retry = pool.open(source);
+    expect(workers).toHaveLength(2);
+    workers[1].emit({ type: 'document-ready', documentKey: request.documentKey });
+    await expect(retry).resolves.toBeUndefined();
     pool.dispose();
   });
 

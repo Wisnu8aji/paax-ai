@@ -4,6 +4,7 @@ import {
   DEFAULT_TILE_CACHE_BYTES,
   PdfTilePyramid,
   TileLru,
+  chooseDetailTileDensity,
   chooseTileDensity,
 } from './pdf-tile-pyramid';
 
@@ -24,8 +25,21 @@ describe('PdfTilePyramid', () => {
 
   it('bounds density selected from zoom and device pixel ratio', () => {
     expect(chooseTileDensity({ zoom: 0.1, dpr: 1 })).toBe(0.25);
-    expect(chooseTileDensity({ zoom: 1.5, dpr: 2 })).toBe(3);
+    expect(chooseTileDensity({ zoom: 1.5, dpr: 2 })).toBe(4);
     expect(chooseTileDensity({ zoom: 8, dpr: 3 })).toBe(4);
+  });
+
+  it('reuses a quantized pyramid level across adjacent zooms while preserving exact settled detail density', () => {
+    expect(chooseTileDensity({ zoom: 1.01, dpr: 1 })).toBe(2);
+    expect(chooseTileDensity({ zoom: 1.49, dpr: 1 })).toBe(2);
+    expect(chooseDetailTileDensity({ zoom: 3, dpr: 2 })).toBe(6);
+    expect(chooseDetailTileDensity({ zoom: 8, dpr: 3 })).toBe(24);
+    expect(chooseDetailTileDensity({ zoom: 20, dpr: 3 })).toBe(32);
+
+    const pyramid = new PdfTilePyramid({ pageKey: 'A-101', width: 1024, height: 1024 });
+    const at101 = pyramid.visibleTiles({ x: 0, y: 0, width: 200, height: 200, zoom: 1.01, dpr: 1 });
+    const at149 = pyramid.visibleTiles({ x: 0, y: 0, width: 200, height: 200, zoom: 1.49, dpr: 1 });
+    expect(at101.map((tile) => tile.key)).toEqual(at149.map((tile) => tile.key));
   });
 });
 

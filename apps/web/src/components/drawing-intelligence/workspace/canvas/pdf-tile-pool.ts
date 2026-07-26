@@ -138,6 +138,9 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
     for (const pending of [...pendingById.values()]) {
       settlePending(pending, error);
     }
+    for (const current of workers) current.terminate();
+    workers.length = 0;
+    nextWorker = 0;
   };
 
   const onMessage = (workerIndex: number, message: WorkerMessage) => {
@@ -150,7 +153,15 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
     }
     if (message.type === 'document-error') {
       const document = documents.get(message.documentKey);
-      if (document) document.reject(new Error(message.message));
+      if (document) {
+        const error = new Error(message.message);
+        documents.delete(message.documentKey);
+        document.reject(error);
+        for (const pending of [...pendingById.values()]) {
+          if (pending.documentKey === message.documentKey) settlePending(pending, error);
+        }
+        for (const worker of workers) worker.postMessage({ type: 'close-document', documentKey: message.documentKey });
+      }
       return;
     }
     if (message.type === 'tile') {

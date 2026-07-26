@@ -7,6 +7,8 @@ export const PDF_TILE_SIZE = 512;
 export const DEFAULT_TILE_CACHE_BYTES = 96 * 1024 * 1024;
 const MIN_TILE_DENSITY = 0.25;
 const MAX_TILE_DENSITY = 4;
+const MAX_DETAIL_TILE_DENSITY = 32;
+const PYRAMID_DENSITIES = [0.25, 0.5, 1, 2, 4] as const;
 
 export interface PdfPageDimensions {
   pageKey: string;
@@ -36,7 +38,21 @@ export interface PdfTileRequest {
 
 export function chooseTileDensity({ zoom, dpr }: Pick<TileViewport, 'zoom' | 'dpr'>): number {
   const requested = (Number.isFinite(zoom) ? zoom : 1) * (Number.isFinite(dpr) ? dpr : 1);
-  return Math.min(MAX_TILE_DENSITY, Math.max(MIN_TILE_DENSITY, requested));
+  const bounded = Math.min(MAX_TILE_DENSITY, Math.max(MIN_TILE_DENSITY, requested));
+  return PYRAMID_DENSITIES.find((density) => density >= bounded) ?? MAX_TILE_DENSITY;
+}
+
+/**
+ * Exact density for a settled visible crop. This intentionally is not used as
+ * a pyramid-cache key: Task 2b should paint the small settled crop directly,
+ * while interactive pan/zoom continues to reuse only quantized LRU levels.
+ * Thirty-two device px per logical px covers the current 8x maximum UI zoom
+ * at DPR 3 while still bounding render work. It avoids silently capping deep
+ * zoom to the 4x interactive pyramid.
+ */
+export function chooseDetailTileDensity({ zoom, dpr }: Pick<TileViewport, 'zoom' | 'dpr'>): number {
+  const requested = (Number.isFinite(zoom) ? zoom : 1) * (Number.isFinite(dpr) ? dpr : 1);
+  return Math.min(MAX_DETAIL_TILE_DENSITY, Math.max(MIN_TILE_DENSITY, requested));
 }
 
 /**
