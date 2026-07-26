@@ -160,6 +160,10 @@ export class TileLru {
     return entry.bitmap;
   }
 
+  peek(key: string): ImageBitmap | undefined {
+    return this.entries.get(key)?.bitmap;
+  }
+
   set(key: string, bitmap: ImageBitmap, bytes: number, protectedKeys: ReadonlySet<string> = new Set()): boolean {
     if (!Number.isFinite(bytes) || bytes < 0 || bytes > this.maxBytes) {
       closeBitmap(bitmap);

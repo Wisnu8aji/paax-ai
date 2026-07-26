@@ -2,12 +2,24 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchPdfArtifactUrl, normalizeArtifactExpiry, PDF_ARTIFACT_REFRESH_SKEW_MS } from '../../drawing-intelligence-api';
-import { TileLru, PdfTilePyramid, type TileViewport } from './pdf-tile-pyramid';
+import { TileLru, PdfTilePyramid, type TileViewport, type PdfTileRequest } from './pdf-tile-pyramid';
 import { createPdfTilePool, type PdfPageMetrics } from './pdf-tile-pool';
 
 export function shouldRefreshArtifactUrl(expiresAt: string | number, now = new Date()): boolean {
   const normalized = normalizeArtifactExpiry(expiresAt);
   return new Date(normalized).getTime() - now.getTime() <= PDF_ARTIFACT_REFRESH_SKEW_MS;
+}
+
+function areTileGeometriesEqual(a: PdfTileRequest, b: PdfTileRequest): boolean {
+  return (
+    a.tx === b.tx &&
+    a.ty === b.ty &&
+    a.x === b.x &&
+    a.y === b.y &&
+    a.width === b.width &&
+    a.height === b.height &&
+    a.density === b.density
+  );
 }
 
 export interface PdfPageLayerProps {
@@ -26,7 +38,7 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
   const openGenRef = useRef(0);
   const activeOpenGenRef = useRef<number | null>(null);
   const [metrics, setMetrics] = useState<PdfPageMetrics | null>(null);
-  const [painted, setPainted] = useState(new Map<string, { tile: ReturnType<PdfTilePyramid['visibleTiles']>[number]; bitmap: ImageBitmap }>());
+  const [painted, setPainted] = useState(new Map<string, { tile: PdfTileRequest; revision: number }>());
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
   const documentKey = `${runId}:${pageIndex}`;
@@ -109,7 +121,20 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
     const cancellations = visible.map((tile) => {
       const cached = cache.get(tile.key);
       if (cached) {
-        setPainted((previous) => new Map(previous).set(tile.key, { tile, bitmap: cached }));
+        setPainted((previous) => {
+          const existing = previous.get(tile.key);
+          if (!existing) {
+            const next = new Map(previous);
+            next.set(tile.key, { tile, revision: 1 });
+            return next;
+          }
+          if (areTileGeometriesEqual(existing.tile, tile)) {
+            return previous;
+          }
+          const next = new Map(previous);
+          next.set(tile.key, { tile, revision: existing.revision });
+          return next;
+        });
         return null;
       }
       const handle = pool.request({ documentKey, pageNumber: pageIndex + 1, tile });
@@ -121,7 +146,13 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
         const bitmap = delivery.claim();
         if (!bitmap) return;
         if (cache.set(tile.key, bitmap, delivery.width * delivery.height * 4, protectedKeys)) {
-          setPainted((previous) => new Map(previous).set(tile.key, { tile, bitmap }));
+          setPainted((previous) => {
+            const existing = previous.get(tile.key);
+            const next = new Map(previous);
+            const revision = existing ? existing.revision + 1 : 1;
+            next.set(tile.key, { tile, revision });
+            return next;
+          });
         }
       }).catch(() => undefined);
       return handle.cancel;
@@ -140,7 +171,13 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
           const bitmap = delivery.claim();
           if (!bitmap) return;
           if (cache.set(tile.key, bitmap, delivery.width * delivery.height * 4, protectedKeys)) {
-            setPainted((previous) => new Map(previous).set(tile.key, { tile, bitmap }));
+            setPainted((previous) => {
+              const existing = previous.get(tile.key);
+              const next = new Map(previous);
+              const revision = existing ? existing.revision + 1 : 1;
+              next.set(tile.key, { tile, revision });
+              return next;
+            });
           }
         }).catch(() => undefined);
         cancellations.push(handle.cancel);
@@ -157,12 +194,23 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
   if (error) return <button type="button" onClick={() => setRetry((value) => value + 1)}>Retry PDF: {error}</button>;
   if (!metrics) return <div role="status">Loading original PDF…</div>;
   return <div data-testid="pdf-page-layer" style={{ position: 'relative', width: '100%', height: '100%', aspectRatio: `${metrics.width} / ${metrics.height}` }}>
-    {[...painted.entries()].map(([key, entry]) => <TileCanvas key={key} tile={entry.tile} bitmap={entry.bitmap} pageWidth={metrics.width} pageHeight={metrics.height} />)}
+    {[...painted.entries()].map(([key, { tile, revision }]) => <TileCanvas key={key} tile={tile} revision={revision} cache={cacheRef.current} pageWidth={metrics.width} pageHeight={metrics.height} />)}
   </div>;
 }
 
-function TileCanvas({ tile, bitmap, pageWidth, pageHeight }: { tile: ReturnType<PdfTilePyramid['visibleTiles']>[number]; bitmap: ImageBitmap; pageWidth: number; pageHeight: number }) {
+function TileCanvas({ tile, revision, cache, pageWidth, pageHeight }: { tile: PdfTileRequest; revision: number; cache: TileLru | null; pageWidth: number; pageHeight: number }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
-  useEffect(() => { const canvas = ref.current; const context = canvas?.getContext('2d'); if (canvas && context) { canvas.width = bitmap.width; canvas.height = bitmap.height; context.drawImage(bitmap, 0, 0); } }, [bitmap]);
+  useEffect(() => {
+    if (!cache) return;
+    const bitmap = cache.peek(tile.key);
+    if (!bitmap) return;
+    const canvas = ref.current;
+    const context = canvas?.getContext('2d');
+    if (canvas && context) {
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      context.drawImage(bitmap, 0, 0);
+    }
+  }, [tile.key, revision, cache]);
   return <canvas ref={ref} aria-hidden="true" style={{ position: 'absolute', left: `${tile.x / tile.density / pageWidth * 100}%`, top: `${tile.y / tile.density / pageHeight * 100}%`, width: `${tile.width / tile.density / pageWidth * 100}%`, height: `${tile.height / tile.density / pageHeight * 100}%`, zIndex: tile.density > 4 ? 2 : 1 }} />;
 }

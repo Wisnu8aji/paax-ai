@@ -93,4 +93,39 @@ describe('TileLru', () => {
     expect(cache.get('tile')).toBe(shared);
     expect(shared.close).not.toHaveBeenCalled();
   });
+
+  it('peek returns bitmap without mutating LRU recency while get mutates recency', () => {
+    const cache = new TileLru(100);
+    const first = bitmap();
+    const second = bitmap();
+    const third = bitmap();
+
+    cache.set('first', first, 40);
+    cache.set('second', second, 40);
+
+    expect(cache.peek('first')).toBe(first);
+
+    cache.set('third', third, 40);
+
+    expect(cache.has('first')).toBe(false);
+    expect(first.close).toHaveBeenCalledOnce();
+    expect(cache.has('second')).toBe(true);
+    expect(cache.has('third')).toBe(true);
+
+    const cache2 = new TileLru(100);
+    const a = bitmap();
+    const b = bitmap();
+    const c = bitmap();
+
+    cache2.set('a', a, 40);
+    cache2.set('b', b, 40);
+
+    expect(cache2.get('a')).toBe(a);
+
+    cache2.set('c', c, 40);
+
+    expect(cache2.has('a')).toBe(true);
+    expect(cache2.has('b')).toBe(false);
+    expect(b.close).toHaveBeenCalledOnce();
+  });
 });

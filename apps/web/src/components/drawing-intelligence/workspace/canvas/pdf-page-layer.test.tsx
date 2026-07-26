@@ -3,6 +3,7 @@ import { describe, expect, it, vi, beforeEach, beforeAll, afterAll } from 'vites
 import { render, screen, act } from '@testing-library/react';
 import React from 'react';
 import { shouldRefreshArtifactUrl, PdfPageLayer } from './pdf-page-layer';
+import { TileLru, PdfTilePyramid } from './pdf-tile-pyramid';
 import { createPdfTilePool } from './pdf-tile-pool';
 import { normalizeArtifactExpiry, fetchPdfArtifactUrl } from '../../drawing-intelligence-api';
 
@@ -677,5 +678,345 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('Phase 3B1: Metadata-only React state and cache.peek rendering', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('active delivery draws from cache.peek, sizing canvas and calling drawImage', async () => {
+    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
+    mockFetchArtifact.mockResolvedValue({
+      url: '/api/document-intelligence/drawings/dem/run-3b1/artifact?token=abc',
+      expiresAt: '2026-07-26T12:00:00.000Z',
+    });
+
+    const drawImageSpy = vi.fn();
+    getContextSpy.mockImplementation((contextId: string) => {
+      if (contextId === '2d') {
+        return { drawImage: drawImageSpy } as unknown as CanvasRenderingContext2D;
+      }
+      return null;
+    });
+
+    const peekSpy = vi.spyOn(TileLru.prototype, 'peek');
+
+    const resolvers: Array<(result: any) => void> = [];
+    const poolInstance = {
+      open: vi.fn().mockResolvedValue({ width: 1000, height: 800, rotation: 0 }),
+      request: vi.fn().mockImplementation(() => {
+        let resolve: (result: any) => void;
+        const promise = new Promise<any>((res) => { resolve = res; });
+        resolvers.push(resolve!);
+        return { promise, cancel: vi.fn() };
+      }),
+      close: vi.fn(),
+      dispose: vi.fn(),
+    };
+    vi.mocked(createPdfTilePool).mockReturnValueOnce(poolInstance as any);
+
+    const viewport = { x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 };
+    render(
+      <PdfPageLayer
+        runId="run-3b1"
+        pageIndex={0}
+        viewport={viewport}
+        fallbackWidth={800}
+        fallbackHeight={600}
+      />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const mockBitmap = { width: 512, height: 512, close: vi.fn() };
+    const delivery = {
+      width: 512,
+      height: 512,
+      claim: vi.fn().mockReturnValue(mockBitmap),
+    };
+
+    await act(async () => {
+      resolvers[0](delivery);
+      await Promise.resolve();
+    });
+
+    expect(peekSpy).toHaveBeenCalledWith('run-3b1:0:1:0:0');
+    expect(drawImageSpy).toHaveBeenCalledWith(mockBitmap, 0, 0);
+
+    peekSpy.mockRestore();
+  });
+
+  it('an evicted/missing key in TileLru does not call drawImage', async () => {
+    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
+    mockFetchArtifact.mockResolvedValue({
+      url: '/api/document-intelligence/drawings/dem/run-evicted/artifact?token=abc',
+      expiresAt: '2026-07-26T12:00:00.000Z',
+    });
+
+    const drawImageSpy = vi.fn();
+    getContextSpy.mockImplementation((contextId: string) => {
+      if (contextId === '2d') {
+        return { drawImage: drawImageSpy } as unknown as CanvasRenderingContext2D;
+      }
+      return null;
+    });
+
+    const peekSpy = vi.spyOn(TileLru.prototype, 'peek').mockReturnValue(undefined);
+
+    const resolvers: Array<(result: any) => void> = [];
+    const poolInstance = {
+      open: vi.fn().mockResolvedValue({ width: 1000, height: 800, rotation: 0 }),
+      request: vi.fn().mockImplementation(() => {
+        let resolve: (result: any) => void;
+        const promise = new Promise<any>((res) => { resolve = res; });
+        resolvers.push(resolve!);
+        return { promise, cancel: vi.fn() };
+      }),
+      close: vi.fn(),
+      dispose: vi.fn(),
+    };
+    vi.mocked(createPdfTilePool).mockReturnValueOnce(poolInstance as any);
+
+    const viewport = { x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 };
+    render(
+      <PdfPageLayer
+        runId="run-evicted"
+        pageIndex={0}
+        viewport={viewport}
+        fallbackWidth={800}
+        fallbackHeight={600}
+      />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const mockBitmap = { width: 512, height: 512, close: vi.fn() };
+    const delivery = {
+      width: 512,
+      height: 512,
+      claim: vi.fn().mockReturnValue(mockBitmap),
+    };
+
+    await act(async () => {
+      resolvers[0](delivery);
+      await Promise.resolve();
+    });
+
+    expect(peekSpy).toHaveBeenCalledWith('run-evicted:0:1:0:0');
+    expect(drawImageSpy).not.toHaveBeenCalled();
+
+    peekSpy.mockRestore();
+  });
+
+  it('same tile key updated with new bitmap re-renders TileCanvas and calls drawImage with new bitmap via revision', async () => {
+    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
+    mockFetchArtifact.mockResolvedValue({
+      url: '/api/document-intelligence/drawings/dem/run-same-key/artifact?token=abc',
+      expiresAt: '2026-07-26T12:00:00.000Z',
+    });
+
+    const drawImageSpy = vi.fn();
+    getContextSpy.mockImplementation((contextId: string) => {
+      if (contextId === '2d') {
+        return { drawImage: drawImageSpy } as unknown as CanvasRenderingContext2D;
+      }
+      return null;
+    });
+
+    const mockBitmapA = { width: 512, height: 512, close: vi.fn(), id: 'bitmapA' };
+    const mockBitmapB = { width: 512, height: 512, close: vi.fn(), id: 'bitmapB' };
+
+    const resolvers: Array<(delivery: any) => void> = [];
+    const requestedTiles: any[] = [];
+    const poolInstance = {
+      open: vi.fn().mockResolvedValue({ width: 1000, height: 800, rotation: 0 }),
+      request: vi.fn().mockImplementation(({ tile }: any) => {
+        requestedTiles.push(tile);
+        let resolve: (delivery: any) => void;
+        const promise = new Promise<any>((res) => { resolve = res; });
+        resolvers.push(resolve!);
+        return { promise, cancel: vi.fn() };
+      }),
+      close: vi.fn(),
+      dispose: vi.fn(),
+    };
+    vi.mocked(createPdfTilePool).mockReturnValueOnce(poolInstance as any);
+
+    const viewport1 = { x: 0, y: 0, width: 0.1, height: 0.1, zoom: 1, dpr: 1 };
+    const { rerender } = render(
+      <PdfPageLayer
+        runId="run-same-key"
+        pageIndex={0}
+        viewport={viewport1}
+        fallbackWidth={800}
+        fallbackHeight={600}
+      />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(resolvers.length).toBe(1);
+
+    const deliveryA = {
+      width: 512,
+      height: 512,
+      claim: vi.fn().mockReturnValue(mockBitmapA),
+    };
+
+    await act(async () => {
+      resolvers[0](deliveryA);
+      await Promise.resolve();
+    });
+
+    expect(drawImageSpy).toHaveBeenCalledWith(mockBitmapA, 0, 0);
+    drawImageSpy.mockClear();
+
+    const getSpy = vi.spyOn(TileLru.prototype, 'get').mockReturnValueOnce(undefined);
+
+    const viewport2 = { x: 0.05, y: 0, width: 0.1, height: 0.1, zoom: 1, dpr: 1 };
+    rerender(
+      <PdfPageLayer
+        runId="run-same-key"
+        pageIndex={0}
+        viewport={viewport2}
+        fallbackWidth={800}
+        fallbackHeight={600}
+      />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(resolvers.length).toBe(2);
+    expect(requestedTiles[0].key).toBe(requestedTiles[1].key);
+
+    const deliveryB = {
+      width: 512,
+      height: 512,
+      claim: vi.fn().mockReturnValue(mockBitmapB),
+    };
+
+    await act(async () => {
+      resolvers[1](deliveryB);
+      await Promise.resolve();
+    });
+
+    expect(drawImageSpy).toHaveBeenCalledWith(mockBitmapB, 0, 0);
+
+    getSpy.mockRestore();
+  });
+
+  it('updates tile metadata on cache hit when geometry changes for same key without incrementing revision or re-triggering drawImage', async () => {
+    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
+    mockFetchArtifact.mockResolvedValue({
+      url: '/api/document-intelligence/drawings/dem/run-meta/artifact?token=abc',
+      expiresAt: '2026-07-26T12:00:00.000Z',
+    });
+
+    const drawImageSpy = vi.fn();
+    getContextSpy.mockImplementation((contextId: string) => {
+      if (contextId === '2d') {
+        return { drawImage: drawImageSpy } as unknown as CanvasRenderingContext2D;
+      }
+      return null;
+    });
+
+    const tileV1 = { key: 'run-meta:0:1:0:0', tx: 0, ty: 0, x: 0, y: 0, width: 400, height: 400, density: 1 };
+    const tileV2 = { key: 'run-meta:0:1:0:0', tx: 0, ty: 0, x: 0, y: 0, width: 500, height: 400, density: 1 };
+
+    const visibleTilesSpy = vi.spyOn(PdfTilePyramid.prototype, 'visibleTiles')
+      .mockReturnValueOnce([tileV1])
+      .mockReturnValueOnce([tileV2]);
+
+    const resolvers: Array<(delivery: any) => void> = [];
+    const poolInstance = {
+      open: vi.fn().mockResolvedValue({ width: 1000, height: 800, rotation: 0 }),
+      request: vi.fn().mockImplementation(() => {
+        let resolve: (delivery: any) => void;
+        const promise = new Promise<any>((res) => { resolve = res; });
+        resolvers.push(resolve!);
+        return { promise, cancel: vi.fn() };
+      }),
+      close: vi.fn(),
+      dispose: vi.fn(),
+    };
+    vi.mocked(createPdfTilePool).mockReturnValueOnce(poolInstance as any);
+
+    const viewport = { x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 };
+    const { container, rerender } = render(
+      <PdfPageLayer
+        runId="run-meta"
+        pageIndex={0}
+        viewport={viewport}
+        fallbackWidth={1000}
+        fallbackHeight={800}
+      />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(resolvers.length).toBe(1);
+
+    const mockBitmap = { width: 400, height: 400, close: vi.fn() };
+    const delivery = {
+      width: 400,
+      height: 400,
+      claim: vi.fn().mockReturnValue(mockBitmap),
+    };
+
+    await act(async () => {
+      resolvers[0](delivery);
+      await Promise.resolve();
+    });
+
+    expect(drawImageSpy).toHaveBeenCalledTimes(1);
+    drawImageSpy.mockClear();
+
+    const canvasBefore = container.querySelector('canvas');
+    expect(canvasBefore).not.toBeNull();
+    expect(canvasBefore?.style.width).toBe('40%');
+
+    // Rerender with slight viewport change dependency to re-trigger useEffect
+    // visibleTiles returns tileV2 (same key, width 500)
+    rerender(
+      <PdfPageLayer
+        runId="run-meta"
+        pageIndex={0}
+        viewport={{ ...viewport, x: 0.001 }}
+        fallbackWidth={1000}
+        fallbackHeight={800}
+      />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // Cache hit: no second pool.request
+    expect(resolvers.length).toBe(1);
+
+    // Canvas width updated to 50%
+    const canvasAfter = container.querySelector('canvas');
+    expect(canvasAfter?.style.width).toBe('50%');
+
+    // drawImage was NOT called again because revision was preserved
+    expect(drawImageSpy).not.toHaveBeenCalled();
+
+    visibleTilesSpy.mockRestore();
   });
 });
