@@ -4,6 +4,7 @@ from collections import Counter, defaultdict
 from statistics import mean
 from typing import Any
 
+from .candidate_inventory import build_candidate_inventory
 from .models import DrawingPackageAnalysis, WorkItemCandidate
 from .taxonomy import (
     dimensions_text,
@@ -431,6 +432,7 @@ def build_human_delivery(analysis: DrawingPackageAnalysis) -> dict[str, Any]:
                 "Perbedaan antarlembar tetap ditandai sebagai Data rancu dan memerlukan keputusan reviewer."
             ),
         },
+        "candidate_inventory": [row.model_dump(mode="json") for row in build_candidate_inventory(analysis)],
         "work_groups": work_groups,
         "work_items": user_items,
         "needs_clarification": clarification,

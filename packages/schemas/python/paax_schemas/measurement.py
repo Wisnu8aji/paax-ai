@@ -126,6 +126,92 @@ class MeasurementFact(BaseModel):
         return quantity_type(value=self.value, unit=self.unit)
 
 
+class SheetClassificationKey(str, Enum):
+    COVER = "cover"
+    DRAWING_LIST = "drawing_list"
+    SITE_PLAN = "site_plan"
+    PLAN = "plan"
+    ELEVATION = "elevation"
+    SECTION = "section"
+    DETAIL = "detail"
+    SCHEDULE = "schedule"
+    DIAGRAM = "diagram"
+    TECHNICAL_NOTE = "technical_note"
+    UNKNOWN = "unknown"
+
+
+class SheetViewStatus(str, Enum):
+    CLASSIFIED = "classified"
+    NEEDS_REVIEW = "needs_review"
+
+
+class SheetViewEntry(BaseModel):
+    """Immutable page identity plus derived sheet-navigation metadata."""
+
+    page_index: Annotated[int, Field(ge=0)]
+    page_number: Annotated[int, Field(ge=1)]
+    level_key: str = Field(min_length=1)
+    classification_key: SheetClassificationKey
+    evidence_refs: list[str] = Field(default_factory=list)
+    status: SheetViewStatus
+    review_reason: str | None = None
+
+    @model_validator(mode="after")
+    def require_immutable_page_number(self) -> "SheetViewEntry":
+        if self.page_number != self.page_index + 1:
+            raise ValueError("page_number must equal page_index plus one")
+        if self.status == SheetViewStatus.NEEDS_REVIEW and not self.review_reason:
+            raise ValueError("needs_review sheet entry requires review_reason")
+        if self.status == SheetViewStatus.CLASSIFIED and self.review_reason is not None:
+            raise ValueError("classified sheet entry cannot carry review_reason")
+        return self
+
+
+class SheetViews(BaseModel):
+    """Three immutable views over the same source-page identities.
+
+    The arrays may differ only in order. They may never drop, duplicate, or
+    rewrite a source page.
+    """
+
+    level: list[SheetViewEntry] = Field(default_factory=list)
+    classification: list[SheetViewEntry] = Field(default_factory=list)
+    source: list[SheetViewEntry] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def require_same_immutable_pages(self) -> "SheetViews":
+        views = {
+            "level": self.level,
+            "classification": self.classification,
+            "source": self.source,
+        }
+        indexed: dict[str, dict[int, SheetViewEntry]] = {}
+        for name, entries in views.items():
+            page_map: dict[int, SheetViewEntry] = {}
+            for entry in entries:
+                if entry.page_index in page_map:
+                    raise ValueError(f"{name} view contains duplicate page_index {entry.page_index}")
+                page_map[entry.page_index] = entry
+            indexed[name] = page_map
+
+        identity_sets = {name: set(page_map) for name, page_map in indexed.items()}
+        if not (identity_sets["level"] == identity_sets["classification"] == identity_sets["source"]):
+            raise ValueError("level, classification, and source views must contain the same page identities")
+
+        for page_index in identity_sets["source"]:
+            canonical = indexed["source"][page_index].model_dump(mode="json")
+            for name in ("level", "classification"):
+                if indexed[name][page_index].model_dump(mode="json") != canonical:
+                    raise ValueError(
+                        f"derived views may reorder but must not rewrite page identity {page_index}"
+                    )
+
+        source_indices = [entry.page_index for entry in self.source]
+        if source_indices != sorted(source_indices):
+            raise ValueError("source view must preserve immutable PDF page order")
+        return self
+
+
 class QuantityAssumption(BaseModel):
     """A human/evidence supplied typed input; approval is always explicit."""
     id: str

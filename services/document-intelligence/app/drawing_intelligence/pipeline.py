@@ -28,6 +28,7 @@ from .raster_fallback import extract_raster_tokens
 from .page_profiler import profile_page
 from .plan_zones import detect_plan_zones
 from .sheet_identity import build_sheet_semantics
+from .sheet_views import build_sheet_views
 from .text_index import extract_native_tokens
 from .vocabulary import build_native_vocabulary, build_project_vocabulary
 from .work_items import build_work_items
@@ -288,6 +289,7 @@ def analyze_drawing_package(
         page_count=total_pages,
         source_manifest=source_manifest,
         pages=pages,
+        sheet_views=build_sheet_views(pages),
         vocabulary=vocabulary,
         cross_references=cross_references,
         work_items=work_items,

@@ -9,6 +9,10 @@ from .measurement import (
     MeasurementFact,
     MeasurementType,
     QuantityAssumption,
+    SheetClassificationKey,
+    SheetViewEntry,
+    SheetViews,
+    SheetViewStatus,
     SourceMethod,
     VerificationStatus,
     Volume,
@@ -16,6 +20,7 @@ from .measurement import (
 
 __all__ = [
     "Area", "AssumptionApprovalStatus", "Count", "Length", "Mass", "MeasurementFact", "MeasurementType", "QuantityAssumption",
+    "SheetClassificationKey", "SheetViewEntry", "SheetViews", "SheetViewStatus",
     "SourceMethod", "VerificationStatus", "Volume",
 ]
 

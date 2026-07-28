@@ -34,6 +34,7 @@ import {
   RabMaterializationMappingSchema,
   RabBridgeV2CandidateSetSchema,
   MeasurementFactSchema,
+  SheetViewsSchema,
 } from "../index";
 
 // Contoh response aktual dari POST /rab/calculate engine
@@ -131,6 +132,46 @@ describe("MeasurementFactSchema", () => {
   it("requires dimensional value and matching unit", () => {
     expect(MeasurementFactSchema.parse(fact).unit).toBe("mm");
     expect(() => MeasurementFactSchema.parse({ ...fact, unit: "m2" })).toThrow();
+  });
+});
+
+
+describe("SheetViewsSchema", () => {
+  const fixture = {
+    level: [
+      { page_index: 0, page_number: 1, level_key: "document", classification_key: "cover", evidence_refs: ["EV-COVER"], status: "classified", review_reason: null },
+      { page_index: 2, page_number: 3, level_key: "site", classification_key: "site_plan", evidence_refs: ["EV-SITE"], status: "classified", review_reason: null },
+      { page_index: 1, page_number: 2, level_key: "L1", classification_key: "plan", evidence_refs: ["EV-L1"], status: "classified", review_reason: null },
+      { page_index: 3, page_number: 4, level_key: "unknown", classification_key: "unknown", evidence_refs: ["EV-UNKNOWN"], status: "needs_review", review_reason: "classification_unknown" },
+    ],
+    classification: [
+      { page_index: 0, page_number: 1, level_key: "document", classification_key: "cover", evidence_refs: ["EV-COVER"], status: "classified", review_reason: null },
+      { page_index: 2, page_number: 3, level_key: "site", classification_key: "site_plan", evidence_refs: ["EV-SITE"], status: "classified", review_reason: null },
+      { page_index: 1, page_number: 2, level_key: "L1", classification_key: "plan", evidence_refs: ["EV-L1"], status: "classified", review_reason: null },
+      { page_index: 3, page_number: 4, level_key: "unknown", classification_key: "unknown", evidence_refs: ["EV-UNKNOWN"], status: "needs_review", review_reason: "classification_unknown" },
+    ],
+    source: [
+      { page_index: 0, page_number: 1, level_key: "document", classification_key: "cover", evidence_refs: ["EV-COVER"], status: "classified", review_reason: null },
+      { page_index: 1, page_number: 2, level_key: "L1", classification_key: "plan", evidence_refs: ["EV-L1"], status: "classified", review_reason: null },
+      { page_index: 2, page_number: 3, level_key: "site", classification_key: "site_plan", evidence_refs: ["EV-SITE"], status: "classified", review_reason: null },
+      { page_index: 3, page_number: 4, level_key: "unknown", classification_key: "unknown", evidence_refs: ["EV-UNKNOWN"], status: "needs_review", review_reason: "classification_unknown" },
+    ],
+  };
+
+  it("round-trips the canonical Level / Classification / Original order contract", () => {
+    expect(SheetViewsSchema.parse(fixture)).toEqual(fixture);
+  });
+
+  it("rejects source page-number rewrites", () => {
+    const invalid = JSON.parse(JSON.stringify(fixture));
+    invalid.source[1].page_number = 99;
+    expect(() => SheetViewsSchema.parse(invalid)).toThrow(/page_number must equal page_index plus one/);
+  });
+
+  it("rejects identity loss between derived views", () => {
+    const invalid = JSON.parse(JSON.stringify(fixture));
+    invalid.classification.pop();
+    expect(() => SheetViewsSchema.parse(invalid)).toThrow(/same page identities/);
   });
 });
 

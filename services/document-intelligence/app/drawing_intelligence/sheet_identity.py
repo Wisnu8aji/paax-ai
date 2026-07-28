@@ -28,6 +28,7 @@ _DISCIPLINE_ALIASES = {
 
 _DRAWING_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("cover", ("GAMBAR KERJA -", "COVER")),
+    ("drawing_list", ("DAFTAR GAMBAR", "DRAWING LIST", "DRAWING INDEX", "SHEET INDEX")),
     ("legend", ("DAFTAR SINGKATAN", "NOTASI GAMBAR", "LEGENDA", "LEGEND")),
     ("schedule", ("TABEL KOLOM", "TABEL BALOK", "TABEL PELAT", "SCHEDULE", "DAFTAR PINTU", "DAFTAR JENDELA")),
     ("single_line_diagram", ("SINGLE LINE DIAGRAM",)),
@@ -219,6 +220,19 @@ def canonical_discipline(value: str | None, title: str = "") -> str:
 
 def classify_drawing_type(title: str | None) -> str:
     upper = normalize_text(title or "")
+    technical_note_prefixes = (
+        "CATATAN TEKNIS", "CATATAN UMUM", "GENERAL NOTES",
+        "TECHNICAL NOTES", "SPESIFIKASI TEKNIS",
+    )
+    # Notes frequently occur inside title blocks of otherwise unrelated sheets.
+    # Treat them as the sheet class only when the candidate itself looks like a
+    # bounded note title, not when title-block metadata was concatenated into it.
+    if (
+        any(upper == prefix or upper.startswith(f"{prefix} ") for prefix in technical_note_prefixes)
+        and len(upper) <= 120
+        and not any(marker in upper for marker in ("NO. GAMBAR", "NO GAMBAR", "SHEET NO", "SKALA", "SCALE"))
+    ):
+        return "technical_note"
     # A sheet explicitly titled as a detail remains a detail even when its
     # subtitle includes words such as TAMPAK, POTONGAN, AC, or PENANGKAL PETIR.
     if upper.startswith("DETAIL ") or upper.startswith("STANDAR DETAIL") or upper.startswith("STANDARD DETAIL"):

@@ -10,7 +10,7 @@ from pathlib import Path
 
 import fitz
 import httpx
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, Response, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -21,8 +21,9 @@ from app.transcription.db_client import DemDbClient
 from app.auth import User, get_current_user
 from app.drawing_intelligence.models import BBox, DrawingPackageAnalysis, WorkItemCalculation
 from app.drawing_intelligence.human_delivery import build_human_delivery
+from app.drawing_intelligence.sheet_views import build_sheet_views
 from app.drawing_intelligence.calculation_bridge import (
-    CalculationNotReady, CoreEngineCalculationClient, build_calculation_request, calculation_from_response,
+    CalculationNotReady, CoreEngineCalculationClient, build_engine_dispatch, calculation_from_response,
 )
 from app.drawing_intelligence.review_ledger import (
     ReviewDecisionRequest, ReviewLedger, append_decision, apply_ledger_to_human_delivery, empty_ledger,
@@ -305,6 +306,66 @@ async def get_page_image(run_id: str, page_index: int, user: User = Depends(get_
     return Response(content=png_bytes, media_type="image/png")
 
 
+def _thumbnail_object_key(run_id: str, page_index: int, width: int) -> str:
+    return f"runs/{run_id}/thumbnails/page-{page_index:05d}-w{width}.png"
+
+
+def _render_thumbnail(pdf_bytes: bytes, page_index: int, width: int) -> bytes:
+    document = fitz.open(stream=pdf_bytes, filetype="pdf")
+    try:
+        if page_index < 0 or page_index >= document.page_count:
+            raise HTTPException(status_code=404, detail="Page index out of bounds")
+        page = document[page_index]
+        scale = width / max(float(page.rect.width), 1.0)
+        pixmap = page.get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=False)
+        return pixmap.tobytes("png")
+    finally:
+        document.close()
+
+
+@router.get("/{run_id}/pages/{page_index}/thumbnail")
+async def get_page_thumbnail(
+    run_id: str,
+    page_index: int,
+    request: Request,
+    width: int = Query(default=320, ge=64, le=320),
+    user: User = Depends(get_current_user),
+):
+    """Serve an authorised, lightweight page derivative for sheet navigation.
+
+    The thumbnail is cached separately from the immutable PDF and is never used
+    as the main viewer page.  Authorization is resolved against the source run
+    before either cache or source bytes are returned.
+    """
+
+    run, pdf_bytes = await _authorized_run_pdf(run_id, user)
+    total_pages = int(run.get("total_pages") or 0)
+    if page_index < 0 or (total_pages and page_index >= total_pages):
+        raise HTTPException(status_code=404, detail="Page index out of bounds")
+    cache_key = f"thumbnail/{_thumbnail_object_key(run_id, page_index, width)}"
+    try:
+        thumbnail = ARTIFACT_STORE.get(cache_key)
+    except ArtifactUnavailable:
+        thumbnail = _render_thumbnail(pdf_bytes, page_index, width)
+        cache_key = ARTIFACT_STORE.put(
+            "thumbnail",
+            thumbnail,
+            content_type="image/png",
+            object_key=_thumbnail_object_key(run_id, page_index, width),
+        )
+    etag = f'"thumb-{hashlib.sha256(thumbnail).hexdigest()}"'
+    headers = {
+        "ETag": etag,
+        "Cache-Control": "private, max-age=3600",
+        "Content-Length": str(len(thumbnail)),
+        "X-Content-Type-Options": "nosniff",
+    }
+    if _if_none_match_matches(request.headers.get("if-none-match"), etag):
+        headers.pop("Content-Length", None)
+        return Response(status_code=304, headers=headers)
+    return Response(content=thumbnail, media_type="image/png", headers=headers)
+
+
 @router.post("/{run_id}/artifact-url")
 async def issue_artifact_url(run_id: str, user: User = Depends(get_current_user)):
     run = await DemDbClient().get_run(run_id)
@@ -519,6 +580,12 @@ async def get_package_intelligence(
     if view == "full":
         return payload
     analysis = _apply_saved_calculations(run_id, DrawingPackageAnalysis.model_validate(payload))
+    sheet_views = analysis.sheet_views
+    if analysis.pages and not sheet_views.source:
+        # Backward-compatible derivation for package artifacts created before
+        # the canonical SheetViews contract existed. Source artifacts remain
+        # immutable; only the response projection is derived.
+        sheet_views = build_sheet_views(analysis.pages)
     human = build_human_delivery(analysis)
     ledger_object_key = f"runs/{run_id}/review-ledger.json"
     ledger_key = f"drawing-intelligence/{ledger_object_key}"
@@ -542,6 +609,7 @@ async def get_package_intelligence(
         "metrics": human.get("metrics", {}),
         "phase_status": human.get("phase_status", {}),
         "warnings": human.get("warnings", []),
+        "sheet_views": sheet_views.model_dump(mode="json"),
         "work_items": human.get("work_items", []),
         "work_groups": human.get("work_groups", []),
         "needs_clarification": human.get("needs_clarification", []),
@@ -630,22 +698,76 @@ async def calculate_package_work_item(
     if item is None:
         raise HTTPException(status_code=404, detail="work item is not available")
     try:
-        request_payload = build_calculation_request(
+        dispatch = build_engine_dispatch(
             item, project_id=str(project_id), snapshot_id=analysis.package_id, requested_by=user.uid,
         )
     except CalculationNotReady as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     try:
-        response = await CoreEngineCalculationClient.from_env().calculate(request_payload)
+        client = CoreEngineCalculationClient.from_env()
+        if dispatch.endpoint == "/calculations":
+            response = await client.calculate(dispatch.payload)
+        else:
+            response = await client.dispatch(dispatch)
     except (RuntimeError, httpx.HTTPError) as exc:
         raise HTTPException(status_code=503, detail=f"Core Engine calculation unavailable: {exc}") from exc
-    calculation = calculation_from_response(item, response)
+    calculation = calculation_from_response(item, response, capability=dispatch.capability)
     ARTIFACT_STORE.put(
         "drawing-intelligence", calculation.model_dump_json(indent=2).encode("utf-8"),
         content_type="application/json",
         object_key=_calculation_object_key(run_id, work_item_id),
     )
     return calculation.model_dump(mode="json")
+
+
+@router.get("/{run_id}/intelligence/pages/{page_index}/context")
+async def get_active_sheet_context(
+    run_id: str, page_index: int, user: User = Depends(get_current_user)
+):
+    """Return only the selected page context; never serialize the whole graph."""
+    if page_index < 0:
+        raise HTTPException(status_code=422, detail="page_index must be non-negative")
+    db_client = DemDbClient()
+    run = await db_client.get_run(run_id)
+    project_id = run.get("project_id")
+    if not project_id:
+        raise HTTPException(status_code=404, detail="run has no project scope")
+    try:
+        await db_client.authorize_actor_for_project(user.uid, project_id)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 403:
+            raise HTTPException(status_code=403, detail="not a member of this project")
+        raise
+    key = f"drawing-intelligence/runs/{run_id}/package-analysis.json"
+    try:
+        analysis = DrawingPackageAnalysis.model_validate_json(ARTIFACT_STORE.get(key))
+    except ArtifactUnavailable:
+        raise HTTPException(status_code=404, detail="package intelligence is not available yet")
+    page = next((value for value in analysis.pages if value.profile.page_index == page_index), None)
+    if page is None:
+        raise HTTPException(status_code=404, detail="page context is not available")
+    work_items = [item for item in analysis.work_items if page_index in item.page_indices]
+    work_item_ids = {item.work_item_id for item in work_items}
+    return {
+        "schema_version": "paax.drawing-intelligence.active-sheet-context.v1",
+        "project_id": str(project_id),
+        "run_id": run_id,
+        "page_index": page_index,
+        "page": page.model_dump(mode="json"),
+        "work_items": [item.model_dump(mode="json") for item in work_items],
+        "physical_instances": [
+            value.model_dump(mode="json") for value in analysis.physical_instances
+            if value.page_index == page_index
+        ],
+        "conflicts": [
+            value.model_dump(mode="json") for value in analysis.conflicts
+            if page_index in value.affected_page_indices or value.work_item_id in work_item_ids
+        ],
+        "review_queue": [
+            value.model_dump(mode="json") for value in analysis.review_queue
+            if value.page_index == page_index
+        ],
+    }
 
 
 @router.get("/{run_id}/intelligence/prototypes")

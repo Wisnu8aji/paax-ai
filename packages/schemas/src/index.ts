@@ -163,6 +163,124 @@ export const EngineCalculationResponseSchema = z.object({
   engine_version: z.string(), warnings: z.array(z.string()).default([]),
 });
 
+// Sheet navigation is a set of derived indexes over immutable PDF page identity.
+export const SheetClassificationKeyEnum = z.enum([
+  "cover",
+  "drawing_list",
+  "site_plan",
+  "plan",
+  "elevation",
+  "section",
+  "detail",
+  "schedule",
+  "diagram",
+  "technical_note",
+  "unknown",
+]);
+
+export const SheetViewStatusEnum = z.enum(["classified", "needs_review"]);
+
+export const SheetViewEntrySchema = z.object({
+  page_index: z.number().int().nonnegative(),
+  page_number: z.number().int().positive(),
+  level_key: z.string().min(1),
+  classification_key: SheetClassificationKeyEnum,
+  evidence_refs: z.array(z.string()).default([]),
+  status: SheetViewStatusEnum,
+  review_reason: z.string().min(1).nullable().default(null),
+}).superRefine((entry, ctx) => {
+  if (entry.page_number !== entry.page_index + 1) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["page_number"],
+      message: "page_number must equal page_index plus one",
+    });
+  }
+  if (entry.status === "needs_review" && entry.review_reason === null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["review_reason"],
+      message: "needs_review sheet entry requires review_reason",
+    });
+  }
+  if (entry.status === "classified" && entry.review_reason !== null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["review_reason"],
+      message: "classified sheet entry cannot carry review_reason",
+    });
+  }
+});
+
+export const SheetViewsSchema = z.object({
+  level: z.array(SheetViewEntrySchema).default([]),
+  classification: z.array(SheetViewEntrySchema).default([]),
+  source: z.array(SheetViewEntrySchema).default([]),
+}).superRefine((views, ctx) => {
+  const viewEntries = {
+    level: views.level,
+    classification: views.classification,
+    source: views.source,
+  } as const;
+
+  const indexed = new Map<keyof typeof viewEntries, Map<number, (typeof views.source)[number]>>();
+  for (const [name, entries] of Object.entries(viewEntries) as Array<[keyof typeof viewEntries, (typeof views.source)]>) {
+    const pageMap = new Map<number, (typeof views.source)[number]>();
+    for (const entry of entries) {
+      if (pageMap.has(entry.page_index)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [name],
+          message: `${name} view contains duplicate page_index ${entry.page_index}`,
+        });
+      }
+      pageMap.set(entry.page_index, entry);
+    }
+    indexed.set(name, pageMap);
+  }
+
+  const levelIds = [...(indexed.get("level")?.keys() ?? [])].sort((a, b) => a - b);
+  const classificationIds = [...(indexed.get("classification")?.keys() ?? [])].sort((a, b) => a - b);
+  const sourceIds = [...(indexed.get("source")?.keys() ?? [])].sort((a, b) => a - b);
+  if (JSON.stringify(levelIds) !== JSON.stringify(sourceIds) || JSON.stringify(classificationIds) !== JSON.stringify(sourceIds)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "level, classification, and source views must contain the same page identities",
+    });
+  }
+
+  const sourceMap = indexed.get("source");
+  for (const pageIndex of sourceIds) {
+    const canonical = sourceMap?.get(pageIndex);
+    if (!canonical) continue;
+    for (const name of ["level", "classification"] as const) {
+      const derived = indexed.get(name)?.get(pageIndex);
+      if (derived && JSON.stringify(derived) !== JSON.stringify(canonical)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [name],
+          message: `derived views may reorder but must not rewrite page identity ${pageIndex}`,
+        });
+      }
+    }
+  }
+
+  const sourceOrder = views.source.map((entry) => entry.page_index);
+  const sortedSourceOrder = [...sourceOrder].sort((a, b) => a - b);
+  if (JSON.stringify(sourceOrder) !== JSON.stringify(sortedSourceOrder)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["source"],
+      message: "source view must preserve immutable PDF page order",
+    });
+  }
+});
+
+export type SheetClassificationKey = z.infer<typeof SheetClassificationKeyEnum>;
+export type SheetViewStatus = z.infer<typeof SheetViewStatusEnum>;
+export type SheetViewEntry = z.infer<typeof SheetViewEntrySchema>;
+export type SheetViews = z.infer<typeof SheetViewsSchema>;
+
 export const RoleEnum = z.enum([
   "OWNER",
   "ENGINEER",

@@ -1,0 +1,51 @@
+from app.drawing_intelligence.models import ElementMeasurementFact, WorkItemCandidate
+from app.drawing_intelligence.takeoff_capabilities import capability_coverage, resolve_takeoff_capability
+
+
+def fact(field: str, *, value: float = 1, unit: str = "m") -> ElementMeasurementFact:
+    if field == "count": unit = "unit"
+    return ElementMeasurementFact(
+        measurement_id=f"M-{field}", work_item_id="WI", field=field, value=value, unit=unit,
+        source_method="written_dimension", verification_status="human_verified",
+        evidence_refs=[f"EV-{field}"], source_page_indices=[0],
+    )
+
+
+def item(category: str, fields=(), attributes=None, conflicts=None):
+    return WorkItemCandidate(
+        work_item_id="WI", category=category, label=category, page_indices=[0], maturity="review_ready",
+        evidence_refs=["EV"], measurement_facts=[fact(field) for field in fields],
+        attributes=attributes or {}, conflict_ids=conflicts or [], calculation_readiness="ready",
+    )
+
+
+def test_column_uses_existing_typed_core_engine_contract():
+    cap = resolve_takeoff_capability(item("column", ("count", "width", "depth", "height")))
+    assert cap.endpoint == "/calculations"
+    assert cap.calculation_type == "concrete_column_total_volume"
+    assert cap.source_authority == "core_engine"
+
+
+def test_beam_is_explicitly_blocked_without_existing_formula_contract():
+    coverage = capability_coverage(item("beam", ("count", "width", "depth", "height")))
+    assert coverage["ready"] is False
+    assert coverage["capability"]["status"] == "blocked"
+    assert "beam volume" in coverage["capability"]["reason"]
+
+
+def test_wall_area_can_use_generic_typed_area_boundary():
+    cap = resolve_takeoff_capability(item("wall", ("area",), {"quantity_basis": "area"}))
+    assert cap.endpoint == "/calculations" and cap.calculation_type == "area"
+
+
+def test_mep_requires_explicit_existing_request_contract_not_category_only():
+    assert resolve_takeoff_capability(item("mep", ("count",))).status == "blocked"
+    cap = resolve_takeoff_capability(item("mep", ("count",), {
+        "engine_contract": "takeoff.mep", "core_engine_payload": {"points": []},
+    }))
+    assert cap.endpoint == "/takeoff/mep"
+
+
+def test_open_conflict_keeps_coverage_not_ready():
+    coverage = capability_coverage(item("wall", ("area",), {"quantity_basis": "area"}, ["C-1"]))
+    assert coverage["ready"] is False
