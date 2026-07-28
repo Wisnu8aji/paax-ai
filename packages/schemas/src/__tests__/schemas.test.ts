@@ -889,7 +889,7 @@ describe("ContextualEvidenceSchemas", () => {
     expect(ResolutionDecisionSchema.parse(validData.resolution_decision).status).toBe("approved");
   });
 
-  it("rejects all 14 named invalid cases from fixture", () => {
+  it("rejects all 20 named invalid cases from fixture", () => {
     const invalidFilePath = path.join(fixturesDir, "contextual-evidence.invalid.json");
     const cases = JSON.parse(fs.readFileSync(invalidFilePath, "utf-8"));
 
@@ -902,7 +902,7 @@ describe("ContextualEvidenceSchemas", () => {
       resolution_decision: ResolutionDecisionSchema,
     };
 
-    expect(cases.length).toBe(14);
+    expect(cases.length).toBe(20);
 
     for (const testCase of cases) {
       const { name, target, data } = testCase;

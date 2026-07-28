@@ -873,9 +873,13 @@ def prevent_raw_evidence_artifact_delete(mapper, connection, target):
 
 class EvidenceRegionModel(Base):
     __tablename__ = "raw_evidence_regions"
+    __table_args__ = (
+        UniqueConstraint("region_id", "project_id", name="uq_raw_evidence_regions_id_project"),
+        ForeignKeyConstraint(["artifact_id", "project_id"], ["raw_evidence_artifacts.artifact_id", "raw_evidence_artifacts.project_id"], ondelete="RESTRICT"),
+    )
 
     region_id = Column(String(128), primary_key=True)
-    artifact_id = Column(String(128), ForeignKey("raw_evidence_artifacts.artifact_id", ondelete="RESTRICT"), nullable=False, index=True)
+    artifact_id = Column(String(128), nullable=False, index=True)
     project_id = Column(String(128), nullable=False, index=True)
     page_index = Column(Integer, nullable=False)
     sheet_id = Column(String(128), nullable=True, index=True)
@@ -904,6 +908,9 @@ def prevent_evidence_region_delete(mapper, connection, target):
 
 class SourceAuthorityEntryModel(Base):
     __tablename__ = "source_authority_entries"
+    __table_args__ = (
+        ForeignKeyConstraint(["supersedes_authority_id", "project_id"], ["source_authority_entries.authority_id", "source_authority_entries.project_id"], ondelete="RESTRICT"),
+    )
 
     authority_id = Column(String(128), primary_key=True)
     project_id = Column(String(128), nullable=False, index=True)
@@ -912,7 +919,7 @@ class SourceAuthorityEntryModel(Base):
     version = Column(String(64), nullable=False)
     scope = Column(JSON_DOCUMENT, nullable=False, default=dict)
     evidence_refs = Column(JSON_DOCUMENT, nullable=False, default=list)
-    supersedes_authority_id = Column(String(128), ForeignKey("source_authority_entries.authority_id", ondelete="RESTRICT"), nullable=True)
+    supersedes_authority_id = Column(String(128), nullable=True)
     created_by = Column(String(128), nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False)
 
@@ -929,17 +936,22 @@ def prevent_source_authority_entry_delete(mapper, connection, target):
 
 class CanonicalFactModel(Base):
     __tablename__ = "canonical_facts"
+    __table_args__ = (
+        ForeignKeyConstraint(["snapshot_id", "project_id"], ["project_graph_snapshots.snapshot_id", "project_graph_snapshots.project_id"], ondelete="RESTRICT"),
+        ForeignKeyConstraint(["source_authority_id", "project_id"], ["source_authority_entries.authority_id", "source_authority_entries.project_id"], ondelete="RESTRICT"),
+        ForeignKeyConstraint(["supersedes_fact_id", "project_id"], ["canonical_facts.fact_id", "canonical_facts.project_id"], ondelete="RESTRICT"),
+    )
 
     fact_id = Column(String(128), primary_key=True)
     project_id = Column(String(128), nullable=False, index=True)
-    snapshot_id = Column(String(128), ForeignKey("project_graph_snapshots.snapshot_id", ondelete="RESTRICT"), nullable=False, index=True)
+    snapshot_id = Column(String(128), nullable=False, index=True)
     fact_type = Column(String(64), nullable=False)
     subject_ref = Column(String(128), nullable=False, index=True)
     predicate = Column(String(128), nullable=False)
     value = Column(JSON_DOCUMENT, nullable=True)
     status = Column(String(32), nullable=False, default="candidate")
-    source_authority_id = Column(String(128), ForeignKey("source_authority_entries.authority_id", ondelete="RESTRICT"), nullable=True)
-    supersedes_fact_id = Column(String(128), ForeignKey("canonical_facts.fact_id", ondelete="RESTRICT"), nullable=True)
+    source_authority_id = Column(String(128), nullable=True)
+    supersedes_fact_id = Column(String(128), nullable=True)
     calculation_authority = Column(String(32), nullable=False, default="none")
     created_by = Column(String(128), nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False)
@@ -957,11 +969,18 @@ def prevent_canonical_fact_delete(mapper, connection, target):
 
 class CanonicalFactEvidenceLinkModel(Base):
     __tablename__ = "canonical_fact_evidence_links"
+    __table_args__ = (
+        UniqueConstraint("link_id", "project_id", name="uq_canonical_fact_evidence_links_id_project"),
+        ForeignKeyConstraint(["fact_id", "project_id"], ["canonical_facts.fact_id", "canonical_facts.project_id"], ondelete="RESTRICT"),
+        ForeignKeyConstraint(["artifact_id", "project_id"], ["raw_evidence_artifacts.artifact_id", "raw_evidence_artifacts.project_id"], ondelete="RESTRICT"),
+        ForeignKeyConstraint(["region_id", "project_id"], ["raw_evidence_regions.region_id", "raw_evidence_regions.project_id"], ondelete="RESTRICT"),
+    )
 
     link_id = Column(String(128), primary_key=True)
-    fact_id = Column(String(128), ForeignKey("canonical_facts.fact_id", ondelete="RESTRICT"), nullable=False, index=True)
-    artifact_id = Column(String(128), ForeignKey("raw_evidence_artifacts.artifact_id", ondelete="RESTRICT"), nullable=False, index=True)
-    region_id = Column(String(128), ForeignKey("raw_evidence_regions.region_id", ondelete="RESTRICT"), nullable=True)
+    fact_id = Column(String(128), nullable=False, index=True)
+    project_id = Column(String(128), nullable=False, index=True)
+    artifact_id = Column(String(128), nullable=False, index=True)
+    region_id = Column(String(128), nullable=True)
     project_graph_snapshot_id = Column(String(128), nullable=True)
     project_graph_evidence_id = Column(String(128), nullable=True)
     role = Column(String(32), nullable=False, default="source")
@@ -979,17 +998,23 @@ def prevent_canonical_fact_evidence_link_delete(mapper, connection, target):
 
 class ResolutionDecisionModel(Base):
     __tablename__ = "resolution_decisions"
+    __table_args__ = (
+        UniqueConstraint("decision_id", "project_id", name="uq_resolution_decisions_id_project"),
+        ForeignKeyConstraint(["snapshot_id", "project_id"], ["project_graph_snapshots.snapshot_id", "project_graph_snapshots.project_id"], ondelete="RESTRICT"),
+        ForeignKeyConstraint(["selected_fact_id", "project_id"], ["canonical_facts.fact_id", "canonical_facts.project_id"], ondelete="RESTRICT"),
+        ForeignKeyConstraint(["supersedes_decision_id", "project_id"], ["resolution_decisions.decision_id", "resolution_decisions.project_id"], ondelete="RESTRICT"),
+    )
 
     decision_id = Column(String(128), primary_key=True)
     project_id = Column(String(128), nullable=False, index=True)
-    snapshot_id = Column(String(128), ForeignKey("project_graph_snapshots.snapshot_id", ondelete="RESTRICT"), nullable=False, index=True)
+    snapshot_id = Column(String(128), nullable=False, index=True)
     target_fact_ids = Column(JSON_DOCUMENT, nullable=False)
-    selected_fact_id = Column(String(128), ForeignKey("canonical_facts.fact_id", ondelete="RESTRICT"), nullable=True)
+    selected_fact_id = Column(String(128), nullable=True)
     status = Column(String(32), nullable=False, default="proposed")
     scope = Column(JSON_DOCUMENT, nullable=False)
     rationale = Column(Text, nullable=False)
     decided_by = Column(String(128), nullable=True)
-    supersedes_decision_id = Column(String(128), ForeignKey("resolution_decisions.decision_id", ondelete="RESTRICT"), nullable=True)
+    supersedes_decision_id = Column(String(128), nullable=True)
     calculation_authority = Column(String(32), nullable=False, default="none")
     created_at = Column(DateTime(timezone=True), nullable=False)
 
@@ -1006,10 +1031,15 @@ def prevent_resolution_decision_delete(mapper, connection, target):
 
 class ResolutionDecisionFactLinkModel(Base):
     __tablename__ = "resolution_decision_fact_links"
+    __table_args__ = (
+        ForeignKeyConstraint(["decision_id", "project_id"], ["resolution_decisions.decision_id", "resolution_decisions.project_id"], ondelete="RESTRICT"),
+        ForeignKeyConstraint(["fact_id", "project_id"], ["canonical_facts.fact_id", "canonical_facts.project_id"], ondelete="RESTRICT"),
+    )
 
     link_id = Column(String(128), primary_key=True)
-    decision_id = Column(String(128), ForeignKey("resolution_decisions.decision_id", ondelete="RESTRICT"), nullable=False, index=True)
-    fact_id = Column(String(128), ForeignKey("canonical_facts.fact_id", ondelete="RESTRICT"), nullable=False, index=True)
+    decision_id = Column(String(128), nullable=False, index=True)
+    fact_id = Column(String(128), nullable=False, index=True)
+    project_id = Column(String(128), nullable=False, index=True)
     project_id = Column(String(128), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), nullable=False)
 
