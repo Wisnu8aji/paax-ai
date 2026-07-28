@@ -15,6 +15,7 @@ interface ProjectsContextValue {
   createProject: (input: ProjectCreateInput) => Promise<Project>;
   updateProject: (id: string, input: ProjectUpdateInput) => Promise<Project | null>;
   deleteProject: (id: string) => Promise<void>;
+  setActiveProject: (id: string) => Promise<void>;
 }
 
 const ProjectsContext = createContext<ProjectsContextValue | null>(null);
@@ -31,18 +32,49 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     try {
       const rows = await projectRepository.list();
       setProjects(rows);
-      const current = LocalStorage.getActiveProjectId();
-      const currentExists = current && rows.some((project) => project.id === current);
-      if (!currentExists) {
-        const portable = rows.find((project) => project.id === 'PLHUT-SURAKARTA');
-        if (portable) LocalStorage.setActiveProjectId(portable.id);
+      
+      // Load workspace head if using postgres
+      let serverActiveProjectId: string | null = null;
+      if (backend === 'postgres') {
+        const head = await projectRepository.getWorkspaceHead();
+        if (head && head.active_project_id) {
+          serverActiveProjectId = head.active_project_id;
+        }
       }
+
+      const current = LocalStorage.getActiveProjectId();
+      
+      // Validation: Prefer server state, fallback to local cache, then fallback to default reference
+      let nextActiveId: string | null = null;
+      if (serverActiveProjectId && rows.some((p) => p.id === serverActiveProjectId)) {
+        nextActiveId = serverActiveProjectId;
+      } else if (current && rows.some((p) => p.id === current)) {
+        nextActiveId = current;
+      } else {
+        // Fallback to designated default reference project instead of hardcoded ID
+        // The cast to any is safe here because we injected isDefaultReference in db-api.ts normalization
+        const defaultRef = rows.find((project) => (project as any).isDefaultReference);
+        if (defaultRef) {
+          nextActiveId = defaultRef.id;
+        } else if (rows.length > 0) {
+          nextActiveId = rows[0].id;
+        }
+      }
+      
+      if (nextActiveId) {
+        LocalStorage.setActiveProjectId(nextActiveId);
+        // If local is out of sync with server, sync it up
+        if (backend === 'postgres' && serverActiveProjectId !== nextActiveId) {
+          projectRepository.patchWorkspaceHead({ active_project_id: nextActiveId }).catch(console.error);
+        }
+      }
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal memuat proyek.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [backend]);
 
   useEffect(() => {
     void refreshProjects();
@@ -74,6 +106,22 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     [projects],
   );
 
+  const setActiveProject = useCallback(
+    async (id: string) => {
+      LocalStorage.setActiveProjectId(id);
+      if (backend === 'postgres') {
+        try {
+          await projectRepository.patchWorkspaceHead({ active_project_id: id });
+        } catch (e) {
+          console.error("Failed to sync active project to server:", e);
+        }
+      }
+      // Re-render handled by local storage event or parent state if needed,
+      // or we can refresh projects to ensure consistency.
+    },
+    [backend],
+  );
+
   const value = useMemo<ProjectsContextValue>(
     () => ({
       projects,
@@ -85,8 +133,9 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       createProject,
       updateProject,
       deleteProject,
+      setActiveProject,
     }),
-    [projects, loading, error, backend, refreshProjects, getProject, createProject, updateProject, deleteProject],
+    [projects, loading, error, backend, refreshProjects, getProject, createProject, updateProject, deleteProject, setActiveProject],
   );
 
   return <ProjectsContext.Provider value={value}>{children}</ProjectsContext.Provider>;

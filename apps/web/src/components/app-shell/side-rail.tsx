@@ -17,6 +17,7 @@ import { useShell } from './shell-context';
 import { PaaxMark } from '@/components/brand/paax-logo';
 import { LocalStorage } from '@/lib/local-storage';
 import { currentUser } from '@/lib/mock/workspace';
+import { useProjects } from '@/lib/projects/projects-context';
 
 /**
  * Sidebar gelap tunggal — rombak 2026-07-07 sesuai G:\Dashboard.
@@ -129,17 +130,18 @@ export function SideRail() {
   const router = useRouter();
   const pathname = usePathname();
   const { openSettings } = useShell();
+  const { setActiveProject } = useProjects();
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     const match = pathname.match(/^\/proyek\/([^/]+)/);
     if (match && match[1] !== 'page') {
       setActiveProjectId(match[1]);
-      LocalStorage.setActiveProjectId(match[1]);
+      setActiveProject(match[1]).catch(console.error);
     } else {
       setActiveProjectId(LocalStorage.getActiveProjectId());
     }
-  }, [pathname]);
+  }, [pathname, setActiveProject]);
 
   return (
     <aside

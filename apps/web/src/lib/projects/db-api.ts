@@ -124,3 +124,58 @@ export const dbApiTkgRepository = {
     if (!res.ok) throw new Error('Failed to save TKG payload');
   },
 };
+
+export interface WorkspaceHead {
+  actor_id: string;
+  active_project_id: string | null;
+  active_module: string | null;
+  active_tab: string | null;
+  revision: number;
+}
+
+export interface WorkspaceSession {
+  actor_id: string;
+  project_id: string;
+  active_document_id: string | null;
+  active_sheet_id: string | null;
+  selected_sheet_ids: string[];
+  preferences: Record<string, any>;
+  open_conflict_group: string | null;
+  quantity_mode: string | null;
+  last_viewed_job_id: string | null;
+  revision: number;
+}
+
+export const dbApiWorkspaceRepository = {
+  async getHead(): Promise<WorkspaceHead | null> {
+    const res = await fetch('/api/workspace/head');
+    if (!res.ok) return null;
+    return res.json();
+  },
+
+  async patchHead(patch: Partial<WorkspaceHead>): Promise<WorkspaceHead> {
+    const res = await fetch('/api/workspace/head', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) throw new Error('Failed to patch workspace head');
+    return res.json();
+  },
+
+  async getSession(projectId: string): Promise<WorkspaceSession | null> {
+    const res = await fetch(`/api/workspace/project/${projectId}/session`);
+    if (!res.ok) return null;
+    return res.json();
+  },
+
+  async patchSession(projectId: string, patch: Partial<WorkspaceSession>): Promise<WorkspaceSession> {
+    const res = await fetch(`/api/workspace/project/${projectId}/session`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) throw new Error('Failed to patch workspace session');
+    return res.json();
+  },
+};

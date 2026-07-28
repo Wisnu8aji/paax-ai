@@ -19,7 +19,7 @@ import {
   type ProjectCreateInput,
   type ProjectUpdateInput,
 } from './types';
-import { dbApiRepository } from './db-api';
+import { dbApiRepository, dbApiWorkspaceRepository, type WorkspaceHead, type WorkspaceSession } from './db-api';
 
 const COLLECTION = 'projects';
 
@@ -65,7 +65,9 @@ function normalizeProject(raw: Partial<Project> & { statusLabel?: string }): Pro
     lastActivity: raw.lastActivity ?? 'tersimpan',
     createdAt: raw.createdAt ?? now,
     updatedAt: raw.updatedAt ?? raw.createdAt ?? now,
-  };
+    isReference: raw.isReference,
+    isDefaultReference: raw.isDefaultReference,
+  } as any;
 }
 
 function readLocalProjects(): Project[] {
@@ -122,6 +124,34 @@ export const projectRepository = {
 
   cachedList(): Project[] {
     return getProjectBackend() === 'localStorage' ? readLocalProjects() : [];
+  },
+
+  async getWorkspaceHead(): Promise<WorkspaceHead | null> {
+    if (getProjectBackend() === 'postgres') {
+      return dbApiWorkspaceRepository.getHead();
+    }
+    return null;
+  },
+
+  async patchWorkspaceHead(patch: Partial<WorkspaceHead>): Promise<WorkspaceHead | null> {
+    if (getProjectBackend() === 'postgres') {
+      return dbApiWorkspaceRepository.patchHead(patch);
+    }
+    return null;
+  },
+
+  async getWorkspaceSession(projectId: string): Promise<WorkspaceSession | null> {
+    if (getProjectBackend() === 'postgres') {
+      return dbApiWorkspaceRepository.getSession(projectId);
+    }
+    return null;
+  },
+
+  async patchWorkspaceSession(projectId: string, patch: Partial<WorkspaceSession>): Promise<WorkspaceSession | null> {
+    if (getProjectBackend() === 'postgres') {
+      return dbApiWorkspaceRepository.patchSession(projectId, patch);
+    }
+    return null;
   },
 
   async list(): Promise<Project[]> {

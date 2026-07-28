@@ -15,7 +15,7 @@ export function ProjectSwitcher({ currentProjectId }: ProjectSwitcherProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { projects } = useProjects();
+  const { projects, setActiveProject } = useProjects();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -33,7 +33,7 @@ export function ProjectSwitcher({ currentProjectId }: ProjectSwitcherProps) {
   const handleSwitchProject = (newProjectId: string) => {
     setIsOpen(false);
     if (newProjectId === currentProjectId) return;
-    LocalStorage.setActiveProjectId(newProjectId);
+    setActiveProject(newProjectId).catch(console.error);
     router.push(pathname.replace(`/proyek/${currentProjectId}`, `/proyek/${newProjectId}`));
   };
 

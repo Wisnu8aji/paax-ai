@@ -20,6 +20,7 @@ import {
   fetchPackageIntelligence,
   fetchActiveSheetContext,
 } from '../drawing-intelligence-api';
+import { projectRepository } from '@/lib/projects/project-repository';
 import { useWorkspace, mapQuantityReadinessToItems, mapCivilWorkItemsToQuantityItems, mapGraphNodesToElements } from './workspace-store';
 import type { ReviewQueueItem, Sheet, DrawingFile } from './di-types';
 import { mapProjectDemSheet } from './sheet-mapping';
@@ -63,13 +64,14 @@ export function useBackendSync(projectId: string | null) {
 
     (async () => {
       try {
-        const [queue, readiness, civilWorkItems, sheetsData, runsData, summaryViewsData] = await Promise.all([
+        const [queue, readiness, civilWorkItems, sheetsData, runsData, summaryViewsData, session] = await Promise.all([
           fetchReviewQueue(projectId),
           fetchQuantityReadiness(projectId),
           fetchCivilWorkItems(projectId),
           fetchProjectDemSheets(projectId),
           fetchProjectDemRuns(projectId),
           fetchSummaryViews(projectId),
+          projectRepository.getWorkspaceSession(projectId).catch(() => null),
         ]);
         if (cancelled) return;
 
@@ -80,7 +82,12 @@ export function useBackendSync(projectId: string | null) {
         }
 
         dispatch({ type: 'backend-connected', connected: true });
-        if (state.mode === 'files' && (sheetsData.length > 0 || queue.items.length > 0)) {
+        
+        let initialMode = state.mode;
+        if (session?.active_module) {
+          initialMode = session.active_module as any;
+          dispatch({ type: 'set-mode', mode: initialMode });
+        } else if (state.mode === 'files' && (sheetsData.length > 0 || queue.items.length > 0)) {
           dispatch({ type: 'set-mode', mode: 'review' });
         }
 
@@ -99,8 +106,16 @@ export function useBackendSync(projectId: string | null) {
         const mappedSheets: Sheet[] = sheetsData.map(mapRawDemSheetToSheet);
         if (mappedSheets.length > 0) {
           dispatch({ type: 'replace-sheets', sheets: mappedSheets });
-          if (!state.activeSheetId) {
-            dispatch({ type: 'set-active-sheet', sheetId: mappedSheets[0].id });
+          
+          let initialSheetId = state.activeSheetId;
+          if (session?.active_sheet_id && mappedSheets.some(s => s.id === session.active_sheet_id)) {
+            initialSheetId = session.active_sheet_id;
+          } else if (!initialSheetId) {
+            initialSheetId = mappedSheets[0].id;
+          }
+          
+          if (initialSheetId) {
+            dispatch({ type: 'set-active-sheet', sheetId: initialSheetId });
           }
         }
         dispatch({ type: 'replace-mapped-sheets', sheets: sheetsData.map(mapProjectDemSheet) });
@@ -303,4 +318,39 @@ export function useBackendSync(projectId: string | null) {
 
     return () => { cancelled = true; };
   }, [projectId, state.activeSheetId, state.mappedSheets, dispatch]);
+
+  // Persist session to backend on change
+  useEffect(() => {
+    if (!projectId || !state.backendConnected) return;
+
+    const sessionPatch = {
+      active_module: state.mode,
+      active_sheet_id: state.activeSheetId,
+      selected_sheet_ids: state.selectedSheetIds,
+      preferences: {
+        zoom: state.canvas.zoom,
+        panX: state.canvas.panX,
+        panY: state.canvas.panY,
+        dock_tab: state.dock.tab,
+      }
+    };
+
+    const timer = setTimeout(() => {
+      projectRepository.patchWorkspaceSession(projectId, sessionPatch).catch(err => {
+        console.error('Failed to sync workspace session:', err);
+      });
+    }, 1000); // 1s debounce
+
+    return () => clearTimeout(timer);
+  }, [
+    projectId,
+    state.backendConnected,
+    state.mode,
+    state.activeSheetId,
+    state.selectedSheetIds,
+    state.canvas.zoom,
+    state.canvas.panX,
+    state.canvas.panY,
+    state.dock.tab
+  ]);
 }

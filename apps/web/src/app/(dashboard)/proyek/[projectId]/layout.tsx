@@ -37,12 +37,12 @@ export default function ProjectDetailLayout({
 }) {
   const { projectId } = use(params);
   const pathname = usePathname();
-  const { getProject, loading } = useProjects();
+  const { getProject, loading, setActiveProject } = useProjects();
   const project = getProject(projectId);
 
   useEffect(() => {
-    LocalStorage.setActiveProjectId(projectId);
-  }, [projectId]);
+    setActiveProject(projectId).catch(console.error);
+  }, [projectId, setActiveProject]);
 
   if (loading) {
     return <div style={{ padding: 24, color: 'var(--text3)' }}>Memuat proyek...</div>;

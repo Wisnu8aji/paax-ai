@@ -12,10 +12,8 @@ from pathlib import Path
 PRESERVE = {
     ".env.local",
     "apps/web/.env.local",
-    "data/portable/paax-portable.db",
-    ".local-runtime/internal-service.key",
 }
-PRESERVE_DIRS = {"data/portable", ".git", "node_modules", ".venv", ".next", ".turbo"}
+PRESERVE_DIRS = {"data/portable", ".local-runtime", ".git", "node_modules", ".venv", ".next", ".turbo"}
 RELEASE_EXCLUDED_DIRS = {
     ".git", "node_modules", ".venv", ".next", ".turbo", ".local-runtime",
     "__pycache__", ".pytest_cache", "coverage", "dist", "build", "report",

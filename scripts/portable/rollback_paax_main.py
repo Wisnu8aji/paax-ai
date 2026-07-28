@@ -3,7 +3,7 @@ import argparse, json, os, shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
-PRESERVE = [".env.local", "apps/web/.env.local", "data/portable", ".local-runtime/internal-service.key", ".git"]
+PRESERVE = [".env.local", "apps/web/.env.local", "data/portable", ".local-runtime", ".git"]
 
 def copy_path(src: Path, dst: Path) -> None:
     if not src.exists(): return

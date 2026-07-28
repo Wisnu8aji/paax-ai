@@ -27,8 +27,11 @@ from .core_engine_factory import build_core_engine_client
 from .rab_bridge_lifecycle import transition
 from .usage_telemetry import emit_best_effort, usage_logger_from_env
 from .engineering_context import build_engineering_context, validate_civil_work_items_payload
+from . import workspace_router
 
 app = FastAPI(title="PAAX DB API", description="Server-side persistent storage for PAAX AI")
+
+app.include_router(workspace_router.router)
 
 app.add_middleware(
     CORSMiddleware,

@@ -40,21 +40,21 @@ def _script_directory() -> ScriptDirectory:
     return ScriptDirectory.from_config(config)
 
 
-def test_alembic_0035_is_single_head():
+def test_alembic_0036_is_single_head():
     script = _script_directory()
     heads = script.get_heads()
     assert len(heads) == 1
-    assert heads[0] == "0035_calculation_authority_constraints"
+    assert heads[0] == "0036"
+
+    rev_0036 = script.get_revision("0036")
+    assert rev_0036.down_revision == "0035_calculation_authority_constraints"
 
     rev_0035 = script.get_revision("0035_calculation_authority_constraints")
     assert rev_0035.down_revision == "0034_contextual_integrity"
 
-    rev_0034 = script.get_revision("0034_contextual_integrity")
-    assert rev_0034.down_revision == "0033_contextual_foundation"
-
-    source_0035 = Path(rev_0035.path).read_text(encoding="utf-8")
-    assert "calculation_authority" in source_0035
-    assert "resolution_decision_fact_links" in source_0035
+    source_0036 = Path(rev_0036.path).read_text(encoding="utf-8")
+    assert "project_references" in source_0036
+    assert "actor_workspace_head" in source_0036
 
 
 def test_models_exist_and_have_tablename():

@@ -1,30 +1,39 @@
-[CmdletBinding()] param([switch]$SkipOptionalServices)
+[CmdletBinding()] param([switch]$SkipOptionalServices, [string]$DataRoot)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $venvPython = Join-Path $repoRoot ".venv\Scripts\python.exe"
 if (-not (Test-Path $venvPython)) { throw "Jalankan Setup-PLHUT-Local.ps1 terlebih dahulu." }
-$runtimeDir = Join-Path $repoRoot ".local-runtime"
-New-Item -ItemType Directory -Force -Path $runtimeDir | Out-Null
+
+. (Join-Path $repoRoot "scripts\portable\Resolve-PAAX-DataRoot.ps1")
+$resolvedRoot = Resolve-PaaxDataRoot -DataRoot $DataRoot -InstallRoot $repoRoot
+$layout = Ensure-PaaxDataRootLayout -Root $resolvedRoot
+
+$runtimeDir = $layout.runtime
 
 # One runtime identity shared by DB proxies, Command Room, and workers.
 $keyFile = Join-Path $runtimeDir "internal-service.key"
 if (-not (Test-Path $keyFile)) { [IO.File]::WriteAllText($keyFile, ([guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N"))) }
+
 $env:PYTHONUTF8="1"
 $env:PAAX_REPO_ROOT=$repoRoot
 $env:PAAX_PORTABLE_ACTOR_ID="paax-web"
-$env:PAAX_PORTABLE_DATA_DIR=(Join-Path $repoRoot "data\portable")
+# Inform child processes of the canonical data root
+$env:PAAX_DATA_ROOT=$resolvedRoot
+$env:PAAX_PORTABLE_DATA_DIR=$resolvedRoot
+
 $env:INTERNAL_SERVICE_KEY=(Get-Content $keyFile -Raw).Trim()
 $env:INTERNAL_SERVICE_SCOPES="dem:read,dem:write,dem:delete,project_graph:synthesize,dem:authorize-actor"
 $env:DB_API_URL="http://127.0.0.1:8001"; $env:NEXT_PUBLIC_DB_API_URL=$env:DB_API_URL; $env:NEXT_PUBLIC_USE_DB="true"
 $env:CORE_ENGINE_URL="http://127.0.0.1:8081"; $env:NEXT_PUBLIC_CORE_ENGINE_URL=$env:CORE_ENGINE_URL
 $env:DOCUMENT_INTELLIGENCE_URL="http://127.0.0.1:8083"; $env:NEXT_PUBLIC_DOCUMENT_INTELLIGENCE_URL=$env:DOCUMENT_INTELLIGENCE_URL
 $env:AI_ORCHESTRATOR_URL="http://127.0.0.1:8082"
-$env:PAAX_AGENT_RUN_STORE=(Join-Path $repoRoot "data\portable\agent-runs.json")
-$env:PAAX_AGENT_EVENT_JOURNAL=(Join-Path $repoRoot "data\portable\agent-events.jsonl")
-$env:PAAX_AGENT_DEAD_LETTER=(Join-Path $repoRoot "data\portable\agent-dead-letter.jsonl")
-$env:PAAX_TAKEOFF_STORE=(Join-Path $repoRoot "data\portable\takeoff-workspace.json")
-$env:PAAX_ENTITY_LINK_STORE=(Join-Path $repoRoot "data\portable\entity-links.json")
+
+$env:PAAX_AGENT_RUN_STORE=(Join-Path $layout.jobs "agent-runs.json")
+$env:PAAX_AGENT_EVENT_JOURNAL=(Join-Path $layout.jobs "agent-events.jsonl")
+$env:PAAX_AGENT_DEAD_LETTER=(Join-Path $layout.jobs "agent-dead-letter.jsonl")
+$env:PAAX_TAKEOFF_STORE=(Join-Path $layout.jobs "takeoff-workspace.json")
+$env:PAAX_ENTITY_LINK_STORE=(Join-Path $layout.jobs "entity-links.json")
 
 & $venvPython (Join-Path $repoRoot "scripts\portable\preflight.py") --allow-running
 
@@ -45,7 +54,7 @@ function Wait-Health([string]$Name,[string]$Url,[int]$Seconds=90) {
         try { $r=Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 3; if ($r.StatusCode -lt 500) { Write-Host "READY $Name — $Url"; return } } catch {}
         Start-Sleep -Milliseconds 700
     }
-    throw "$Name tidak sehat setelah $Seconds detik. Periksa .local-runtime\$Name.err.log"
+    throw "$Name tidak sehat setelah $Seconds detik. Periksa $($runtimeDir)\$Name.err.log"
 }
 
 Start-ServiceProcess "db-plhut" $venvPython @("scripts/live_test/serve_db_with_fixture.py") $repoRoot
@@ -61,4 +70,4 @@ if (-not $SkipOptionalServices) {
 }
 Start-ServiceProcess "web" "pnpm.cmd" @("--dir","apps/web","dev","--hostname","127.0.0.1","--port","3000") $repoRoot
 Wait-Health "web" "http://127.0.0.1:3000" 180
-Write-Host "PAAX siap: http://127.0.0.1:3000 — PLHUT-SURAKARTA terdaftar secara persisten."
+Write-Host "PAAX siap: http://127.0.0.1:3000 — Data Root: $resolvedRoot"

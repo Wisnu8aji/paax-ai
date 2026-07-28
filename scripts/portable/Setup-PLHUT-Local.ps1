@@ -1,4 +1,4 @@
-[CmdletBinding()] param()
+[CmdletBinding()] param([string]$DataRoot)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
@@ -50,12 +50,16 @@ Install-Editable ".\services\document-intelligence"
 Install-Editable ".\services\db[dev]"
 Install-Editable ".\services\site-agent"
 
-# Templates are credential-free. Runtime creates one shared random service key
-# under .local-runtime; it is never written back to the release archive.
 foreach ($target in @(".env.local", "apps\web\.env.local")) {
     if (-not (Test-Path $target)) { Copy-Item .env.local.example $target }
 }
-New-Item -ItemType Directory -Force -Path (Join-Path $repoRoot "data\portable") | Out-Null
+
+# Resolve and ensure data root
+. (Join-Path $repoRoot "scripts\portable\Resolve-PAAX-DataRoot.ps1")
+$resolvedRoot = Resolve-PaaxDataRoot -DataRoot $DataRoot -InstallRoot $repoRoot
+Ensure-PaaxDataRootLayout -Root $resolvedRoot | Out-Null
+$env:PAAX_DATA_ROOT = $resolvedRoot
+
 & $venvPython scripts\portable\preflight.py
 if ($LASTEXITCODE -ne 0) { throw "Portable preflight gagal setelah setup." }
-Write-Host "Setup selesai. Jalankan scripts\portable\Start-PLHUT-Local.ps1"
+Write-Host "Setup selesai. Data root siap di $resolvedRoot. Jalankan scripts\portable\Start-PLHUT-Local.ps1"
