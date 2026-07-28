@@ -81,7 +81,7 @@ jobs:
           pip install -e ./packages/schemas/python
           pip install -e './services/core-engine[dev]'
           pip install -e ./services/document-intelligence
-          pip install pytest httpx pytest-socket
+          pip install pytest httpx pytest-socket pytest-asyncio
 
       - name: Run Core Engine tests with outbound network blocked
         working-directory: ./services/core-engine
