@@ -863,7 +863,12 @@ class RawEvidenceArtifactModel(Base):
 
 @event.listens_for(RawEvidenceArtifactModel, "before_update")
 def prevent_raw_evidence_artifact_update(mapper, connection, target):
-    raise ValueError("RawEvidenceArtifactModel records are immutable and cannot be updated.")
+    raise ValueError("RawEvidenceArtifactModel records are append-only and cannot be updated.")
+
+
+@event.listens_for(RawEvidenceArtifactModel, "before_delete")
+def prevent_raw_evidence_artifact_delete(mapper, connection, target):
+    raise ValueError("RawEvidenceArtifactModel records are append-only and cannot be deleted.")
 
 
 class EvidenceRegionModel(Base):
@@ -889,7 +894,12 @@ class EvidenceRegionModel(Base):
 
 @event.listens_for(EvidenceRegionModel, "before_update")
 def prevent_evidence_region_update(mapper, connection, target):
-    raise ValueError("EvidenceRegionModel records are immutable and cannot be updated.")
+    raise ValueError("EvidenceRegionModel records are append-only and cannot be updated.")
+
+
+@event.listens_for(EvidenceRegionModel, "before_delete")
+def prevent_evidence_region_delete(mapper, connection, target):
+    raise ValueError("EvidenceRegionModel records are append-only and cannot be deleted.")
 
 
 class SourceAuthorityEntryModel(Base):
@@ -909,7 +919,12 @@ class SourceAuthorityEntryModel(Base):
 
 @event.listens_for(SourceAuthorityEntryModel, "before_update")
 def prevent_source_authority_entry_update(mapper, connection, target):
-    raise ValueError("SourceAuthorityEntryModel records are immutable and cannot be updated.")
+    raise ValueError("SourceAuthorityEntryModel records are append-only and cannot be updated.")
+
+
+@event.listens_for(SourceAuthorityEntryModel, "before_delete")
+def prevent_source_authority_entry_delete(mapper, connection, target):
+    raise ValueError("SourceAuthorityEntryModel records are append-only and cannot be deleted.")
 
 
 class CanonicalFactModel(Base):
@@ -931,20 +946,13 @@ class CanonicalFactModel(Base):
 
 
 @event.listens_for(CanonicalFactModel, "before_update")
-def prevent_canonical_fact_core_update(mapper, connection, target):
-    from sqlalchemy import inspect
-    state = inspect(target)
-    immutable_fields = {
-        "fact_id", "project_id", "snapshot_id", "fact_type", "subject_ref",
-        "predicate", "value", "source_authority_id", "supersedes_fact_id",
-        "calculation_authority", "created_by", "created_at"
-    }
-    for attr in state.attrs:
-        if attr.key in immutable_fields and attr.history.has_changes():
-            raise ValueError(
-                f"CanonicalFactModel field '{attr.key}' is immutable. "
-                "Only status can be updated."
-            )
+def prevent_canonical_fact_update(mapper, connection, target):
+    raise ValueError("CanonicalFactModel records are append-only and cannot be updated.")
+
+
+@event.listens_for(CanonicalFactModel, "before_delete")
+def prevent_canonical_fact_delete(mapper, connection, target):
+    raise ValueError("CanonicalFactModel records are append-only and cannot be deleted.")
 
 
 class CanonicalFactEvidenceLinkModel(Base):
@@ -961,7 +969,12 @@ class CanonicalFactEvidenceLinkModel(Base):
 
 @event.listens_for(CanonicalFactEvidenceLinkModel, "before_update")
 def prevent_canonical_fact_evidence_link_update(mapper, connection, target):
-    raise ValueError("CanonicalFactEvidenceLinkModel records are immutable and cannot be updated.")
+    raise ValueError("CanonicalFactEvidenceLinkModel records are append-only and cannot be updated.")
+
+
+@event.listens_for(CanonicalFactEvidenceLinkModel, "before_delete")
+def prevent_canonical_fact_evidence_link_delete(mapper, connection, target):
+    raise ValueError("CanonicalFactEvidenceLinkModel records are append-only and cannot be deleted.")
 
 
 class ResolutionDecisionModel(Base):
@@ -982,18 +995,30 @@ class ResolutionDecisionModel(Base):
 
 
 @event.listens_for(ResolutionDecisionModel, "before_update")
-def prevent_resolution_decision_core_update(mapper, connection, target):
-    from sqlalchemy import inspect
-    state = inspect(target)
-    immutable_fields = {
-        "decision_id", "project_id", "snapshot_id", "target_fact_ids", "scope",
-        "rationale", "supersedes_decision_id", "calculation_authority", "created_at"
-    }
-    for attr in state.attrs:
-        if attr.key in immutable_fields and attr.history.has_changes():
-            raise ValueError(
-                f"ResolutionDecisionModel field '{attr.key}' is immutable. "
-                "Only status, selected_fact_id, decided_by can be updated."
-            )
+def prevent_resolution_decision_update(mapper, connection, target):
+    raise ValueError("ResolutionDecisionModel records are append-only and cannot be updated.")
 
 
+@event.listens_for(ResolutionDecisionModel, "before_delete")
+def prevent_resolution_decision_delete(mapper, connection, target):
+    raise ValueError("ResolutionDecisionModel records are append-only and cannot be deleted.")
+
+
+class ResolutionDecisionFactLinkModel(Base):
+    __tablename__ = "resolution_decision_fact_links"
+
+    link_id = Column(String(128), primary_key=True)
+    decision_id = Column(String(128), ForeignKey("resolution_decisions.decision_id", ondelete="RESTRICT"), nullable=False, index=True)
+    fact_id = Column(String(128), ForeignKey("canonical_facts.fact_id", ondelete="RESTRICT"), nullable=False, index=True)
+    project_id = Column(String(128), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), nullable=False)
+
+
+@event.listens_for(ResolutionDecisionFactLinkModel, "before_update")
+def prevent_resolution_decision_fact_link_update(mapper, connection, target):
+    raise ValueError("ResolutionDecisionFactLinkModel records are append-only and cannot be updated.")
+
+
+@event.listens_for(ResolutionDecisionFactLinkModel, "before_delete")
+def prevent_resolution_decision_fact_link_delete(mapper, connection, target):
+    raise ValueError("ResolutionDecisionFactLinkModel records are append-only and cannot be deleted.")
