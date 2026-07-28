@@ -77,8 +77,8 @@ jobs:
 
       - name: Install Python services and test tooling
         run: |
-          python -m pip install --upgrade pip
-          pip install -e ./packages/schemas/python
+          python -m pip install --upgrade pip setuptools wheel poetry-core hatchling
+          pip install --no-build-isolation -e ./packages/schemas/python
           pip install --no-build-isolation -e './services/core-engine[dev]'
           pip install --no-build-isolation -e ./services/document-intelligence
           pip install pytest httpx pytest-socket pytest-asyncio
@@ -151,9 +151,10 @@ jobs:
 
       - name: Install DB service
         run: |
-          python -m pip install --upgrade pip
-          pip install -e ./packages/schemas/python
-          pip install -e './services/db[dev]'
+          python -m pip install --upgrade pip setuptools wheel poetry-core hatchling
+          pip install --no-build-isolation -e ./packages/schemas/python
+          pip install --no-build-isolation -e './services/db[dev]'
+          pip install pytest-asyncio
 
       - name: Run complete DB test suite
         working-directory: ./services/db
