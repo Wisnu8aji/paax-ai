@@ -1,12 +1,18 @@
-"""Re-export ContextualEvidenceAdapter for perception ai_assist module."""
+"""Re-export pure ContextualEvidenceAdapter for perception ai_assist module."""
 from app.project_graph.contextual_evidence_adapter import (
+    ArtifactInput,
     ContextualEvidenceAdapter,
-    ContextualEvidenceBundleResult,
-    ContextualFactProposalResult,
+    ContextualEvidenceBundle,
+    ContextualEvidenceInputError,
+    ObservationInput,
+    materialize_evidence_bundle,
 )
 
 __all__ = [
+    "ArtifactInput",
     "ContextualEvidenceAdapter",
-    "ContextualEvidenceBundleResult",
-    "ContextualFactProposalResult",
+    "ContextualEvidenceBundle",
+    "ContextualEvidenceInputError",
+    "ObservationInput",
+    "materialize_evidence_bundle",
 ]

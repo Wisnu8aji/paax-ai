@@ -1,224 +1,302 @@
-"""Contextual Evidence & Canonical Fact Adapter for Document Intelligence."""
+"""Pure, explicit, deterministic ContextualEvidenceAdapter for Document Intelligence.
+
+Boundary: this module materializes caller-supplied provenance into validated
+contextual evidence contracts.  It NEVER imports paax_db, writes to any
+database, generates random IDs, uses current time, or invents provenance.
+
+All identity is derived deterministically from caller-supplied canonical fields.
+"""
+from __future__ import annotations
+
 import hashlib
-import uuid
-import logging
-from dataclasses import dataclass
+import json
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Tuple, Optional, Literal
+from typing import Any, List, Optional, Sequence
+
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from paax_schemas.contextual_evidence import (
+    ArtifactKind,
+    BboxSpace,
     CanonicalFact,
     EvidenceRegion,
     RawEvidenceArtifact,
     SourceAuthorityEntry,
 )
-try:
-    from paax_db import (
-        ContextualEvidenceRepository,
-        ContextualEvidenceConflict,
-        ContextualEvidenceIntegrityError,
-    )
-except ImportError:
-    ContextualEvidenceRepository = Any  # type: ignore
-    class ContextualEvidenceConflict(Exception):  # type: ignore
-        pass
-    class ContextualEvidenceIntegrityError(Exception):  # type: ignore
-        pass
-
-logger = logging.getLogger(__name__)
 
 
-@dataclass
-class ContextualEvidenceBundleResult:
-    bundle_status: Literal["accepted", "existing", "rejected"]
-    artifact: Optional[RawEvidenceArtifact]
+# ─── Errors ──────────────────────────────────────────────────────────────────
+
+class ContextualEvidenceInputError(ValueError):
+    """Raised when caller-supplied input is missing required provenance fields."""
+
+
+# ─── Input contracts ─────────────────────────────────────────────────────────
+
+class ArtifactInput(BaseModel):
+    """Caller-supplied artifact provenance — no defaults generated here."""
+
+    project_id: str = Field(min_length=1)
+    snapshot_id: str = Field(min_length=1)
+    document_id: str = Field(min_length=1)
+    document_revision_id: Optional[str] = None
+    artifact_kind: ArtifactKind
+    content_sha256: str = Field(pattern=r"^[0-9a-fA-F]{64}$")
+    byte_size: int = Field(ge=0)
+    storage_ref: str = Field(min_length=1)
+    media_type: str = Field(min_length=1)
+    created_at: datetime
+    content_bytes: Optional[bytes] = None
+
+    @field_validator("project_id", "snapshot_id", "document_id", "storage_ref", "media_type")
+    @classmethod
+    def _not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ContextualEvidenceInputError(f"Field must not be blank")
+        return v
+
+    @field_validator("created_at")
+    @classmethod
+    def _tz_required(cls, v: datetime) -> datetime:
+        if v.tzinfo is None:
+            raise ContextualEvidenceInputError("created_at must be timezone-aware")
+        return v
+
+    model_config = {"frozen": True}
+
+
+class ObservationInput(BaseModel):
+    """One per-observation evidence record supplied by the caller."""
+
+    observation_id: str = Field(min_length=1)
+    subject_ref: str
+    fact_type: str = Field(min_length=1)
+    predicate: str
+    value: Any
+    page_index: int = Field(ge=0)
+    source_ref: str = Field(min_length=1)
+    source_version: str = Field(min_length=1)
+    bbox_space: BboxSpace = "none"
+    bbox: Optional[List[float]] = None
+    project_graph_snapshot_id: Optional[str] = None
+    project_graph_evidence_id: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _validate_pairs(self) -> "ObservationInput":
+        snap = self.project_graph_snapshot_id
+        ev = self.project_graph_evidence_id
+        if (snap is not None and ev is None) or (snap is None and ev is not None):
+            raise ContextualEvidenceInputError(
+                "project_graph_snapshot_id and project_graph_evidence_id must appear together"
+            )
+        return self
+
+    model_config = {"frozen": True}
+
+
+# ─── Output bundle ────────────────────────────────────────────────────────────
+
+@dataclass(frozen=True)
+class ContextualEvidenceBundle:
+    artifact: RawEvidenceArtifact
     regions: List[EvidenceRegion]
-    candidates: List[CanonicalFact]
-    error: Optional[str] = None
+    authority: SourceAuthorityEntry
+    facts: List[CanonicalFact]
 
 
-@dataclass
-class ContextualFactProposalResult:
-    status: Literal["accepted", "existing", "rejected"]
-    fact: Optional[CanonicalFact]
-    error: Optional[str] = None
+# ─── Deterministic ID derivation ─────────────────────────────────────────────
+
+def _sha_hex(*parts: str, prefix: str = "") -> str:
+    """Derive a stable ID from canonical string parts."""
+    canonical = "\x00".join(parts)
+    digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    return f"{prefix}{digest[:24]}" if prefix else digest[:32]
 
 
-class ContextualEvidenceAdapter:
-    """Adapts raw extracted DEM observations/sheets into canonical evidence entities with fail-closed repository persistence."""
+def _dt_iso(dt: datetime) -> str:
+    if dt.tzinfo is None:
+        raise ContextualEvidenceInputError("Timestamp must be timezone-aware")
+    return dt.isoformat()
 
-    def __init__(self, repository: Optional[ContextualEvidenceRepository] = None):
-        self.repository = repository
 
-    def materialize_page_evidence(
-        self,
-        project_id: str,
-        snapshot_id: str,
-        page_data: Dict[str, Any],
-        creator: str = "pipeline_dem",
-    ) -> Tuple[RawEvidenceArtifact, EvidenceRegion, SourceAuthorityEntry, List[CanonicalFact]]:
-        now_iso = datetime.now(timezone.utc).isoformat()
-        document_id = page_data.get("document_id", f"doc_{uuid.uuid4().hex[:8]}")
-        page_index = page_data.get("page_index", 0)
-        content_bytes = page_data.get("content_bytes", b"")
-        if not content_bytes:
-            content_bytes = f"{document_id}:{page_index}:{now_iso}".encode("utf-8")
+# ─── Core materialization function ────────────────────────────────────────────
 
-        sha256 = hashlib.sha256(content_bytes).hexdigest()
-        artifact_id = f"art_{sha256[:16]}"
-        storage_ref = page_data.get("storage_ref", f"s3://paax-artifacts/{project_id}/{document_id}/page_{page_index}.bin")
+def materialize_evidence_bundle(
+    artifact_input: ArtifactInput,
+    observations: Sequence[ObservationInput],
+) -> ContextualEvidenceBundle:
+    """Materialize caller-supplied provenance into a validated evidence bundle.
 
-        artifact = RawEvidenceArtifact(
-            schema_version="paax.contextual-evidence.v1",
-            artifact_id=artifact_id,
-            project_id=project_id,
-            document_id=document_id,
-            document_revision_id=page_data.get("document_revision_id"),
-            artifact_kind="dem_page",
-            content_sha256=sha256,
-            storage_ref=storage_ref,
-            media_type=page_data.get("media_type", "application/octet-stream"),
-            byte_size=len(content_bytes),
-            created_at=now_iso,
+    Rules:
+    - validate all input before creating any output;
+    - if content_bytes provided, verify declared hash and size;
+    - derive stable IDs from canonical explicit identity/hashes only;
+    - use the caller-provided timezone-aware timestamp;
+    - create one region per distinct observation;
+    - preserve graph IDs only when explicitly provided;
+    - never import paax_db;
+    - do not mutate caller input.
+    """
+    if not observations:
+        raise ContextualEvidenceInputError("At least one observation is required")
+
+    # Validate each observation before any output is created
+    for obs in observations:
+        if not obs.subject_ref or not obs.subject_ref.strip():
+            raise ContextualEvidenceInputError(
+                f"Observation '{obs.observation_id}': subject_ref must not be blank"
+            )
+        if not obs.predicate or not obs.predicate.strip():
+            raise ContextualEvidenceInputError(
+                f"Observation '{obs.observation_id}': predicate must not be blank"
+            )
+
+    # Verify content_bytes if provided
+    if artifact_input.content_bytes is not None:
+        actual_sha = hashlib.sha256(artifact_input.content_bytes).hexdigest()
+        if actual_sha != artifact_input.content_sha256:
+            raise ContextualEvidenceInputError(
+                f"content_bytes hash mismatch: declared={artifact_input.content_sha256}, "
+                f"actual={actual_sha}"
+            )
+        actual_size = len(artifact_input.content_bytes)
+        if actual_size != artifact_input.byte_size:
+            raise ContextualEvidenceInputError(
+                f"byte_size mismatch: declared={artifact_input.byte_size}, actual={actual_size}"
+            )
+
+    created_at_iso = _dt_iso(artifact_input.created_at)
+
+    # Stable artifact_id: derived from content_sha256 and project/document identity
+    artifact_id = _sha_hex(
+        artifact_input.project_id,
+        artifact_input.document_id,
+        artifact_input.content_sha256,
+        artifact_input.artifact_kind,
+        prefix="art_",
+    )
+
+    artifact = RawEvidenceArtifact(
+        schema_version="paax.contextual-evidence.v1",
+        artifact_id=artifact_id,
+        project_id=artifact_input.project_id,
+        document_id=artifact_input.document_id,
+        document_revision_id=artifact_input.document_revision_id,
+        artifact_kind=artifact_input.artifact_kind,
+        content_sha256=artifact_input.content_sha256,
+        storage_ref=artifact_input.storage_ref,
+        media_type=artifact_input.media_type,
+        byte_size=artifact_input.byte_size,
+        created_at=artifact_input.created_at,
+    )
+
+    # One region per observation — stable ID from observation canonical identity
+    regions: List[EvidenceRegion] = []
+    for obs in observations:
+        region_id = _sha_hex(
+            artifact_id,
+            obs.observation_id,
+            obs.source_ref,
+            obs.source_version,
+            str(obs.page_index),
+            prefix="reg_",
         )
 
-        region_id = f"reg_{hashlib.sha256(f'{artifact_id}:{page_index}'.encode('utf-8')).hexdigest()[:16]}"
-        ev_id = page_data.get("evidence_id")
-        snap_id = snapshot_id
-        if snap_id and not ev_id:
-            ev_id = f"ev_{region_id[4:]}"
+        # Encode bbox for hashing — None-safe
+        bbox_key = json.dumps(obs.bbox, sort_keys=True) if obs.bbox is not None else "null"
 
         region = EvidenceRegion(
             region_id=region_id,
             artifact_id=artifact_id,
-            project_id=project_id,
-            page_index=page_index,
-            sheet_id=page_data.get("sheet_id"),
-            sheet_revision_id=page_data.get("sheet_revision_id"),
-            view_id=page_data.get("view_id"),
-            zone_id=page_data.get("zone_id"),
-            bbox_space=page_data.get("bbox_space", "none"),
-            bbox=page_data.get("bbox"),
-            project_graph_snapshot_id=snap_id,
-            project_graph_evidence_id=ev_id,
-            created_at=now_iso,
+            project_id=artifact_input.project_id,
+            page_index=obs.page_index,
+            sheet_id=None,
+            sheet_revision_id=None,
+            view_id=None,
+            zone_id=None,
+            bbox_space=obs.bbox_space,
+            bbox=obs.bbox,
+            project_graph_snapshot_id=obs.project_graph_snapshot_id,
+            project_graph_evidence_id=obs.project_graph_evidence_id,
+            created_at=artifact_input.created_at,
+        )
+        regions.append(region)
+
+    # Stable authority_id: derived from project + source_ref + source_version
+    # Use first observation's source as the authority anchor (all must have same source)
+    first_obs = observations[0]
+    authority_id = _sha_hex(
+        artifact_input.project_id,
+        first_obs.source_ref,
+        first_obs.source_version,
+        prefix="auth_",
+    )
+
+    evidence_refs_for_authority = [artifact_id] + [r.region_id for r in regions]
+
+    authority = SourceAuthorityEntry(
+        authority_id=authority_id,
+        project_id=artifact_input.project_id,
+        source_kind="dem_sheet_drawing",
+        source_ref=first_obs.source_ref,
+        version=first_obs.source_version,
+        scope={},
+        evidence_refs=evidence_refs_for_authority,
+        supersedes_authority_id=None,
+        created_by="pipeline_dem",
+        created_at=artifact_input.created_at,
+    )
+
+    # One fact per observation — stable ID from canonical fact identity
+    facts: List[CanonicalFact] = []
+    for obs, region in zip(observations, regions):
+        fact_id = _sha_hex(
+            artifact_input.project_id,
+            artifact_input.snapshot_id,
+            obs.observation_id,
+            obs.subject_ref,
+            obs.predicate,
+            prefix="fact_",
         )
 
-        sheet_ref = page_data.get("sheet_id") or page_data.get("file_name") or f"page_{page_index}"
-        authority_id = f"auth_{hashlib.sha256(f'{project_id}:{sheet_ref}'.encode('utf-8')).hexdigest()[:16]}"
-        authority = SourceAuthorityEntry(
-            authority_id=authority_id,
-            project_id=project_id,
-            source_kind="dem_sheet_drawing",
-            source_ref=sheet_ref,
-            version=page_data.get("sheet_revision_id") or "v1",
-            scope={
-                "drawing_type": page_data.get("drawing_type", "General Drawing"),
-                "discipline": page_data.get("discipline", "GEN"),
-            },
-            evidence_refs=[artifact_id, region_id],
-            supersedes_authority_id=None,
-            created_by=creator,
-            created_at=now_iso,
+        fact = CanonicalFact(
+            fact_id=fact_id,
+            project_id=artifact_input.project_id,
+            snapshot_id=artifact_input.snapshot_id,
+            fact_type=obs.fact_type,
+            subject_ref=obs.subject_ref,
+            predicate=obs.predicate,
+            value=obs.value,
+            status="candidate",
+            evidence_refs=[region.region_id],
+            source_authority_id=authority_id,
+            supersedes_fact_id=None,
+            calculation_authority="none",
+            created_by="pipeline_dem",
+            created_at=artifact_input.created_at,
         )
+        facts.append(fact)
 
-        facts: List[CanonicalFact] = []
-        observations = page_data.get("observations", [])
-        for idx, obs in enumerate(observations):
-            subject_ref = obs.get("subject_ref") or f"OBS-{page_index}-{idx}"
-            fact_type = obs.get("fact_type", "extracted_fact")
-            predicate = obs.get("predicate", "value")
-            val = obs.get("value")
+    return ContextualEvidenceBundle(
+        artifact=artifact,
+        regions=regions,
+        authority=authority,
+        facts=facts,
+    )
 
-            fact_seed = f"{snapshot_id}:{subject_ref}:{predicate}:{idx}".encode("utf-8")
-            fact_id = f"fact_{hashlib.sha256(fact_seed).hexdigest()[:16]}"
 
-            fact = CanonicalFact(
-                fact_id=fact_id,
-                project_id=project_id,
-                snapshot_id=snapshot_id,
-                fact_type=fact_type,
-                subject_ref=subject_ref,
-                predicate=predicate,
-                value=val,
-                status="candidate",
-                evidence_refs=[region_id],
-                source_authority_id=authority_id,
-                supersedes_fact_id=None,
-                calculation_authority="none",
-                created_by=creator,
-                created_at=now_iso,
-            )
-            facts.append(fact)
+# ─── Adapter class ────────────────────────────────────────────────────────────
 
-        return artifact, region, authority, facts
+class ContextualEvidenceAdapter:
+    """Stateless adapter — wraps the pure materialize_evidence_bundle function.
 
-    async def validate_and_persist_bundle(
+    No repository, no persistence, no database dependency.
+    """
+
+    def materialize_bundle(
         self,
-        artifact: RawEvidenceArtifact,
-        regions: List[EvidenceRegion] = [],
-        candidates: List[CanonicalFact] = [],
-    ) -> ContextualEvidenceBundleResult:
-        if self.repository is None:
-            err = "Repository is not configured"
-            return ContextualEvidenceBundleResult(
-                bundle_status="rejected", artifact=artifact, regions=[], candidates=[], error=err
-            )
-        try:
-            res = await self.repository.append_raw_evidence_bundle(artifact, regions)
-            status = "accepted" if res.status == "inserted" else "existing"
-
-            persisted_candidates: List[CanonicalFact] = []
-            for candidate in candidates:
-                prop_res = await self.propose_canonical_fact(candidate)
-                if prop_res.status == "rejected":
-                    logger.warning(
-                        "Candidate fact %s rejected during bundle persistence: %s",
-                        candidate.fact_id,
-                        prop_res.error,
-                    )
-                    return ContextualEvidenceBundleResult(
-                        bundle_status="rejected",
-                        artifact=artifact,
-                        regions=[],
-                        candidates=[],
-                        error=f"Candidate fact '{candidate.fact_id}' rejected: {prop_res.error}",
-                    )
-                if prop_res.fact is not None:
-                    persisted_candidates.append(prop_res.fact)
-
-            return ContextualEvidenceBundleResult(
-                bundle_status=status,
-                artifact=artifact,
-                regions=regions,
-                candidates=persisted_candidates,
-            )
-        except Exception as e:
-            logger.warning("Failing closed: Contextual evidence bundle rejected: %s", e)
-            return ContextualEvidenceBundleResult(
-                bundle_status="rejected",
-                artifact=artifact,
-                regions=[],
-                candidates=[],
-                error=str(e),
-            )
-
-    async def propose_canonical_fact(
-        self, fact: CanonicalFact
-    ) -> ContextualFactProposalResult:
-        if self.repository is None:
-            err = "Repository is not configured"
-            return ContextualFactProposalResult(status="rejected", fact=None, error=err)
-
-        if fact.calculation_authority != "none":
-            err = f"Golden Rule violation (§1 AGENTS.md): calculation_authority must be 'none', got '{fact.calculation_authority}'"
-            logger.error(err)
-            return ContextualFactProposalResult(status="rejected", fact=None, error=err)
-
-        try:
-            res = await self.repository.append_canonical_fact(fact)
-            status = "accepted" if res.status == "inserted" else "existing"
-            return ContextualFactProposalResult(status=status, fact=res.item)
-        except Exception as e:
-            logger.warning("Failing closed: Canonical fact proposal %s rejected: %s", fact.fact_id, e)
-            return ContextualFactProposalResult(status="rejected", fact=None, error=str(e))
+        artifact_input: ArtifactInput,
+        observations: Sequence[ObservationInput],
+    ) -> ContextualEvidenceBundle:
+        return materialize_evidence_bundle(artifact_input, observations)
