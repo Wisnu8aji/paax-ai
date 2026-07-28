@@ -58,7 +58,7 @@ def test_invalid_contextual_evidence_cases_are_rejected():
         "resolution_decision": ResolutionDecision,
     }
 
-    assert len(cases) == 14, f"Expected 14 invalid cases, found {len(cases)}"
+    assert len(cases) == 20, f"Expected 20 invalid cases, found {len(cases)}"
 
     for case in cases:
         name = case["name"]

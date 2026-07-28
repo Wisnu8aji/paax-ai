@@ -3282,10 +3282,39 @@ export const EvidenceRegionSchema = z.object({
     });
   }
   if (val.bbox_space === "normalized_page" && val.bbox != null) {
-    if (!val.bbox.every((coord) => coord >= 0.0 && coord <= 1.0)) {
+    const [x, y, w, h] = val.bbox;
+    if (w <= 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "normalized_page bbox coordinates must be within [0.0, 1.0]",
+        message: "normalized_page bbox width must be positive",
+        path: ["bbox"],
+      });
+    }
+    if (h <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "normalized_page bbox height must be positive",
+        path: ["bbox"],
+      });
+    }
+    if (!(x >= 0 && x <= 1.0 && y >= 0 && y <= 1.0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "normalized_page bbox x and y must be within [0.0, 1.0]",
+        path: ["bbox"],
+      });
+    }
+    if (x + w > 1.0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `normalized_page bbox x + width (${x} + ${w} = ${x + w}) exceeds 1.0`,
+        path: ["bbox"],
+      });
+    }
+    if (y + h > 1.0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `normalized_page bbox y + height (${y} + ${h} = ${y + h}) exceeds 1.0`,
         path: ["bbox"],
       });
     }
@@ -3340,6 +3369,19 @@ export const CanonicalFactSchema = z.object({
   calculation_authority: z.literal("none").default("none"),
   created_by: z.string().min(1),
   created_at: rfc3339TimestampSchema,
+}).superRefine((val, ctx) => {
+  const seen = new Set<string>();
+  for (const ref of val.evidence_refs) {
+    if (seen.has(ref)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `evidence_refs must not contain duplicates (found duplicate: '${ref}')`,
+        path: ["evidence_refs"],
+      });
+      break;
+    }
+    seen.add(ref);
+  }
 });
 export type CanonicalFact = z.infer<typeof CanonicalFactSchema>;
 
@@ -3375,6 +3417,20 @@ export const ResolutionDecisionSchema = z.object({
       message: `scope.project_id '${val.scope.project_id}' must equal decision project_id '${val.project_id}'`,
       path: ["scope", "project_id"],
     });
+  }
+
+  // Duplicate target fact IDs are rejected
+  const targetSeen = new Set<string>();
+  for (const id of val.target_fact_ids) {
+    if (targetSeen.has(id)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `target_fact_ids must not contain duplicates (found duplicate: '${id}')`,
+        path: ["target_fact_ids"],
+      });
+      break;
+    }
+    targetSeen.add(id);
   }
 
   if (val.status === "approved") {

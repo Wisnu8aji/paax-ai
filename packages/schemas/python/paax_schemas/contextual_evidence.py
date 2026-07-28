@@ -67,7 +67,7 @@ class EvidenceRegion(BaseModel):
 
     @field_validator("bbox")
     @classmethod
-    def validate_bbox(cls, v: Optional[List[float]]) -> Optional[List[float]]:
+    def validate_bbox_length(cls, v: Optional[List[float]]) -> Optional[List[float]]:
         if v is not None and len(v) != 4:
             raise ValueError("bbox must contain exactly 4 numbers [x, y, w, h]")
         return v
@@ -83,9 +83,27 @@ class EvidenceRegion(BaseModel):
             raise ValueError("bbox must be None when bbox_space is 'none'")
 
         if self.bbox_space == "normalized_page" and self.bbox is not None:
-            for coord in self.bbox:
-                if coord < 0.0 or coord > 1.0:
-                    raise ValueError("normalized_page bbox coordinates must be within [0.0, 1.0]")
+            x, y, w, h = self.bbox[0], self.bbox[1], self.bbox[2], self.bbox[3]
+
+            # width and height must be strictly positive
+            if w <= 0.0:
+                raise ValueError("normalized_page bbox width must be positive")
+            if h <= 0.0:
+                raise ValueError("normalized_page bbox height must be positive")
+
+            # individual coordinates must be in [0.0, 1.0]
+            if not (0.0 <= x <= 1.0 and 0.0 <= y <= 1.0):
+                raise ValueError("normalized_page bbox x and y must be within [0.0, 1.0]")
+
+            # extent must fit within the page
+            if x + w > 1.0:
+                raise ValueError(
+                    f"normalized_page bbox x + width ({x} + {w} = {x + w:.4f}) exceeds 1.0"
+                )
+            if y + h > 1.0:
+                raise ValueError(
+                    f"normalized_page bbox y + height ({y} + {h} = {y + h:.4f}) exceeds 1.0"
+                )
 
         return self
 
@@ -145,6 +163,12 @@ class CanonicalFact(BaseModel):
     def validate_tz(cls, v: datetime) -> datetime:
         return _validate_timezone_aware(v)
 
+    @model_validator(mode="after")
+    def validate_no_duplicate_evidence_refs(self) -> "CanonicalFact":
+        if len(self.evidence_refs) != len(set(self.evidence_refs)):
+            raise ValueError("evidence_refs must not contain duplicates")
+        return self
+
 
 class PropagationScope(BaseModel):
     project_id: str = Field(min_length=1)
@@ -180,6 +204,10 @@ class ResolutionDecision(BaseModel):
     def validate_decision_invariants(self) -> "ResolutionDecision":
         if self.scope.project_id != self.project_id:
             raise ValueError(f"scope.project_id '{self.scope.project_id}' must equal decision project_id '{self.project_id}'")
+
+        # Duplicate target fact IDs are rejected
+        if len(self.target_fact_ids) != len(set(self.target_fact_ids)):
+            raise ValueError("target_fact_ids must not contain duplicates")
 
         if self.status == "approved":
             if not self.selected_fact_id:

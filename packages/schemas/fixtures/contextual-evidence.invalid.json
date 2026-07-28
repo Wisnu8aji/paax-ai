@@ -213,5 +213,92 @@
       "created_by": "estimator_1",
       "created_at": "2026-07-28T10:10:00Z"
     }
+  },
+  {
+    "name": "bbox_extent_x_exceeds_page",
+    "target": "region",
+    "data": {
+      "region_id": "reg_2002",
+      "artifact_id": "art_1001",
+      "project_id": "proj_demo_01",
+      "page_index": 0,
+      "bbox_space": "normalized_page",
+      "bbox": [0.8, 0.1, 0.3, 0.2],
+      "created_at": "2026-07-28T10:05:00Z"
+    }
+  },
+  {
+    "name": "bbox_extent_y_exceeds_page",
+    "target": "region",
+    "data": {
+      "region_id": "reg_2003",
+      "artifact_id": "art_1001",
+      "project_id": "proj_demo_01",
+      "page_index": 0,
+      "bbox_space": "normalized_page",
+      "bbox": [0.1, 0.8, 0.2, 0.3],
+      "created_at": "2026-07-28T10:05:00Z"
+    }
+  },
+  {
+    "name": "bbox_non_positive_width",
+    "target": "region",
+    "data": {
+      "region_id": "reg_2004",
+      "artifact_id": "art_1001",
+      "project_id": "proj_demo_01",
+      "page_index": 0,
+      "bbox_space": "normalized_page",
+      "bbox": [0.1, 0.1, 0.0, 0.2],
+      "created_at": "2026-07-28T10:05:00Z"
+    }
+  },
+  {
+    "name": "bbox_non_positive_height",
+    "target": "region",
+    "data": {
+      "region_id": "reg_2005",
+      "artifact_id": "art_1001",
+      "project_id": "proj_demo_01",
+      "page_index": 0,
+      "bbox_space": "normalized_page",
+      "bbox": [0.1, 0.1, 0.2, -0.1],
+      "created_at": "2026-07-28T10:05:00Z"
+    }
+  },
+  {
+    "name": "duplicate_evidence_refs",
+    "target": "canonical_fact",
+    "data": {
+      "fact_id": "fact_4002",
+      "project_id": "proj_demo_01",
+      "snapshot_id": "snap_pckm_001",
+      "fact_type": "structural_dimension",
+      "subject_ref": "COL-K1-002",
+      "predicate": "section_dimensions",
+      "value": { "w": 300 },
+      "status": "candidate",
+      "evidence_refs": ["reg_2001", "reg_2001"],
+      "calculation_authority": "none",
+      "created_by": "pipeline_dem",
+      "created_at": "2026-07-28T10:15:00Z"
+    }
+  },
+  {
+    "name": "duplicate_target_fact_ids",
+    "target": "resolution_decision",
+    "data": {
+      "decision_id": "dec_5002",
+      "project_id": "proj_demo_01",
+      "snapshot_id": "snap_pckm_001",
+      "target_fact_ids": ["fact_4001", "fact_4001"],
+      "selected_fact_id": "fact_4001",
+      "status": "approved",
+      "scope": { "project_id": "proj_demo_01", "match_mode": "exact" },
+      "rationale": "Duplicate target facts",
+      "decided_by": "engineer_1",
+      "calculation_authority": "none",
+      "created_at": "2026-07-28T10:20:00Z"
+    }
   }
 ]
