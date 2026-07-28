@@ -292,7 +292,9 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
       rejectConsumer(abortError());
       if (pending && pending.consumers.size === 0) {
         pendingById.delete(pending.requestId);
-        pendingByKey.delete(pending.key);
+        if (pendingByKey.get(pending.key) === pending) {
+          pendingByKey.delete(pending.key);
+        }
         pending.worker.postMessage({ type: 'cancel', requestId: pending.requestId });
       }
     };

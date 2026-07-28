@@ -5,6 +5,19 @@ import { fetchPdfArtifactUrl, normalizeArtifactExpiry, PDF_ARTIFACT_REFRESH_SKEW
 import { TileLru, PdfTilePyramid, type TileViewport, type PdfTileRequest } from './pdf-tile-pyramid';
 import { createPdfTilePool, type PdfPageMetrics } from './pdf-tile-pool';
 
+let globalPdfTilePool: ReturnType<typeof createPdfTilePool> | null = null;
+let globalTileCache: TileLru | null = null;
+
+export function getGlobalPdfTilePool() {
+  if (!globalPdfTilePool) globalPdfTilePool = createPdfTilePool();
+  return globalPdfTilePool;
+}
+
+export function getGlobalTileCache() {
+  if (!globalTileCache) globalTileCache = new TileLru();
+  return globalTileCache;
+}
+
 export function shouldRefreshArtifactUrl(expiresAt: string | number, now = new Date()): boolean {
   const normalized = normalizeArtifactExpiry(expiresAt);
   return new Date(normalized).getTime() - now.getTime() <= PDF_ARTIFACT_REFRESH_SKEW_MS;
@@ -39,6 +52,10 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
   const activeOpenGenRef = useRef<number | null>(null);
   const activeRequestsRef = useRef<Map<string, { identity: symbol; cancel: () => void }>>(new Map());
   const desiredKeysRef = useRef<Set<string>>(new Set());
+
+  if (!poolRef.current) poolRef.current = getGlobalPdfTilePool();
+  if (!cacheRef.current) cacheRef.current = getGlobalTileCache();
+
   const [metrics, setMetrics] = useState<PdfPageMetrics | null>(null);
   const [painted, setPainted] = useState(new Map<string, { tile: PdfTileRequest; revision: number }>());
   const [error, setError] = useState<string | null>(null);
@@ -54,10 +71,8 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
     activeRequestsRef.current.clear();
     desiredKeysRef.current.clear();
 
-    const pool = createPdfTilePool();
-    const cache = new TileLru();
-    poolRef.current = pool;
-    cacheRef.current = cache;
+    const pool = poolRef.current!;
+    const cache = cacheRef.current!;
     setMetrics(null);
     setPainted(new Map());
     setError(null);
@@ -159,7 +174,7 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
             return;
           }
 
-          const bitmap = delivery.claim();
+          const bitmap = delivery.claim() ?? cacheRef.current?.peek(tile.key);
           if (!bitmap) return;
 
           if (cache.set(tile.key, bitmap, delivery.width * delivery.height * 4, protectedKeys)) {
@@ -211,8 +226,22 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
 
     return () => {
       window.clearTimeout(detailTimer);
+      // Wait, we shouldn't close pool here because it's shared!
+      // But we DO need to cancel active requests from this layer!
     };
   }, [metrics, viewport.x, viewport.y, viewport.width, viewport.height, viewport.zoom, viewport.dpr, error, pyramid, documentKey, pageIndex, dimensions.width, dimensions.height]);
+
+  useEffect(() => {
+    return () => {
+      cancelled = true;
+      if (refreshTimer !== undefined) window.clearTimeout(refreshTimer);
+      activeRequestsRef.current.forEach((entry) => entry.cancel());
+      activeRequestsRef.current.clear();
+      desiredKeysRef.current.clear();
+      // Only close this documentKey, other documents stay open in the shared pool.
+      poolRef.current?.close(documentKey);
+    };
+  }, [documentKey]);
 
   if (error) return <button type="button" onClick={() => setRetry((value) => value + 1)}>Retry PDF: {error}</button>;
   if (!metrics) return <div role="status">Loading original PDF…</div>;
