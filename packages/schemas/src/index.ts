@@ -3207,3 +3207,163 @@ export const SectionedRABResult = z.object({
   total: z.number(),
 });
 export type SectionedRABResult = z.infer<typeof SectionedRABResult>;
+
+// ── Contextual Evidence & Canonical Fact Schemas (paax.contextual-evidence.v1) ───────────────
+
+export const ArtifactKindEnum = z.enum([
+  "original_document",
+  "json1_raw",
+  "dem_page",
+  "extracted_text",
+  "extracted_vector",
+]);
+export type ArtifactKind = z.infer<typeof ArtifactKindEnum>;
+
+export const BboxSpaceEnum = z.enum(["pdf_points", "normalized_page", "pixel", "none"]);
+export type BboxSpace = z.infer<typeof BboxSpaceEnum>;
+
+export const EvidencePointerRoleEnum = z.enum(["source", "corroborating", "contradicting", "decision"]);
+export type EvidencePointerRole = z.infer<typeof EvidencePointerRoleEnum>;
+
+export const CanonicalFactStatusEnum = z.enum(["candidate", "human_verified", "superseded", "stale"]);
+export type CanonicalFactStatus = z.infer<typeof CanonicalFactStatusEnum>;
+
+export const ResolutionDecisionStatusEnum = z.enum(["proposed", "approved", "rejected", "stale", "superseded"]);
+export type ResolutionDecisionStatus = z.infer<typeof ResolutionDecisionStatusEnum>;
+
+export const RawEvidenceArtifactSchema = z.object({
+  schema_version: z.literal("paax.contextual-evidence.v1").default("paax.contextual-evidence.v1"),
+  artifact_id: z.string().min(1),
+  project_id: z.string().min(1),
+  document_id: z.string().min(1),
+  document_revision_id: z.string().nullish(),
+  artifact_kind: ArtifactKindEnum,
+  content_sha256: z.string().regex(/^[0-9a-f]{64}$/),
+  storage_ref: z.string().min(1),
+  media_type: z.string().min(1),
+  byte_size: z.number().int().nonnegative(),
+  created_at: z.string().min(1),
+});
+export type RawEvidenceArtifact = z.infer<typeof RawEvidenceArtifactSchema>;
+
+export const EvidenceRegionSchema = z.object({
+  region_id: z.string().min(1),
+  artifact_id: z.string().min(1),
+  project_id: z.string().min(1),
+  page_index: z.number().int().nonnegative(),
+  sheet_id: z.string().nullish(),
+  sheet_revision_id: z.string().nullish(),
+  view_id: z.string().nullish(),
+  zone_id: z.string().nullish(),
+  bbox_space: BboxSpaceEnum.default("none"),
+  bbox: z.array(z.number()).length(4).nullish(),
+  project_graph_snapshot_id: z.string().nullish(),
+  project_graph_evidence_id: z.string().nullish(),
+  created_at: z.string().min(1),
+}).superRefine((val, ctx) => {
+  const snap = val.project_graph_snapshot_id;
+  const ev = val.project_graph_evidence_id;
+  if ((snap != null && ev == null) || (snap == null && ev != null)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "project_graph_snapshot_id and project_graph_evidence_id must appear together",
+    });
+  }
+});
+export type EvidenceRegion = z.infer<typeof EvidenceRegionSchema>;
+
+export const EvidencePointerSchema = z.object({
+  artifact_id: z.string().min(1),
+  region_id: z.string().nullish(),
+  project_graph_snapshot_id: z.string().nullish(),
+  project_graph_evidence_id: z.string().nullish(),
+  role: EvidencePointerRoleEnum.default("source"),
+}).superRefine((val, ctx) => {
+  const snap = val.project_graph_snapshot_id;
+  const ev = val.project_graph_evidence_id;
+  if ((snap != null && ev == null) || (snap == null && ev != null)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "project_graph_snapshot_id and project_graph_evidence_id must appear together",
+    });
+  }
+});
+export type EvidencePointer = z.infer<typeof EvidencePointerSchema>;
+
+export const SourceAuthorityEntrySchema = z.object({
+  authority_id: z.string().min(1),
+  project_id: z.string().min(1),
+  source_kind: z.string().min(1),
+  source_ref: z.string().min(1),
+  version: z.string().min(1),
+  scope: z.record(z.string(), z.unknown()).default({}),
+  evidence_refs: z.array(z.string().min(1)).min(1),
+  supersedes_authority_id: z.string().nullish(),
+  created_by: z.string().min(1),
+  created_at: z.string().min(1),
+});
+export type SourceAuthorityEntry = z.infer<typeof SourceAuthorityEntrySchema>;
+
+export const CanonicalFactSchema = z.object({
+  fact_id: z.string().min(1),
+  project_id: z.string().min(1),
+  snapshot_id: z.string().min(1),
+  fact_type: z.string().min(1),
+  subject_ref: z.string().min(1),
+  predicate: z.string().min(1),
+  value: z.unknown(),
+  status: CanonicalFactStatusEnum.default("candidate"),
+  evidence_refs: z.array(z.string().min(1)).min(1),
+  source_authority_id: z.string().nullish(),
+  supersedes_fact_id: z.string().nullish(),
+  calculation_authority: z.literal("none").default("none"),
+  created_by: z.string().min(1),
+  created_at: z.string().min(1),
+});
+export type CanonicalFact = z.infer<typeof CanonicalFactSchema>;
+
+export const PropagationScopeSchema = z.object({
+  project_id: z.string().min(1),
+  document_ids: z.array(z.string()).nullish(),
+  sheet_ids: z.array(z.string()).nullish(),
+  view_ids: z.array(z.string()).nullish(),
+  zone_ids: z.array(z.string()).nullish(),
+  revision_ids: z.array(z.string()).nullish(),
+  occurrence_ids: z.array(z.string()).nullish(),
+  match_mode: z.literal("exact").default("exact"),
+});
+export type PropagationScope = z.infer<typeof PropagationScopeSchema>;
+
+export const ResolutionDecisionSchema = z.object({
+  decision_id: z.string().min(1),
+  project_id: z.string().min(1),
+  snapshot_id: z.string().min(1),
+  target_fact_ids: z.array(z.string().min(1)).min(1),
+  selected_fact_id: z.string().nullish(),
+  status: ResolutionDecisionStatusEnum.default("proposed"),
+  scope: PropagationScopeSchema,
+  rationale: z.string().min(1),
+  decided_by: z.string().nullish(),
+  supersedes_decision_id: z.string().nullish(),
+  calculation_authority: z.literal("none").default("none"),
+  created_at: z.string().min(1),
+}).superRefine((val, ctx) => {
+  if (val.status === "approved") {
+    if (!val.selected_fact_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "selected_fact_id is required when status is approved",
+        path: ["selected_fact_id"],
+      });
+    }
+    if (!val.decided_by) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "decided_by is required when status is approved",
+        path: ["decided_by"],
+      });
+    }
+  }
+});
+export type ResolutionDecision = z.infer<typeof ResolutionDecisionSchema>;
+
