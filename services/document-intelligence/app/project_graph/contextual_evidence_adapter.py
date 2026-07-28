@@ -1,8 +1,10 @@
 """Contextual Evidence & Canonical Fact Adapter for Document Intelligence."""
 import hashlib
 import uuid
+import logging
+from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional, Literal
 
 from paax_schemas.contextual_evidence import (
     CanonicalFact,
@@ -10,10 +12,36 @@ from paax_schemas.contextual_evidence import (
     RawEvidenceArtifact,
     SourceAuthorityEntry,
 )
+from paax_db import (
+    ContextualEvidenceRepository,
+    ContextualEvidenceConflict,
+    ContextualEvidenceIntegrityError,
+)
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ContextualEvidenceBundleResult:
+    bundle_status: Literal["accepted", "existing", "rejected"]
+    artifact: Optional[RawEvidenceArtifact]
+    regions: List[EvidenceRegion]
+    candidates: List[CanonicalFact]
+    error: Optional[str] = None
+
+
+@dataclass
+class ContextualFactProposalResult:
+    status: Literal["accepted", "existing", "rejected"]
+    fact: Optional[CanonicalFact]
+    error: Optional[str] = None
 
 
 class ContextualEvidenceAdapter:
-    """Adapts raw extracted DEM observations/sheets into canonical evidence entities."""
+    """Adapts raw extracted DEM observations/sheets into canonical evidence entities with fail-closed repository persistence."""
+
+    def __init__(self, repository: Optional[ContextualEvidenceRepository] = None):
+        self.repository = repository
 
     def materialize_page_evidence(
         self,
@@ -117,3 +145,73 @@ class ContextualEvidenceAdapter:
             facts.append(fact)
 
         return artifact, region, authority, facts
+
+    async def validate_and_persist_bundle(
+        self,
+        artifact: RawEvidenceArtifact,
+        regions: List[EvidenceRegion] = [],
+        candidates: List[CanonicalFact] = [],
+    ) -> ContextualEvidenceBundleResult:
+        if self.repository is None:
+            err = "Repository is not configured"
+            return ContextualEvidenceBundleResult(
+                bundle_status="rejected", artifact=artifact, regions=[], candidates=[], error=err
+            )
+        try:
+            res = await self.repository.append_raw_evidence_bundle(artifact, regions)
+            status = "accepted" if res.status == "inserted" else "existing"
+
+            persisted_candidates: List[CanonicalFact] = []
+            for candidate in candidates:
+                prop_res = await self.propose_canonical_fact(candidate)
+                if prop_res.status == "rejected":
+                    logger.warning(
+                        "Candidate fact %s rejected during bundle persistence: %s",
+                        candidate.fact_id,
+                        prop_res.error,
+                    )
+                    return ContextualEvidenceBundleResult(
+                        bundle_status="rejected",
+                        artifact=artifact,
+                        regions=[],
+                        candidates=[],
+                        error=f"Candidate fact '{candidate.fact_id}' rejected: {prop_res.error}",
+                    )
+                if prop_res.fact is not None:
+                    persisted_candidates.append(prop_res.fact)
+
+            return ContextualEvidenceBundleResult(
+                bundle_status=status,
+                artifact=artifact,
+                regions=regions,
+                candidates=persisted_candidates,
+            )
+        except Exception as e:
+            logger.warning("Failing closed: Contextual evidence bundle rejected: %s", e)
+            return ContextualEvidenceBundleResult(
+                bundle_status="rejected",
+                artifact=artifact,
+                regions=[],
+                candidates=[],
+                error=str(e),
+            )
+
+    async def propose_canonical_fact(
+        self, fact: CanonicalFact
+    ) -> ContextualFactProposalResult:
+        if self.repository is None:
+            err = "Repository is not configured"
+            return ContextualFactProposalResult(status="rejected", fact=None, error=err)
+
+        if fact.calculation_authority != "none":
+            err = f"Golden Rule violation (§1 AGENTS.md): calculation_authority must be 'none', got '{fact.calculation_authority}'"
+            logger.error(err)
+            return ContextualFactProposalResult(status="rejected", fact=None, error=err)
+
+        try:
+            res = await self.repository.append_canonical_fact(fact)
+            status = "accepted" if res.status == "inserted" else "existing"
+            return ContextualFactProposalResult(status=status, fact=res.item)
+        except Exception as e:
+            logger.warning("Failing closed: Canonical fact proposal %s rejected: %s", fact.fact_id, e)
+            return ContextualFactProposalResult(status="rejected", fact=None, error=str(e))

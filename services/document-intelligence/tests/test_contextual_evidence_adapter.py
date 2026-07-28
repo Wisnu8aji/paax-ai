@@ -1,5 +1,9 @@
 import pytest
-from app.project_graph.contextual_evidence_adapter import ContextualEvidenceAdapter
+from app.project_graph.contextual_evidence_adapter import (
+    ContextualEvidenceAdapter,
+    ContextualEvidenceBundleResult,
+    ContextualFactProposalResult,
+)
 from paax_schemas.contextual_evidence import CanonicalFact, RawEvidenceArtifact, EvidenceRegion, SourceAuthorityEntry
 
 
@@ -58,3 +62,23 @@ def test_contextual_evidence_adapter_materialization():
     assert fact.calculation_authority == "none"
     assert fact.subject_ref == "COL-K1-001"
     assert fact.source_authority_id == auth.authority_id
+
+
+@pytest.mark.asyncio
+async def test_contextual_evidence_adapter_fail_closed_without_repo():
+    adapter = ContextualEvidenceAdapter(repository=None)
+    art = RawEvidenceArtifact(
+        schema_version="paax.contextual-evidence.v1",
+        artifact_id="art_1",
+        project_id="p1",
+        document_id="d1",
+        artifact_kind="dem_page",
+        content_sha256="a" * 64,
+        storage_ref="s3://ref",
+        media_type="image/png",
+        byte_size=10,
+        created_at="2026-07-28T10:00:00Z",
+    )
+    res = await adapter.validate_and_persist_bundle(art)
+    assert res.bundle_status == "rejected"
+    assert "Repository is not configured" in res.error
