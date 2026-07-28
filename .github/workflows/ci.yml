@@ -92,7 +92,7 @@ jobs:
           GOOGLE_API_KEY: ''
           GEMINI_API_KEY: ''
           OPENROUTER_API_KEY: ''
-        run: pytest -q --disable-socket
+        run: pytest -q --disable-socket --allow-hosts=127.0.0.1,localhost
 
       - name: Run Document Intelligence tests with outbound network blocked
         working-directory: ./services/document-intelligence
@@ -104,7 +104,7 @@ jobs:
           GOOGLE_API_KEY: ''
           GEMINI_API_KEY: ''
           OPENROUTER_API_KEY: ''
-        run: pytest -q --disable-socket
+        run: pytest -q --disable-socket --allow-hosts=127.0.0.1,localhost
 
       - name: Re-run durable deterministic pipeline acceptance tests explicitly
         working-directory: ./services/document-intelligence
@@ -117,7 +117,7 @@ jobs:
           GEMINI_API_KEY: ''
           OPENROUTER_API_KEY: ''
         run: |
-          pytest -q --disable-socket \
+          pytest -q --disable-socket --allow-hosts=127.0.0.1,localhost \
             tests/test_durable_worker_async.py \
             tests/test_dem_job_handlers.py \
             tests/test_synthesis_task.py
