@@ -66,13 +66,13 @@ export async function buildProjectContextPack(
         bagian.push(`== SKRIP GAMBAR (TKG, ${status}) ==\n` + potong(tkgRec.lastRenderedText, 4000));
       } else {
         // ringkas dari struktur bila skrip belum dirender
-        const ringkas = tkgRec.tkg.sheets.map((s) => {
-          const el = s.elements.map((e) => `${e.kode} ${e.alamat} n=${e.n}`).join('; ');
-          const rec = s.tables.flatMap((t) => t.records).map((r) =>
+        const ringkas = (tkgRec.tkg as any).sheets.map((s: any) => {
+          const el = s.elements.map((e: any) => `${e.kode} ${e.alamat} n=${e.n}`).join('; ');
+          const rec = s.tables.flatMap((t: any) => t.records).map((r: any) =>
             `${r.kode}${r.lantai ? `(${r.lantai})` : ''} ` +
             Object.entries(r.dimensi).map(([k, v]) => `${k}=${v}`).join(',') +
             ` ${r.satuan_dimensi}` +
-            (r.tulangan.length ? ` tul: ${r.tulangan.map((t) => t.raw).join('/')}` : ''),
+            (r.tulangan.length ? ` tul: ${r.tulangan.map((t: any) => t.raw).join('/')}` : ''),
           ).join('; ');
           return `[${s.sheet_id} ${s.jenis}] ${s.meta.judul}` +
             (el ? `\n  elemen: ${el}` : '') + (rec ? `\n  tipe: ${rec}` : '');

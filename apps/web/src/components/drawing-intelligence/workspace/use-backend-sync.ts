@@ -81,7 +81,7 @@ export function useBackendSync(projectId: string | null) {
 
         dispatch({ type: 'backend-connected', connected: true });
         if (state.mode === 'files' && (sheetsData.length > 0 || queue.items.length > 0)) {
-          dispatch({ type: 'switch-mode', mode: 'review' });
+          dispatch({ type: 'set-mode', mode: 'review' });
         }
 
         const snapshotId = queue.snapshot_id || readiness.snapshot_id || null;

@@ -1,4 +1,4 @@
-import type { Sheet, SheetViewEntry, SheetViews } from '../di-types';
+import type { Sheet, SheetClassificationKey, SheetViewEntry, SheetViews } from '../di-types';
 import type { NavigatorTab } from '../workspace-store';
 
 export interface NavigableSheet {
@@ -65,13 +65,12 @@ export function viewEntriesForMode(views: SheetViews | null | undefined, mode: N
   if (!sheets || sheets.length === 0) return [];
   return sheets.map((sheet) => ({
     page_index: sheet.pageIndex ?? sheet.pageNumber - 1,
-    sheet_number: sheet.code,
-    title: sheet.title,
-    discipline: sheet.discipline || 'arch',
-    drawing_type: sheet.classification || 'drawing',
-    level_key: (sheet.level || sheet.floorId || 'unknown').toLowerCase(),
-    classification_key: (sheet.classification || sheet.drawingType || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '_'),
-    readiness: 'ready',
+    page_number: sheet.pageNumber,
+    level_key: (sheet.floorId || 'unknown').toLowerCase(),
+    classification_key: (sheet.drawingType || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '_') as SheetClassificationKey,
+    evidence_refs: [],
+    status: 'classified',
+    review_reason: null,
   }));
 }
 

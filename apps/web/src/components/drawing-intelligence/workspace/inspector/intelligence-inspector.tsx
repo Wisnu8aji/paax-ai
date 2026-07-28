@@ -336,7 +336,7 @@ export function IntelligenceInspector() {
     if (state.summaryViews && state.summaryViews.length > 0) {
       const view = state.summaryViews[0];
       if (view && view.summary && view.summary.element_type_index) {
-        return view.summary.element_type_index.slice(0, 8).map(idx => {
+        return view.summary.element_type_index.slice(0, 8).map((idx: any) => {
           let cat = 'column';
           const n = (idx.name || '').toLowerCase();
           if (n.includes('beam')) cat = 'beam';
@@ -345,7 +345,8 @@ export function IntelligenceInspector() {
           else if (n.includes('door')) cat = 'door';
           else if (n.includes('window')) cat = 'window';
           else if (n.includes('room')) cat = 'room';
-          return { category: cat as ElementCategory, count: idx.occurrence_count, label: idx.name };
+          else if (n.includes('stair')) cat = 'stair';
+          return { category: cat as ElementCategory, count: idx.occurrence_count || 0, label: idx.name };
         });
       }
     }
