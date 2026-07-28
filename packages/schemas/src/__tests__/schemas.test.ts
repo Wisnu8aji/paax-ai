@@ -1,7 +1,5 @@
-/**
- * Test Zod schema parsing — memastikan schema selaras dengan response engine aktual.
- * Nilai di sini adalah contoh response aktual dari POST /rab/calculate engine.
- */
+import * as fs from "fs";
+import * as path from "path";
 import {
   RABResult,
   HSPBreakdown,
@@ -875,100 +873,15 @@ describe("GroundedAnswerSchema", () => {
 });
 
 describe("ContextualEvidenceSchemas", () => {
-  it("parses valid contextual evidence JSON fixture", () => {
-    const validData = {
-      artifact: {
-        schema_version: "paax.contextual-evidence.v1",
-        artifact_id: "art_1001",
-        project_id: "proj_demo_01",
-        document_id: "doc_pdf_88",
-        document_revision_id: "doc_rev_01",
-        artifact_kind: "dem_page",
-        content_sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        storage_ref: "s3://paax-artifacts/proj_demo_01/doc_pdf_88/page-01.png",
-        media_type: "image/png",
-        byte_size: 245810,
-        created_at: "2026-07-28T10:00:00Z",
-      },
-      region: {
-        region_id: "reg_2001",
-        artifact_id: "art_1001",
-        project_id: "proj_demo_01",
-        page_index: 0,
-        sheet_id: "sheet_A2_102",
-        sheet_revision_id: "sheet_rev_01",
-        view_id: "view_fl_01",
-        zone_id: "zone_grid_b3",
-        bbox_space: "normalized_page",
-        bbox: [0.1, 0.2, 0.3, 0.4],
-        project_graph_snapshot_id: "snap_pckm_001",
-        project_graph_evidence_id: "ev_pckm_99",
-        created_at: "2026-07-28T10:05:00Z",
-      },
-      authority: {
-        authority_id: "auth_3001",
-        project_id: "proj_demo_01",
-        source_kind: "dem_sheet_drawing",
-        source_ref: "A2-102",
-        version: "R1",
-        scope: { drawing_type: "Floor Plan", discipline: "STR" },
-        evidence_refs: ["art_1001", "reg_2001"],
-        supersedes_authority_id: null,
-        created_by: "estimator_usr_1",
-        created_at: "2026-07-28T10:10:00Z",
-      },
-      canonical_fact: {
-        fact_id: "fact_4001",
-        project_id: "proj_demo_01",
-        snapshot_id: "snap_pckm_001",
-        fact_type: "structural_dimension",
-        subject_ref: "COL-K1-002",
-        predicate: "section_dimensions",
-        value: { width_mm: 300, depth_mm: 600, token_ref: "P1" },
-        status: "candidate",
-        evidence_refs: ["reg_2001"],
-        source_authority_id: "auth_3001",
-        supersedes_fact_id: null,
-        calculation_authority: "none",
-        created_by: "pipeline_dem",
-        created_at: "2026-07-28T10:15:00Z",
-      },
-      propagation_scope: {
-        project_id: "proj_demo_01",
-        document_ids: ["doc_pdf_88"],
-        sheet_ids: ["sheet_A2_102"],
-        view_ids: ["view_fl_01"],
-        zone_ids: ["zone_grid_b3"],
-        revision_ids: ["doc_rev_01"],
-        occurrence_ids: ["occ_PJ1"],
-        match_mode: "exact",
-      },
-      resolution_decision: {
-        decision_id: "dec_5001",
-        project_id: "proj_demo_01",
-        snapshot_id: "snap_pckm_001",
-        target_fact_ids: ["fact_4001"],
-        selected_fact_id: "fact_4001",
-        status: "approved",
-        scope: {
-          project_id: "proj_demo_01",
-          document_ids: ["doc_pdf_88"],
-          sheet_ids: ["sheet_A2_102"],
-          view_ids: ["view_fl_01"],
-          zone_ids: ["zone_grid_b3"],
-          revision_ids: ["doc_rev_01"],
-          occurrence_ids: ["occ_PJ"],
-          match_mode: "exact",
-        },
-        rationale: "Verified column dimension K1 against structural detail sheet S-02",
-        decided_by: "lead_engineer_2",
-        supersedes_decision_id: null,
-        calculation_authority: "none",
-        created_at: "2026-07-28T10:20:00Z",
-      },
-    };
+  const fixturesDir = path.resolve(__dirname, "../../fixtures");
 
-    expect(RawEvidenceArtifactSchema.parse(validData.artifact).content_sha256).toBe("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+  it("parses valid contextual evidence JSON fixture", () => {
+    const validFilePath = path.join(fixturesDir, "contextual-evidence.valid.json");
+    const validData = JSON.parse(fs.readFileSync(validFilePath, "utf-8"));
+
+    expect(RawEvidenceArtifactSchema.parse(validData.artifact).content_sha256).toBe(
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    );
     expect(EvidenceRegionSchema.parse(validData.region).project_graph_snapshot_id).toBe("snap_pckm_001");
     expect(SourceAuthorityEntrySchema.parse(validData.authority).authority_id).toBe("auth_3001");
     expect(CanonicalFactSchema.parse(validData.canonical_fact).calculation_authority).toBe("none");
@@ -976,24 +889,26 @@ describe("ContextualEvidenceSchemas", () => {
     expect(ResolutionDecisionSchema.parse(validData.resolution_decision).status).toBe("approved");
   });
 
-  it("rejects invalid cases", () => {
-    expect(() => RawEvidenceArtifactSchema.parse({
-      schema_version: "paax.contextual-evidence.v1",
-      artifact_id: "art_1", project_id: "p1", document_id: "d1", artifact_kind: "dem_page",
-      content_sha256: "INVALID_SHA", storage_ref: "s3://ref", media_type: "image/png", byte_size: 10, created_at: "now",
-    })).toThrow();
+  it("rejects all 14 named invalid cases from fixture", () => {
+    const invalidFilePath = path.join(fixturesDir, "contextual-evidence.invalid.json");
+    const cases = JSON.parse(fs.readFileSync(invalidFilePath, "utf-8"));
 
-    expect(() => CanonicalFactSchema.parse({
-      fact_id: "f1", project_id: "p1", snapshot_id: "s1", fact_type: "t1", subject_ref: "sub", predicate: "pred", value: 1,
-      status: "candidate", evidence_refs: [], calculation_authority: "none", created_by: "dev", created_at: "now",
-    })).toThrow();
+    const targetMap: Record<string, z.ZodSchema<any>> = {
+      artifact: RawEvidenceArtifactSchema,
+      region: EvidenceRegionSchema,
+      authority: SourceAuthorityEntrySchema,
+      canonical_fact: CanonicalFactSchema,
+      propagation_scope: PropagationScopeSchema,
+      resolution_decision: ResolutionDecisionSchema,
+    };
 
-    expect(() => PropagationScopeSchema.parse({ project_id: "p1", match_mode: "prefix" })).toThrow();
+    expect(cases.length).toBe(14);
 
-    expect(() => ResolutionDecisionSchema.parse({
-      decision_id: "dec1", project_id: "p1", snapshot_id: "s1", target_fact_ids: ["f1"], selected_fact_id: null,
-      status: "approved", scope: { project_id: "p1", match_mode: "exact" }, rationale: "ok", decided_by: "eng1",
-      calculation_authority: "none", created_at: "now",
-    })).toThrow();
+    for (const testCase of cases) {
+      const { name, target, data } = testCase;
+      const schema = targetMap[target];
+      expect(schema).toBeDefined();
+      expect(() => schema.parse(data)).toThrow();
+    }
   });
 });

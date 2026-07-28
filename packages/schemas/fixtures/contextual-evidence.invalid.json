@@ -1,6 +1,7 @@
 [
   {
     "name": "malformed_sha256",
+    "target": "artifact",
     "data": {
       "schema_version": "paax.contextual-evidence.v1",
       "artifact_id": "art_1001",
@@ -16,6 +17,7 @@
   },
   {
     "name": "fact_no_evidence",
+    "target": "canonical_fact",
     "data": {
       "fact_id": "fact_4001",
       "project_id": "proj_demo_01",
@@ -26,6 +28,7 @@
       "value": { "w": 300 },
       "status": "candidate",
       "evidence_refs": [],
+      "source_authority_id": "auth_3001",
       "calculation_authority": "none",
       "created_by": "pipeline_dem",
       "created_at": "2026-07-28T10:15:00Z"
@@ -33,6 +36,7 @@
   },
   {
     "name": "invalid_calculation_authority",
+    "target": "canonical_fact",
     "data": {
       "fact_id": "fact_4001",
       "project_id": "proj_demo_01",
@@ -43,6 +47,7 @@
       "value": { "w": 300 },
       "status": "candidate",
       "evidence_refs": ["reg_2001"],
+      "source_authority_id": "auth_3001",
       "calculation_authority": "core_engine",
       "created_by": "pipeline_dem",
       "created_at": "2026-07-28T10:15:00Z"
@@ -50,6 +55,7 @@
   },
   {
     "name": "invalid_match_mode",
+    "target": "propagation_scope",
     "data": {
       "project_id": "proj_demo_01",
       "match_mode": "prefix"
@@ -57,6 +63,7 @@
   },
   {
     "name": "approved_decision_no_selection",
+    "target": "resolution_decision",
     "data": {
       "decision_id": "dec_5001",
       "project_id": "proj_demo_01",
@@ -73,6 +80,7 @@
   },
   {
     "name": "approved_decision_no_decided_by",
+    "target": "resolution_decision",
     "data": {
       "decision_id": "dec_5001",
       "project_id": "proj_demo_01",
@@ -85,6 +93,125 @@
       "decided_by": null,
       "calculation_authority": "none",
       "created_at": "2026-07-28T10:20:00Z"
+    }
+  },
+  {
+    "name": "non_rfc3339_timestamp",
+    "target": "artifact",
+    "data": {
+      "schema_version": "paax.contextual-evidence.v1",
+      "artifact_id": "art_1001",
+      "project_id": "proj_demo_01",
+      "document_id": "doc_pdf_88",
+      "artifact_kind": "dem_page",
+      "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "storage_ref": "s3://paax-artifacts/page-01.png",
+      "media_type": "image/png",
+      "byte_size": 100,
+      "created_at": "2026-07-28 10:00:00"
+    }
+  },
+  {
+    "name": "naive_timestamp",
+    "target": "artifact",
+    "data": {
+      "schema_version": "paax.contextual-evidence.v1",
+      "artifact_id": "art_1001",
+      "project_id": "proj_demo_01",
+      "document_id": "doc_pdf_88",
+      "artifact_kind": "dem_page",
+      "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "storage_ref": "s3://paax-artifacts/page-01.png",
+      "media_type": "image/png",
+      "byte_size": 100,
+      "created_at": "2026-07-28T10:00:00"
+    }
+  },
+  {
+    "name": "graph_id_mismatch",
+    "target": "region",
+    "data": {
+      "region_id": "reg_2001",
+      "artifact_id": "art_1001",
+      "project_id": "proj_demo_01",
+      "page_index": 0,
+      "bbox_space": "none",
+      "project_graph_snapshot_id": "snap_pckm_001",
+      "project_graph_evidence_id": null,
+      "created_at": "2026-07-28T10:05:00Z"
+    }
+  },
+  {
+    "name": "invalid_bbox_coordinates",
+    "target": "region",
+    "data": {
+      "region_id": "reg_2001",
+      "artifact_id": "art_1001",
+      "project_id": "proj_demo_01",
+      "page_index": 0,
+      "bbox_space": "normalized_page",
+      "bbox": [0.1, 0.2, 1.5, 0.4],
+      "created_at": "2026-07-28T10:05:00Z"
+    }
+  },
+  {
+    "name": "bbox_space_value_mismatch",
+    "target": "region",
+    "data": {
+      "region_id": "reg_2001",
+      "artifact_id": "art_1001",
+      "project_id": "proj_demo_01",
+      "page_index": 0,
+      "bbox_space": "none",
+      "bbox": [0.1, 0.2, 0.3, 0.4],
+      "created_at": "2026-07-28T10:05:00Z"
+    }
+  },
+  {
+    "name": "decision_selected_not_in_targets",
+    "target": "resolution_decision",
+    "data": {
+      "decision_id": "dec_5001",
+      "project_id": "proj_demo_01",
+      "snapshot_id": "snap_pckm_001",
+      "target_fact_ids": ["fact_4001"],
+      "selected_fact_id": "fact_OTHER_99",
+      "status": "approved",
+      "scope": { "project_id": "proj_demo_01", "match_mode": "exact" },
+      "rationale": "Selected fact not in targets",
+      "decided_by": "engineer_1",
+      "calculation_authority": "none",
+      "created_at": "2026-07-28T10:20:00Z"
+    }
+  },
+  {
+    "name": "decision_scope_project_mismatch",
+    "target": "resolution_decision",
+    "data": {
+      "decision_id": "dec_5001",
+      "project_id": "proj_demo_01",
+      "snapshot_id": "snap_pckm_001",
+      "target_fact_ids": ["fact_4001"],
+      "selected_fact_id": "fact_4001",
+      "status": "approved",
+      "scope": { "project_id": "proj_DIFFERENT_PROJECT", "match_mode": "exact" },
+      "rationale": "Scope project mismatch",
+      "decided_by": "engineer_1",
+      "calculation_authority": "none",
+      "created_at": "2026-07-28T10:20:00Z"
+    }
+  },
+  {
+    "name": "empty_evidence_refs",
+    "target": "authority",
+    "data": {
+      "authority_id": "auth_3001",
+      "project_id": "proj_demo_01",
+      "source_kind": "dem_sheet_drawing",
+      "source_ref": "A2-102",
+      "evidence_refs": [],
+      "created_by": "estimator_1",
+      "created_at": "2026-07-28T10:10:00Z"
     }
   }
 ]

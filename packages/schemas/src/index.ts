@@ -3231,6 +3231,11 @@ export type CanonicalFactStatus = z.infer<typeof CanonicalFactStatusEnum>;
 export const ResolutionDecisionStatusEnum = z.enum(["proposed", "approved", "rejected", "stale", "superseded"]);
 export type ResolutionDecisionStatus = z.infer<typeof ResolutionDecisionStatusEnum>;
 
+const rfc3339TimestampSchema = z.string().regex(
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/,
+  "created_at must be an RFC 3339 timestamp with an explicit timezone offset (e.g. 'Z' or '+07:00')"
+);
+
 export const RawEvidenceArtifactSchema = z.object({
   schema_version: z.literal("paax.contextual-evidence.v1").default("paax.contextual-evidence.v1"),
   artifact_id: z.string().min(1),
@@ -3238,11 +3243,11 @@ export const RawEvidenceArtifactSchema = z.object({
   document_id: z.string().min(1),
   document_revision_id: z.string().nullish(),
   artifact_kind: ArtifactKindEnum,
-  content_sha256: z.string().regex(/^[0-9a-f]{64}$/),
+  content_sha256: z.string().regex(/^[0-9a-fA-F]{64}$/),
   storage_ref: z.string().min(1),
   media_type: z.string().min(1),
   byte_size: z.number().int().nonnegative(),
-  created_at: z.string().min(1),
+  created_at: rfc3339TimestampSchema,
 });
 export type RawEvidenceArtifact = z.infer<typeof RawEvidenceArtifactSchema>;
 
@@ -3259,7 +3264,7 @@ export const EvidenceRegionSchema = z.object({
   bbox: z.array(z.number()).length(4).nullish(),
   project_graph_snapshot_id: z.string().nullish(),
   project_graph_evidence_id: z.string().nullish(),
-  created_at: z.string().min(1),
+  created_at: rfc3339TimestampSchema,
 }).superRefine((val, ctx) => {
   const snap = val.project_graph_snapshot_id;
   const ev = val.project_graph_evidence_id;
@@ -3268,6 +3273,22 @@ export const EvidenceRegionSchema = z.object({
       code: z.ZodIssueCode.custom,
       message: "project_graph_snapshot_id and project_graph_evidence_id must appear together",
     });
+  }
+  if (val.bbox_space === "none" && val.bbox != null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "bbox must be null when bbox_space is 'none'",
+      path: ["bbox"],
+    });
+  }
+  if (val.bbox_space === "normalized_page" && val.bbox != null) {
+    if (!val.bbox.every((coord) => coord >= 0.0 && coord <= 1.0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "normalized_page bbox coordinates must be within [0.0, 1.0]",
+        path: ["bbox"],
+      });
+    }
   }
 });
 export type EvidenceRegion = z.infer<typeof EvidenceRegionSchema>;
@@ -3300,7 +3321,7 @@ export const SourceAuthorityEntrySchema = z.object({
   evidence_refs: z.array(z.string().min(1)).min(1),
   supersedes_authority_id: z.string().nullish(),
   created_by: z.string().min(1),
-  created_at: z.string().min(1),
+  created_at: rfc3339TimestampSchema,
 });
 export type SourceAuthorityEntry = z.infer<typeof SourceAuthorityEntrySchema>;
 
@@ -3318,7 +3339,7 @@ export const CanonicalFactSchema = z.object({
   supersedes_fact_id: z.string().nullish(),
   calculation_authority: z.literal("none").default("none"),
   created_by: z.string().min(1),
-  created_at: z.string().min(1),
+  created_at: rfc3339TimestampSchema,
 });
 export type CanonicalFact = z.infer<typeof CanonicalFactSchema>;
 
@@ -3346,13 +3367,27 @@ export const ResolutionDecisionSchema = z.object({
   decided_by: z.string().nullish(),
   supersedes_decision_id: z.string().nullish(),
   calculation_authority: z.literal("none").default("none"),
-  created_at: z.string().min(1),
+  created_at: rfc3339TimestampSchema,
 }).superRefine((val, ctx) => {
+  if (val.scope.project_id !== val.project_id) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `scope.project_id '${val.scope.project_id}' must equal decision project_id '${val.project_id}'`,
+      path: ["scope", "project_id"],
+    });
+  }
+
   if (val.status === "approved") {
     if (!val.selected_fact_id) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "selected_fact_id is required when status is approved",
+        path: ["selected_fact_id"],
+      });
+    } else if (!val.target_fact_ids.includes(val.selected_fact_id)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `selected_fact_id '${val.selected_fact_id}' must be included in target_fact_ids`,
         path: ["selected_fact_id"],
       });
     }
