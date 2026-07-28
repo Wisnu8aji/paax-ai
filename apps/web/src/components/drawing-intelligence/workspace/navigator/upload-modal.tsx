@@ -335,7 +335,7 @@ export function UploadDrawingModal() {
               >
                 <CheckCircle2 size={16} style={{ color: 'var(--di-ok)', flexShrink: 0 }} />
                 <div style={{ fontSize: 12, color: 'var(--di-text)', flex: 1 }}>
-                  Upload and page extraction complete. {state.sheets.length} sheets are ready.
+                  Upload complete. Extracting in background...
                 </div>
                 <button
                   className="di-btn di-btn-primary"

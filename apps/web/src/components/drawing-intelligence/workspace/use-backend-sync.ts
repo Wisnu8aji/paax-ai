@@ -62,7 +62,8 @@ export function useBackendSync(projectId: string | null) {
     // Reset mock data immediately for real projects to avoid showing incorrect details
     dispatch({ type: 'clear-project-data' });
 
-    (async () => {
+    let timer: any;
+    const sync = async () => {
       try {
         const [queue, readiness, civilWorkItems, sheetsData, runsData, summaryViewsData, session, head] = await Promise.all([
           fetchReviewQueue(projectId),
@@ -83,7 +84,7 @@ export function useBackendSync(projectId: string | null) {
         }
 
         dispatch({ type: 'backend-connected', connected: true });
-        
+
         let initialMode = state.mode;
         if (head?.active_module) {
           initialMode = head.active_module as any;
@@ -97,33 +98,51 @@ export function useBackendSync(projectId: string | null) {
           dispatch({ type: 'set-active-snapshot-id', snapshotId });
         }
 
-        // Two distinct shapes come from the same sheetsData: `Sheet[]` drives
-        // the canvas/lookup logic below and workspace navigation, while
-        // `MappedProjectSheet[]` (mapProjectDemSheet) is the review/quantity
-        // display shape dispatched separately as `mappedSheets` state. A
-        // prior bug declared `mappedSheets` (this local, Sheet[]-typed) as an
-        // always-empty array and never actually assigned it, so every real
-        // graph node/evidence lookup below silently found nothing.
-        const mappedSheets: Sheet[] = sheetsData.map(mapRawDemSheetToSheet);
+        const hasPendingRuns = runsData.some((r: any) => ['created', 'processing', 'uploading'].includes(r.status));
+
+        const syntheticSheetsData: any[] = [];
+        for (const run of runsData) {
+          const runId = run.id;
+          const hasSheets = sheetsData.some((s: any) => s.run_id === runId);
+          if (!hasSheets && run.total_pages > 0) {
+            for (let i = 0; i < run.total_pages; i++) {
+              syntheticSheetsData.push({
+                run_id: runId,
+                page_index: i,
+                file_name: run.file_name,
+                status: run.status === 'created' ? 'uploading' : 'processing',
+                sheet_title: `Processing Page ${i + 1}`,
+                sheet_number: `PAGE-${i + 1}`,
+              });
+            }
+          }
+        }
+        const combinedSheetsData = [...sheetsData, ...syntheticSheetsData];
+
+        const mappedSheets: Sheet[] = combinedSheetsData.map(mapRawDemSheetToSheet);
         if (mappedSheets.length > 0) {
           dispatch({ type: 'replace-sheets', sheets: mappedSheets });
-          
+
           let initialSheetId = state.activeSheetId;
           if (session?.active_sheet_id && mappedSheets.some(s => s.id === session.active_sheet_id)) {
             initialSheetId = session.active_sheet_id;
           } else if (!initialSheetId) {
             initialSheetId = mappedSheets[0].id;
           }
-          
+
           if (initialSheetId) {
             dispatch({ type: 'set-active-sheet', sheetId: initialSheetId });
           }
         }
-        dispatch({ type: 'replace-mapped-sheets', sheets: sheetsData.map(mapProjectDemSheet) });
+        dispatch({ type: 'replace-mapped-sheets', sheets: combinedSheetsData.map(mapProjectDemSheet) });
         const mappedFiles = runsData.map(mapDemRunToDrawingFile);
 
         if (mappedFiles.length > 0) {
           dispatch({ type: 'replace-files', files: mappedFiles });
+        }
+
+        if (hasPendingRuns && !cancelled) {
+          timer = setTimeout(sync, 5000);
         }
 
         // Load the persisted package-level intelligence for the newest run
@@ -266,10 +285,12 @@ export function useBackendSync(projectId: string | null) {
         console.error('Failed to sync backend:', err);
         dispatch({ type: 'backend-sync-failed', error: 'failed' });
       }
-    })();
+    };
+    sync();
 
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
   }, [projectId, dispatch]);
 

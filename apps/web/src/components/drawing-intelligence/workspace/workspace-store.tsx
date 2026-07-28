@@ -615,7 +615,7 @@ export function WorkspaceProvider({
         files.forEach(async (f, i) => {
           if (!f.file) return;
           const entryId = entries[i].id;
-          
+
           const updateEntryStatus = (prog: number, status: UploadEntry['status'], label: string, runId?: string) => {
             dispatch({
               type: 'upload-entries',
@@ -627,63 +627,27 @@ export function WorkspaceProvider({
             updateEntryStatus(10, 'uploading', 'Uploading file...');
             const uploadRes = await startDemUpload(projectId, f.file);
             const runId = uploadRes.run_id;
-            
-            updateEntryStatus(30, 'uploading', 'Processing DEM extraction...', runId);
-            
-            const poll = setInterval(async () => {
+            updateEntryStatus(100, 'completed', 'Upload complete. Extraction started.', runId);
+
+            completedUploads += 1;
+            if (completedUploads === files.length) {
+              dispatch({ type: 'upload', patch: { running: false } });
+              dispatch({
+                type: 'push-activity',
+                entry: { time: 'Now', message: `${files.length} file(s) uploaded.`, kind: 'upload' },
+              });
+
               try {
-                const statusData = await fetchDemRunStatus(runId);
-                const totalPages = statusData.total_pages;
-                const pages = statusData.pages || [];
-                const completedCount = pages.filter((p: any) => p.status === 'complete' || p.status === 'failed').length;
-                
-                const extractionProgress = totalPages > 0 ? Math.round((completedCount / totalPages) * 70) : 0;
-                const currentProgress = 30 + extractionProgress;
-                
-                const statusStr = statusData.status === 'dem_complete' || statusData.status === 'partially_failed' ? 'completed' : 'uploading';
-                const labelStr = statusData.status === 'dem_complete' || statusData.status === 'partially_failed'
-                  ? 'Extraction completed'
-                  : `Extracting pages (${completedCount}/${totalPages})`;
-
-                updateEntryStatus(
-                  currentProgress >= 100 ? 99 : currentProgress, // hold at 99 until fully complete
-                  statusStr,
-                  labelStr,
-                  runId
-                );
-                
-                if (statusData.status === 'dem_complete' || statusData.status === 'partially_failed' || completedCount === totalPages) {
-                  clearInterval(poll);
-                  completedUploads += 1;
-                  
-                  updateEntryStatus(100, 'completed', statusData.status === 'dem_complete' ? 'Extraction completed' : 'Partially failed', runId);
-
-                  if (completedUploads === files.length) {
-                    dispatch({ type: 'upload', patch: { running: false } });
-                    dispatch({
-                      type: 'push-activity',
-                      entry: { time: 'Now', message: `${files.length} file(s) extraction complete.`, kind: 'upload' },
-                    });
-                    
-                    try {
-                      const sheetsData = await fetchProjectDemSheets(projectId);
-                      dispatch({ type: 'replace-mapped-sheets', sheets: sheetsData.map(mapProjectDemSheet) });
-                      
-                      const runsData = await fetchProjectDemRuns(projectId);
-                      const mappedFiles = runsData.map(mapDemRunToDrawingFile);
-                      dispatch({ type: 'replace-files', files: mappedFiles });
-                    } catch (e) {
-                      console.error("Gagal refresh data setelah upload:", e);
-                    }
-                  }
-                }
-              } catch (err) {
-                clearInterval(poll);
-                updateEntryStatus(100, 'failed' as any, 'Failed to check status');
+                // We'll rely on useBackendSync's polling to populate synthetic sheets and runs.
+                // Just trigger a quick refresh of runs to get the status.
+                const runsData = await import('../drawing-intelligence-api').then(api => api.fetchProjectDemRuns(projectId));
+                const mappedFiles = runsData.map(mapDemRunToDrawingFile);
+                dispatch({ type: 'replace-files', files: mappedFiles });
+              } catch (e) {
+                console.error("Gagal refresh data setelah upload:", e);
               }
-            }, 2000);
-            timers.current.push(poll);
-            
+            }
+
           } catch (err: any) {
             console.error("Gagal upload file:", err);
             updateEntryStatus(100, 'failed' as any, err?.message || 'Upload failed');
@@ -1147,7 +1111,7 @@ export function mapGraphNodesToElements(nodes: any[], sheetId: string): Detected
     } else if (typeof props.bbox === 'object' && props.bbox !== null) {
       bbox = { x: props.bbox.x || 0, y: props.bbox.y || 0, w: props.bbox.w || 100, h: props.bbox.h || 100 };
     }
-    
+
     let cat: ElementCategory = 'column';
     const t = type.toLowerCase();
     if (t.includes('beam')) cat = 'beam';
