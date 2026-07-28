@@ -112,3 +112,97 @@ async def test_mapping_workflow_derives_provenance_from_approved_scoped_facts_an
     async with TestSession() as session:
         audits = (await session.execute(select(models.RabMaterializationMappingAudit))).scalars().all()
     assert [(row.action, row.actor) for row in audits] == [("created", "OWNER-A"), ("updated", "OWNER-A"), ("approved", "OWNER-A")]
+
+@pytest.mark.asyncio
+async def test_agentic_calculation_resolves_only_approved_mapping_and_returns_engine_response_unchanged(monkeypatch):
+    from sqlalchemy import select
+    from .conftest import TestSession
+
+    await _seed_materialization_fixture(mapping=True)
+    monkeypatch.setenv(
+        "INTERNAL_SERVICE_SCOPES",
+        "dem:read,dem:write,dem:delete,project_graph:synthesize,dem:authorize-actor,agentic:calculate",
+    )
+    transport = CompleteEngineTransport()
+    app.dependency_overrides[get_core_engine_client] = lambda: CoreEngineClient(
+        transport, internal_key="core-engine-test-key"
+    )
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                "/internal/projects/PROJECT-A/agentic/measurement-facts/calculate",
+                headers={
+                    "X-Internal-Key": "test-internal-key",
+                    "X-User-Id": "ai-orchestrator-agentic",
+                    "Idempotency-Key": "AGENT-CALC-1",
+                },
+                json={"measurement_fact_ids": ["MF-W"], "idempotency_key": "AGENT-CALC-1"},
+            )
+    finally:
+        app.dependency_overrides.pop(get_core_engine_client, None)
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "calculation_id": "CALC-1",
+        "status": "complete",
+        "result": 12.5,
+        "unit": "m3",
+        "formula": "width x depth x height",
+        "substituted_formula": "0.2 x 0.25 x 250 = 12.5",
+        "input_sources": [{"measurement_id": "MF-W", "source_method": "written_dimension", "unit": "m"}],
+        "engine_version": "0.6.0",
+        "warnings": ["fixture warning"],
+    }
+    assert transport.calls[0][0] == "/calculations"
+    request = transport.calls[0][1]
+    assert request["project_id"] == "PROJECT-A"
+    assert request["snapshot_id"] == "SNAP-A"
+    assert request["measurement_fact_ids"] == ["MF-W"]
+    assert request["calculation_type"] == "concrete_column_volume"
+    assert request["requested_by"] == "ai-orchestrator-agentic"
+    assert float(request["inputs"][0]["value"]) == 0.2
+    async with TestSession() as session:
+        audits = (await session.execute(select(models.ToolCallAudit).where(
+            models.ToolCallAudit.tool_name == "agentic.core_engine.calculate.completed"
+        ))).scalars().all()
+    assert len(audits) == 1 and audits[0].project_id == "PROJECT-A"
+
+
+@pytest.mark.asyncio
+async def test_agentic_calculation_fails_closed_without_mapping_or_with_numeric_payload(monkeypatch):
+    await _seed_materialization_fixture(mapping=False)
+    monkeypatch.setenv(
+        "INTERNAL_SERVICE_SCOPES",
+        "dem:read,dem:write,dem:delete,project_graph:synthesize,dem:authorize-actor,agentic:calculate",
+    )
+    transport = CompleteEngineTransport()
+    app.dependency_overrides[get_core_engine_client] = lambda: CoreEngineClient(
+        transport, internal_key="core-engine-test-key"
+    )
+    headers = {
+        "X-Internal-Key": "test-internal-key",
+        "X-User-Id": "ai-orchestrator-agentic",
+        "Idempotency-Key": "AGENT-CALC-2",
+    }
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            unmapped = await client.post(
+                "/internal/projects/PROJECT-A/agentic/measurement-facts/calculate",
+                headers=headers,
+                json={"measurement_fact_ids": ["MF-W"], "idempotency_key": "AGENT-CALC-2"},
+            )
+            numeric = await client.post(
+                "/internal/projects/PROJECT-A/agentic/measurement-facts/calculate",
+                headers=headers,
+                json={
+                    "measurement_fact_ids": ["MF-W"],
+                    "idempotency_key": "AGENT-CALC-2",
+                    "quantity": 999,
+                },
+            )
+    finally:
+        app.dependency_overrides.pop(get_core_engine_client, None)
+
+    assert unmapped.status_code == 422
+    assert numeric.status_code == 422
+    assert transport.calls == []

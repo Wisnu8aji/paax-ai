@@ -627,6 +627,19 @@ class RabMaterializationMappingCreate(BaseModel):
     calculation_type: Literal["concrete_column_volume", "length", "area", "count"]
 
 
+class AgenticMeasurementCalculationRequest(BaseModel):
+    measurement_fact_ids: List[str] = Field(min_length=1)
+    idempotency_key: str = Field(min_length=1, max_length=200)
+
+    model_config = ConfigDict(extra="forbid")
+
+    @model_validator(mode="after")
+    def require_unique_measurement_fact_ids(self):
+        if len(set(self.measurement_fact_ids)) != len(self.measurement_fact_ids):
+            raise ValueError("measurement_fact_ids must be unique")
+        return self
+
+
 class RabMaterializationMappingResolve(BaseModel):
     status: Literal["approved", "rejected"]
 
@@ -832,3 +845,8 @@ class ProjectGraphSummaryViewResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AgenticMeasurementCalculationRequest(BaseModel):
+    measurement_fact_ids: List[str] = Field(min_length=1)
+    idempotency_key: str = Field(min_length=1)

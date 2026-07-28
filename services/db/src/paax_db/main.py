@@ -110,6 +110,25 @@ async def _approved_scoped_measurement_facts(
     return [by_id[fact_id] for fact_id in measurement_fact_ids]
 
 
+def _measurement_fact_engine_input(fact: models.MeasurementFact) -> dict[str, Any]:
+    return {
+        "measurement_id": fact.measurement_id,
+        "project_id": fact.project_id,
+        "snapshot_id": fact.snapshot_id,
+        "measurement_type": fact.measurement_type,
+        "value": str(fact.value),
+        "unit": fact.unit,
+        "source_method": fact.source_method,
+        "element_ids": fact.element_ids,
+        "evidence_refs": fact.evidence_refs,
+        "formula_inputs": fact.formula_inputs,
+        "verification_status": fact.verification_status,
+        "created_by": fact.created_by,
+        "audit_metadata": fact.audit_metadata,
+        "supersedes_measurement_id": fact.supersedes_measurement_id,
+    }
+
+
 def _utc_now() -> datetime.datetime:
     return datetime.datetime.now(datetime.timezone.utc)
 
@@ -1378,6 +1397,71 @@ async def resolve_rab_bridge_proposal(id: str, proposal_id: str, request: schema
         "metadata": {"approved_selection_count": int(proposal.status == "approved")},
     })
     return {"status": proposal.status, "snapshot_id": proposal.snapshot_id, "proposal_id": proposal.id, "items": proposal.payload.get("items", [])}
+
+
+@app.post(
+    "/internal/projects/{id}/agentic/measurement-facts/calculate",
+    dependencies=[Depends(RoleChecker(["owner", "pm"], service_scope="agentic:calculate"))],
+)
+async def calculate_agentic_measurement_facts(
+    id: str,
+    request: schemas.AgenticMeasurementCalculationRequest,
+    http_request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+    core_engine_client: Any | None = Depends(get_core_engine_client),
+):
+    """Resolve approved facts and calculation type server-side, then return the
+    Core Engine response unchanged. The agent supplies identities only; it never
+    supplies dimensions, formulae, or an authoritative numeric result.
+    """
+    header_key = http_request.headers.get("Idempotency-Key")
+    if not header_key or header_key != request.idempotency_key:
+        raise HTTPException(status_code=422, detail="matching Idempotency-Key header and body are required")
+    snapshot = await get_active_snapshot(db, id)
+    if snapshot is None:
+        raise HTTPException(status_code=409, detail="active project graph snapshot is required")
+
+    requested_ids = list(request.measurement_fact_ids)
+    requested_set = set(requested_ids)
+    mappings = (await db.execute(select(models.RabMaterializationMapping).where(
+        models.RabMaterializationMapping.project_id == id,
+        models.RabMaterializationMapping.snapshot_id == snapshot.snapshot_id,
+        models.RabMaterializationMapping.approval_status == "approved",
+    ))).scalars().all()
+    matching = [mapping for mapping in mappings if set(mapping.measurement_fact_ids or []) == requested_set]
+    if not matching:
+        raise HTTPException(status_code=422, detail="approved calculation mapping was not found for the supplied Measurement Facts")
+    if len(matching) != 1:
+        raise HTTPException(status_code=409, detail="Measurement Facts resolve to multiple approved calculation mappings")
+    mapping = matching[0]
+    facts = await _approved_scoped_measurement_facts(
+        db, project_id=id, snapshot_id=snapshot.snapshot_id, measurement_fact_ids=requested_ids,
+    )
+    if core_engine_client is None:
+        raise HTTPException(status_code=503, detail="Core Engine client is not configured")
+
+    engine_request = {
+        "project_id": id,
+        "snapshot_id": snapshot.snapshot_id,
+        "measurement_fact_ids": requested_ids,
+        "calculation_type": mapping.calculation_type,
+        "requested_by": user.uid,
+        "inputs": [_measurement_fact_engine_input(fact) for fact in facts],
+    }
+    try:
+        calculation = core_engine_client.calculate(engine_request)
+    except CoreEngineUnavailable as exc:
+        _audit_project_action(db, project_id=id, actor=user.uid, action="agentic.core_engine.calculate.failed", target_id=mapping.id, success=False)
+        await db.commit()
+        raise HTTPException(status_code=503, detail="Core Engine unavailable; quantity remains blocked") from exc
+    if calculation.get("status") != "complete" or calculation.get("result") is None or not calculation.get("unit"):
+        _audit_project_action(db, project_id=id, actor=user.uid, action="agentic.core_engine.calculate.invalid", target_id=mapping.id, success=False)
+        await db.commit()
+        raise HTTPException(status_code=422, detail="Core Engine did not return a complete authoritative result")
+    _audit_project_action(db, project_id=id, actor=user.uid, action="agentic.core_engine.calculate.completed", target_id=mapping.id)
+    await db.commit()
+    return calculation
 
 
 @app.post(
