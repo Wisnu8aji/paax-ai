@@ -365,6 +365,7 @@ class ContextualEvidenceRepository:
             link_row = CanonicalFactEvidenceLinkModel(
                 link_id=link_id,
                 fact_id=fact.fact_id,
+                project_id=fact.project_id,
                 artifact_id=art_id,
                 region_id=reg_id,
                 role="source",

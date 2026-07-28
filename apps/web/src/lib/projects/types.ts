@@ -16,6 +16,8 @@ export interface Project {
   createdAt: string;
   updatedAt: string;
   drawingSystem?: 'dem_pckm_v2' | 'legacy_tkg';
+  isReference?: boolean;
+  isDefaultReference?: boolean;
 }
 
 export interface ProjectCreateInput {

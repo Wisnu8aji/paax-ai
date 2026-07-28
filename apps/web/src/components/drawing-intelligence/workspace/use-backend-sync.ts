@@ -64,7 +64,7 @@ export function useBackendSync(projectId: string | null) {
 
     (async () => {
       try {
-        const [queue, readiness, civilWorkItems, sheetsData, runsData, summaryViewsData, session] = await Promise.all([
+        const [queue, readiness, civilWorkItems, sheetsData, runsData, summaryViewsData, session, head] = await Promise.all([
           fetchReviewQueue(projectId),
           fetchQuantityReadiness(projectId),
           fetchCivilWorkItems(projectId),
@@ -72,6 +72,7 @@ export function useBackendSync(projectId: string | null) {
           fetchProjectDemRuns(projectId),
           fetchSummaryViews(projectId),
           projectRepository.getWorkspaceSession(projectId).catch(() => null),
+          projectRepository.getWorkspaceHead().catch(() => null),
         ]);
         if (cancelled) return;
 
@@ -84,8 +85,8 @@ export function useBackendSync(projectId: string | null) {
         dispatch({ type: 'backend-connected', connected: true });
         
         let initialMode = state.mode;
-        if (session?.active_module) {
-          initialMode = session.active_module as any;
+        if (head?.active_module) {
+          initialMode = head.active_module as any;
           dispatch({ type: 'set-mode', mode: initialMode });
         } else if (state.mode === 'files' && (sheetsData.length > 0 || queue.items.length > 0)) {
           dispatch({ type: 'set-mode', mode: 'review' });
@@ -324,7 +325,6 @@ export function useBackendSync(projectId: string | null) {
     if (!projectId || !state.backendConnected) return;
 
     const sessionPatch = {
-      active_module: state.mode,
       active_sheet_id: state.activeSheetId,
       selected_sheet_ids: state.selectedSheetIds,
       preferences: {
@@ -335,9 +335,17 @@ export function useBackendSync(projectId: string | null) {
       }
     };
 
+    const headPatch = {
+      active_module: state.mode,
+      active_project_id: projectId,
+    };
+
     const timer = setTimeout(() => {
       projectRepository.patchWorkspaceSession(projectId, sessionPatch).catch(err => {
         console.error('Failed to sync workspace session:', err);
+      });
+      projectRepository.patchWorkspaceHead(headPatch).catch(err => {
+        console.error('Failed to sync workspace head:', err);
       });
     }, 1000); // 1s debounce
 

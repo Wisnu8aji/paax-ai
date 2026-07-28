@@ -47,7 +47,8 @@ def test_alembic_0036_is_single_head():
     assert heads[0] == "0036"
 
     rev_0036 = script.get_revision("0036")
-    assert rev_0036.down_revision == "0035_calculation_authority_constraints"
+    assert isinstance(rev_0036.down_revision, tuple)
+    assert "0035_calculation_authority_constraints" in rev_0036.down_revision
 
     rev_0035 = script.get_revision("0035_calculation_authority_constraints")
     assert rev_0035.down_revision == "0034_contextual_integrity"

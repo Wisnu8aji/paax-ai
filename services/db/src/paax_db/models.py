@@ -273,6 +273,7 @@ class DurableJob(Base):
 
 class ProjectGraphSnapshot(Base):
     __tablename__ = "project_graph_snapshots"
+    __table_args__ = (UniqueConstraint('snapshot_id', 'project_id', name='uq_project_graph_snapshots_id_project'),)
 
     snapshot_id = Column(String, primary_key=True)
     project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -848,6 +849,7 @@ class QuantityAssumption(Base):
 
 class RawEvidenceArtifactModel(Base):
     __tablename__ = "raw_evidence_artifacts"
+    __table_args__ = (UniqueConstraint("artifact_id", "project_id", name="uq_raw_evidence_artifacts_id_project"),)
 
     artifact_id = Column(String(128), primary_key=True)
     project_id = Column(String(128), nullable=False, index=True)
@@ -909,6 +911,7 @@ def prevent_evidence_region_delete(mapper, connection, target):
 class SourceAuthorityEntryModel(Base):
     __tablename__ = "source_authority_entries"
     __table_args__ = (
+        UniqueConstraint("authority_id", "project_id", name="uq_source_authority_entries_id_project"),
         ForeignKeyConstraint(["supersedes_authority_id", "project_id"], ["source_authority_entries.authority_id", "source_authority_entries.project_id"], ondelete="RESTRICT"),
     )
 
@@ -937,6 +940,8 @@ def prevent_source_authority_entry_delete(mapper, connection, target):
 class CanonicalFactModel(Base):
     __tablename__ = "canonical_facts"
     __table_args__ = (
+        UniqueConstraint("fact_id", "project_id", name="uq_canonical_facts_id_project"),
+        CheckConstraint("calculation_authority = 'none'", name="ck_canonical_facts_calculation_authority_none"),
         ForeignKeyConstraint(["snapshot_id", "project_id"], ["project_graph_snapshots.snapshot_id", "project_graph_snapshots.project_id"], ondelete="RESTRICT"),
         ForeignKeyConstraint(["source_authority_id", "project_id"], ["source_authority_entries.authority_id", "source_authority_entries.project_id"], ondelete="RESTRICT"),
         ForeignKeyConstraint(["supersedes_fact_id", "project_id"], ["canonical_facts.fact_id", "canonical_facts.project_id"], ondelete="RESTRICT"),

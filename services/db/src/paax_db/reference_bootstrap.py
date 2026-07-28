@@ -17,7 +17,7 @@ from paax_db.project_graph_repository import build_and_activate_snapshot
 # Add document-intelligence to path to import schemas and synthesis logic
 _doc_intel_path = Path(__file__).resolve().parents[4] / "services" / "document-intelligence"
 if str(_doc_intel_path) not in sys.path:
-    sys.path.append(str(_doc_intel_path))
+    sys.path.insert(0, str(_doc_intel_path))
 
 from app.transcription.models import DrawingEvidenceSheet
 from app.project_graph.synthesis import synthesize_project_graph
