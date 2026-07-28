@@ -102,7 +102,59 @@ class ContextualEvidenceRepository:
                 f"RawEvidenceArtifact '{artifact.artifact_id}' already exists with a different payload"
             )
 
-        row = RawEvidenceArtifactModel(
+        # Validate ALL regions before inserting anything (atomic validation pass)
+        region_rows: List[EvidenceRegionModel] = []
+        for region in regions:
+            if region.artifact_id != artifact.artifact_id:
+                raise ContextualEvidenceIntegrityError(
+                    f"Region '{region.region_id}' artifact_id '{region.artifact_id}' does not match bundle artifact_id '{artifact.artifact_id}'"
+                )
+            if region.project_id != artifact.project_id:
+                raise ContextualEvidenceIntegrityError(
+                    f"Region '{region.region_id}' project_id '{region.project_id}' does not match bundle project_id '{artifact.project_id}'"
+                )
+            existing_reg = await self.session.get(EvidenceRegionModel, region.region_id)
+            if existing_reg is not None:
+                if (
+                    existing_reg.artifact_id == region.artifact_id
+                    and existing_reg.project_id == region.project_id
+                    and existing_reg.page_index == region.page_index
+                    and existing_reg.bbox_space == region.bbox_space
+                ):
+                    # Identical region already exists — skip (idempotent)
+                    continue
+                raise ContextualEvidenceConflict(
+                    f"EvidenceRegion '{region.region_id}' already exists with a different payload"
+                )
+
+            reg_dt = _parse_dt(region.created_at)
+            bbox_x = region.bbox[0] if region.bbox and len(region.bbox) == 4 else None
+            bbox_y = region.bbox[1] if region.bbox and len(region.bbox) == 4 else None
+            bbox_w = region.bbox[2] if region.bbox and len(region.bbox) == 4 else None
+            bbox_h = region.bbox[3] if region.bbox and len(region.bbox) == 4 else None
+            region_rows.append(
+                EvidenceRegionModel(
+                    region_id=region.region_id,
+                    artifact_id=region.artifact_id,
+                    project_id=region.project_id,
+                    page_index=region.page_index,
+                    sheet_id=region.sheet_id,
+                    sheet_revision_id=region.sheet_revision_id,
+                    view_id=region.view_id,
+                    zone_id=region.zone_id,
+                    bbox_space=region.bbox_space,
+                    bbox_x=bbox_x,
+                    bbox_y=bbox_y,
+                    bbox_w=bbox_w,
+                    bbox_h=bbox_h,
+                    project_graph_snapshot_id=region.project_graph_snapshot_id,
+                    project_graph_evidence_id=region.project_graph_evidence_id,
+                    created_at=reg_dt,
+                )
+            )
+
+        # All validation passed — now add artifact and regions atomically
+        art_row = RawEvidenceArtifactModel(
             artifact_id=artifact.artifact_id,
             project_id=artifact.project_id,
             document_id=artifact.document_id,
@@ -114,19 +166,11 @@ class ContextualEvidenceRepository:
             byte_size=artifact.byte_size,
             created_at=dt,
         )
-        self.session.add(row)
+        self.session.add(art_row)
+        for reg_row in region_rows:
+            self.session.add(reg_row)
 
-        for region in regions:
-            if region.artifact_id != artifact.artifact_id:
-                raise ContextualEvidenceIntegrityError(
-                    f"Region '{region.region_id}' artifact_id '{region.artifact_id}' does not match bundle artifact_id '{artifact.artifact_id}'"
-                )
-            if region.project_id != artifact.project_id:
-                raise ContextualEvidenceIntegrityError(
-                    f"Region '{region.region_id}' project_id '{region.project_id}' does not match bundle project_id '{artifact.project_id}'"
-                )
-            await self.save_evidence_region(region)
-
+        # Single flush — atomic: either all rows reach DB buffer or none do
         await self.session.flush()
         return AppendResult(item=artifact, status="inserted")
 
