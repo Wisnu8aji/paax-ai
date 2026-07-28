@@ -28,6 +28,12 @@ export class AgentToolRegistry {
 
   list(): string[] { return [...this.tools.keys()].sort(); }
 
+  describe(name: string): Pick<AgentToolContract<unknown, unknown>, 'name' | 'scope' | 'sideEffect' | 'timeoutMs'> {
+    const tool = this.tools.get(name);
+    if (!tool) throw new Error(`unknown tool: ${name}`);
+    return { name: tool.name, scope: tool.scope, sideEffect: tool.sideEffect, timeoutMs: tool.timeoutMs };
+  }
+
   async execute<I extends { projectId?: string }, O>(
     name: string,
     input: I,

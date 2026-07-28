@@ -9,7 +9,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ run
 }
 export async function POST(request: NextRequest, context: { params: Promise<{ runId: string }> }) {
   const { runId } = await context.params; const payload = await request.json(); const action = String(payload.action || 'transition');
-  const suffix = action === 'branch' ? 'branch' : 'transition'; delete payload.action;
+  const suffix = action === 'branch' ? 'branch' : action === 'step' ? 'step' : 'transition'; delete payload.action;
   try { const response = await fetch(`${baseUrl()}/agent-runs/${encodeURIComponent(runId)}/${suffix}`, { method: 'POST', headers: headers(), body: JSON.stringify(payload) }); return new NextResponse(await response.text(), { status: response.status, headers: { 'Content-Type': response.headers.get('content-type') || 'application/json' } }); }
   catch (error) { return NextResponse.json({ error: 'Agent runtime belum tersedia', detail: String(error) }, { status: 503 }); }
 }

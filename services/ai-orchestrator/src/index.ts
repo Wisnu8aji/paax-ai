@@ -1,5 +1,5 @@
 import cors from "cors";
-import express from "express";
+import express, { type Request, type Response, type NextFunction } from "express";
 
 import { loadConfig } from "./config";
 import { createChatHandler } from "./routes/chat";
@@ -16,7 +16,7 @@ app.use(express.json());
 const RATE_LIMIT = Number(process.env.RATE_LIMIT_PER_MINUTE || 30);
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
-function rateLimiter(req: express.Request, res: express.Response, next: express.NextFunction) {
+function rateLimiter(req: Request, res: Response, next: NextFunction) {
   const key = req.body?.project_id || req.ip || "global";
   const now = Date.now();
   let record = rateLimitMap.get(key);

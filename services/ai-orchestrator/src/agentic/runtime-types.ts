@@ -64,4 +64,7 @@ export interface MatureAgentRun {
   createdAt: string;
   updatedAt: string;
   failure?: string;
+  budget?: { maxToolCalls: number; maxTokens: number; maxCostUsd: number; maxDurationMs: number };
+  budgetUsage?: { toolCalls: number; tokens: number; costUsd: number; startedAtMs: number };
+  auditTimeline?: Array<{ eventId: string; type: string; message: string; createdAt: string; data?: unknown }>;
 }

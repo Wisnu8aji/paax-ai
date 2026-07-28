@@ -20,6 +20,9 @@ export class MatureAreteOrchestrator {
       runId: `run-${randomUUID()}`, goalSpec, plan: buildEngineeringPlan(request, binding), status: 'queued',
       completedTaskIds: [], failedTaskIds: [], invocations: [], observations: [], artifacts: [], pendingApprovalIds: [],
       version: 0, createdAt: now, updatedAt: now,
+      budget: { maxToolCalls: 20, maxTokens: 120_000, maxCostUsd: 5, maxDurationMs: 30 * 60_000 },
+      budgetUsage: { toolCalls: 0, tokens: 0, costUsd: 0, startedAtMs: Date.now() },
+      auditTimeline: [{ eventId: `event-${randomUUID()}`, type: 'run_created', message: 'Agent run created', createdAt: now }],
     };
     return await this.store.create(run);
   }
