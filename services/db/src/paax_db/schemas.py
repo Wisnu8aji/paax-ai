@@ -850,3 +850,90 @@ class ProjectGraphSummaryViewResponse(BaseModel):
 class AgenticMeasurementCalculationRequest(BaseModel):
     measurement_fact_ids: List[str] = Field(min_length=1)
     idempotency_key: str = Field(min_length=1)
+
+
+class RawEvidenceArtifactResponse(BaseModel):
+    artifact_id: str
+    project_id: str
+    document_id: str
+    document_revision_id: Optional[str] = None
+    artifact_kind: Literal["original_document", "json1_raw", "dem_page", "extracted_text", "extracted_vector"]
+    content_sha256: str
+    storage_ref: str
+    media_type: str
+    byte_size: int = Field(ge=0)
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EvidenceRegionResponse(BaseModel):
+    region_id: str
+    artifact_id: str
+    project_id: str
+    page_index: int = Field(ge=0)
+    sheet_id: Optional[str] = None
+    sheet_revision_id: Optional[str] = None
+    view_id: Optional[str] = None
+    zone_id: Optional[str] = None
+    bbox_space: Literal["pdf_points", "normalized_page", "pixel", "none"] = "none"
+    bbox_x: Optional[float] = None
+    bbox_y: Optional[float] = None
+    bbox_w: Optional[float] = None
+    bbox_h: Optional[float] = None
+    project_graph_snapshot_id: Optional[str] = None
+    project_graph_evidence_id: Optional[str] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SourceAuthorityEntryResponse(BaseModel):
+    authority_id: str
+    project_id: str
+    source_kind: str
+    source_ref: str
+    version: str
+    scope: Dict[str, Any] = Field(default_factory=dict)
+    evidence_refs: List[str] = Field(default_factory=list)
+    supersedes_authority_id: Optional[str] = None
+    created_by: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CanonicalFactResponse(BaseModel):
+    fact_id: str
+    project_id: str
+    snapshot_id: str
+    fact_type: str
+    subject_ref: str
+    predicate: str
+    value: Optional[Any] = None
+    status: Literal["candidate", "human_verified", "superseded", "stale"] = "candidate"
+    source_authority_id: Optional[str] = None
+    supersedes_fact_id: Optional[str] = None
+    calculation_authority: Literal["none"] = "none"
+    created_by: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ResolutionDecisionResponse(BaseModel):
+    decision_id: str
+    project_id: str
+    snapshot_id: str
+    target_fact_ids: List[str]
+    selected_fact_id: Optional[str] = None
+    status: Literal["proposed", "approved", "rejected", "stale", "superseded"] = "proposed"
+    scope: Dict[str, Any]
+    rationale: str
+    decided_by: Optional[str] = None
+    supersedes_decision_id: Optional[str] = None
+    calculation_authority: Literal["none"] = "none"
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
