@@ -9,7 +9,7 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
-revision = "0034_contextual_evidence_integrity"
+revision = "0034_contextual_integrity"
 down_revision = "0033_contextual_foundation"
 branch_labels = None
 depends_on = None

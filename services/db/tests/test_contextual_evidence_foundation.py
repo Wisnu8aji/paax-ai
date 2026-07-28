@@ -44,9 +44,9 @@ def test_alembic_0034_is_single_head():
     script = _script_directory()
     heads = script.get_heads()
     assert len(heads) == 1
-    assert heads[0] == "0034_contextual_evidence_integrity"
+    assert heads[0] == "0034_contextual_integrity"
 
-    rev = script.get_revision("0034_contextual_evidence_integrity")
+    rev = script.get_revision("0034_contextual_integrity")
     assert rev.down_revision == "0033_contextual_foundation"
     source = Path(rev.path).read_text(encoding="utf-8")
     assert "resolution_decision_fact_links" in source

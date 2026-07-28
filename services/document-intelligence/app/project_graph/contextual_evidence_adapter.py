@@ -12,11 +12,18 @@ from paax_schemas.contextual_evidence import (
     RawEvidenceArtifact,
     SourceAuthorityEntry,
 )
-from paax_db import (
-    ContextualEvidenceRepository,
-    ContextualEvidenceConflict,
-    ContextualEvidenceIntegrityError,
-)
+try:
+    from paax_db import (
+        ContextualEvidenceRepository,
+        ContextualEvidenceConflict,
+        ContextualEvidenceIntegrityError,
+    )
+except ImportError:
+    ContextualEvidenceRepository = Any  # type: ignore
+    class ContextualEvidenceConflict(Exception):  # type: ignore
+        pass
+    class ContextualEvidenceIntegrityError(Exception):  # type: ignore
+        pass
 
 logger = logging.getLogger(__name__)
 
