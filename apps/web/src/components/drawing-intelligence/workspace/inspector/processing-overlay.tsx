@@ -5,7 +5,6 @@
 import { useEffect, useState } from 'react';
 import { Check, CheckCircle2 } from 'lucide-react';
 import { useWorkspace } from '../workspace-store';
-import { MODEL_STACK } from '../di-mock-data';
 import { fetchDemRunStatus } from '../../drawing-intelligence-api';
 
 export function ProcessingOverlay() {
@@ -32,6 +31,7 @@ export function ProcessingOverlay() {
   const totalPages = realStatus?.total_pages || 0;
   const completedPages = realStatus?.pages?.filter((p: any) => p.status === 'complete' || p.status === 'failed').length || 0;
   const synStatus = realStatus?.synthesis_status || 'pending';
+  const modelStack = Array.isArray(realStatus?.model_stack) ? realStatus.model_stack : [];
 
   // Make stages reactive to real synthesis status
   const activeStages = stages.map((s, i) => {
@@ -161,17 +161,19 @@ export function ProcessingOverlay() {
           <span className="di-mono" style={{ fontSize: 11, color: 'var(--di-text3)' }}>
             Analysis Stats: {completedPages}/{totalPages} pages extracted · Synthesis Status: {synStatus}
           </span>
-          <details>
-            <summary style={{ fontSize: 11, color: 'var(--di-text3)', cursor: 'pointer' }}>Model Stack</summary>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 6, paddingLeft: 4 }}>
-              {MODEL_STACK.map((m) => (
-                <div key={m.name} className="di-mono" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: 'var(--di-text3)' }}>
-                  <span>{m.name}</span>
-                  <span>{m.version}</span>
-                </div>
-              ))}
-            </div>
-          </details>
+          {modelStack.length > 0 && (
+            <details>
+              <summary style={{ fontSize: 11, color: 'var(--di-text3)', cursor: 'pointer' }}>Runtime components</summary>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 6, paddingLeft: 4 }}>
+                {modelStack.map((component: any, index: number) => (
+                  <div key={`${component.name ?? 'component'}-${index}`} className="di-mono" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: 'var(--di-text3)' }}>
+                    <span>{String(component.name ?? 'Component')}</span>
+                    <span>{String(component.version ?? '')}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center' }}>

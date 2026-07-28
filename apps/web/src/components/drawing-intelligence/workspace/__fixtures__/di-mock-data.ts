@@ -23,7 +23,7 @@ import type {
   RoomShape,
   Sheet,
   SheetGeometry,
-} from './di-types';
+} from '../di-types';
 
 // ── Grid & geometri dasar (konsisten untuk denah tipikal) ────────────────────
 

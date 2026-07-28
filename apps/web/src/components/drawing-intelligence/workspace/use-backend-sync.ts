@@ -3,8 +3,8 @@
 /**
  * useBackendSync — sambungan aman ke backend nyata (services/db lewat proxy
  * /api/drawing-intelligence). Bila backend hidup dan punya data untuk proyek
- * aktif, review queue nyata menggantikan dummy; bila tidak, UI tetap penuh
- * berfungsi dengan mock (blueprint: dummy tidak boleh menghambat fungsi).
+ * aktif. Empty/not-ready states remain explicit; no production fixture is
+ * substituted when the backend has no data.
  *
  * TIDAK menghitung apa pun — hanya memetakan payload ke view-model.
  */
@@ -18,6 +18,7 @@ import {
   fetchProjectDemRuns,
   fetchSummaryViews,
   fetchPackageIntelligence,
+  fetchActiveSheetContext,
 } from '../drawing-intelligence-api';
 import { useWorkspace, mapQuantityReadinessToItems, mapCivilWorkItemsToQuantityItems, mapGraphNodesToElements } from './workspace-store';
 import type { ReviewQueueItem, Sheet, DrawingFile } from './di-types';
@@ -51,7 +52,7 @@ function mapDemRunToDrawingFile(run: any): DrawingFile {
 }
 
 export function useBackendSync(projectId: string | null) {
-  const { dispatch } = useWorkspace();
+  const { state, dispatch } = useWorkspace();
 
   useEffect(() => {
     if (!projectId) return;
@@ -79,6 +80,9 @@ export function useBackendSync(projectId: string | null) {
         }
 
         dispatch({ type: 'backend-connected', connected: true });
+        if (state.mode === 'files' && (sheetsData.length > 0 || queue.items.length > 0)) {
+          dispatch({ type: 'switch-mode', mode: 'review' });
+        }
 
         const snapshotId = queue.snapshot_id || readiness.snapshot_id || null;
         if (snapshotId) {
@@ -95,6 +99,9 @@ export function useBackendSync(projectId: string | null) {
         const mappedSheets: Sheet[] = sheetsData.map(mapRawDemSheetToSheet);
         if (mappedSheets.length > 0) {
           dispatch({ type: 'replace-sheets', sheets: mappedSheets });
+          if (!state.activeSheetId) {
+            dispatch({ type: 'set-active-sheet', sheetId: mappedSheets[0].id });
+          }
         }
         dispatch({ type: 'replace-mapped-sheets', sheets: sheetsData.map(mapProjectDemSheet) });
         const mappedFiles = runsData.map(mapDemRunToDrawingFile);
@@ -218,10 +225,15 @@ export function useBackendSync(projectId: string | null) {
           dispatch({ type: 'replace-elements', elements: allMappedElements });
         }
 
-        if (civilWorkItems?.items.length) {
-          dispatch({ type: 'replace-quantities', quantities: mapCivilWorkItemsToQuantityItems(civilWorkItems.items) });
-        } else if (readiness.items.length > 0) {
-          dispatch({ type: 'replace-quantities', quantities: mapQuantityReadinessToItems(readiness.items) });
+        const civilQuantities = civilWorkItems?.items.length ? mapCivilWorkItemsToQuantityItems(civilWorkItems.items) : [];
+        const readinessQuantities = readiness.items.length ? mapQuantityReadinessToItems(readiness.items) : [];
+        // Combined quantity items prioritize verified Civil Work Items first, followed by all remaining candidate element types from quantity-readiness
+        const combinedQuantities = [
+          ...civilQuantities,
+          ...readinessQuantities.filter((rq) => !civilQuantities.some((cq) => cq.itemCode === rq.itemCode || cq.id === rq.id))
+        ];
+        if (combinedQuantities.length > 0) {
+          dispatch({ type: 'replace-quantities', quantities: combinedQuantities });
         }
 
         if (summaryViewsData && summaryViewsData.length > 0) {
@@ -244,4 +256,51 @@ export function useBackendSync(projectId: string | null) {
       cancelled = true;
     };
   }, [projectId, dispatch]);
+
+  useEffect(() => {
+    const selected = state.mappedSheets.find((sheet) => sheet.id === state.activeSheetId);
+    if (!projectId || !selected) return;
+    let cancelled = false;
+
+    fetchActiveSheetContext(selected.runId, selected.pageIndex)
+      .then((context) => {
+        if (cancelled) return;
+        const elements = context.physical_instances.map((instance: any) => {
+          const bbox = instance.bbox || {};
+          const category = String(instance.category || 'unknown') as any;
+          return {
+            id: String(instance.instance_id),
+            sheetId: selected.id,
+            code: String(instance.code || instance.instance_id),
+            aiId: String(instance.instance_id),
+            category,
+            label: String(instance.code || instance.category || 'Detected item'),
+            floorId: String(instance.level || selected.level || 'UNKNOWN'),
+            grid: null,
+            dimensions: null,
+            material: null,
+            bbox: {
+              x: Number(bbox.x0 || 0) * 1000,
+              y: Number(bbox.y0 || 0) * 1000,
+              w: Math.max(0, Number(bbox.x1 || 0) - Number(bbox.x0 || 0)) * 1000,
+              h: Math.max(0, Number(bbox.y1 || 0) - Number(bbox.y0 || 0)) * 1000,
+            },
+            confidence: typeof instance.confidence === 'number' ? Math.round(instance.confidence * 100) : null,
+            verification: (instance.authority === 'human_confirmed' || instance.authority === 'engine_confirmed' ? 'verified' : 'detected') as 'verified' | 'detected',
+            properties: [],
+            sourcePages: [{ sheetCode: `p.${selected.pageIndex + 1}`, label: 'Active sheet evidence' }],
+            aiNotes: [],
+          };
+        });
+        dispatch({ type: 'replace-elements', elements });
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error('Failed to load active-sheet context:', error);
+          dispatch({ type: 'replace-elements', elements: [] });
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [projectId, state.activeSheetId, state.mappedSheets, dispatch]);
 }

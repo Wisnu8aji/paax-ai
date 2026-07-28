@@ -12,6 +12,7 @@ import {
 import { civilWorkItemsExportUrl } from '../../drawing-intelligence-api';
 import type { QuantityItem, QuantityRowStatus } from '../di-types';
 import { useWorkspace } from '../workspace-store';
+import { canDisplayFinalQuantity } from '../quantity-authority';
 
 const STATUS_PILL: Record<QuantityRowStatus, { label: string; tone?: string }> = {
   verified: { label: 'Terverifikasi', tone: 'ok' },
@@ -78,7 +79,7 @@ export function QuantitiesMode() {
   );
   const groups = useMemo(() => groupItems(quantities, groupMode), [quantities, groupMode]);
   const total = quantities.length;
-  const nVerified = quantities.filter((q) => q.status === 'verified').length;
+  const nVerified = quantities.filter((q) => q.status === 'verified' && canDisplayFinalQuantity({ sourceAuthority: q.sourceAuthority ?? 'none' })).length;
   const nReview = quantities.filter((q) => ['needs-review', 'conflict'].includes(q.status)).length;
   const nFloors = new Set(quantities.map((q) => q.floorLabel)).size;
   const activeFilterLabel = FILTERS.find((entry) => entry.id === scopeFilter)?.label ?? 'Semua item';
@@ -132,7 +133,7 @@ export function QuantitiesMode() {
           <div>
             <h2 style={{ fontFamily: 'var(--di-font-display)', fontSize: 15, margin: 0 }}>Daftar Item Pekerjaan &amp; Perhitungan</h2>
             <div style={{ marginTop: 4, fontSize: 11.5, color: 'var(--di-text3)' }}>
-              Nilai terverifikasi berasal dari Measurement Facts dan Core Engine; kode internal disembunyikan dari tabel utama.
+              Nilai final hanya ditampilkan setelah dihitung oleh Core Engine; kandidat dan Measurement Fact tetap reviewable tetapi bukan quantity final.
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -170,7 +171,7 @@ export function QuantitiesMode() {
             <thead><tr>
               <th style={{ width: 28 }} />
               <th>Item pekerjaan</th><th>Lokasi / Lantai</th><th>Jenis</th><th>Satuan</th><th>Ukuran</th>
-              <th style={{ textAlign: 'right' }}>Jumlah</th><th>Formula</th><th style={{ textAlign: 'right' }}>Volume / Hasil</th>
+              <th style={{ textAlign: 'right' }}>Jumlah</th><th style={{ textAlign: 'right' }}>Volume / Hasil</th>
               <th>Status</th><th>Sumber</th><th style={{ width: 28 }} />
             </tr></thead>
             <tbody>
@@ -178,7 +179,7 @@ export function QuantitiesMode() {
                 const collapsed = collapsedGroups.has(group.title);
                 return <Fragment key={group.title}>
                   {groupMode !== 'flat' && <tr onClick={() => toggleGroup(group.title)} style={{ background: 'var(--di-panel2)', cursor: 'pointer' }}>
-                    <td colSpan={12}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <td colSpan={11}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       {collapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
                       <span className="di-mono" style={{ color: 'var(--di-text3)' }}>{index + 1}</span>
                       <strong style={{ fontSize: 12.5 }}>{group.title}</strong>
@@ -195,8 +196,7 @@ export function QuantitiesMode() {
                       <td>{item.floorLabel}</td><td style={{ textTransform: 'capitalize' }}>{categoryLabel(item.category)}</td>
                       <td className="di-mono">{item.unit}</td><td className="di-mono">{item.dimensionsDisplay ?? '-'}</td>
                       <td className="di-mono" style={{ textAlign: 'right' }}>{item.countDisplay ?? '-'}</td>
-                      <td className="di-mono" style={{ fontSize: 11 }}>{item.formula}</td>
-                      <td className="di-mono" style={{ textAlign: 'right', fontWeight: 700 }}>{item.resultDisplay ?? item.qty}</td>
+                      <td className="di-mono" style={{ textAlign: 'right', fontWeight: 700 }}>{canDisplayFinalQuantity({ sourceAuthority: item.sourceAuthority ?? 'none' }) ? (item.resultDisplay ?? item.qty) : '—'}</td>
                       <td><span className="di-pill" data-tone={pill.tone}>{pill.label}</span></td>
                       <td style={{ maxWidth: 250, fontSize: 11, color: 'var(--di-text2)' }}>{item.source}</td>
                       <td onClick={(event) => event.stopPropagation()}>{hoveredRowId === item.id && <button className="di-icon-btn" title="Buka sumber/review" onClick={() => openFirstSource(item)}><ExternalLink size={13} /></button>}</td>
@@ -204,7 +204,7 @@ export function QuantitiesMode() {
                   })}
                 </Fragment>;
               })}
-              {quantities.length === 0 && <tr><td colSpan={12} style={{ padding: 32, textAlign: 'center', color: 'var(--di-text3)' }}>Tidak ada item pada filter ini.</td></tr>}
+              {quantities.length === 0 && <tr><td colSpan={11} style={{ padding: 32, textAlign: 'center', color: 'var(--di-text3)' }}>Tidak ada item pada filter ini.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -216,7 +216,7 @@ export function QuantitiesMode() {
         <SummaryBlock title="Menurut jenis" entries={byCategory.map((entry) => ({ ...entry, label: categoryLabel(entry.label) }))} />
         <div style={{ marginTop: 18, padding: 12, borderRadius: 8, background: 'var(--di-panel2)', fontSize: 11.5, lineHeight: 1.55, color: 'var(--di-text2)' }}>
           <strong style={{ color: 'var(--di-text)' }}>Aturan authority</strong><br />
-          Draft/kandidat AI tidak masuk Core Engine. Item berstatus “Terverifikasi” memiliki sumber lembar dan formula yang dapat diaudit.
+          Draft/kandidat AI tidak menjadi angka final. Hanya respons Core Engine yang dapat masuk handoff; bukti tetap dapat dibuka dari label halaman.
         </div>
       </aside> : null}
     </div>

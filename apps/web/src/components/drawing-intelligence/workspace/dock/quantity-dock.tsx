@@ -4,7 +4,7 @@
  * Quantity Dock — dock bawah mode Review (blueprint §16, gambar 1/8).
  *
  * ATURAN EMAS: dock ini TIDAK PERNAH menghitung kuantitas. Semua qty adalah
- * string yang disalin apa adanya dari state.quantities (mock/engine). Angka
+ * string yang disalin apa adanya dari respons backend/Core Engine. Angka
  * yang tampil di badge/pill di sini adalah COUNT baris (jumlah UI), bukan
  * hasil perhitungan teknik.
  */
@@ -16,19 +16,14 @@ import {
   ChevronRight,
   Filter,
   Columns3,
-  Settings,
   Download,
   Maximize2,
   MoreVertical,
-  Sigma,
-  Square,
-  Hash,
   Flag,
   AlertCircle,
   CheckCircle2,
 } from 'lucide-react';
 import { useWorkspace } from '../workspace-store';
-import { MOCK_ASSUMPTIONS } from '../di-mock-data';
 import type { DockTab } from '../workspace-store';
 import type { QuantityItem, QuantityRowStatus, VerificationStatus } from '../di-types';
 import { useDockToast, DockToastHost } from './dock-toast';
@@ -61,18 +56,11 @@ const VERIFICATION_PILL: Record<VerificationStatus, { label: string; tone?: stri
   'missing-source': { label: 'Missing source', tone: 'err' },
 };
 
-const FORMULA_ICON: Record<QuantityItem['formulaBasis'], typeof Sigma> = {
-  Count: Hash,
-  Length: Sigma,
-  Area: Square,
-  Volume: Square,
-};
-
 type StatusFilter = 'all' | 'verified' | 'needs-review' | 'ai-detected';
 type SortKey = 'itemCode' | 'floorId' | 'qty' | null;
 type SortDir = 'asc' | 'desc';
 
-const OPTIONAL_COLUMNS = ['formula', 'confidence', 'source'] as const;
+const OPTIONAL_COLUMNS = ['confidence', 'source'] as const;
 type OptionalColumn = (typeof OPTIONAL_COLUMNS)[number];
 
 function activityDotTone(kind: string): string {
@@ -100,7 +88,6 @@ export function QuantityDock() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [visibleCols, setVisibleCols] = useState<Record<OptionalColumn, boolean>>({
-    formula: true,
     confidence: false,
     source: true,
   });
@@ -134,7 +121,7 @@ export function QuantityDock() {
   }
 
   const filteredQuantities = useMemo(() => {
-    let rows = state.quantities.filter((quantity) => canDisplayFinalQuantity({ sourceAuthority: quantity.sourceAuthority ?? 'none' }));
+    let rows = state.quantities;
     if (statusFilter !== 'all') rows = rows.filter((q) => q.status === statusFilter);
     if (sortKey) {
       rows = [...rows].sort((a, b) => {
@@ -174,7 +161,7 @@ export function QuantityDock() {
 
   function verifyRow(q: QuantityItem) {
     if (!canDisplayFinalQuantity({ sourceAuthority: q.sourceAuthority ?? 'none' })) {
-      showToast('Blocked: only Measurement Fact or Core Engine results can be verified as final quantities.');
+      showToast('Blocked: only a complete Python Core Engine result can be verified as a final quantity.');
       return;
     }
     dispatch({ type: 'set-quantity-status', quantityId: q.id, status: 'verified' });
@@ -213,13 +200,8 @@ export function QuantityDock() {
       showToast(`Create a correction proposal before resolving “${title}”. The review item remains open.`);
       return;
     } else {
-      // No project — no backend to call, resolve locally only (demo/mock mode)
-      dispatch({ type: 'resolve-review-item', itemId });
-      dispatch({
-        type: 'push-activity',
-        entry: { time: 'Now', message: `Resolved locally: ${title}`, kind: 'correction' },
-      });
-      showToast(`Resolved locally (no active project).`);
+      showToast('Review resolution requires an active project and a persisted correction.');
+      return;
     }
   }
 
@@ -399,16 +381,12 @@ export function QuantityDock() {
                           checked={visibleCols[c]}
                           onChange={() => setVisibleCols((v) => ({ ...v, [c]: !v[c] }))}
                         />
-                        {c === 'formula' ? 'Formula' : c === 'confidence' ? 'Confidence' : 'Source'}
+                        {c === 'confidence' ? 'Confidence' : 'Source'}
                       </label>
                     ))}
                   </div>
                 )}
               </div>
-
-              <button className="di-btn di-btn-ghost" onClick={() => showToast('Coming soon')}>
-                <Settings size={14} /> Settings
-              </button>
 
               <button
                 className="di-icon-btn"
@@ -485,7 +463,7 @@ export function QuantityDock() {
               <div data-testid="quantity-authority-blocked" style={{ margin: 14, padding: 12, border: '1px solid var(--di-warn)', borderRadius: 8, color: 'var(--di-text2)', fontSize: 12 }}>
                 <strong>Quantity blocked</strong><br />
                 {honestStateMessage(state.honestState === 'ready' ? 'core-engine-required' : state.honestState)}<br />
-                Detected references, context groups, and candidates remain non-physical until a typed Measurement Fact or explicit Core Engine result is available.
+                Detected references and Measurement Facts remain non-final until Python Core Engine returns an authoritative result.
               </div>
             )}
             {dock.tab === 'quantities' && (
@@ -501,7 +479,6 @@ export function QuantityDock() {
                       Floor {sortKey === 'floorId' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
                     </th>
                     <th>Category</th>
-                    {visibleCols.formula && <th>Formula</th>}
                     <th>Unit</th>
                     <th onClick={() => toggleSort('qty')} style={{ cursor: 'pointer', textAlign: 'right' }}>
                       Qty {sortKey === 'qty' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
@@ -514,7 +491,6 @@ export function QuantityDock() {
                 </thead>
                 <tbody>
                   {filteredQuantities.map((q) => {
-                    const FormulaIcon = FORMULA_ICON[q.formulaBasis];
                     const pill = STATUS_PILL[q.status];
                     const isExpanded = expandedRowId === q.id;
                     return (
@@ -554,17 +530,9 @@ export function QuantityDock() {
                           </td>
                           <td className="di-mono">{q.floorLabel}</td>
                           <td>{q.category}</td>
-                          {visibleCols.formula && (
-                            <td>
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                                <FormulaIcon size={12} color="var(--di-text3)" />
-                                {q.formulaBasis}
-                              </span>
-                            </td>
-                          )}
                           <td className="di-mono">{q.unit}</td>
                           <td className="di-mono" style={{ textAlign: 'right', fontWeight: 700, color: 'var(--di-text)' }}>
-                            {q.qty}
+                            {canDisplayFinalQuantity({ sourceAuthority: q.sourceAuthority ?? 'none' }) ? q.qty : '—'}
                           </td>
                           <td>
                             <span
@@ -605,16 +573,15 @@ export function QuantityDock() {
                         </tr>
                         {isExpanded && (
                           <tr style={{ cursor: 'default' }}>
-                            <td colSpan={11} style={{ background: 'var(--di-panel2)' }}>
-                              <div style={{ padding: '8px 6px' }}>
-                                <div style={{ fontSize: 12, color: 'var(--di-text)', marginBottom: 6 }}>{q.formula}</div>
-                                <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                  {q.formulaEvidence.map((line, i) => (
-                                    <li key={i} className="di-mono" style={{ fontSize: 11, color: 'var(--di-text2)' }}>
-                                      {line}
-                                    </li>
-                                  ))}
-                                </ul>
+                            <td colSpan={10} style={{ background: 'var(--di-panel2)' }}>
+                              <div style={{ padding: '8px 6px', display: 'grid', gap: 4 }}>
+                                <div style={{ fontSize: 12, color: 'var(--di-text2)' }}>
+                                  Source: <span className="di-mono">{q.source || 'Not available'}</span>
+                                </div>
+                                <div style={{ fontSize: 12, color: 'var(--di-text2)' }}>
+                                  Authority: <span className="di-mono">{q.sourceAuthority ?? 'none'}</span>
+                                </div>
+                                {q.reviewerNote && <div style={{ fontSize: 12, color: 'var(--di-warn)' }}>{q.reviewerNote}</div>}
                               </div>
                             </td>
                           </tr>
@@ -727,14 +694,8 @@ export function QuantityDock() {
             )}
 
             {dock.tab === 'assumptions' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12 }}>
-                {MOCK_ASSUMPTIONS.map((a) => (
-                  <div key={a.id} className="di-panel" style={{ padding: 12, borderRadius: 10 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 700 }}>{a.topic}</div>
-                    <div style={{ fontSize: 12, color: 'var(--di-text2)', marginTop: 4 }}>{a.assumption}</div>
-                    <div style={{ fontSize: 11, color: 'var(--di-text3)', marginTop: 6 }}>Affects: {a.affects}</div>
-                  </div>
-                ))}
+              <div style={{ padding: 14, color: 'var(--di-text2)', fontSize: 12 }}>
+                No approved assumptions are available for this project. Assumptions must come from evidence or explicit human input and require approval.
               </div>
             )}
 

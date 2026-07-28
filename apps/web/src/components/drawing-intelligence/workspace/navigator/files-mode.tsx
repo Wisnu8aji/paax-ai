@@ -179,13 +179,6 @@ export function FilesMode() {
               <UploadCloud size={15} />
               Upload new files
             </button>
-            <button
-              className="di-btn"
-              style={{ height: 38, padding: '0 18px' }}
-              onClick={() => showToast('Coming soon')}
-            >
-              Import from project documents
-            </button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--di-text3)', marginTop: 6 }}>
             Supported formats: PDF, DWG, PNG, JPG, TIFF

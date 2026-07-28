@@ -15,7 +15,7 @@ describe('real DEM sheet mapping', () => {
     expect(mapProjectDemSheet({ run_id: 'run-1', page_index: 0, file_name: 'drawing.pdf', status: 'completed' })).toEqual({
       id: 'run-1-page-0', runId: 'run-1', pageIndex: 0,
       number: null, title: null, discipline: null, level: null,
-      scale: null, revision: null, confidence: null, status: 'completed', imageUrl: null,
+      scale: null, revision: null, confidence: null, widthPx: null, heightPx: null, status: 'completed', imageUrl: null,
     });
   });
 

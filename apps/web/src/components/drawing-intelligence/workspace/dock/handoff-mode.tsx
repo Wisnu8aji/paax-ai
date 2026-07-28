@@ -15,6 +15,7 @@ import type { QuantityItem } from '../di-types';
 import { HandoffConfirmModal } from './handoff-confirm-modal';
 import { useDockToast, DockToastHost } from './dock-toast';
 import { RabProposalReviewPanel } from './rab-proposal-review-panel';
+import { canHandoffQuantity } from '../quantity-authority';
 
 function disciplineFromCategory(category: QuantityItem['category']): 'STR' | 'ARC' | 'MEP' {
   if (category === 'door' || category === 'window' || category === 'room') return 'ARC';
@@ -44,7 +45,8 @@ export function HandoffMode({ projectName = 'Proyek aktif' }: { projectName?: st
   }
 
   const total = quantities.length;
-  const nVerified = quantities.filter((q) => q.status === 'verified').length;
+  const eligibleQuantities = quantities.filter((q) => canHandoffQuantity({ sourceAuthority: q.sourceAuthority ?? 'none', status: q.status, unit: q.unit }));
+  const nVerified = eligibleQuantities.length;
   const nReview = quantities.filter((q) => q.status === 'needs-review').length;
   const pctVerified = total > 0 ? Math.round((nVerified / total) * 100) : 0;
   const pctReview = total > 0 ? Math.round((nReview / total) * 100) : 0;
@@ -119,8 +121,7 @@ export function HandoffMode({ projectName = 'Proyek aktif' }: { projectName?: st
           <div style={{ flex: 1, minWidth: 0 }}>
             <h1 style={{ fontFamily: 'var(--di-font-display)', fontSize: 20, margin: 0 }}>Verified Quantities Ready</h1>
             <p style={{ fontSize: 12.5, color: 'var(--di-text2)', margin: '6px 0 0', maxWidth: 560 }}>
-              All drawing intelligence checks are complete. Your verified quantities are ready to be handed off to
-              Cost &amp; Quantity.
+              Only Core Engine-authoritative quantities are eligible. Review, blocked, and evidence-only rows remain visible but cannot be handed off.
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
@@ -145,7 +146,7 @@ export function HandoffMode({ projectName = 'Proyek aktif' }: { projectName?: st
           <HandoffStat title="Verified items" value={String(nVerified)} sub={`${pctVerified}% of total items`} ok />
           <HandoffStat title="Needs review" value={String(nReview)} sub={`${pctReview}% of total items`} warn />
           <HandoffStat title="Total levels grouped" value={String(totalFloors)} sub={totalFloors > 0 ? "Berdasarkan metadata gambar" : "Level belum tersedia"} ok={totalFloors > 0} />
-          <HandoffStat title="Ready for Cost & Quantity" value="100%" sub="Deterministic handoff" ok />
+          <HandoffStat title="Ready for Cost & Quantity" value={String(nVerified)} sub={nVerified > 0 ? "Core Engine-authoritative rows" : "No eligible rows yet"} ok={nVerified > 0} warn={nVerified === 0} />
         </div>
 
         {/* Verified Work Package Summary */}
@@ -169,7 +170,7 @@ export function HandoffMode({ projectName = 'Proyek aktif' }: { projectName?: st
               <tbody>
                 {groups.map((g) => {
                   const collapsed = collapsedGroups.has(g.title);
-                  const verifiedCount = g.rows.filter((r) => r.status === 'verified').length;
+                  const verifiedCount = g.rows.filter((r) => canHandoffQuantity({ sourceAuthority: r.sourceAuthority ?? 'none', status: r.status, unit: r.unit })).length;
                   const reviewCount = g.rows.filter((r) => r.status === 'needs-review').length;
                   const groupPct = g.rows.length > 0 ? Math.round((verifiedCount / g.rows.length) * 100) : 0;
                   const disciplines = new Set(g.rows.map((r) => disciplineFromCategory(r.category)));
@@ -196,14 +197,14 @@ export function HandoffMode({ projectName = 'Proyek aktif' }: { projectName?: st
                               </span>
                             </td>
                             <td className="di-mono" style={{ textAlign: 'right' }}>
-                              {q.status === 'verified' ? 1 : 0}
+                              {canHandoffQuantity({ sourceAuthority: q.sourceAuthority ?? 'none', status: q.status, unit: q.unit }) ? 1 : 0}
                             </td>
-                            <td className="di-mono">{q.qty} {q.unit}</td>
+                            <td className="di-mono">{canHandoffQuantity({ sourceAuthority: q.sourceAuthority ?? 'none', status: q.status, unit: q.unit }) ? `${q.qty} ${q.unit}` : '—'}</td>
                             <td className="di-mono" style={{ textAlign: 'right' }}>
                               {q.status === 'needs-review' ? 1 : 0}
                             </td>
                             <td>
-                              <MiniProgress pct={q.status === 'verified' ? 100 : q.status === 'needs-review' ? 0 : 50} />
+                              <MiniProgress pct={canHandoffQuantity({ sourceAuthority: q.sourceAuthority ?? 'none', status: q.status, unit: q.unit }) ? 100 : 0} />
                             </td>
                             <td>
                               <span className="di-pill" data-tone={q.status === 'verified' ? 'ok' : 'warn'}>
@@ -253,8 +254,8 @@ export function HandoffMode({ projectName = 'Proyek aktif' }: { projectName?: st
                     <MiniProgress pct={pctVerified} label={`${pctVerified}%`} />
                   </td>
                   <td>
-                    <span className="di-pill" data-tone="ok">
-                      Verified
+                    <span className="di-pill" data-tone={nReview > 0 ? 'warn' : nVerified > 0 ? 'ok' : undefined}>
+                      {nReview > 0 ? 'Review required' : nVerified > 0 ? 'Eligible' : 'Not ready'}
                     </span>
                   </td>
                 </tr>
@@ -278,7 +279,7 @@ export function HandoffMode({ projectName = 'Proyek aktif' }: { projectName?: st
       >
         <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--di-ok)', flexShrink: 0 }} />
         <span style={{ fontSize: 12.5 }}>
-          <strong>Ready for handoff</strong> — Verified quantities are ready to send to Cost &amp; Quantity.
+          <strong>{nVerified > 0 ? 'Eligible for handoff' : 'Handoff blocked'}</strong> — {nVerified > 0 ? `${nVerified} Core Engine-authoritative quantities can be sent.` : 'No Core Engine-authoritative quantity is available yet.'}
         </span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
           <button className="di-btn di-btn-ghost" onClick={() => showToast('Opening Cost & Quantity…')}>

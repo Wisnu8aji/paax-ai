@@ -4,7 +4,7 @@
  * Store pusat Drawing Intelligence Workspace — React context + reducer.
  * Menyimpan seluruh state UI (mode, seleksi, canvas, dock, upload, analysis,
  * handoff). Tidak ada perhitungan teknik di sini: angka kuantitas selalu
- * berasal dari data (mock/engine) — reducer hanya memindah status & seleksi.
+ * berasal dari backend/engine nyata — reducer hanya memindah status & seleksi.
  */
 
 import {
@@ -33,16 +33,7 @@ import type {
   WorkspaceMode,
   ActivityEntry,
 } from './di-types';
-import {
-  ANALYSIS_LOG_SCRIPT,
-  ANALYSIS_STAGES,
-  MOCK_ACTIVITY,
-  MOCK_ELEMENTS,
-  MOCK_FILE,
-  MOCK_QUANTITY_ITEMS,
-  MOCK_REVIEW_QUEUE,
-  MOCK_SHEETS,
-} from './di-mock-data';
+
 import {
   retrieveProjectGraph,
   startDemUpload,
@@ -53,7 +44,6 @@ import {
 import type { PackageIntelligenceSummary } from '../drawing-intelligence-api';
 import type { ProjectGraphSummaryView, QuantityReadinessItem } from '@paax/schemas';
 import type { MappedProjectSheet } from './sheet-mapping';
-import { canUseWorkspaceMocks, resolveWorkspaceEnvironmentMode } from './environment';
 import { mapProjectDemSheet } from './sheet-mapping';
 import type { HonestWorkspaceState } from './quantity-authority';
 
@@ -71,7 +61,7 @@ export type CanvasTool =
   | 'volume'
   | 'calibrate';
 
-export type NavigatorTab = 'sheets' | 'classification';
+export type NavigatorTab = 'level' | 'classification' | 'source';
 export type InspectorTab = 'sheet' | 'detection' | 'properties' | 'verification' | 'ai-notes';
 export type DockTab = 'detected' | 'quantities' | 'review-queue' | 'assumptions' | 'activity';
 export type GalleryView = 'grid' | 'list';
@@ -179,7 +169,6 @@ const DEFAULT_OVERLAYS: Record<string, boolean> = {
   'mep-point': false,
 };
 
-import { makeGeometry } from './di-mock-data';
 
 function mapDemRunToDrawingFile(run: any): DrawingFile {
   let status: DrawingFile['status'] = 'processing';
@@ -191,13 +180,22 @@ function mapDemRunToDrawingFile(run: any): DrawingFile {
   return {
     id: run.id,
     name: run.file_name,
-    sizeBytes: 2.4 * 1024 * 1024,
+    sizeBytes: Number.isFinite(run.size_bytes) ? Number(run.size_bytes) : 0,
     kind: (run.file_name.split('.').pop()?.toUpperCase() as any) || 'PDF',
     status,
     sheetCount: run.total_pages,
     uploadedAt: run.created_at,
   };
 }
+
+const ANALYSIS_STAGES: AnalysisStage[] = [
+  { id: 1, label: 'Uploading', status: 'pending' },
+  { id: 2, label: 'Sheet classification', status: 'pending' },
+  { id: 3, label: 'Grid detection', status: 'pending' },
+  { id: 4, label: 'Element recognition', status: 'pending' },
+  { id: 5, label: 'Quantity extraction', status: 'pending' },
+  { id: 6, label: 'Verification packaging', status: 'pending' },
+];
 
 const DEFAULT_CONFIG: AnalysisConfig = {
   scope: 'superstructure',
@@ -215,33 +213,33 @@ const DEFAULT_CONFIG: AnalysisConfig = {
 };
 
 export function initialWorkspaceState(withData: boolean): WorkspaceState {
-  const useMocks = withData && canUseWorkspaceMocks(resolveWorkspaceEnvironmentMode());
+  void withData; // retained for API compatibility; production state never injects fixtures.
   return {
-    mode: useMocks ? 'review' : 'files',
+    mode: 'files',
     projectId: null,
     activeSnapshotId: null,
-    hasData: useMocks,
-    files: useMocks ? [MOCK_FILE] : [],
-    sheets: useMocks ? MOCK_SHEETS : [],
+    hasData: false,
+    files: [],
+    sheets: [],
     mappedSheets: [],
-    elements: useMocks ? MOCK_ELEMENTS : [],
-    quantities: useMocks ? MOCK_QUANTITY_ITEMS : [],
-    reviewQueue: useMocks ? MOCK_REVIEW_QUEUE : [],
-    activity: useMocks ? MOCK_ACTIVITY : [],
-    activeSheetId: useMocks ? 'sheet-f02' : null,
-    selectedSheetIds: useMocks ? ['sheet-f02'] : [],
+    elements: [],
+    quantities: [],
+    reviewQueue: [],
+    activity: [],
+    activeSheetId: null,
+    selectedSheetIds: [],
     selectedElementId: null,
     hoveredElementId: null,
     selectedQuantityId: null,
     navigator: {
       collapsed: false,
-      tab: 'sheets',
+      tab: 'level',
       search: '',
       disciplineFilter: null,
-      expandedFloors: useMocks ? ['F02'] : [],
+      expandedFloors: [],
     },
     inspector: { collapsed: false, tab: 'sheet' },
-    dock: { expanded: useMocks, tab: 'quantities', heightPct: 32 },
+    dock: { expanded: false, tab: 'quantities', heightPct: 32 },
     gallery: { view: 'grid', groupBy: 'floor', search: '', showTitles: true },
     canvas: {
       zoom: 0.67,
@@ -255,21 +253,21 @@ export function initialWorkspaceState(withData: boolean): WorkspaceState {
     analysis: {
       setupOpen: false,
       running: false,
-      complete: useMocks,
-      stages: ANALYSIS_STAGES.map((s) => ({ ...s, status: useMocks ? 'done' : 'pending' })),
+      complete: false,
+      stages: ANALYSIS_STAGES.map((stage) => ({ ...stage })),
       log: [],
-      progress: useMocks ? 100 : 0,
+      progress: 0,
       currentMessage: '',
       config: { ...DEFAULT_CONFIG },
       packageIntelligence: null,
     },
     handoff: { confirmOpen: false, sent: false, proposalId: null, sentAt: null, reviewPanelOpen: false, proposalItems: null },
     askPaax: { open: false, messages: [], busy: false },
-    statusMessage: useMocks ? 'Review workspace ready' : 'Waiting for drawing files',
+    statusMessage: 'Waiting for drawing files',
     backendConnected: false,
     backendSyncFailed: false,
     backendSyncError: null,
-    honestState: useMocks ? 'ready' : 'extraction-pending',
+    honestState: 'extraction-pending',
     summaryViews: [],
   };
 }
@@ -298,7 +296,6 @@ export type WorkspaceAction =
   | { type: 'push-activity'; entry: ActivityEntry }
   | { type: 'upload'; patch: Partial<WorkspaceState['upload']> }
   | { type: 'upload-entries'; entries: UploadEntry[] }
-  | { type: 'load-mock-data' }
   | { type: 'analysis'; patch: Partial<WorkspaceState['analysis']> }
   | { type: 'analysis-config'; patch: Partial<AnalysisConfig> }
   | { type: 'analysis-outputs'; patch: Partial<AnalysisConfig['outputs']> }
@@ -429,23 +426,6 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
       return { ...state, upload: { ...state.upload, ...action.patch } };
     case 'upload-entries':
       return { ...state, upload: { ...state.upload, entries: action.entries } };
-    case 'load-mock-data': {
-      if (!canUseWorkspaceMocks(resolveWorkspaceEnvironmentMode())) {
-        return {
-          ...state,
-          statusMessage: 'Mock data is disabled in production. Connect a project backend to load drawings.',
-          upload: { ...state.upload, running: false },
-        };
-      }
-      const loaded = initialWorkspaceState(true);
-      return {
-        ...loaded,
-        mode: 'sheets',
-        statusMessage: `Upload complete. ${loaded.sheets.length} demo sheet(s) are ready for classification and analysis.`,
-        upload: { modalOpen: false, entries: state.upload.entries, running: false },
-        backendConnected: state.backendConnected,
-      };
-    }
     case 'analysis':
       return { ...state, analysis: { ...state.analysis, ...action.patch } };
     case 'analysis-config':
@@ -574,9 +554,9 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
 interface WorkspaceContextValue {
   state: WorkspaceState;
   dispatch: (action: WorkspaceAction) => void;
-  /** Simulasi upload per-file (dummy) → selesai → load mock sheets. */
+  /** Upload files through the real DEM backend; unavailable backend is an explicit error. */
   startUploadSimulation: (files: { file?: File; name: string; sizeBytes: number; kind: UploadEntry['kind'] }[]) => void;
-  /** Simulasi progres analisis (stepper §13) → selesai → mode review. */
+  /** Trigger real DEM/PCKM synthesis for the uploaded run. */
   startAnalysis: () => void;
   /** Kirim pertanyaan Ask PAAX — memanggil retrieveProjectGraph backend nyata. */
   askPaax: (question: string) => void;
@@ -590,13 +570,6 @@ export function useWorkspace(): WorkspaceContextValue {
   if (!ctx) throw new Error('useWorkspace must be used within WorkspaceProvider');
   return ctx;
 }
-
-const UPLOAD_PHASES: { label: string; at: number }[] = [
-  { label: 'Uploading', at: 0 },
-  { label: 'Validating', at: 55 },
-  { label: 'Generating previews', at: 75 },
-  { label: 'Completed', at: 100 },
-];
 
 export function WorkspaceProvider({
   children,
@@ -718,35 +691,17 @@ export function WorkspaceProvider({
           }
         });
       } else {
-        // --- SIMULASI ---
-        let tick = 0;
-        const interval = setInterval(() => {
-          tick += 1;
-          let allDone = true;
-          const next = entries.map((e, i) => {
-            const progress = Math.min(100, Math.max(0, tick * 7 - i * 12));
-            const phase = [...UPLOAD_PHASES].reverse().find((p) => progress >= p.at)!;
-            if (progress < 100) allDone = false;
-            return {
-              ...e,
-              progress,
-              status: (progress >= 100 ? 'completed' : 'uploading') as UploadEntry['status'],
-              statusLabel: progress <= 0 ? 'Queued' : phase.label,
-            };
-          });
-          dispatch({ type: 'upload-entries', entries: next });
-          if (allDone) {
-            clearInterval(interval);
-            dispatch({ type: 'upload', patch: { running: false } });
-            dispatch({ type: 'load-mock-data' });
-            dispatch({
-              type: 'push-activity',
-              entry: { time: 'Now', message: `${entries.length} file(s) uploaded — demo sheets prepared`, kind: 'upload' },
-            });
-          }
-        }, 220);
-        timers.current.push(interval);
+        const reason = !projectId
+          ? 'Upload requires an active project.'
+          : 'Upload requires actual File objects; synthetic upload is disabled.';
+        dispatch({
+          type: 'upload-entries',
+          entries: entries.map((entry) => ({ ...entry, progress: 0, status: 'failed', statusLabel: reason })),
+        });
+        dispatch({ type: 'upload', patch: { running: false } });
+        dispatch({ type: 'set-status', message: reason });
       }
+
     },
     [projectId, dispatch, state.analysis.config.mode]
   );
@@ -1145,7 +1100,7 @@ export function mapCivilWorkItemsToQuantityItems(items: any[]): QuantityItem[] {
             ? 'conflict'
             : 'draft';
     const primarySource = Array.isArray(item.source_refs) && item.source_refs.length
-      ? item.source_refs.map((ref: any) => `Hal. ${ref.page} — ${ref.role}`).join('; ')
+      ? [...new Set(item.source_refs.map((ref: any) => `p.${ref.page}`))].join(', ')
       : 'Sumber belum tersedia';
     return {
       id: String(item.id),
@@ -1174,9 +1129,7 @@ export function mapCivilWorkItemsToQuantityItems(items: any[]): QuantityItem[] {
       confidence: status === 'verified' ? 100 : null,
       ahspCandidate: null,
       reviewerNote: Array.isArray(item.notes) ? item.notes.join(' ') : null,
-      sourceAuthority: item.source_authority === 'core_engine' || item.source_authority === 'measurement_fact'
-        ? item.source_authority
-        : 'none',
+      sourceAuthority: item.source_authority === 'core_engine' ? 'core_engine' : 'none',
     };
   });
 }

@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { useWorkspace } from '../workspace-store';
+import { canHandoffQuantity } from '../quantity-authority';
 
 export function HandoffConfirmModal({
   nVerified,
@@ -36,24 +37,21 @@ export function HandoffConfirmModal({
 
   // WP2 guard: item dengan unit 'ref' adalah context-group (occurrence count),
   // BUKAN Measurement Fact terverifikasi. Harus diblokir dari jalur RAB.
-  const blockedRefItems = state.quantities.filter(
-    (q) => q.status === 'verified' && q.unit === 'ref',
-  );
-  const blockedRefCount = blockedRefItems.length;
+  const eligibleItems = state.quantities.filter((q) => canHandoffQuantity({ sourceAuthority: q.sourceAuthority ?? 'none', status: q.status, unit: q.unit }));
+  const blockedItems = state.quantities.filter((q) => q.status === 'verified' && !canHandoffQuantity({ sourceAuthority: q.sourceAuthority ?? 'none', status: q.status, unit: q.unit }));
+  const blockedRefCount = blockedItems.length;
 
   async function confirmSend() {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const verifiedNodeIds = state.quantities
-        .filter((q) => q.status === 'verified' && q.unit !== 'ref')
-        .map((q) => q.id)
+      const verifiedNodeIds = eligibleItems.map((q) => q.id)
         .filter(Boolean);
 
       if (verifiedNodeIds.length === 0) {
         throw new Error(
           blockedRefCount > 0
-            ? `Semua ${blockedRefCount} item terverifikasi memiliki unit 'ref' (context-group, bukan Measurement Fact) dan diblokir dari RAB. Pastikan item memiliki satuan fisik terverifikasi sebelum handoff.`
+            ? `Semua ${blockedRefCount} item berstatus verified tidak memiliki otoritas Core Engine atau masih berupa context-group dan diblokir dari RAB. Pastikan item memiliki satuan fisik terverifikasi sebelum handoff.`
             : 'Tidak ada item terverifikasi (verified) untuk dikirim ke RAB Bridge.',
         );
       }
@@ -120,12 +118,12 @@ export function HandoffConfirmModal({
         <h2 style={{ fontFamily: 'var(--di-font-display)', fontSize: 16, margin: 0 }}>Send verified quantities?</h2>
 
         <p style={{ fontSize: 12.5, color: 'var(--di-text2)', margin: 0 }}>
-          <strong style={{ color: 'var(--di-text)' }}>{nVerified - blockedRefCount}</strong> verified items will be transferred to Cost
+          <strong style={{ color: 'var(--di-text)' }}>{eligibleItems.length}</strong> verified items will be transferred to Cost
           &amp; Quantity.
         </p>
         {blockedRefCount > 0 && (
           <p style={{ fontSize: 12, color: 'var(--di-warn)', margin: '4px 0 0', fontWeight: 500 }}>
-            ⚠ {blockedRefCount} item diblokir: unit &lsquo;ref&rsquo; (context-group, bukan Measurement Fact). Tidak terkirim ke RAB.
+            ⚠ {blockedRefCount} item diblokir: bukan quantity final berotoritas Core Engine atau masih berupa context-group. Tidak terkirim ke RAB.
           </p>
         )}
 
@@ -151,7 +149,7 @@ export function HandoffConfirmModal({
         )}
 
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer', marginTop: 4 }}>
-          <input type="checkbox" checked={ack} disabled={loading || nVerified === 0} onChange={(e) => setAck(e.target.checked)} />
+          <input type="checkbox" checked={ack} disabled={loading || eligibleItems.length === 0} onChange={(e) => setAck(e.target.checked)} />
           I have reviewed the excluded items.
         </label>
 
@@ -159,8 +157,8 @@ export function HandoffConfirmModal({
           <button className="di-btn di-btn-ghost" disabled={loading} onClick={close}>
             Cancel
           </button>
-          <button className="di-btn di-btn-ok" disabled={!ack || loading || nVerified === 0} onClick={confirmSend}>
-            {loading ? 'Sending...' : `Send ${nVerified} items`}
+          <button className="di-btn di-btn-ok" disabled={!ack || loading || eligibleItems.length === 0} onClick={confirmSend}>
+            {loading ? 'Sending...' : `Send ${eligibleItems.length} items`}
           </button>
         </div>
       </div>

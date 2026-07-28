@@ -10,7 +10,7 @@ export type HonestWorkspaceState =
   | 'core-engine-required';
 
 export function canDisplayFinalQuantity(input: { sourceAuthority: QuantitySourceAuthority }): boolean {
-  return input.sourceAuthority === 'measurement_fact' || input.sourceAuthority === 'core_engine';
+  return input.sourceAuthority === 'core_engine';
 }
 
 const MESSAGES: Record<HonestWorkspaceState, string> = {
@@ -26,4 +26,12 @@ const MESSAGES: Record<HonestWorkspaceState, string> = {
 
 export function honestStateMessage(state: HonestWorkspaceState): string {
   return MESSAGES[state];
+}
+
+export function canHandoffQuantity(input: {
+  sourceAuthority: QuantitySourceAuthority;
+  status: string;
+  unit: string;
+}): boolean {
+  return input.sourceAuthority === 'core_engine' && input.status === 'verified' && input.unit !== 'ref';
 }

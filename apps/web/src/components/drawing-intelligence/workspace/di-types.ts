@@ -6,7 +6,10 @@
  * State model mengikuti blueprint §27 (sheet & quantity lifecycle).
  */
 
-import type { ElementTypeIndexEntry, ProjectGraphSummaryView } from '@paax/schemas';
+import type {
+  ElementTypeIndexEntry,
+  ProjectGraphSummaryView,
+} from '@paax/schemas';
 
 // ── Mode workspace (blueprint §4) ────────────────────────────────────────────
 
@@ -34,7 +37,9 @@ export const DISCIPLINE_LABELS: Record<Discipline, string> = {
 
 export type DrawingType =
   | 'Cover / Index'
+  | 'Drawing List'
   | 'General Notes'
+  | 'Technical Note'
   | 'Site Plan'
   | 'Floor Plan'
   | 'Foundation Plan'
@@ -51,6 +56,24 @@ export type DrawingType =
   | 'Cross Section'
   | 'Reinforcement Detail'
   | 'Other / Unclassified';
+
+export type SheetClassificationKey =
+  | 'cover' | 'drawing_list' | 'site_plan' | 'plan' | 'elevation' | 'section'
+  | 'detail' | 'schedule' | 'diagram' | 'technical_note' | 'unknown';
+export interface SheetViewEntry {
+  page_index: number;
+  page_number: number;
+  level_key: string;
+  classification_key: SheetClassificationKey;
+  evidence_refs: string[];
+  status: 'classified' | 'needs_review';
+  review_reason: string | null;
+}
+export interface SheetViews {
+  level: SheetViewEntry[];
+  classification: SheetViewEntry[];
+  source: SheetViewEntry[];
+}
 
 // ── File & sheet lifecycle (blueprint §27) ───────────────────────────────────
 
@@ -257,7 +280,7 @@ export interface QuantityItem {
   wbsGroup: string; // contoh: 'Struktur / Lantai 12' atau 'Substruktur / Abutment A1'
   category: ElementCategory;
   formulaBasis: 'Count' | 'Length' | 'Area' | 'Volume';
-  formula: string; // teks rumus dari engine — hanya ditampilkan
+  formula: string; // retained for audit/export; hidden from primary quantity UI
   formulaEvidence: string[]; // baris bukti expand (blueprint §16.6)
   unit: string;
   qty: string; // string terformat dari engine — UI tidak menghitung
@@ -318,6 +341,15 @@ export interface ReviewQueueItem {
   sheetId: string | null;
   elementId: string | null;
   resolved: boolean;
+  aiProposal?: {
+    trigger: 'abstain' | 'ambiguous';
+    deterministicReason: string;
+    model: string;
+    promptVersion: string;
+    evidenceRefs: string[];
+    proposal: Record<string, unknown>;
+    validation: { valid: boolean; reason?: string };
+  };
 }
 
 export interface ActivityEntry {

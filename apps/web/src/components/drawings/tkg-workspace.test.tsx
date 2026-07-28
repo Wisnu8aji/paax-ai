@@ -10,6 +10,7 @@ import type { TakeoffAhspSuggestion, TakeoffResult, TkgDocument, TkgValidationRe
 
 import { renderTkg, takeoffAhspSuggestTkg, validateTkg } from "@/lib/engine";
 import { emptyRabLine, rabRepository, type ProjectRabDraft } from "@/lib/projects/rab-repository";
+import type { ProjectTkgRecord } from "@/lib/projects/tkg-repository";
 import { TkgWorkspace } from "./tkg-workspace";
 
 const { analyzeDrawingFileInBackgroundMock, saveMock, routerPushMock } = vi.hoisted(() => ({
@@ -262,7 +263,7 @@ function makePdfFile() {
 
 beforeEach(() => {
   analyzeDrawingFileInBackgroundMock.mockResolvedValue(intakeResult);
-  saveMock.mockImplementation(async (record) => ({
+  saveMock.mockImplementation(async (record: ProjectTkgRecord) => ({
     ...record,
     updatedAt: "2026-07-04T01:00:00.000Z",
   }));
@@ -271,7 +272,7 @@ beforeEach(() => {
   vi.mocked(takeoffAhspSuggestTkg).mockResolvedValue({ takeoff: takeoffResult, suggestions: [] });
   vi.mocked(emptyRabLine).mockReturnValue({ id: "generated-line", ahsp_code: "", volume: null, duration_days: null });
   vi.mocked(rabRepository.get).mockResolvedValue({ ...emptyDraft, lines: [...emptyDraft.lines] });
-  vi.mocked(rabRepository.save).mockImplementation(async (draft) => draft);
+  vi.mocked(rabRepository.save).mockImplementation(async (draft: ProjectRabDraft) => draft);
 });
 
 afterEach(() => {

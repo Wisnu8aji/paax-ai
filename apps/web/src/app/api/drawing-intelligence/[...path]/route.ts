@@ -8,7 +8,7 @@ const DB_API_UPSTREAM_URL =
   process.env.NEXT_PUBLIC_DB_API_URL ||
   "http://127.0.0.1:8001";
 
-const INTERNAL_SERVICE_KEY = process.env.INTERNAL_SERVICE_KEY || "test-internal-key";
+const INTERNAL_SERVICE_KEY = process.env.INTERNAL_SERVICE_KEY || "live-test-key";
 
 type RouteContext = {
   params: Promise<{ path?: string[] }>;

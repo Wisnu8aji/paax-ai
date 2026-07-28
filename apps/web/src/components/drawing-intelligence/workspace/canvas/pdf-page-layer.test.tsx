@@ -20,8 +20,8 @@ beforeEach(() => {
   });
 });
 
-vi.mock('../../drawing-intelligence-api', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../drawing-intelligence-api')>();
+vi.mock('../../drawing-intelligence-api', async (importOriginal: () => Promise<typeof import('../../drawing-intelligence-api')>) => {
+  const actual = await importOriginal();
   return {
     ...actual,
     fetchPdfArtifactUrl: vi.fn(),

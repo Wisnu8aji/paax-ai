@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { normalizeStatusMessage } from './status-bar';
 
 describe('normalizeStatusMessage', () => {
-  it.each([undefined, null, {}, 12])('returns a stable fallback for %p', (value) => {
+  it.each([undefined, null, {}, 12])('returns a stable fallback for %p', (value: unknown) => {
     expect(normalizeStatusMessage(value)).toBe('Workspace ready');
   });
 

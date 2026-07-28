@@ -6,6 +6,21 @@ import type {
   QuantityReadinessResponse,
 } from '@paax/schemas';
 
+
+export interface SheetViewEntryResponse {
+  page_index: number;
+  page_number: number;
+  level_key: string;
+  classification_key: 'cover' | 'drawing_list' | 'site_plan' | 'plan' | 'elevation' | 'section' | 'detail' | 'schedule' | 'diagram' | 'technical_note' | 'unknown';
+  evidence_refs: string[];
+  status: 'classified' | 'needs_review';
+  review_reason: string | null;
+}
+export interface SheetViewsResponse {
+  level: SheetViewEntryResponse[];
+  classification: SheetViewEntryResponse[];
+  source: SheetViewEntryResponse[];
+}
 /**
  * Klien tipis untuk Drawing Intelligence Workspace (C9/C9b). Semua request
  * lewat proxy /api/drawing-intelligence/* (route.ts) supaya header
@@ -495,6 +510,7 @@ export interface DrawingWorkItemCalculation {
   measurement_fact_ids: string[];
   warnings: string[];
   engine_version: string | null;
+  source_authority: 'core_engine' | 'none' | 'measurement_fact';
 }
 
 export interface PackageIntelligenceWorkItem {
@@ -585,6 +601,7 @@ export interface PackageIntelligenceSummary {
   metrics: Record<string, any>;
   phase_status: Record<string, string>;
   warnings: string[];
+  sheet_views: SheetViewsResponse;
   work_items: PackageIntelligenceWorkItem[];
   work_groups: PackageIntelligenceWorkGroup[];
   needs_clarification: PackageIntelligenceWorkItem[];
@@ -642,6 +659,31 @@ export async function submitDrawingIntelligenceReview(
     },
   );
   if (!res.ok) throw new Error(`Gagal menyimpan review Drawing Intelligence (status ${res.status})`);
+  return res.json();
+}
+
+
+export interface ActiveSheetContextResponse {
+  schema_version: 'paax.drawing-intelligence.active-sheet-context.v1';
+  project_id: string;
+  run_id: string;
+  page_index: number;
+  page: { detections?: Array<Record<string, unknown>>; [key: string]: unknown };
+  work_items: Array<Record<string, unknown>>;
+  physical_instances: Array<Record<string, any>>;
+  conflicts: Array<Record<string, unknown>>;
+  review_queue: Array<Record<string, unknown>>;
+}
+
+export async function fetchActiveSheetContext(runId: string, pageIndex: number): Promise<ActiveSheetContextResponse> {
+  const res = await fetch(
+    `/api/document-intelligence/drawings/dem/${encodeURIComponent(runId)}/intelligence/pages/${pageIndex}/context`,
+    { cache: 'no-store' },
+  );
+  if (!res.ok) {
+    const payload = await res.json().catch(() => null);
+    throw new Error(payload?.detail || `Gagal memuat konteks halaman aktif (status ${res.status})`);
+  }
   return res.json();
 }
 

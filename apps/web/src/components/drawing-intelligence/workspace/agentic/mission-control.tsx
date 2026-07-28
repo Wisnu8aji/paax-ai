@@ -15,6 +15,10 @@ export type AgentRun = {
   completedTaskIds: string[];
   pendingApprovalIds: string[];
   failure?: string;
+  budget?: { maxToolCalls: number; maxTokens: number; maxCostUsd: number; maxDurationMs: number };
+  budgetUsage?: { toolCalls: number; tokens: number; costUsd: number; startedAtMs: number };
+  auditTimeline?: Array<{ eventId: string; type: string; message: string; createdAt: string }>;
+  invocations?: Array<{ invocationId: string; toolName: string; status: string; idempotencyKey?: string; error?: string }>;
 };
 
 type MissionActionState = 'idle' | 'loading' | 'ready' | 'error' | 'manual';
@@ -54,7 +58,7 @@ function normalizeError(err: unknown): string {
 
 function normalizeRun(raw: any): AgentRun {
   const statusStr = safeString(raw?.status, 'unknown');
-  const runId = safeString(raw?.runId, `run-${Math.random().toString(36).substring(2, 9)}`);
+  const runId = safeString(raw?.runId, 'unknown-run');
   const version = typeof raw?.version === 'number' ? raw.version : 1;
   const updatedAt = safeString(raw?.updatedAt, new Date().toISOString());
 
@@ -64,7 +68,7 @@ function normalizeRun(raw: any): AgentRun {
 
   const tasks = Array.isArray(raw?.plan?.tasks)
     ? raw.plan.tasks.map((t: any) => ({
-        id: safeString(t?.id, `task-${Math.random().toString(36).substring(2, 7)}`),
+        id: safeString(t?.id, 'unknown-task'),
         title: safeString(t?.title, 'Untitled Task'),
         capability: safeString(t?.capability, 'general'),
       }))
@@ -94,6 +98,10 @@ function normalizeRun(raw: any): AgentRun {
     completedTaskIds,
     pendingApprovalIds,
     failure,
+    budget: raw?.budget,
+    budgetUsage: raw?.budgetUsage,
+    auditTimeline: Array.isArray(raw?.auditTimeline) ? raw.auditTimeline : [],
+    invocations: Array.isArray(raw?.invocations) ? raw.invocations : [],
   };
 }
 
@@ -250,6 +258,36 @@ export function MissionControl() {
     await executeTransition(projectId, run, status);
   }, [projectId, actionState, executeTransition]);
 
+  const executeNextStep = useCallback(async (run: AgentRun) => {
+    if (!projectId || actionState === 'loading' || inFlightRef.current) return;
+    inFlightRef.current = true;
+    const operation = async () => {
+      const response = await fetch(`/api/agent-runs/${encodeURIComponent(run.runId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'step', projectId, expectedVersion: run.version,
+          idempotencyKey: `${run.runId}:${run.version}`,
+        }),
+      });
+      if (!response.ok) {
+        const errorJson = await response.json().catch(() => ({}));
+        throw new Error(safeString(errorJson.error || errorJson.detail || `HTTP ${response.status}`, `HTTP ${response.status}`));
+      }
+      await performFetchRuns(projectId);
+    };
+    lastFailedOpRef.current = operation;
+    setActionState('loading');
+    setErrorMessage(null);
+    dispatch({ type: 'set-status', message: 'Executing next governed mission step…' });
+    try { await operation(); }
+    catch (error) {
+      const message = normalizeError(error);
+      setErrorMessage(message); setActionState('error');
+      dispatch({ type: 'set-status', message: normalizeStatusMessage(`Mission operation failed: ${message}`) });
+    } finally { inFlightRef.current = false; }
+  }, [projectId, actionState, dispatch, performFetchRuns]);
+
   const handleRetry = useCallback(() => {
     if (inFlightRef.current) return;
     if (lastFailedOpRef.current) {
@@ -403,6 +441,16 @@ export function MissionControl() {
                   <div style={{ fontSize: 10.5, color: 'var(--di-text3)' }}>
                     {completedCount}/{taskCount} tasks · risk {run.goalSpec?.riskTier} · v{run.version}
                   </div>
+                  {run.budget && run.budgetUsage && (
+                    <div style={{ marginTop: 6, fontSize: 10.5, color: 'var(--di-text3)' }}>
+                      Budget: {run.budgetUsage.toolCalls}/{run.budget.maxToolCalls} tools · {run.budgetUsage.tokens}/{run.budget.maxTokens} tokens · ${run.budgetUsage.costUsd.toFixed(4)}/${run.budget.maxCostUsd.toFixed(2)}
+                    </div>
+                  )}
+                  {currentStatus === 'waiting_approval' && (
+                    <div role="alert" style={{ marginTop: 8, padding: 8, borderRadius: 6, background: 'var(--di-warn-bg)', color: 'var(--di-warn)', fontSize: 10.5 }}>
+                      Authoritative tool is waiting for a valid project-scoped approval token. Mission UI cannot self-approve it.
+                    </div>
+                  )}
                   <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                     {run.plan?.tasks?.map((task) => (
                       <span
@@ -420,6 +468,11 @@ export function MissionControl() {
                     ))}
                   </div>
                   <div style={{ marginTop: 9, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {['running', 'waiting_tool'].includes(currentStatus) && (
+                      <button onClick={() => void executeNextStep(run)} disabled={actionState === 'loading'}>
+                        Execute next governed step
+                      </button>
+                    )}
                     {currentStatus === 'queued' && (
                       <button onClick={() => void transition(run, 'planning')} disabled={actionState === 'loading'}>
                         Mulai planning
@@ -452,6 +505,14 @@ export function MissionControl() {
                     )}
                   </div>
                   {run.failure && <div style={{ marginTop: 8, color: 'var(--di-danger)', fontSize: 10.5 }}>{run.failure}</div>}
+                  {(run.auditTimeline?.length ?? 0) > 0 && (
+                    <details style={{ marginTop: 8 }}>
+                      <summary style={{ fontSize: 10.5, cursor: 'pointer' }}>Audit timeline ({run.auditTimeline?.length})</summary>
+                      <ol style={{ margin: '6px 0 0', paddingLeft: 18, fontSize: 10, color: 'var(--di-text3)' }}>
+                        {run.auditTimeline?.slice(-8).map((event) => <li key={event.eventId}>{event.type}: {event.message}</li>)}
+                      </ol>
+                    </details>
+                  )}
                 </article>
               );
             })}

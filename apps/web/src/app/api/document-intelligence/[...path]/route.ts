@@ -26,7 +26,7 @@ async function proxyDocumentIntelligence(request: Request, context: RouteContext
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
   }
-  headers.set("X-Internal-Key", INTERNAL_SERVICE_KEY);
+  headers.set("X-Internal-Key", process.env.INTERNAL_SERVICE_KEY || INTERNAL_SERVICE_KEY);
   headers.set("X-User-Id", process.env.PAAX_PORTABLE_ACTOR_ID?.trim() || "paax-web");
 
   const method = request.method.toUpperCase();

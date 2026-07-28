@@ -1,0 +1,6 @@
+{
+  "status": "pending_same_laptop_capture",
+  "fixture": "gambar-kerja-arsitektur-gedung-a.pdf",
+  "required_samples": { "cold": 3, "warm": 3 },
+  "note": "No synthetic timing values are stored. Capture on the owner's laptop before the performance gate can pass."
+}
