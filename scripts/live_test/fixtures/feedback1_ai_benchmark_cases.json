@@ -1,0 +1,37 @@
+[
+  {
+    "case_id": "sheet-cover",
+    "prompt_version": "feedback1-classification-v1",
+    "extracted_text": ["GAMBAR KERJA", "DAFTAR ISI GAMBAR"],
+    "bbox_evidence": [{"evidence_ref": "EV-COVER-1", "bbox": [40, 40, 520, 160]}],
+    "allowed_categories": ["cover", "drawing_list", "technical_note"]
+  },
+  {
+    "case_id": "sheet-plan-l1",
+    "prompt_version": "feedback1-classification-v1",
+    "extracted_text": ["DENAH LANTAI 1", "SKALA 1:100"],
+    "bbox_evidence": [{"evidence_ref": "EV-PLAN-1", "bbox": [35, 20, 480, 90]}],
+    "allowed_categories": ["plan", "site_plan", "detail"]
+  },
+  {
+    "case_id": "sheet-section",
+    "prompt_version": "feedback1-classification-v1",
+    "extracted_text": ["POTONGAN A-A", "ELEVASI +4.000"],
+    "bbox_evidence": [{"evidence_ref": "EV-SECTION-1", "bbox": [60, 30, 500, 120]}],
+    "allowed_categories": ["section", "elevation", "detail"]
+  },
+  {
+    "case_id": "sheet-schedule",
+    "prompt_version": "feedback1-classification-v1",
+    "extracted_text": ["TABEL KOLOM", "K1 400 x 400"],
+    "bbox_evidence": [{"evidence_ref": "EV-SCHEDULE-1", "bbox": [80, 80, 900, 620]}],
+    "allowed_categories": ["schedule", "detail", "technical_note"]
+  },
+  {
+    "case_id": "sheet-mep-diagram",
+    "prompt_version": "feedback1-classification-v1",
+    "extracted_text": ["SINGLE LINE DIAGRAM", "PANEL DISTRIBUSI"],
+    "bbox_evidence": [{"evidence_ref": "EV-DIAGRAM-1", "bbox": [50, 45, 740, 520]}],
+    "allowed_categories": ["diagram", "plan", "technical_note"]
+  }
+]
