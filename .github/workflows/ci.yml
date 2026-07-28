@@ -33,6 +33,9 @@ jobs:
       - name: Test shared schemas
         run: pnpm --filter @paax/schemas test
 
+      - name: Build shared schemas
+        run: pnpm --filter @paax/schemas build
+
       - name: Test AI Orchestrator
         run: pnpm --filter @paax/ai-orchestrator test
 
