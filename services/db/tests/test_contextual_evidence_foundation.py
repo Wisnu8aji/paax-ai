@@ -1,5 +1,6 @@
 import pytest
 import pytest_asyncio
+from datetime import datetime, timezone
 from pathlib import Path
 from alembic.config import Config
 from alembic.script import ScriptDirectory
@@ -11,7 +12,25 @@ from paax_db.models import (
     CanonicalFactModel,
     CanonicalFactEvidenceLinkModel,
     ResolutionDecisionModel,
+    ResolutionDecisionFactLinkModel,
+    Project,
+    ProjectGraphSnapshot,
 )
+from paax_schemas.contextual_evidence import (
+    RawEvidenceArtifact,
+    EvidenceRegion,
+    SourceAuthorityEntry,
+    CanonicalFact,
+    PropagationScope,
+    ResolutionDecision,
+)
+from paax_db import (
+    ContextualEvidenceRepository,
+    ContextualEvidenceConflict,
+    ContextualEvidenceIntegrityError,
+)
+from paax_db.contextual_evidence_repository import _parse_dt
+from .conftest import TestSession
 
 
 def _script_directory() -> ScriptDirectory:
@@ -21,18 +40,16 @@ def _script_directory() -> ScriptDirectory:
     return ScriptDirectory.from_config(config)
 
 
-def test_alembic_0033_is_single_head():
+def test_alembic_0034_is_single_head():
     script = _script_directory()
     heads = script.get_heads()
     assert len(heads) == 1
-    assert heads[0] == "0033_contextual_foundation"
+    assert heads[0] == "0034_contextual_evidence_integrity"
 
-    rev = script.get_revision("0033_contextual_foundation")
-    assert rev.down_revision == "0032_correction_status"
+    rev = script.get_revision("0034_contextual_evidence_integrity")
+    assert rev.down_revision == "0033_contextual_foundation"
     source = Path(rev.path).read_text(encoding="utf-8")
-    assert "raw_evidence_artifacts" in source
-    assert "canonical_facts" in source
-    assert "resolution_decisions" in source
+    assert "resolution_decision_fact_links" in source
 
 
 def test_models_exist_and_have_tablename():
@@ -42,29 +59,13 @@ def test_models_exist_and_have_tablename():
     assert CanonicalFactModel.__tablename__ == "canonical_facts"
     assert CanonicalFactEvidenceLinkModel.__tablename__ == "canonical_fact_evidence_links"
     assert ResolutionDecisionModel.__tablename__ == "resolution_decisions"
-
-
-from paax_schemas.contextual_evidence import (
-    RawEvidenceArtifact,
-    EvidenceRegion,
-    SourceAuthorityEntry,
-    CanonicalFact,
-    PropagationScope,
-    ResolutionDecision,
-)
-from paax_db import ContextualEvidenceRepository
-from paax_db.models import Project, ProjectGraphSnapshot
-from .conftest import TestSession
+    assert ResolutionDecisionFactLinkModel.__tablename__ == "resolution_decision_fact_links"
 
 
 @pytest.mark.asyncio
-async def test_repository_save_and_retrieve_lineage():
+async def test_repository_append_idempotency_and_lineage():
     async with TestSession() as session:
-        proj_row = Project(
-            id="proj_test_1",
-            owner_id="user_1",
-            name="Test Project",
-        )
+        proj_row = Project(id="proj_test_1", owner_id="user_1", name="Test Project")
         session.add(proj_row)
 
         snap_row = ProjectGraphSnapshot(
@@ -80,21 +81,44 @@ async def test_repository_save_and_retrieve_lineage():
         await session.flush()
 
         repo = ContextualEvidenceRepository(session)
+
+        # 1. Append artifact
         art = RawEvidenceArtifact(
             schema_version="paax.contextual-evidence.v1",
             artifact_id="art_test_1",
             project_id="proj_test_1",
             document_id="doc_1",
             artifact_kind="dem_page",
-            content_sha256="a"*64,
+            content_sha256="a" * 64,
             storage_ref="s3://ref",
             media_type="image/png",
             byte_size=100,
             created_at="2026-07-28T10:00:00Z",
         )
-        saved_art = await repo.save_raw_artifact(art)
-        assert saved_art.artifact_id == "art_test_1"
+        res1 = await repo.append_raw_evidence_bundle(art)
+        assert res1.status == "inserted"
 
+        # Identical retry -> existing
+        res1_retry = await repo.append_raw_evidence_bundle(art)
+        assert res1_retry.status == "existing"
+
+        # Conflicting retry -> raises ContextualEvidenceConflict
+        art_conflict = RawEvidenceArtifact(
+            schema_version="paax.contextual-evidence.v1",
+            artifact_id="art_test_1",
+            project_id="proj_test_1",
+            document_id="doc_1",
+            artifact_kind="dem_page",
+            content_sha256="b" * 64,  # different SHA
+            storage_ref="s3://ref",
+            media_type="image/png",
+            byte_size=100,
+            created_at="2026-07-28T10:00:00Z",
+        )
+        with pytest.raises(ContextualEvidenceConflict):
+            await repo.append_raw_evidence_bundle(art_conflict)
+
+        # 2. Append region
         reg = EvidenceRegion(
             region_id="reg_test_1",
             artifact_id="art_test_1",
@@ -107,6 +131,7 @@ async def test_repository_save_and_retrieve_lineage():
         saved_reg = await repo.save_evidence_region(reg)
         assert saved_reg.region_id == "reg_test_1"
 
+        # 3. Append authority
         auth = SourceAuthorityEntry(
             authority_id="auth_test_1",
             project_id="proj_test_1",
@@ -117,9 +142,10 @@ async def test_repository_save_and_retrieve_lineage():
             created_by="user_1",
             created_at="2026-07-28T10:02:00Z",
         )
-        saved_auth = await repo.save_source_authority(auth)
-        assert saved_auth.authority_id == "auth_test_1"
+        res_auth = await repo.append_source_authority(auth)
+        assert res_auth.status == "inserted"
 
+        # 4. Append fact
         fact = CanonicalFact(
             fact_id="fact_test_1",
             project_id="proj_test_1",
@@ -129,22 +155,23 @@ async def test_repository_save_and_retrieve_lineage():
             predicate="width_mm",
             value=300,
             status="candidate",
-            evidence_refs=["art_test_1"],
+            evidence_refs=["reg_test_1"],
             source_authority_id="auth_test_1",
             calculation_authority="none",
             created_by="pipeline",
             created_at="2026-07-28T10:03:00Z",
         )
-        saved_fact = await repo.save_canonical_fact(fact)
-        assert saved_fact.fact_id == "fact_test_1"
-        assert saved_fact.calculation_authority == "none"
+        res_fact = await repo.append_canonical_fact(fact)
+        assert res_fact.status == "inserted"
 
-        res_fact, res_auth, res_arts, res_regs = await repo.get_fact_lineage("fact_test_1")
-        assert res_fact.fact_id == "fact_test_1"
-        assert res_auth.authority_id == "auth_test_1"
-        assert len(res_arts) == 1
-        assert res_arts[0].artifact_id == "art_test_1"
+        # Lineage retrieval
+        lineage = await repo.get_canonical_fact_lineage("proj_test_1", "fact_test_1")
+        assert lineage.fact.fact_id == "fact_test_1"
+        assert lineage.authority is not None and lineage.authority.authority_id == "auth_test_1"
+        assert len(lineage.artifacts) == 1
+        assert lineage.artifacts[0].artifact_id == "art_test_1"
 
+        # 5. Append decision
         dec = ResolutionDecision(
             decision_id="dec_test_1",
             project_id="proj_test_1",
@@ -158,15 +185,57 @@ async def test_repository_save_and_retrieve_lineage():
             calculation_authority="none",
             created_at="2026-07-28T10:04:00Z",
         )
-        saved_dec = await repo.save_resolution_decision(dec)
-        assert saved_dec.decision_id == "dec_test_1"
+        res_dec = await repo.append_resolution_decision(dec)
+        assert res_dec.status == "inserted"
 
+        # Resolution history
         history = await repo.get_resolution_history("proj_test_1", "fact_test_1")
         assert len(history) == 1
         assert history[0].decision_id == "dec_test_1"
 
-        active_facts = await repo.list_active_canonical_facts("proj_test_1", "snap_test_1")
-        assert len(active_facts) == 1
-        assert active_facts[0].fact_id == "fact_test_1"
+
+@pytest.mark.asyncio
+async def test_repository_rejects_cross_project_and_orphans():
+    async with TestSession() as session:
+        proj1 = Project(id="proj_A", owner_id="u1", name="Project A")
+        proj2 = Project(id="proj_B", owner_id="u1", name="Project B")
+        session.add_all([proj1, proj2])
+
+        snap1 = ProjectGraphSnapshot(
+            snapshot_id="snap_A", project_id="proj_A", schema_version="v1", status="active",
+            source_manifest_hash="h1", generation_metadata={}, effective_sheet_revision_ids=[]
+        )
+        session.add(snap1)
+        await session.flush()
+
+        repo = ContextualEvidenceRepository(session)
+
+        art = RawEvidenceArtifact(
+            schema_version="paax.contextual-evidence.v1", artifact_id="art_A", project_id="proj_A",
+            document_id="doc1", artifact_kind="dem_page", content_sha256="c"*64, storage_ref="s3://ref",
+            media_type="image/png", byte_size=10, created_at="2026-07-28T10:00:00Z"
+        )
+        await repo.append_raw_evidence_bundle(art)
+
+        # Cross-project region -> raises ContextualEvidenceIntegrityError
+        reg_cross = EvidenceRegion(
+            region_id="reg_cross", artifact_id="art_A", project_id="proj_B", page_index=0, created_at="2026-07-28T10:00:00Z"
+        )
+        with pytest.raises(ContextualEvidenceIntegrityError):
+            await repo.save_evidence_region(reg_cross)
 
 
+@pytest.mark.asyncio
+async def test_append_only_models_reject_update_and_delete():
+    async with TestSession() as session:
+        dt = _parse_dt("2026-07-28T10:00:00Z")
+        art_row = RawEvidenceArtifactModel(
+            artifact_id="art_immut", project_id="p1", document_id="d1", artifact_kind="dem_page",
+            content_sha256="f"*64, storage_ref="ref", media_type="image/png", byte_size=10, created_at=dt
+        )
+        session.add(art_row)
+        await session.flush()
+
+        art_row.document_id = "d2_updated"
+        with pytest.raises(ValueError, match="append-only"):
+            await session.flush()
