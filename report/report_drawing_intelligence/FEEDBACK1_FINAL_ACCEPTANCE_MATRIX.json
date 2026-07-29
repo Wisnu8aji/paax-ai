@@ -1,0 +1,490 @@
+[
+  {
+    "paragraph": "P2",
+    "requirement": "Initial loading speed optimization",
+    "phase": "Phase 04C / Phase 10B",
+    "status": "requires_retest",
+    "limitation": "Verified in Phase 10B Playwright test; requires retest in Phase 11C",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P3",
+    "requirement": "Visual loading state validation",
+    "phase": "Phase 04C / Phase 10B",
+    "status": "requires_retest",
+    "limitation": "Verified in Phase 10B Playwright test; requires retest in Phase 11C",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P4",
+    "requirement": "Viewer initialization layout stability",
+    "phase": "Phase 04C / Phase 10B",
+    "status": "requires_retest",
+    "limitation": "Verified in Phase 10B Playwright test; requires retest in Phase 11C",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P5",
+    "requirement": "High-fidelity vector rendering & Core Engine geometry authority",
+    "phase": "Phase 04C / Phase 09D",
+    "status": "verified_previous_phase",
+    "limitation": "Verified in test_feedback1_engine_authority.py",
+    "retest_subphase": "Phase 11B"
+  },
+  {
+    "paragraph": "P6",
+    "requirement": "Viewport navigation controls toggle",
+    "phase": "Phase 06 / Phase 10B",
+    "status": "requires_retest",
+    "limitation": "Verified in Phase 10B browser test; requires retest in Phase 11C",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P7",
+    "requirement": "Fix takeoff tab error & Core Engine calculator authority",
+    "phase": "Phase 09D / Phase 10B",
+    "status": "verified_previous_phase",
+    "limitation": "Verified in test_feedback1_engine_authority.py",
+    "retest_subphase": "Phase 11B"
+  },
+  {
+    "paragraph": "P8",
+    "requirement": "Takeoff error recovery and state cleanup",
+    "phase": "Phase 04C / Phase 10B",
+    "status": "requires_retest",
+    "limitation": "Verified in Phase 10B browser test; requires retest in Phase 11C",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P9",
+    "requirement": "Complete civil work items detection from DEM/PCKM",
+    "phase": "Phase 09E",
+    "status": "verified_previous_phase",
+    "limitation": "Verified on 88-page PLHUT dataset in Phase 09E",
+    "retest_subphase": "Phase 11B"
+  },
+  {
+    "paragraph": "P10",
+    "requirement": "Engine + AI classification without dummy data",
+    "phase": "Phase 09E / Phase 10C",
+    "status": "verified_previous_phase",
+    "limitation": "Verified via DeepSeek V4 Flash live benchmark in Phase 10C",
+    "retest_subphase": "Phase 11D"
+  },
+  {
+    "paragraph": "P11",
+    "requirement": "Classification data integrity between DEM and PCKM",
+    "phase": "Phase 09E",
+    "status": "verified_previous_phase",
+    "limitation": "3,407 graph nodes and 3,768 edges in portable.sqlite",
+    "retest_subphase": "Phase 11B"
+  },
+  {
+    "paragraph": "P12",
+    "requirement": "Fix mission tab click issue",
+    "phase": "Phase 08 / Phase 10A",
+    "status": "verified_previous_phase",
+    "limitation": "Verified in unit test suite",
+    "retest_subphase": "Phase 11B"
+  },
+  {
+    "paragraph": "P13",
+    "requirement": "Mission tab state persistence",
+    "phase": "Phase 08 / Phase 10A",
+    "status": "verified_previous_phase",
+    "limitation": "Verified in workspace session tests",
+    "retest_subphase": "Phase 11B"
+  },
+  {
+    "paragraph": "P14",
+    "requirement": "Handoff items completeness validation",
+    "phase": "Phase 09E / Phase 10A",
+    "status": "verified_previous_phase",
+    "limitation": "Verified in handoff-safety-coverage.test.ts",
+    "retest_subphase": "Phase 11B"
+  },
+  {
+    "paragraph": "P15",
+    "requirement": "Proper handoff system without dummy data",
+    "phase": "Phase 09E / Phase 10A",
+    "status": "verified_previous_phase",
+    "limitation": "Strict handoff safety rules enforced",
+    "retest_subphase": "Phase 11B"
+  },
+  {
+    "paragraph": "P16",
+    "requirement": "Sheet classification system removing unassigned",
+    "phase": "Phase 05 / Phase 06",
+    "status": "verified_previous_phase",
+    "limitation": "3 view modes implemented",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P17",
+    "requirement": "Generic drawing support beyond PLHUT",
+    "phase": "Phase 09E / Phase 10B",
+    "status": "verified_previous_phase",
+    "limitation": "Tested on 53-page Gedung A PDF",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P18",
+    "requirement": "Fast lightweight sheet thumbnail loading",
+    "phase": "Phase 04C / Phase 06",
+    "status": "verified_previous_phase",
+    "limitation": "Optimized canvas preview",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P19",
+    "requirement": "User selectable sheet view categories",
+    "phase": "Phase 05 / Phase 06",
+    "status": "verified_previous_phase",
+    "limitation": "3 view option tabs active",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P20",
+    "requirement": "Sheet classification ordering concept",
+    "phase": "Phase 05 / Phase 06",
+    "status": "verified_previous_phase",
+    "limitation": "Deterministic group ordering",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P21",
+    "requirement": "Three view options requirement",
+    "phase": "Phase 05 / Phase 06",
+    "status": "verified_previous_phase",
+    "limitation": "Level, classification, original modes",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P22",
+    "requirement": "View Mode 1: Level / Floor grouping",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Level grouping active",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P23",
+    "requirement": "Level tag: Site / Tapak",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Tag supported in level index",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P24",
+    "requirement": "Level tag: Pondasi",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Tag supported in level index",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P25",
+    "requirement": "Level tag: Lantai 1",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Tag supported in level index",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P26",
+    "requirement": "Level tag: Lantai 2",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Tag supported in level index",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P27",
+    "requirement": "Level tag: Lantai 3",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Tag supported in level index",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P28",
+    "requirement": "Level tag: Lantai 4",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Tag supported in level index",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P29",
+    "requirement": "Level tag: Lantai 5",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Tag supported in level index",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P30",
+    "requirement": "Level tag: Atap / Roof",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Tag supported in level index",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P31",
+    "requirement": "Level tag: Detail category",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Category supported in level view",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P32",
+    "requirement": "Level tag: Potongan category",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Category supported in level view",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P33",
+    "requirement": "Level tag: Tampak category",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Category supported in level view",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P34",
+    "requirement": "Level tag: Tabel category",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Category supported in level view",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P35",
+    "requirement": "Multi-discipline sheet aggregation per floor",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Multi-discipline floor aggregation",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P36",
+    "requirement": "Vertical building hierarchy understanding goal",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Vertical tree navigation active",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P37",
+    "requirement": "View Mode 2: Drawing Classification grouping",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Classification mode active",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P38",
+    "requirement": "Classification: Cover",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Cover category supported",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P39",
+    "requirement": "Classification: Daftar Gambar",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Daftar Gambar category supported",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P40",
+    "requirement": "Classification: Site Plan",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Site Plan category supported",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P41",
+    "requirement": "Classification: Denah",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Denah category supported",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P42",
+    "requirement": "Classification: Tampak",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Tampak category supported",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P43",
+    "requirement": "Classification: Potongan",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Potongan category supported",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P44",
+    "requirement": "Classification: Detail",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Detail category supported",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P45",
+    "requirement": "Classification: Tabel",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Tabel category supported",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P46",
+    "requirement": "Classification: Diagram",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Diagram category supported",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P47",
+    "requirement": "Classification: Catatan Teknis",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Catatan Teknis category supported",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P48",
+    "requirement": "Single-type drawing aggregation rule",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Grouping rule enforced",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P49",
+    "requirement": "Site Plan category contents specification",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Site plan tags active",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P50",
+    "requirement": "Denah category floor-ordered sequence",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Vertical floor ordering in denah",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P51",
+    "requirement": "Potongan category building cuts specification",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Potongan contents grouped",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P52",
+    "requirement": "Detail category sub-disciplines specification",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Sub-disciplines supported",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P53",
+    "requirement": "Tabel category schedule types specification",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Schedule types supported",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P54",
+    "requirement": "Tampak category exterior & interior view",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Elevation view types supported",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P55",
+    "requirement": "Category sub-ordering by building level",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Sub-ordering algorithm active",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P56",
+    "requirement": "View Mode 3: Original Page Order specification",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Original page order active",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P57",
+    "requirement": "Original document sequence preservation",
+    "phase": "Phase 05",
+    "status": "verified_previous_phase",
+    "limitation": "Original sequence preserved",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P58",
+    "requirement": "User flexibility across view options",
+    "phase": "Phase 06 / Phase 10B",
+    "status": "requires_retest",
+    "limitation": "Verified in Phase 10B; requires retest in Phase 11C",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P59",
+    "requirement": "Fallback AI classification for unclassified drawings",
+    "phase": "Phase 07A / Phase 10C",
+    "status": "verified_previous_phase",
+    "limitation": "Verified via DeepSeek V4 Flash live benchmark in Phase 10C",
+    "retest_subphase": "Phase 11D"
+  },
+  {
+    "paragraph": "P60",
+    "requirement": "Quantities display page simplification & Core Engine authority",
+    "phase": "Phase 09D / Phase 10B",
+    "status": "requires_retest",
+    "limitation": "Verified in Phase 10B; requires retest in Phase 11C",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P61",
+    "requirement": "Sidebar and sheet tree layout cleanup",
+    "phase": "Phase 06 / Phase 10B",
+    "status": "requires_retest",
+    "limitation": "Verified in Phase 10B; requires retest in Phase 11C",
+    "retest_subphase": "Phase 11C"
+  },
+  {
+    "paragraph": "P62",
+    "requirement": "AI + Engine testing budget & benchmark ledger schema",
+    "phase": "Phase 07B / Phase 10C",
+    "status": "verified_previous_phase",
+    "limitation": "DeepSeek V4 Flash live benchmark complete (15/15 calls accounted)",
+    "retest_subphase": "Phase 11D"
+  }
+]

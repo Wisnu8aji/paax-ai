@@ -1,0 +1,72 @@
+[
+  {
+    "feature_id": "sheet_classification_fallback",
+    "domain": "Drawing Intelligence AI-Assist",
+    "entrypoint": "app/perception/ai_assist/sheet_classification_assist.py",
+    "max_live_calls": 15,
+    "test_plan_cases": ["valid", "ambiguous", "invalid", "provider_error", "fallback"],
+    "status": "requires_retest",
+    "retest_subphase": "Phase 11D",
+    "description": "AI-assist fallback router for classifying unassigned drawing sheets"
+  },
+  {
+    "feature_id": "discipline_ambiguity_resolution",
+    "domain": "Drawing Intelligence Project Graph",
+    "entrypoint": "app/project_graph/providers/deepseek.py",
+    "max_live_calls": 15,
+    "test_plan_cases": ["valid", "ambiguous", "invalid", "provider_error", "fallback"],
+    "status": "requires_retest",
+    "retest_subphase": "Phase 11D",
+    "description": "AI proposal for resolving discipline/level ambiguities in drawing items"
+  },
+  {
+    "feature_id": "evidence_binding_suggestion",
+    "domain": "Drawing Intelligence PCKM Graph",
+    "entrypoint": "app/project_graph/providers/deepseek.py",
+    "max_live_calls": 15,
+    "test_plan_cases": ["valid", "ambiguous", "invalid", "provider_error", "fallback"],
+    "status": "requires_retest",
+    "retest_subphase": "Phase 11D",
+    "description": "AI candidate resolution proposals for merging or separating graph nodes"
+  },
+  {
+    "feature_id": "review_explanation_router",
+    "domain": "Drawing Intelligence Review Queue",
+    "entrypoint": "app/perception/ai_assist/client.py",
+    "max_live_calls": 15,
+    "test_plan_cases": ["valid", "ambiguous", "invalid", "provider_error", "fallback"],
+    "status": "requires_retest",
+    "retest_subphase": "Phase 11D",
+    "description": "AI-assisted explanations and suggested next steps for items needing review"
+  },
+  {
+    "feature_id": "deterministic_rejection_fallback",
+    "domain": "Core Engine Authority Gate",
+    "entrypoint": "services/core-engine/tests/test_feedback1_engine_authority.py",
+    "max_live_calls": 15,
+    "test_plan_cases": ["valid", "ambiguous", "invalid", "provider_error", "fallback"],
+    "status": "requires_retest",
+    "retest_subphase": "Phase 11D",
+    "description": "Golden Rule fail-closed gate refusing AI numeric quantity calculations"
+  },
+  {
+    "feature_id": "command_room_router",
+    "domain": "Command Room Chat AI",
+    "entrypoint": "apps/web/src/app/api/command-room/chat/route.ts",
+    "max_live_calls": 15,
+    "test_plan_cases": ["valid", "ambiguous", "invalid", "provider_error", "fallback"],
+    "status": "requires_retest",
+    "retest_subphase": "Phase 11D",
+    "description": "Command Room multi-model routing (Lucent/Arete/Noir) and fallback"
+  },
+  {
+    "feature_id": "agentic_planner_governance",
+    "domain": "Agentic Mission Control",
+    "entrypoint": "services/document-intelligence/app/agentic/governed_runner.py",
+    "max_live_calls": 15,
+    "test_plan_cases": ["valid", "ambiguous", "invalid", "provider_error", "fallback"],
+    "status": "requires_retest",
+    "retest_subphase": "Phase 11D",
+    "description": "Governed agentic mission planning, tool execution, budget caps, and audit trail"
+  }
+]
