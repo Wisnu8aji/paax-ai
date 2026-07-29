@@ -2,19 +2,15 @@ from __future__ import annotations
 
 """Typed, formula-free boundary from verified drawing facts to Python Core Engine.
 
-Phase 09C Correction Round 5 — Unexported Object Capability & Truthful Request Identity:
+Phase 09C Correction Round 6 — Capability Closure & Full-Context Fingerprint:
   - DispatchContext: immutable receipt with fixed-format safe SHA-256 idempotency_key
-    (idemp-<32-hex-chars>) bound to project_id, snapshot_id, work_item_id, evidence_digest,
-    request_digest, endpoint, contract, calculation_type, and expected_unit.
-  - CoreEngineCalculationClient.execute_dispatch(): ONLY path that issues a verified
-    DispatchReceipt (via private _mark_client_verified() using unexported object sentinel).
-  - Header Sanitization: X-Idempotency-Key header transmits opaque fixed-format fingerprint,
-    guaranteed free of CR/LF or unescaped header injection.
-  - Endpoint-Specific Family Response Models: Exact Pydantic schema validation per endpoint family:
-      1. /calculations           -> DICalculationsResponse
-      2. /tkg/takeoff            -> DITkgTakeoffResponse
-      3. /takeoff/mep[_advanced] -> DIMepTakeoffResponse
-      4. /takeoff/* (manual)     -> DIManualTakeoffResponse
+    (idemp-<32-hex-chars>) bound to FULL canonical context (schema_version, endpoint,
+    contract, calculation_type, project_id, snapshot_id, work_item_id, evidence_digest,
+    request_digest, expected_unit).
+  - CoreEngineCalculationClient.execute_dispatch(): ONLY path that obtains a verified
+    DispatchReceipt (via module-internal issue_verified_receipt using unexported capability token).
+  - Disclosure: Module-internal closures protect against ordinary application trust forgery.
+    They do not form a cryptographic sandbox against in-process interpreter tampering.
 """
 
 import os
@@ -27,6 +23,7 @@ from .dispatch_context import (
     DispatchContext,
     DispatchReceipt,
     expected_unit_for,
+    issue_verified_receipt,
     make_evidence_digest,
     make_idempotency_key,
     make_request_digest,
@@ -36,7 +33,7 @@ from .models import ElementMeasurementFact, WorkItemCalculation, WorkItemCandida
 from app.perception.takeoff_capability_registry import TakeoffCapability, resolve_takeoff_capability
 
 
-# Re-export so tests can import from calculation_bridge directly
+# Re-export public API symbols only (issue_verified_receipt is NOT re-exported)
 __all__ = [
     "CalculationNotReady",
     "DispatchContext",
@@ -213,7 +210,17 @@ def build_engine_dispatch(
         }
         exp_unit = expected_unit_for(capability.calculation_type, fallback="unit")
         request_digest = make_request_digest(payload)
-        idemp_key = make_idempotency_key(project_id, snapshot_id, item.work_item_id, request_digest)
+        idemp_key = make_idempotency_key(
+            endpoint=capability.endpoint,
+            contract=None,
+            calculation_type=capability.calculation_type,
+            project_id=project_id,
+            snapshot_id=snapshot_id,
+            work_item_id=item.work_item_id,
+            evidence_digest=evidence_digest,
+            request_digest=request_digest,
+            expected_unit=exp_unit,
+        )
         ctx = DispatchContext(
             endpoint=capability.endpoint,
             contract=None,
@@ -247,7 +254,17 @@ def build_engine_dispatch(
         tkg_units = {"beton": "m3", "bekisting": "m2", "besi": "kg"}
         exp_unit = tkg_units.get(item.category.lower(), "unit")
         request_digest = make_request_digest(payload)
-        idemp_key = make_idempotency_key(project_id, snapshot_id, item.work_item_id, request_digest)
+        idemp_key = make_idempotency_key(
+            endpoint=capability.endpoint,
+            contract="tkg.takeoff",
+            calculation_type=None,
+            project_id=project_id,
+            snapshot_id=snapshot_id,
+            work_item_id=item.work_item_id,
+            evidence_digest=evidence_digest,
+            request_digest=request_digest,
+            expected_unit=exp_unit,
+        )
         ctx = DispatchContext(
             endpoint=capability.endpoint,
             contract="tkg.takeoff",
@@ -300,7 +317,17 @@ def build_engine_dispatch(
     exp_unit = _DOMAIN_EXPECTED_UNITS.get(contract, "unit")
 
     request_digest = make_request_digest(validated_payload)
-    idemp_key = make_idempotency_key(project_id, snapshot_id, item.work_item_id, request_digest)
+    idemp_key = make_idempotency_key(
+        endpoint=capability.endpoint,
+        contract=contract,
+        calculation_type=None,
+        project_id=project_id,
+        snapshot_id=snapshot_id,
+        work_item_id=item.work_item_id,
+        evidence_digest=evidence_digest,
+        request_digest=request_digest,
+        expected_unit=exp_unit,
+    )
     ctx = DispatchContext(
         endpoint=capability.endpoint,
         contract=contract,
@@ -361,7 +388,7 @@ class CoreEngineCalculationClient:
     async def execute_dispatch(self, dispatch: EngineDispatch) -> tuple[dict[str, Any], DispatchReceipt]:
         """Execute a roundtrip call to Core Engine and return (response_json, verified_receipt).
 
-        This is the ONLY path that issues a verified DispatchReceipt with the unexported sentinel!
+        This is the ONLY path that obtains a verified DispatchReceipt (via issue_verified_receipt).
         Sends X-Idempotency-Key header.
         """
         headers = {
@@ -376,8 +403,7 @@ class CoreEngineCalculationClient:
                 response = await client.post(f"{self.base_url}{dispatch.endpoint}", json=dispatch.payload, headers=headers)
         response.raise_for_status()
         resp_json = response.json()
-        receipt = DispatchReceipt(context=dispatch.context, response=resp_json)
-        receipt._mark_client_verified()
+        receipt = issue_verified_receipt(dispatch.context, resp_json)
         return resp_json, receipt
 
     async def dispatch(self, dispatch: EngineDispatch) -> dict[str, Any]:
@@ -395,7 +421,18 @@ class CoreEngineCalculationClient:
         snap_id = str(payload.get("snapshot_id") or "unknown")
         work_id = str(payload.get("work_item_id") or "unknown")
         req_digest = make_request_digest(payload)
-        idemp_key = make_idempotency_key(proj_id, snap_id, work_id, req_digest)
+        exp_unit = expected_unit_for(payload.get("calculation_type"), fallback="unit")
+        idemp_key = make_idempotency_key(
+            endpoint="/calculations",
+            contract=None,
+            calculation_type=payload.get("calculation_type"),
+            project_id=proj_id,
+            snapshot_id=snap_id,
+            work_item_id=work_id,
+            evidence_digest="none",
+            request_digest=req_digest,
+            expected_unit=exp_unit,
+        )
         ctx = DispatchContext(
             endpoint="/calculations",
             contract=None,
@@ -405,7 +442,7 @@ class CoreEngineCalculationClient:
             work_item_id=work_id,
             evidence_digest="none",
             request_digest=req_digest,
-            expected_unit=expected_unit_for(payload.get("calculation_type"), fallback="unit"),
+            expected_unit=exp_unit,
             idempotency_key=idemp_key,
         )
         return await self.dispatch(EngineDispatch(endpoint="/calculations", payload=payload, capability=capability, context=ctx))
@@ -422,8 +459,8 @@ def calculation_from_response(
 ) -> WorkItemCalculation:
     """Convert a Core Engine HTTP response to a WorkItemCalculation.
 
-    Round 5: source_authority='core_engine' REQUIRES:
-      1. A non-null DispatchReceipt that is CLIENT-VERIFIED (marked via execute_dispatch).
+    Round 6: source_authority='core_engine' REQUIRES:
+      1. A non-null DispatchReceipt that is CLIENT-VERIFIED (issued via issue_verified_receipt).
       2. context.work_item_id == item.work_item_id
       3. Current evidence lineage matches context.evidence_digest exactly
       4. receipt.is_authority_valid() passes all Pydantic response family & identity gates

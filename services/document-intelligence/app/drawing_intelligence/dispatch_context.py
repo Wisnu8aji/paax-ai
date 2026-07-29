@@ -1,28 +1,27 @@
 """DispatchContext and DispatchReceipt — Object-Capability Authority Boundary.
 
-Phase 09C Correction Round 5 — Unexported object capability & truthful request identity.
+Phase 09C Correction Round 6 — Capability Closure & Full-Context Request Fingerprint.
 
 Design Invariants:
-  - Trust Boundary: DispatchReceipt contains NO public create_verified or caller-settable
-    verification token. Verified issuance uses an unexported module sentinel
-    (_CLIENT_ISSUED_RECEIPT_SENTINEL) set ONLY by CoreEngineCalculationClient.execute_dispatch().
-  - Truthful Request Identity: idempotency_key is a fixed-format SHA-256-derived opaque fingerprint
-    (idemp-<32-hex-chars>) safe for HTTP headers. It provides deterministic request correlation.
+  - Trust Boundary: DispatchReceipt contains NO public create_verified or _mark_client_verified
+    mutator methods. The PrivateAttr _capability_token is set ONLY by module-internal
+    issue_verified_receipt(), which is called exclusively by CoreEngineCalculationClient.execute_dispatch().
+  - Python Limitation Disclosure: In-process module-internal closures provide an application boundary
+    against ordinary caller trust forgery. They do not form a cryptographic sandbox against malicious
+    code already running inside the same Python interpreter.
+  - Truthful Request Identity: idempotency_key is a fixed-format SHA-256 opaque fingerprint
+    (idemp-<32-hex-chars>) derived from the canonical serialized FULL context (schema_version,
+    endpoint, contract, calculation_type, project_id, snapshot_id, work_item_id, evidence_digest,
+    request_digest, expected_unit). Safe for HTTP headers without injection risk.
     Note: Core Engine is stateless (no server-side idempotency storage); the key guarantees client-side
     reproducibility and correlation across the execution roundtrip.
-  - Endpoint-Specific Family Models: Exact Pydantic schema validation per endpoint family:
-      1. /calculations           -> DICalculationsResponse
-      2. /tkg/takeoff            -> DITkgTakeoffResponse
-      3. /takeoff/mep[_advanced] -> DIMepTakeoffResponse
-      4. /takeoff/* (manual)     -> DIManualTakeoffResponse
 """
 from __future__ import annotations
 
 import hashlib
 import json
-import re
 from typing import Any, Optional
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, PrivateAttr, ValidationError
 
 from .dispatch_schemas import (
     DICalculationsResponse,
@@ -32,7 +31,7 @@ from .dispatch_schemas import (
 )
 
 # Unexported module sentinel for object-capability verification
-_CLIENT_ISSUED_RECEIPT_SENTINEL = object()
+_RECEIPT_CAPABILITY_TOKEN = object()
 
 
 class DispatchContext(BaseModel):
@@ -66,19 +65,38 @@ def make_request_digest(payload: Any) -> str:
     return _sha256_of(payload)
 
 
-def make_idempotency_key(project_id: str, snapshot_id: str, work_item_id: str, request_digest: str) -> str:
-    """Generate a fixed-format safe opaque request fingerprint for Core Engine dispatch.
+def make_idempotency_key(
+    *,
+    endpoint: str,
+    contract: Optional[str] = None,
+    calculation_type: Optional[str] = None,
+    project_id: str,
+    snapshot_id: str,
+    work_item_id: str,
+    evidence_digest: str,
+    request_digest: str,
+    expected_unit: str,
+    schema_version: str = "v1",
+) -> str:
+    """Generate an opaque, deterministic request fingerprint from full canonical context inputs.
 
-    Always produces 'idemp-<32-hex-chars>', which is alphanumeric and dashes only.
-    Safe for HTTP headers without header injection risks.
+    Binds schema_version, endpoint, contract, calculation_type, project_id, snapshot_id,
+    work_item_id, evidence_digest, request_digest, and expected_unit.
+    Produces 'idemp-<32-hex-chars>', which is safe for HTTP headers.
     """
-    fingerprint_input = {
+    canonical_input = {
+        "schema_version": schema_version,
+        "endpoint": str(endpoint),
+        "contract": str(contract or ""),
+        "calculation_type": str(calculation_type or ""),
         "project_id": str(project_id),
         "snapshot_id": str(snapshot_id),
         "work_item_id": str(work_item_id),
+        "evidence_digest": str(evidence_digest),
         "request_digest": str(request_digest),
+        "expected_unit": str(expected_unit),
     }
-    hex_digest = _sha256_of(fingerprint_input)[:32]
+    hex_digest = _sha256_of(canonical_input)[:32]
     return f"idemp-{hex_digest}"
 
 
@@ -89,35 +107,26 @@ class DispatchReceipt(BaseModel):
 
     Object Capability Boundary:
     Ordinary public construction DispatchReceipt(context=..., response=...) leaves
-    the private _client_sentinel unset (None).
-    ONLY CoreEngineCalculationClient.execute_dispatch() invokes _mark_client_verified()
-    to attach the unexported _CLIENT_ISSUED_RECEIPT_SENTINEL.
+    the PrivateAttr _capability_token as None.
+    ONLY issue_verified_receipt() sets _capability_token to _RECEIPT_CAPABILITY_TOKEN.
     """
     context: DispatchContext
     response: dict[str, Any]
 
+    _capability_token: Optional[object] = PrivateAttr(default=None)
+
     model_config = {"arbitrary_types_allowed": True}
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(**data)
-        # Private attribute not defined in Pydantic fields — never populated by model_validate or kwargs
-        object.__setattr__(self, "_client_sentinel", None)
-
-    def _mark_client_verified(self) -> "DispatchReceipt":
-        """Private module method called ONLY by CoreEngineCalculationClient.execute_dispatch()."""
-        object.__setattr__(self, "_client_sentinel", _CLIENT_ISSUED_RECEIPT_SENTINEL)
-        return self
-
     def is_client_verified(self) -> bool:
-        """True ONLY if this receipt instance was marked by CoreEngineCalculationClient."""
-        return getattr(self, "_client_sentinel", None) is _CLIENT_ISSUED_RECEIPT_SENTINEL
+        """True ONLY if this receipt instance was marked by issue_verified_receipt()."""
+        return getattr(self, "_capability_token", None) is _RECEIPT_CAPABILITY_TOKEN
 
     def is_authority_valid(self) -> tuple[bool, str]:
         """Check all identity, client verification, and Pydantic response gates. Returns (ok, reason)."""
         ctx = self.context
         resp = self.response
 
-        # Gate 0: Must be client-verified via unexported object capability
+        # Gate 0: Must be client-verified via unexported capability token
         if not self.is_client_verified():
             return False, "DispatchReceipt was not issued by a verified CoreEngineCalculationClient execution roundtrip"
 
@@ -236,6 +245,16 @@ class DispatchReceipt(BaseModel):
         if unit:
             return str(unit)
         return self.context.expected_unit
+
+
+def issue_verified_receipt(context: DispatchContext, response: dict[str, Any]) -> DispatchReceipt:
+    """Module-internal function invoked ONLY by CoreEngineCalculationClient.execute_dispatch().
+
+    NOT exported in __all__ or calculation_bridge public exports.
+    """
+    receipt = DispatchReceipt(context=context, response=response)
+    receipt._capability_token = _RECEIPT_CAPABILITY_TOKEN
+    return receipt
 
 
 # ─── Unit/dimension correlation ──────────────────────────────────────────────
