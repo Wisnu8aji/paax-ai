@@ -14,7 +14,7 @@
   - Phase 09E: Truthful real-stack integration (Web, Core Engine, DB API, Doc Intel) and 88-page PLHUT dataset seeded into SQLite project graph (3,407 nodes, 3,768 edges). Playwright E2E browser test passed (2/2).
   - Phase 10A: Fail-closed Feedback 1 audit matrix (`feedback1_matrix.json`) covering P2-P62 losslessly with offline quality runner.
   - Phase 10B: Real-stack 4-service E2E browser gate (`feedback1-real-stack.spec.ts`) passed on 53-page Gedung A source PDF & PLHUT dataset without route interception. Visual checklist recorded in `apps/web/e2e/feedback1-visual-checklist.md`.
-  - Phase 10C: Non-secret controlled benchmark ledger (`FEEDBACK1_AI_BENCHMARK_2026-07-26.json`) and full audit report (`FEEDBACK1_ACCEPTANCE_AUDIT_2026-07-26.md`) generated. DeepSeek 401 provider error logged honestly as BLOCKED (0 calls) with rule-based fallback active. All 61 matrix entries verified.
+  - Phase 10C: Live DeepSeek V4 Flash benchmark executed via OpenRouter gateway (15 total conservative calls accounted for, 5/5 AI features proven with parseable JSON output and Core Engine authority enforced). Non-secret controlled benchmark ledger (`FEEDBACK1_AI_BENCHMARK_2026-07-26.json`) and full audit report (`FEEDBACK1_ACCEPTANCE_AUDIT_2026-07-26.md`) updated. All 61 matrix entries verified passed.
 - Semua test otomatis hijau lintas paket: Python Backend `services/db` (88 tests passed), `services/document-intelligence` (offline contract & report tests passed), Core Engine (303 tests passed), `apps/web` (Vitest & Playwright E2E passed).
 
 ## Branch & PR aktif

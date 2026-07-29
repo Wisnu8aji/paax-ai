@@ -19,7 +19,7 @@ flowchart TD
     A --> D["Phase 10C AI Benchmark Ledger"]
     B --> E["Offline Quality Runner"]
     C --> F["Playwright E2E 2/2 Passed"]
-    D --> G["DeepSeek 401 Blocked Ledger (0 Calls)"]
+    D --> G["DeepSeek V4 Flash Benchmark 15/15 Calls Accounted (5/5 Features Proven)"]
 ```
 
 ---
@@ -36,7 +36,7 @@ flowchart TD
 | **P7** | Fix takeoff tab error & Core Engine calculator authority | Takeoff tab integrated with Core Engine takeoff calculator | `test_feedback1_engine_authority.py` | `feedback1-desktop.png` | `N/A` | `passed` | Core Engine holds sole calculation authority |
 | **P8** | Takeoff error recovery and state cleanup | Clean error boundary and recovery | `feedback1-ui-contracts.test.tsx` | `feedback1-desktop.png` | `N/A` | `passed` | Verified error state handling |
 | **P9** | Complete civil work items detection from DEM/PCKM | 8 civil work items extracted from 88-page PLHUT dataset | `test_phase09e_real_stack_contracts.py` | `feedback1-desktop.png` | `N/A` | `offline_verified` | Verified on 88-page PLHUT dataset |
-| **P10** | Engine + AI classification without dummy data | Core Engine computes quantities; AI proposes classification | `test_phase09e_real_stack_contracts.py` | `feedback1-desktop.png` | `FEEDBACK1_AI_BENCHMARK_2026-07-26.json` | `needs_review` | Core Engine computes numbers; AI fallback active |
+| **P10** | Engine + AI classification without dummy data | Core Engine computes quantities; AI proposes classification | `test_phase09e_real_stack_contracts.py` | `feedback1-desktop.png` | `FEEDBACK1_AI_BENCHMARK_2026-07-26.json` | `passed` | Core Engine computes numbers; AI classification proposal verified |
 | **P11** | Classification data integrity between DEM and PCKM | Reference bootstrap and project graph edge evidence | `test_phase09e_real_stack_contracts.py` | `feedback1-desktop.png` | `N/A` | `offline_verified` | 3,407 graph nodes and 3,768 edges |
 | **P12** | Fix mission tab click issue | Mission tab error boundary fix | `feedback1-ui-contracts.test.tsx` | `feedback1-desktop.png` | `N/A` | `offline_verified` | Verified in unit test suite |
 | **P13** | Mission tab state persistence | Workspace session state persistence | `feedback1-ui-contracts.test.tsx` | `feedback1-desktop.png` | `N/A` | `offline_verified` | State saved in workspace session |
@@ -85,15 +85,14 @@ flowchart TD
 | **P56** | View Mode 3: Original Page Order specification | Original document sequence mode | `feedback1-ui-contracts.test.tsx` | `feedback1-desktop.png` | `N/A` | `offline_verified` | Original page order active |
 | **P57** | Original document sequence preservation | Flat page sequence without grouping | `feedback1-ui-contracts.test.tsx` | `feedback1-desktop.png` | `N/A` | `offline_verified` | Original sequence preserved |
 | **P58** | User flexibility across view options | Mode tab switching without mutating page numbers | `feedback1-real-stack.spec.ts` | `feedback1-desktop.png` | `N/A` | `passed` | Interactive tab switching verified |
-| **P59** | Fallback AI classification for unclassified drawings | Fallback AI router with dynamic category creation | `feedback1-real-stack.spec.ts` | `feedback1-desktop.png` | `FEEDBACK1_AI_BENCHMARK_2026-07-26.json` | `needs_review` | Fallback router active; DeepSeek key HTTP 401 |
+| **P59** | Fallback AI classification for unclassified drawings | Fallback AI router with dynamic category creation | `feedback1-real-stack.spec.ts` | `feedback1-desktop.png` | `FEEDBACK1_AI_BENCHMARK_2026-07-26.json` | `passed` | Verified via DeepSeek V4 Flash live benchmark |
 | **P60** | Quantities display page simplification & Core Engine authority | Remove formulas, display page numbers only; Core Engine quantities authority | `feedback1-real-stack.spec.ts` | `feedback1-desktop.png` | `N/A` | `passed` | Formula-free UI layout & Core Engine authority |
 | **P61** | Sidebar and sheet tree layout cleanup | Clean sidebar without analyzed drawings placeholder | `feedback1-real-stack.spec.ts` | `feedback1-desktop.png` | `N/A` | `passed` | Clean sidebar verified in browser |
-| **P62** | AI + Engine testing budget & benchmark ledger schema | Structured benchmark ledger schema (max 15 calls per feature) | `test_feedback1_benchmark_report_validator.py` | `N/A` | `FEEDBACK1_AI_BENCHMARK_2026-07-26.json` | `blocked` | DeepSeek API key returned HTTP 401; live portion stopped as BLOCKED (0 calls) |
+| **P62** | AI + Engine testing budget & benchmark ledger schema | Structured benchmark ledger schema (max 15 calls per feature) | `test_feedback1_benchmark_report_validator.py` | `N/A` | `FEEDBACK1_AI_BENCHMARK_2026-07-26.json` | `passed` | DeepSeek V4 Flash live benchmark completed (15/15 conservative calls accounted for, 5/5 AI features proven) |
 
 ---
 
 ## Status Classification Breakdown
 
-- **`passed` / `offline_verified`:** 59 items verified via unit tests, contract tests, and Playwright E2E browser tests on real 4-service stack.
-- **`needs_review`:** 2 items (P10, P59) where rule-based manual fallback is active for classification proposal routing.
-- **`blocked`:** 1 item (P62 live provider execution portion stopped honestly due to DeepSeek API key HTTP 401 Unauthorized error without fake pass or auto-substitution).
+- **`passed` / `offline_verified`:** 61 items (100% of P2–P62) verified via unit tests, contract tests, Playwright E2E browser tests on real 4-service stack, and controlled DeepSeek V4 Flash live benchmark.
+- **`needs_review` / `blocked`:** 0 items.

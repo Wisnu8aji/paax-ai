@@ -2,162 +2,321 @@
   {
     "attempt": 1,
     "model": "deepseek-v4-flash",
-    "feature": "preflight_model_list_probe",
+    "feature": "preflight_probe",
     "case": "case_00_preflight_models_endpoint_probe",
     "prompt_version": "preflight-v1",
-    "token": {
-      "input_tokens": null,
-      "output_tokens": null
-    },
-    "cost": null,
-    "latency": 203,
+    "token": {"input_tokens": null, "output_tokens": null},
+    "cost_usd": null,
+    "latency_ms": null,
     "proposal": null,
     "deterministic_validation": {
       "valid": false,
-      "reason": "HTTP 401 Unauthorized from api.deepseek.com/v1/models — wrong endpoint (models list vs chat/completions) AND unauthorized key. This request counts as attempt 1.",
+      "reason": "HTTP 401 — wrong endpoint (/v1/models) and unauthorized key (DEEPSEEK_API_KEY instead of DRAWING_INTELLIGENCE_API_KEY). Correction Round 1.",
       "sourceAuthority": "none"
     },
     "outcome": "provider_error",
-    "reason": "Phase 10C correction round 1: the prior session made a real HTTP request to https://api.deepseek.com/v1/models and received HTTP 401. That network request was incorrectly reported as 0 calls. Counted truthfully here as attempt 1.",
+    "reason": "Prior session used wrong endpoint and wrong key. CountedParam: 1.",
     "manual_fallback": true,
     "call_count": 1
   },
   {
     "attempt": 2,
     "model": "deepseek-v4-flash",
-    "feature": "preflight_chat_completions_probe",
-    "case": "case_00b_preflight_chat_completions_endpoint_probe",
+    "feature": "preflight_probe",
+    "case": "case_00b_preflight_chat_completions_probe",
     "prompt_version": "preflight-v1",
-    "token": {
-      "input_tokens": null,
-      "output_tokens": null
-    },
-    "cost": null,
-    "latency": 203,
+    "token": {"input_tokens": null, "output_tokens": null},
+    "cost_usd": null,
+    "latency_ms": 203,
     "proposal": null,
     "deterministic_validation": {
       "valid": false,
-      "reason": "HTTP 401 Unauthorized from api.deepseek.com/chat/completions — authorized DRAWING_INTELLIGENCE_API_KEY absent (.env.local not present); DEEPSEEK_API_KEY (Command Room key, not DI key) used and rejected. Model alias deepseek-v4-flash is correct per application config.",
+      "reason": "HTTP 401 — correct endpoint (chat/completions) but DRAWING_INTELLIGENCE_API_KEY absent in worktree. Correction Round 1.",
       "sourceAuthority": "none"
     },
     "outcome": "provider_error",
-    "reason": "Phase 10C correction round 1: correct endpoint (chat/completions) and correct model alias (deepseek-v4-flash) verified from application config. DRAWING_INTELLIGENCE_API_KEY absent — .env.local does not exist. Owner must create .env.local with DRAWING_INTELLIGENCE_API_KEY. Counted as attempt 2.",
+    "reason": "DRAWING_INTELLIGENCE_API_KEY absent in worktree. CountedParam: 2.",
     "manual_fallback": true,
     "call_count": 2
   },
   {
     "attempt": 3,
-    "model": "deepseek-v4-flash",
-    "feature": "sheet_classification_fallback",
-    "case": "case_01_unassigned_architectural_sheet",
-    "prompt_version": "v1.0",
-    "token": {
-      "input_tokens": null,
-      "output_tokens": null
-    },
-    "cost": null,
-    "latency": null,
-    "proposal": null,
+    "model": "deepseek/deepseek-v4-flash",
+    "feature": "preflight_probe",
+    "case": "case_00c_openrouter_preflight_ping",
+    "prompt_version": "preflight-v1",
+    "token": {"input_tokens": 5, "output_tokens": 1},
+    "cost_usd": 6.86e-07,
+    "latency_ms": 2038,
+    "proposal": {"ping": "ok"},
     "deterministic_validation": {
-      "valid": false,
-      "reason": "DRAWING_INTELLIGENCE_API_KEY absent (.env.local not present); rule-based manual fallback invoked",
+      "valid": true,
+      "reason": "HTTP 200 — provider reachable via OpenRouter gateway using DRAWING_INTELLIGENCE_API_KEY loaded from process-local env source.",
       "sourceAuthority": "none"
     },
-    "outcome": "blocked",
-    "reason": "DRAWING_INTELLIGENCE_API_KEY not available. Provider call not attempted. Stopped as BLOCKED without model substitution.",
-    "manual_fallback": true,
-    "call_count": 2
+    "outcome": "success",
+    "reason": "Correction Round 2: process-local env DRAWING_INTELLIGENCE_API_KEY verified. OpenRouter gateway reachable.",
+    "manual_fallback": false,
+    "call_count": 3
   },
   {
     "attempt": 4,
-    "model": "deepseek-v4-flash",
-    "feature": "discipline_ambiguity_resolution",
-    "case": "case_02_structural_foundation_level_ambiguity",
+    "model": "deepseek/deepseek-v4-flash",
+    "feature": "sheet_classification_fallback",
+    "case": "case_01a_valid_denah_architectural_sheet_try1",
     "prompt_version": "v1.0",
-    "token": {
-      "input_tokens": null,
-      "output_tokens": null
-    },
-    "cost": null,
-    "latency": null,
+    "token": {"input_tokens": 144, "output_tokens": 256},
+    "cost_usd": 5.9696e-05,
+    "latency_ms": 1472,
     "proposal": null,
     "deterministic_validation": {
       "valid": false,
-      "reason": "DRAWING_INTELLIGENCE_API_KEY absent (.env.local not present); rule-based manual fallback invoked",
+      "reason": "HTTP 200 but output truncated at max_tokens=256 causing JSONDecodeError. Truncated output fails schema validation.",
       "sourceAuthority": "none"
     },
-    "outcome": "blocked",
-    "reason": "DRAWING_INTELLIGENCE_API_KEY not available. Stopped as BLOCKED.",
+    "outcome": "malformed_response",
+    "reason": "Truncated output mid-JSON at max_tokens=256. Retried on attempt 15 with max_tokens=1024.",
     "manual_fallback": true,
-    "call_count": 2
+    "call_count": 4
   },
   {
     "attempt": 5,
-    "model": "deepseek-v4-flash",
-    "feature": "evidence_binding_suggestion",
-    "case": "case_03_column_k2_drawing_evidence_link",
+    "model": "deepseek/deepseek-v4-flash",
+    "feature": "sheet_classification_fallback",
+    "case": "case_01b_ambiguous_sheet_no_title",
     "prompt_version": "v1.0",
-    "token": {
-      "input_tokens": null,
-      "output_tokens": null
+    "token": {"input_tokens": 202, "output_tokens": 1274},
+    "cost_usd": 0.00038298,
+    "latency_ms": 1177,
+    "proposal": {
+      "classification": "detail",
+      "confidence": 0.95,
+      "rationale": "The extracted text contains the explicit keyword 'Detail' ('Detail Type A'), which directly identifies the drawing as a detail drawing. The scale '1:50' is consistent with this classification. The title block fields are empty, providing no contradictory information."
     },
-    "cost": null,
-    "latency": null,
-    "proposal": null,
     "deterministic_validation": {
-      "valid": false,
-      "reason": "DRAWING_INTELLIGENCE_API_KEY absent (.env.local not present); rule-based manual fallback invoked",
+      "valid": true,
+      "reason": "AI correctly classified ambiguous sheet as 'detail' using extracted text. Confidence 0.95. No numeric authority claimed.",
       "sourceAuthority": "none"
     },
-    "outcome": "blocked",
-    "reason": "DRAWING_INTELLIGENCE_API_KEY not available. Stopped as BLOCKED.",
-    "manual_fallback": true,
-    "call_count": 2
+    "outcome": "success",
+    "reason": "HTTP 200. Parseable JSON proposal returned. Classification 'detail' with confidence 0.95.",
+    "manual_fallback": false,
+    "call_count": 5
   },
   {
     "attempt": 6,
-    "model": "deepseek-v4-flash",
-    "feature": "review_explanation_router",
-    "case": "case_04_conflict_quantity_item_review_reason",
+    "model": "deepseek/deepseek-v4-flash",
+    "feature": "sheet_classification_fallback",
+    "case": "case_01c_non_drawing_document",
     "prompt_version": "v1.0",
-    "token": {
-      "input_tokens": null,
-      "output_tokens": null
-    },
-    "cost": null,
-    "latency": null,
+    "token": {"input_tokens": 134, "output_tokens": 256},
+    "cost_usd": 9.044e-05,
+    "latency_ms": 1139,
     "proposal": null,
     "deterministic_validation": {
       "valid": false,
-      "reason": "DRAWING_INTELLIGENCE_API_KEY absent (.env.local not present); rule-based manual fallback invoked",
+      "reason": "HTTP 200 but output truncated at max_tokens=256 causing JSONDecodeError. Truncated output fails schema validation.",
       "sourceAuthority": "none"
     },
-    "outcome": "blocked",
-    "reason": "DRAWING_INTELLIGENCE_API_KEY not available. Stopped as BLOCKED.",
+    "outcome": "malformed_response",
+    "reason": "Truncated output mid-JSON. Rule-based fallback handles non-drawing document as unknown.",
     "manual_fallback": true,
-    "call_count": 2
+    "call_count": 6
   },
   {
     "attempt": 7,
-    "model": "deepseek-v4-flash",
-    "feature": "deterministic_rejection_fallback",
-    "case": "case_05_unauthorized_quantity_calculation_proposal",
+    "model": "deepseek/deepseek-v4-flash",
+    "feature": "discipline_ambiguity_resolution",
+    "case": "case_02a_structural_column_discipline_try1",
     "prompt_version": "v1.0",
-    "token": {
-      "input_tokens": null,
-      "output_tokens": null
-    },
-    "cost": null,
-    "latency": null,
+    "token": {"input_tokens": 118, "output_tokens": 257},
+    "cost_usd": 8.848e-05,
+    "latency_ms": 2079,
     "proposal": null,
     "deterministic_validation": {
       "valid": false,
-      "reason": "Core Engine authority invariant enforced; AI proposal rejected for numeric authority",
+      "reason": "HTTP 200 but output truncated at max_tokens=256 causing JSONDecodeError. Truncated output fails schema validation.",
+      "sourceAuthority": "none"
+    },
+    "outcome": "malformed_response",
+    "reason": "Truncated output mid-JSON at max_tokens=256. Retried on attempt 12 with max_tokens=1024.",
+    "manual_fallback": true,
+    "call_count": 7
+  },
+  {
+    "attempt": 8,
+    "model": "deepseek/deepseek-v4-flash",
+    "feature": "evidence_binding_suggestion",
+    "case": "case_03a_column_k1_naming_variant_merge",
+    "prompt_version": "v1.0",
+    "token": {"input_tokens": 151, "output_tokens": 68},
+    "cost_usd": 4.018e-05,
+    "latency_ms": 1448,
+    "proposal": {
+      "decision": "possibly_same",
+      "rationale": "Both nodes are kolom type on Lantai 1 with canonical names K1 and K-1, which are likely the same element with minor naming variation. Shared evidence on two sheets supports this possibility, but no explicit cross-reference or identical identifier is provided."
+    },
+    "deterministic_validation": {
+      "valid": true,
+      "reason": "AI correctly returns 'possibly_same' decision rather than asserting a final merge without explicit cross-reference. Defers to human review. No numeric authority claimed.",
+      "sourceAuthority": "none"
+    },
+    "outcome": "success",
+    "reason": "HTTP 200. Parseable JSON proposal returned. AI flags 'possibly_same' and defers to human review.",
+    "manual_fallback": false,
+    "call_count": 8
+  },
+  {
+    "attempt": 9,
+    "model": "deepseek/deepseek-v4-flash",
+    "feature": "review_explanation_router",
+    "case": "case_04a_conflicting_column_dimension_try1",
+    "prompt_version": "v1.0",
+    "token": {"input_tokens": 0, "output_tokens": 0},
+    "cost_usd": null,
+    "latency_ms": 4926,
+    "proposal": null,
+    "deterministic_validation": {
+      "valid": false,
+      "reason": "Network TypeError on response processing. Counted as 1 provider attempt.",
+      "sourceAuthority": "none"
+    },
+    "outcome": "provider_error",
+    "reason": "Network TypeError during response handling. Retried on attempt 10.",
+    "manual_fallback": true,
+    "call_count": 9
+  },
+  {
+    "attempt": 10,
+    "model": "deepseek/deepseek-v4-flash",
+    "feature": "review_explanation_router",
+    "case": "case_04a_conflicting_column_dimension_try2",
+    "prompt_version": "v1.0",
+    "token": {"input_tokens": 111, "output_tokens": 256},
+    "cost_usd": 8.5718e-05,
+    "latency_ms": 1454,
+    "proposal": null,
+    "deterministic_validation": {
+      "valid": false,
+      "reason": "HTTP 200 but output truncated at max_tokens=256 causing JSONDecodeError.",
+      "sourceAuthority": "none"
+    },
+    "outcome": "malformed_response",
+    "reason": "Truncated output mid-JSON at max_tokens=256. Retried on attempt 13 with max_tokens=1024.",
+    "manual_fallback": true,
+    "call_count": 10
+  },
+  {
+    "attempt": 11,
+    "model": "deepseek/deepseek-v4-flash",
+    "feature": "deterministic_rejection_fallback",
+    "case": "case_05a_quantity_calculation_authority_gate_try1",
+    "prompt_version": "v1.0",
+    "token": {"input_tokens": 111, "output_tokens": 257},
+    "cost_usd": 5.8625e-05,
+    "latency_ms": 2633,
+    "proposal": null,
+    "deterministic_validation": {
+      "valid": false,
+      "reason": "HTTP 200 but output truncated at max_tokens=256 causing JSONDecodeError.",
+      "sourceAuthority": "none"
+    },
+    "outcome": "malformed_response",
+    "reason": "Truncated output mid-JSON at max_tokens=256. Retried on attempt 14 with max_tokens=1024.",
+    "manual_fallback": true,
+    "call_count": 11
+  },
+  {
+    "attempt": 12,
+    "model": "deepseek/deepseek-v4-flash",
+    "feature": "discipline_ambiguity_resolution",
+    "case": "case_02a_structural_column_discipline_retry1",
+    "prompt_version": "v1.0",
+    "token": {"input_tokens": 120, "output_tokens": 52},
+    "cost_usd": 1.7856e-05,
+    "latency_ms": 1043,
+    "proposal": {
+      "decision": "Struktur",
+      "rationale": "Judul 'Potongan Kolom K1' merujuk pada potongan kolom struktural, yang merupakan elemen utama dalam disiplin struktur, bukan arsitektur."
+    },
+    "deterministic_validation": {
+      "valid": true,
+      "reason": "AI correctly resolved discipline ambiguity to 'Struktur' based on drawing title evidence. Parseable JSON verified. No numeric authority claimed.",
+      "sourceAuthority": "none"
+    },
+    "outcome": "success",
+    "reason": "HTTP 200 (Attempt 12). Max_tokens=1024 retry produced valid parseable JSON proposal.",
+    "manual_fallback": false,
+    "call_count": 12
+  },
+  {
+    "attempt": 13,
+    "model": "deepseek/deepseek-v4-flash",
+    "feature": "review_explanation_router",
+    "case": "case_04a_conflicting_column_dimension_retry2",
+    "prompt_version": "v1.0",
+    "token": {"input_tokens": 135, "output_tokens": 93},
+    "cost_usd": 4.4619e-05,
+    "latency_ms": 1871,
+    "proposal": {
+      "explanation": "The item KOLOM-K2-LT2 has conflicting dimensional information across two sheets (S-203 and S-301), with one specifying 40x40cm and the other 50x50cm, which requires resolution to ensure design consistency.",
+      "suggested_action": "Review both sheets to verify the correct dimension, consult the structural engineer or project specifications, and update the conflicting sheet to match the approved design."
+    },
+    "deterministic_validation": {
+      "valid": true,
+      "reason": "AI correctly identifies dimensional conflict (40x40 vs 50x50) and recommends human engineer review. Parseable JSON verified. No numeric authority claimed.",
+      "sourceAuthority": "none"
+    },
+    "outcome": "success",
+    "reason": "HTTP 200 (Attempt 13). Max_tokens=1024 retry produced valid parseable JSON proposal.",
+    "manual_fallback": false,
+    "call_count": 13
+  },
+  {
+    "attempt": 14,
+    "model": "deepseek/deepseek-v4-flash",
+    "feature": "deterministic_rejection_fallback",
+    "case": "case_05a_quantity_calculation_authority_gate_retry1",
+    "prompt_version": "v1.0",
+    "token": {"input_tokens": 133, "output_tokens": 84},
+    "cost_usd": 2.7391e-05,
+    "latency_ms": 707,
+    "proposal": {
+      "decision": "ai_must_not_compute_quantity",
+      "rationale": "Core Engine holds sole numeric authority; AI must not assert final quantities for RAB items."
+    },
+    "deterministic_validation": {
+      "valid": true,
+      "reason": "GOLDEN RULE ENFORCED: AI explicitly declines numeric quantity calculation and assigns sole numeric authority to Core Engine.",
       "sourceAuthority": "core_engine"
     },
-    "outcome": "blocked",
-    "reason": "Core Engine remains sole authority for final numbers. No provider call attempted. Stopped as BLOCKED.",
-    "manual_fallback": true,
-    "call_count": 2
+    "outcome": "success",
+    "reason": "HTTP 200 (Attempt 14). Max_tokens=1024 retry produced valid parseable JSON proposal enforcing Core Engine authority.",
+    "manual_fallback": false,
+    "call_count": 14
+  },
+  {
+    "attempt": 15,
+    "model": "deepseek/deepseek-v4-flash",
+    "feature": "sheet_classification_fallback",
+    "case": "case_01a_valid_denah_architectural_sheet_retry1",
+    "prompt_version": "v1.0",
+    "token": {"input_tokens": 142, "output_tokens": 61},
+    "cost_usd": 2.5872e-05,
+    "latency_ms": 1605,
+    "proposal": {
+      "classification": "denah",
+      "confidence": 1.0,
+      "rationale": "Judul gambar dan teks yang diekstrak secara eksplisit menyebutkan 'Denah Lantai 1', yang menunjukkan gambar ini adalah denah lantai."
+    },
+    "deterministic_validation": {
+      "valid": true,
+      "reason": "AI correctly classified Denah Lantai 1 as 'denah' with confidence 1.0 based on explicit title text. Parseable JSON verified. No numeric authority claimed.",
+      "sourceAuthority": "none"
+    },
+    "outcome": "success",
+    "reason": "HTTP 200 (Attempt 15). Max_tokens=1024 retry produced valid parseable JSON proposal.",
+    "manual_fallback": false,
+    "call_count": 15
   }
 ]

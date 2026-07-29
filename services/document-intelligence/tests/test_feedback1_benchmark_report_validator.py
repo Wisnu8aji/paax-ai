@@ -35,7 +35,7 @@ def test_benchmark_json_exists_and_validates():
 
     required_fields = [
         "model", "feature", "case", "attempt", "prompt_version",
-        "token", "cost", "latency", "proposal", "deterministic_validation",
+        "token", "cost_usd", "latency_ms", "proposal", "deterministic_validation",
         "outcome", "reason", "manual_fallback", "call_count"
     ]
 
