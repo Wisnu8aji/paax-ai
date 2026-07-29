@@ -1,6 +1,6 @@
 PHASE: 07B
 STATUS: PASS_WITH_BENCHMARK_BLOCKED
-COMMIT: PENDING_COMMIT
+COMMIT: 17dcf7e5
 OFFLINE TEST EVIDENCE: Python pytest test_ai_assist_benchmark_runner.py & test_ai_assist_key_isolation.py & test_controlled_benchmark_router.py PASSED (11 passed in 0.94s, total suite 87 passed in 1.62s)
 KEY ISOLATION: Verified DRAWING_INTELLIGENCE_API_KEY is sole authorized key; GEMINI_API_KEY, NVIDIA_API_KEY, and Command Room keys rejected
 NETWORK GUARD: Zero HTTP calls during normal unit tests; socket guard active
