@@ -1,5 +1,6 @@
 {
   "schema_version": "1.0",
+  "fixture_version": "1.0",
   "project_id": "PLHUT-SURAKARTA",
   "name": "PLHUT Surakarta",
   "owner_id": "paax-web",

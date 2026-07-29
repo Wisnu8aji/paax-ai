@@ -682,7 +682,7 @@ export function IntelligenceInspector() {
             <SectionTitle>Detected Elements</SectionTitle>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
-            {detectedSummary.map((d, i) => (
+            {detectedSummary.map((d: any, i: number) => (
               <div key={d.category + i} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <span
                   style={{

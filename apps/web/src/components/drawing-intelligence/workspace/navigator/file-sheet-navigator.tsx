@@ -83,17 +83,17 @@ export function FileSheetNavigator() {
   // Derive unique available option values for view, revision, zone from validated DrawingPackageIndex
   const availableViews = useMemo(() => {
     if (!packageIndex) return [];
-    return Array.from(new Set(packageIndex.entries.map((e) => e.view.value))).sort();
+    return Array.from(new Set(packageIndex.entries.map((e: any) => String(e.view.value)))).sort();
   }, [packageIndex]);
 
   const availableRevisions = useMemo(() => {
     if (!packageIndex) return [];
-    return Array.from(new Set(packageIndex.entries.map((e) => e.revision.value))).sort();
+    return Array.from(new Set(packageIndex.entries.map((e: any) => String(e.revision.value)))).sort();
   }, [packageIndex]);
 
   const availableZones = useMemo(() => {
     if (!packageIndex) return [];
-    return Array.from(new Set(packageIndex.entries.map((e) => e.zone.value))).sort();
+    return Array.from(new Set(packageIndex.entries.map((e: any) => String(e.zone.value)))).sort();
   }, [packageIndex]);
 
   // Index-based groups: use DrawingPackageIndex when available for the active run

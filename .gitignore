@@ -70,3 +70,9 @@ graphify-out/
 .saya/
 skills-lock.json
 test-results/
+
+# Local SQLite databases (runtime state only, do not commit)
+*.sqlite
+*.db
+!scripts/live_test/live_test.db
+.local-test-logs/

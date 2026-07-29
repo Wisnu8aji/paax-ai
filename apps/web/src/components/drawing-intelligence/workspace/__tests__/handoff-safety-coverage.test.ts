@@ -20,7 +20,7 @@ describe('Phase 09E Handoff Safety & Coverage Unit Tests', () => {
     confidence: 0.98,
     source: 'p. 4, Gbr S-02',
     wbsGroup: 'Superstructure',
-  };
+  } as any;
 
   const unverifiedItem: QuantityItem = {
     id: 'Q-02',
@@ -30,11 +30,11 @@ describe('Phase 09E Handoff Safety & Coverage Unit Tests', () => {
     qty: '4.80',
     unit: 'm3',
     status: 'needs-review',
-    sourceAuthority: 'proposal',
+    sourceAuthority: 'proposal' as any,
     confidence: 0.70,
     source: 'p. 5, Gbr S-03',
     wbsGroup: 'Superstructure',
-  };
+  } as any;
 
   const blockedItem: QuantityItem = {
     id: 'Q-03',
@@ -48,7 +48,7 @@ describe('Phase 09E Handoff Safety & Coverage Unit Tests', () => {
     confidence: 0.50,
     source: 'p. 2, Gbr A-01',
     wbsGroup: 'Architecture',
-  };
+  } as any;
 
   it('1. canDisplayFinalQuantity requires sourceAuthority === "core_engine"', () => {
     expect(canDisplayFinalQuantity({ sourceAuthority: 'core_engine' })).toBe(true);

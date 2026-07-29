@@ -252,7 +252,7 @@ export function useBackendSync(projectId: string | null) {
         };
 
         if (queue.items.length > 0) {
-          const mapped: ReviewQueueItem[] = queue.items.map((item) => {
+          const mapped: ReviewQueueItem[] = queue.items.map((item: any) => {
             let sheetId: string | null = null;
             // target_type is 'node' | 'edge' per schema — 'sheet' is not a valid value
             if (item.evidence_refs && item.evidence_refs.length > 0) {

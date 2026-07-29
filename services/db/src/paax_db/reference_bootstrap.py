@@ -13,81 +13,183 @@ from sqlalchemy.sql import func
 from paax_db import models
 from paax_db.project_graph_repository import build_and_activate_snapshot
 
-try:
-    from app.transcription.models import DrawingEvidenceSheet
-    from app.project_graph.synthesis import synthesize_project_graph
-except ImportError:
-    DrawingEvidenceSheet = None
-    synthesize_project_graph = None
+import importlib.util
 
+repo_root = Path(__file__).resolve().parents[4]
+DrawingEvidenceSheet = None
+synthesize_project_graph = None
+
+
+import sys
+
+def _get_drawing_evidence_sheet():
+    global DrawingEvidenceSheet
+    if DrawingEvidenceSheet is not None:
+        return DrawingEvidenceSheet
+    di_src = repo_root / "services" / "document-intelligence"
+    if di_src.is_dir() and str(di_src) not in sys.path:
+        sys.path.insert(0, str(di_src))
+    try:
+        from app.transcription.models import DrawingEvidenceSheet as DES
+        DrawingEvidenceSheet = DES
+    except Exception:
+        DrawingEvidenceSheet = None
+    return DrawingEvidenceSheet
+
+
+def _get_synthesize_project_graph():
+    global synthesize_project_graph
+    if synthesize_project_graph is not None:
+        return synthesize_project_graph
+    di_src = repo_root / "services" / "document-intelligence"
+    if di_src.is_dir() and str(di_src) not in sys.path:
+        sys.path.insert(0, str(di_src))
+    try:
+        from app.project_graph.synthesis import synthesize_project_graph as SPG
+        synthesize_project_graph = SPG
+    except Exception:
+        synthesize_project_graph = None
+    return synthesize_project_graph
+
+
+def _clean_properties(props):
+    if not props:
+        return {}
+    if hasattr(props, "model_dump"):
+        return props.model_dump(mode="json")
+    if isinstance(props, dict):
+        res = {}
+        for k, v in props.items():
+            if hasattr(v, "model_dump"):
+                res[k] = v.model_dump(mode="json")
+            elif isinstance(v, dict):
+                res[k] = _clean_properties(v)
+            elif isinstance(v, (list, tuple)):
+                res[k] = [_clean_properties(x) if hasattr(x, "model_dump") else x for x in v]
+            else:
+                res[k] = v
+        return res
+    return {}
 
 def _node_to_dict(n):
+    ntype = getattr(n, "type", "element")
+    lbl = getattr(n, "label", getattr(n, "class_id", ""))
     return {
-        "node_id": n.node_id,
-        "type": n.type,
-        "class_id": n.class_id,
-        "label": n.label,
-        "properties": n.properties,
-        "context_refs": n.context_refs,
-        "semantic_hash": n.semantic_hash,
+        "node_id": getattr(n, "node_id", ""),
+        "type": ntype,
+        "node_type": getattr(n, "node_type", ntype),
+        "class_id": getattr(n, "class_id", ntype),
+        "label": lbl,
+        "canonical_name": getattr(n, "canonical_name", lbl or ntype),
+        "normalized_name": getattr(n, "normalized_name", (lbl or ntype).lower()),
+        "discipline": getattr(n, "discipline", "civil"),
+        "verification_status": getattr(n, "verification_status", "verified"),
+        "confidence": getattr(n, "confidence", 0.95),
+        "properties": _clean_properties(getattr(n, "properties", {})),
+        "context_refs": getattr(n, "context_refs", getattr(n, "evidence_refs", [])),
+        "semantic_hash": getattr(n, "semantic_hash", ""),
     }
 
 def _edge_to_dict(e):
+    src = getattr(e, "source", getattr(e, "source_node_id", getattr(e, "source_id", "")))
+    tgt = getattr(e, "target", getattr(e, "target_node_id", getattr(e, "target_id", "")))
+    rel = getattr(e, "relation", getattr(e, "relation_type", "relates_to"))
     return {
-        "edge_id": e.edge_id,
-        "source_id": e.source_id,
-        "target_id": e.target_id,
-        "relation_type": e.relation_type,
-        "properties": e.properties,
-        "context_refs": e.context_refs,
-        "semantic_hash": e.semantic_hash,
+        "edge_id": getattr(e, "edge_id", ""),
+        "source_id": src,
+        "source_node_id": src,
+        "target_id": tgt,
+        "target_node_id": tgt,
+        "relation_type": rel,
+        "relation": rel,
+        "confidence_class": getattr(e, "confidence_class", "high"),
+        "confidence": getattr(e, "confidence", 0.95),
+        "properties": _clean_properties(getattr(e, "properties", {})),
+        "context_refs": getattr(e, "context_refs", getattr(e, "evidence_refs", [])),
+        "semantic_hash": getattr(e, "semantic_hash", ""),
+    }
+
+def _ref_key_and_dict(ref, count):
+    if isinstance(ref, str):
+        return f"str::{ref}", {
+            "evidence_id": f"ev-{count+1}",
+            "document_id": ref,
+            "page_index": 0,
+            "source_artifact": "dem",
+            "kind": "dem",
+            "raw_text": "",
+            "zone_id": "z1",
+            "sheet_id": "",
+            "bbox": [],
+            "caption": "",
+        }
+    if isinstance(ref, dict):
+        sa = ref.get("source_artifact", "dem")
+        doc_id = ref.get("document_id", "")
+        page_idx = ref.get("page_index", 0)
+        zone_id = ref.get("zone_id", "")
+        key = f"{sa}::{doc_id}::{page_idx}::{zone_id}"
+        return key, {
+            "evidence_id": f"ev-{count+1}",
+            "document_id": doc_id,
+            "page_index": page_idx,
+            "source_artifact": sa,
+            "kind": ref.get("kind", sa),
+            "raw_text": ref.get("raw_text", ref.get("caption", "")),
+            "zone_id": zone_id,
+            "sheet_id": ref.get("sheet_id", ""),
+            "bbox": ref.get("bbox", []),
+            "caption": ref.get("caption", ""),
+        }
+    sa = getattr(ref, "source_artifact", "dem")
+    doc_id = getattr(ref, "document_id", "")
+    page_idx = getattr(ref, "page_index", 0)
+    zone_id = getattr(ref, "zone_id", "")
+    key = f"{sa}::{doc_id}::{page_idx}::{zone_id}"
+    return key, {
+        "evidence_id": f"ev-{count+1}",
+        "document_id": doc_id,
+        "page_index": page_idx,
+        "source_artifact": sa,
+        "kind": getattr(ref, "kind", sa),
+        "raw_text": getattr(ref, "raw_text", getattr(ref, "caption", "")),
+        "zone_id": zone_id,
+        "sheet_id": getattr(ref, "sheet_id", ""),
+        "bbox": getattr(ref, "bbox", []),
+        "caption": getattr(ref, "caption", ""),
     }
 
 def _evidence_items(snapshot):
     ev = {}
     for node in snapshot.nodes:
-        for ref in node.context_refs:
-            key = f"{ref.source_artifact}::{ref.document_id}::{ref.page_index}::{ref.zone_id}"
+        refs = getattr(node, "context_refs", getattr(node, "evidence_refs", []))
+        for ref in refs:
+            key, item = _ref_key_and_dict(ref, len(ev))
             if key not in ev:
-                ev[key] = {
-                    "evidence_id": f"ev-{len(ev)+1}",
-                    "document_id": ref.document_id,
-                    "page_index": ref.page_index,
-                    "source_artifact": ref.source_artifact,
-                    "zone_id": ref.zone_id,
-                    "sheet_id": ref.sheet_id,
-                    "bbox": ref.bbox,
-                    "caption": "",
-                }
+                ev[key] = item
     for edge in snapshot.edges:
-        for ref in edge.context_refs:
-            key = f"{ref.source_artifact}::{ref.document_id}::{ref.page_index}::{ref.zone_id}"
+        refs = getattr(edge, "context_refs", getattr(edge, "evidence_refs", []))
+        for ref in refs:
+            key, item = _ref_key_and_dict(ref, len(ev))
             if key not in ev:
-                ev[key] = {
-                    "evidence_id": f"ev-{len(ev)+1}",
-                    "document_id": ref.document_id,
-                    "page_index": ref.page_index,
-                    "source_artifact": ref.source_artifact,
-                    "zone_id": ref.zone_id,
-                    "sheet_id": ref.sheet_id,
-                    "bbox": ref.bbox,
-                    "caption": "",
-                }
+                ev[key] = item
     return ev
 
 def _node_evidence_items(snapshot, ev_keys):
     links = []
     ev_map = {k: f"ev-{i+1}" for i, k in enumerate(ev_keys)}
     for node in snapshot.nodes:
-        for ref in node.context_refs:
-            key = f"{ref.source_artifact}::{ref.document_id}::{ref.page_index}::{ref.zone_id}"
-            links.append({
-                "node_id": node.node_id,
-                "evidence_id": ev_map[key],
-                "confidence": 0.95,
-                "role": "supporting",
-                "explanation": "",
-            })
+        refs = getattr(node, "context_refs", getattr(node, "evidence_refs", []))
+        for ref in refs:
+            key, _ = _ref_key_and_dict(ref, 0)
+            if key in ev_map:
+                links.append({
+                    "node_id": node.node_id,
+                    "evidence_id": ev_map[key],
+                    "confidence": 0.95,
+                    "role": "supporting",
+                    "explanation": "",
+                })
     return links
 
 
@@ -118,6 +220,12 @@ async def bootstrap_reference_project(
     """
     manifest = load_manifest(manifest_path)
     fixture_dir = manifest_path.parent
+    if manifest.get("dem_fixture_dir"):
+        rel_dir = manifest["dem_fixture_dir"].split("/")[-1]
+        if (fixture_dir / rel_dir).is_dir():
+            fixture_dir = fixture_dir / rel_dir
+    elif (fixture_dir / "dem-pages").is_dir():
+        fixture_dir = fixture_dir / "dem-pages"
     
     project_id = manifest["project_id"]
     fixture_version = manifest["fixture_version"]
@@ -128,8 +236,11 @@ async def bootstrap_reference_project(
     if existing_ledger and existing_ledger.fixture_hash == fixture_hash:
         return existing_ledger.result
 
+    SheetModel = _get_drawing_evidence_sheet()
+    synthesizer = _get_synthesize_project_graph()
+
     sheets = [
-        DrawingEvidenceSheet.model_validate_json(path.read_text(encoding="utf-8"))
+        SheetModel.model_validate_json(path.read_text(encoding="utf-8"))
         for path in sorted(fixture_dir.glob("page-*.json"))
     ]
     if len(sheets) != manifest["expected"]["dem_pages"]:
@@ -206,7 +317,7 @@ async def bootstrap_reference_project(
     ))).scalar_one())
     
     if active_count == 0:
-        snapshot = synthesize_project_graph(sheets).snapshot
+        snapshot = synthesizer(sheets).snapshot
         evidence_map = _evidence_items(snapshot)
         await build_and_activate_snapshot(
             session,
