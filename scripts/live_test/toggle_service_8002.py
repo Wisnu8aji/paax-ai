@@ -26,6 +26,10 @@ elif action == 'start':
     env['INTERNAL_SERVICE_SCOPES'] = 'dem:read,dem:write,dem:delete,project_graph:synthesize,dem:authorize-actor,agentic:calculate'
     env['PAAX_PORTABLE_ACTOR_ID'] = 'paax-web'
     env['PAAX_DESKTOP_MODE'] = '1'
+    env['ALLOW_DEV_SIGNING'] = '1'
+    env['ARTIFACT_SIGNING_SECRET'] = 'development-only-artifact-secret'
+    env['DB_API_URL'] = 'http://127.0.0.1:8001'
+    env['NEXT_PUBLIC_DB_API_URL'] = 'http://127.0.0.1:8001'
     env['DATABASE_URL'] = 'sqlite+aiosqlite:///G:/paax-ai-contextual-integration/services/db/portable.sqlite'
 
     subprocess.Popen(

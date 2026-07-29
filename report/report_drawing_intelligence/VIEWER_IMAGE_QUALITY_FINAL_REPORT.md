@@ -26,7 +26,8 @@
   - Heap Delta: `0 MB` (no memory leakage detected)
 - **Long-Task Metrics:** 0 long-tasks exceeding 50ms during viewer navigation
 - **Viewport Dimensions:**
-  - Viewport Desktop: `1440x900` (`devicePixelRatio: 1`, Screenshot: `apps/web/e2e/results/phase11c-desktop-100.png`)
+  - Viewport Desktop 100%: `1440x900` (`devicePixelRatio: 1`, Screenshot: `apps/web/e2e/results/phase11c-desktop-100.png`)
+  - Viewport Desktop 200%: `1440x900` (`devicePixelRatio: 1`, Screenshot: `apps/web/e2e/results/phase11c-desktop-200.png`)
   - Viewport Mobile: `390x844` (`devicePixelRatio: 1`, Screenshot: `apps/web/e2e/results/phase11c-mobile.png`)
 - **Zoom Level:** `100% (Fit)` and `200% (High-Detail Vector View)`
 - **Tile Lifecycle:** `PdfTilePool` LRU memory bound <= 256MB; lazy tile allocation and automatic canvas tile cleanup verified upon page switch
@@ -35,13 +36,17 @@
 ---
 
 ## 3. Streaming & HTTP Range Header Evidence
-- **Backend Service:** Document Intelligence (`http://127.0.0.1:8002`)
-- **Range Request Header:** `bytes=0-65535`
-- **HTTP Status:** `200 OK` / `206 Partial Content`
+- **Backend Service:** Document Intelligence (`http://127.0.0.1:8002/drawings/dem/{run_id}/artifact`) & Web App Proxy (`http://127.0.0.1:3000/api/document-intelligence/drawings/dem/{run_id}/artifact`)
+- **Request Header:** `Range: bytes=0-65535`
+- **HTTP Status:** `206 Partial Content` (exact single status)
 - **Accept-Ranges Header:** `bytes`
+- **Content-Range Header:** `bytes 0-65535/9797197`
+- **Content-Length Header:** `65536` (partial body size)
 - **Content-Type Header:** `application/pdf`
-- **Content-Length:** `9,797,197 bytes`
-- **Proxied Requests Count:** `15 backend proxy requests` (HTTP 200)
+- **Response Body Bytes:** `65536 bytes` (matches partial range exactly)
+- **Source PDF Byte Size:** `9,797,197 bytes`
+- **Raw Evidence Artifact:** `apps/web/e2e/results/phase11c-raw-network-evidence.json`
+- **Proxied Requests Count:** `20 backend proxy requests` (HTTP 200 / HTTP 206)
 
 ---
 

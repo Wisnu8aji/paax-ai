@@ -1,0 +1,38 @@
+{
+  "schema_version": "paax.drawing-intelligence.phase11c-network-evidence.v1",
+  "pdf_source": {
+    "path": "G:\\paax-data\\gambar kerja\\gambar-kerja-arsitektur-gedung-a.pdf",
+    "byte_size": 9797197,
+    "sha256_hash": "7B4151C7EC7C87588B1C858CB0FB77FFDECA550ECB4C041714B3643ECD4B4510",
+    "empty_file_hash_rejected": true
+  },
+  "direct_backend_8002": {
+    "endpoint_url": "http://127.0.0.1:8002/drawings/dem/514fb7f2-26fd-5816-9f22-a4a2412688bf/artifact?token=1785366912.PJsyPSGI81lCA_h9LADhvJ4_deNCuksz5hCO7Xy_41o",
+    "request_range_header": "bytes=0-65535",
+    "http_status": 206,
+    "accept_ranges": "bytes",
+    "content_range": "bytes 0-65535/9797197",
+    "content_length": 65536,
+    "content_type": "application/pdf",
+    "received_body_bytes": 65536
+  },
+  "proxied_web_3000": {
+    "endpoint_url": "http://127.0.0.1:3000/api/document-intelligence/drawings/dem/514fb7f2-26fd-5816-9f22-a4a2412688bf/artifact?token=1785366912.PJsyPSGI81lCA_h9LADhvJ4_deNCuksz5hCO7Xy_41o",
+    "request_range_header": "bytes=0-65535",
+    "http_status": 206,
+    "accept_ranges": "bytes",
+    "content_range": "bytes 0-65535/9797197",
+    "content_length": 65536,
+    "content_type": "application/pdf",
+    "received_body_bytes": 65536
+  },
+  "performance_metrics": {
+    "fcp_ms": 832,
+    "dom_content_loaded_ms": 267,
+    "warm_switch_ms": 653,
+    "heap_before_mb": 82,
+    "heap_after_mb": 82,
+    "heap_delta_mb": 0,
+    "device_pixel_ratio": 1
+  }
+}

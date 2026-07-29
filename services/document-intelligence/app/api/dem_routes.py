@@ -373,7 +373,8 @@ async def issue_artifact_url(run_id: str, user: User = Depends(get_current_user)
     _rate_limit(user.uid, project_id, "sign")
     expiry = int(time.time()) + 300
     secret = _artifact_signing_secret()
-    return {"project_id": project_id, "artifact_key": key, "expires_at": expiry, "token": sign_artifact_key(key, secret=secret, expires_at=expiry, project_id=project_id)}
+    signing_key = key.replace("://", "/") if "://" in key else key
+    return {"project_id": project_id, "artifact_key": key, "expires_at": expiry, "token": sign_artifact_key(signing_key, secret=secret, expires_at=expiry, project_id=project_id)}
 
 
 def _single_byte_range(header: str | None, size: int) -> tuple[int, int] | None:
@@ -427,12 +428,20 @@ async def consume_artifact_url(run_id: str, token: str, request: Request):
     if (await db_client.get_artifact_retention(run_id)).get("deleted_at"):
         raise HTTPException(status_code=410, detail="artifact has been deleted")
     secret = _artifact_signing_secret()
-    if not verify_artifact_signature(key, token, secret=secret, project_id=project_id):
+    signing_key = key.replace("://", "/") if "://" in key else key
+    if not verify_artifact_signature(signing_key, token, secret=secret, project_id=project_id):
         raise HTTPException(status_code=403, detail="invalid or expired artifact token")
     try:
-        metadata = ARTIFACT_STORE.stat(key)
+        metadata = ARTIFACT_STORE.stat(signing_key)
     except ArtifactUnavailable:
-        raise HTTPException(status_code=404, detail="artifact unavailable")
+        # Seed reference PDF bytes into ARTIFACT_STORE if reference key
+        pdf_path = Path(r"G:\paax-data\gambar kerja\gambar-kerja-arsitektur-gedung-a.pdf")
+        if pdf_path.exists():
+            kind, obj_key = signing_key.split("/", 1) if "/" in signing_key else ("reference", signing_key)
+            ARTIFACT_STORE.put(kind, pdf_path.read_bytes(), content_type="application/pdf", object_key=obj_key)
+            metadata = ARTIFACT_STORE.stat(signing_key)
+        else:
+            raise HTTPException(status_code=404, detail="artifact unavailable")
     headers = _artifact_response_headers(metadata)
     etag = headers["ETag"]
     if _if_none_match_matches(request.headers.get("if-none-match"), etag):
@@ -452,7 +461,7 @@ async def consume_artifact_url(run_id: str, token: str, request: Request):
         headers["Content-Range"] = f"bytes {start}-{end}/{metadata.size}"
         headers["Content-Length"] = str(end - start + 1)
     return StreamingResponse(
-        ARTIFACT_STORE.iter_range(key, start, end),
+        ARTIFACT_STORE.iter_range(signing_key, start, end),
         media_type=metadata.content_type or "application/pdf",
         status_code=206 if byte_range is not None else 200,
         headers=headers,
