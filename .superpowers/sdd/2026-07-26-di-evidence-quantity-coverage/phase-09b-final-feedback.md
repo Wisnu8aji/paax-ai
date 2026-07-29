@@ -1,7 +1,7 @@
 PHASE: 09B
 STATUS: PASS
 STARTING HEAD: 91fc5655 (Phase 09A final commit)
-FINAL COMMIT: PENDING_COMMIT
+FINAL COMMIT: e5f0805f
 REGISTRY EVIDENCE: resolve_takeoff_capability(category, work_type) in takeoff_capability_registry.py maps category/work_type to TakeoffCapability deterministically
 VERIFIED ENDPOINT MATRIX: Verified exact Core Engine routes: /tkg/takeoff for beton/bekisting/besi; /takeoff/{tanah,dinding,arsitektur,baja,atap,kusen,mep,mep-advanced,smkk}
 REQUIRED-FIELD/UNIT EVIDENCE: Required fields (e.g. panjang_m, lebar_m, tinggi_m, dalam_m, luas_m2, berat_kg) derived strictly from Core Engine request models
