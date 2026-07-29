@@ -215,5 +215,5 @@ This document provides the 16-domain final acceptance inventory for the PAAX Con
 - **Phase 11A (DONE):** Activation gate, evidence inventory, and final test manifest.
 - **Phase 11B (DONE):** Offline & full service test suites, engine anchors, schema parity, security scan.
 - **Phase 11C (DONE):** Real-stack browser E2E (desktop/mobile), PDF viewer image quality, performance, console/network.
-- **Phase 11D:** Live AI & failure/fallback test suite (bounded max 15 calls/feature), agentic runner, review queue, server handoff.
+- **Phase 11D (DONE):** Live AI & failure/fallback test suite (bounded max 15 calls/feature), agentic runner, review queue, server handoff.
 - **Phase 11E:** Full Word document re-audit, cross-matrix reconciliation, draft PR handoff, terminal decision.

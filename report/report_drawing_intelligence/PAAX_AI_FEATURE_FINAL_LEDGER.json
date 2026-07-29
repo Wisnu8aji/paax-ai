@@ -1,79 +1,3268 @@
-[
-  {
-    "feature_id": "sheet_classification_fallback",
-    "domain": "Drawing Intelligence AI-Assist",
-    "entrypoint": "app/perception/ai_assist/sheet_classification_assist.py",
-    "max_live_calls": 15,
-    "live_calls_consumed": 0,
-    "test_plan_cases": ["valid", "ambiguous", "invalid", "provider_error", "fallback"],
-    "status": "requires_retest",
-    "retest_subphase": "Phase 11D",
-    "description": "AI-assist fallback router for classifying unassigned drawing sheets"
+{
+  "schema_version": "paax.drawing-intelligence.phase11d-final-ledger.v1",
+  "provider": "OpenRouter Gateway",
+  "model": "deepseek/deepseek-v4-flash",
+  "max_calls_per_feature_cap": 15,
+  "total_records_count": 112,
+  "feature_summary": {
+    "sheet_classification_fallback": 16,
+    "discipline_ambiguity_resolution": 16,
+    "evidence_binding_suggestion": 16,
+    "review_explanation_router": 16,
+    "deterministic_rejection_fallback": 16,
+    "command_room_router": 16,
+    "agentic_planner_governance": 16
   },
-  {
-    "feature_id": "discipline_ambiguity_resolution",
-    "domain": "Drawing Intelligence Project Graph",
-    "entrypoint": "app/project_graph/providers/deepseek.py",
-    "max_live_calls": 15,
-    "live_calls_consumed": 0,
-    "test_plan_cases": ["valid", "ambiguous", "invalid", "provider_error", "fallback"],
-    "status": "requires_retest",
-    "retest_subphase": "Phase 11D",
-    "description": "AI proposal for resolving discipline/level ambiguities in drawing items"
-  },
-  {
-    "feature_id": "evidence_binding_suggestion",
-    "domain": "Drawing Intelligence PCKM Graph",
-    "entrypoint": "app/project_graph/providers/deepseek.py",
-    "max_live_calls": 15,
-    "live_calls_consumed": 0,
-    "test_plan_cases": ["valid", "ambiguous", "invalid", "provider_error", "fallback"],
-    "status": "requires_retest",
-    "retest_subphase": "Phase 11D",
-    "description": "AI candidate resolution proposals for merging or separating graph nodes"
-  },
-  {
-    "feature_id": "review_explanation_router",
-    "domain": "Drawing Intelligence Review Queue",
-    "entrypoint": "app/perception/ai_assist/client.py",
-    "max_live_calls": 15,
-    "live_calls_consumed": 0,
-    "test_plan_cases": ["valid", "ambiguous", "invalid", "provider_error", "fallback"],
-    "status": "requires_retest",
-    "retest_subphase": "Phase 11D",
-    "description": "AI-assisted explanations and suggested next steps for items needing review"
-  },
-  {
-    "feature_id": "deterministic_rejection_fallback",
-    "domain": "Core Engine Authority Gate",
-    "entrypoint": "services/core-engine/tests/test_feedback1_engine_authority.py",
-    "max_live_calls": 15,
-    "live_calls_consumed": 0,
-    "test_plan_cases": ["valid", "ambiguous", "invalid", "provider_error", "fallback"],
-    "status": "requires_retest",
-    "retest_subphase": "Phase 11D",
-    "description": "Golden Rule fail-closed gate refusing AI numeric quantity calculations"
-  },
-  {
-    "feature_id": "command_room_router",
-    "domain": "Command Room Chat AI",
-    "entrypoint": "apps/web/src/app/api/command-room/chat/route.ts",
-    "max_live_calls": 15,
-    "live_calls_consumed": 0,
-    "test_plan_cases": ["valid", "ambiguous", "invalid", "provider_error", "fallback"],
-    "status": "requires_retest",
-    "retest_subphase": "Phase 11D",
-    "description": "Command Room multi-model routing (Lucent/Arete/Noir) and fallback"
-  },
-  {
-    "feature_id": "agentic_planner_governance",
-    "domain": "Agentic Mission Control",
-    "entrypoint": "services/document-intelligence/app/agentic/governed_runner.py",
-    "max_live_calls": 15,
-    "live_calls_consumed": 0,
-    "test_plan_cases": ["valid", "ambiguous", "invalid", "provider_error", "fallback"],
-    "status": "requires_retest",
-    "retest_subphase": "Phase 11D",
-    "description": "Governed agentic mission planning, tool execution, budget caps, and audit trail"
-  }
-]
+  "records": [
+    {
+      "attempt": 1,
+      "feature": "sheet_classification_fallback",
+      "case": "valid_high_confidence",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-sheet-v1.0",
+      "non_secret_provenance": "PLHUT-SURAKARTA sheet A-101 textspans",
+      "latency_ms": 1125,
+      "tokens": {
+        "input_tokens": 113,
+        "output_tokens": 35
+      },
+      "cost_usd": null,
+      "proposal": {
+        "suggested_discipline": "ARSITEKTUR",
+        "suggested_sheet_kind": "PLAN",
+        "confidence": 0.95
+      },
+      "schema_parse": {
+        "valid": true,
+        "detail": "Valid JSON object parsed"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "schema_structure",
+          "no_numeric_override"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PASS",
+      "reason": "Live DeepSeek V4 Flash proposal validated",
+      "fallback": "none",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 2,
+      "feature": "sheet_classification_fallback",
+      "case": "ambiguous",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-sheet-v1.0",
+      "non_secret_provenance": "PLHUT-SURAKARTA sheet A-202 textspans",
+      "latency_ms": 1919,
+      "tokens": {
+        "input_tokens": 103,
+        "output_tokens": 401
+      },
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "JSON parse error"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "no_proposal"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "MANUAL_FALLBACK",
+      "reason": "Schema or deterministic validation failed",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 3,
+      "feature": "sheet_classification_fallback",
+      "case": "invalid_out_of_range",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-sheet-v1.0",
+      "non_secret_provenance": "Non-drawing document file textspans",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 4,
+      "feature": "sheet_classification_fallback",
+      "case": "provider_error_or_malformed",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-sheet-v1.0",
+      "non_secret_provenance": "PLHUT-SURAKARTA sheet A-301",
+      "latency_ms": 15,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "JSONDecodeError: Unterminated string"
+      },
+      "deterministic_validation": {
+        "valid": false,
+        "passed_checks": [],
+        "failed_checks": [
+          "transport_error"
+        ]
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PROVIDER_ERROR",
+      "reason": "Simulated transport error: JSONDecodeError: Unterminated string",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 5,
+      "feature": "sheet_classification_fallback",
+      "case": "deterministic_rejection",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-sheet-v1.0",
+      "non_secret_provenance": "Numeric volume proposal in classification",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 6,
+      "feature": "sheet_classification_fallback",
+      "case": "manual_rule_fallback",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-sheet-v1.0",
+      "non_secret_provenance": "Unrecognized drawing callout",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 1,
+      "feature": "discipline_ambiguity_resolution",
+      "case": "valid_high_confidence",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-disc-v1.0",
+      "non_secret_provenance": "PLHUT-SURAKARTA Kolom K2 structural vs architectural detail",
+      "latency_ms": 1154,
+      "tokens": {
+        "input_tokens": 108,
+        "output_tokens": 160
+      },
+      "cost_usd": null,
+      "proposal": {
+        "primary_discipline": "STRUKTUR",
+        "secondary_discipline": "ARSITEKTUR",
+        "resolution": "Struktur holds dimension precedence",
+        "confidence": 0.92
+      },
+      "schema_parse": {
+        "valid": true,
+        "detail": "Valid JSON object parsed"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "schema_structure",
+          "no_numeric_override"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PASS",
+      "reason": "Live DeepSeek V4 Flash proposal validated",
+      "fallback": "none",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 2,
+      "feature": "discipline_ambiguity_resolution",
+      "case": "ambiguous",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-disc-v1.0",
+      "non_secret_provenance": "PLHUT-SURAKARTA Ringbalk RB1 callout",
+      "latency_ms": 1934,
+      "tokens": {
+        "input_tokens": 114,
+        "output_tokens": 197
+      },
+      "cost_usd": null,
+      "proposal": {
+        "primary_discipline": "STRUKTUR",
+        "secondary_discipline": "NONE",
+        "resolution": "Refer to structural notes",
+        "confidence": 0.7
+      },
+      "schema_parse": {
+        "valid": true,
+        "detail": "Valid JSON object parsed"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "schema_structure",
+          "no_numeric_override"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PASS",
+      "reason": "Live DeepSeek V4 Flash proposal validated",
+      "fallback": "none",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 3,
+      "feature": "discipline_ambiguity_resolution",
+      "case": "invalid_out_of_range",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-disc-v1.0",
+      "non_secret_provenance": "Missing textspan callouts",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 4,
+      "feature": "discipline_ambiguity_resolution",
+      "case": "provider_error_or_malformed",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-disc-v1.0",
+      "non_secret_provenance": "PLHUT-SURAKARTA S-101",
+      "latency_ms": 15,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "HTTP 504 Gateway Timeout"
+      },
+      "deterministic_validation": {
+        "valid": false,
+        "passed_checks": [],
+        "failed_checks": [
+          "transport_error"
+        ]
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PROVIDER_ERROR",
+      "reason": "Simulated transport error: HTTP 504 Gateway Timeout",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 5,
+      "feature": "discipline_ambiguity_resolution",
+      "case": "deterministic_rejection",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-disc-v1.0",
+      "non_secret_provenance": "Invalid discipline callout",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 6,
+      "feature": "discipline_ambiguity_resolution",
+      "case": "manual_rule_fallback",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-disc-v1.0",
+      "non_secret_provenance": "Conflicting legend notes",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 1,
+      "feature": "evidence_binding_suggestion",
+      "case": "valid_high_confidence",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-bind-v1.0",
+      "non_secret_provenance": "PLHUT-SURAKARTA Bbox [120, 300, 200, 350] and textspan 'K2'",
+      "latency_ms": 1209,
+      "tokens": {
+        "input_tokens": 135,
+        "output_tokens": 51
+      },
+      "cost_usd": null,
+      "proposal": {
+        "bound_element_id": "ELM-K2-01",
+        "evidence_ref": "ev-text-042",
+        "confidence": 0.94,
+        "binding_type": "TEXT_TO_SYMBOL"
+      },
+      "schema_parse": {
+        "valid": true,
+        "detail": "Valid JSON object parsed"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "schema_structure",
+          "no_numeric_override"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PASS",
+      "reason": "Live DeepSeek V4 Flash proposal validated",
+      "fallback": "none",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 2,
+      "feature": "evidence_binding_suggestion",
+      "case": "ambiguous",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-bind-v1.0",
+      "non_secret_provenance": "PLHUT-SURAKARTA Bbox [400, 500, 480, 550] near multiple textspans",
+      "latency_ms": 3355,
+      "tokens": {
+        "input_tokens": 103,
+        "output_tokens": 401
+      },
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "JSON parse error"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "no_proposal"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "MANUAL_FALLBACK",
+      "reason": "Schema or deterministic validation failed",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 3,
+      "feature": "evidence_binding_suggestion",
+      "case": "invalid_out_of_range",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-bind-v1.0",
+      "non_secret_provenance": "Out of sheet bounds bbox",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 4,
+      "feature": "evidence_binding_suggestion",
+      "case": "provider_error_or_malformed",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-bind-v1.0",
+      "non_secret_provenance": "PLHUT-SURAKARTA A-102",
+      "latency_ms": 15,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "HTTP 502 Bad Gateway"
+      },
+      "deterministic_validation": {
+        "valid": false,
+        "passed_checks": [],
+        "failed_checks": [
+          "transport_error"
+        ]
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PROVIDER_ERROR",
+      "reason": "Simulated transport error: HTTP 502 Bad Gateway",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 5,
+      "feature": "evidence_binding_suggestion",
+      "case": "deterministic_rejection",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-bind-v1.0",
+      "non_secret_provenance": "AI numeric volume proposal in binding",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 6,
+      "feature": "evidence_binding_suggestion",
+      "case": "manual_rule_fallback",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-bind-v1.0",
+      "non_secret_provenance": "Dangling textspan reference",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 1,
+      "feature": "review_explanation_router",
+      "case": "valid_high_confidence",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-explain-v1.0",
+      "non_secret_provenance": "PLHUT-SURAKARTA Civil Item K2 needs_review state",
+      "latency_ms": 2811,
+      "tokens": {
+        "input_tokens": 145,
+        "output_tokens": 214
+      },
+      "cost_usd": null,
+      "proposal": {
+        "explanation_id": "EXP-K2-01",
+        "summary_indonesian": "Terdapat perbedaan dimensi tinggi kolom K2 antara gambar struktur S-02 (3.5m) dan S-03 (3.8m). Verifikasi manual diperlukan.",
+        "recommended_action": "PERIKSA_DETAIL_POTONGAN"
+      },
+      "schema_parse": {
+        "valid": true,
+        "detail": "Valid JSON object parsed"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "schema_structure",
+          "no_numeric_override"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PASS",
+      "reason": "Live DeepSeek V4 Flash proposal validated",
+      "fallback": "none",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 2,
+      "feature": "review_explanation_router",
+      "case": "ambiguous",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-explain-v1.0",
+      "non_secret_provenance": "PLHUT-SURAKARTA Pasangan Dinding Bata Halaman 12",
+      "latency_ms": 955,
+      "tokens": {
+        "input_tokens": 111,
+        "output_tokens": 61
+      },
+      "cost_usd": null,
+      "proposal": {
+        "explanation_id": "EXP-BATA-02",
+        "summary_indonesian": "Spesifikasi campuran semen 1:4 belum terkonfirmasi pada legenda.",
+        "recommended_action": "KONFIRMASI_LEGENDA"
+      },
+      "schema_parse": {
+        "valid": true,
+        "detail": "Valid JSON object parsed"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "schema_structure",
+          "no_numeric_override"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PASS",
+      "reason": "Live DeepSeek V4 Flash proposal validated",
+      "fallback": "none",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 3,
+      "feature": "review_explanation_router",
+      "case": "invalid_out_of_range",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-explain-v1.0",
+      "non_secret_provenance": "Unknown item ID",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 4,
+      "feature": "review_explanation_router",
+      "case": "provider_error_or_malformed",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-explain-v1.0",
+      "non_secret_provenance": "PLHUT-SURAKARTA Item 8",
+      "latency_ms": 15,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "HTTP 500 Internal Server Error"
+      },
+      "deterministic_validation": {
+        "valid": false,
+        "passed_checks": [],
+        "failed_checks": [
+          "transport_error"
+        ]
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PROVIDER_ERROR",
+      "reason": "Simulated transport error: HTTP 500 Internal Server Error",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 5,
+      "feature": "review_explanation_router",
+      "case": "deterministic_rejection",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-explain-v1.0",
+      "non_secret_provenance": "AI attempting to override Core Engine volume",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 6,
+      "feature": "review_explanation_router",
+      "case": "manual_rule_fallback",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-explain-v1.0",
+      "non_secret_provenance": "Missing evidence link",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 1,
+      "feature": "deterministic_rejection_fallback",
+      "case": "valid_high_confidence",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-reject-v1.0",
+      "non_secret_provenance": "PLHUT-SURAKARTA invalid unit 'kg/m3' for column count",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 2,
+      "feature": "deterministic_rejection_fallback",
+      "case": "ambiguous",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-reject-v1.0",
+      "non_secret_provenance": "PLHUT-SURAKARTA unmapped material 'Batu Kali'",
+      "latency_ms": 7741,
+      "tokens": {
+        "input_tokens": 101,
+        "output_tokens": 290
+      },
+      "cost_usd": null,
+      "proposal": {
+        "status": "NEEDS_REVIEW",
+        "reason": "Batu Kali requires manual mapping to PAAX Standard Catalog",
+        "category": "PONDASI_BATU_KALI"
+      },
+      "schema_parse": {
+        "valid": true,
+        "detail": "Valid JSON object parsed"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "schema_structure",
+          "no_numeric_override"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PASS",
+      "reason": "Live DeepSeek V4 Flash proposal validated",
+      "fallback": "none",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 3,
+      "feature": "deterministic_rejection_fallback",
+      "case": "invalid_out_of_range",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-reject-v1.0",
+      "non_secret_provenance": "Hallucinated evidence ID 'ev-99999'",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 4,
+      "feature": "deterministic_rejection_fallback",
+      "case": "provider_error_or_malformed",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-reject-v1.0",
+      "non_secret_provenance": "Malformed payload probe",
+      "latency_ms": 15,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "JSONDecodeError: Invalid control character"
+      },
+      "deterministic_validation": {
+        "valid": false,
+        "passed_checks": [],
+        "failed_checks": [
+          "transport_error"
+        ]
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PROVIDER_ERROR",
+      "reason": "Simulated transport error: JSONDecodeError: Invalid control character",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 5,
+      "feature": "deterministic_rejection_fallback",
+      "case": "deterministic_rejection",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-reject-v1.0",
+      "non_secret_provenance": "AI proposed quantity '150.5 m3'",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 6,
+      "feature": "deterministic_rejection_fallback",
+      "case": "manual_rule_fallback",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "dem-reject-v1.0",
+      "non_secret_provenance": "Fallback to review queue",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 1,
+      "feature": "command_room_router",
+      "case": "valid_high_confidence",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "cmd-room-v1.0",
+      "non_secret_provenance": "User prompt: 'Berapa volume beton kolom K2 pada proyek PLHUT?'",
+      "latency_ms": 2173,
+      "tokens": {
+        "input_tokens": 115,
+        "output_tokens": 50
+      },
+      "cost_usd": null,
+      "proposal": {
+        "intent": "QUERY_QUANTITY",
+        "target_item": "Kolom K2",
+        "action": "FETCH_ENGINE_RECEIPT",
+        "project_id": "PLHUT-SURAKARTA"
+      },
+      "schema_parse": {
+        "valid": true,
+        "detail": "Valid JSON object parsed"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "schema_structure",
+          "no_numeric_override"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PASS",
+      "reason": "Live DeepSeek V4 Flash proposal validated",
+      "fallback": "none",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 2,
+      "feature": "command_room_router",
+      "case": "ambiguous",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "cmd-room-v1.0",
+      "non_secret_provenance": "User prompt: 'Tampilkan gambar lantai 1'",
+      "latency_ms": 1366,
+      "tokens": {
+        "input_tokens": 107,
+        "output_tokens": 168
+      },
+      "cost_usd": null,
+      "proposal": {
+        ":": "NAVIGATE_SHEET",
+        "target_sheet": "A-101",
+        "action": "SET_VIEWPORT_SHEET",
+        "project_id": "PLHUT-SURAKARTA"
+      },
+      "schema_parse": {
+        "valid": true,
+        "detail": "Valid JSON object parsed"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "schema_structure",
+          "no_numeric_override"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PASS",
+      "reason": "Live DeepSeek V4 Flash proposal validated",
+      "fallback": "none",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 3,
+      "feature": "command_room_router",
+      "case": "invalid_out_of_range",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "cmd-room-v1.0",
+      "non_secret_provenance": "User prompt: 'Hitungkan rumus fisika kuantum'",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 4,
+      "feature": "command_room_router",
+      "case": "provider_error_or_malformed",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "cmd-room-v1.0",
+      "non_secret_provenance": "Command room network glitch",
+      "latency_ms": 15,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "HTTP 503 Service Unavailable"
+      },
+      "deterministic_validation": {
+        "valid": false,
+        "passed_checks": [],
+        "failed_checks": [
+          "transport_error"
+        ]
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PROVIDER_ERROR",
+      "reason": "Simulated transport error: HTTP 503 Service Unavailable",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 5,
+      "feature": "command_room_router",
+      "case": "deterministic_rejection",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "cmd-room-v1.0",
+      "non_secret_provenance": "AI trying to compute quantity directly in command room",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 6,
+      "feature": "command_room_router",
+      "case": "manual_rule_fallback",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "cmd-room-v1.0",
+      "non_secret_provenance": "Unrecognized prompt fallback to help text",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 1,
+      "feature": "agentic_planner_governance",
+      "case": "valid_high_confidence",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "agent-plan-v1.0",
+      "non_secret_provenance": "Mission: 'Synthesize project graph and verify quantity readiness for PLHUT-SURAKARTA'",
+      "latency_ms": 615,
+      "tokens": {
+        "input_tokens": 144,
+        "output_tokens": 69
+      },
+      "cost_usd": null,
+      "proposal": {
+        "mission_id": "MIS-PLHUT-01",
+        "plan_steps": [
+          "fetch_runs",
+          "build_summary_views",
+          "calculate_quantities"
+        ],
+        "tool_allowlist": [
+          "fetch_runs",
+          "build_summary_views",
+          "calculate_quantities"
+        ],
+        "confidence": 0.96
+      },
+      "schema_parse": {
+        "valid": true,
+        "detail": "Valid JSON object parsed"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "schema_structure",
+          "no_numeric_override"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PASS",
+      "reason": "Live DeepSeek V4 Flash proposal validated",
+      "fallback": "none",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 2,
+      "feature": "agentic_planner_governance",
+      "case": "ambiguous",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "agent-plan-v1.0",
+      "non_secret_provenance": "Mission: 'Check for discrepancies in structural drawings'",
+      "latency_ms": 7892,
+      "tokens": {
+        "input_tokens": 98,
+        "output_tokens": 314
+      },
+      "cost_usd": null,
+      "proposal": {
+        "mission_id": "MIS-PLHUT-02",
+        "plan_steps": [
+          "fetch_review_queue",
+          "highlight_conflicts"
+        ],
+        "tool_allowlist": [
+          "db_api"
+        ],
+        "confidence": 0.75
+      },
+      "schema_parse": {
+        "valid": true,
+        "detail": "Valid JSON object parsed"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "schema_structure",
+          "no_numeric_override"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PASS",
+      "reason": "Live DeepSeek V4 Flash proposal validated",
+      "fallback": "none",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 3,
+      "feature": "agentic_planner_governance",
+      "case": "invalid_out_of_range",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "agent-plan-v1.0",
+      "non_secret_provenance": "Mission requesting forbidden external network tool",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 4,
+      "feature": "agentic_planner_governance",
+      "case": "provider_error_or_malformed",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "agent-plan-v1.0",
+      "non_secret_provenance": "Planner timeout test",
+      "latency_ms": 15,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "HTTP 504 Gateway Timeout"
+      },
+      "deterministic_validation": {
+        "valid": false,
+        "passed_checks": [],
+        "failed_checks": [
+          "transport_error"
+        ]
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "PROVIDER_ERROR",
+      "reason": "Simulated transport error: HTTP 504 Gateway Timeout",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 5,
+      "feature": "agentic_planner_governance",
+      "case": "deterministic_rejection",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "agent-plan-v1.0",
+      "non_secret_provenance": "AI planner proposing direct database write bypass",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 6,
+      "feature": "agentic_planner_governance",
+      "case": "manual_rule_fallback",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "agent-plan-v1.0",
+      "non_secret_provenance": "Planner fallback to manual step approval",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 7,
+      "feature": "sheet_classification_fallback",
+      "case": "fill_budget_7",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 8,
+      "feature": "sheet_classification_fallback",
+      "case": "fill_budget_8",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 9,
+      "feature": "sheet_classification_fallback",
+      "case": "fill_budget_9",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 10,
+      "feature": "sheet_classification_fallback",
+      "case": "fill_budget_10",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 11,
+      "feature": "sheet_classification_fallback",
+      "case": "fill_budget_11",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 12,
+      "feature": "sheet_classification_fallback",
+      "case": "fill_budget_12",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 13,
+      "feature": "sheet_classification_fallback",
+      "case": "fill_budget_13",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 14,
+      "feature": "sheet_classification_fallback",
+      "case": "fill_budget_14",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 15,
+      "feature": "sheet_classification_fallback",
+      "case": "fill_budget_15",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 16,
+      "feature": "sheet_classification_fallback",
+      "case": "attempt_16_exceeded_test",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Attempt 16 overflow probe",
+      "latency_ms": 0,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Attempt 16 rejected fail-closed"
+      },
+      "deterministic_validation": {
+        "valid": false,
+        "passed_checks": [],
+        "failed_checks": [
+          "budget_cap_exceeded"
+        ]
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "ATTEMPT_16_REJECTED",
+      "reason": "Exceeded maximum 15 call per-feature budget cap",
+      "fallback": "manual_review_queue",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 7,
+      "feature": "discipline_ambiguity_resolution",
+      "case": "fill_budget_7",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 8,
+      "feature": "discipline_ambiguity_resolution",
+      "case": "fill_budget_8",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 9,
+      "feature": "discipline_ambiguity_resolution",
+      "case": "fill_budget_9",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 10,
+      "feature": "discipline_ambiguity_resolution",
+      "case": "fill_budget_10",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 11,
+      "feature": "discipline_ambiguity_resolution",
+      "case": "fill_budget_11",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 12,
+      "feature": "discipline_ambiguity_resolution",
+      "case": "fill_budget_12",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 13,
+      "feature": "discipline_ambiguity_resolution",
+      "case": "fill_budget_13",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 14,
+      "feature": "discipline_ambiguity_resolution",
+      "case": "fill_budget_14",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 15,
+      "feature": "discipline_ambiguity_resolution",
+      "case": "fill_budget_15",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 16,
+      "feature": "discipline_ambiguity_resolution",
+      "case": "attempt_16_exceeded_test",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Attempt 16 overflow probe",
+      "latency_ms": 0,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Attempt 16 rejected fail-closed"
+      },
+      "deterministic_validation": {
+        "valid": false,
+        "passed_checks": [],
+        "failed_checks": [
+          "budget_cap_exceeded"
+        ]
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "ATTEMPT_16_REJECTED",
+      "reason": "Exceeded maximum 15 call per-feature budget cap",
+      "fallback": "manual_review_queue",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 7,
+      "feature": "evidence_binding_suggestion",
+      "case": "fill_budget_7",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 8,
+      "feature": "evidence_binding_suggestion",
+      "case": "fill_budget_8",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 9,
+      "feature": "evidence_binding_suggestion",
+      "case": "fill_budget_9",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 10,
+      "feature": "evidence_binding_suggestion",
+      "case": "fill_budget_10",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 11,
+      "feature": "evidence_binding_suggestion",
+      "case": "fill_budget_11",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 12,
+      "feature": "evidence_binding_suggestion",
+      "case": "fill_budget_12",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 13,
+      "feature": "evidence_binding_suggestion",
+      "case": "fill_budget_13",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 14,
+      "feature": "evidence_binding_suggestion",
+      "case": "fill_budget_14",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 15,
+      "feature": "evidence_binding_suggestion",
+      "case": "fill_budget_15",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 16,
+      "feature": "evidence_binding_suggestion",
+      "case": "attempt_16_exceeded_test",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Attempt 16 overflow probe",
+      "latency_ms": 0,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Attempt 16 rejected fail-closed"
+      },
+      "deterministic_validation": {
+        "valid": false,
+        "passed_checks": [],
+        "failed_checks": [
+          "budget_cap_exceeded"
+        ]
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "ATTEMPT_16_REJECTED",
+      "reason": "Exceeded maximum 15 call per-feature budget cap",
+      "fallback": "manual_review_queue",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 7,
+      "feature": "review_explanation_router",
+      "case": "fill_budget_7",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 8,
+      "feature": "review_explanation_router",
+      "case": "fill_budget_8",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 9,
+      "feature": "review_explanation_router",
+      "case": "fill_budget_9",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 10,
+      "feature": "review_explanation_router",
+      "case": "fill_budget_10",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 11,
+      "feature": "review_explanation_router",
+      "case": "fill_budget_11",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 12,
+      "feature": "review_explanation_router",
+      "case": "fill_budget_12",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 13,
+      "feature": "review_explanation_router",
+      "case": "fill_budget_13",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 14,
+      "feature": "review_explanation_router",
+      "case": "fill_budget_14",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 15,
+      "feature": "review_explanation_router",
+      "case": "fill_budget_15",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 16,
+      "feature": "review_explanation_router",
+      "case": "attempt_16_exceeded_test",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Attempt 16 overflow probe",
+      "latency_ms": 0,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Attempt 16 rejected fail-closed"
+      },
+      "deterministic_validation": {
+        "valid": false,
+        "passed_checks": [],
+        "failed_checks": [
+          "budget_cap_exceeded"
+        ]
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "ATTEMPT_16_REJECTED",
+      "reason": "Exceeded maximum 15 call per-feature budget cap",
+      "fallback": "manual_review_queue",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 7,
+      "feature": "deterministic_rejection_fallback",
+      "case": "fill_budget_7",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 8,
+      "feature": "deterministic_rejection_fallback",
+      "case": "fill_budget_8",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 9,
+      "feature": "deterministic_rejection_fallback",
+      "case": "fill_budget_9",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 10,
+      "feature": "deterministic_rejection_fallback",
+      "case": "fill_budget_10",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 11,
+      "feature": "deterministic_rejection_fallback",
+      "case": "fill_budget_11",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 12,
+      "feature": "deterministic_rejection_fallback",
+      "case": "fill_budget_12",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 13,
+      "feature": "deterministic_rejection_fallback",
+      "case": "fill_budget_13",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 14,
+      "feature": "deterministic_rejection_fallback",
+      "case": "fill_budget_14",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 15,
+      "feature": "deterministic_rejection_fallback",
+      "case": "fill_budget_15",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 16,
+      "feature": "deterministic_rejection_fallback",
+      "case": "attempt_16_exceeded_test",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Attempt 16 overflow probe",
+      "latency_ms": 0,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Attempt 16 rejected fail-closed"
+      },
+      "deterministic_validation": {
+        "valid": false,
+        "passed_checks": [],
+        "failed_checks": [
+          "budget_cap_exceeded"
+        ]
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "ATTEMPT_16_REJECTED",
+      "reason": "Exceeded maximum 15 call per-feature budget cap",
+      "fallback": "manual_review_queue",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 7,
+      "feature": "command_room_router",
+      "case": "fill_budget_7",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 8,
+      "feature": "command_room_router",
+      "case": "fill_budget_8",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 9,
+      "feature": "command_room_router",
+      "case": "fill_budget_9",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 10,
+      "feature": "command_room_router",
+      "case": "fill_budget_10",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 11,
+      "feature": "command_room_router",
+      "case": "fill_budget_11",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 12,
+      "feature": "command_room_router",
+      "case": "fill_budget_12",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 13,
+      "feature": "command_room_router",
+      "case": "fill_budget_13",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 14,
+      "feature": "command_room_router",
+      "case": "fill_budget_14",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 15,
+      "feature": "command_room_router",
+      "case": "fill_budget_15",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 16,
+      "feature": "command_room_router",
+      "case": "attempt_16_exceeded_test",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Attempt 16 overflow probe",
+      "latency_ms": 0,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Attempt 16 rejected fail-closed"
+      },
+      "deterministic_validation": {
+        "valid": false,
+        "passed_checks": [],
+        "failed_checks": [
+          "budget_cap_exceeded"
+        ]
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "ATTEMPT_16_REJECTED",
+      "reason": "Exceeded maximum 15 call per-feature budget cap",
+      "fallback": "manual_review_queue",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 7,
+      "feature": "agentic_planner_governance",
+      "case": "fill_budget_7",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 8,
+      "feature": "agentic_planner_governance",
+      "case": "fill_budget_8",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 9,
+      "feature": "agentic_planner_governance",
+      "case": "fill_budget_9",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 10,
+      "feature": "agentic_planner_governance",
+      "case": "fill_budget_10",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 11,
+      "feature": "agentic_planner_governance",
+      "case": "fill_budget_11",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 12,
+      "feature": "agentic_planner_governance",
+      "case": "fill_budget_12",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 13,
+      "feature": "agentic_planner_governance",
+      "case": "fill_budget_13",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 14,
+      "feature": "agentic_planner_governance",
+      "case": "fill_budget_14",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 15,
+      "feature": "agentic_planner_governance",
+      "case": "fill_budget_15",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Budget fill test",
+      "latency_ms": 2,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Deterministic fast-path fallback"
+      },
+      "deterministic_validation": {
+        "valid": true,
+        "passed_checks": [
+          "rule_fast_path"
+        ],
+        "failed_checks": []
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "DETERMINISTIC_REJECTION",
+      "reason": "Rule-based fast path rejected invalid or out-of-bounds input before network",
+      "fallback": "rule_based_fallback",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    },
+    {
+      "attempt": 16,
+      "feature": "agentic_planner_governance",
+      "case": "attempt_16_exceeded_test",
+      "model": "deepseek/deepseek-v4-flash",
+      "prompt_version": "v1.0",
+      "non_secret_provenance": "Attempt 16 overflow probe",
+      "latency_ms": 0,
+      "tokens": null,
+      "cost_usd": null,
+      "proposal": null,
+      "schema_parse": {
+        "valid": false,
+        "detail": "Attempt 16 rejected fail-closed"
+      },
+      "deterministic_validation": {
+        "valid": false,
+        "passed_checks": [],
+        "failed_checks": [
+          "budget_cap_exceeded"
+        ]
+      },
+      "approval_requirement": "human_approval_required",
+      "outcome": "ATTEMPT_16_REJECTED",
+      "reason": "Exceeded maximum 15 call per-feature budget cap",
+      "fallback": "manual_review_queue",
+      "numeric_authority_decision": "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    }
+  ]
+}

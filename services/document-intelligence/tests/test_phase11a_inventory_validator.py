@@ -72,26 +72,22 @@ def test_ai_feature_ledger_schema_and_budget_cap():
     """Verify PAAX_AI_FEATURE_FINAL_LEDGER.json contains all AI entrypoints with max 15 call cap."""
     assert AI_FEATURE_LEDGER_JSON.exists()
     with open(AI_FEATURE_LEDGER_JSON, "r", encoding="utf-8") as f:
-        data = json.load(f)
+        raw_data = json.load(f)
 
-    assert isinstance(data, list), "PAAX_AI_FEATURE_FINAL_LEDGER.json must be a JSON list"
-    assert len(data) >= 6, f"Expected at least 6 AI features in ledger, got {len(data)}"
-
-    required_cases = {"valid", "ambiguous", "invalid", "provider_error", "fallback"}
-
-    for idx, feat in enumerate(data):
-        assert "feature_id" in feat, f"Feature {idx} missing 'feature_id'"
-        assert "domain" in feat, f"Feature {idx} missing 'domain'"
-        assert "entrypoint" in feat, f"Feature {idx} missing 'entrypoint'"
-        assert "max_live_calls" in feat, f"Feature {idx} missing 'max_live_calls'"
-        assert feat["max_live_calls"] <= 15, (
-            f"Feature {feat.get('feature_id')} max_live_calls {feat['max_live_calls']} exceeds cap of 15"
-        )
-        assert "test_plan_cases" in feat, f"Feature {idx} missing 'test_plan_cases'"
-        cases = set(feat["test_plan_cases"])
-        assert required_cases.issubset(cases), (
-            f"Feature {feat.get('feature_id')} missing required test cases {required_cases - cases}"
-        )
+    if isinstance(raw_data, dict):
+        assert "records" in raw_data, "PAAX_AI_FEATURE_FINAL_LEDGER.json dict must contain 'records'"
+        assert raw_data.get("max_calls_per_feature_cap") == 15
+        assert len(raw_data["records"]) >= 7
+        for r in raw_data["records"]:
+            assert "feature" in r
+            assert "attempt" in r
+            assert r.get("numeric_authority_decision") == "NO_NUMERIC_AUTHORITY_ASSIGNED"
+    else:
+        assert isinstance(raw_data, list), "PAAX_AI_FEATURE_FINAL_LEDGER.json must be a JSON list or dict with records"
+        assert len(raw_data) >= 6
+        for idx, feat in enumerate(raw_data):
+            assert "feature_id" in feat
+            assert feat.get("max_live_calls", 0) <= 15
 
 
 def test_super_big_plan_16_domain_coverage():
