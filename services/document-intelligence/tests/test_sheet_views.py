@@ -217,3 +217,33 @@ def test_pipeline_persists_sheet_views_in_package_analysis() -> None:
     assert analysis.sheet_views.source[0].classification_key == "cover"
     assert analysis.sheet_views.source[1].classification_key == "plan"
     assert analysis.sheet_views.source[1].level_key == "L1"
+
+
+def test_build_drawing_package_index_lossless_multi_axis() -> None:
+    from app.drawing_intelligence.sheet_views import build_drawing_package_index, DrawingPackageAnalysis
+
+    pages = [
+        _page(0, drawing_type="cover", level=None, title="Cover Sheet"),
+        _page(1, drawing_type="floor_plan", level="L1", title="Denah Lt 1"),
+        _page(2, drawing_type="elevation", level="L1", title="Tampak Depan"),
+    ]
+    analysis = DrawingPackageAnalysis(
+        package_id="pkg-test-1",
+        document_name="gedung.pdf",
+        document_sha256="a" * 64,
+        page_count=3,
+        pages=pages,
+    )
+
+    index = build_drawing_package_index(analysis)
+
+    assert index.package_id == "pkg-test-1"
+    assert index.total_pages == 3
+    assert len(index.entries) == 3
+    assert [e.page_index for e in index.entries] == [0, 1, 2]
+    assert index.entries[0].level.value == "document"
+    assert index.entries[1].level.value == "L1"
+    assert index.entries[1].view.value == "plan"
+    assert index.entries[1].classification.value == "plan"
+    assert index.entries[2].view.value == "elevation"
+    assert index.entries[2].classification.value == "elevation"

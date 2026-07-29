@@ -18,7 +18,7 @@ describe("document intelligence proxy artifact transport", () => {
       expect(headers.get("range")).toBe("bytes=0-2");
       expect(headers.get("if-range")).toBe('"source-etag"');
       expect(headers.get("if-none-match")).toBe('"source-etag"');
-      expect(headers.get("x-internal-key")).toBe("live-test-key");
+      expect(headers.get("x-internal-key")).toBe("test-internal-key");
       return new Response(upstreamBody, {
         status: 206,
         headers: {

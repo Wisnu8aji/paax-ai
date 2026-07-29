@@ -173,8 +173,6 @@ def _artifact_signing_secret() -> bytes:
         return secret.encode()
     if os.environ.get("TESTING") == "1":
         return b"development-only-artifact-secret"
-    if os.environ.get("ENV", "development") == "development":
-        return b"development-only-artifact-secret"
     raise HTTPException(status_code=500, detail="ARTIFACT_SIGNING_SECRET is not configured")
 
 
@@ -751,6 +749,7 @@ async def get_active_sheet_context(
         "page_index": page_index,
         "page": page.model_dump(mode="json"),
         "work_items": [item.model_dump(mode="json") for item in work_items],
+        "work_item_ids": sorted(work_item_ids),
         "physical_instances": [
             value.model_dump(mode="json") for value in analysis.physical_instances
             if value.page_index == page_index
@@ -764,6 +763,87 @@ async def get_active_sheet_context(
             if value.page_index == page_index
         ],
     }
+
+
+@router.get("/{run_id}/index")
+async def get_drawing_package_index(
+    run_id: str,
+    level: str | None = None,
+    view: str | None = None,
+    classification: str | None = None,
+    revision: str | None = None,
+    zone: str | None = None,
+    status: str | None = None,
+    user: User = Depends(get_current_user),
+):
+    """Expose project-authorized multi-axis drawing package index with independent axis filtering."""
+    from app.drawing_intelligence.sheet_views import build_drawing_package_index, DrawingPackageIndex, MultiAxisSheetEntry, LevelAxis, ViewAxis, ClassificationAxis, RevisionAxis, ZoneAxis, AxisStatus
+
+    db_client = DemDbClient()
+    run = await db_client.get_run(run_id)
+    project_id = run.get("project_id")
+    if not project_id:
+        raise HTTPException(status_code=404, detail="run has no project scope")
+    try:
+        await db_client.authorize_actor_for_project(user.uid, project_id)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 403:
+            raise HTTPException(status_code=403, detail="not a member of this project")
+        raise
+
+    analysis_key = f"drawing-intelligence/runs/{run_id}/package-analysis.json"
+    try:
+        analysis = DrawingPackageAnalysis.model_validate_json(ARTIFACT_STORE.get(analysis_key))
+        index = build_drawing_package_index(analysis)
+    except ArtifactUnavailable:
+        entries = [
+            MultiAxisSheetEntry(
+                page_index=i,
+                page_number=i + 1,
+                sheet_code="unknown",
+                sheet_title=f"Sheet {i + 1}",
+                level=LevelAxis(value="unknown", status=AxisStatus.UNKNOWN),
+                view=ViewAxis(value="unknown", status=AxisStatus.UNKNOWN),
+                classification=ClassificationAxis(value="unknown", status=AxisStatus.UNKNOWN),
+                revision=RevisionAxis(value="unknown", status=AxisStatus.UNKNOWN),
+                zone=ZoneAxis(value="unknown", status=AxisStatus.UNKNOWN),
+                needs_review=True,
+                review_reasons=["package_analysis_pending"],
+            )
+            for i in range(run.get("total_pages", 0))
+        ]
+        index = DrawingPackageIndex(
+            package_id=f"run-{run_id}",
+            run_id=run_id,
+            document_name=run.get("file_name", "unknown.pdf"),
+            document_sha256=run.get("document_hash", ""),
+            total_pages=len(entries),
+            entries=entries,
+            unknown_axis_count=len(entries) * 5,
+            needs_review_count=len(entries),
+        )
+
+    filtered_entries = index.entries
+    if level:
+        filtered_entries = [e for e in filtered_entries if e.level.value.casefold() == level.casefold()]
+    if view:
+        filtered_entries = [e for e in filtered_entries if e.view.value.casefold() == view.casefold()]
+    if classification:
+        filtered_entries = [e for e in filtered_entries if e.classification.value.casefold() == classification.casefold()]
+    if revision:
+        filtered_entries = [e for e in filtered_entries if e.revision.value.casefold() == revision.casefold()]
+    if zone:
+        filtered_entries = [e for e in filtered_entries if e.zone.value.casefold() == zone.casefold()]
+    if status:
+        if status == "needs_review":
+            filtered_entries = [e for e in filtered_entries if e.needs_review]
+        elif status == "confirmed":
+            filtered_entries = [e for e in filtered_entries if not e.needs_review]
+
+    result = index.model_dump(mode="json")
+    result["entries"] = [e.model_dump(mode="json") for e in filtered_entries]
+    result["total_filtered_pages"] = len(filtered_entries)
+    return result
 
 
 @router.get("/{run_id}/intelligence/prototypes")

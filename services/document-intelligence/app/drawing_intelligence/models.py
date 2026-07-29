@@ -452,3 +452,86 @@ class DrawingPackageAnalysis(BaseModel):
     metrics: dict[str, Any] = Field(default_factory=dict)
     phase_status: dict[str, str] = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
+
+
+class AxisStatus(str, Enum):
+    CONFIRMED = "confirmed"
+    PROPOSED = "proposed"
+    UNKNOWN = "unknown"
+    AMBIGUOUS = "ambiguous"
+    CONFLICTING = "conflicting"
+
+
+class LevelAxis(BaseModel):
+    value: str = "unknown"
+    raw_text: str | None = None
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    status: AxisStatus = AxisStatus.UNKNOWN
+    evidence_refs: list[str] = Field(default_factory=list)
+
+
+class ViewAxis(BaseModel):
+    value: str = "unknown"
+    raw_text: str | None = None
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    status: AxisStatus = AxisStatus.UNKNOWN
+    evidence_refs: list[str] = Field(default_factory=list)
+
+
+class ClassificationAxis(BaseModel):
+    value: str = "unknown"
+    code: str | None = None
+    raw_text: str | None = None
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    status: AxisStatus = AxisStatus.UNKNOWN
+    evidence_refs: list[str] = Field(default_factory=list)
+
+
+class RevisionAxis(BaseModel):
+    value: str = "unknown"
+    revision_date: str | None = None
+    author: str | None = None
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    status: AxisStatus = AxisStatus.UNKNOWN
+    evidence_refs: list[str] = Field(default_factory=list)
+
+
+class ZoneAxis(BaseModel):
+    value: str = "unknown"
+    raw_text: str | None = None
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    status: AxisStatus = AxisStatus.UNKNOWN
+    evidence_refs: list[str] = Field(default_factory=list)
+
+
+class MultiAxisSheetEntry(BaseModel):
+    page_index: int = Field(ge=0)
+    page_number: int = Field(ge=1)
+    sheet_code: str = "unknown"
+    sheet_title: str = "unknown"
+    level: LevelAxis = Field(default_factory=LevelAxis)
+    view: ViewAxis = Field(default_factory=ViewAxis)
+    classification: ClassificationAxis = Field(default_factory=ClassificationAxis)
+    revision: RevisionAxis = Field(default_factory=RevisionAxis)
+    zone: ZoneAxis = Field(default_factory=ZoneAxis)
+    needs_review: bool = False
+    review_reasons: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_page_number(self) -> "MultiAxisSheetEntry":
+        if self.page_number != self.page_index + 1:
+            raise ValueError("page_number must equal page_index plus one")
+        return self
+
+
+class DrawingPackageIndex(BaseModel):
+    package_id: str
+    run_id: str
+    document_name: str
+    document_sha256: str
+    total_pages: int
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    version: int = 1
+    entries: list[MultiAxisSheetEntry] = Field(default_factory=list)
+    unknown_axis_count: int = 0
+    needs_review_count: int = 0

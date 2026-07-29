@@ -12,19 +12,27 @@ let globalPdfTilePool: ReturnType<typeof createPdfTilePool> | null = null;
 let globalTileCache: TileLru | null = null;
 
 export function getGlobalPdfTilePool() {
-  if (process.env.NODE_ENV === 'test') {
-    return createPdfTilePool();
-  }
   if (!globalPdfTilePool) globalPdfTilePool = createPdfTilePool();
   return globalPdfTilePool;
 }
 
 export function getGlobalTileCache() {
-  if (process.env.NODE_ENV === 'test') {
-    return new TileLru(96 * 1024 * 1024);
-  }
   if (!globalTileCache) globalTileCache = new TileLru(96 * 1024 * 1024);
   return globalTileCache;
+}
+
+export function resetGlobalPdfTilePool() {
+  if (globalPdfTilePool) {
+    globalPdfTilePool.dispose();
+    globalPdfTilePool = null;
+  }
+}
+
+export function resetGlobalTileCache() {
+  if (globalTileCache) {
+    globalTileCache.dispose();
+    globalTileCache = null;
+  }
 }
 
 export function shouldRefreshArtifactUrl(expiresAt: string | number, now = new Date()): boolean {
@@ -51,19 +59,46 @@ export interface PdfPageLayerProps {
   fallbackWidth: number;
   fallbackHeight: number;
   onMetrics?: (metrics: PdfPageMetrics) => void;
+  tilePool?: ReturnType<typeof createPdfTilePool>;
+  tileCache?: TileLru;
 }
 
 /** Original-PDF-only tile layer. Signed URLs live solely in this component. */
-export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallbackHeight, onMetrics }: PdfPageLayerProps) {
+export function PdfPageLayer({
+  runId,
+  pageIndex,
+  viewport,
+  fallbackWidth,
+  fallbackHeight,
+  onMetrics,
+  tilePool,
+  tileCache,
+}: PdfPageLayerProps) {
   const poolRef = useRef<ReturnType<typeof createPdfTilePool> | null>(null);
   const cacheRef = useRef<TileLru | null>(null);
+  const isExternalPoolRef = useRef(false);
   const openGenRef = useRef(0);
   const activeOpenGenRef = useRef<number | null>(null);
   const activeRequestsRef = useRef<Map<string, { identity: symbol; cancel: () => void }>>(new Map());
   const desiredKeysRef = useRef<Set<string>>(new Set());
 
-  if (!poolRef.current) poolRef.current = getGlobalPdfTilePool();
-  if (!cacheRef.current) cacheRef.current = getGlobalTileCache();
+  if (!poolRef.current) {
+    if (tilePool) {
+      poolRef.current = tilePool;
+      isExternalPoolRef.current = true;
+    } else {
+      poolRef.current = createPdfTilePool();
+      isExternalPoolRef.current = false;
+    }
+  }
+
+  if (!cacheRef.current) {
+    if (tileCache) {
+      cacheRef.current = tileCache;
+    } else {
+      cacheRef.current = getGlobalTileCache();
+    }
+  }
 
   const [metrics, setMetrics] = useState<PdfPageMetrics | null>(null);
   const [painted, setPainted] = useState(new Map<string, { tile: PdfTileRequest; revision: number }>());
@@ -80,8 +115,8 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
     activeRequestsRef.current.clear();
     desiredKeysRef.current.clear();
 
-    const pool = poolRef.current ?? getGlobalPdfTilePool();
-    const cache = cacheRef.current ?? getGlobalTileCache();
+    const pool = poolRef.current ?? (tilePool || getGlobalPdfTilePool());
+    const cache = cacheRef.current ?? (tileCache || getGlobalTileCache());
     poolRef.current = pool;
     cacheRef.current = cache;
     setMetrics(null);
@@ -124,12 +159,14 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
       activeRequestsRef.current.clear();
       desiredKeysRef.current.clear();
       pool.close(documentKey);
-      cache.dispose();
-      pool.dispose();
-      if (poolRef.current === pool) poolRef.current = null;
-      if (cacheRef.current === cache) cacheRef.current = null;
+      if (!isExternalPoolRef.current) {
+        cache.dispose();
+        pool.dispose();
+        if (poolRef.current === pool) poolRef.current = null;
+        if (cacheRef.current === cache) cacheRef.current = null;
+      }
     };
-  }, [runId, pageIndex, documentKey, retry]);
+  }, [runId, pageIndex, documentKey, retry, tilePool, tileCache]);
 
   const dimensions = metrics ?? { width: fallbackWidth, height: fallbackHeight, rotation: 0 };
   const pyramid = useMemo(() => new PdfTilePyramid({ pageKey: documentKey, width: dimensions.width, height: dimensions.height }), [documentKey, dimensions.width, dimensions.height]);

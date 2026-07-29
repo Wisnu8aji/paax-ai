@@ -3458,3 +3458,99 @@ export const ResolutionDecisionSchema = z.object({
 });
 export type ResolutionDecision = z.infer<typeof ResolutionDecisionSchema>;
 
+
+// ─── Drawing Package Multi-Axis Index ───────────────────────────────────────
+
+export const AxisStatusEnum = z.enum([
+  "confirmed",
+  "proposed",
+  "unknown",
+  "ambiguous",
+  "conflicting",
+]);
+export type AxisStatus = z.infer<typeof AxisStatusEnum>;
+
+export const LevelAxisSchema = z.object({
+  value: z.string().default("unknown"),
+  raw_text: z.string().nullish(),
+  confidence: z.number().min(0).max(1).default(0),
+  status: AxisStatusEnum.default("unknown"),
+  evidence_refs: z.array(z.string()).default([]),
+});
+export type LevelAxis = z.infer<typeof LevelAxisSchema>;
+
+export const ViewAxisSchema = z.object({
+  value: z.string().default("unknown"),
+  raw_text: z.string().nullish(),
+  confidence: z.number().min(0).max(1).default(0),
+  status: AxisStatusEnum.default("unknown"),
+  evidence_refs: z.array(z.string()).default([]),
+});
+export type ViewAxis = z.infer<typeof ViewAxisSchema>;
+
+export const ClassificationAxisSchema = z.object({
+  value: z.string().default("unknown"),
+  code: z.string().nullish(),
+  raw_text: z.string().nullish(),
+  confidence: z.number().min(0).max(1).default(0),
+  status: AxisStatusEnum.default("unknown"),
+  evidence_refs: z.array(z.string()).default([]),
+});
+export type ClassificationAxis = z.infer<typeof ClassificationAxisSchema>;
+
+export const RevisionAxisSchema = z.object({
+  value: z.string().default("unknown"),
+  revision_date: z.string().nullish(),
+  author: z.string().nullish(),
+  confidence: z.number().min(0).max(1).default(0),
+  status: AxisStatusEnum.default("unknown"),
+  evidence_refs: z.array(z.string()).default([]),
+});
+export type RevisionAxis = z.infer<typeof RevisionAxisSchema>;
+
+export const ZoneAxisSchema = z.object({
+  value: z.string().default("unknown"),
+  raw_text: z.string().nullish(),
+  confidence: z.number().min(0).max(1).default(0),
+  status: AxisStatusEnum.default("unknown"),
+  evidence_refs: z.array(z.string()).default([]),
+});
+export type ZoneAxis = z.infer<typeof ZoneAxisSchema>;
+
+export const MultiAxisSheetEntrySchema = z.object({
+  page_index: z.number().int().min(0),
+  page_number: z.number().int().min(1),
+  sheet_code: z.string().default("unknown"),
+  sheet_title: z.string().default("unknown"),
+  level: LevelAxisSchema.default({}),
+  view: ViewAxisSchema.default({}),
+  classification: ClassificationAxisSchema.default({}),
+  revision: RevisionAxisSchema.default({}),
+  zone: ZoneAxisSchema.default({}),
+  needs_review: z.boolean().default(false),
+  review_reasons: z.array(z.string()).default([]),
+}).superRefine((val, ctx) => {
+  if (val.page_number !== val.page_index + 1) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "page_number must equal page_index plus one",
+      path: ["page_number"],
+    });
+  }
+});
+export type MultiAxisSheetEntry = z.infer<typeof MultiAxisSheetEntrySchema>;
+
+export const DrawingPackageIndexSchema = z.object({
+  package_id: z.string().min(1),
+  run_id: z.string().min(1),
+  document_name: z.string().min(1),
+  document_sha256: z.string().min(1),
+  total_pages: z.number().int().min(0),
+  created_at: rfc3339TimestampSchema,
+  version: z.number().int().default(1),
+  entries: z.array(MultiAxisSheetEntrySchema).default([]),
+  unknown_axis_count: z.number().int().default(0),
+  needs_review_count: z.number().int().default(0),
+});
+export type DrawingPackageIndex = z.infer<typeof DrawingPackageIndexSchema>;
+

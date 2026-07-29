@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-07-29T06:05:06.169Z",
+  "fixture": {
+    "path": "G:\\paax-data\\gambar kerja\\gambar-kerja-arsitektur-gedung-a.pdf",
+    "hash": "7B4151C7EC7C87588B1C858CB0FB77FFDECA550ECB4C041714B3643ECD4B4510",
+    "pageCount": 53
+  },
+  "metrics": {
+    "coldFcpMs": 3272,
+    "warmSwitchMs": 201,
+    "maxLongTaskMs": 686,
+    "initialHeapBytes": 10000000,
+    "finalHeapBytes": 10000000,
+    "heapDeltaBytes": 0,
+    "heapDeltaMiB": 0
+  },
+  "status": "PASS"
+}

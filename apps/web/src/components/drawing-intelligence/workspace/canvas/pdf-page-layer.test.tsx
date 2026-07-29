@@ -2,7 +2,7 @@
 import { describe, expect, it, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import React from 'react';
-import { shouldRefreshArtifactUrl, PdfPageLayer } from './pdf-page-layer';
+import { shouldRefreshArtifactUrl, PdfPageLayer, resetGlobalPdfTilePool, resetGlobalTileCache } from './pdf-page-layer';
 import { TileLru, PdfTilePyramid, type TileViewport } from './pdf-tile-pyramid';
 import { createPdfTilePool } from './pdf-tile-pool';
 import { normalizeArtifactExpiry, fetchPdfArtifactUrl } from '../../drawing-intelligence-api';
@@ -10,6 +10,8 @@ import { normalizeArtifactExpiry, fetchPdfArtifactUrl } from '../../drawing-inte
 let getContextSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
+  resetGlobalPdfTilePool();
+  resetGlobalTileCache();
   vi.clearAllMocks();
   vi.restoreAllMocks();
   getContextSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation((contextId: string) => {

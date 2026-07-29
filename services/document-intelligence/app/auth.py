@@ -36,11 +36,8 @@ def get_current_user(
     # when unset. A misconfigured production deployment that forgot both ENV
     # and INTERNAL_SERVICE_KEY must not silently accept a well-known key.
     internal_key = os.environ.get("INTERNAL_SERVICE_KEY")
-    if not internal_key:
-        if os.environ.get("TESTING") == "1":
-            internal_key = "test-internal-key"
-        else:
-            internal_key = "live-test-key"
+    if not internal_key and os.environ.get("TESTING") == "1":
+        internal_key = "test-internal-key"
     req_internal_key = request.headers.get("X-Internal-Key")
     
     if internal_key and req_internal_key == internal_key:

@@ -775,3 +775,32 @@ export function runFindSimilar(
     threshold,
   });
 }
+
+export async function fetchDrawingPackageIndex(
+  runId: string,
+  filters?: {
+    level?: string;
+    view?: string;
+    classification?: string;
+    revision?: string;
+    zone?: string;
+    status?: string;
+  }
+): Promise<import('@paax/schemas').DrawingPackageIndex> {
+  const params = new URLSearchParams();
+  if (filters?.level) params.set('level', filters.level);
+  if (filters?.view) params.set('view', filters.view);
+  if (filters?.classification) params.set('classification', filters.classification);
+  if (filters?.revision) params.set('revision', filters.revision);
+  if (filters?.zone) params.set('zone', filters.zone);
+  if (filters?.status) params.set('status', filters.status);
+
+  const query = params.toString() ? `?${params.toString()}` : '';
+  const res = await fetch(`${PROXY_BASE}/dem/${encodeURIComponent(runId)}/index${query}`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    throw new Error(`Gagal memuat drawing package index (status ${res.status})`);
+  }
+  return res.json();
+}
