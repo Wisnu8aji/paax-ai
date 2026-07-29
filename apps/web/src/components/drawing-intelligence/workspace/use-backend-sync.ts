@@ -380,36 +380,11 @@ export function useBackendSync(projectId: string | null) {
     if (!projectId || !selected) return;
     let cancelled = false;
 
-    fetchActiveSheetContext(selected.runId, selected.pageIndex)
+    fetchActiveSheetContext(projectId, selected.pageIndex)
       .then((context) => {
         if (cancelled) return;
-        const elements = context.physical_instances.map((instance: any) => {
-          const bbox = instance.bbox || {};
-          const category = String(instance.category || 'unknown') as any;
-          return {
-            id: String(instance.instance_id),
-            sheetId: selected.id,
-            code: String(instance.code || instance.instance_id),
-            aiId: String(instance.instance_id),
-            category,
-            label: String(instance.code || instance.category || 'Detected item'),
-            floorId: String(instance.level || selected.level || 'UNKNOWN'),
-            grid: null,
-            dimensions: null,
-            material: null,
-            bbox: {
-              x: Number(bbox.x0 || 0) * 1000,
-              y: Number(bbox.y0 || 0) * 1000,
-              w: Math.max(0, Number(bbox.x1 || 0) - Number(bbox.x0 || 0)) * 1000,
-              h: Math.max(0, Number(bbox.y1 || 0) - Number(bbox.y0 || 0)) * 1000,
-            },
-            confidence: typeof instance.confidence === 'number' ? Math.round(instance.confidence * 100) : null,
-            verification: (instance.authority === 'human_confirmed' || instance.authority === 'engine_confirmed' ? 'verified' : 'detected') as 'verified' | 'detected',
-            properties: [],
-            sourcePages: [{ sheetCode: `p.${selected.pageIndex + 1}`, label: 'Active sheet evidence' }],
-            aiNotes: [],
-          };
-        });
+        const nodes = context.nodes || [];
+        const elements = mapGraphNodesToElements(nodes, selected.id);
         dispatch({ type: 'replace-elements', elements });
       })
       .catch((error) => {

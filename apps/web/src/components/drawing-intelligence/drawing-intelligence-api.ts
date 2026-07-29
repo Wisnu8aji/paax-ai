@@ -663,7 +663,7 @@ export async function submitDrawingIntelligenceReview(
 }
 
 
-export interface ActiveSheetContextResponse {
+export interface DemActiveSheetContextResponse {
   schema_version: 'paax.drawing-intelligence.active-sheet-context.v1';
   project_id: string;
   run_id: string;
@@ -675,7 +675,7 @@ export interface ActiveSheetContextResponse {
   review_queue: Array<Record<string, unknown>>;
 }
 
-export async function fetchActiveSheetContext(runId: string, pageIndex: number): Promise<ActiveSheetContextResponse> {
+export async function fetchDemActiveSheetContext(runId: string, pageIndex: number): Promise<DemActiveSheetContextResponse> {
   const res = await fetch(
     `/api/document-intelligence/drawings/dem/${encodeURIComponent(runId)}/intelligence/pages/${pageIndex}/context`,
     { cache: 'no-store' },
@@ -801,6 +801,55 @@ export async function fetchDrawingPackageIndex(
   });
   if (!res.ok) {
     throw new Error(`Gagal memuat drawing package index (status ${res.status})`);
+  }
+  return res.json();
+}
+
+export interface ActiveSheetContextResponse {
+  project_id: string;
+  page_index: number;
+  snapshot_id: string;
+  nodes: Array<Record<string, unknown>>;
+  edges: Array<Record<string, unknown>>;
+  review_queue: Array<Record<string, unknown>>;
+  evidence_refs: string[];
+  metadata: {
+    node_count: number;
+    edge_count: number;
+    review_count: number;
+    evidence_count: number;
+    is_active_sheet_only: boolean;
+  };
+}
+
+export async function fetchActiveSheetContext(
+  projectId: string,
+  pageIndex: number
+): Promise<ActiveSheetContextResponse> {
+  const res = await fetch(
+    `${PROXY_BASE}/projects/${encodeURIComponent(projectId)}/project-graph/sheets/${pageIndex}/context`,
+    { cache: 'no-store' }
+  );
+  if (!res.ok) {
+    if (res.status === 404) {
+      return {
+        project_id: projectId,
+        page_index: pageIndex,
+        snapshot_id: 'empty',
+        nodes: [],
+        edges: [],
+        review_queue: [],
+        evidence_refs: [],
+        metadata: {
+          node_count: 0,
+          edge_count: 0,
+          review_count: 0,
+          evidence_count: 0,
+          is_active_sheet_only: true,
+        },
+      };
+    }
+    throw new Error(`Gagal memuat active sheet context (status ${res.status})`);
   }
   return res.json();
 }

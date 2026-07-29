@@ -3554,3 +3554,35 @@ export const DrawingPackageIndexSchema = z.object({
 });
 export type DrawingPackageIndex = z.infer<typeof DrawingPackageIndexSchema>;
 
+export const CandidateOriginEnum = z.enum(["dem", "pckm", "consolidated_registry"]);
+export const CoverageStatusEnum = z.enum(["ready", "calculated", "needs_review", "blocked"]);
+
+export const CandidateInventoryRowSchema = z.object({
+  candidate_id: z.string().min(1),
+  origin: CandidateOriginEnum,
+  work_item_id: z.string().nullable().optional(),
+  page_index: z.number().int().nonnegative(),
+  evidence_refs: z.array(z.string()).default([]),
+  category: z.string().min(1),
+  coverage_status: CoverageStatusEnum,
+  reason: z.string().nullable().optional(),
+});
+export type CandidateInventoryRowSchemaType = z.infer<typeof CandidateInventoryRowSchema>;
+
+export const ActiveSheetContextSchema = z.object({
+  project_id: z.string(),
+  page_index: z.number().int().nonnegative(),
+  snapshot_id: z.string(),
+  nodes: z.array(z.record(z.unknown())),
+  edges: z.array(z.record(z.unknown())),
+  review_queue: z.array(z.record(z.unknown())),
+  evidence_refs: z.array(z.string()),
+  metadata: z.object({
+    node_count: z.number(),
+    edge_count: z.number(),
+    review_count: z.number(),
+    evidence_count: z.number(),
+    is_active_sheet_only: z.boolean(),
+  }),
+});
+export type ActiveSheetContext = z.infer<typeof ActiveSheetContextSchema>;

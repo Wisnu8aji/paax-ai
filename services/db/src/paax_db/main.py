@@ -27,6 +27,7 @@ from .core_engine_factory import build_core_engine_client
 from .rab_bridge_lifecycle import transition
 from .usage_telemetry import emit_best_effort, usage_logger_from_env
 from .engineering_context import build_engineering_context, validate_civil_work_items_payload
+from .project_graph_sheet_context import get_active_sheet_context
 from . import workspace_router
 
 app = FastAPI(title="PAAX DB API", description="Server-side persistent storage for PAAX AI")
@@ -1133,6 +1134,22 @@ async def read_active_project_graph_snapshot(id: str, db: AsyncSession = Depends
     if snapshot is None:
         raise HTTPException(status_code=404, detail="Project graph is not ready")
     return snapshot
+
+
+@app.get(
+    "/projects/{id}/project-graph/sheets/{page_index}/context",
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def read_active_sheet_context(id: str, page_index: int, db: AsyncSession = Depends(get_db)):
+    if page_index < 0:
+        raise HTTPException(status_code=422, detail="page_index must be >= 0")
+    snapshot = await get_active_snapshot(db, id)
+    if snapshot is None:
+        proj = (await db.execute(select(models.Project).where(models.Project.id == id))).scalars().first()
+        if not proj:
+            raise HTTPException(status_code=404, detail="Project not found")
+        snapshot = {"snapshot_id": "empty", "nodes": [], "edges": [], "review_queue": []}
+    return get_active_sheet_context(snapshot, page_index, project_id=id)
 
 
 @app.post(
