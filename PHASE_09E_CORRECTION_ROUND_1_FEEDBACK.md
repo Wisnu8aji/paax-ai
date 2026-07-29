@@ -1,56 +1,35 @@
-# Phase 09E Correction Round 1 Recovery Feedback Report
+# Phase 09E Correction Round 1 Feedback Report
 
-**Status:** `PASS`
-**Date:** 2026-07-30
-**Worktree:** `G:\paax-ai-contextual-integration`
-**Branch:** `codex/contextual-intelligence-integration`
-**Base SHA:** `c6cc6c6a`
-**HEAD SHA:** `70dfaed5de2353ba9d083584e8ba533070f6df11`
-**Remote SHA:** `70dfaed5de2353ba9d083584e8ba533070f6df11` (`origin/codex/contextual-intelligence-integration`)
-
----
-
-## 1. Truthful Real-Stack Execution Summary
-
-Phase 09E Correction Round 1 Recovery has been fully achieved by proving a truthful, un-mocked end-to-end integration across all 4 services and the real 88-page PLHUT Surakarta dataset:
-
-| Service | Port | Status | Responsibility | Verification Evidence |
-| :--- | :--- | :--- | :--- | :--- |
-| **Web App** | `3000` | `OPERATIONAL` | Next.js Frontend UI & API Proxy | Playwright E2E 2/2 Passed, build 20/20 pages |
-| **Core Engine** | `8000` | `OPERATIONAL` | Quantity authority & math computation | Deterministic quantity authority contract passed |
-| **DB API** | `8001` | `OPERATIONAL` | SQLite Project Graph & DB storage | Async SQLAlchemy + 3,407 nodes / 3,768 edges |
-| **Document Intelligence** | `8002` | `OPERATIONAL` | DEM page parsing & Drawing evidence | 88 PLHUT DEM pages seeded & parsed |
-
----
-
-## 2. Key Accomplishments
-
-1. **Idempotent PLHUT Seeding (`seed_plhut_real.py` & `reference_bootstrap.py`):**
-   - Corrected sub-directory page JSON resolving (`dem-pages`).
-   - Cleaned Pydantic property objects (`_clean_properties`) for JSONB compatibility.
-   - Built full graph with 3,407 nodes and 3,768 edges for `PLHUT-SURAKARTA`.
-   - Populated 8 real civil work items including K2 Lantai 2 (4 units, 2.34 m³ volume).
-
-2. **Preflight & Stack Management (`preflight_real_stack.py`, `start_phase09e_stack.ps1`, `stop_phase09e_stack.ps1`):**
-   - Automated 5 endpoint preflight sanity check (`/health` across services + `/api/db-projects/projects`).
-   - Standardized process cleanup scripts to release ports 3000, 8000, 8001, and 8002 cleanly.
-
-3. **Playwright E2E Real-Stack Verification (`drawing-intelligence-truthful-runtime.spec.ts`):**
-   - Verified live UI rendering without Playwright route interception.
-   - Tested Desktop (1440x900) and Mobile (390x844) viewports.
-   - Verified real network proxy calls hit DB API and returned HTTP 200.
-   - Verified zero console errors.
-
-4. **Quality Gates Passed:**
-   - Backend Pytest: `2 passed in 8.29s`.
-   - TypeScript Check: `npx tsc --noEmit` exited with code 0 (0 errors).
-   - Next.js Build: `npm run build` compiled 20/20 static pages cleanly.
-   - Graphify Knowledge Graph: `graphify update .` rebuilt 10,918 nodes and 23,339 edges.
-   - Git Diff Hygiene: `git diff --check` passed with 0 errors.
-
----
-
-## 3. Strict Compliance Note
-
-- **Phase 10 / Phase 11:** NOT touched or executed, in strict compliance with AGY instructions.
-- **SQLite Database:** `services/db/portable.sqlite` is explicitly ignored by `.gitignore` and not committed.
+- **PHASE:** Phase 09E Correction Round 1
+- **STATUS:** PASS
+- **MODEL:** Gemini 3.6 Flash High Thinking
+- **WORKTREE:** `G:\paax-ai-contextual-integration`
+- **BRANCH:** `codex/contextual-intelligence-integration`
+- **BASE COMMIT:** `c6cc6c6a`
+- **FINAL/IMPLEMENTATION COMMIT:** `70dfaed5` (Initial feedback report committed at `654febd5`; the post-document current HEAD/remote SHA is reported in the terminal final response after push)
+- **REMOTE RECONCILIATION:** Synchronized with `origin/codex/contextual-intelligence-integration`
+- **IMPLEMENTED:**
+  - Idempotent PLHUT Surakarta real-stack seeding (`seed_plhut_real.py`, `reference_bootstrap.py`).
+  - 4-service real stack launcher and preflight sanity checker (`start_phase09e_stack.ps1`, `preflight_real_stack.py`, `stop_phase09e_stack.ps1`).
+  - Real-stack Playwright E2E browser verification without route interception (`drawing-intelligence-truthful-runtime.spec.ts`).
+  - Strict quantity authority enforcement via Core Engine (`canDisplayFinalQuantity` requires `sourceAuthority === 'core_engine'`).
+- **TEST EVIDENCE:**
+  - Backend Pytest: `services/db/tests/test_phase09e_real_stack_contracts.py` — `2 passed in 8.29s`.
+  - Playwright E2E: `apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts` — `2 passed` (Desktop 1440x900 & Mobile 390x844).
+- **TYPECHECK/BUILD EVIDENCE:**
+  - `npx tsc --noEmit` (in `apps/web`): `0 errors` (exit code 0).
+  - `npm run build` (in `apps/web`): `20/20 static pages compiled successfully`.
+- **BROWSER EVIDENCE:**
+  - Playwright E2E test hit live backend proxy endpoints (`/api/db-projects/*`, `/api/drawing-intelligence/*`, `/api/document-intelligence/*`) with HTTP 200 and zero uncaught console errors. Artifact screenshots saved to `apps/web/e2e/results/phase09e-desktop.png` and `apps/web/e2e/results/phase09e-mobile.png`.
+- **REAL-DATA EVIDENCE:**
+  - 88 PLHUT DEM pages seeded into `services/db/portable.sqlite`, creating **3,407 project graph nodes**, **3,768 graph edges**, and **8 civil work items** (including K2 Lantai 2, volume 2.34 m³).
+- **SECURITY/SECRET SCAN:**
+  - Environment variables used for service keys (`INTERNAL_SERVICE_KEY`), `.env` ignored. Zero secrets exposed in git commits. `services/db/portable.sqlite` ignored by `.gitignore`.
+- **PROCESS CLEANUP:**
+  - Executed `scripts/live_test/stop_phase09e_stack.ps1`. Ports 3000, 8000, 8001, and 8002 verified clean and freed.
+- **REMAINING CONCERNS:**
+  - None. All Phase 09E requirements, contracts, and quality gates passed cleanly.
+- **NEXT RECOMMENDED ACTION:**
+  - Await user prompt for subsequent phase authorization. (Phase 10 and Phase 11 remain untouched).
+- **QUOTA STATUS:**
+  - Nominal. No quota errors encountered.
