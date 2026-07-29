@@ -28,6 +28,9 @@ def _select_vision_provider() -> DemVisionProvider:
 
     provider = QwenDemAdapter.from_env()
     if provider is None:
+        if os.environ.get("DEM_VISION_PROVIDER") == "mock" or os.environ.get("TESTING") == "1":
+            from app.transcription.providers.mock import MockDemAdapter
+            return MockDemAdapter()
         raise RuntimeError(
             "DRAWING_INTELLIGENCE_API_KEY is not configured -- the durable "
             "worker cannot process dem.extract jobs without a real vision "

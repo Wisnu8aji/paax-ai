@@ -29,7 +29,9 @@ export function mapProjectDemSheet(sheet: ProjectDemSheetResponse): ProjectSheet
     imageUrl: (() => {
       const url = optionalString(sheet.thumbnail_url);
       if (!url) return null;
-      return url.startsWith('/projects/') ? `/api/drawing-intelligence${url}` : url;
+      if (url.startsWith('/projects/')) return `/api/drawing-intelligence${url}`;
+      if (url.startsWith('/drawings/')) return `/api/document-intelligence${url}`;
+      return url;
     })(),
   };
 }

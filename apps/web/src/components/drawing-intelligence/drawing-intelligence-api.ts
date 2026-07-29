@@ -796,7 +796,7 @@ export async function fetchDrawingPackageIndex(
   if (filters?.status) params.set('status', filters.status);
 
   const query = params.toString() ? `?${params.toString()}` : '';
-  const res = await fetch(`${PROXY_BASE}/dem/${encodeURIComponent(runId)}/index${query}`, {
+  const res = await fetch(`/api/document-intelligence/drawings/dem/${encodeURIComponent(runId)}/index${query}`, {
     cache: 'no-store',
   });
   if (!res.ok) {

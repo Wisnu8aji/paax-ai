@@ -65,3 +65,39 @@ describe("document intelligence proxy artifact transport", () => {
     await expect(response.arrayBuffer()).resolves.toEqual(new ArrayBuffer(0));
   });
 });
+
+// ── Security regression: fail-closed and no-test-actor-in-production ────────
+describe("document-intelligence proxy — security regression", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("SECURITY: test mode uses test-internal-key, never a hardcoded live key", async () => {
+    // NODE_ENV is 'test' here (vitest default); key must be 'test-internal-key'
+    let capturedKey: string | null = null;
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init?: RequestInit) => {
+      capturedKey = new Headers(init?.headers).get("x-internal-key");
+      return new Response(null, { status: 200 });
+    }));
+    await GET(new Request("http://paax.test/api/document-intelligence/drawings/dem/run/idx"), context);
+    // In test env, must be 'test-internal-key'; must NOT be 'live-test-key'
+    expect(capturedKey).toBe("test-internal-key");
+    expect(capturedKey).not.toBe("live-test-key");
+  });
+
+  it("SECURITY: X-User-Id never defaults to 'paax-test' — must default to 'paax-web'", async () => {
+    let capturedUserId: string | null = null;
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init?: RequestInit) => {
+      capturedUserId = new Headers(init?.headers).get("x-user-id");
+      return new Response(null, { status: 200 });
+    }));
+    const origActorId = process.env.PAAX_PORTABLE_ACTOR_ID;
+    delete process.env.PAAX_PORTABLE_ACTOR_ID;
+    try {
+      await GET(new Request("http://paax.test/api/document-intelligence/drawings/dem/run/idx"), context);
+      // Default must be 'paax-web', never 'paax-test'
+      expect(capturedUserId).toBe("paax-web");
+      expect(capturedUserId).not.toBe("paax-test");
+    } finally {
+      if (origActorId !== undefined) process.env.PAAX_PORTABLE_ACTOR_ID = origActorId;
+    }
+  });
+});

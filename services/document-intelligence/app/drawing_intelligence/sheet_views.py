@@ -443,7 +443,7 @@ def build_drawing_package_index(
         zone_raw = None
         if zones:
             for z in zones:
-                z_name = z.name if hasattr(z, "name") else z.get("name")
+                z_name = z.get("name") if isinstance(z, dict) else (getattr(z, "name", None) or getattr(z, "label", None) or getattr(z, "zone_id", None))
                 if z_name and "zone" in str(z_name).casefold():
                     zone_val = str(z_name).strip()
                     zone_raw = zone_val

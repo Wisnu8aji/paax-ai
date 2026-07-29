@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { PanelLeftClose, PanelLeftOpen, Search, UploadCloud, AlertTriangle } from 'lucide-react';
 import { useMemo } from 'react';
@@ -75,9 +75,26 @@ export function FileSheetNavigator() {
     status: filters.status ?? undefined,
     level: filters.level ?? undefined,
     classification: filters.classification ?? undefined,
-  }), [filters]);
+    search: search || undefined,
+  }), [filters, search]);
 
-  const hasActiveFilters = Object.values(filters).some(v => v !== null);
+  const hasActiveFilters = Object.values(filters).some(v => v !== null) || Boolean(search);
+
+  // Derive unique available option values for view, revision, zone from validated DrawingPackageIndex
+  const availableViews = useMemo(() => {
+    if (!packageIndex) return [];
+    return Array.from(new Set(packageIndex.entries.map((e) => e.view.value))).sort();
+  }, [packageIndex]);
+
+  const availableRevisions = useMemo(() => {
+    if (!packageIndex) return [];
+    return Array.from(new Set(packageIndex.entries.map((e) => e.revision.value))).sort();
+  }, [packageIndex]);
+
+  const availableZones = useMemo(() => {
+    if (!packageIndex) return [];
+    return Array.from(new Set(packageIndex.entries.map((e) => e.zone.value))).sort();
+  }, [packageIndex]);
 
   // Index-based groups: use DrawingPackageIndex when available for the active run
   const indexGroups = useMemo(() => {
@@ -128,7 +145,7 @@ export function FileSheetNavigator() {
           </button>
         </div>
 
-        {/* Three-mode tab selector â€” canonical SHEET_VIEW_MODES */}
+        {/* Three-mode tab selector — canonical SHEET_VIEW_MODES */}
         <div role="tablist" aria-label="Sheet view mode" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 4 }}>
           {SHEET_VIEW_MODES.map((mode) => {
             const selected = state.navigator.tab === mode.id;
@@ -148,9 +165,9 @@ export function FileSheetNavigator() {
           })}
         </div>
 
-        {/* Independent optional filters â€” applied client-side, no refetch */}
+        {/* Independent optional filters — applied client-side, no refetch */}
         {packageIndex && (
-          <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+          <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4 }}>
             {/* Status filter */}
             <FilterPill
               label="Needs review"
@@ -160,12 +177,73 @@ export function FileSheetNavigator() {
                 patch: { status: filters.status === 'needs_review' ? null : 'needs_review' },
               })}
             />
+
+            {/* View filter */}
+            {availableViews.length > 0 && (
+              <select
+                aria-label="Filter by view"
+                className="di-select"
+                style={{ height: 22, fontSize: 10, padding: '0 4px', borderRadius: 4, border: '1px solid var(--di-border)', background: 'var(--di-paper)', color: 'var(--di-text)' }}
+                value={filters.view ?? ''}
+                onChange={(e) => dispatch({
+                  type: 'set-index-filters',
+                  patch: { view: e.target.value || null },
+                })}
+              >
+                <option value="">All views</option>
+                {availableViews.map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+            )}
+
+            {/* Revision filter */}
+            {availableRevisions.length > 0 && (
+              <select
+                aria-label="Filter by revision"
+                className="di-select"
+                style={{ height: 22, fontSize: 10, padding: '0 4px', borderRadius: 4, border: '1px solid var(--di-border)', background: 'var(--di-paper)', color: 'var(--di-text)' }}
+                value={filters.revision ?? ''}
+                onChange={(e) => dispatch({
+                  type: 'set-index-filters',
+                  patch: { revision: e.target.value || null },
+                })}
+              >
+                <option value="">All revisions</option>
+                {availableRevisions.map((r) => (
+                  <option key={r} value={r}>Rev {r}</option>
+                ))}
+              </select>
+            )}
+
+            {/* Zone filter */}
+            {availableZones.length > 0 && (
+              <select
+                aria-label="Filter by zone"
+                className="di-select"
+                style={{ height: 22, fontSize: 10, padding: '0 4px', borderRadius: 4, border: '1px solid var(--di-border)', background: 'var(--di-paper)', color: 'var(--di-text)' }}
+                value={filters.zone ?? ''}
+                onChange={(e) => dispatch({
+                  type: 'set-index-filters',
+                  patch: { zone: e.target.value || null },
+                })}
+              >
+                <option value="">All zones</option>
+                {availableZones.map((z) => (
+                  <option key={z} value={z}>Zone {z}</option>
+                ))}
+              </select>
+            )}
+
             {/* Clear all filters */}
             {hasActiveFilters && (
               <button
                 className="di-btn di-btn-ghost"
                 style={{ height: 22, fontSize: 10, padding: '0 8px', color: 'var(--di-warn)' }}
-                onClick={() => dispatch({ type: 'clear-index-filters' })}
+                onClick={() => {
+                  dispatch({ type: 'clear-index-filters' });
+                  if (search) dispatch({ type: 'navigator', patch: { search: '' } });
+                }}
                 aria-label="Clear all filters"
               >
                 Clear filters

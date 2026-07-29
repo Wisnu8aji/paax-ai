@@ -74,17 +74,37 @@ export function useBackendSync(projectId: string | null) {
     let timer: any;
     const sync = async () => {
       try {
+        // Trigger package index load immediately in parallel without waiting for heavy endpoints
+        fetchProjectDemRuns(projectId)
+          .then((runs) => {
+            const intelRun = runs.find((r: any) => r.status === 'synthesis_complete' || r.status === 'completed');
+            if (intelRun?.id) {
+              fetchDrawingPackageIndex(intelRun.id)
+                .then((rawIndex) => {
+                  const mergeResult = validateAndMergeIndex({
+                    activeRunId: intelRun.id,
+                    prev: stateRef.current.drawingPackageIndex,
+                    incoming: rawIndex,
+                  });
+                  if (mergeResult.index) {
+                    dispatch({ type: 'set-drawing-package-index', index: mergeResult.index, error: null });
+                  }
+                })
+                .catch(() => {});
+            }
+          })
+          .catch(() => {});
+
         const [queue, readiness, civilWorkItems, sheetsData, runsData, summaryViewsData, session, head] = await Promise.all([
-          fetchReviewQueue(projectId),
-          fetchQuantityReadiness(projectId),
-          fetchCivilWorkItems(projectId),
-          fetchProjectDemSheets(projectId),
-          fetchProjectDemRuns(projectId),
-          fetchSummaryViews(projectId),
+          fetchReviewQueue(projectId).catch(() => ({ items: [], snapshot_id: null })),
+          fetchQuantityReadiness(projectId).catch(() => ({ items: [], snapshot_id: null, summary: { total: 0, ready: 0, needs_review: 0 } })),
+          fetchCivilWorkItems(projectId).catch(() => null),
+          fetchProjectDemSheets(projectId).catch(() => []),
+          fetchProjectDemRuns(projectId).catch(() => []),
+          fetchSummaryViews(projectId).catch(() => []),
           projectRepository.getWorkspaceSession(projectId).catch(() => null),
           projectRepository.getWorkspaceHead().catch(() => null),
         ]);
-        if (cancelled) return;
 
         const hasRealData = queue.items.length > 0 || readiness.items.length > 0 || (civilWorkItems?.items.length ?? 0) > 0 || sheetsData.length > 0 || runsData.length > 0 || summaryViewsData.length > 0;
         const isUploadingOrMapped = stateRef.current.upload.running || stateRef.current.mappedSheets.length > 0;
@@ -183,16 +203,10 @@ export function useBackendSync(projectId: string | null) {
           run.status === 'synthesis_complete' || run.status === 'completed'
         );
         if (intelligenceRun?.id) {
-          const packageIntelligence = await fetchPackageIntelligence(intelligenceRun.id).catch(() => null);
-          if (!cancelled) {
-            dispatch({ type: 'analysis', patch: { packageIntelligence } });
-          }
-
-          // Phase 06: Fetch DrawingPackageIndex once for the active run.
-          // Validates with Zod, guards against stale run_id.
-          try {
-            const rawIndex = await fetchDrawingPackageIndex(intelligenceRun.id);
-            if (!cancelled) {
+          // Fetch package index immediately without waiting for package intelligence
+          fetchDrawingPackageIndex(intelligenceRun.id)
+            .then((rawIndex) => {
+              if (cancelled) return;
               const currentState = stateRef.current;
               const mergeResult = validateAndMergeIndex({
                 activeRunId: intelligenceRun.id,
@@ -200,17 +214,29 @@ export function useBackendSync(projectId: string | null) {
                 incoming: rawIndex,
               });
               if (mergeResult.error) {
+                console.error('[INDEX SYNC ERROR] mergeResult:', mergeResult.error);
                 dispatch({ type: 'set-drawing-package-index-error', error: mergeResult.error });
               } else if (mergeResult.index) {
                 dispatch({ type: 'set-drawing-package-index', index: mergeResult.index, error: null });
               }
-            }
-          } catch (indexErr) {
-            if (!cancelled) {
+            })
+            .catch((indexErr) => {
+              if (cancelled) return;
               const msg = indexErr instanceof Error ? indexErr.message : String(indexErr);
+              console.error('[INDEX SYNC ERROR] fetch:', msg);
               dispatch({ type: 'set-drawing-package-index-error', error: `fetch failed: ${msg}` });
-            }
-          }
+            });
+
+          // Fetch package intelligence asynchronously
+          fetchPackageIntelligence(intelligenceRun.id)
+            .then((packageIntelligence) => {
+              if (!cancelled && packageIntelligence) {
+                dispatch({ type: 'analysis', patch: { packageIntelligence } });
+              }
+            })
+            .catch((err) => {
+              console.warn('[INTEL SYNC WARN]', err);
+            });
         }
 
         const findSheetIdForEvidence = (evidenceId: string | null): string | null => {
@@ -347,7 +373,7 @@ export function useBackendSync(projectId: string | null) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [projectId, state.files.length, state.upload.entries.length, state.upload.running, dispatch]);
+  }, [projectId]);
 
   useEffect(() => {
     const selected = state.mappedSheets.find((sheet) => sheet.id === state.activeSheetId);

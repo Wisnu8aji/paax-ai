@@ -270,6 +270,62 @@ describe('Case 5 — Independent filters intersect correctly', () => {
   });
 });
 
+// ── Case 5.1: Navigator search wired into primary index-backed path ──────
+
+describe('Case 5.1 — Navigator search wired into index-backed path', () => {
+  const entries = [
+    makeEntry(0, { level: 'ground', classification: 'plan', view: 'plan', revision: 'Rev-01', zone: 'Zone-A' }),
+    makeEntry(1, { level: 'roof', classification: 'elevation', view: 'side_view', revision: 'Rev-02', zone: 'Zone-B' }),
+    makeEntry(2, { level: 'basement', classification: 'section', view: 'cross_section', revision: 'Rev-03', zone: 'Zone-C' }),
+  ];
+
+  it('matches entry by sheet_code', () => {
+    const res = applyIndexFilters(entries, { search: 'S-1' });
+    expect(res.map(e => e.page_index)).toEqual([0]);
+  });
+
+  it('matches entry by sheet_title', () => {
+    const res = applyIndexFilters(entries, { search: 'Sheet 2' });
+    expect(res.map(e => e.page_index)).toEqual([1]);
+  });
+
+  it('matches entry by page_number', () => {
+    const res = applyIndexFilters(entries, { search: '3' });
+    expect(res.map(e => e.page_index)).toEqual([2]);
+  });
+
+  it('matches entry by level.value', () => {
+    const res = applyIndexFilters(entries, { search: 'roof' });
+    expect(res.map(e => e.page_index)).toEqual([1]);
+  });
+
+  it('matches entry by classification.value', () => {
+    const res = applyIndexFilters(entries, { search: 'section' });
+    expect(res.map(e => e.page_index)).toEqual([2]);
+  });
+
+  it('matches entry by view.value', () => {
+    const res = applyIndexFilters(entries, { search: 'side_view' });
+    expect(res.map(e => e.page_index)).toEqual([1]);
+  });
+
+  it('matches entry by revision.value', () => {
+    const res = applyIndexFilters(entries, { search: 'Rev-01' });
+    expect(res.map(e => e.page_index)).toEqual([0]);
+  });
+
+  it('matches entry by zone.value', () => {
+    const res = applyIndexFilters(entries, { search: 'Zone-C' });
+    expect(res.map(e => e.page_index)).toEqual([2]);
+  });
+
+  it('combines search and view/revision/zone filters deterministically', () => {
+    const res = applyIndexFilters(entries, { view: 'plan', search: 'Zone-A' });
+    expect(res.map(e => e.page_index)).toEqual([0]);
+  });
+});
+
+
 // ── Case 6: Unknown axis review reasons visible; manual review action exposed
 
 describe('Case 6 — Unknown axis review reasons remain visible', () => {

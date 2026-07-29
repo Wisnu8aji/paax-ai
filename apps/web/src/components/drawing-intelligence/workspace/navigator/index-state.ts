@@ -67,7 +67,10 @@ export function validateAndMergeIndex({
       ? (incoming as Record<string, unknown>)['run_id']
       : undefined;
 
-  if (typeof runId === 'string' && runId !== activeRunId) {
+  const cleanRunId = typeof runId === 'string' ? runId.replace(/^run-/, '') : undefined;
+  const cleanActiveId = activeRunId.replace(/^run-/, '');
+
+  if (cleanRunId && cleanRunId !== cleanActiveId) {
     return {
       index: prev,
       error: `stale: incoming run_id "${runId}" does not match active run "${activeRunId}"`,

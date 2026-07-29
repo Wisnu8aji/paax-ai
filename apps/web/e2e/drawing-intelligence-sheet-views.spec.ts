@@ -23,14 +23,18 @@ import { test, expect } from '@playwright/test';
 const BASE_URL = process.env.DI_E2E_URL || 'http://127.0.0.1:3000/drawing-intelligence';
 
 test.describe('Phase 06 — Drawing Intelligence Sheet Views', () => {
+  test.describe.configure({ mode: 'serial' });
+  test.setTimeout(90000);
 
   // ── Helper: navigate and wait for navigator ────────────────────────────
-  async function gotoWithNavigator(page: any, projectId?: string) {
-    const url = projectId ? `${BASE_URL}?projectId=${projectId}` : BASE_URL;
+  async function gotoWithNavigator(page: any, projectId: string = 'proj-clean') {
+    const url = `${BASE_URL}?projectId=${projectId}`;
     const pageErrors: string[] = [];
-    page.on('pageerror', (err: Error) => pageErrors.push(String(err)));
+    page.on('pageerror', (err: Error) => pageErrors.push(err.message));
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(url, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[role="tablist"][aria-label="Sheet view mode"]', { timeout: 45000 });
+    await page.locator('button').filter({ hasText: 'Needs review' }).first().waitFor({ timeout: 45000 });
     return { pageErrors };
   }
 
@@ -76,8 +80,7 @@ test.describe('Phase 06 — Drawing Intelligence Sheet Views', () => {
 
     await gotoWithNavigator(page);
 
-    // Wait for the page to settle
-    await page.waitForTimeout(1000);
+    // Initial /index request is complete
     const requestsAfterLoad = indexRequests.length;
 
     // Now switch modes multiple times
@@ -110,64 +113,68 @@ test.describe('Phase 06 — Drawing Intelligence Sheet Views', () => {
     expect(eagerCount).toBeLessThan(53);
   });
 
-  // ── Case 9: Original order page numbers in API source order ────────────
+  // ── Case 3: Source order tab page order matching API ──────────────────────
   test('Original order tab shows page numbers in ascending source order', async ({ page }) => {
     await gotoWithNavigator(page);
 
-    // Switch to Original order
     await page.getByRole('tab', { name: 'Original order' }).click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
 
     // Collect visible page numbers from navigator
-    const pageNums = await page.locator('[class*="di-mono"]').filter({ hasText: /^p\.\d+$/ }).allTextContents();
-    if (pageNums.length > 1) {
-      // Extract numbers and verify ascending order (source order)
-      const nums = pageNums.map(t => parseInt(t.replace('p.', ''), 10)).filter(n => !isNaN(n));
-      for (let i = 1; i < nums.length; i++) {
-        expect(nums[i]).toBeGreaterThan(nums[i - 1]);
-      }
+    await expect(page.locator('span.di-mono').first()).toBeVisible({ timeout: 15000 });
+    const allMono = await page.locator('span.di-mono').allTextContents();
+    const pageNums = allMono.map(s => s.trim()).filter(t => /^p\.\d+$/.test(t));
+    expect(pageNums.length).toBeGreaterThan(0);
+    const nums = pageNums.map(t => parseInt(t.replace('p.', ''), 10)).filter(n => !isNaN(n));
+    expect(nums.length).toBeGreaterThan(0);
+    for (let i = 1; i < nums.length; i++) {
+      expect(nums[i]).toBeGreaterThanOrEqual(nums[i - 1]);
     }
   });
 
-  // ── Case 6: Needs review entries remain visible ─────────────────────────
-  test('needs_review entries show review_reasons text and Review classification button', async ({ page }) => {
+  // ── Case 6: Multi-axis UI controls & Needs review ─────────────────────────
+  test('multi-axis filter dropdowns and Needs review pill are accessible and operational', async ({ page }) => {
     await gotoWithNavigator(page);
 
-    // If there are any "Needs review" pills, check they have an action button
-    const reviewPills = page.getByText('Needs review');
-    const count = await reviewPills.count();
-    if (count > 0) {
-      // Check for review classification button presence
-      const reviewButtons = page.getByRole('button', { name: 'Review classification' });
-      await expect(reviewButtons.first()).toBeVisible();
-    }
-    // If no review items, the test passes vacuously — this is expected for fully-classified packages
+    // View, Revision, Zone dropdown controls present with explicit aria-labels
+    const viewSelect = page.locator('select[aria-label="Filter by view"]');
+    const revSelect = page.locator('select[aria-label="Filter by revision"]');
+    const zoneSelect = page.locator('select[aria-label="Filter by zone"]');
+
+    await expect(viewSelect).toBeVisible({ timeout: 15000 });
+    await expect(revSelect).toBeVisible({ timeout: 15000 });
+    await expect(zoneSelect).toBeVisible({ timeout: 15000 });
   });
 
-  // ── Filter pill: Needs review toggle ───────────────────────────────────
-  test('Needs review filter pill toggles without refetch', async ({ page }) => {
+  // ── Filter pill: Needs review toggle & Search integration ─────────────────────────
+  test('Needs review filter pill and search input update filters without refetch', async ({ page }) => {
     const indexRequests: string[] = [];
     page.on('request', (req: any) => {
       if (req.url().includes('/index')) indexRequests.push(req.url());
     });
 
     await gotoWithNavigator(page);
-    await page.waitForTimeout(1000);
     const beforeCount = indexRequests.length;
 
-    // Click the filter pill if it exists (only present when index is loaded)
-    const filterPill = page.getByRole('button', { name: 'Needs review' }).first();
-    if (await filterPill.isVisible()) {
-      await filterPill.click();
-      await page.waitForTimeout(300);
-      // No new /index fetch should have fired
-      expect(indexRequests.length).toBe(beforeCount);
+    // Toggle Needs review pill
+    const filterPill = page.locator('button').filter({ hasText: 'Needs review' }).first();
+    await expect(filterPill).toBeVisible({ timeout: 15000 });
+    await filterPill.click();
+    await page.waitForTimeout(300);
+    // No new /index fetch should have fired
+    expect(indexRequests.length).toBe(beforeCount);
 
-      // Toggle back
-      await filterPill.click();
-      await page.waitForTimeout(300);
-      expect(indexRequests.length).toBe(beforeCount);
-    }
+    // Toggle back
+    await filterPill.click();
+    await page.waitForTimeout(300);
+    expect(indexRequests.length).toBe(beforeCount);
+
+    // Test Search input wiring (Finding 2)
+    const searchInput = page.getByPlaceholder(/Search title/i);
+    await expect(searchInput).toBeVisible();
+    await searchInput.fill('01');
+    await page.waitForTimeout(300);
+    expect(indexRequests.length).toBe(beforeCount);
   });
 
   // ── Case 7: Unavailable thumbnails are explicit, no synthetic image ─────

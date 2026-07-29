@@ -795,6 +795,7 @@ async def get_drawing_package_index(
     try:
         analysis = DrawingPackageAnalysis.model_validate_json(ARTIFACT_STORE.get(analysis_key))
         index = build_drawing_package_index(analysis)
+        index.run_id = run_id
     except ArtifactUnavailable:
         entries = [
             MultiAxisSheetEntry(

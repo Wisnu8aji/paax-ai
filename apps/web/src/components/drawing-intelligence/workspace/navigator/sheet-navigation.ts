@@ -128,16 +128,20 @@ export interface IndexFilter {
   status?: 'classified' | 'needs_review';
   level?: string;
   classification?: string;
+  search?: string;
 }
 
 /**
  * Apply independent optional filters to a list of MultiAxisSheetEntry-like
  * objects. Returns entries that satisfy ALL provided filters (intersection).
- * Clearing all filters returns the full set.
+ * Clearing all filters restores the full set.
  *
  * This function is synchronous and performs NO network requests.
  */
 export function applyIndexFilters<T extends {
+  sheet_code?: string;
+  sheet_title?: string;
+  page_number?: number;
   level: { value: string };
   view: { value: string };
   classification: { value: string };
@@ -153,6 +157,22 @@ export function applyIndexFilters<T extends {
     if (filters.zone && entry.zone.value !== filters.zone) return false;
     if (filters.status === 'needs_review' && !entry.needs_review) return false;
     if (filters.status === 'classified' && entry.needs_review) return false;
+    if (filters.search) {
+      const q = filters.search.trim().toLowerCase();
+      if (q) {
+        const matchesSearch = [
+          entry.sheet_code,
+          entry.sheet_title,
+          entry.page_number !== undefined ? String(entry.page_number) : undefined,
+          entry.level.value,
+          entry.classification.value,
+          entry.view.value,
+          entry.revision.value,
+          entry.zone.value,
+        ].some((val) => val && String(val).toLowerCase().includes(q));
+        if (!matchesSearch) return false;
+      }
+    }
     return true;
   });
 }
@@ -199,10 +219,10 @@ export function buildGroupsFromIndex(
 ): IndexSheetNavigationGroup[] {
   const filtered = applyIndexFilters(index.entries, filters);
 
-  // Build lookup: run_id + page_index → Sheet
+  const cleanIndexRunId = index.run_id.replace(/^run-/, '');
   const byPage = new Map<number, Sheet>(
     sheets
-      .filter((s) => s.runId === index.run_id)
+      .filter((s) => (s.runId ? s.runId.replace(/^run-/, '') === cleanIndexRunId : true))
       .map((s) => [s.pageIndex ?? s.pageNumber - 1, s]),
   );
 

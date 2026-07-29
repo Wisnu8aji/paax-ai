@@ -1034,6 +1034,7 @@ async def get_dem_run_status(id: str, db: AsyncSession = Depends(get_db), user: 
     pages = pages_result.scalars().all()
     return schemas.DemRunStatusResponse(
         id=run.id,
+        project_id=run.project_id,
         status=run.status,
         total_pages=run.total_pages,
         pages=pages,

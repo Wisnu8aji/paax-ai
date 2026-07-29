@@ -20,4 +20,20 @@ class MockDemAdapter:
     ) -> dict:
         if self.error is not None:
             raise self.error
+        if not self.response:
+            p = page_context.page_number
+            sheet_num = f"A-{p:02d}"
+            title = f"Sheet {p}"
+            return {
+                "sheet_identity": {
+                    "sheet_number": {"value": sheet_num, "confidence": 1.0},
+                    "title": {"value": title, "confidence": 1.0},
+                    "discipline": {"value": "Architectural", "confidence": 1.0, "status": "extracted"},
+                },
+                "completion": {
+                    "sections_expected": 1,
+                    "sections_completed": 1,
+                    "is_complete": True,
+                },
+            }
         return self.response

@@ -8,7 +8,7 @@ const DB_API_UPSTREAM_URL =
   process.env.NEXT_PUBLIC_DB_API_URL ||
   "http://127.0.0.1:8001";
 
-const INTERNAL_SERVICE_KEY = process.env.INTERNAL_SERVICE_KEY || "live-test-key";
+const INTERNAL_SERVICE_KEY = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "test" ? "test-internal-key" : "");
 
 type RouteContext = {
   params: Promise<{ path?: string[] }>;
@@ -27,8 +27,10 @@ async function proxyDbApi(request: Request, context: RouteContext): Promise<Resp
   const headers = new Headers();
   const contentType = request.headers.get("content-type");
   if (contentType) headers.set("content-type", contentType);
-  headers.set("X-Internal-Key", INTERNAL_SERVICE_KEY);
-  headers.set("X-User-Id", process.env.PAAX_PORTABLE_ACTOR_ID || "paax-web");
+  if (INTERNAL_SERVICE_KEY) {
+    headers.set("X-Internal-Key", INTERNAL_SERVICE_KEY);
+  }
+  headers.set("X-User-Id", process.env.PAAX_PORTABLE_ACTOR_ID?.trim() || "paax-web");
 
   const method = request.method.toUpperCase();
   const body = method === "GET" || method === "HEAD" ? undefined : await request.arrayBuffer();

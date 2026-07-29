@@ -25,6 +25,7 @@ class DemDbClient:
             base_url=self.base_url,
             transport=self._transport,
             headers=self._headers(),
+            timeout=httpx.Timeout(30.0, connect=30.0),
         )
 
     async def create_run(

@@ -401,6 +401,7 @@ class DemPageResponse(BaseModel):
 
 class DemRunStatusResponse(BaseModel):
     id: uuid.UUID
+    project_id: Optional[str] = None
     status: str
     total_pages: int
     pages: list[DemPageResponse]
