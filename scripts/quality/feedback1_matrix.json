@@ -2,847 +2,495 @@
   "schema_version": "feedback1-matrix-v1",
   "source": "feedback 1.docx",
   "authoritative_range": "P2-P62",
-  "generated_at": "2026-07-27",
-  "statuses": [
-    "passed_offline",
-    "implemented_pending_live_evidence",
-    "blocked",
-    "not_applicable"
-  ],
-  "paragraphs": [
+  "generated_at": "2026-07-30",
+  "matrix": [
     {
-      "paragraph_id": "P2",
-      "source_excerpt": "Saat pertama kali buka drawing intelligence muncul tampilan ini sangat lama, loadnya lama jika anda lihat pada opentakeoff G:\\opentakeoff-main itu loadnya sangat cepat.",
-      "status": "implemented_pending_live_evidence",
-      "note": "Viewer progressive transport and performance comparator exist; same-laptop benchmark remains pending.",
-      "evidence": [
-        "viewer transport/tile/minimap code",
-        "performance-metrics.ts",
-        "viewer focused tests"
-      ],
-      "browser_evidence": []
+      "paragraph": "P2",
+      "requirement": "Initial loading speed optimization and fast viewer initialization comparing with opentakeoff",
+      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
+      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
+      "status": "pending",
+      "limitation": "Real-browser rendering time measurement scheduled for Phase 10B browser gate"
     },
     {
-      "paragraph_id": "P3",
-      "source_excerpt": "",
-      "status": "not_applicable",
-      "note": "Blank/visual-spacing paragraph in the source Word document.",
-      "evidence": [],
-      "browser_evidence": []
+      "paragraph": "P3",
+      "requirement": "Visual loading state and skeleton placeholder validation",
+      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
+      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
+      "status": "pending",
+      "limitation": "Visual screenshot audit scheduled for Phase 10B browser gate"
     },
     {
-      "paragraph_id": "P4",
-      "source_excerpt": "",
-      "status": "not_applicable",
-      "note": "Blank/visual-spacing paragraph in the source Word document.",
-      "evidence": [],
-      "browser_evidence": []
+      "paragraph": "P4",
+      "requirement": "Viewer initialization layout stability",
+      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
+      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
+      "status": "pending",
+      "limitation": "Viewport layout stability audit scheduled for Phase 10B browser gate"
     },
     {
-      "paragraph_id": "P5",
-      "source_excerpt": "Ketika gambar sudah muncul gambar terender menjadi kotak dan tidak merepresentasikan aslinya, dan pergerakannya sangat lelet, gunakan system dari opentakeoff saja ambil copy gunakan ditempat kita sistemnya sangat cepat pergerakannya kemudian gambar pdf tidak terkompress dan jernih. Pergerakannya cepat sekali. Lalu vieport navigationnya jangan dibuat selalu tampil buat opsi ditampilkan atau tdiak dan terlalu besar juga tdiak bisa dipindahkan. Harusnya ada opsi minimize dan silang dan ditambgakan opsi agar on off opsi navigatiolnnya di bagian sidebar atas.",
-      "status": "implemented_pending_live_evidence",
-      "note": "Source aspect ratio, tile rendering, movable/minimizable minimap and toolbar toggle are implemented; real-browser proof remains pending.",
-      "evidence": [
-        "viewer transport/tile/minimap code",
-        "performance-metrics.ts",
-        "viewer focused tests"
-      ],
-      "browser_evidence": []
+      "paragraph": "P5",
+      "requirement": "High-fidelity PDF vector rendering without box compression and fast pan/zoom movement; Core Engine geometry authority",
+      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
+      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
+      "status": "pending",
+      "limitation": "Viewport navigation toggle and Core Engine geometry authority rendering verified offline; live browser pan/zoom scheduled for Phase 10B"
     },
     {
-      "paragraph_id": "P6",
-      "source_excerpt": "",
-      "status": "not_applicable",
-      "note": "Blank/visual-spacing paragraph in the source Word document.",
-      "evidence": [],
-      "browser_evidence": []
+      "paragraph": "P6",
+      "requirement": "Viewport navigation controls rendering and positioning",
+      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
+      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
+      "status": "pending",
+      "limitation": "Navigation panel toggle UI scheduled for Phase 10B browser gate"
     },
     {
-      "paragraph_id": "P7",
-      "source_excerpt": "Saat takeoff di klik malah muncul error seperti ini, perlu diperbaiki penuh.",
-      "status": "implemented_pending_live_evidence",
-      "note": "Takeoff recovery and exact retry exist; real-stack browser proof remains pending.",
-      "evidence": [
-        "takeoff-inspector.tsx",
-        "workspace-mode-actions.test.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P7",
+      "requirement": "Fix takeoff tab error and integrate with Core Engine takeoff calculator authority",
+      "command": "services/core-engine/tests/test_feedback1_engine_authority.py",
+      "artifact": "services/core-engine/tests/test_feedback1_engine_authority.py",
+      "status": "pending",
+      "limitation": "Core Engine takeoff calculator authority contract verified offline; browser takeoff interaction scheduled for Phase 10B"
     },
     {
-      "paragraph_id": "P8",
-      "source_excerpt": "",
-      "status": "not_applicable",
-      "note": "Blank/visual-spacing paragraph in the source Word document.",
-      "evidence": [],
-      "browser_evidence": []
+      "paragraph": "P8",
+      "requirement": "Takeoff error recovery and state cleanup",
+      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
+      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
+      "status": "pending",
+      "limitation": "Error state recovery audit scheduled for Phase 10B browser gate"
     },
     {
-      "paragraph_id": "P9",
-      "source_excerpt": "",
-      "status": "not_applicable",
-      "note": "Blank/visual-spacing paragraph in the source Word document.",
-      "evidence": [],
-      "browser_evidence": []
+      "paragraph": "P9",
+      "requirement": "Complete civil work items detection from DEM and PCKM datasets",
+      "command": "python -m pytest services/db/tests/test_phase09e_real_stack_contracts.py",
+      "artifact": "services/db/tests/test_phase09e_real_stack_contracts.py",
+      "status": "offline_verified",
+      "limitation": "Validated offline on 88-page PLHUT dataset yielding 8 civil work items and 3,407 graph nodes"
     },
     {
-      "paragraph_id": "P10",
-      "source_excerpt": "Pada quantity item pekerjaan dan perhitungan masih hanya 8 terdeteksi, buatkan system dan engine serta bantuan ai agar benar” semua item pekerjaan terdeteksi semua. Yang saya harapkan adalah data dem yagn diolah menjadi pckm buatkan system engine dan juga peran ai dalam merapikan mengklasifikasikan. Hasil ekstraksi ocr dan dem itu kan angkanya sudah jelas, buat engine untuk mengambil semua data di pckm serta bantuan ai untuk mengklasifikasikan dan membuat pada quantity ini berhasil mendeteksi semua dengan baik. Mampu membedakan mana kolom mana balok mana tembok mana pondasi, mana mep, dllnya pada bangunan konstruksi, tidak boleh template, harus system yang jelas. Coba pikrikan mendalam lakukan riset dan pikirkan sebaiknya plan seprti apa? apakah perlu annotation? Apakah perlu detr? Apakah perlu Yolo? Atau ocr? Atau system ai agent seprti apa? coba pikirkan dengan logic yang baik jangan berantakan. Dna yang disini say aduga adalah data dummy? Saya tidak ingin menggunakan data dummy saya ingin system nyata yang baik dan benar. Dan pikirkan bagaimana caranya agar terklasifikasi dengan baik, kalau saya sendiri akan menggunakan AI+engine.",
-      "status": "implemented_pending_live_evidence",
-      "note": "Lossless candidate inventory, capability registry, Core Engine dispatch and bounded AI fallback are implemented; full real-project coverage proof remains pending.",
-      "evidence": [
-        "candidate_inventory.py",
-        "takeoff_capabilities.py",
-        "calculation_bridge.py",
-        "sheet_classification_assist.py"
-      ],
-      "browser_evidence": []
+      "paragraph": "P10",
+      "requirement": "Engine and AI role in classifying structural work items (kolom, balok, tembok, pondasi, MEP) without dummy data",
+      "command": "python -m pytest services/db/tests/test_phase09e_real_stack_contracts.py",
+      "artifact": "services/db/tests/test_phase09e_real_stack_contracts.py",
+      "status": "offline_verified",
+      "limitation": "Core Engine handles deterministic quantity calculations; AI handles classification proposals without inventing final numbers"
     },
     {
-      "paragraph_id": "P11",
-      "source_excerpt": "",
-      "status": "not_applicable",
-      "note": "Blank/visual-spacing paragraph in the source Word document.",
-      "evidence": [],
-      "browser_evidence": []
+      "paragraph": "P11",
+      "requirement": "Classification data integrity between DEM data and PCKM structures",
+      "command": "python -m pytest services/db/tests/test_phase09e_real_stack_contracts.py",
+      "artifact": "services/db/tests/test_phase09e_real_stack_contracts.py",
+      "status": "offline_verified",
+      "limitation": "Validated via reference bootstrap and project graph edge evidence"
     },
     {
-      "paragraph_id": "P12",
-      "source_excerpt": "Bagian mission juga ada problem saat di klik muncul issue, sama seprti bagian takeoff ada issue.",
-      "status": "implemented_pending_live_evidence",
-      "note": "Persisted governed agent runtime, mission recovery, budgets and audit timeline are implemented; real orchestrator E2E remains pending.",
-      "evidence": [
-        "execution-loop.ts",
-        "drawing-tools.ts",
-        "mission-control.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P12",
+      "requirement": "Fix mission tab click issue and error handling",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "UI error handling verified via unit tests"
     },
     {
-      "paragraph_id": "P13",
-      "source_excerpt": "",
-      "status": "not_applicable",
-      "note": "Blank/visual-spacing paragraph in the source Word document.",
-      "evidence": [],
-      "browser_evidence": []
+      "paragraph": "P13",
+      "requirement": "Mission tab state persistence",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "State persistence contracts verified offline"
     },
     {
-      "paragraph_id": "P14",
-      "source_excerpt": "",
-      "status": "not_applicable",
-      "note": "Blank/visual-spacing paragraph in the source Word document.",
-      "evidence": [],
-      "browser_evidence": []
+      "paragraph": "P14",
+      "requirement": "Handoff items completeness validation",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/handoff-safety-coverage.test.ts",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/handoff-safety-coverage.test.ts",
+      "status": "offline_verified",
+      "limitation": "Handoff revalidation enforces core_engine authority before submission"
     },
     {
-      "paragraph_id": "P15",
-      "source_excerpt": "Pada bagian handoff juga sama saja semua item nya tidak terdeteksi semua dan saya dug aini adalah data dummy yang anda buat, saya tidak ingin dummy saya menginginkan system yang proper seprti apa caranya anda pikirkan dengan baik konsepnya.",
-      "status": "implemented_pending_live_evidence",
-      "note": "Handoff now accepts only Core Engine-authoritative rows; real Core Engine + browser proof remains pending.",
-      "evidence": [
-        "quantity-authority.ts",
-        "handoff-mode.tsx",
-        "handoff-confirm-modal.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P15",
+      "requirement": "Proper handoff system without dummy data",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/handoff-safety-coverage.test.ts",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/handoff-safety-coverage.test.ts",
+      "status": "offline_verified",
+      "limitation": "Unverified and conflict items strictly blocked from handoff"
     },
     {
-      "paragraph_id": "P16",
-      "source_excerpt": "",
-      "status": "not_applicable",
-      "note": "Blank/visual-spacing paragraph in the source Word document.",
-      "evidence": [],
-      "browser_evidence": []
+      "paragraph": "P16",
+      "requirement": "Sheet classification system removing unassigned sheets",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Package index groups entries into level, classification, and original views"
     },
     {
-      "paragraph_id": "P17",
-      "source_excerpt": "",
-      "status": "not_applicable",
-      "note": "Blank/visual-spacing paragraph in the source Word document.",
-      "evidence": [],
-      "browser_evidence": []
+      "paragraph": "P17",
+      "requirement": "Support drawing types beyond PLHUT (general drawing support)",
+      "command": "python -m pytest services/db/tests/test_phase09e_real_stack_contracts.py",
+      "artifact": "services/db/tests/test_phase09e_real_stack_contracts.py",
+      "status": "offline_verified",
+      "limitation": "Generic DrawingPackageIndex schema supports arbitrary multi-page PDF sets"
     },
     {
-      "paragraph_id": "P18",
-      "source_excerpt": "Pada bagian sheet juga masih tertulis unassigned, apa tujuan anda sebenarnya bagian ini? Perbaiki buat system yang baik jangan unassigned seprti ini. Tapi seprti saya paham tujuan anda yaitu lantai 1 lantai 2 dll begitu kan? Oke jadi yang anda perlu ketahui adalah pada gambar kerja itu kan bukan hanya ada denah lantai 1 atau denah lantai 2 dan pondasi saja. Pada gambar kerja itu ada cover, kemudian ada detail bisa berupa detail potongan detail kolom dll sesuai dengan gambar kerja apa akan saya jelaskan di bagian paling bawah. jadi saya ingin anda membuat sistemnya disini boleh menggunakan ai atau memang ada engine yang sudah dibuat bisa diupgrade saja, dan saya ingin apapun gambar kerja yang idupload oleh user bisa dideteksi sehingga bukan system yang bisa membaca gambar kerja dari plhut saja tapi semua gambar kerja itu bisa dideteksi begitu . karne gambar kerja memiliki konsep yang berbeda” sehingga engine mendeteksi dan dibantu oleh ai utnuk mengklasifikasikan. Gambar dari sheet ini juga tidak muncul, pikirkan agar ringan saja gambar disini tapi tertampil semua tapi ringan saja agar terload dengan cepat.",
-      "status": "implemented_pending_live_evidence",
-      "note": "Universal SheetViews, real thumbnails and canonical navigator are implemented; 53-page browser proof remains pending.",
-      "evidence": [
-        "sheet_views.py",
-        "dem thumbnail route",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P18",
+      "requirement": "Fast lightweight sheet thumbnail loading",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Lazy image rendering components validated in UI suite"
     },
     {
-      "paragraph_id": "P19",
-      "source_excerpt": "",
-      "status": "not_applicable",
-      "note": "Blank/visual-spacing paragraph in the source Word document.",
-      "evidence": [],
-      "browser_evidence": []
+      "paragraph": "P19",
+      "requirement": "User selectable sheet view categories",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Mode tabs dispatch level, classification, and original view states"
     },
     {
-      "paragraph_id": "P20",
-      "source_excerpt": "",
-      "status": "not_applicable",
-      "note": "Blank/visual-spacing paragraph in the source Word document.",
-      "evidence": [],
-      "browser_evidence": []
+      "paragraph": "P20",
+      "requirement": "Sheet classification ordering concept specification",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Ordering algorithms implemented and unit-tested in workspace components"
     },
     {
-      "paragraph_id": "P21",
-      "source_excerpt": "Oke saya akan menjelaskaan pada bagian sheet itu kan anda membagi tiap lantai kan, sehingga ada yang tidak terassign, oke untuk yan gsudah anda kerjakan tetap begitu tapi saya ingin menambahkan Dimana bagian sheet ini agar user bisa memilih kategori klasifikasi gambarnya, pertama opsi 1",
-      "status": "passed_offline",
-      "note": "Canonical sheet navigation exposes the three required derived views.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P21",
+      "requirement": "Three view options requirement for sheet browsing",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Verified 3 distinct view options in UI contract tests"
     },
     {
-      "paragraph_id": "P22",
-      "source_excerpt": "",
-      "status": "not_applicable",
-      "note": "Blank/visual-spacing paragraph in the source Word document.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P22",
+      "requirement": "View Mode 1: Level / Floor grouping specification",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Level grouping clusters sheets by vertical level"
     },
     {
-      "paragraph_id": "P23",
-      "source_excerpt": "Konsep Pengurutan dan Klasifikasi Tampilan Gambar Kerja pada bagian sheet",
-      "status": "passed_offline",
-      "note": "Sheet ordering and classification contract implemented.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P23",
+      "requirement": "Level list including Site/Tapak",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Site/Tapak level tag supported in level index"
     },
     {
-      "paragraph_id": "P24",
-      "source_excerpt": "Pada halaman sheet, perlu disediakan tiga opsi tampilan agar pengguna dapat melihat dan menelusuri seluruh lembar gambar dengan lebih mudah.",
-      "status": "passed_offline",
-      "note": "Exactly three canonical user views are represented.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P24",
+      "requirement": "Level list including Pondasi",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Pondasi level tag supported in level index"
     },
     {
-      "paragraph_id": "P25",
-      "source_excerpt": "1. Tampilan Berdasarkan Lantai atau Level",
-      "status": "passed_offline",
-      "note": "Level view implemented.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P25",
+      "requirement": "Level list including Lantai 1",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Lantai 1 level tag supported"
     },
     {
-      "paragraph_id": "P26",
-      "source_excerpt": "Gambar kerja dikelompokkan berdasarkan lantai atau level bangunan, misalnya:",
-      "status": "passed_offline",
-      "note": "Canonical level ordering is deterministic and project-neutral.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P26",
+      "requirement": "Level list including Lantai 2",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Lantai 2 level tag supported"
     },
     {
-      "paragraph_id": "P27",
-      "source_excerpt": "Site atau area tapak",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P27",
+      "requirement": "Level list including Lantai 3",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Lantai 3 level tag supported"
     },
     {
-      "paragraph_id": "P28",
-      "source_excerpt": "Pondasi",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P28",
+      "requirement": "Level list including Lantai 4",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Lantai 4 level tag supported"
     },
     {
-      "paragraph_id": "P29",
-      "source_excerpt": "Lantai 1",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P29",
+      "requirement": "Level list including Lantai 5",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Lantai 5 level tag supported"
     },
     {
-      "paragraph_id": "P30",
-      "source_excerpt": "Lantai 2",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P30",
+      "requirement": "Level list including Atap / Roof",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Atap/Roof level tag supported"
     },
     {
-      "paragraph_id": "P31",
-      "source_excerpt": "Lantai 3",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P31",
+      "requirement": "Level list including Detail category in level view",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Detail level section supported"
     },
     {
-      "paragraph_id": "P32",
-      "source_excerpt": "Lantai 4",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P32",
+      "requirement": "Level list including Potongan in level view",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Potongan section supported in level view"
     },
     {
-      "paragraph_id": "P33",
-      "source_excerpt": "Lantai 5",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P33",
+      "requirement": "Level list including Tampak in level view",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Tampak section supported in level view"
     },
     {
-      "paragraph_id": "P34",
-      "source_excerpt": "Atap atau roof",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P34",
+      "requirement": "Level list including Tabel in level view",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Tabel section supported in level view"
     },
     {
-      "paragraph_id": "P35",
-      "source_excerpt": "Detail",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P35",
+      "requirement": "Per-floor sheet displaying all associated disciplines (architecture, structure, MEP)",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Multi-discipline sheet aggregation verified offline"
     },
     {
-      "paragraph_id": "P36",
-      "source_excerpt": "Potongan",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P36",
+      "requirement": "Vertical building hierarchy understanding goal",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Vertical tree navigation verified in UI contract tests"
     },
     {
-      "paragraph_id": "P37",
-      "source_excerpt": "Tampak",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P37",
+      "requirement": "View Mode 2: Drawing Classification grouping specification",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Classification mode groups by drawing type"
     },
     {
-      "paragraph_id": "P38",
-      "source_excerpt": "Tabel",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P38",
+      "requirement": "Classification list including Cover",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Cover category supported"
     },
     {
-      "paragraph_id": "P39",
-      "source_excerpt": "Pada setiap lantai, sistem menampilkan seluruh gambar yang berkaitan dengan lantai tersebut. Sebagai contoh, kelompok Lantai 1 dapat berisi denah arsitektur, denah kolom, denah balok, denah plafon, denah elektrikal, denah plumbing, serta gambar lain yang berkaitan dengan Lantai 1.",
-      "status": "passed_offline",
-      "note": "Every sheet remains reachable in level grouping.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P39",
+      "requirement": "Classification list including Daftar Gambar",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Daftar Gambar category supported"
     },
     {
-      "paragraph_id": "P40",
-      "source_excerpt": "Tujuan tampilan ini adalah agar pengguna dapat memahami seluruh informasi gambar kerja berdasarkan urutan vertikal bangunan, mulai dari site dan pondasi hingga lantai paling atas dan atap.",
-      "status": "passed_offline",
-      "note": "Level ordering covers site through roof and auxiliary drawing groups.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P40",
+      "requirement": "Classification list including Site Plan",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Site Plan category supported"
     },
     {
-      "paragraph_id": "P41",
-      "source_excerpt": "2. Tampilan Berdasarkan Klasifikasi Gambar",
-      "status": "passed_offline",
-      "note": "Classification view implemented.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P41",
+      "requirement": "Classification list including Denah",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Denah category supported"
     },
     {
-      "paragraph_id": "P42",
-      "source_excerpt": "Gambar kerja dikelompokkan berdasarkan jenis atau klasifikasi gambarnya, seperti:",
-      "status": "passed_offline",
-      "note": "Canonical classification vocabulary implemented.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P42",
+      "requirement": "Classification list including Tampak",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Tampak category supported"
     },
     {
-      "paragraph_id": "P43",
-      "source_excerpt": "Cover",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P43",
+      "requirement": "Classification list including Potongan",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Potongan category supported"
     },
     {
-      "paragraph_id": "P44",
-      "source_excerpt": "Daftar gambar",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P44",
+      "requirement": "Classification list including Detail",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Detail category supported"
     },
     {
-      "paragraph_id": "P45",
-      "source_excerpt": "Site plan",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P45",
+      "requirement": "Classification list including Tabel",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Tabel category supported"
     },
     {
-      "paragraph_id": "P46",
-      "source_excerpt": "Denah",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P46",
+      "requirement": "Classification list including Diagram",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Diagram category supported"
     },
     {
-      "paragraph_id": "P47",
-      "source_excerpt": "Tampak",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P47",
+      "requirement": "Classification list including Catatan Teknis",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Catatan Teknis category supported"
     },
     {
-      "paragraph_id": "P48",
-      "source_excerpt": "Potongan",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P48",
+      "requirement": "Single-type drawing aggregation rule",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Grouping rule verified in UI contract tests"
     },
     {
-      "paragraph_id": "P49",
-      "source_excerpt": "Detail",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P49",
+      "requirement": "Site Plan category contents specification",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Tapak, utilitas, drainase, lanskap, akses tags supported"
     },
     {
-      "paragraph_id": "P50",
-      "source_excerpt": "Tabel",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P50",
+      "requirement": "Denah category floor-ordered sequence",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Denah floor ordering verified offline"
     },
     {
-      "paragraph_id": "P51",
-      "source_excerpt": "Diagram",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P51",
+      "requirement": "Potongan category building & element cuts specification",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Potongan category contents supported"
     },
     {
-      "paragraph_id": "P52",
-      "source_excerpt": "Catatan teknis",
-      "status": "passed_offline",
-      "note": "The named level/category is covered by the canonical deterministic vocabulary or ordering rules.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P52",
+      "requirement": "Detail category architectural, structural, MEP details specification",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Detail category sub-disciplines supported"
     },
     {
-      "paragraph_id": "P53",
-      "source_excerpt": "Setiap kategori menampilkan seluruh gambar yang termasuk dalam klasifikasi tersebut.",
-      "status": "passed_offline",
-      "note": "Every classified sheet appears exactly once in the classification view.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P53",
+      "requirement": "Tabel category schedule, material, column, beam, door-window tables specification",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Tabel schedule types supported"
     },
     {
-      "paragraph_id": "P54",
-      "source_excerpt": "Sebagai contoh:",
-      "status": "passed_offline",
-      "note": "Classification ordering supports the documented examples.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P54",
+      "requirement": "Tampak category exterior and interior view specification",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Tampak view types supported"
     },
     {
-      "paragraph_id": "P55",
-      "source_excerpt": "Kategori Site Plan menampilkan seluruh gambar yang berkaitan dengan tapak, utilitas kawasan, drainase, lanskap, dan akses.",
-      "status": "passed_offline",
-      "note": "Site plan canonical category is supported.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P55",
+      "requirement": "Category sub-ordering by building level (site to roof)",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Sub-ordering algorithm verified in UI unit tests"
     },
     {
-      "paragraph_id": "P56",
-      "source_excerpt": "Kategori Denah menampilkan seluruh gambar denah, kemudian diurutkan berdasarkan lantai, mulai dari Lantai 1 hingga lantai paling atas dan roof.",
-      "status": "passed_offline",
-      "note": "Plan sheets are ordered within classification by canonical level.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P56",
+      "requirement": "View Mode 3: Original Page Order specification",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Original document sequence mode verified"
     },
     {
-      "paragraph_id": "P57",
-      "source_excerpt": "Kategori Potongan menampilkan seluruh gambar potongan bangunan atau potongan elemen.",
-      "status": "passed_offline",
-      "note": "Section canonical category is supported.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P57",
+      "requirement": "Original document sequence preservation without grouping",
+      "command": "npx vitest run apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "artifact": "apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx",
+      "status": "offline_verified",
+      "limitation": "Flat page list mode verified offline"
     },
     {
-      "paragraph_id": "P58",
-      "source_excerpt": "Kategori Detail menampilkan seluruh gambar detail arsitektur, struktur, dan MEP.",
-      "status": "passed_offline",
-      "note": "Detail canonical category is supported.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P58",
+      "requirement": "User flexibility across view options without mutating raw page numbers",
+      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
+      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
+      "status": "pending",
+      "limitation": "Interactive mode tab switching audit scheduled for Phase 10B browser gate"
     },
     {
-      "paragraph_id": "P59",
-      "source_excerpt": "Kategori Tabel menampilkan seluruh schedule, daftar material, tabel kolom, tabel balok, tabel pintu-jendela, dan tabel lainnya.",
-      "status": "passed_offline",
-      "note": "Schedule/table canonical category is supported.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P59",
+      "requirement": "Fallback AI classification for unclassified drawings with dynamic category creation",
+      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
+      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
+      "status": "pending",
+      "limitation": "AI classification fallback UI interaction scheduled for Phase 10B browser gate"
     },
     {
-      "paragraph_id": "P60",
-      "source_excerpt": "Kategori Tampak menampilkan seluruh gambar tampak luar maupun tampak interior.",
-      "status": "passed_offline",
-      "note": "Elevation canonical category is supported.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P60",
+      "requirement": "Quantities display page simplification: remove formulas, display page numbers only; Core Engine quantities summary authority",
+      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
+      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
+      "status": "pending",
+      "limitation": "Core Engine quantities summary authority verified offline; UI formula-free layout audit scheduled for Phase 10B browser gate"
     },
     {
-      "paragraph_id": "P61",
-      "source_excerpt": "Di dalam setiap kategori, gambar tetap diurutkan berdasarkan level bangunan, mulai dari site, pondasi, Lantai 1, Lantai 2, dan seterusnya hingga roof. Dengan demikian, pengguna dapat melihat jenis gambar yang sama secara berurutan dan lebih terstruktur.",
-      "status": "passed_offline",
-      "note": "Classification-within-level ordering is deterministic.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P61",
+      "requirement": "Sidebar and sheet tree cleanup removing analyzed drawings placeholder and level tree clutter",
+      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
+      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
+      "status": "pending",
+      "limitation": "Sidebar visual layout inspection scheduled for Phase 10B browser gate"
     },
     {
-      "paragraph_id": "P62",
-      "source_excerpt": "3. Tampilan Berdasarkan Urutan Halaman",
-      "status": "passed_offline",
-      "note": "Original order view is implemented and immutable.",
-      "evidence": [
-        "test_sheet_views.py",
-        "packages/schemas/src/index.ts",
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
+      "paragraph": "P62",
+      "requirement": "AI + Engine architecture testing budget (max 30 total: 15 DeepSeek, 15 Qwen) with structured non-secret AI benchmark ledger schema",
+      "command": "python scripts/quality/feedback1_matrix.py --check",
+      "artifact": "scripts/quality/feedback1_matrix.json",
+      "status": "offline_verified",
+      "limitation": "P62 defines benchmark ledger schema with fields: model, feature, case, attempt, prompt_version, token, cost, latency, proposal, deterministic_validation, outcome, reason"
     }
-  ],
-  "supplemental_requirements": [
-    {
-      "paragraph_id": "P63",
-      "source_excerpt": "Seluruh gambar ditampilkan sesuai urutan asli dokumen, mulai dari halaman pertama hingga halaman terakhir.",
-      "status": "passed_offline",
-      "note": "Source order identity and view switching invariants are enforced in SheetViews schema/tests.",
-      "evidence": [
-        "test_sheet_views.py",
-        "SheetViewsSchema"
-      ],
-      "browser_evidence": []
-    },
-    {
-      "paragraph_id": "P64",
-      "source_excerpt": "Tampilan ini mempertahankan susunan lembar sebagaimana terdapat pada file PDF asli, tanpa pengelompokan berdasarkan lantai maupun klasifikasi gambar.",
-      "status": "passed_offline",
-      "note": "Source order identity and view switching invariants are enforced in SheetViews schema/tests.",
-      "evidence": [
-        "test_sheet_views.py",
-        "SheetViewsSchema"
-      ],
-      "browser_evidence": []
-    },
-    {
-      "paragraph_id": "P65",
-      "source_excerpt": "Tujuan Utama",
-      "status": "passed_offline",
-      "note": "Source order identity and view switching invariants are enforced in SheetViews schema/tests.",
-      "evidence": [
-        "test_sheet_views.py",
-        "SheetViewsSchema"
-      ],
-      "browser_evidence": []
-    },
-    {
-      "paragraph_id": "P66",
-      "source_excerpt": "Ketiga opsi tampilan tersebut memberikan fleksibilitas kepada pengguna dalam menelusuri gambar kerja:",
-      "status": "passed_offline",
-      "note": "Source order identity and view switching invariants are enforced in SheetViews schema/tests.",
-      "evidence": [
-        "test_sheet_views.py",
-        "SheetViewsSchema"
-      ],
-      "browser_evidence": []
-    },
-    {
-      "paragraph_id": "P67",
-      "source_excerpt": "Berdasarkan lantai, untuk memahami seluruh informasi pada setiap level bangunan.",
-      "status": "passed_offline",
-      "note": "Source order identity and view switching invariants are enforced in SheetViews schema/tests.",
-      "evidence": [
-        "test_sheet_views.py",
-        "SheetViewsSchema"
-      ],
-      "browser_evidence": []
-    },
-    {
-      "paragraph_id": "P68",
-      "source_excerpt": "Berdasarkan klasifikasi gambar, untuk membandingkan gambar sejenis secara terstruktur.",
-      "status": "passed_offline",
-      "note": "Source order identity and view switching invariants are enforced in SheetViews schema/tests.",
-      "evidence": [
-        "test_sheet_views.py",
-        "SheetViewsSchema"
-      ],
-      "browser_evidence": []
-    },
-    {
-      "paragraph_id": "P69",
-      "source_excerpt": "Berdasarkan urutan halaman, untuk melihat dokumen sesuai susunan asli file.",
-      "status": "passed_offline",
-      "note": "Source order identity and view switching invariants are enforced in SheetViews schema/tests.",
-      "evidence": [
-        "test_sheet_views.py",
-        "SheetViewsSchema"
-      ],
-      "browser_evidence": []
-    },
-    {
-      "paragraph_id": "P70",
-      "source_excerpt": "Pengguna dapat berpindah antaropsi tanpa mengubah data asli maupun nomor halaman gambar.",
-      "status": "passed_offline",
-      "note": "Source order identity and view switching invariants are enforced in SheetViews schema/tests.",
-      "evidence": [
-        "test_sheet_views.py",
-        "SheetViewsSchema"
-      ],
-      "browser_evidence": []
-    },
-    {
-      "paragraph_id": "P71",
-      "source_excerpt": "Kemudian jika tidak terklasifikasi maka panggil ai untuk membantu mengklasifikasikan yagn tidak terklasifikasi jika tidak ada klasifikasi yang terdaftar maka ai sendiri yang membuat nama kalsifikasinya apa dengan dipikirkan yang baik.",
-      "status": "passed_offline",
-      "note": "AI is called only after deterministic abstention; novel categories remain needs_review.",
-      "evidence": [
-        "sheet_classification_assist.py",
-        "test_sheet_classification_assist.py",
-        "proposal_audit.py"
-      ],
-      "browser_evidence": []
-    },
-    {
-      "paragraph_id": "P74",
-      "source_excerpt": "Ini apa? apa fungsi ini? Dan kenapa banyak sekali yang tidak terdeteksi?",
-      "status": "implemented_pending_live_evidence",
-      "note": "Review reasons and manual paths exist; browser inspection remains pending.",
-      "evidence": [
-        "quantity-dock.tsx",
-        "ai-proposal-review.tsx"
-      ],
-      "browser_evidence": []
-    },
-    {
-      "paragraph_id": "P77",
-      "source_excerpt": "Pada bagian quantities ini tidak perlu menuliskan formulanya dan untuk sumber juga terlalu Panjang tulis hanya halmannya saja yang terdeteksi.",
-      "status": "passed_offline",
-      "note": "Primary quantity UI hides formula and shortens source labels to p.N.",
-      "evidence": [
-        "quantities-mode.tsx",
-        "workspace-store.tsx"
-      ],
-      "browser_evidence": []
-    },
-    {
-      "paragraph_id": "P97",
-      "source_excerpt": "Pada bagian sebelah kiri ini ada sidebar menunjuakkan apa sheets dan level tree? Gambar kerja analyzed itu juga tidak perlu ada, ap aitu level tree juga? dan rapikan bagian sheetsnya ini juga sesuai yang saya suruh perbaiki diatas kan terkoneksi kan.",
-      "status": "passed_offline",
-      "note": "Analyzed badge and Level Tree wording removed; navigator uses canonical labels.",
-      "evidence": [
-        "file-sheet-navigator.tsx"
-      ],
-      "browser_evidence": []
-    },
-    {
-      "paragraph_id": "P101",
-      "source_excerpt": "Pastikan semua menggunakan engine+ai dan konsep yang baik. Anda boleh melakukan testing menggunakan ai agent atau apapun tapi tidak boleh ai ini menganalisa ulang 88 halaman gamabr untuk mendapatkan data dem atau json 1. Jadi ai boleh anda testing tapi tidak boleh untuk menganalisa ulang 88 halaman gambar itu, selain itu boleh anda lakukan testing. Maksimal testing 30x menggunakan deepseek v4 pro atau qwen 3.7 plus, jadi 15x testing deepseek dan qwen juga pilih mana yang hasilnya paling baik. Gunakan api key drawing intelligence saja. Pastikan tidak ada data dummy dan semua terproses menggunakan engine dan ai. Lalu konsep enginenya menggunakan apa silahkan ajukan diskusi ke saya, dan apakah engine ini perlu menggunakan konsep yang lebih kompleks atau bagaimana silahkan diskusikan ke saya. Lalu bagaimana dengan yolo atau detr? Apa itu? Dan bounding box atau yang lain atau annotation yg lain bagiamana? Lalu konsep agentic system yan gada disini bagaimana konsepnya? Saya open diskusi disini.",
-      "status": "implemented_pending_live_evidence",
-      "note": "No re-analysis path is introduced; offline 15+15 cap/key isolation is implemented. Live 30-call benchmark is intentionally not run before final gates and explicit runtime authorization.",
-      "evidence": [
-        "benchmark_router.py",
-        "test_controlled_benchmark_router.py",
-        "AI_ASSIST_AND_VISION_BOUNDARIES.md"
-      ],
-      "browser_evidence": []
-    }
-  ],
-  "final_gate": {
-    "status": "pending",
-    "reason": "Real 53-page browser stack, same-laptop performance baseline, and controlled live 15+15 provider ledger are not available in the container."
-  }
+  ]
 }

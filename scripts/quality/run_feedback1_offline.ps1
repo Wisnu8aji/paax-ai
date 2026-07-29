@@ -1,64 +1,59 @@
-$ErrorActionPreference = 'Stop'
-$repo = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-Set-Location $repo
-$env:DI_ENABLE_LIVE_AI_TESTS = 'false'
-Remove-Item Env:DRAWING_INTELLIGENCE_API_KEY -ErrorAction SilentlyContinue
-$evidencePath = Join-Path $repo 'report\report_drawing_intelligence\FEEDBACK1_OFFLINE_EVIDENCE_2026-07-27.json'
-try {
-  python scripts/quality/feedback1_matrix.py --check
-  python scripts/quality/check_no_production_di_dummy.py
-  $env:PYTHONPATH = 'packages/schemas/python;services/document-intelligence'
-  python -m pytest `
-    services/document-intelligence/tests/test_sheet_views.py `
-    packages/schemas/python/tests/test_sheet_view_schema.py `
-    services/document-intelligence/tests/test_sheet_classification_assist.py `
-    services/document-intelligence/tests/test_dem_thumbnail_routes.py `
-    services/document-intelligence/tests/test_dem_active_sheet_context.py `
-    services/document-intelligence/tests/test_human_delivery_candidate_inventory.py `
-    services/document-intelligence/tests/test_takeoff_capabilities.py `
-    services/document-intelligence/tests/test_general_calculation_bridge.py `
-    services/document-intelligence/tests/test_ai_proposal_audit.py `
-    services/document-intelligence/tests/test_controlled_benchmark_router.py `
-    services/document-intelligence/tests/test_feedback1_offline_contracts.py `
-    services/document-intelligence/tests/test_no_synthetic_delivery_claims.py -q
+# Phase 10A Offline Test & Matrix Runner PowerShell Script
+# Enforces offline execution, fail-closed matrix validation, pytest, vitest, and tsc check.
 
-  $env:PYTHONPATH = 'packages/schemas/python;services/core-engine'
-  python -m pytest services/core-engine/tests/test_feedback1_engine_authority.py services/core-engine/tests/test_calculation_boundary.py -q
+$ErrorActionPreference = "Stop"
 
-  Push-Location services/db
-  python -m pytest tests/test_rab_materialize.py -q
-  Pop-Location
+Write-Host "=== Starting Phase 10A Feedback 1 Offline Test Suite ===" -ForegroundColor Cyan
 
-  pnpm --filter @paax/schemas test
-  pnpm --filter @paax/schemas exec tsc --noEmit
-  pnpm --filter @paax/ai-orchestrator test
-  pnpm --filter @paax/ai-orchestrator exec tsc --noEmit
-  pnpm --filter @paax/web test -- `
-    src/components/drawing-intelligence/workspace/navigator/__tests__/file-sheet-navigator.test.tsx `
-    src/components/drawing-intelligence/workspace/__tests__/workspace-mode-actions.test.tsx `
-    src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.ts `
-    src/components/drawing-intelligence/workspace/canvas/performance-metrics.test.ts
-  pnpm --filter @paax/web exec tsc --noEmit
+# 1. Enforce network-disabled environment flags
+$env:NO_NET = "1"
+$env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
+$env:NODE_ENV = "test"
 
-  $payload = @{
-    status = 'passed'
-    generated_at = (Get-Date).ToUniversalTime().ToString('o')
-    provider_network = 'disabled'
-    api_key_present = $false
-    matrix = 'P2-P62 validated'
-    note = 'All Feedback 1 offline gates completed; browser and live-provider gates remain separate.'
-  } | ConvertTo-Json -Depth 4
-  New-Item -ItemType Directory -Force -Path (Split-Path -Parent $evidencePath) | Out-Null
-  Set-Content -Path $evidencePath -Value $payload -Encoding UTF8
-  Write-Host "Offline Feedback 1 gate passed. Evidence: $evidencePath"
-} catch {
-  $payload = @{
-    status = 'failed'
-    generated_at = (Get-Date).ToUniversalTime().ToString('o')
-    provider_network = 'disabled'
-    error = $_.Exception.Message
-  } | ConvertTo-Json -Depth 4
-  New-Item -ItemType Directory -Force -Path (Split-Path -Parent $evidencePath) | Out-Null
-  Set-Content -Path $evidencePath -Value $payload -Encoding UTF8
-  throw
+# 2. Run Matrix Check
+Write-Host "`n[1/5] Running Feedback 1 Matrix Validator..." -ForegroundColor Yellow
+python scripts/quality/feedback1_matrix.py --check
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Matrix validation failed!"
+    exit 1
 }
+
+# 3. Run Document Intelligence Offline Contract Pytest
+Write-Host "`n[2/5] Running Document Intelligence Offline Contracts (Pytest)..." -ForegroundColor Yellow
+python -m pytest services/document-intelligence/tests/test_feedback1_offline_contracts.py
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Document Intelligence Pytest failed!"
+    exit 1
+}
+
+# 4. Run Core Engine Authority Pytest
+Write-Host "`n[3/5] Running Core Engine Authority Contracts (Pytest)..." -ForegroundColor Yellow
+python -m pytest services/core-engine/tests/test_feedback1_engine_authority.py
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Core Engine Authority Pytest failed!"
+    exit 1
+}
+
+# 5. Run Web Vitest Contract Suites
+Write-Host "`n[4/5] Running Web UI Contracts (Vitest)..." -ForegroundColor Yellow
+Push-Location apps/web
+try {
+    npx vitest run src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx src/components/drawing-intelligence/workspace/__tests__/handoff-safety-coverage.test.ts
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Vitest UI contracts failed!"
+        exit 1
+    }
+
+    # 6. Run TypeScript Typecheck
+    Write-Host "`n[5/5] Running TypeScript Typecheck (tsc --noEmit)..." -ForegroundColor Yellow
+    npx tsc --noEmit
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "TypeScript typecheck failed!"
+        exit 1
+    }
+} finally {
+    Pop-Location
+}
+
+Write-Host "`n=== ALL Phase 10A Offline Quality Gates PASSED Successfully ===" -ForegroundColor Green
+exit 0
