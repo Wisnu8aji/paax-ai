@@ -1,14 +1,33 @@
 import type { ApprovalRequest } from './approval-service';
+import {
+  authorizeQuantityAction as authorizeQuantityActionGov,
+  type QuantityActionSpec,
+  type ApprovalTokenContext,
+  type BudgetContext,
+  type QuantityPolicyDecision as GovQuantityPolicyDecision,
+} from './quantity-tool-policy';
 
 export type QuantityPolicyDecision = 'allowed' | 'waiting_approval' | 'blocked';
 
-export function authorizeQuantityAction(input: {
-  action: string;
-  actorRoles: string[];
-  approval?: ApprovalRequest;
-  budgetRemaining: { toolCalls: number; tokens: number; costUsd: number; durationMs: number };
-  nowMs?: number;
-}): QuantityPolicyDecision {
+export function authorizeQuantityAction(
+  actionOrInput:
+    | QuantityActionSpec
+    | {
+        action: string;
+        actorRoles: string[];
+        approval?: ApprovalRequest;
+        budgetRemaining: { toolCalls: number; tokens: number; costUsd: number; durationMs: number };
+        nowMs?: number;
+      },
+  approvalToken?: ApprovalTokenContext,
+  budget?: BudgetContext,
+  nowMs?: number
+): QuantityPolicyDecision | GovQuantityPolicyDecision {
+  if ('toolName' in actionOrInput) {
+    return authorizeQuantityActionGov(actionOrInput, approvalToken, budget, nowMs);
+  }
+
+  const input = actionOrInput;
   const now = input.nowMs ?? Date.now();
   if (Object.values(input.budgetRemaining).some((value) => !Number.isFinite(value) || value < 0)) return 'blocked';
   const approval = input.approval;
@@ -18,3 +37,5 @@ export function authorizeQuantityAction(input: {
   if (approval.riskTier !== 'R3' && approval.riskTier !== 'R4') return 'blocked';
   return 'allowed';
 }
+
+export * from './quantity-tool-policy';

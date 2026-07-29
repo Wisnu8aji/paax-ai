@@ -15,7 +15,11 @@ export * from './security';
 export * from './evaluation';
 export * from './mature-orchestrator';
 export * from './budget-sandbox';
+export * from './idempotency';
+export * from './scoped-tools';
+export * from './core-engine-tool';
 
 export * from './drawing-tools';
 export * from './execution-loop';
 export * from './quantity-policy';
+export * from './quantity-tool-policy';
