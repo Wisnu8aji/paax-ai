@@ -1,0 +1,92 @@
+[
+  {
+    "case_id": "di-case-001-sheet-classification",
+    "prompt_version": "di-assist-v1.0",
+    "provenance_hash": "sha256:7b4151c7ec7c87588b1c858cb0fb77ffdeca550ecb4c041714b3643ecd4b4510:page_1",
+    "extracted_text": [
+      "DENAH LANTAI 1",
+      "SKALA 1:100",
+      "PROYEK PEMBANGUNAN GEDUNG A"
+    ],
+    "bbox_evidence": [
+      {
+        "evidence_ref": "ev-title-01",
+        "bbox": [50.0, 750.0, 300.0, 780.0]
+      }
+    ],
+    "allowed_fields": ["classification_key", "evidence_refs", "source_texts"],
+    "allowed_vocabulary": ["cover", "drawing_list", "site_plan", "plan", "elevation", "section", "detail", "schedule", "diagram", "technical_note"]
+  },
+  {
+    "case_id": "di-case-002-kusen-binding",
+    "prompt_version": "di-assist-v1.0",
+    "provenance_hash": "sha256:7b4151c7ec7c87588b1c858cb0fb77ffdeca550ecb4c041714b3643ecd4b4510:page_12",
+    "extracted_text": [
+      "SCHEDULE KUSEN PINTU DAN JENDELA",
+      "P1: KUSEN ALUMUNIUM 4 INCH, UKURAN 90x210 CM",
+      "J1: KUSEN ALUMUNIUM 4 INCH, UKURAN 120x150 CM"
+    ],
+    "bbox_evidence": [
+      {
+        "evidence_ref": "ev-kusen-01",
+        "bbox": [100.0, 200.0, 500.0, 250.0]
+      }
+    ],
+    "allowed_fields": ["kusen_mark", "material", "width_cm", "height_cm", "evidence_refs", "source_texts"],
+    "allowed_vocabulary": ["P1", "P2", "J1", "J2", "ALUMUNIUM", "KAYU"]
+  },
+  {
+    "case_id": "di-case-003-roof-truss-binding",
+    "prompt_version": "di-assist-v1.0",
+    "provenance_hash": "sha256:7b4151c7ec7c87588b1c858cb0fb77ffdeca550ecb4c041714b3643ecd4b4510:page_25",
+    "extracted_text": [
+      "DETAIL KUDA-KUDA BAJA WF 200.100.5.8",
+      "GORDING CNP 125.50.20.2.3",
+      "PANJANG KUDA-KUDA 12.00 M"
+    ],
+    "bbox_evidence": [
+      {
+        "evidence_ref": "ev-roof-01",
+        "bbox": [120.0, 300.0, 480.0, 360.0]
+      }
+    ],
+    "allowed_fields": ["profile_designation", "weight_kg_per_m", "span_m", "evidence_refs", "source_texts"],
+    "allowed_vocabulary": ["WF 200.100.5.8", "CNP 125.50.20.2.3", "L 50.50.5"]
+  },
+  {
+    "case_id": "di-case-004-architectural-finish",
+    "prompt_version": "di-assist-v1.0",
+    "provenance_hash": "sha256:7b4151c7ec7c87588b1c858cb0fb77ffdeca550ecb4c041714b3643ecd4b4510:page_30",
+    "extracted_text": [
+      "FINISHING LANTAI KERAMIK 60x60 HOMOGENEOUS TILE",
+      "FINISHING DINDING CAT EMULSI",
+      "PLAFON GYPSUM BOARD 9MM"
+    ],
+    "bbox_evidence": [
+      {
+        "evidence_ref": "ev-arch-01",
+        "bbox": [80.0, 100.0, 400.0, 180.0]
+      }
+    ],
+    "allowed_fields": ["finish_type", "material_spec", "evidence_refs", "source_texts"],
+    "allowed_vocabulary": ["keramik", "cat_emulsi", "gypsum", "waterproofing"]
+  },
+  {
+    "case_id": "di-case-005-mep-fixture-count",
+    "prompt_version": "di-assist-v1.0",
+    "provenance_hash": "sha256:7b4151c7ec7c87588b1c858cb0fb77ffdeca550ecb4c041714b3643ecd4b4510:page_42",
+    "extracted_text": [
+      "DIAGRAM TITIK LAMPU DOWNLIGHT LED 15W",
+      "STOP KONTAK DINDING 220V / 16A",
+      "SAKLAR GANDA"
+    ],
+    "bbox_evidence": [
+      {
+        "evidence_ref": "ev-mep-01",
+        "bbox": [150.0, 400.0, 550.0, 460.0]
+      }
+    ],
+    "allowed_fields": ["fixture_type", "specification", "evidence_refs", "source_texts"],
+    "allowed_vocabulary": ["downlight_led", "stop_kontak", "saklar_ganda", "saklar_tunggal"]
+  }
+]
