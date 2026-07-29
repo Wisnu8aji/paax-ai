@@ -1,0 +1,44 @@
+# Phase 10A Feedback 1 Offline Matrix Feedback Report
+
+- **PHASE:** Phase 10A / Task 1: Offline matrix and fixture integrity
+- **STATUS:** DONE
+- **MODEL:** Gemini 3.6 Flash High Thinking
+- **WORKTREE:** `G:\paax-ai-contextual-integration`
+- **BRANCH:** `codex/contextual-intelligence-integration`
+- **BASE COMMIT:** `fe1e02b7cf516d521324de15e44f761028072f1e`
+- **IMPLEMENTATION COMMIT:** `efc0e8b1`
+- **FEEDBACK COMMIT:** (Separate feedback commit; post-feedback HEAD/remote is reported in terminal response after push)
+- **POST-FEEDBACK HEAD/REMOTE:** (Reported in terminal response after push)
+- **WORD AUDIT EVIDENCE:** Parsed full text and tables from `G:\REVISI\feedback 1.docx` (103 paragraphs), mapping P2 through P62 losslessly.
+- **IMPLEMENTED:**
+  - `scripts/quality/feedback1_matrix.json` (Lossless audit matrix for P2..P62)
+  - `scripts/quality/feedback1_matrix.py` (Fail-closed validator CLI supporting `--check`)
+  - `scripts/quality/run_feedback1_offline.ps1` (Offline PowerShell test runner enforcing `NO_NET=1`)
+  - `services/document-intelligence/tests/test_feedback1_offline_contracts.py` (Matrix schema & contract pytest suite)
+  - `services/core-engine/tests/test_feedback1_engine_authority.py` (Core Engine authority mapping tests)
+  - `apps/web/src/components/drawing-intelligence/workspace/__tests__/feedback1-ui-contracts.test.tsx` (UI view modes & quantity authority Vitest suite)
+- **RED TEST EVIDENCE:**
+  - `test_feedback1_offline_contracts.py` failed 6/6 tests against empty/missing matrix baseline, establishing required fail-closed RED verification before implementation.
+- **GREEN TEST EVIDENCE:**
+  - Feedback 1 Matrix Validator: `[SUCCESS] Feedback 1 Matrix verified: 61 entries (P2..P62 lossless coverage)`
+  - Document Intelligence Pytest: `6 passed in 0.40s`
+  - Core Engine Authority Pytest: `2 passed in 0.34s`
+  - Web UI Contracts (Vitest): `6 passed in 853ms`
+- **TYPECHECK EVIDENCE:**
+  - `npx tsc --noEmit` in `apps/web`: Exited with code 0 (0 errors).
+- **MATRIX COVERAGE:**
+  - Lossless coverage for P2-P62 including ranges P9-P27, P28-P48, P49-P57. Fail-closed validator enforces non-empty commands/artifacts, valid status, required limitations, and artifact path existence.
+- **ENGINE AUTHORITY EVIDENCE:**
+  - Explicit Core Engine quantity authority mappings established for P5 (geometry/rendering authority), P7 (takeoff calculation authority), and P60 (quantities summary authority).
+- **NETWORK-DISABLED EVIDENCE:**
+  - `run_feedback1_offline.ps1` explicitly sets `NO_NET=1` and `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`. Zero external network calls or live AI provider requests executed during Phase 10A.
+- **SECURITY/SECRET SCAN:**
+  - Verified no secret keys, environment tokens, or database binaries (`portable.sqlite`) are staged or committed. `.env` and `.sqlite` files ignored by `.gitignore`.
+- **PROCESS CLEANUP:**
+  - Executed process check via `stop_phase09e_stack.ps1`. Ports 3000, 8000, 8001, and 8002 confirmed clean and free.
+- **REMAINING CONCERNS:**
+  - None for Phase 10A. Browser visual evidence for P2-P8 and P59-P61 is marked `pending`/`blocked` as required until Phase 10B E2E browser gate execution.
+- **NEXT RECOMMENDED ACTION:**
+  - Await user prompt/authorization for Phase 10B execution (Real service and browser quality gate). Phase 11 remains locked.
+- **QUOTA STATUS:**
+  - Nominal. No quota errors encountered.
