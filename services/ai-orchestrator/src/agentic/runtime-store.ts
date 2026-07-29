@@ -5,7 +5,7 @@ import type { MatureAgentRun, MatureRunStatus } from './runtime-types';
 const TERMINAL: MatureRunStatus[] = ['failed', 'completed', 'cancelled'];
 const TRANSITIONS: Record<MatureRunStatus, MatureRunStatus[]> = {
   queued: ['planning', 'cancelled'],
-  planning: ['running', 'blocked', 'failed', 'cancelled'],
+  planning: ['running', 'waiting_approval', 'blocked', 'failed', 'cancelled'],
   running: ['waiting_tool', 'waiting_approval', 'blocked', 'paused', 'failed', 'completed', 'cancelled'],
   waiting_tool: ['running', 'blocked', 'failed', 'cancelled'],
   waiting_approval: ['running', 'blocked', 'cancelled'],

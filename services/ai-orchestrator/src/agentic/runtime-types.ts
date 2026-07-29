@@ -15,6 +15,21 @@ export interface GoalSpec {
   binding: ProjectContextBinding;
 }
 
+export interface AgentActionRecord {
+  actionId: string;
+  idempotencyKey: string;
+  riskTier: 'low' | 'medium' | 'high' | 'critical';
+  approvalId?: string;
+  budgetBefore?: { toolCalls: number; tokens: number; costUsd: number; startedAtMs: number };
+  budgetAfter?: { toolCalls: number; tokens: number; costUsd: number; startedAtMs: number };
+  inputHash: string;
+  outputHash?: string;
+  status: 'queued' | 'running' | 'succeeded' | 'failed' | 'waiting_approval' | 'replayed';
+  createdAt: string;
+  completedAt?: string;
+  error?: string;
+}
+
 export interface ToolInvocationRecord {
   invocationId: string;
   taskId: string;
@@ -55,6 +70,7 @@ export interface MatureAgentRun {
   completedTaskIds: string[];
   failedTaskIds: string[];
   invocations: ToolInvocationRecord[];
+  actionRecords?: AgentActionRecord[];
   observations: AgentObservation[];
   artifacts: AgentArtifact[];
   pendingApprovalIds: string[];
