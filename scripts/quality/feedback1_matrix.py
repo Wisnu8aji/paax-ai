@@ -71,13 +71,13 @@ def validate_matrix(matrix_path: pathlib.Path) -> bool:
                 print(f"[ERROR] Entry {p_id} status is '{status}' but artifact file does not exist: {art_path}")
                 return False
 
-    # 3. Phase 10A Browser placeholders check (P2..P8 and P59..P61 must be pending/blocked)
+    # 3. Phase 10B Browser placeholders check (P2..P8 and P59..P61 accept passed when artifact exists)
     browser_placeholders = [f"P{i}" for i in range(2, 9)] + [f"P{i}" for i in range(59, 62)]
     for p_id in browser_placeholders:
         entry = matrix_map.get(p_id, {})
         st = entry.get("status")
-        if st not in {"pending", "blocked"}:
-            print(f"[ERROR] Phase 10A browser placeholder {p_id} status must be 'pending' or 'blocked', got '{st}'")
+        if st not in {"pending", "blocked", "passed", "offline_verified"}:
+            print(f"[ERROR] Browser placeholder {p_id} status must be valid, got '{st}'")
             return False
 
     # 4. Core Engine authority mapping check for P5, P7, P60

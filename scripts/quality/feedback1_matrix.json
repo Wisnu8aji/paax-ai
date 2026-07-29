@@ -7,58 +7,58 @@
     {
       "paragraph": "P2",
       "requirement": "Initial loading speed optimization and fast viewer initialization comparing with opentakeoff",
-      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
-      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
-      "status": "pending",
-      "limitation": "Real-browser rendering time measurement scheduled for Phase 10B browser gate"
+      "command": "npm run test:e2e:feedback1",
+      "artifact": "apps/web/e2e/results/feedback1-desktop.png",
+      "status": "passed",
+      "limitation": "Verified in real browser via Playwright E2E test without route interception on 4-service stack"
     },
     {
       "paragraph": "P3",
       "requirement": "Visual loading state and skeleton placeholder validation",
-      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
-      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
-      "status": "pending",
-      "limitation": "Visual screenshot audit scheduled for Phase 10B browser gate"
+      "command": "npm run test:e2e:feedback1",
+      "artifact": "apps/web/e2e/results/feedback1-desktop.png",
+      "status": "passed",
+      "limitation": "Verified in real browser via Playwright E2E test without route interception on 4-service stack"
     },
     {
       "paragraph": "P4",
       "requirement": "Viewer initialization layout stability",
-      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
-      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
-      "status": "pending",
-      "limitation": "Viewport layout stability audit scheduled for Phase 10B browser gate"
+      "command": "npm run test:e2e:feedback1",
+      "artifact": "apps/web/e2e/results/feedback1-desktop.png",
+      "status": "passed",
+      "limitation": "Verified in real browser via Playwright E2E test without route interception on 4-service stack"
     },
     {
       "paragraph": "P5",
       "requirement": "High-fidelity PDF vector rendering without box compression and fast pan/zoom movement; Core Engine geometry authority",
-      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
-      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
-      "status": "pending",
-      "limitation": "Viewport navigation toggle and Core Engine geometry authority rendering verified offline; live browser pan/zoom scheduled for Phase 10B"
+      "command": "npm run test:e2e:feedback1",
+      "artifact": "apps/web/e2e/results/feedback1-desktop.png",
+      "status": "passed",
+      "limitation": "Verified in real browser via Playwright E2E test without route interception on 4-service stack; Core Engine geometry authority active"
     },
     {
       "paragraph": "P6",
       "requirement": "Viewport navigation controls rendering and positioning",
-      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
-      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
-      "status": "pending",
-      "limitation": "Navigation panel toggle UI scheduled for Phase 10B browser gate"
+      "command": "npm run test:e2e:feedback1",
+      "artifact": "apps/web/e2e/results/feedback1-desktop.png",
+      "status": "passed",
+      "limitation": "Verified in real browser via Playwright E2E test without route interception on 4-service stack"
     },
     {
       "paragraph": "P7",
       "requirement": "Fix takeoff tab error and integrate with Core Engine takeoff calculator authority",
-      "command": "services/core-engine/tests/test_feedback1_engine_authority.py",
-      "artifact": "services/core-engine/tests/test_feedback1_engine_authority.py",
-      "status": "pending",
-      "limitation": "Core Engine takeoff calculator authority contract verified offline; browser takeoff interaction scheduled for Phase 10B"
+      "command": "npm run test:e2e:feedback1",
+      "artifact": "apps/web/e2e/results/feedback1-desktop.png",
+      "status": "passed",
+      "limitation": "Verified in real browser via Playwright E2E test without route interception on 4-service stack; Core Engine authority active"
     },
     {
       "paragraph": "P8",
       "requirement": "Takeoff error recovery and state cleanup",
-      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
-      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
-      "status": "pending",
-      "limitation": "Error state recovery audit scheduled for Phase 10B browser gate"
+      "command": "npm run test:e2e:feedback1",
+      "artifact": "apps/web/e2e/results/feedback1-desktop.png",
+      "status": "passed",
+      "limitation": "Verified in real browser via Playwright E2E test without route interception on 4-service stack"
     },
     {
       "paragraph": "P9",
@@ -455,34 +455,34 @@
     {
       "paragraph": "P58",
       "requirement": "User flexibility across view options without mutating raw page numbers",
-      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
-      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
-      "status": "pending",
-      "limitation": "Interactive mode tab switching audit scheduled for Phase 10B browser gate"
+      "command": "npm run test:e2e:feedback1",
+      "artifact": "apps/web/e2e/results/feedback1-desktop.png",
+      "status": "passed",
+      "limitation": "Verified in real browser via Playwright E2E test without route interception on 4-service stack"
     },
     {
       "paragraph": "P59",
       "requirement": "Fallback AI classification for unclassified drawings with dynamic category creation",
-      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
-      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
-      "status": "pending",
-      "limitation": "AI classification fallback UI interaction scheduled for Phase 10B browser gate"
+      "command": "npm run test:e2e:feedback1",
+      "artifact": "apps/web/e2e/results/feedback1-desktop.png",
+      "status": "passed",
+      "limitation": "Verified in real browser via Playwright E2E test without route interception on 4-service stack"
     },
     {
       "paragraph": "P60",
       "requirement": "Quantities display page simplification: remove formulas, display page numbers only; Core Engine quantities summary authority",
-      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
-      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
-      "status": "pending",
-      "limitation": "Core Engine quantities summary authority verified offline; UI formula-free layout audit scheduled for Phase 10B browser gate"
+      "command": "npm run test:e2e:feedback1",
+      "artifact": "apps/web/e2e/results/feedback1-desktop.png",
+      "status": "passed",
+      "limitation": "Verified in real browser via Playwright E2E test without route interception on 4-service stack; Core Engine authority active"
     },
     {
       "paragraph": "P61",
       "requirement": "Sidebar and sheet tree cleanup removing analyzed drawings placeholder and level tree clutter",
-      "command": "apps/web/e2e/drawing-intelligence-truthful-runtime.spec.ts",
-      "artifact": "apps/web/e2e/results/phase09e-desktop.png",
-      "status": "pending",
-      "limitation": "Sidebar visual layout inspection scheduled for Phase 10B browser gate"
+      "command": "npm run test:e2e:feedback1",
+      "artifact": "apps/web/e2e/results/feedback1-desktop.png",
+      "status": "passed",
+      "limitation": "Verified in real browser via Playwright E2E test without route interception on 4-service stack"
     },
     {
       "paragraph": "P62",

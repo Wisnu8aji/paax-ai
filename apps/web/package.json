@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e:feedback1": "playwright test e2e/feedback1-real-stack.spec.ts",
+    "test:visual:feedback1": "playwright test e2e/feedback1-real-stack.spec.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",
