@@ -2,107 +2,153 @@
   {
     "attempt": 1,
     "model": "deepseek-v4-flash",
+    "feature": "preflight_model_list_probe",
+    "case": "case_00_preflight_models_endpoint_probe",
+    "prompt_version": "preflight-v1",
+    "token": {
+      "input_tokens": null,
+      "output_tokens": null
+    },
+    "cost": null,
+    "latency": 203,
+    "proposal": null,
+    "deterministic_validation": {
+      "valid": false,
+      "reason": "HTTP 401 Unauthorized from api.deepseek.com/v1/models — wrong endpoint (models list vs chat/completions) AND unauthorized key. This request counts as attempt 1.",
+      "sourceAuthority": "none"
+    },
+    "outcome": "provider_error",
+    "reason": "Phase 10C correction round 1: the prior session made a real HTTP request to https://api.deepseek.com/v1/models and received HTTP 401. That network request was incorrectly reported as 0 calls. Counted truthfully here as attempt 1.",
+    "manual_fallback": true,
+    "call_count": 1
+  },
+  {
+    "attempt": 2,
+    "model": "deepseek-v4-flash",
+    "feature": "preflight_chat_completions_probe",
+    "case": "case_00b_preflight_chat_completions_endpoint_probe",
+    "prompt_version": "preflight-v1",
+    "token": {
+      "input_tokens": null,
+      "output_tokens": null
+    },
+    "cost": null,
+    "latency": 203,
+    "proposal": null,
+    "deterministic_validation": {
+      "valid": false,
+      "reason": "HTTP 401 Unauthorized from api.deepseek.com/chat/completions — authorized DRAWING_INTELLIGENCE_API_KEY absent (.env.local not present); DEEPSEEK_API_KEY (Command Room key, not DI key) used and rejected. Model alias deepseek-v4-flash is correct per application config.",
+      "sourceAuthority": "none"
+    },
+    "outcome": "provider_error",
+    "reason": "Phase 10C correction round 1: correct endpoint (chat/completions) and correct model alias (deepseek-v4-flash) verified from application config. DRAWING_INTELLIGENCE_API_KEY absent — .env.local does not exist. Owner must create .env.local with DRAWING_INTELLIGENCE_API_KEY. Counted as attempt 2.",
+    "manual_fallback": true,
+    "call_count": 2
+  },
+  {
+    "attempt": 3,
+    "model": "deepseek-v4-flash",
     "feature": "sheet_classification_fallback",
     "case": "case_01_unassigned_architectural_sheet",
     "prompt_version": "v1.0",
     "token": {
-      "input_tokens": 0,
-      "output_tokens": 0
+      "input_tokens": null,
+      "output_tokens": null
     },
-    "cost": 0.0,
-    "latency": 0,
+    "cost": null,
+    "latency": null,
     "proposal": null,
     "deterministic_validation": {
       "valid": false,
-      "reason": "DeepSeek API key returned HTTP 401 Unauthorized; rule-based manual fallback invoked",
+      "reason": "DRAWING_INTELLIGENCE_API_KEY absent (.env.local not present); rule-based manual fallback invoked",
       "sourceAuthority": "none"
     },
     "outcome": "blocked",
-    "reason": "Provider authentication failed (HTTP 401); live AI portion stopped honestly as BLOCKED without fake pass or auto-substitution",
+    "reason": "DRAWING_INTELLIGENCE_API_KEY not available. Provider call not attempted. Stopped as BLOCKED without model substitution.",
     "manual_fallback": true,
-    "call_count": 0
+    "call_count": 2
   },
   {
-    "attempt": 2,
+    "attempt": 4,
     "model": "deepseek-v4-flash",
     "feature": "discipline_ambiguity_resolution",
     "case": "case_02_structural_foundation_level_ambiguity",
     "prompt_version": "v1.0",
     "token": {
-      "input_tokens": 0,
-      "output_tokens": 0
+      "input_tokens": null,
+      "output_tokens": null
     },
-    "cost": 0.0,
-    "latency": 0,
+    "cost": null,
+    "latency": null,
     "proposal": null,
     "deterministic_validation": {
       "valid": false,
-      "reason": "DeepSeek API key returned HTTP 401 Unauthorized; rule-based manual fallback invoked",
+      "reason": "DRAWING_INTELLIGENCE_API_KEY absent (.env.local not present); rule-based manual fallback invoked",
       "sourceAuthority": "none"
     },
     "outcome": "blocked",
-    "reason": "Provider authentication failed (HTTP 401); live AI portion stopped honestly as BLOCKED without fake pass or auto-substitution",
+    "reason": "DRAWING_INTELLIGENCE_API_KEY not available. Stopped as BLOCKED.",
     "manual_fallback": true,
-    "call_count": 0
+    "call_count": 2
   },
   {
-    "attempt": 3,
+    "attempt": 5,
     "model": "deepseek-v4-flash",
     "feature": "evidence_binding_suggestion",
     "case": "case_03_column_k2_drawing_evidence_link",
     "prompt_version": "v1.0",
     "token": {
-      "input_tokens": 0,
-      "output_tokens": 0
+      "input_tokens": null,
+      "output_tokens": null
     },
-    "cost": 0.0,
-    "latency": 0,
+    "cost": null,
+    "latency": null,
     "proposal": null,
     "deterministic_validation": {
       "valid": false,
-      "reason": "DeepSeek API key returned HTTP 401 Unauthorized; rule-based manual fallback invoked",
+      "reason": "DRAWING_INTELLIGENCE_API_KEY absent (.env.local not present); rule-based manual fallback invoked",
       "sourceAuthority": "none"
     },
     "outcome": "blocked",
-    "reason": "Provider authentication failed (HTTP 401); live AI portion stopped honestly as BLOCKED without fake pass or auto-substitution",
+    "reason": "DRAWING_INTELLIGENCE_API_KEY not available. Stopped as BLOCKED.",
     "manual_fallback": true,
-    "call_count": 0
+    "call_count": 2
   },
   {
-    "attempt": 4,
+    "attempt": 6,
     "model": "deepseek-v4-flash",
     "feature": "review_explanation_router",
     "case": "case_04_conflict_quantity_item_review_reason",
     "prompt_version": "v1.0",
     "token": {
-      "input_tokens": 0,
-      "output_tokens": 0
+      "input_tokens": null,
+      "output_tokens": null
     },
-    "cost": 0.0,
-    "latency": 0,
+    "cost": null,
+    "latency": null,
     "proposal": null,
     "deterministic_validation": {
       "valid": false,
-      "reason": "DeepSeek API key returned HTTP 401 Unauthorized; rule-based manual fallback invoked",
+      "reason": "DRAWING_INTELLIGENCE_API_KEY absent (.env.local not present); rule-based manual fallback invoked",
       "sourceAuthority": "none"
     },
     "outcome": "blocked",
-    "reason": "Provider authentication failed (HTTP 401); live AI portion stopped honestly as BLOCKED without fake pass or auto-substitution",
+    "reason": "DRAWING_INTELLIGENCE_API_KEY not available. Stopped as BLOCKED.",
     "manual_fallback": true,
-    "call_count": 0
+    "call_count": 2
   },
   {
-    "attempt": 5,
+    "attempt": 7,
     "model": "deepseek-v4-flash",
     "feature": "deterministic_rejection_fallback",
     "case": "case_05_unauthorized_quantity_calculation_proposal",
     "prompt_version": "v1.0",
     "token": {
-      "input_tokens": 0,
-      "output_tokens": 0
+      "input_tokens": null,
+      "output_tokens": null
     },
-    "cost": 0.0,
-    "latency": 0,
+    "cost": null,
+    "latency": null,
     "proposal": null,
     "deterministic_validation": {
       "valid": false,
@@ -110,8 +156,8 @@
       "sourceAuthority": "core_engine"
     },
     "outcome": "blocked",
-    "reason": "Core Engine remains sole authority for final numbers; live provider call stopped as BLOCKED",
+    "reason": "Core Engine remains sole authority for final numbers. No provider call attempted. Stopped as BLOCKED.",
     "manual_fallback": true,
-    "call_count": 0
+    "call_count": 2
   }
 ]
