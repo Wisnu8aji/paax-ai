@@ -16,6 +16,7 @@ import pytest
 
 from app.drawing_intelligence.calculation_bridge import (
     CalculationNotReady,
+    CoreEngineCalculationClient,
     DispatchContext,
     DispatchReceipt,
     build_engine_dispatch,
@@ -241,14 +242,16 @@ class TestDispatchContext:
         ], work_item_id="WI-COL-01")
         dispatch = build_engine_dispatch(item, project_id="P-001", snapshot_id="S-001", requested_by="U")
         ctx = dispatch.context if hasattr(dispatch, "context") else dispatch
-        # Valid response with matching context should grant authority
-        response = {"status": "complete", "result": 1.0, "unit": "m3",
-                    "calculation_id": "calc-1", "calculation_type": "concrete_column_total_volume"}
-        receipt = DispatchReceipt.create_verified(ctx, response)
-        calc = calculation_from_response(item, response, receipt=receipt)
-        assert calc.source_authority == "core_engine", (
-            f"Valid receipt must grant core_engine authority; got {calc.source_authority}"
-        )
+        response = {"status": "complete", "result": 1.0, "unit": "m3", "calculation_id": "calc-1", "calculation_type": "concrete_column_total_volume"}
+        import httpx
+        async def _run():
+            async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200, json=response)), base_url="http://core") as http:
+                client = CoreEngineCalculationClient("http://core", internal_key="x", client=http)
+                resp, receipt = await client.execute_dispatch(dispatch)
+                return calculation_from_response(item, resp, receipt=receipt)
+        import asyncio
+        calc = asyncio.run(_run())
+        assert calc.source_authority == "core_engine"
 
     def test_mismatched_project_id_in_receipt_denies_authority(self):
         """DispatchReceipt with mismatched project_id must deny authority."""
@@ -338,8 +341,13 @@ class TestDomainCoverageMatrix:
             "calculation_id": "calc-col-1",
             "calculation_type": "concrete_column_total_volume",
         }
-        receipt = DispatchReceipt.create_verified(ctx, resp)
-        calc = calculation_from_response(item, resp, receipt=receipt)
+        import httpx, asyncio
+        async def _run():
+            async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200, json=resp)), base_url="http://core") as http:
+                client = CoreEngineCalculationClient("http://core", internal_key="x", client=http)
+                r_json, receipt = await client.execute_dispatch(dispatch)
+                return calculation_from_response(item, r_json, receipt=receipt)
+        calc = asyncio.run(_run())
         assert calc.source_authority == "core_engine"
         assert calc.result == 1.0
         assert calc.unit == "m3"
@@ -361,7 +369,7 @@ class TestDomainCoverageMatrix:
         # is_authority_valid() must handle domain responses via extract_result()
         resp = {
             "domain": "mep",
-            "status": "complete",  # some engines echo status at root
+            "status": "complete",
             "items": [{
                 "kode": "PR1", "work": "pipa_air", "quantity": 20.0,
                 "unit": "m", "formula": "F-MEP", "detail": "10m x 2",
@@ -369,8 +377,13 @@ class TestDomainCoverageMatrix:
             }],
             "engine_version": "core-engine-v1",
         }
-        receipt = DispatchReceipt.create_verified(ctx, resp)
-        calc = calculation_from_response(item, resp, receipt=receipt)
+        import httpx, asyncio
+        async def _run():
+            async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200, json=resp)), base_url="http://core") as http:
+                client = CoreEngineCalculationClient("http://core", internal_key="x", client=http)
+                r_json, receipt = await client.execute_dispatch(dispatch)
+                return calculation_from_response(item, r_json, receipt=receipt)
+        calc = asyncio.run(_run())
         assert calc.source_authority == "core_engine"
         assert calc.result == 20.0
 
@@ -409,8 +422,13 @@ class TestDomainCoverageMatrix:
             }],
             "engine_version": "core-engine-v1",
         }
-        receipt = DispatchReceipt.create_verified(ctx, resp)
-        calc = calculation_from_response(item, resp, receipt=receipt)
+        import httpx, asyncio
+        async def _run():
+            async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200, json=resp)), base_url="http://core") as http:
+                client = CoreEngineCalculationClient("http://core", internal_key="x", client=http)
+                r_json, receipt = await client.execute_dispatch(dispatch)
+                return calculation_from_response(item, r_json, receipt=receipt)
+        calc = asyncio.run(_run())
         assert calc.source_authority == "core_engine"
         assert calc.result == 6.0
 

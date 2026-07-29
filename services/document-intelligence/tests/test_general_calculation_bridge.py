@@ -73,8 +73,13 @@ def test_engine_authority_is_assigned_only_after_complete_result():
     work = item("column", ["count", "width", "depth", "height"])
     dispatch = build_engine_dispatch(work, project_id="P", snapshot_id="S", requested_by="U")
     comp_resp = {"status": "complete", "result": 4.2, "unit": "m3", "project_id": "P"}
-    comp_receipt = DispatchReceipt.create_verified(context=dispatch.context, response=comp_resp)
-    complete = calculation_from_response(work, comp_resp, receipt=comp_receipt)
+    import httpx, asyncio
+    async def _run():
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200, json=comp_resp)), base_url="http://core") as http:
+            client = CoreEngineCalculationClient("http://core", internal_key="x", client=http)
+            r_json, receipt = await client.execute_dispatch(dispatch)
+            return calculation_from_response(work, r_json, receipt=receipt)
+    complete = asyncio.run(_run())
     
     blocked_resp = {"status": "needs_input", "result": None}
     blocked_receipt = DispatchReceipt(context=dispatch.context, response=blocked_resp)

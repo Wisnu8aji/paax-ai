@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 from app.drawing_intelligence.calculation_bridge import (
     CalculationNotReady,
+    CoreEngineCalculationClient,
     DispatchReceipt,
     EngineDispatch,
     build_engine_dispatch,
@@ -198,12 +199,13 @@ def test_calculation_from_response_core_engine_authority():
 
     # Valid response from Core Engine -> source_authority='core_engine'
     valid_response = {
-        "domain": "beton",
-        "status": "complete",
+        "prj_id": "proj-101",
+        "rev_id": "snap-1",
         "items": [
             {
                 "kode": "K1",
-                "work": "beton_kolom",
+                "kategori": "beton",
+                "work_type": "beton",
                 "quantity": 1.0,
                 "unit": "m3",
                 "formula": "F-B01",
@@ -214,8 +216,13 @@ def test_calculation_from_response_core_engine_authority():
         ],
         "engine_version": "core-engine-v1",
     }
-    receipt = DispatchReceipt.create_verified(context=dispatch.context, response=valid_response)
-    calc_valid = calculation_from_response(item, valid_response, receipt=receipt)
+    import httpx, asyncio
+    async def _run():
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200, json=valid_response)), base_url="http://core") as http:
+            client = CoreEngineCalculationClient("http://core", internal_key="x", client=http)
+            r_json, receipt = await client.execute_dispatch(dispatch)
+            return calculation_from_response(item, r_json, receipt=receipt)
+    calc_valid = asyncio.run(_run())
     assert calc_valid.source_authority == "core_engine"
     assert calc_valid.status == "complete"
     assert calc_valid.result == 1.0

@@ -17,6 +17,7 @@ import pytest
 
 from app.drawing_intelligence.calculation_bridge import (
     CalculationNotReady,
+    CoreEngineCalculationClient,
     DispatchReceipt,
     build_engine_dispatch,
     calculation_from_response,
@@ -296,8 +297,13 @@ class TestResponseCorrelationSafety:
             "unit": "m3",
             "project_id": "P-001",
         }
-        receipt = DispatchReceipt.create_verified(context=dispatch.context, response=response)
-        calc = calculation_from_response(item, response, receipt=receipt)
+        import httpx, asyncio
+        async def _run():
+            async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200, json=response)), base_url="http://core") as http:
+                client = CoreEngineCalculationClient("http://core", internal_key="x", client=http)
+                r_json, receipt = await client.execute_dispatch(dispatch)
+                return calculation_from_response(item, r_json, receipt=receipt)
+        calc = asyncio.run(_run())
         assert calc.source_authority == "core_engine", (
             f"Valid correlated response must grant core_engine; got {calc.source_authority}"
         )

@@ -457,10 +457,82 @@ def get_request_model(contract: str) -> type[_StrictBase] | None:
     return _REQUEST_MODEL_REGISTRY.get(contract)
 
 
-# ─── Strict Response Boundary Models ─────────────────────────────────────────
+# ─── Strict Response Boundary Models Per Endpoint Family ─────────────────────
 
-class DITakeoffLine(BaseModel):
-    """Typed response line from /takeoff/* and /tkg/takeoff endpoints."""
+class DICalculationsResponse(BaseModel):
+    """Strict response model for /calculations endpoint family."""
+    status: Literal["complete"]
+    result: float
+    unit: str
+    calculation_id: Optional[str] = None
+    calculation_type: Optional[str] = None
+    formula: Optional[str] = None
+    substituted_formula: Optional[str] = None
+    warnings: list[str] = Field(default_factory=list)
+    engine_version: Optional[str] = None
+    project_id: Optional[str] = None
+    snapshot_id: Optional[str] = None
+
+    model_config = {"extra": "forbid"}
+
+    @field_validator("result", mode="before")
+    @classmethod
+    def _validate_result(cls, v: Any) -> float:
+        return _non_negative_finite(v, "result")
+
+
+class DITkgTakeoffItem(BaseModel):
+    """Line item model for /tkg/takeoff response."""
+    kode: str
+    lantai: Optional[str] = None
+    kategori: str
+    work_type: Literal["beton", "bekisting", "besi"]
+    quantity: float
+    unit: str
+    formula: str = ""
+    detail: str = ""
+    needs_review: bool = False
+    review_reason: Optional[str] = None
+    mutu_beton: Optional[str] = None
+    alamat: Optional[str] = None
+    rule_id: str = ""
+    usage_factor: int = Field(default=1, ge=1)
+
+    model_config = {"extra": "forbid"}
+
+    @field_validator("quantity", mode="before")
+    @classmethod
+    def _validate_quantity(cls, v: Any) -> float:
+        return _non_negative_finite(v, "quantity")
+
+
+class DITkgTakeoffResponse(BaseModel):
+    """Strict response model for /tkg/takeoff endpoint family."""
+    prj_id: Optional[str] = None
+    rev_id: Optional[str] = None
+    items: list[DITkgTakeoffItem] = Field(default_factory=list)
+    assumptions: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    params_used: list[dict] = Field(default_factory=list)
+    engine_version: Optional[str] = None
+    status: Optional[str] = None
+    project_id: Optional[str] = None
+    snapshot_id: Optional[str] = None
+
+    model_config = {"extra": "forbid"}
+
+    @model_validator(mode="after")
+    def _validate_items(self) -> "DITkgTakeoffResponse":
+        if not self.items:
+            raise ValueError("TKG takeoff response has empty items list")
+        for item in self.items:
+            if item.needs_review:
+                raise ValueError(f"TKG item {item.kode} has needs_review=True")
+        return self
+
+
+class DIManualTakeoffLine(BaseModel):
+    """Line item model for standard manual /takeoff/* response."""
     kode: str
     work: str
     quantity: float
@@ -480,13 +552,13 @@ class DITakeoffLine(BaseModel):
 
 
 class DIManualTakeoffResponse(BaseModel):
-    """Strict typed response model for /takeoff/* domain endpoints."""
-    domain: str
-    items: list[DITakeoffLine] = Field(default_factory=list)
+    """Strict response model for standard manual /takeoff/* endpoints."""
+    domain: Literal["tanah", "dinding", "arsitektur", "baja", "atap", "kusen", "smkk"]
+    items: list[DIManualTakeoffLine] = Field(default_factory=list)
     assumptions: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     params_used: list[dict] = Field(default_factory=list)
-    n_needs_review: int = Field(default=0, ge=0)
+    n_needs_review: int = Field(default=0, ge=0, le=0)
     engine_version: Optional[str] = None
     status: Optional[str] = None
     project_id: Optional[str] = None
@@ -498,29 +570,36 @@ class DIManualTakeoffResponse(BaseModel):
     def _validate_items_and_review(self) -> "DIManualTakeoffResponse":
         if self.n_needs_review > 0:
             raise ValueError(f"Manual Takeoff response has n_needs_review={self.n_needs_review}")
+        if not self.items:
+            raise ValueError("Manual Takeoff response has empty items list")
         for item in self.items:
             if item.needs_review:
                 raise ValueError(f"Item {item.kode} has needs_review=True")
         return self
 
 
-class DICalculationsResponse(BaseModel):
-    """Strict typed response model for /calculations endpoint."""
-    status: Literal["complete"]
-    result: float
-    unit: str
-    calculation_id: Optional[str] = None
-    calculation_type: Optional[str] = None
-    formula: Optional[str] = None
-    substituted_formula: Optional[str] = None
+class DIMepTakeoffResponse(BaseModel):
+    """Strict response model for MEP takeoff endpoints (/takeoff/mep, /takeoff/mep-advanced)."""
+    domain: Literal["mep", "mep_advanced"]
+    items: list[DIManualTakeoffLine] = Field(default_factory=list)
+    assumptions: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    params_used: list[dict] = Field(default_factory=list)
+    n_needs_review: int = Field(default=0, ge=0, le=0)
     engine_version: Optional[str] = None
+    status: Optional[str] = None
     project_id: Optional[str] = None
     snapshot_id: Optional[str] = None
 
     model_config = {"extra": "forbid"}
 
-    @field_validator("result", mode="before")
-    @classmethod
-    def _validate_result(cls, v: Any) -> float:
-        return _non_negative_finite(v, "result")
+    @model_validator(mode="after")
+    def _validate_items_and_review(self) -> "DIMepTakeoffResponse":
+        if self.n_needs_review > 0:
+            raise ValueError(f"MEP Takeoff response has n_needs_review={self.n_needs_review}")
+        if not self.items:
+            raise ValueError("MEP Takeoff response has empty items list")
+        for item in self.items:
+            if item.needs_review:
+                raise ValueError(f"Item {item.kode} has needs_review=True")
+        return self

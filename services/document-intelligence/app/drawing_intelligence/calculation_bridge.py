@@ -2,17 +2,19 @@ from __future__ import annotations
 
 """Typed, formula-free boundary from verified drawing facts to Python Core Engine.
 
-Phase 09C Correction Round 4 — Verified Client Execution Receipt & Idempotency:
-  - DispatchContext: immutable receipt with idempotency_key bound to project_id,
-    snapshot_id, work_item_id, evidence_digest (SHA-256), request_digest (SHA-256),
-    endpoint, contract, calculation_type, and expected_unit.
-  - CoreEngineCalculationClient.execute_dispatch(): ONLY path that creates a verified
-    DispatchReceipt (with X-Idempotency-Key header sent to Core Engine).
-  - calculation_from_response(): requires a verified DispatchReceipt (verification_token
-    from execute_dispatch) AND current evidence lineage match. Caller-constructed or
-    unverified receipts yield source_authority="none".
-  - Strict endpoint-specific response model validation in DispatchReceipt (extra=forbid,
-    finite result, unit correlation, echoed identity verification).
+Phase 09C Correction Round 5 — Unexported Object Capability & Truthful Request Identity:
+  - DispatchContext: immutable receipt with fixed-format safe SHA-256 idempotency_key
+    (idemp-<32-hex-chars>) bound to project_id, snapshot_id, work_item_id, evidence_digest,
+    request_digest, endpoint, contract, calculation_type, and expected_unit.
+  - CoreEngineCalculationClient.execute_dispatch(): ONLY path that issues a verified
+    DispatchReceipt (via private _mark_client_verified() using unexported object sentinel).
+  - Header Sanitization: X-Idempotency-Key header transmits opaque fixed-format fingerprint,
+    guaranteed free of CR/LF or unescaped header injection.
+  - Endpoint-Specific Family Response Models: Exact Pydantic schema validation per endpoint family:
+      1. /calculations           -> DICalculationsResponse
+      2. /tkg/takeoff            -> DITkgTakeoffResponse
+      3. /takeoff/mep[_advanced] -> DIMepTakeoffResponse
+      4. /takeoff/* (manual)     -> DIManualTakeoffResponse
 """
 
 import os
@@ -359,7 +361,7 @@ class CoreEngineCalculationClient:
     async def execute_dispatch(self, dispatch: EngineDispatch) -> tuple[dict[str, Any], DispatchReceipt]:
         """Execute a roundtrip call to Core Engine and return (response_json, verified_receipt).
 
-        This is the ONLY path that issues a verified DispatchReceipt with verification_token!
+        This is the ONLY path that issues a verified DispatchReceipt with the unexported sentinel!
         Sends X-Idempotency-Key header.
         """
         headers = {
@@ -374,8 +376,9 @@ class CoreEngineCalculationClient:
                 response = await client.post(f"{self.base_url}{dispatch.endpoint}", json=dispatch.payload, headers=headers)
         response.raise_for_status()
         resp_json = response.json()
-        verified_receipt = DispatchReceipt.create_verified(dispatch.context, resp_json)
-        return resp_json, verified_receipt
+        receipt = DispatchReceipt(context=dispatch.context, response=resp_json)
+        receipt._mark_client_verified()
+        return resp_json, receipt
 
     async def dispatch(self, dispatch: EngineDispatch) -> dict[str, Any]:
         """Execute dispatch and return response_json directly."""
@@ -419,11 +422,11 @@ def calculation_from_response(
 ) -> WorkItemCalculation:
     """Convert a Core Engine HTTP response to a WorkItemCalculation.
 
-    Round 4: source_authority='core_engine' REQUIRES:
-      1. A non-null DispatchReceipt that is CLIENT-VERIFIED (created by execute_dispatch).
+    Round 5: source_authority='core_engine' REQUIRES:
+      1. A non-null DispatchReceipt that is CLIENT-VERIFIED (marked via execute_dispatch).
       2. context.work_item_id == item.work_item_id
       3. Current evidence lineage matches context.evidence_digest exactly
-      4. receipt.is_authority_valid() passes all Pydantic response & identity gates
+      4. receipt.is_authority_valid() passes all Pydantic response family & identity gates
     """
     cap = capability or resolve_takeoff_capability(item)
 
@@ -442,20 +445,17 @@ def calculation_from_response(
 
     # ─── Receipt-required path ───────────────────────────────────────────────
     if receipt is not None:
-        # Gate 0: Receipt MUST be client-verified
         if not receipt.is_client_verified():
             return _deny("DispatchReceipt is not client-verified; authority denied")
 
         ctx = receipt.context
 
-        # Gate 1: work_item_id binding
         if ctx.work_item_id != item.work_item_id:
             return _deny(
                 f"DispatchContext work_item_id mismatch: "
                 f"context={ctx.work_item_id!r}, item={item.work_item_id!r}; authority denied"
             )
 
-        # Gate 2: Current evidence lineage re-evaluation
         all_refs: list[str] = []
         for fact in item.measurement_facts:
             all_refs.extend(fact.evidence_refs)
@@ -466,12 +466,10 @@ def calculation_from_response(
                 f"context={ctx.evidence_digest[:8]!r}, current={current_evidence_digest[:8]!r}; authority denied"
             )
 
-        # Gate 3: Pydantic response & identity validity check
         ok, reason = receipt.is_authority_valid()
         if not ok:
             return _deny(f"DispatchReceipt validity check failed: {reason}")
 
-        # All gates passed — grant authority
         result = receipt.extract_result()
         unit = receipt.extract_unit()
         return WorkItemCalculation(
