@@ -1,6 +1,6 @@
 PHASE: 07
 STATUS: PASS_WITH_BENCHMARK_BLOCKED
-COMMIT(S): 254ee2fc (07A), 17dcf7e5 (07B), PENDING_COMMIT (07C)
+COMMIT(S): 254ee2fc (07A), 17dcf7e5 (07B), b02dad50 (07C)
 07A CONTRACT EVIDENCE: contracts.py & audit_ledger.py hash-chain append-only ledger; 78 python pytest tests passed
 07B ROUTER/CAP EVIDENCE: model_router.py & benchmark_runner.py 15+15 allocation, cap-31 RuntimeError rejection, key isolation enforced
 LIVE BENCHMARK STATUS: BLOCKED (missing DRAWING_INTELLIGENCE_API_KEY; offline implementation & dry-run 30 attempts verified)
