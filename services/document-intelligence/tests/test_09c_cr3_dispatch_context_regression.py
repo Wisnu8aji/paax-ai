@@ -244,7 +244,7 @@ class TestDispatchContext:
         # Valid response with matching context should grant authority
         response = {"status": "complete", "result": 1.0, "unit": "m3",
                     "calculation_id": "calc-1", "calculation_type": "concrete_column_total_volume"}
-        receipt = DispatchReceipt(context=ctx, response=response)
+        receipt = DispatchReceipt.create_verified(ctx, response)
         calc = calculation_from_response(item, response, receipt=receipt)
         assert calc.source_authority == "core_engine", (
             f"Valid receipt must grant core_engine authority; got {calc.source_authority}"
@@ -338,7 +338,7 @@ class TestDomainCoverageMatrix:
             "calculation_id": "calc-col-1",
             "calculation_type": "concrete_column_total_volume",
         }
-        receipt = DispatchReceipt(context=ctx, response=resp)
+        receipt = DispatchReceipt.create_verified(ctx, resp)
         calc = calculation_from_response(item, resp, receipt=receipt)
         assert calc.source_authority == "core_engine"
         assert calc.result == 1.0
@@ -369,7 +369,7 @@ class TestDomainCoverageMatrix:
             }],
             "engine_version": "core-engine-v1",
         }
-        receipt = DispatchReceipt(context=ctx, response=resp)
+        receipt = DispatchReceipt.create_verified(ctx, resp)
         calc = calculation_from_response(item, resp, receipt=receipt)
         assert calc.source_authority == "core_engine"
         assert calc.result == 20.0
@@ -409,7 +409,7 @@ class TestDomainCoverageMatrix:
             }],
             "engine_version": "core-engine-v1",
         }
-        receipt = DispatchReceipt(context=ctx, response=resp)
+        receipt = DispatchReceipt.create_verified(ctx, resp)
         calc = calculation_from_response(item, resp, receipt=receipt)
         assert calc.source_authority == "core_engine"
         assert calc.result == 6.0

@@ -214,7 +214,7 @@ def test_calculation_from_response_core_engine_authority():
         ],
         "engine_version": "core-engine-v1",
     }
-    receipt = DispatchReceipt(context=dispatch.context, response=valid_response)
+    receipt = DispatchReceipt.create_verified(context=dispatch.context, response=valid_response)
     calc_valid = calculation_from_response(item, valid_response, receipt=receipt)
     assert calc_valid.source_authority == "core_engine"
     assert calc_valid.status == "complete"

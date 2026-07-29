@@ -296,7 +296,7 @@ class TestResponseCorrelationSafety:
             "unit": "m3",
             "project_id": "P-001",
         }
-        receipt = DispatchReceipt(context=dispatch.context, response=response)
+        receipt = DispatchReceipt.create_verified(context=dispatch.context, response=response)
         calc = calculation_from_response(item, response, receipt=receipt)
         assert calc.source_authority == "core_engine", (
             f"Valid correlated response must grant core_engine; got {calc.source_authority}"

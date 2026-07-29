@@ -38,9 +38,9 @@ class _StrictBase(BaseModel):
 
 class DIGalianFootplat(_StrictBase):
     kode: str
-    b_ft: float  # lebar footplat (m), must be positive
-    l_ft: float  # panjang footplat (m), must be positive
-    d_gali: float  # kedalaman galian (m), must be positive
+    b_ft: float
+    l_ft: float
+    d_gali: float
     n: int = Field(default=1, ge=1)
     v_struktur_tertanam_per_lubang: Optional[float] = None
 
@@ -447,7 +447,7 @@ _REQUEST_MODEL_REGISTRY: dict[str, type[_StrictBase]] = {
     "takeoff.atap": DIAtapDetailRequest,
     "takeoff.kusen": DIKusenRequest,
     "takeoff.mep": DIMepRequest,
-    "takeoff.mep_advanced": DIMepRequest,  # same schema, different endpoint
+    "takeoff.mep_advanced": DIMepRequest,
     "takeoff.smkk": DISmkkRequest,
 }
 
@@ -457,13 +457,13 @@ def get_request_model(contract: str) -> type[_StrictBase] | None:
     return _REQUEST_MODEL_REGISTRY.get(contract)
 
 
-# ─── Typed Response models ────────────────────────────────────────────────────
+# ─── Strict Response Boundary Models ─────────────────────────────────────────
 
 class DITakeoffLine(BaseModel):
-    """Typed response item from /takeoff/* and /tkg/takeoff endpoints."""
+    """Typed response line from /takeoff/* and /tkg/takeoff endpoints."""
     kode: str
     work: str
-    quantity: Optional[float] = None  # None = needs_review; never fabricated
+    quantity: float
     unit: str
     formula: str = ""
     detail: str = ""
@@ -471,24 +471,44 @@ class DITakeoffLine(BaseModel):
     review_reason: Optional[str] = None
     rule_id: str = ""
 
+    model_config = {"extra": "forbid"}
+
+    @field_validator("quantity", mode="before")
+    @classmethod
+    def _validate_quantity(cls, v: Any) -> float:
+        return _non_negative_finite(v, "quantity")
+
 
 class DIManualTakeoffResponse(BaseModel):
-    """Typed response from manual-domain /takeoff/* endpoints."""
-    domain: Optional[str] = None
+    """Strict typed response model for /takeoff/* domain endpoints."""
+    domain: str
     items: list[DITakeoffLine] = Field(default_factory=list)
     assumptions: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    params_used: list[dict] = Field(default_factory=list)
+    n_needs_review: int = Field(default=0, ge=0)
     engine_version: Optional[str] = None
-    n_needs_review: Optional[int] = None
+    status: Optional[str] = None
+    project_id: Optional[str] = None
+    snapshot_id: Optional[str] = None
 
-    model_config = {"extra": "allow"}  # tolerate additional engine fields
+    model_config = {"extra": "forbid"}
+
+    @model_validator(mode="after")
+    def _validate_items_and_review(self) -> "DIManualTakeoffResponse":
+        if self.n_needs_review > 0:
+            raise ValueError(f"Manual Takeoff response has n_needs_review={self.n_needs_review}")
+        for item in self.items:
+            if item.needs_review:
+                raise ValueError(f"Item {item.kode} has needs_review=True")
+        return self
 
 
 class DICalculationsResponse(BaseModel):
-    """Typed response from /calculations endpoint."""
-    status: str
-    result: Optional[float] = None
-    unit: Optional[str] = None
+    """Strict typed response model for /calculations endpoint."""
+    status: Literal["complete"]
+    result: float
+    unit: str
     calculation_id: Optional[str] = None
     calculation_type: Optional[str] = None
     formula: Optional[str] = None
@@ -496,5 +516,11 @@ class DICalculationsResponse(BaseModel):
     warnings: list[str] = Field(default_factory=list)
     engine_version: Optional[str] = None
     project_id: Optional[str] = None
+    snapshot_id: Optional[str] = None
 
-    model_config = {"extra": "allow"}
+    model_config = {"extra": "forbid"}
+
+    @field_validator("result", mode="before")
+    @classmethod
+    def _validate_result(cls, v: Any) -> float:
+        return _non_negative_finite(v, "result")

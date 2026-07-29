@@ -2,18 +2,17 @@ from __future__ import annotations
 
 """Typed, formula-free boundary from verified drawing facts to Python Core Engine.
 
-Phase 09C Correction Round 3 — DispatchContext and typed request validation:
-  - validate_endpoint_request(): endpoint-specific strict Pydantic validation
-    (extra=forbid recursive, finite values, positive dimensions, no empty payloads,
-     no precomputed totals/formula/boolean-as-number)
-  - DispatchContext: immutable receipt bound to endpoint/project/snapshot/candidate/
-    evidence/request SHA-256/expected-unit; created only by build_engine_dispatch()
-  - DispatchReceipt: pairs context with response; the ONLY path to source_authority=core_engine
-  - calculation_from_response(): requires receipt kwarg; without receipt, authority
-    is always "none" (raw-response authority is architecturally impossible)
-  - Corrections from Round 2 preserved:
-    - FIELD_ALIAS_MAP: volume removed from berat_kg (dimensional violation)
-    - Domain coverage matrix: column (supported), beam/wall/foundation/MEP blocked
+Phase 09C Correction Round 4 — Verified Client Execution Receipt & Idempotency:
+  - DispatchContext: immutable receipt with idempotency_key bound to project_id,
+    snapshot_id, work_item_id, evidence_digest (SHA-256), request_digest (SHA-256),
+    endpoint, contract, calculation_type, and expected_unit.
+  - CoreEngineCalculationClient.execute_dispatch(): ONLY path that creates a verified
+    DispatchReceipt (with X-Idempotency-Key header sent to Core Engine).
+  - calculation_from_response(): requires a verified DispatchReceipt (verification_token
+    from execute_dispatch) AND current evidence lineage match. Caller-constructed or
+    unverified receipts yield source_authority="none".
+  - Strict endpoint-specific response model validation in DispatchReceipt (extra=forbid,
+    finite result, unit correlation, echoed identity verification).
 """
 
 import os
@@ -27,6 +26,7 @@ from .dispatch_context import (
     DispatchReceipt,
     expected_unit_for,
     make_evidence_digest,
+    make_idempotency_key,
     make_request_digest,
 )
 from .dispatch_schemas import get_request_model
@@ -110,8 +110,6 @@ def _typed_fact_payload(
     }
 
 
-# ─── Dimensional-safe FIELD_ALIAS_MAP ──────────────────────────────────────────
-# Round 2 correction: volume removed from berat_kg aliases (m3 ≠ kg).
 FIELD_ALIAS_MAP: dict[str, set[str]] = {
     "panjang_m": {"length", "panjang_m"},
     "lebar_m": {"width", "lebar_m"},
@@ -121,7 +119,6 @@ FIELD_ALIAS_MAP: dict[str, set[str]] = {
     "volume_m3": {"volume", "volume_m3"},
     "jumlah_unit": {"count", "jumlah_unit"},
     "spesifikasi": {"spesifikasi"},
-    # berat_kg: mass dimension only — no volumetric or length aliases.
     "berat_kg": {"berat_kg"},
     "jumlah_ls": {"count", "jumlah_ls"},
 }
@@ -135,22 +132,8 @@ def _has_fact_for_field(field_name: str, approved_facts_by_field: dict[str, list
     return False
 
 
-# ─── validate_endpoint_request ────────────────────────────────────────────────
-
 def validate_endpoint_request(contract: str, payload: dict[str, Any]) -> dict[str, Any]:
-    """Validate a raw core_engine_payload dict against the strict DI boundary model
-    for the given engine_contract.
-
-    Returns the validated payload as a serializable dict (model.model_dump()).
-    Raises CalculationNotReady with a descriptive message on any validation failure.
-
-    Guarantees:
-      - extra=forbid (recursive): unknown keys rejected
-      - Positive/finite dimensions: negative, NaN, Infinity rejected
-      - No boolean-as-number
-      - No empty payload when work items are required
-      - No precomputed totals/formula/result keys (blocked by strict schema)
-    """
+    """Validate a raw core_engine_payload dict against the strict DI boundary model."""
     model_cls = get_request_model(contract)
     if model_cls is None:
         raise CalculationNotReady(
@@ -161,37 +144,15 @@ def validate_endpoint_request(contract: str, payload: dict[str, Any]) -> dict[st
         validated = model_cls.model_validate(payload)
         return validated.model_dump()
     except ValidationError as exc:
-        # Flatten validation errors to a readable message
         errors = exc.errors(include_url=False)
         msgs = "; ".join(
             f"{'.'.join(str(l) for l in e['loc'])}: {e['msg']}" if e.get("loc") else e["msg"]
-            for e in errors[:5]  # cap at 5 to avoid huge messages
+            for e in errors[:5]
         )
         raise CalculationNotReady(
             f"payload for '{contract}' failed strict validation: {msgs}"
         ) from exc
 
-
-# ─── Expected response units per calculation type ─────────────────────────────
-_CALCULATION_TYPE_EXPECTED_UNITS: dict[str, frozenset[str]] = {
-    "concrete_column_total_volume": frozenset({"m3", "m³"}),
-    "area": frozenset({"m2", "m²"}),
-    "length": frozenset({"m"}),
-    "count": frozenset({"unit", "buah", "bh", "pcs"}),
-    "volume": frozenset({"m3", "m³"}),
-}
-
-
-def _unit_matches_capability(capability: TakeoffCapability | None, unit: str) -> bool:
-    if capability is None:
-        return True
-    expected = _CALCULATION_TYPE_EXPECTED_UNITS.get(capability.calculation_type or "")
-    if not expected:
-        return True
-    return unit.strip().lower() in expected
-
-
-# ─── build_engine_dispatch ────────────────────────────────────────────────────
 
 def build_engine_dispatch(
     item: WorkItemCandidate,
@@ -200,13 +161,7 @@ def build_engine_dispatch(
     snapshot_id: str,
     requested_by: str,
 ) -> EngineDispatch:
-    """Build a validated EngineDispatch with an immutable DispatchContext.
-
-    The returned EngineDispatch.context binds:
-      endpoint, contract, calculation_type, project_id, snapshot_id,
-      work_item_id, evidence_digest (SHA-256 of sorted evidence refs),
-      request_digest (SHA-256 of payload), expected_unit.
-    """
+    """Build a validated EngineDispatch with an immutable DispatchContext."""
     if item.conflict_ids:
         raise CalculationNotReady("open drawing conflicts must be resolved before calculation")
 
@@ -226,7 +181,6 @@ def build_engine_dispatch(
     if missing:
         raise CalculationNotReady(f"missing approved measurement facts: {', '.join(sorted(missing))}")
 
-    # Collect all evidence refs for digest
     all_evidence_refs: list[str] = []
     for fact_list in facts.values():
         for fact in fact_list:
@@ -256,6 +210,8 @@ def build_engine_dispatch(
             "inputs": inputs,
         }
         exp_unit = expected_unit_for(capability.calculation_type, fallback="unit")
+        request_digest = make_request_digest(payload)
+        idemp_key = make_idempotency_key(project_id, snapshot_id, item.work_item_id, request_digest)
         ctx = DispatchContext(
             endpoint=capability.endpoint,
             contract=None,
@@ -264,8 +220,9 @@ def build_engine_dispatch(
             snapshot_id=snapshot_id,
             work_item_id=item.work_item_id,
             evidence_digest=evidence_digest,
-            request_digest=make_request_digest(payload),
+            request_digest=request_digest,
             expected_unit=exp_unit,
+            idempotency_key=idemp_key,
         )
         return EngineDispatch(endpoint=capability.endpoint, payload=payload, capability=capability, context=ctx)
 
@@ -287,6 +244,8 @@ def build_engine_dispatch(
         }
         tkg_units = {"beton": "m3", "bekisting": "m2", "besi": "kg"}
         exp_unit = tkg_units.get(item.category.lower(), "unit")
+        request_digest = make_request_digest(payload)
+        idemp_key = make_idempotency_key(project_id, snapshot_id, item.work_item_id, request_digest)
         ctx = DispatchContext(
             endpoint=capability.endpoint,
             contract="tkg.takeoff",
@@ -295,8 +254,9 @@ def build_engine_dispatch(
             snapshot_id=snapshot_id,
             work_item_id=item.work_item_id,
             evidence_digest=evidence_digest,
-            request_digest=make_request_digest(payload),
+            request_digest=request_digest,
             expected_unit=exp_unit,
+            idempotency_key=idemp_key,
         )
         return EngineDispatch(endpoint=capability.endpoint, payload=payload, capability=capability, context=ctx)
 
@@ -314,10 +274,8 @@ def build_engine_dispatch(
             f"engine_contract='{contract}' requires a dict core_engine_payload attribute"
         )
 
-    # Typed Pydantic validation (strict, extra=forbid) — raises CalculationNotReady
     validated_payload = validate_endpoint_request(contract, raw_payload)
 
-    # Build final payload: project/snapshot provenance added by bridge (not from raw payload)
     payload = {
         "project_id": project_id,
         "snapshot_id": snapshot_id,
@@ -326,7 +284,6 @@ def build_engine_dispatch(
         **validated_payload,
     }
 
-    # Determine expected unit from domain
     _DOMAIN_EXPECTED_UNITS: dict[str, str] = {
         "takeoff.tanah": "m3",
         "takeoff.dinding": "m2",
@@ -340,6 +297,8 @@ def build_engine_dispatch(
     }
     exp_unit = _DOMAIN_EXPECTED_UNITS.get(contract, "unit")
 
+    request_digest = make_request_digest(validated_payload)
+    idemp_key = make_idempotency_key(project_id, snapshot_id, item.work_item_id, request_digest)
     ctx = DispatchContext(
         endpoint=capability.endpoint,
         contract=contract,
@@ -348,8 +307,9 @@ def build_engine_dispatch(
         snapshot_id=snapshot_id,
         work_item_id=item.work_item_id,
         evidence_digest=evidence_digest,
-        request_digest=make_request_digest(validated_payload),
+        request_digest=request_digest,
         expected_unit=exp_unit,
+        idempotency_key=idemp_key,
     )
     return EngineDispatch(endpoint=capability.endpoint, payload=payload, capability=capability, context=ctx)
 
@@ -396,15 +356,31 @@ class CoreEngineCalculationClient:
             raise RuntimeError("INTERNAL_SERVICE_KEY is required")
         return cls(base_url, internal_key=key)
 
-    async def dispatch(self, dispatch: EngineDispatch) -> dict[str, Any]:
-        headers = {"X-Internal-Key": self.internal_key, "X-User-Id": "drawing-intelligence-calculation-bridge"}
+    async def execute_dispatch(self, dispatch: EngineDispatch) -> tuple[dict[str, Any], DispatchReceipt]:
+        """Execute a roundtrip call to Core Engine and return (response_json, verified_receipt).
+
+        This is the ONLY path that issues a verified DispatchReceipt with verification_token!
+        Sends X-Idempotency-Key header.
+        """
+        headers = {
+            "X-Internal-Key": self.internal_key,
+            "X-User-Id": "drawing-intelligence-calculation-bridge",
+            "X-Idempotency-Key": dispatch.context.idempotency_key,
+        }
         if self._client is not None:
             response = await self._client.post(f"{self.base_url}{dispatch.endpoint}", json=dispatch.payload, headers=headers)
         else:
             async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
                 response = await client.post(f"{self.base_url}{dispatch.endpoint}", json=dispatch.payload, headers=headers)
         response.raise_for_status()
-        return response.json()
+        resp_json = response.json()
+        verified_receipt = DispatchReceipt.create_verified(dispatch.context, resp_json)
+        return resp_json, verified_receipt
+
+    async def dispatch(self, dispatch: EngineDispatch) -> dict[str, Any]:
+        """Execute dispatch and return response_json directly."""
+        resp_json, _ = await self.execute_dispatch(dispatch)
+        return resp_json
 
     async def calculate(self, payload: dict[str, Any]) -> dict[str, Any]:
         capability = TakeoffCapability(
@@ -412,17 +388,22 @@ class CoreEngineCalculationClient:
             source_authority="core_engine", status="supported",
             calculation_type=payload.get("calculation_type"),
         )
-        # Build a minimal context for legacy callers
+        proj_id = str(payload.get("project_id") or "unknown")
+        snap_id = str(payload.get("snapshot_id") or "unknown")
+        work_id = str(payload.get("work_item_id") or "unknown")
+        req_digest = make_request_digest(payload)
+        idemp_key = make_idempotency_key(proj_id, snap_id, work_id, req_digest)
         ctx = DispatchContext(
             endpoint="/calculations",
             contract=None,
             calculation_type=payload.get("calculation_type"),
-            project_id=str(payload.get("project_id") or "unknown"),
-            snapshot_id=str(payload.get("snapshot_id") or "unknown"),
-            work_item_id=str(payload.get("work_item_id") or "unknown"),
+            project_id=proj_id,
+            snapshot_id=snap_id,
+            work_item_id=work_id,
             evidence_digest="none",
-            request_digest=make_request_digest(payload),
+            request_digest=req_digest,
             expected_unit=expected_unit_for(payload.get("calculation_type"), fallback="unit"),
+            idempotency_key=idemp_key,
         )
         return await self.dispatch(EngineDispatch(endpoint="/calculations", payload=payload, capability=capability, context=ctx))
 
@@ -432,22 +413,17 @@ def calculation_from_response(
     response: dict[str, Any],
     *,
     capability: TakeoffCapability | None = None,
-    # Legacy kwargs kept for backward compat but ignored when receipt present
     project_id: str | None = None,
     snapshot_id: str | None = None,
-    # Round 3: primary authority path requires a DispatchReceipt
     receipt: DispatchReceipt | None = None,
 ) -> WorkItemCalculation:
     """Convert a Core Engine HTTP response to a WorkItemCalculation.
 
-    Round 3: source_authority='core_engine' REQUIRES a DispatchReceipt.
-    Without a receipt, authority is always 'none' regardless of response content.
-    This makes raw-response authority architecturally impossible.
-
-    With a receipt, authority is granted only if ALL gates pass:
-      1. receipt.is_authority_valid() returns True
-      2. work_item_id in context matches item.work_item_id
-      3. Response unit is dimensionally compatible with context.expected_unit
+    Round 4: source_authority='core_engine' REQUIRES:
+      1. A non-null DispatchReceipt that is CLIENT-VERIFIED (created by execute_dispatch).
+      2. context.work_item_id == item.work_item_id
+      3. Current evidence lineage matches context.evidence_digest exactly
+      4. receipt.is_authority_valid() passes all Pydantic response & identity gates
     """
     cap = capability or resolve_takeoff_capability(item)
 
@@ -466,6 +442,10 @@ def calculation_from_response(
 
     # ─── Receipt-required path ───────────────────────────────────────────────
     if receipt is not None:
+        # Gate 0: Receipt MUST be client-verified
+        if not receipt.is_client_verified():
+            return _deny("DispatchReceipt is not client-verified; authority denied")
+
         ctx = receipt.context
 
         # Gate 1: work_item_id binding
@@ -475,7 +455,18 @@ def calculation_from_response(
                 f"context={ctx.work_item_id!r}, item={item.work_item_id!r}; authority denied"
             )
 
-        # Gate 2: receipt identity/quality checks
+        # Gate 2: Current evidence lineage re-evaluation
+        all_refs: list[str] = []
+        for fact in item.measurement_facts:
+            all_refs.extend(fact.evidence_refs)
+        current_evidence_digest = make_evidence_digest(all_refs)
+        if current_evidence_digest != ctx.evidence_digest:
+            return _deny(
+                f"evidence lineage changed since dispatch: "
+                f"context={ctx.evidence_digest[:8]!r}, current={current_evidence_digest[:8]!r}; authority denied"
+            )
+
+        # Gate 3: Pydantic response & identity validity check
         ok, reason = receipt.is_authority_valid()
         if not ok:
             return _deny(f"DispatchReceipt validity check failed: {reason}")
@@ -504,10 +495,6 @@ def calculation_from_response(
         )
 
     # ─── No receipt: authority is always "none" ──────────────────────────────
-    # Raw-response authority is architecturally forbidden. Return a non-authoritative
-    # calculation that can be used for informational display but never as ground truth.
-
-    # For /calculations endpoint: extract result info but deny authority
     if cap and cap.endpoint == "/calculations":
         status = str(response.get("status") or "blocked")
         result = response.get("result")
@@ -524,10 +511,9 @@ def calculation_from_response(
             measurement_fact_ids=[fact.measurement_id for fact in item.measurement_facts],
             warnings=[str(w) for w in response.get("warnings", [])],
             engine_version=response.get("engine_version"),
-            source_authority="none",  # No receipt → no authority
+            source_authority="none",
         )
 
-    # /takeoff/* domain endpoints
     lines = response.get("items") if isinstance(response.get("items"), list) else []
     warnings = [str(w) for w in response.get("warnings", [])]
     calc_type = cap.category if cap else item.category
@@ -551,5 +537,5 @@ def calculation_from_response(
         substituted_formula=str(line.get("detail") or "") or None,
         measurement_fact_ids=[fact.measurement_id for fact in item.measurement_facts],
         warnings=warnings, engine_version=str(response.get("engine_version") or "core-engine"),
-        source_authority="none",  # No receipt → no authority
+        source_authority="none",
     )

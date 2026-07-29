@@ -73,7 +73,7 @@ def test_engine_authority_is_assigned_only_after_complete_result():
     work = item("column", ["count", "width", "depth", "height"])
     dispatch = build_engine_dispatch(work, project_id="P", snapshot_id="S", requested_by="U")
     comp_resp = {"status": "complete", "result": 4.2, "unit": "m3", "project_id": "P"}
-    comp_receipt = DispatchReceipt(context=dispatch.context, response=comp_resp)
+    comp_receipt = DispatchReceipt.create_verified(context=dispatch.context, response=comp_resp)
     complete = calculation_from_response(work, comp_resp, receipt=comp_receipt)
     
     blocked_resp = {"status": "needs_input", "result": None}
