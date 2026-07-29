@@ -5,16 +5,25 @@ import { fetchPdfArtifactUrl, normalizeArtifactExpiry, PDF_ARTIFACT_REFRESH_SKEW
 import { TileLru, PdfTilePyramid, type TileViewport, type PdfTileRequest } from './pdf-tile-pyramid';
 import { createPdfTilePool, type PdfPageMetrics } from './pdf-tile-pool';
 
+
+
+
 let globalPdfTilePool: ReturnType<typeof createPdfTilePool> | null = null;
 let globalTileCache: TileLru | null = null;
 
 export function getGlobalPdfTilePool() {
+  if (process.env.NODE_ENV === 'test') {
+    return createPdfTilePool();
+  }
   if (!globalPdfTilePool) globalPdfTilePool = createPdfTilePool();
   return globalPdfTilePool;
 }
 
 export function getGlobalTileCache() {
-  if (!globalTileCache) globalTileCache = new TileLru();
+  if (process.env.NODE_ENV === 'test') {
+    return new TileLru(96 * 1024 * 1024);
+  }
+  if (!globalTileCache) globalTileCache = new TileLru(96 * 1024 * 1024);
   return globalTileCache;
 }
 
@@ -71,8 +80,10 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
     activeRequestsRef.current.clear();
     desiredKeysRef.current.clear();
 
-    const pool = poolRef.current!;
-    const cache = cacheRef.current!;
+    const pool = poolRef.current ?? getGlobalPdfTilePool();
+    const cache = cacheRef.current ?? getGlobalTileCache();
+    poolRef.current = pool;
+    cacheRef.current = cache;
     setMetrics(null);
     setPainted(new Map());
     setError(null);
@@ -174,10 +185,11 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
             return;
           }
 
-          const bitmap = delivery.claim() ?? cacheRef.current?.peek(tile.key);
-          if (!bitmap) return;
-
-          if (cache.set(tile.key, bitmap, delivery.width * delivery.height * 4, protectedKeys)) {
+          const bitmap = delivery.claim();
+          if (bitmap) {
+            cache.set(tile.key, bitmap, delivery.width * delivery.height * 4, protectedKeys);
+          }
+          if (cache.has(tile.key)) {
             setPainted((previous) => {
               const existing = previous.get(tile.key);
               const next = new Map(previous);
@@ -231,17 +243,6 @@ export function PdfPageLayer({ runId, pageIndex, viewport, fallbackWidth, fallba
     };
   }, [metrics, viewport.x, viewport.y, viewport.width, viewport.height, viewport.zoom, viewport.dpr, error, pyramid, documentKey, pageIndex, dimensions.width, dimensions.height]);
 
-  useEffect(() => {
-    return () => {
-      cancelled = true;
-      if (refreshTimer !== undefined) window.clearTimeout(refreshTimer);
-      activeRequestsRef.current.forEach((entry) => entry.cancel());
-      activeRequestsRef.current.clear();
-      desiredKeysRef.current.clear();
-      // Only close this documentKey, other documents stay open in the shared pool.
-      poolRef.current?.close(documentKey);
-    };
-  }, [documentKey]);
 
   if (error) return <button type="button" onClick={() => setRetry((value) => value + 1)}>Retry PDF: {error}</button>;
   if (!metrics) return <div role="status">Loading original PDF…</div>;

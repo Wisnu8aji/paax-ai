@@ -12,7 +12,7 @@ import paax_db.models
 
 # revision identifiers, used by Alembic.
 revision = '0036'
-down_revision = ('0035_calculation_authority', '0035_calculation_authority_constraints', '0035_calculation_authority_const')
+down_revision = '0035_calculation_authority'
 branch_labels = None
 depends_on = None
 

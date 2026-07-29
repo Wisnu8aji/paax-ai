@@ -9,7 +9,7 @@
  * TIDAK menghitung apa pun — hanya memetakan payload ke view-model.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   fetchQuantityReadiness,
   fetchCivilWorkItems,
@@ -54,6 +54,13 @@ function mapDemRunToDrawingFile(run: any): DrawingFile {
 
 export function useBackendSync(projectId: string | null) {
   const { state, dispatch } = useWorkspace();
+  const hasInitializedModeRef = useRef(false);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  useEffect(() => {
+    hasInitializedModeRef.current = false;
+  }, [projectId]);
 
   useEffect(() => {
     if (!projectId) return;
@@ -78,19 +85,28 @@ export function useBackendSync(projectId: string | null) {
         if (cancelled) return;
 
         const hasRealData = queue.items.length > 0 || readiness.items.length > 0 || (civilWorkItems?.items.length ?? 0) > 0 || sheetsData.length > 0 || runsData.length > 0 || summaryViewsData.length > 0;
+        const isUploadingOrMapped = stateRef.current.upload.running || stateRef.current.mappedSheets.length > 0;
         if (!hasRealData) {
-          dispatch({ type: 'backend-sync-failed', error: 'not-ready' });
+          if (!isUploadingOrMapped) {
+            dispatch({ type: 'backend-sync-failed', error: 'not-ready' });
+          }
+          if (!cancelled) {
+            timer = setTimeout(sync, 3000);
+          }
           return;
         }
 
         dispatch({ type: 'backend-connected', connected: true });
 
-        let initialMode = state.mode;
-        if (head?.active_module) {
-          initialMode = head.active_module as any;
-          dispatch({ type: 'set-mode', mode: initialMode });
-        } else if (state.mode === 'files' && (sheetsData.length > 0 || queue.items.length > 0)) {
-          dispatch({ type: 'set-mode', mode: 'review' });
+        if (!hasInitializedModeRef.current) {
+          hasInitializedModeRef.current = true;
+          if (stateRef.current.mode === 'files') {
+            if (head?.active_module && head.active_module !== 'files') {
+              dispatch({ type: 'set-mode', mode: head.active_module as any });
+            } else if (sheetsData.length > 0 || queue.items.length > 0) {
+              dispatch({ type: 'set-mode', mode: 'review' });
+            }
+          }
         }
 
         const snapshotId = queue.snapshot_id || readiness.snapshot_id || null;
@@ -98,43 +114,56 @@ export function useBackendSync(projectId: string | null) {
           dispatch({ type: 'set-active-snapshot-id', snapshotId });
         }
 
-        const hasPendingRuns = runsData.some((r: any) => ['created', 'processing', 'uploading'].includes(r.status));
+        const hasPendingRuns = runsData.some((r: any) => ['created', 'processing', 'uploading', 'pages_queued', 'pages_extracting'].includes(r.status));
 
-        const syntheticSheetsData: any[] = [];
+        const combinedSheetsData = [...sheetsData];
+
+        const mappedSheets: Sheet[] = combinedSheetsData.map(mapRawDemSheetToSheet);
+        if (mappedSheets.length > 0) {
+          dispatch({ type: 'replace-sheets', sheets: mappedSheets });
+        } else {
+          dispatch({ type: 'replace-sheets', sheets: [] });
+        }
+
+        const placeholders: any[] = [];
         for (const run of runsData) {
           const runId = run.id;
           const hasSheets = sheetsData.some((s: any) => s.run_id === runId);
           if (!hasSheets && run.total_pages > 0) {
             for (let i = 0; i < run.total_pages; i++) {
-              syntheticSheetsData.push({
-                run_id: runId,
-                page_index: i,
-                file_name: run.file_name,
+              placeholders.push({
+                id: `placeholder-${runId}-${i}`,
+                runId: runId,
+                pageIndex: i,
+                number: null,
+                title: null,
+                discipline: null,
+                level: null,
+                scale: null,
+                revision: null,
+                confidence: null,
+                widthPx: null,
+                heightPx: null,
                 status: run.status === 'created' ? 'uploading' : 'processing',
-                sheet_title: `Processing Page ${i + 1}`,
-                sheet_number: `PAGE-${i + 1}`,
+                imageUrl: null,
               });
             }
           }
         }
-        const combinedSheetsData = [...sheetsData, ...syntheticSheetsData];
 
-        const mappedSheets: Sheet[] = combinedSheetsData.map(mapRawDemSheetToSheet);
-        if (mappedSheets.length > 0) {
-          dispatch({ type: 'replace-sheets', sheets: mappedSheets });
+        const allMappedSheets = [...combinedSheetsData.map(mapProjectDemSheet), ...placeholders];
+        dispatch({ type: 'replace-mapped-sheets', sheets: allMappedSheets });
 
-          let initialSheetId = state.activeSheetId;
-          if (session?.active_sheet_id && mappedSheets.some(s => s.id === session.active_sheet_id)) {
-            initialSheetId = session.active_sheet_id;
-          } else if (!initialSheetId) {
-            initialSheetId = mappedSheets[0].id;
-          }
-
-          if (initialSheetId) {
-            dispatch({ type: 'set-active-sheet', sheetId: initialSheetId });
-          }
+        let initialSheetId = state.activeSheetId;
+        if (session?.active_sheet_id && allMappedSheets.some((s: any) => s.id === session.active_sheet_id)) {
+          initialSheetId = session.active_sheet_id;
+        } else if (!initialSheetId || !allMappedSheets.some((s: any) => s.id === initialSheetId)) {
+          initialSheetId = allMappedSheets[0]?.id || null;
         }
-        dispatch({ type: 'replace-mapped-sheets', sheets: combinedSheetsData.map(mapProjectDemSheet) });
+
+        if (initialSheetId) {
+          dispatch({ type: 'set-active-sheet', sheetId: initialSheetId });
+        }
         const mappedFiles = runsData.map(mapDemRunToDrawingFile);
 
         if (mappedFiles.length > 0) {
@@ -292,7 +321,7 @@ export function useBackendSync(projectId: string | null) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [projectId, dispatch]);
+  }, [projectId, state.files.length, state.upload.entries.length, state.upload.running, dispatch]);
 
   useEffect(() => {
     const selected = state.mappedSheets.find((sheet) => sheet.id === state.activeSheetId);
@@ -346,8 +375,8 @@ export function useBackendSync(projectId: string | null) {
     if (!projectId || !state.backendConnected) return;
 
     const sessionPatch = {
-      active_sheet_id: state.activeSheetId,
-      selected_sheet_ids: state.selectedSheetIds,
+      active_sheet_id: state.activeSheetId?.startsWith('placeholder-') ? null : state.activeSheetId,
+      selected_sheet_ids: state.selectedSheetIds.filter(id => !id.startsWith('placeholder-')),
       preferences: {
         zoom: state.canvas.zoom,
         panX: state.canvas.panX,

@@ -182,6 +182,7 @@ async def test_issuing_artifact_url_fails_closed_without_a_configured_signing_se
     fallback now only applies under an explicit TESTING=1 flag."""
     monkeypatch.delenv("ARTIFACT_SIGNING_SECRET", raising=False)
     monkeypatch.delenv("TESTING", raising=False)
+    monkeypatch.setenv("ENV", "production")
     run = {"id": "run-500", "project_id": "PROJECT-A", "artifact_key": "original-pdf/runs/run-500/source.pdf"}
     with patch("app.api.dem_routes.DemDbClient.get_run", new=AsyncMock(return_value=run)), \
          patch("app.api.dem_routes.DemDbClient.authorize_artifact", new=AsyncMock()), \

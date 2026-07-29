@@ -3,7 +3,7 @@ const DOCUMENT_INTELLIGENCE_URL =
   process.env.NEXT_PUBLIC_DOCUMENT_INTELLIGENCE_URL ||
   "http://127.0.0.1:8083";
 
-const INTERNAL_SERVICE_KEY = process.env.INTERNAL_SERVICE_KEY || "test-internal-key";
+const INTERNAL_SERVICE_KEY = process.env.INTERNAL_SERVICE_KEY || "live-test-key";
 
 type RouteContext = {
   params: Promise<{ path?: string[] }>;

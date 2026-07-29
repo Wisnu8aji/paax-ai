@@ -5,7 +5,6 @@ import hashlib
 import json
 import uuid
 from pathlib import Path
-import sys
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,13 +13,17 @@ from sqlalchemy.sql import func
 from paax_db import models
 from paax_db.project_graph_repository import build_and_activate_snapshot
 
-# Add document-intelligence to path to import schemas and synthesis logic
-_doc_intel_path = Path(__file__).resolve().parents[4] / "services" / "document-intelligence"
-if str(_doc_intel_path) not in sys.path:
-    sys.path.insert(0, str(_doc_intel_path))
+import sys
 
-from app.transcription.models import DrawingEvidenceSheet
-from app.project_graph.synthesis import synthesize_project_graph
+try:
+    from app.transcription.models import DrawingEvidenceSheet
+    from app.project_graph.synthesis import synthesize_project_graph
+except ImportError:
+    _doc_intel_path = Path(__file__).resolve().parents[4] / "services" / "document-intelligence"
+    if _doc_intel_path.exists() and str(_doc_intel_path) not in sys.path:
+        sys.path.insert(0, str(_doc_intel_path))
+    from app.transcription.models import DrawingEvidenceSheet
+    from app.project_graph.synthesis import synthesize_project_graph
 
 
 def _node_to_dict(n):

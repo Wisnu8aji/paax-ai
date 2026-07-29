@@ -27,5 +27,5 @@ export default function DrawingIntelligencePage() {
   const project = resolveDrawingProject(activeProjectId, projects);
   const projectName = project?.name ?? 'Proyek aktif';
 
-  return <DrawingIntelligenceWorkspaceV2 projectName={projectName} projectId={project?.id ?? null} />;
+  return <DrawingIntelligenceWorkspaceV2 projectName={projectName} projectId={project?.id ?? activeProjectId ?? null} />;
 }

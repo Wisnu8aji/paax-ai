@@ -341,9 +341,7 @@ export function UploadDrawingModal() {
                   className="di-btn di-btn-primary"
                   onClick={() => {
                     close();
-                    if (entries.some(e => e.runId)) {
-                      dispatch({ type: 'set-mode', mode: 'analyze' });
-                    }
+                    dispatch({ type: 'set-mode', mode: 'analyze' });
                   }}
                 >
                   Configure Analysis

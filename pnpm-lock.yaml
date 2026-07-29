@@ -86,7 +86,7 @@ importers:
         version: 4.3.1
     devDependencies:
       '@playwright/test':
-        specifier: ^1.50.0
+        specifier: ^1.62.0
         version: 1.62.0
       '@tailwindcss/postcss':
         specifier: ^4.0.0
@@ -112,6 +112,9 @@ importers:
       jsdom:
         specifier: ^29.1.1
         version: 29.1.1
+      playwright:
+        specifier: ^1.62.0
+        version: 1.62.0
       tailwindcss:
         specifier: ^4.0.0
         version: 4.3.1

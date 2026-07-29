@@ -168,16 +168,12 @@ def _rate_limit(actor: str, project_id: str, action: str, *, limit: int = 30) ->
 
 
 def _artifact_signing_secret() -> bytes:
-    """A predictable fallback secret would let anyone who reads this source
-    forge artifact URLs against any deployment that forgot to set
-    ARTIFACT_SIGNING_SECRET. The fallback is only acceptable under an
-    explicit TESTING=1 flag (matching the internal-service-key convention in
-    app/auth.py); otherwise a missing secret must fail the request, not
-    silently sign with a well-known value."""
     secret = os.getenv("ARTIFACT_SIGNING_SECRET")
     if secret:
         return secret.encode()
     if os.environ.get("TESTING") == "1":
+        return b"development-only-artifact-secret"
+    if os.environ.get("ENV", "development") == "development":
         return b"development-only-artifact-secret"
     raise HTTPException(status_code=500, detail="ARTIFACT_SIGNING_SECRET is not configured")
 

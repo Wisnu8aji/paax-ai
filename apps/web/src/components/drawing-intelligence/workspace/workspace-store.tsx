@@ -520,13 +520,17 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
       return { ...state, summaryViews: action.summaryViews };
     case 'replace-elements':
       return { ...state, elements: action.elements };
-    case 'replace-mapped-sheets':
+    case 'replace-mapped-sheets': {
+      const nextActiveId = (state.activeSheetId && action.sheets.some((s) => s.id === state.activeSheetId))
+        ? state.activeSheetId
+        : (action.sheets[0]?.id ?? null);
       return {
         ...state,
         mappedSheets: action.sheets,
-        activeSheetId: state.activeSheetId ?? action.sheets[0]?.id ?? null,
-        selectedSheetIds: state.selectedSheetIds.length ? state.selectedSheetIds : (action.sheets[0] ? [action.sheets[0].id] : []),
+        activeSheetId: nextActiveId,
+        selectedSheetIds: nextActiveId ? [nextActiveId] : [],
       };
+    }
     case 'replace-sheets': {
       const activeSheetId = state.activeSheetId || (action.sheets.length > 0 ? action.sheets[0].id : null);
       const selectedSheetIds = state.selectedSheetIds.length > 0 ? state.selectedSheetIds : (activeSheetId ? [activeSheetId] : []);
@@ -609,8 +613,9 @@ export function WorkspaceProvider({
       dispatch({ type: 'set-status', message: `Uploading ${entries.length} files` });
 
       const hasRealFiles = files.some(f => f.file !== undefined);
+      const activePid = projectId || state.projectId;
 
-      if (hasRealFiles && projectId) {
+      if (hasRealFiles && activePid) {
         let completedUploads = 0;
         files.forEach(async (f, i) => {
           if (!f.file) return;
@@ -625,13 +630,37 @@ export function WorkspaceProvider({
 
           try {
             updateEntryStatus(10, 'uploading', 'Uploading file...');
-            const uploadRes = await startDemUpload(projectId, f.file);
+            const uploadRes = await startDemUpload(activePid, f.file);
             const runId = uploadRes.run_id;
+            const totalPages = uploadRes.total_pages || 1;
             updateEntryStatus(100, 'completed', 'Upload complete. Extraction started.', runId);
+
+            // Populate mappedSheets placeholders immediately so PDF canvas mounts without delay
+            const placeholders: any[] = [];
+            for (let pIdx = 0; pIdx < totalPages; pIdx++) {
+              placeholders.push({
+                id: `placeholder-${runId}-${pIdx}`,
+                runId: runId,
+                pageIndex: pIdx,
+                number: null,
+                title: null,
+                discipline: null,
+                level: null,
+                scale: null,
+                revision: null,
+                confidence: null,
+                widthPx: null,
+                heightPx: null,
+                status: 'processing',
+                imageUrl: null,
+              });
+            }
+            dispatch({ type: 'replace-mapped-sheets', sheets: placeholders });
 
             completedUploads += 1;
             if (completedUploads === files.length) {
               dispatch({ type: 'upload', patch: { running: false } });
+              dispatch({ type: 'set-mode', mode: 'analyze' });
               dispatch({
                 type: 'push-activity',
                 entry: { time: 'Now', message: `${files.length} file(s) uploaded.`, kind: 'upload' },
@@ -640,7 +669,7 @@ export function WorkspaceProvider({
               try {
                 // We'll rely on useBackendSync's polling to populate synthetic sheets and runs.
                 // Just trigger a quick refresh of runs to get the status.
-                const runsData = await import('../drawing-intelligence-api').then(api => api.fetchProjectDemRuns(projectId));
+                const runsData = await import('../drawing-intelligence-api').then(api => api.fetchProjectDemRuns(activePid));
                 const mappedFiles = runsData.map(mapDemRunToDrawingFile);
                 dispatch({ type: 'replace-files', files: mappedFiles });
               } catch (e) {
