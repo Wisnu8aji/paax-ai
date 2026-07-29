@@ -382,7 +382,7 @@ export function MissionControl({ userRole = 'estimator' }: MissionControlProps) 
               disabled={actionState === 'loading' || !goal.trim()}
               style={{ marginTop: 10, width: '100%', height: 34, cursor: actionState === 'loading' ? 'not-allowed' : 'pointer' }}
             >
-              Buat Plan Terikat PLHUT
+              Buat Plan Terikat Proyek
             </button>
             <p style={{ fontSize: 11, color: 'var(--di-text3)', lineHeight: 1.5 }}>
               Run hanya membuat plan dan state persisten. Aksi RAB, approval, dan keputusan engineering tetap melalui authority gate.

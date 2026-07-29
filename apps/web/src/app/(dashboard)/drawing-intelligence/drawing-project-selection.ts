@@ -4,5 +4,5 @@ export function resolveDrawingProject<T extends { id: string }>(
 ): T | null {
   const active = activeProjectId ? projects.find((project) => project.id === activeProjectId) : null;
   if (active) return active;
-  return projects.find((project) => project.id === 'PLHUT-SURAKARTA') ?? (projects.length === 1 ? projects[0] : null);
+  return projects.length === 1 ? projects[0] : null;
 }

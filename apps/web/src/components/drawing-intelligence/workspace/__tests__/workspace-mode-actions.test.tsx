@@ -359,7 +359,7 @@ describe('MissionControl — Backend Failure Recovery (Phase 5B)', () => {
     });
     (global.fetch as any).mockImplementation(() => slowCreatePromise);
 
-    const submitBtn = screen.getByRole('button', { name: /buat plan terikat plhut/i });
+    const submitBtn = screen.getByRole('button', { name: /buat plan terikat proyek/i });
     fireEvent.click(submitBtn);
     fireEvent.click(submitBtn);
 
@@ -393,7 +393,7 @@ describe('MissionControl — Backend Failure Recovery (Phase 5B)', () => {
       json: async () => ({ error: 'Create run failed 500' }),
     });
 
-    const createBtn = screen.getByRole('button', { name: /buat plan terikat plhut/i });
+    const createBtn = screen.getByRole('button', { name: /buat plan terikat proyek/i });
     fireEvent.click(createBtn);
 
     const errorPanel = await screen.findByTestId('mission-error-panel');

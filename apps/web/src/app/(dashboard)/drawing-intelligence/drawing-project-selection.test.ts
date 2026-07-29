@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { resolveDrawingProject } from "./drawing-project-selection";
 
 const projects = [
-  { id: "PLHUT-SURAKARTA", name: "PLHUT Surakarta" },
+  { id: "PROJ-001", name: "Proyek Utama UNS" },
 ] as any;
 
 describe("resolveDrawingProject", () => {
