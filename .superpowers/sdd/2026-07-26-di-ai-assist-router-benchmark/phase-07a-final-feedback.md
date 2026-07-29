@@ -1,6 +1,6 @@
 PHASE: 07A
 STATUS: PASS
-COMMIT: PENDING_COMMIT
+COMMIT: 254ee2fc
 FAST-PATH NO-CALL EVIDENCE: Python pytest test_deterministic_success_does_not_call_provider & test_null_client_always_returns_none PASSED
 VALIDATION EVIDENCE: Python pytest test_bounded_validation_rejects_unknown_fields_and_evidence, test_proposal_outside_allowed_vocabulary_is_rejected, test_source_text_mismatch_is_rejected, test_proposal_claiming_core_engine_or_final_quantity_is_rejected PASSED
 HUMAN APPROVAL EVIDENCE: Python pytest test_proposal_requires_human_approval_state PASSED (approval_state='unapproved', outcome='needs_review')
