@@ -10,7 +10,12 @@
 - Fase 0 (Baseline, Feature Flags, upload security, logic leakage block, review queue API confirmation, mock fallback block) SELESAI di branch `feat/drawing-intelligence-truth-rebuild`. Detail: `docs/plans/drawing intelligence/Versi 1.1/PHASE_0_COMPLETION_REPORT.md`.
 - Fase 1 (Documentation and Active-State Reconciliation) SELESAI. Detail: `docs/plans/drawing intelligence/Versi 1.1/PHASE_1_COMPLETION_REPORT.md`.
 - Fase 2 (Evidence Truth Layer) SELESAI. Immutability guard, synthesis rewrite, composite foreign keys, dan citation package v2 telah diimplementasikan penuh di backend (`services/db`, `services/document-intelligence`) dan AI Orchestrator (`services/ai-orchestrator`). Detail: `docs/plans/drawing intelligence/Versi 1.1/PHASE_2_COMPLETION_REPORT.md`.
-- Semua test otomatis hijau lintas paket: Python Backend `services/db` (88 tests passed), `services/document-intelligence` (synthesis roundtrip test passed), dan `services/ai-orchestrator` (50 tests passed).
+- **Phase 09E & Phase 10 (Feedback 1 Audit, E2E & Controlled Benchmark):**
+  - Phase 09E: Truthful real-stack integration (Web, Core Engine, DB API, Doc Intel) and 88-page PLHUT dataset seeded into SQLite project graph (3,407 nodes, 3,768 edges). Playwright E2E browser test passed (2/2).
+  - Phase 10A: Fail-closed Feedback 1 audit matrix (`feedback1_matrix.json`) covering P2-P62 losslessly with offline quality runner.
+  - Phase 10B: Real-stack 4-service E2E browser gate (`feedback1-real-stack.spec.ts`) passed on 53-page Gedung A source PDF & PLHUT dataset without route interception. Visual checklist recorded in `apps/web/e2e/feedback1-visual-checklist.md`.
+  - Phase 10C: Non-secret controlled benchmark ledger (`FEEDBACK1_AI_BENCHMARK_2026-07-26.json`) and full audit report (`FEEDBACK1_ACCEPTANCE_AUDIT_2026-07-26.md`) generated. DeepSeek 401 provider error logged honestly as BLOCKED (0 calls) with rule-based fallback active. All 61 matrix entries verified.
+- Semua test otomatis hijau lintas paket: Python Backend `services/db` (88 tests passed), `services/document-intelligence` (offline contract & report tests passed), Core Engine (303 tests passed), `apps/web` (Vitest & Playwright E2E passed).
 
 ## Branch & PR aktif
 - Branch kerja mandat: `feat/drawing-intelligence-truth-rebuild` (aktif dikerjakan, Phase 0, 1, dan 2 selesai).
