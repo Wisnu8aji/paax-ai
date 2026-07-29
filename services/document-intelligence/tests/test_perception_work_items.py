@@ -225,3 +225,15 @@ def test_work_items_endpoint_returns_grouping_response():
     data = response.json()
     assert data["work_items"][0]["formula_status"] == "dihitung"
     assert data["work_items"][0]["volume"] == 0.42
+
+
+def test_takeoff_capability_registry_integration():
+    from app.perception.takeoff_capability_registry import resolve_takeoff_capability
+
+    cap_tanah = resolve_takeoff_capability("tanah")
+    assert cap_tanah is not None
+    assert cap_tanah.endpoint == "/takeoff/tanah"
+    assert cap_tanah.required_fields == ["panjang_m", "lebar_m", "dalam_m"]
+
+    cap_invalid = resolve_takeoff_capability("non_existent_category")
+    assert cap_invalid is None

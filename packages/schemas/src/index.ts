@@ -3586,3 +3586,30 @@ export const ActiveSheetContextSchema = z.object({
   }),
 });
 export type ActiveSheetContext = z.infer<typeof ActiveSheetContextSchema>;
+
+export const SourceAuthorityEnum = z.enum(["none", "review", "core_engine"]);
+export const ReadinessStatusEnum = z.enum(["ready", "needs_review", "blocked"]);
+
+export const TakeoffCapabilitySchema = z.object({
+  endpoint: z.string().min(1),
+  required_fields: z.array(z.string()),
+  source_authority: SourceAuthorityEnum.default("none"),
+  status: ReadinessStatusEnum.default("ready"),
+  category: z.string().min(1),
+  work_type: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+export type TakeoffCapabilitySchemaType = z.infer<typeof TakeoffCapabilitySchema>;
+
+export const CoverageRowSchema = z.object({
+  work_id: z.string().min(1),
+  category: z.string().min(1),
+  evidence_refs: z.array(z.string()).default([]),
+  required_fields: z.array(z.string()).default([]),
+  missing_fields: z.array(z.string()).default([]),
+  endpoint: z.string().nullable().optional(),
+  readiness: ReadinessStatusEnum.default("blocked"),
+  source_authority: SourceAuthorityEnum.default("none"),
+  reason: z.string().nullable().optional(),
+});
+export type CoverageRowSchemaType = z.infer<typeof CoverageRowSchema>;
