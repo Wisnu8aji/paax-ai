@@ -42,7 +42,7 @@ import {
   fetchProjectDemRuns,
 } from '../drawing-intelligence-api';
 import type { PackageIntelligenceSummary } from '../drawing-intelligence-api';
-import type { ProjectGraphSummaryView, QuantityReadinessItem } from '@paax/schemas';
+import type { ProjectGraphSummaryView, QuantityReadinessItem, DrawingPackageIndex } from '@paax/schemas';
 import type { MappedProjectSheet } from './sheet-mapping';
 import { mapProjectDemSheet } from './sheet-mapping';
 import type { HonestWorkspaceState } from './quantity-authority';
@@ -152,6 +152,27 @@ export interface WorkspaceState {
 
   summaryViews: ProjectGraphSummaryView[];
   honestState: HonestWorkspaceState;
+
+  /**
+   * Backend-derived DrawingPackageIndex — fetched once for the active/latest
+   * usable DEM run. Never refetched on mode or filter changes.
+   * null = not yet loaded or run not ready.
+   */
+  drawingPackageIndex: DrawingPackageIndex | null;
+  /** Set when the last index load failed or returned a malformed payload. */
+  drawingPackageIndexError: string | null;
+  /**
+   * Independent optional filters applied client-side to the already-fetched
+   * index. Filter changes do NOT trigger a refetch.
+   */
+  indexFilters: {
+    view: string | null;
+    revision: string | null;
+    zone: string | null;
+    status: 'classified' | 'needs_review' | null;
+    level: string | null;
+    classification: string | null;
+  };
 }
 
 const DEFAULT_OVERLAYS: Record<string, boolean> = {
@@ -269,6 +290,16 @@ export function initialWorkspaceState(withData: boolean): WorkspaceState {
     backendSyncError: null,
     honestState: 'extraction-pending',
     summaryViews: [],
+    drawingPackageIndex: null,
+    drawingPackageIndexError: null,
+    indexFilters: {
+      view: null,
+      revision: null,
+      zone: null,
+      status: null,
+      level: null,
+      classification: null,
+    },
   };
 }
 
@@ -314,7 +345,14 @@ export type WorkspaceAction =
   | { type: 'replace-files'; files: DrawingFile[] }
   | { type: 'set-active-snapshot-id'; snapshotId: string | null }
   | { type: 'set-project-id'; projectId: string | null }
-  | { type: 'set-honest-state'; state: HonestWorkspaceState };
+  | { type: 'set-honest-state'; state: HonestWorkspaceState }
+  /** Phase 06: DrawingPackageIndex state. Index is set once per active run. */
+  | { type: 'set-drawing-package-index'; index: DrawingPackageIndex; error: null }
+  | { type: 'set-drawing-package-index-error'; error: string }
+  | { type: 'clear-drawing-package-index' }
+  /** Phase 06: Update independent optional filters without refetching. */
+  | { type: 'set-index-filters'; patch: Partial<WorkspaceState['indexFilters']> }
+  | { type: 'clear-index-filters' };
 
 function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
   switch (action.type) {
@@ -548,6 +586,42 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
       return { ...state, activeSnapshotId: action.snapshotId };
     case 'set-project-id':
       return { ...state, projectId: action.projectId };
+    // Phase 06 — DrawingPackageIndex state management
+    case 'set-drawing-package-index':
+      return {
+        ...state,
+        drawingPackageIndex: action.index,
+        drawingPackageIndexError: null,
+      };
+    case 'set-drawing-package-index-error':
+      // Retain last valid index on failure (brief §3)
+      return {
+        ...state,
+        drawingPackageIndexError: action.error,
+      };
+    case 'clear-drawing-package-index':
+      return {
+        ...state,
+        drawingPackageIndex: null,
+        drawingPackageIndexError: null,
+      };
+    case 'set-index-filters':
+      return {
+        ...state,
+        indexFilters: { ...state.indexFilters, ...action.patch },
+      };
+    case 'clear-index-filters':
+      return {
+        ...state,
+        indexFilters: {
+          view: null,
+          revision: null,
+          zone: null,
+          status: null,
+          level: null,
+          classification: null,
+        },
+      };
     default:
       return state;
   }

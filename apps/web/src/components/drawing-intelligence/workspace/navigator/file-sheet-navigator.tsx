@@ -1,16 +1,16 @@
-'use client';
+﻿'use client';
 
-import { PanelLeftClose, PanelLeftOpen, Search, UploadCloud } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Search, UploadCloud, AlertTriangle } from 'lucide-react';
 import { useMemo } from 'react';
 import { useWorkspace } from '../workspace-store';
 import type { NavigatorTab } from '../workspace-store';
-import { buildSheetNavigationGroups, displayClassification } from './sheet-navigation';
-
-const MODES: Array<{ id: NavigatorTab; label: string }> = [
-  { id: 'level', label: 'Level' },
-  { id: 'classification', label: 'Classification' },
-  { id: 'source', label: 'Original order' },
-];
+import {
+  buildSheetNavigationGroups,
+  displayClassification,
+  buildGroupsFromIndex,
+  SHEET_VIEW_MODES,
+  type IndexFilter,
+} from './sheet-navigation';
 
 function SheetThumbnail({ sheetId }: { sheetId: string }) {
   const { state } = useWorkspace();
@@ -37,11 +37,56 @@ function SheetThumbnail({ sheetId }: { sheetId: string }) {
   );
 }
 
+/** Filter chip that dispatches a single axis filter. */
+function FilterPill({
+  label,
+  active,
+  onToggle,
+}: {
+  label: string;
+  active: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      className={active ? 'di-btn di-btn-primary' : 'di-btn di-btn-ghost'}
+      style={{ height: 22, fontSize: 10, padding: '0 8px' }}
+      onClick={onToggle}
+      aria-pressed={active}
+    >
+      {label}
+    </button>
+  );
+}
+
 export function FileSheetNavigator() {
   const { state, dispatch } = useWorkspace();
   const views = state.analysis.packageIntelligence?.sheet_views;
+  const packageIndex = state.drawingPackageIndex;
+  const indexError = state.drawingPackageIndexError;
+  const filters = state.indexFilters;
   const search = state.navigator.search.trim().toLowerCase();
-  const groups = useMemo(() => {
+
+  // Build the active filter object for index-based rendering
+  const activeFilter: IndexFilter = useMemo(() => ({
+    view: filters.view ?? undefined,
+    revision: filters.revision ?? undefined,
+    zone: filters.zone ?? undefined,
+    status: filters.status ?? undefined,
+    level: filters.level ?? undefined,
+    classification: filters.classification ?? undefined,
+  }), [filters]);
+
+  const hasActiveFilters = Object.values(filters).some(v => v !== null);
+
+  // Index-based groups: use DrawingPackageIndex when available for the active run
+  const indexGroups = useMemo(() => {
+    if (!packageIndex) return null;
+    return buildGroupsFromIndex(packageIndex, state.sheets, state.navigator.tab, activeFilter);
+  }, [packageIndex, state.sheets, state.navigator.tab, activeFilter]);
+
+  // Fallback: legacy SheetViews-based groups
+  const legacyGroups = useMemo(() => {
     const derived = buildSheetNavigationGroups(views, state.sheets, state.navigator.tab);
     if (!search) return derived;
     return derived
@@ -83,8 +128,9 @@ export function FileSheetNavigator() {
           </button>
         </div>
 
+        {/* Three-mode tab selector â€” canonical SHEET_VIEW_MODES */}
         <div role="tablist" aria-label="Sheet view mode" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 4 }}>
-          {MODES.map((mode) => {
+          {SHEET_VIEW_MODES.map((mode) => {
             const selected = state.navigator.tab === mode.id;
             return (
               <button
@@ -102,70 +148,123 @@ export function FileSheetNavigator() {
           })}
         </div>
 
+        {/* Independent optional filters â€” applied client-side, no refetch */}
+        {packageIndex && (
+          <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {/* Status filter */}
+            <FilterPill
+              label="Needs review"
+              active={filters.status === 'needs_review'}
+              onToggle={() => dispatch({
+                type: 'set-index-filters',
+                patch: { status: filters.status === 'needs_review' ? null : 'needs_review' },
+              })}
+            />
+            {/* Clear all filters */}
+            {hasActiveFilters && (
+              <button
+                className="di-btn di-btn-ghost"
+                style={{ height: 22, fontSize: 10, padding: '0 8px', color: 'var(--di-warn)' }}
+                onClick={() => dispatch({ type: 'clear-index-filters' })}
+                aria-label="Clear all filters"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Index error banner */}
+        {indexError && (
+          <div
+            role="alert"
+            style={{ marginTop: 6, padding: '6px 8px', borderRadius: 6, background: 'var(--di-warn-bg, rgba(255,180,0,0.1))', fontSize: 10.5, color: 'var(--di-warn)', display: 'flex', gap: 6 }}
+          >
+            <AlertTriangle size={13} style={{ flexShrink: 0 }} />
+            <span>Index load issue: {indexError}. Previous index retained.</span>
+          </div>
+        )}
+
         <label style={{ position: 'relative', display: 'block', marginTop: 8 }}>
           <Search size={13} style={{ position: 'absolute', left: 8, top: 8, color: 'var(--di-text3)' }} />
           <input
             aria-label="Search sheets"
             value={state.navigator.search}
             onChange={(event) => dispatch({ type: 'navigator', patch: { search: event.target.value } })}
-            placeholder="Search title, page, level…"
+            placeholder="Search title, page, levelâ€¦"
             style={{ width: '100%', height: 30, paddingLeft: 28 }}
           />
         </label>
       </div>
 
       <div style={{ overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {!views && groups.length === 0 && (
-          <div className="di-panel" style={{ padding: 10, fontSize: 11.5, color: 'var(--di-text2)' }}>
-            Sheet indexes are not ready. Complete deterministic package synthesis first; no placeholder grouping is shown.
-          </div>
-        )}
-        {views && groups.length === 0 && (
-          <div style={{ padding: 8, color: 'var(--di-text3)', fontSize: 11.5 }}>No matching sheets.</div>
-        )}
-        {groups.map((group) => (
+        {/* Index-based rendering (Phase 06) */}
+        {indexGroups !== null && indexGroups.map((group) => (
           <section key={group.key} aria-label={group.label}>
             <div className="di-section-title" style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
               <span>{group.label}</span><span className="di-pill" style={{ marginLeft: 'auto' }}>{group.rows.length}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {group.rows.map(({ sheet, view }) => {
-                const active = state.activeSheetId === sheet.id;
-                const needsReview = view.status === 'needs_review';
+              {group.rows.map(({ sheet: rowSheet, entry }) => {
+                const active = rowSheet ? state.activeSheetId === rowSheet.id : false;
+                const needsReview = entry.needs_review;
+                const sheetId = rowSheet?.id ?? null;
+                // Thumbnail: look up from mappedSheets by run_id + page_index
+                const mappingId = `${packageIndex!.run_id}-page-${entry.page_index}`;
+                const mapping = state.mappedSheets.find(m => m.id === mappingId);
+
                 return (
                   <article
-                    key={`${view.page_index}-${sheet.id}`}
+                    key={`idx-${entry.page_index}`}
                     className="di-panel"
-                    style={{ overflow: 'hidden', borderColor: active ? 'var(--di-accent)' : undefined, cursor: 'pointer' }}
-                    onClick={() => dispatch({ type: 'set-active-sheet', sheetId: sheet.id })}
+                    style={{ overflow: 'hidden', borderColor: active ? 'var(--di-accent)' : undefined, cursor: sheetId ? 'pointer' : 'default', opacity: rowSheet ? 1 : 0.6 }}
+                    onClick={() => sheetId && dispatch({ type: 'set-active-sheet', sheetId })}
                   >
-                    <SheetThumbnail sheetId={sheet.id} />
+                    {/* Thumbnail â€” lazy; never eager */}
+                    {mapping?.imageUrl ? (
+                      <img
+                        src={mapping.imageUrl}
+                        alt={`Thumbnail page ${entry.page_number}`}
+                        loading="lazy"
+                        decoding="async"
+                        style={{ display: 'block', width: '100%', height: 92, objectFit: 'contain', background: 'var(--di-paper)' }}
+                      />
+                    ) : (
+                      <div
+                        role="img"
+                        aria-label={rowSheet ? 'Thumbnail unavailable' : 'Sheet unavailable â€” index join miss'}
+                        style={{ display: 'grid', placeItems: 'center', height: 92, background: 'var(--di-paper)', color: 'var(--di-text3)', fontSize: 10 }}
+                      >
+                        {rowSheet ? 'Thumbnail unavailable' : 'Sheet not matched'}
+                      </div>
+                    )}
                     <div style={{ padding: 8 }}>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
-                        <span className="di-mono" style={{ fontWeight: 700 }}>p.{view.page_number}</span>
-                        <span className="di-mono" style={{ color: 'var(--di-text3)', fontSize: 10 }}>{sheet.code}</span>
+                        <span className="di-mono" style={{ fontWeight: 700 }}>p.{entry.page_number}</span>
+                        <span className="di-mono" style={{ color: 'var(--di-text3)', fontSize: 10 }}>{entry.sheet_code}</span>
                         <span className="di-pill" data-tone={needsReview ? 'warn' : 'ok'} style={{ marginLeft: 'auto' }}>
                           {needsReview ? 'Needs review' : 'Classified'}
                         </span>
                       </div>
-                      <div style={{ fontSize: 11.5, marginTop: 3 }}>{sheet.title}</div>
+                      <div style={{ fontSize: 11.5, marginTop: 3 }}>{entry.sheet_title}</div>
                       <div style={{ color: 'var(--di-text3)', fontSize: 10.5, marginTop: 3 }}>
-                        {displayClassification(view.classification_key)} · {view.level_key}
+                        {displayClassification(entry.classification.value)} Â· {entry.level.value}
                       </div>
-                      {needsReview && (
+                      {/* Unknown axis / review reasons â€” displayed verbatim, no auto-commit */}
+                      {needsReview && entry.review_reasons.length > 0 && (
                         <div style={{ marginTop: 7 }}>
                           <div style={{ fontSize: 10.5, color: 'var(--di-warn)' }}>
-                            {view.review_reason ?? 'Classification requires manual confirmation.'}
+                            {entry.review_reasons.join(' Â· ')}
                           </div>
                           <button
                             className="di-btn di-btn-ghost"
                             style={{ marginTop: 5, height: 26, fontSize: 10.5 }}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              dispatch({ type: 'set-active-sheet', sheetId: sheet.id });
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (sheetId) dispatch({ type: 'set-active-sheet', sheetId });
                               dispatch({ type: 'set-mode', mode: 'review' });
                               dispatch({ type: 'dock', patch: { expanded: true, tab: 'review-queue' } });
-                              dispatch({ type: 'set-status', message: `Review classification for p.${view.page_number}` });
+                              dispatch({ type: 'set-status', message: `Review classification for p.${entry.page_number}` });
                             }}
                           >
                             Review classification
@@ -179,6 +278,83 @@ export function FileSheetNavigator() {
             </div>
           </section>
         ))}
+
+        {/* Fallback: legacy SheetViews-based rendering when no index available */}
+        {indexGroups === null && (
+          <>
+            {!views && legacyGroups.length === 0 && (
+              <div className="di-panel" style={{ padding: 10, fontSize: 11.5, color: 'var(--di-text2)' }}>
+                Sheet indexes are not ready. Complete deterministic package synthesis first; no placeholder grouping is shown.
+              </div>
+            )}
+            {views && legacyGroups.length === 0 && (
+              <div style={{ padding: 8, color: 'var(--di-text3)', fontSize: 11.5 }}>No matching sheets.</div>
+            )}
+            {legacyGroups.map((group) => (
+              <section key={group.key} aria-label={group.label}>
+                <div className="di-section-title" style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+                  <span>{group.label}</span><span className="di-pill" style={{ marginLeft: 'auto' }}>{group.rows.length}</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {group.rows.map(({ sheet, view }) => {
+                    const active = state.activeSheetId === sheet.id;
+                    const needsReview = view.status === 'needs_review';
+                    return (
+                      <article
+                        key={`${view.page_index}-${sheet.id}`}
+                        className="di-panel"
+                        style={{ overflow: 'hidden', borderColor: active ? 'var(--di-accent)' : undefined, cursor: 'pointer' }}
+                        onClick={() => dispatch({ type: 'set-active-sheet', sheetId: sheet.id })}
+                      >
+                        <SheetThumbnail sheetId={sheet.id} />
+                        <div style={{ padding: 8 }}>
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
+                            <span className="di-mono" style={{ fontWeight: 700 }}>p.{view.page_number}</span>
+                            <span className="di-mono" style={{ color: 'var(--di-text3)', fontSize: 10 }}>{sheet.code}</span>
+                            <span className="di-pill" data-tone={needsReview ? 'warn' : 'ok'} style={{ marginLeft: 'auto' }}>
+                              {needsReview ? 'Needs review' : 'Classified'}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: 11.5, marginTop: 3 }}>{sheet.title}</div>
+                          <div style={{ color: 'var(--di-text3)', fontSize: 10.5, marginTop: 3 }}>
+                            {displayClassification(view.classification_key)} Â· {view.level_key}
+                          </div>
+                          {needsReview && (
+                            <div style={{ marginTop: 7 }}>
+                              <div style={{ fontSize: 10.5, color: 'var(--di-warn)' }}>
+                                {view.review_reason ?? 'Classification requires manual confirmation.'}
+                              </div>
+                              <button
+                                className="di-btn di-btn-ghost"
+                                style={{ marginTop: 5, height: 26, fontSize: 10.5 }}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  dispatch({ type: 'set-active-sheet', sheetId: sheet.id });
+                                  dispatch({ type: 'set-mode', mode: 'review' });
+                                  dispatch({ type: 'dock', patch: { expanded: true, tab: 'review-queue' } });
+                                  dispatch({ type: 'set-status', message: `Review classification for p.${view.page_number}` });
+                                }}
+                              >
+                                Review classification
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </>
+        )}
+
+        {/* Empty state when index is loaded but filters produce no results */}
+        {indexGroups !== null && indexGroups.length === 0 && (
+          <div style={{ padding: 8, color: 'var(--di-text3)', fontSize: 11.5 }}>
+            {hasActiveFilters ? 'No sheets match the active filters.' : 'No sheets in this view.'}
+          </div>
+        )}
       </div>
 
       <div style={{ padding: 10, borderTop: '1px solid var(--di-border)' }}>

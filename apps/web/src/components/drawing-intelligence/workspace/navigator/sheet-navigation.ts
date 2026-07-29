@@ -104,3 +104,131 @@ export function buildSheetNavigationGroups(
   }
   return [...groups.values()];
 }
+
+// ── Phase 06 additions ────────────────────────────────────────────────────
+
+/**
+ * Canonical three-mode navigator definition. Exported so components and tests
+ * share a single source of truth for mode IDs and labels.
+ */
+export const SHEET_VIEW_MODES: Array<{ id: NavigatorTab; label: string }> = [
+  { id: 'level', label: 'Level' },
+  { id: 'classification', label: 'Classification' },
+  { id: 'source', label: 'Original order' },
+];
+
+/**
+ * Independent optional filter set. Filters are applied to already-fetched
+ * index entries by deterministic value comparison — no network request.
+ */
+export interface IndexFilter {
+  view?: string;
+  revision?: string;
+  zone?: string;
+  status?: 'classified' | 'needs_review';
+  level?: string;
+  classification?: string;
+}
+
+/**
+ * Apply independent optional filters to a list of MultiAxisSheetEntry-like
+ * objects. Returns entries that satisfy ALL provided filters (intersection).
+ * Clearing all filters returns the full set.
+ *
+ * This function is synchronous and performs NO network requests.
+ */
+export function applyIndexFilters<T extends {
+  level: { value: string };
+  view: { value: string };
+  classification: { value: string };
+  revision: { value: string };
+  zone: { value: string };
+  needs_review: boolean;
+}>(entries: T[], filters: IndexFilter): T[] {
+  return entries.filter((entry) => {
+    if (filters.level && entry.level.value !== filters.level) return false;
+    if (filters.view && entry.view.value !== filters.view) return false;
+    if (filters.classification && entry.classification.value !== filters.classification) return false;
+    if (filters.revision && entry.revision.value !== filters.revision) return false;
+    if (filters.zone && entry.zone.value !== filters.zone) return false;
+    if (filters.status === 'needs_review' && !entry.needs_review) return false;
+    if (filters.status === 'classified' && entry.needs_review) return false;
+    return true;
+  });
+}
+
+/**
+ * Extended NavigableSheet that carries the full MultiAxisSheetEntry so the
+ * navigator can display review_reasons and all axis values.
+ */
+export interface NavigableIndexSheet {
+  sheet: Sheet | null; // null = explicit unavailable state (join miss)
+  entry: {
+    page_index: number;
+    page_number: number;
+    sheet_code: string;
+    sheet_title: string;
+    level: { value: string; status: string };
+    view: { value: string };
+    classification: { value: string };
+    revision: { value: string };
+    zone: { value: string };
+    needs_review: boolean;
+    review_reasons: string[];
+  };
+}
+
+export interface IndexSheetNavigationGroup {
+  key: string;
+  label: string;
+  rows: NavigableIndexSheet[];
+}
+
+/**
+ * Build navigator groups from a DrawingPackageIndex, joining entries to Sheets
+ * strictly by run_id + page_index. A missing join is an explicit unavailable
+ * state — never silently dropped.
+ *
+ * This function is synchronous and performs NO network requests.
+ */
+export function buildGroupsFromIndex(
+  index: { run_id: string; entries: NavigableIndexSheet['entry'][] },
+  sheets: Sheet[],
+  mode: NavigatorTab,
+  filters: IndexFilter,
+): IndexSheetNavigationGroup[] {
+  const filtered = applyIndexFilters(index.entries, filters);
+
+  // Build lookup: run_id + page_index → Sheet
+  const byPage = new Map<number, Sheet>(
+    sheets
+      .filter((s) => s.runId === index.run_id)
+      .map((s) => [s.pageIndex ?? s.pageNumber - 1, s]),
+  );
+
+  const rows: NavigableIndexSheet[] = filtered.map((entry) => ({
+    sheet: byPage.get(entry.page_index) ?? null,
+    entry,
+  }));
+
+  if (mode === 'source') {
+    return [{ key: 'source', label: 'Original PDF order', rows }];
+  }
+
+  const groups = new Map<string, IndexSheetNavigationGroup>();
+  for (const row of rows) {
+    const key =
+      mode === 'level'
+        ? row.entry.level.value
+        : row.entry.classification.value;
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        label: mode === 'level' ? displayLevel(key) : displayClassification(key),
+        rows: [],
+      });
+    }
+    groups.get(key)!.rows.push(row);
+  }
+  return [...groups.values()];
+}

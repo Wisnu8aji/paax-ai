@@ -19,12 +19,14 @@ import {
   fetchSummaryViews,
   fetchPackageIntelligence,
   fetchActiveSheetContext,
+  fetchDrawingPackageIndex,
 } from '../drawing-intelligence-api';
 import { projectRepository } from '@/lib/projects/project-repository';
 import { useWorkspace, mapQuantityReadinessToItems, mapCivilWorkItemsToQuantityItems, mapGraphNodesToElements } from './workspace-store';
 import type { ReviewQueueItem, Sheet, DrawingFile } from './di-types';
 import { mapProjectDemSheet } from './sheet-mapping';
 import { mapRawDemSheetToSheet } from './sheet-view-mapping';
+import { validateAndMergeIndex } from './navigator/index-state';
 
 const CATEGORY_LABELS: Record<string, string> = {
   conflict: 'Dimension conflict',
@@ -184,6 +186,30 @@ export function useBackendSync(projectId: string | null) {
           const packageIntelligence = await fetchPackageIntelligence(intelligenceRun.id).catch(() => null);
           if (!cancelled) {
             dispatch({ type: 'analysis', patch: { packageIntelligence } });
+          }
+
+          // Phase 06: Fetch DrawingPackageIndex once for the active run.
+          // Validates with Zod, guards against stale run_id.
+          try {
+            const rawIndex = await fetchDrawingPackageIndex(intelligenceRun.id);
+            if (!cancelled) {
+              const currentState = stateRef.current;
+              const mergeResult = validateAndMergeIndex({
+                activeRunId: intelligenceRun.id,
+                prev: currentState.drawingPackageIndex,
+                incoming: rawIndex,
+              });
+              if (mergeResult.error) {
+                dispatch({ type: 'set-drawing-package-index-error', error: mergeResult.error });
+              } else if (mergeResult.index) {
+                dispatch({ type: 'set-drawing-package-index', index: mergeResult.index, error: null });
+              }
+            }
+          } catch (indexErr) {
+            if (!cancelled) {
+              const msg = indexErr instanceof Error ? indexErr.message : String(indexErr);
+              dispatch({ type: 'set-drawing-package-index-error', error: `fetch failed: ${msg}` });
+            }
           }
         }
 
