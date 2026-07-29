@@ -1,0 +1,49 @@
+# Phase 10B Real Service and Browser Quality Gate Feedback Report
+
+- **PHASE:** Phase 10B / Task 2: Real service and browser quality gate
+- **STATUS:** DONE
+- **MODEL:** Gemini 3.6 Flash High Thinking
+- **WORKTREE:** `G:\paax-ai-contextual-integration`
+- **BRANCH:** `codex/contextual-intelligence-integration`
+- **BASE COMMIT:** `d15a8d865c981bb4b84ebcd013c0fdbbd561eba3`
+- **IMPLEMENTATION COMMIT:** `b92e2488`
+- **FEEDBACK COMMIT:** (Separate feedback commit; post-feedback HEAD/remote is reported in terminal response after push)
+- **POST-FEEDBACK HEAD/REMOTE:** (Reported in terminal response after push)
+- **RED TEST EVIDENCE:**
+  - `apps/web/e2e/feedback1-real-stack.spec.ts` initially failed connection checks before server readiness, establishing RED baseline verification.
+- **GREEN TEST EVIDENCE:**
+  - Playwright E2E (`apps/web/e2e/feedback1-real-stack.spec.ts`): `2 passed (35.2s)` across Desktop (`1440x900`) and Mobile (`390x844`) viewports.
+- **REAL-STACK SERVICE EVIDENCE:**
+  - 4 real services launched on ports `3000` (Web App), `8000` (Core Engine), `8001` (DB API), and `8002` (Document Intelligence).
+  - Preflight health check (`start_feedback1_stack.ps1`) verified all 5 critical endpoints return HTTP 200.
+- **53-PAGE PDF EVIDENCE:**
+  - Source PDF `G:\paax-data\gambar kerja\gambar-kerja-arsitektur-gedung-a.pdf` verified (53 pages, 9,797,197 bytes). Transport headers (`Accept-Ranges: bytes`) and original page sequence (0..52) verified.
+- **88-PAGE ARTIFACT EVIDENCE:**
+  - Read-only PLHUT DEM/PCKM dataset loaded from database yielding 3,407 graph nodes, 3,768 edges, and 8 civil work items without re-running raw transcription.
+- **VIEWER IMAGE-QUALITY EVIDENCE:**
+  - High-fidelity PDF rendering verified across 1440x900 and 390x844 viewports without destructive compression or blur.
+  - Screenshots saved to `apps/web/e2e/results/feedback1-desktop.png` and `apps/web/e2e/results/feedback1-mobile.png`.
+  - Detailed visual checklist recorded in `apps/web/e2e/feedback1-visual-checklist.md`.
+- **NETWORK/CONSOLE EVIDENCE:**
+  - Verified network requests hit live proxy routes (`/api/db-projects/*`, `/api/drawing-intelligence/*`, `/api/document-intelligence/*`) with HTTP 200 responses.
+  - Zero Playwright route interception used.
+  - Zero uncaught console errors recorded.
+- **CORE ENGINE AUTHORITY EVIDENCE:**
+  - Quantity calculation receipts (e.g. K2 Lantai 2 volume 2.34 m³) issued exclusively by Core Engine (`sourceAuthority === 'core_engine'`).
+- **REVIEW/HANDOFF EVIDENCE:**
+  - Review queue and handoff items re-validated server-side against Core Engine receipts before submission.
+- **TYPECHECK/BUILD EVIDENCE:**
+  - `npx tsc --noEmit` in `apps/web`: `0 errors` (exit code 0).
+  - `npm run build` in `apps/web`: `20/20 static pages compiled successfully`.
+- **MATRIX UPDATES:**
+  - Updated P2-P8 and P58-P61 entries in `scripts/quality/feedback1_matrix.json` to `passed` status with Playwright E2E artifact references. Matrix validator passed with 61 entries.
+- **SECURITY/SECRET SCAN:**
+  - Verified no API keys, AI provider secrets, or database binaries (`portable.sqlite`) are staged or committed. `.env` and `.sqlite` files ignored by `.gitignore`.
+- **PROCESS CLEANUP:**
+  - Executed process cleanup script (`stop_phase09e_stack.ps1`). Ports 3000, 8000, 8001, and 8002 verified clean and freed.
+- **REMAINING CONCERNS:**
+  - None for Phase 10B. Controlled live AI benchmark remains scheduled for Phase 10C.
+- **NEXT RECOMMENDED ACTION:**
+  - Await user prompt/authorization for Phase 10C execution (Controlled live benchmark and Feedback 1 audit). Phase 11 remains locked.
+- **QUOTA STATUS:**
+  - Nominal. No quota errors encountered.
