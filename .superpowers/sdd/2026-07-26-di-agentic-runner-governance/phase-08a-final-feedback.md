@@ -1,7 +1,7 @@
 PHASE: 08A
 STATUS: PASS
 STARTING HEAD: b02dad50 (Phase 07C final commit)
-FINAL COMMIT: PENDING_COMMIT
+FINAL COMMIT: f4113292
 STATE-TRANSITION EVIDENCE: validateMatureTransition & state-machine prove queued -> planning -> waiting_approval -> running -> completed; invalid/skipped transitions rejected
 IDEMPOTENCY/REPLAY EVIDENCE: hashPayload & IdempotencyRegistry claim returns status new for unseen keys, replay with stored output for identical input hash, and conflict for mismatched input hash
 SCOPED-TOOL EVIDENCE: ScopedToolRegistry registers project_graph.read_active_sheet, drawing.review_proposal, and core_engine.calculate_measurement_facts; duplicate registration rejected; arbitrary unregistered tools rejected
