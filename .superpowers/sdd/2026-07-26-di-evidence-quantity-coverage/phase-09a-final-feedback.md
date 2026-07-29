@@ -1,7 +1,7 @@
 PHASE: 09A
 STATUS: PASS
 STARTING HEAD: 56757a24 (Phase 08 final commit)
-FINAL COMMIT: PENDING_COMMIT
+FINAL COMMIT: 91fc5655
 LOSSLESS INVENTORY EVIDENCE: CandidateInventoryRow model in candidate_inventory.py constructs an exact lossless 1:1 mapping for every input candidate from DEM, PCKM, and consolidated registry
 NO-DROP/NO-DUPLICATE EVIDENCE: build_candidate_inventory raises ValueError on duplicate candidate identities and guarantees input candidate ID set equals inventory output candidate ID set
 BLOCKED/REVIEW EVIDENCE: Unsupported/incomplete/conflicting candidates retain explicit blocked or needs_review coverage status with reasons; zero candidates dropped or converted to zero
