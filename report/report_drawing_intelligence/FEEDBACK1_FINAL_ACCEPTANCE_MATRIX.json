@@ -4,7 +4,7 @@
     "requirement": "Initial loading speed optimization",
     "phase": "Phase 04C / Phase 10B / Phase 11C",
     "status": "verified_previous_phase",
-    "limitation": "Verified in Phase 11C Playwright test (Cold Load DOMContentLoaded: 413ms)",
+    "limitation": "Verified in Phase 11C Playwright test (Cold Load DOMContentLoaded: 262ms)",
     "retest_subphase": "Phase 11C"
   },
   {

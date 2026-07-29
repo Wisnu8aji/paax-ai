@@ -21,7 +21,7 @@ This document provides the 16-domain final acceptance inventory for the PAAX Con
 - **Implementation Commit:** `441d9bdb`, `af87e1ee`, `ae0fdc31`
 - **Feedback Artifact:** `PHASE_11C_REAL_STACK_BROWSER_VIEWER_PERFORMANCE_FEEDBACK.md`
 - **Test Command:** `npx playwright test e2e/phase11c-real-stack-acceptance.spec.ts`
-- **Automated Artifact:** `apps/web/e2e/phase11c-real-stack-acceptance.spec.ts` (Cold Load DOMContentLoaded: 413ms)
+- **Automated Artifact:** `apps/web/e2e/phase11c-real-stack-acceptance.spec.ts` (Cold Load DOMContentLoaded: 262ms)
 - **Browser / Service Artifact:** `e2e/results/phase11c-desktop-viewer.png` (Playwright E2E)
 - **Real-Data Provenance:** 53-page Gedung A PDF (`G:\paax-data\gambar kerja\gambar-kerja-arsitektur-gedung-a.pdf`)
 - **Current Status:** `verified_previous_phase`

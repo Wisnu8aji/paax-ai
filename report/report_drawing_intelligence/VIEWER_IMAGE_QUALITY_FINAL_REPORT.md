@@ -17,12 +17,12 @@
 ---
 
 ## 2. Performance & Rendering Metrics (Phase 11C Real-Stack Measured)
-- **First Contentful Paint (FCP):** `832 ms` (measured via `PerformancePaintTiming` API)
-- **DOMContentLoaded Timing:** `267 ms`
-- **Warm View Mode Switch Latency:** `653 ms`
+- **First Contentful Paint (FCP):** `940 ms` (measured via `PerformancePaintTiming` API)
+- **DOMContentLoaded Timing:** `262 ms`
+- **Warm View Mode Switch Latency:** `649 ms`
 - **Memory & Heap:**
-  - `usedJSHeapSize` Before Navigation: `82 MB`
-  - `usedJSHeapSize` After 5-Page Switch Sequence: `82 MB`
+  - `usedJSHeapSize` Before Navigation: `78 MB`
+  - `usedJSHeapSize` After 5-Page Switch Sequence: `78 MB`
   - Heap Delta: `0 MB` (no memory leakage detected)
 - **Long-Task Metrics:** 0 long-tasks exceeding 50ms during viewer navigation
 - **Viewport Dimensions:**
