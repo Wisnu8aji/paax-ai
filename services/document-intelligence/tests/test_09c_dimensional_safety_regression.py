@@ -17,6 +17,7 @@ import pytest
 
 from app.drawing_intelligence.calculation_bridge import (
     CalculationNotReady,
+    DispatchReceipt,
     build_engine_dispatch,
     calculation_from_response,
 )
@@ -104,7 +105,7 @@ class TestDimensionalSafety:
             "baja", [],
             attributes={
                 "engine_contract": "takeoff.baja",
-                "core_engine_payload": {"profil_baja": [{"kode": "WF200", "panjang_m": 6.0, "jumlah": 2}]},
+                "core_engine_payload": {"members": [{"kode": "WF200", "designation": "WF200", "length_m": 6.0, "qty": 2}]},
             },
         )
         dispatch = build_engine_dispatch(item_ok, project_id="P", snapshot_id="S", requested_by="U")
@@ -223,13 +224,13 @@ class TestManualPayloadAntiByplass:
             attributes={
                 "engine_contract": "takeoff.tanah",
                 "core_engine_payload": {
-                    "galian_footplat": [{"kode": "FP1", "b_ft": 2.0, "l_ft": 2.0, "d_gali": 1.5, "n": 1}],
+                    "footplats": [{"kode": "FP1", "b_ft": 2.0, "l_ft": 2.0, "d_gali": 1.5, "n": 1}],
                 },
             },
         )
         dispatch = build_engine_dispatch(item, project_id="P-001", snapshot_id="S-001", requested_by="U")
         assert dispatch.endpoint == "/takeoff/tanah"
-        assert dispatch.payload.get("galian_footplat") is not None
+        assert dispatch.payload.get("footplats") is not None
 
 
 # ─── C. Response/correlation safety ───────────────────────────────────────────
@@ -288,16 +289,15 @@ class TestResponseCorrelationSafety:
     def test_core_engine_authority_granted_for_valid_correlated_response(self):
         """Valid correlated response grants source_authority=core_engine."""
         item = _candidate("column", [_fact("count", 4), _fact("width", 0.5), _fact("depth", 0.5), _fact("height", 4.0)])
+        dispatch = build_engine_dispatch(item, project_id="P-001", snapshot_id="S-001", requested_by="U")
         response = {
             "status": "complete",
             "result": 1.0,
             "unit": "m3",
             "project_id": "P-001",
         }
-        calc = calculation_from_response(
-            item, response,
-            project_id="P-001", snapshot_id="S-001",
-        )
+        receipt = DispatchReceipt(context=dispatch.context, response=response)
+        calc = calculation_from_response(item, response, receipt=receipt)
         assert calc.source_authority == "core_engine", (
             f"Valid correlated response must grant core_engine; got {calc.source_authority}"
         )

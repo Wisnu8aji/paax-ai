@@ -2,7 +2,7 @@ import httpx
 import pytest
 
 from app.drawing_intelligence.calculation_bridge import (
-    CalculationNotReady, CoreEngineCalculationClient, build_engine_dispatch, calculation_from_response,
+    CalculationNotReady, CoreEngineCalculationClient, DispatchReceipt, build_engine_dispatch, calculation_from_response,
 )
 from app.drawing_intelligence.models import ElementMeasurementFact, WorkItemCandidate
 
@@ -69,10 +69,15 @@ async def test_client_posts_to_capability_selected_endpoint():
 
 
 def test_engine_authority_is_assigned_only_after_complete_result():
-    """source_authority=core_engine only after complete+non-null result."""
+    """source_authority=core_engine only after complete+non-null result with DispatchReceipt."""
     work = item("column", ["count", "width", "depth", "height"])
-    cap = build_engine_dispatch(work, project_id="P", snapshot_id="S", requested_by="U").capability
-    complete = calculation_from_response(work, {"status": "complete", "result": 4.2, "unit": "m3", "project_id": "P"}, capability=cap, project_id="P", snapshot_id="S")
-    blocked = calculation_from_response(work, {"status": "needs_input", "result": None}, capability=cap, project_id="P", snapshot_id="S")
+    dispatch = build_engine_dispatch(work, project_id="P", snapshot_id="S", requested_by="U")
+    comp_resp = {"status": "complete", "result": 4.2, "unit": "m3", "project_id": "P"}
+    comp_receipt = DispatchReceipt(context=dispatch.context, response=comp_resp)
+    complete = calculation_from_response(work, comp_resp, receipt=comp_receipt)
+    
+    blocked_resp = {"status": "needs_input", "result": None}
+    blocked_receipt = DispatchReceipt(context=dispatch.context, response=blocked_resp)
+    blocked = calculation_from_response(work, blocked_resp, receipt=blocked_receipt)
     assert complete.source_authority == "core_engine"
     assert blocked.source_authority == "none"

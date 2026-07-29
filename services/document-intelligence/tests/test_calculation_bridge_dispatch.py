@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 from app.drawing_intelligence.calculation_bridge import (
     CalculationNotReady,
+    DispatchReceipt,
     EngineDispatch,
     build_engine_dispatch,
     calculation_from_response,
@@ -126,7 +127,7 @@ def test_build_engine_dispatch_tanah():
         # engine_contract is required for anti-bypass validation (09C correction)
         "engine_contract": "takeoff.tanah",
         "core_engine_payload": {
-            "galian_footplat": [
+            "footplats": [
                 {"kode": "FP1", "b_ft": 2.0, "l_ft": 2.0, "d_gali": 1.5, "n": 1}
             ]
         },
@@ -141,7 +142,7 @@ def test_build_engine_dispatch_tanah():
     )
 
     assert dispatch.endpoint == "/takeoff/tanah"
-    assert "galian_footplat" in dispatch.payload
+    assert "footplats" in dispatch.payload
 
 
 def test_build_engine_dispatch_rejects_missing_fields_and_open_conflicts():
@@ -178,11 +179,27 @@ def test_build_engine_dispatch_rejects_missing_fields_and_open_conflicts():
 
 
 def test_calculation_from_response_core_engine_authority():
-    item = _make_candidate("item-beton-01", "beton")
+    facts = [
+        ElementMeasurementFact(
+            measurement_id="m-1", work_item_id="item-beton-01", field="length", value=1.0, unit="m",
+            source_method="written_dimension", verification_status="human_verified", evidence_refs=["ev-1"]
+        ),
+        ElementMeasurementFact(
+            measurement_id="m-2", work_item_id="item-beton-01", field="width", value=1.0, unit="m",
+            source_method="written_dimension", verification_status="human_verified", evidence_refs=["ev-1"]
+        ),
+        ElementMeasurementFact(
+            measurement_id="m-3", work_item_id="item-beton-01", field="height", value=1.0, unit="m",
+            source_method="written_dimension", verification_status="human_verified", evidence_refs=["ev-1"]
+        ),
+    ]
+    item = _make_candidate("item-beton-01", "beton", facts=facts)
+    dispatch = build_engine_dispatch(item, project_id="proj-101", snapshot_id="snap-1", requested_by="test-user")
 
     # Valid response from Core Engine -> source_authority='core_engine'
     valid_response = {
         "domain": "beton",
+        "status": "complete",
         "items": [
             {
                 "kode": "K1",
@@ -197,7 +214,8 @@ def test_calculation_from_response_core_engine_authority():
         ],
         "engine_version": "core-engine-v1",
     }
-    calc_valid = calculation_from_response(item, valid_response)
+    receipt = DispatchReceipt(context=dispatch.context, response=valid_response)
+    calc_valid = calculation_from_response(item, valid_response, receipt=receipt)
     assert calc_valid.source_authority == "core_engine"
     assert calc_valid.status == "complete"
     assert calc_valid.result == 1.0

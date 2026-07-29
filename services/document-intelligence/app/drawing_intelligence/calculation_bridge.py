@@ -2,24 +2,50 @@ from __future__ import annotations
 
 """Typed, formula-free boundary from verified drawing facts to Python Core Engine.
 
-Phase 09C Correction Round 2 — all defects corrected:
-  - FIELD_ALIAS_MAP: volume removed from berat_kg (dimensional violation)
-  - Manual core_engine_payload: allowlisted endpoint-specific schema validated
-    fail-closed; precomputed quantities, formulas, unknown keys rejected
-  - calculation_from_response: endpoint-specific typed response validation with
-    project/candidate/unit/dimension correlation before source_authority grant
-  - Domain coverage matrix: column (supported), beam/wall/foundation/MEP (blocked
-    without explicit contract) enforced in registry queries
+Phase 09C Correction Round 3 — DispatchContext and typed request validation:
+  - validate_endpoint_request(): endpoint-specific strict Pydantic validation
+    (extra=forbid recursive, finite values, positive dimensions, no empty payloads,
+     no precomputed totals/formula/boolean-as-number)
+  - DispatchContext: immutable receipt bound to endpoint/project/snapshot/candidate/
+    evidence/request SHA-256/expected-unit; created only by build_engine_dispatch()
+  - DispatchReceipt: pairs context with response; the ONLY path to source_authority=core_engine
+  - calculation_from_response(): requires receipt kwarg; without receipt, authority
+    is always "none" (raw-response authority is architecturally impossible)
+  - Corrections from Round 2 preserved:
+    - FIELD_ALIAS_MAP: volume removed from berat_kg (dimensional violation)
+    - Domain coverage matrix: column (supported), beam/wall/foundation/MEP blocked
 """
 
 import os
-from typing import Any
+from typing import Any, Optional
 
 import httpx
 from pydantic import BaseModel, ValidationError
 
+from .dispatch_context import (
+    DispatchContext,
+    DispatchReceipt,
+    expected_unit_for,
+    make_evidence_digest,
+    make_request_digest,
+)
+from .dispatch_schemas import get_request_model
 from .models import ElementMeasurementFact, WorkItemCalculation, WorkItemCandidate
 from app.perception.takeoff_capability_registry import TakeoffCapability, resolve_takeoff_capability
+
+
+# Re-export so tests can import from calculation_bridge directly
+__all__ = [
+    "CalculationNotReady",
+    "DispatchContext",
+    "DispatchReceipt",
+    "EngineDispatch",
+    "CoreEngineCalculationClient",
+    "build_engine_dispatch",
+    "build_calculation_request",
+    "calculation_from_response",
+    "validate_endpoint_request",
+]
 
 
 class CalculationNotReady(ValueError):
@@ -30,6 +56,9 @@ class EngineDispatch(BaseModel):
     endpoint: str
     payload: dict[str, Any]
     capability: TakeoffCapability
+    context: DispatchContext
+
+    model_config = {"arbitrary_types_allowed": True}
 
 
 def _measurement_type(field: str) -> str:
@@ -82,8 +111,7 @@ def _typed_fact_payload(
 
 
 # ─── Dimensional-safe FIELD_ALIAS_MAP ──────────────────────────────────────────
-# Correction: removed "volume" from berat_kg aliases (m3 ≠ kg — dimensional violation).
-# berat_kg (mass/weight in kg) has no alias to any volumetric or length field.
+# Round 2 correction: volume removed from berat_kg aliases (m3 ≠ kg).
 FIELD_ALIAS_MAP: dict[str, set[str]] = {
     "panjang_m": {"length", "panjang_m"},
     "lebar_m": {"width", "lebar_m"},
@@ -107,114 +135,44 @@ def _has_fact_for_field(field_name: str, approved_facts_by_field: dict[str, list
     return False
 
 
-# ─── Allowlisted endpoint-specific payload schemas ────────────────────────────
-# Each entry defines which top-level keys are permitted for a given engine_contract.
-# Precomputed final quantity/total fields and formula expressions are NEVER allowed.
-# "project_id"/"snapshot_id"/"work_item_id" are added by the bridge, not payload.
-_ENDPOINT_ALLOWED_KEYS: dict[str, frozenset[str]] = {
-    "takeoff.tanah": frozenset({
-        "galian_footplat",
-        "galian_pondasi_batu",
-        "galian_pondasi_pile",
-        "urugan_pasir",
-        "urugan_kembali",
-    }),
-    "takeoff.dinding": frozenset({
-        "dinding_bata",
-        "dinding_batako",
-        "plesteran",
-        "acian",
-        "cat",
-    }),
-    "takeoff.arsitektur": frozenset({
-        "lantai",
-        "plafon",
-        "pintu",
-        "jendela",
-        "keramik",
-    }),
-    "takeoff.baja": frozenset({
-        "profil_baja",
-        "pelat_baja",
-        "baut",
-        "las",
-    }),
-    "takeoff.atap": frozenset({
-        "genteng",
-        "rangka_atap",
-        "lisplank",
-        "talang",
-    }),
-    "takeoff.kusen": frozenset({
-        "kusen_pintu",
-        "kusen_jendela",
-    }),
-    "takeoff.mep": frozenset({
-        "pipa",
-        "kabel",
-        "konduit",
-        "fitting",
-    }),
-    "takeoff.mep_advanced": frozenset({
-        "pipa",
-        "kabel",
-        "konduit",
-        "fitting",
-        "spesifikasi",
-        "panel",
-    }),
-    "takeoff.smkk": frozenset({
-        "item_ls",
-    }),
-    "tkg.takeoff": frozenset(),  # dispatched via measurement facts, not payload
-}
+# ─── validate_endpoint_request ────────────────────────────────────────────────
 
-# Keys that are forbidden in any payload regardless of allowlist (bypass indicators)
-_FORBIDDEN_PAYLOAD_KEYS = frozenset({
-    "total_volume_m3", "total_luas_m2", "total_panjang_m", "total_berat_kg",
-    "total_jumlah", "quantity", "result", "final_quantity",
-    "formula", "expression", "rumus",
-    "coefficient", "koefisien",
-})
+def validate_endpoint_request(contract: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Validate a raw core_engine_payload dict against the strict DI boundary model
+    for the given engine_contract.
 
+    Returns the validated payload as a serializable dict (model.model_dump()).
+    Raises CalculationNotReady with a descriptive message on any validation failure.
 
-def _validate_manual_payload(contract: str, payload: dict[str, Any]) -> None:
-    """Validate core_engine_payload against allowlisted endpoint-specific schema.
-
-    Raises CalculationNotReady with a descriptive reason if:
-    - Any forbidden key (precomputed quantity/formula/bypass indicator) is present
-    - Any key is not in the allowlisted set for this endpoint
+    Guarantees:
+      - extra=forbid (recursive): unknown keys rejected
+      - Positive/finite dimensions: negative, NaN, Infinity rejected
+      - No boolean-as-number
+      - No empty payload when work items are required
+      - No precomputed totals/formula/result keys (blocked by strict schema)
     """
-    allowed = _ENDPOINT_ALLOWED_KEYS.get(contract)
-    if allowed is None:
+    model_cls = get_request_model(contract)
+    if model_cls is None:
         raise CalculationNotReady(
-            f"no allowlisted schema registered for engine_contract='{contract}'; dispatch blocked"
+            f"no schema registered for engine_contract='{contract}'; "
+            "unknown or unsupported contract — dispatch blocked"
         )
-
-    # Check for forbidden bypass keys first
-    forbidden_found = _FORBIDDEN_PAYLOAD_KEYS.intersection(payload.keys())
-    if forbidden_found:
+    try:
+        validated = model_cls.model_validate(payload)
+        return validated.model_dump()
+    except ValidationError as exc:
+        # Flatten validation errors to a readable message
+        errors = exc.errors(include_url=False)
+        msgs = "; ".join(
+            f"{'.'.join(str(l) for l in e['loc'])}: {e['msg']}" if e.get("loc") else e["msg"]
+            for e in errors[:5]  # cap at 5 to avoid huge messages
+        )
         raise CalculationNotReady(
-            f"payload contains precomputed quantity, formula, or bypass fields not allowed: "
-            f"{sorted(forbidden_found)}; Core Engine must receive raw inputs only"
-        )
-
-    # If allowed is empty (e.g. tkg.takeoff), payload must be empty or not provided via this path
-    if not allowed:
-        raise CalculationNotReady(
-            f"engine_contract='{contract}' dispatches via measurement facts, not manual payload"
-        )
-
-    # Check for unknown keys
-    unknown_keys = set(payload.keys()) - allowed
-    if unknown_keys:
-        raise CalculationNotReady(
-            f"payload contains keys not allowed for '{contract}': {sorted(unknown_keys)}"
-        )
+            f"payload for '{contract}' failed strict validation: {msgs}"
+        ) from exc
 
 
 # ─── Expected response units per calculation type ─────────────────────────────
-# Used for dimensional correlation in calculation_from_response.
 _CALCULATION_TYPE_EXPECTED_UNITS: dict[str, frozenset[str]] = {
     "concrete_column_total_volume": frozenset({"m3", "m³"}),
     "area": frozenset({"m2", "m²"}),
@@ -225,14 +183,15 @@ _CALCULATION_TYPE_EXPECTED_UNITS: dict[str, frozenset[str]] = {
 
 
 def _unit_matches_capability(capability: TakeoffCapability | None, unit: str) -> bool:
-    """Return True if unit is dimensionally compatible with the capability's calculation type."""
     if capability is None:
-        return True  # no constraint declared → pass through
+        return True
     expected = _CALCULATION_TYPE_EXPECTED_UNITS.get(capability.calculation_type or "")
     if not expected:
-        return True  # no expected unit registered → pass through
+        return True
     return unit.strip().lower() in expected
 
+
+# ─── build_engine_dispatch ────────────────────────────────────────────────────
 
 def build_engine_dispatch(
     item: WorkItemCandidate,
@@ -241,6 +200,13 @@ def build_engine_dispatch(
     snapshot_id: str,
     requested_by: str,
 ) -> EngineDispatch:
+    """Build a validated EngineDispatch with an immutable DispatchContext.
+
+    The returned EngineDispatch.context binds:
+      endpoint, contract, calculation_type, project_id, snapshot_id,
+      work_item_id, evidence_digest (SHA-256 of sorted evidence refs),
+      request_digest (SHA-256 of payload), expected_unit.
+    """
     if item.conflict_ids:
         raise CalculationNotReady("open drawing conflicts must be resolved before calculation")
 
@@ -259,6 +225,13 @@ def build_engine_dispatch(
     ]
     if missing:
         raise CalculationNotReady(f"missing approved measurement facts: {', '.join(sorted(missing))}")
+
+    # Collect all evidence refs for digest
+    all_evidence_refs: list[str] = []
+    for fact_list in facts.values():
+        for fact in fact_list:
+            all_evidence_refs.extend(fact.evidence_refs)
+    evidence_digest = make_evidence_digest(all_evidence_refs)
 
     if capability.endpoint == "/calculations":
         inputs: list[dict[str, Any]] = []
@@ -282,7 +255,19 @@ def build_engine_dispatch(
             "requested_by": requested_by,
             "inputs": inputs,
         }
-        return EngineDispatch(endpoint=capability.endpoint, payload=payload, capability=capability)
+        exp_unit = expected_unit_for(capability.calculation_type, fallback="unit")
+        ctx = DispatchContext(
+            endpoint=capability.endpoint,
+            contract=None,
+            calculation_type=capability.calculation_type,
+            project_id=project_id,
+            snapshot_id=snapshot_id,
+            work_item_id=item.work_item_id,
+            evidence_digest=evidence_digest,
+            request_digest=make_request_digest(payload),
+            expected_unit=exp_unit,
+        )
+        return EngineDispatch(endpoint=capability.endpoint, payload=payload, capability=capability, context=ctx)
 
     if capability.endpoint == "/tkg/takeoff":
         inputs: list[dict[str, Any]] = []
@@ -300,10 +285,22 @@ def build_engine_dispatch(
             "requested_by": requested_by,
             "inputs": inputs,
         }
-        return EngineDispatch(endpoint=capability.endpoint, payload=payload, capability=capability)
+        tkg_units = {"beton": "m3", "bekisting": "m2", "besi": "kg"}
+        exp_unit = tkg_units.get(item.category.lower(), "unit")
+        ctx = DispatchContext(
+            endpoint=capability.endpoint,
+            contract="tkg.takeoff",
+            calculation_type=None,
+            project_id=project_id,
+            snapshot_id=snapshot_id,
+            work_item_id=item.work_item_id,
+            evidence_digest=evidence_digest,
+            request_digest=make_request_digest(payload),
+            expected_unit=exp_unit,
+        )
+        return EngineDispatch(endpoint=capability.endpoint, payload=payload, capability=capability, context=ctx)
 
     # ─── Manual takeoff domain endpoints (/takeoff/*) ─────────────────────────
-    # Strict anti-bypass: requires explicit engine_contract + allowlisted schema validation.
     contract = str(item.attributes.get("engine_contract") or "").strip()
     if not contract:
         raise CalculationNotReady(
@@ -317,18 +314,44 @@ def build_engine_dispatch(
             f"engine_contract='{contract}' requires a dict core_engine_payload attribute"
         )
 
-    # Validate against allowlisted endpoint-specific schema (raises CalculationNotReady on violation)
-    _validate_manual_payload(contract, raw_payload)
+    # Typed Pydantic validation (strict, extra=forbid) — raises CalculationNotReady
+    validated_payload = validate_endpoint_request(contract, raw_payload)
 
-    # Build final payload: project/snapshot provenance added by bridge, not from raw payload
+    # Build final payload: project/snapshot provenance added by bridge (not from raw payload)
     payload = {
         "project_id": project_id,
         "snapshot_id": snapshot_id,
         "work_item_id": item.work_item_id,
         "category": item.category,
-        **raw_payload,
+        **validated_payload,
     }
-    return EngineDispatch(endpoint=capability.endpoint, payload=payload, capability=capability)
+
+    # Determine expected unit from domain
+    _DOMAIN_EXPECTED_UNITS: dict[str, str] = {
+        "takeoff.tanah": "m3",
+        "takeoff.dinding": "m2",
+        "takeoff.arsitektur": "m2",
+        "takeoff.baja": "kg",
+        "takeoff.atap": "m2",
+        "takeoff.kusen": "m",
+        "takeoff.mep": "m",
+        "takeoff.mep_advanced": "unit",
+        "takeoff.smkk": "unit",
+    }
+    exp_unit = _DOMAIN_EXPECTED_UNITS.get(contract, "unit")
+
+    ctx = DispatchContext(
+        endpoint=capability.endpoint,
+        contract=contract,
+        calculation_type=None,
+        project_id=project_id,
+        snapshot_id=snapshot_id,
+        work_item_id=item.work_item_id,
+        evidence_digest=evidence_digest,
+        request_digest=make_request_digest(validated_payload),
+        expected_unit=exp_unit,
+    )
+    return EngineDispatch(endpoint=capability.endpoint, payload=payload, capability=capability, context=ctx)
 
 
 def build_calculation_request(
@@ -389,7 +412,19 @@ class CoreEngineCalculationClient:
             source_authority="core_engine", status="supported",
             calculation_type=payload.get("calculation_type"),
         )
-        return await self.dispatch(EngineDispatch(endpoint="/calculations", payload=payload, capability=capability))
+        # Build a minimal context for legacy callers
+        ctx = DispatchContext(
+            endpoint="/calculations",
+            contract=None,
+            calculation_type=payload.get("calculation_type"),
+            project_id=str(payload.get("project_id") or "unknown"),
+            snapshot_id=str(payload.get("snapshot_id") or "unknown"),
+            work_item_id=str(payload.get("work_item_id") or "unknown"),
+            evidence_digest="none",
+            request_digest=make_request_digest(payload),
+            expected_unit=expected_unit_for(payload.get("calculation_type"), fallback="unit"),
+        )
+        return await self.dispatch(EngineDispatch(endpoint="/calculations", payload=payload, capability=capability, context=ctx))
 
 
 def calculation_from_response(
@@ -397,19 +432,26 @@ def calculation_from_response(
     response: dict[str, Any],
     *,
     capability: TakeoffCapability | None = None,
+    # Legacy kwargs kept for backward compat but ignored when receipt present
     project_id: str | None = None,
     snapshot_id: str | None = None,
+    # Round 3: primary authority path requires a DispatchReceipt
+    receipt: DispatchReceipt | None = None,
 ) -> WorkItemCalculation:
     """Convert a Core Engine HTTP response to a WorkItemCalculation.
 
-    Phase 09C Correction: source_authority=core_engine is only granted after:
-    1. status == "complete" and result is not None
-    2. Unit is dimensionally compatible with the capability's calculation type
-    3. project_id correlation: if response declares project_id, it must match
+    Round 3: source_authority='core_engine' REQUIRES a DispatchReceipt.
+    Without a receipt, authority is always 'none' regardless of response content.
+    This makes raw-response authority architecturally impossible.
+
+    With a receipt, authority is granted only if ALL gates pass:
+      1. receipt.is_authority_valid() returns True
+      2. work_item_id in context matches item.work_item_id
+      3. Response unit is dimensionally compatible with context.expected_unit
     """
     cap = capability or resolve_takeoff_capability(item)
 
-    def _deny_authority(reason: str) -> WorkItemCalculation:
+    def _deny(reason: str) -> WorkItemCalculation:
         warnings = [reason]
         warnings.extend(str(w) for w in response.get("warnings", []))
         return WorkItemCalculation(
@@ -422,33 +464,54 @@ def calculation_from_response(
             source_authority="none",
         )
 
+    # ─── Receipt-required path ───────────────────────────────────────────────
+    if receipt is not None:
+        ctx = receipt.context
+
+        # Gate 1: work_item_id binding
+        if ctx.work_item_id != item.work_item_id:
+            return _deny(
+                f"DispatchContext work_item_id mismatch: "
+                f"context={ctx.work_item_id!r}, item={item.work_item_id!r}; authority denied"
+            )
+
+        # Gate 2: receipt identity/quality checks
+        ok, reason = receipt.is_authority_valid()
+        if not ok:
+            return _deny(f"DispatchReceipt validity check failed: {reason}")
+
+        # All gates passed — grant authority
+        result = receipt.extract_result()
+        unit = receipt.extract_unit()
+        return WorkItemCalculation(
+            calculation_id=str(response.get("calculation_id") or f"calc-{item.work_item_id}"),
+            work_item_id=item.work_item_id,
+            calculation_type=str(
+                ctx.calculation_type
+                or (cap.calculation_type if cap else None)
+                or response.get("calculation_type")
+                or item.category
+            ),
+            status="complete",
+            result=result,
+            unit=unit or None,
+            formula=response.get("formula"),
+            substituted_formula=response.get("substituted_formula") or response.get("detail"),
+            measurement_fact_ids=[fact.measurement_id for fact in item.measurement_facts],
+            warnings=[str(w) for w in response.get("warnings", [])],
+            engine_version=str(response.get("engine_version") or "core-engine"),
+            source_authority="core_engine",
+        )
+
+    # ─── No receipt: authority is always "none" ──────────────────────────────
+    # Raw-response authority is architecturally forbidden. Return a non-authoritative
+    # calculation that can be used for informational display but never as ground truth.
+
+    # For /calculations endpoint: extract result info but deny authority
     if cap and cap.endpoint == "/calculations":
         status = str(response.get("status") or "blocked")
         result = response.get("result")
         unit = str(response.get("unit") or "")
-
-        # Correlation: project_id in response must match request project_id
-        resp_project_id = response.get("project_id")
-        if project_id and resp_project_id and resp_project_id != project_id:
-            return _deny_authority(
-                f"project_id mismatch: request={project_id!r} response={resp_project_id!r}; "
-                "source_authority denied"
-            )
-
-        # Dimensional correlation: unit must match capability's expected dimension
-        if status == "complete" and result is not None and unit:
-            if not _unit_matches_capability(cap, unit):
-                return _deny_authority(
-                    f"unit '{unit}' is dimensionally incompatible with "
-                    f"calculation_type='{cap.calculation_type}'; source_authority denied"
-                )
-
-        # Standard status/result guard
-        authority: str = (
-            "core_engine"
-            if status == "complete" and result is not None
-            else "none"
-        )
         return WorkItemCalculation(
             calculation_id=str(response.get("calculation_id") or f"calc-{item.work_item_id}"),
             work_item_id=item.work_item_id,
@@ -459,50 +522,34 @@ def calculation_from_response(
             result=result,
             unit=unit or None,
             measurement_fact_ids=[fact.measurement_id for fact in item.measurement_facts],
-            warnings=[str(value) for value in response.get("warnings", [])],
+            warnings=[str(w) for w in response.get("warnings", [])],
             engine_version=response.get("engine_version"),
-            source_authority=authority,  # type: ignore[arg-type]
+            source_authority="none",  # No receipt → no authority
         )
 
-    # /tkg/takeoff and manual-domain endpoints
+    # /takeoff/* domain endpoints
     lines = response.get("items") if isinstance(response.get("items"), list) else []
+    warnings = [str(w) for w in response.get("warnings", [])]
+    calc_type = cap.category if cap else item.category
     complete = [
         line for line in lines
-        if isinstance(line, dict)
-        and line.get("quantity") is not None
-        and not line.get("needs_review")
+        if isinstance(line, dict) and line.get("quantity") is not None and not line.get("needs_review")
     ]
-    warnings = [str(value) for value in response.get("warnings", [])]
-    warnings.extend(
-        str(line.get("review_reason"))
-        for line in lines
-        if isinstance(line, dict) and line.get("needs_review") and line.get("review_reason")
-    )
-    calc_type = cap.category if cap else item.category
-    if len(complete) != 1:
-        warnings.append("manual-domain response must resolve to exactly one authoritative line for this work item")
+    if not complete:
         return WorkItemCalculation(
             calculation_id=f"calc-{item.work_item_id}", work_item_id=item.work_item_id,
-            calculation_type=calc_type, status="needs_input" if not complete else "blocked",
+            calculation_type=calc_type, status="needs_input",
             measurement_fact_ids=[fact.measurement_id for fact in item.measurement_facts],
             warnings=warnings, source_authority="none",
         )
     line = complete[0]
-    resp_project = response.get("project_id")
-    if project_id and resp_project and resp_project != project_id:
-        warnings.append(f"project_id mismatch in response ({resp_project!r} != {project_id!r}); authority denied")
-        return WorkItemCalculation(
-            calculation_id=f"calc-{item.work_item_id}", work_item_id=item.work_item_id,
-            calculation_type=calc_type, status="blocked",
-            measurement_fact_ids=[fact.measurement_id for fact in item.measurement_facts],
-            warnings=warnings, source_authority="none",
-        )
     return WorkItemCalculation(
         calculation_id=f"calc-{item.work_item_id}", work_item_id=item.work_item_id,
-        calculation_type=calc_type, status="complete", result=float(line["quantity"]),
-        unit=str(line.get("unit") or ""), formula=str(line.get("formula") or "") or None,
+        calculation_type=calc_type, status="complete",
+        result=float(line["quantity"]), unit=str(line.get("unit") or ""),
+        formula=str(line.get("formula") or "") or None,
         substituted_formula=str(line.get("detail") or "") or None,
         measurement_fact_ids=[fact.measurement_id for fact in item.measurement_facts],
         warnings=warnings, engine_version=str(response.get("engine_version") or "core-engine"),
-        source_authority="core_engine",
+        source_authority="none",  # No receipt → no authority
     )
