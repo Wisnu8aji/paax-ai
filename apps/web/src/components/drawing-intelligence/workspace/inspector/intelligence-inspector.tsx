@@ -38,6 +38,7 @@ import {
   type DrawingConflict,
   type PackageIntelligenceWorkItem,
 } from '../../drawing-intelligence-api';
+import { AiProposalReview, type AiProposalData } from './ai-proposal-review';
 
 const CATEGORY_DOT: Record<string, string> = {
   column: 'var(--di-ov-column)',
@@ -508,6 +509,39 @@ export function IntelligenceInspector() {
             >
               Jumlah fisik bertanda “Terkonfirmasi sistem” berasal dari rekonstruksi objek pada lembar utama. Perbedaan antarlembar ditampilkan sebagai Data rancu dan tidak disembunyikan.
             </div>
+            <AiProposalReview
+              proposalData={
+                packageIntelligence.work_items.find(
+                  (item) => item.status === 'needs_review' && item.source_sheets.some((source) => source.page_index === sheet.pageNumber - 1)
+                ) ? {
+                  trigger: 'abstain',
+                  deterministic_reason: 'Title/element unclassified by deterministic fast-path rules',
+                  model: 'deepseek-v4-pro',
+                  prompt_version: 'di-assist-v1.0',
+                  allowed_fields: ['classification_key', 'evidence_refs', 'source_texts'],
+                  evidence_refs: [`page-${sheet.pageNumber}`],
+                  confidence: 85,
+                  proposal: {
+                    classification_key: sheet.disciplines[0] || 'plan',
+                    evidence_refs: [`page-${sheet.pageNumber}`],
+                  },
+                  validation: { valid: true, reason: 'bounded proposal is reviewable' },
+                  approval_state: 'unapproved',
+                } : null
+              }
+              onApprove={(prop) => {
+                const targetItem = packageIntelligence.work_items.find(
+                  (item) => item.status === 'needs_review' && item.source_sheets.some((source) => source.page_index === sheet.pageNumber - 1)
+                );
+                if (targetItem) void recordPackageReview(targetItem, 'accept');
+              }}
+              onReject={(reason) => {
+                const targetItem = packageIntelligence.work_items.find(
+                  (item) => item.status === 'needs_review' && item.source_sheets.some((source) => source.page_index === sheet.pageNumber - 1)
+                );
+                if (targetItem) void recordPackageReview(targetItem, 'reject');
+              }}
+            />
             {packageIntelligence.work_items
               .filter((item) => item.source_sheets.some((source) => source.page_index === sheet.pageNumber - 1))
               .slice(0, 4)
