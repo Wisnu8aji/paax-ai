@@ -1,6 +1,6 @@
 import json
 import pathlib
-import re
+import pytest
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
 LEDGER_PATH = REPO_ROOT / "report" / "report_drawing_intelligence" / "PAAX_AI_FEATURE_FINAL_LEDGER.json"
@@ -15,6 +15,19 @@ EXPECTED_FEATURES = [
     "agentic_planner_governance",
 ]
 
+PROVIDER_BACKED_FEATURES = [
+    "sheet_classification_fallback",
+    "evidence_binding_suggestion",
+    "review_explanation_router",
+    "command_room_router",
+    "agentic_planner_governance",
+]
+
+DETERMINISTIC_FEATURES = [
+    "discipline_ambiguity_resolution",
+    "deterministic_rejection_fallback",
+]
+
 
 def test_ai_feature_ledger_exists_and_schema():
     """Verify Phase 11D AI feature final ledger exists and matches schema v1."""
@@ -25,6 +38,36 @@ def test_ai_feature_ledger_exists_and_schema():
     assert data["model"] == "deepseek/deepseek-v4-flash"
     assert data["max_calls_per_feature_cap"] == 15
     assert data["total_records_count"] == 112
+
+
+def test_execution_mode_and_network_sent_contracts():
+    """Verify execution mode contracts and fail-closed network call semantics."""
+    data = json.loads(LEDGER_PATH.read_text(encoding="utf-8"))
+    records = data["records"]
+
+    valid_modes = {"live_provider", "deterministic_fast_path", "simulated_error", "manual_fallback", "budget_rejection"}
+
+    for r in records:
+        mode = r.get("execution_mode")
+        assert mode in valid_modes, f"Invalid execution_mode '{mode}' in record {r['feature']} attempt {r['attempt']}"
+        assert "network_sent" in r, f"Missing network_sent boolean in record {r['feature']} attempt {r['attempt']}"
+        assert "http_status" in r, f"Missing http_status in record {r['feature']} attempt {r['attempt']}"
+        assert "provider_request_id" in r, f"Missing provider_request_id in record {r['feature']} attempt {r['attempt']}"
+        assert "product_file" in r and r["product_file"], f"Missing product_file mapping in record {r['feature']}"
+        assert "product_symbol" in r and r["product_symbol"], f"Missing product_symbol mapping in record {r['feature']}"
+
+        if mode == "live_provider":
+            assert r["network_sent"] is True, f"live_provider mode must set network_sent=True"
+            assert r["http_status"] == 200, f"live_provider mode must return http_status=200"
+            assert r["response_schema_valid"] is True, f"live_provider mode must have response_schema_valid=True"
+            assert r["provider_request_id"] is not None and isinstance(r["provider_request_id"], str), (
+                f"live_provider mode must contain non-secret provider_request_id"
+            )
+            assert r["tokens"] is not None and "input_tokens" in r["tokens"], f"live_provider mode must track returned tokens"
+        else:
+            assert r["network_sent"] is False, f"Non-live mode '{mode}' must set network_sent=False"
+            assert r["http_status"] is None, f"Non-live mode '{mode}' must set http_status=None"
+            assert r["provider_request_id"] is None, f"Non-live mode '{mode}' must set provider_request_id=None"
 
 
 def test_attempt_16_budget_cap_gate():
@@ -38,8 +81,29 @@ def test_attempt_16_budget_cap_gate():
         
         attempt_16 = next((r for r in feat_records if r["attempt"] == 16), None)
         assert attempt_16 is not None, f"Feature {feature} missing attempt 16 record"
+        assert attempt_16["execution_mode"] == "budget_rejection"
+        assert attempt_16["network_sent"] is False
         assert attempt_16["outcome"] == "ATTEMPT_16_REJECTED"
         assert "budget cap" in attempt_16["reason"].lower()
+
+
+def test_per_feature_network_sent_counts_and_provider_backed_pass():
+    """Verify actual network_sent counts per feature <= 15 and genuine live PASS for provider-backed features."""
+    data = json.loads(LEDGER_PATH.read_text(encoding="utf-8"))
+    records = data["records"]
+
+    for feature in EXPECTED_FEATURES:
+        feat_records = [r for r in records if r["feature"] == feature]
+        network_calls = [r for r in feat_records if r["network_sent"] is True]
+        assert len(network_calls) <= 15, f"Feature {feature} exceeded max 15 network calls (sent {len(network_calls)})"
+
+        if feature in PROVIDER_BACKED_FEATURES:
+            live_pass = [r for r in feat_records if r["execution_mode"] == "live_provider" and r["outcome"] == "PASS"]
+            assert len(live_pass) >= 1, f"Provider-backed feature {feature} missing live_provider PASS record"
+            assert live_pass[0]["network_sent"] is True
+            assert live_pass[0]["http_status"] == 200
+        elif feature in DETERMINISTIC_FEATURES:
+            assert len(network_calls) == 0, f"Deterministic feature {feature} should have 0 network calls (found {len(network_calls)})"
 
 
 def test_no_numeric_authority_assigned_to_ai():
@@ -54,17 +118,6 @@ def test_no_numeric_authority_assigned_to_ai():
         if proposal and isinstance(proposal, dict):
             for k, v in proposal.items():
                 assert k.lower() not in {"quantity", "volume", "total_cost", "unit_price"}, f"AI proposal contained numeric volume field '{k}'!"
-
-
-def test_all_7_graphify_features_tested_with_live_pass():
-    """Verify all 7 Graphify-discovered AI features have at least one live DeepSeek PASS record."""
-    data = json.loads(LEDGER_PATH.read_text(encoding="utf-8"))
-    records = data["records"]
-
-    for feature in EXPECTED_FEATURES:
-        feat_pass = [r for r in records if r["feature"] == feature and r["outcome"] == "PASS"]
-        assert len(feat_pass) >= 1, f"Feature {feature} has no live DeepSeek PASS record!"
-        assert feat_pass[0]["model"] == "deepseek/deepseek-v4-flash"
 
 
 def test_no_secret_keys_or_bearer_tokens_in_ledger():
