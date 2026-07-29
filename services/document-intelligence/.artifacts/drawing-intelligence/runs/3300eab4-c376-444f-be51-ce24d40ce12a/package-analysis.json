@@ -1,0 +1,5891 @@
+{
+  "schema_version": "paax.drawing-intelligence.package.v1",
+  "package_id": "run-3300eab4-c376-444f-be51-ce24d40ce12a",
+  "document_name": "gambar-kerja-arsitektur-gedung-a.pdf",
+  "document_sha256": "7b4151c7ec7c87588b1c858cb0fb77ffdeca550ecb4c041714b3643ecd4b4510",
+  "page_count": 53,
+  "source_manifest": {
+    "original_filename": "gambar-kerja-arsitektur-gedung-a.pdf",
+    "input_kind": "pdf",
+    "source_sha256": "7b4151c7ec7c87588b1c858cb0fb77ffdeca550ecb4c041714b3643ecd4b4510",
+    "processed_pdf_sha256": "7b4151c7ec7c87588b1c858cb0fb77ffdeca550ecb4c041714b3643ecd4b4510",
+    "source_size_bytes": 9797197,
+    "processed_size_bytes": 9797197,
+    "page_count": 53,
+    "converted_to_pdf": false,
+    "encrypted": false,
+    "repaired_pdf": false,
+    "security_status": "accepted",
+    "lineage_notes": []
+  },
+  "created_at": "2026-07-29T08:03:59.271618+00:00",
+  "pages": [
+    {
+      "profile": {
+        "page_index": 0,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 3125,
+        "raster_images": 0,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 3116.2061,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": false,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 0,
+        "sheet_number": "A-01",
+        "title": "Sheet 1",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.9092097939513131,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p0-drawing-0",
+          "page_index": 0,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.02244658481480107,
+            "y0": 0.031839647781538624,
+            "x1": 0.9774584555002969,
+            "y1": 0.9838799541482998,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 1,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 47057,
+        "raster_images": 4,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 46924.5788,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 1,
+        "sheet_number": "A-02",
+        "title": "Sheet 2",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p1-drawing-0",
+          "page_index": 1,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 2,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 44989,
+        "raster_images": 6,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 44862.3983,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 2,
+        "sheet_number": "A-03",
+        "title": "Sheet 3",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p2-drawing-0",
+          "page_index": 2,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 3,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 48109,
+        "raster_images": 11,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 47973.6184,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 3,
+        "sheet_number": "A-04",
+        "title": "Sheet 4",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p3-drawing-0",
+          "page_index": 3,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 4,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 46959,
+        "raster_images": 11,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 46826.8546,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 4,
+        "sheet_number": "A-05",
+        "title": "Sheet 5",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p4-drawing-0",
+          "page_index": 4,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 5,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 14920,
+        "raster_images": 5,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 14878.0142,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 5,
+        "sheet_number": "A-06",
+        "title": "Sheet 6",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p5-drawing-0",
+          "page_index": 5,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 6,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 7640,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 7618.5006,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 6,
+        "sheet_number": "A-07",
+        "title": "Sheet 7",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p6-drawing-0",
+          "page_index": 6,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 7,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 5492,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 5476.5452,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 7,
+        "sheet_number": "A-08",
+        "title": "Sheet 8",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p7-drawing-0",
+          "page_index": 7,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 8,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 6940,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 6920.4704,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 8,
+        "sheet_number": "A-09",
+        "title": "Sheet 9",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p8-drawing-0",
+          "page_index": 8,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 9,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 5528,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 5512.4439,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 9,
+        "sheet_number": "A-10",
+        "title": "Sheet 10",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p9-drawing-0",
+          "page_index": 9,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 10,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 59999,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 59830.1593,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 10,
+        "sheet_number": "A-11",
+        "title": "Sheet 11",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p10-drawing-0",
+          "page_index": 10,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 11,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 65182,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 64998.574,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 11,
+        "sheet_number": "A-12",
+        "title": "Sheet 12",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p11-drawing-0",
+          "page_index": 11,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 12,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 70631,
+        "raster_images": 2,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 70432.2402,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 12,
+        "sheet_number": "A-13",
+        "title": "Sheet 13",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p12-drawing-0",
+          "page_index": 12,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 13,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 54727,
+        "raster_images": 3,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 54572.995,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 13,
+        "sheet_number": "A-14",
+        "title": "Sheet 14",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p13-drawing-0",
+          "page_index": 13,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 14,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 11063,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 11031.8681,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 14,
+        "sheet_number": "A-15",
+        "title": "Sheet 15",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925636244167398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p14-drawing-0",
+          "page_index": 14,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705396493653506,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 15,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 12948,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 12911.5636,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 15,
+        "sheet_number": "A-16",
+        "title": "Sheet 16",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p15-drawing-0",
+          "page_index": 15,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 16,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 9024,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 8998.6059,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 16,
+        "sheet_number": "A-17",
+        "title": "Sheet 17",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p16-drawing-0",
+          "page_index": 16,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 17,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 11411,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 11378.8888,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 17,
+        "sheet_number": "A-18",
+        "title": "Sheet 18",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p17-drawing-0",
+          "page_index": 17,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 18,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 7105,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 7085.0061,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 18,
+        "sheet_number": "A-19",
+        "title": "Sheet 19",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p18-drawing-0",
+          "page_index": 18,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 19,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 7790,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 7768.0785,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 19,
+        "sheet_number": "A-20",
+        "title": "Sheet 20",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p19-drawing-0",
+          "page_index": 19,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 20,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 34975,
+        "raster_images": 4,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 34876.5783,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 20,
+        "sheet_number": "A-21",
+        "title": "Sheet 21",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p20-drawing-0",
+          "page_index": 20,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 21,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 34115,
+        "raster_images": 7,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 34018.9984,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 21,
+        "sheet_number": "A-22",
+        "title": "Sheet 22",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p21-drawing-0",
+          "page_index": 21,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 22,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 33958,
+        "raster_images": 7,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 33862.4402,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 22,
+        "sheet_number": "A-23",
+        "title": "Sheet 23",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p22-drawing-0",
+          "page_index": 22,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 23,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 32887,
+        "raster_images": 7,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 32794.4541,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 23,
+        "sheet_number": "A-24",
+        "title": "Sheet 24",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p23-drawing-0",
+          "page_index": 23,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 24,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 36369,
+        "raster_images": 5,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 36266.6555,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 24,
+        "sheet_number": "A-25",
+        "title": "Sheet 25",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p24-drawing-0",
+          "page_index": 24,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 25,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 14677,
+        "raster_images": 2,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 14635.6981,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 25,
+        "sheet_number": "A-26",
+        "title": "Sheet 26",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p25-drawing-0",
+          "page_index": 25,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 26,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 36055,
+        "raster_images": 7,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 35953.5391,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 26,
+        "sheet_number": "A-27",
+        "title": "Sheet 27",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p26-drawing-0",
+          "page_index": 26,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 27,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 13548,
+        "raster_images": 2,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 13509.8751,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 27,
+        "sheet_number": "A-28",
+        "title": "Sheet 28",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p27-drawing-0",
+          "page_index": 27,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 28,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 4462,
+        "raster_images": 2,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 4449.4437,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 28,
+        "sheet_number": "A-29",
+        "title": "Sheet 29",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p28-drawing-0",
+          "page_index": 28,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 29,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 4606,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 4593.0384,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 29,
+        "sheet_number": "A-30",
+        "title": "Sheet 30",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p29-drawing-0",
+          "page_index": 29,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 30,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 18700,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 18647.3771,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 30,
+        "sheet_number": "A-31",
+        "title": "Sheet 31",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p30-drawing-0",
+          "page_index": 30,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 31,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 4188,
+        "raster_images": 22,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 4176.2147,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 31,
+        "sheet_number": "A-32",
+        "title": "Sheet 32",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p31-drawing-0",
+          "page_index": 31,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 32,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 18344,
+        "raster_images": 4,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 18292.3789,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 32,
+        "sheet_number": "A-33",
+        "title": "Sheet 33",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p32-drawing-0",
+          "page_index": 32,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 33,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 18577,
+        "raster_images": 7,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 18524.7232,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 33,
+        "sheet_number": "A-34",
+        "title": "Sheet 34",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p33-drawing-0",
+          "page_index": 33,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 34,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 33794,
+        "raster_images": 4,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 33698.9017,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 34,
+        "sheet_number": "A-35",
+        "title": "Sheet 35",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p34-drawing-0",
+          "page_index": 34,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 35,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 32885,
+        "raster_images": 6,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 32792.4597,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 35,
+        "sheet_number": "A-36",
+        "title": "Sheet 36",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p35-drawing-0",
+          "page_index": 35,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 36,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 32672,
+        "raster_images": 7,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 32580.0591,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 36,
+        "sheet_number": "A-37",
+        "title": "Sheet 37",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p36-drawing-0",
+          "page_index": 36,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 37,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 31451,
+        "raster_images": 7,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 31362.495,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 37,
+        "sheet_number": "A-38",
+        "title": "Sheet 38",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p37-drawing-0",
+          "page_index": 37,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 38,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 8003,
+        "raster_images": 2,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 7980.4791,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 38,
+        "sheet_number": "A-39",
+        "title": "Sheet 39",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p38-drawing-0",
+          "page_index": 38,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 39,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 4994,
+        "raster_images": 2,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 4979.9466,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 39,
+        "sheet_number": "A-40",
+        "title": "Sheet 40",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p39-drawing-0",
+          "page_index": 39,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 40,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 3026,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 3017.4847,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 40,
+        "sheet_number": "A-41",
+        "title": "Sheet 41",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p40-drawing-0",
+          "page_index": 40,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 41,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 2722,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 2714.3401,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 41,
+        "sheet_number": "A-42",
+        "title": "Sheet 42",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p41-drawing-0",
+          "page_index": 41,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 42,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 11510,
+        "raster_images": 2,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 11477.6102,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 42,
+        "sheet_number": "A-43",
+        "title": "Sheet 43",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p42-drawing-0",
+          "page_index": 42,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 43,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 3067,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 3058.3693,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 43,
+        "sheet_number": "A-44",
+        "title": "Sheet 44",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p43-drawing-0",
+          "page_index": 43,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 44,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 4025,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 4013.6734,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 44,
+        "sheet_number": "A-45",
+        "title": "Sheet 45",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p44-drawing-0",
+          "page_index": 44,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 45,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 14233,
+        "raster_images": 2,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 14192.9475,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 45,
+        "sheet_number": "A-46",
+        "title": "Sheet 46",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p45-drawing-0",
+          "page_index": 45,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 46,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 6028,
+        "raster_images": 2,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 6011.0369,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 46,
+        "sheet_number": "A-47",
+        "title": "Sheet 47",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p46-drawing-0",
+          "page_index": 46,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 47,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 2897,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 2888.8477,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 47,
+        "sheet_number": "A-48",
+        "title": "Sheet 48",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p47-drawing-0",
+          "page_index": 47,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 48,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 3045,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 3036.4312,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 48,
+        "sheet_number": "A-49",
+        "title": "Sheet 49",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p48-drawing-0",
+          "page_index": 48,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 49,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 4295,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 4282.9136,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 49,
+        "sheet_number": "A-50",
+        "title": "Sheet 50",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p49-drawing-0",
+          "page_index": 49,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 50,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 7720,
+        "raster_images": 2,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 7698.2755,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 50,
+        "sheet_number": "A-51",
+        "title": "Sheet 51",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p50-drawing-0",
+          "page_index": 50,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 51,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 23914,
+        "raster_images": 4,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 23846.7046,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 51,
+        "sheet_number": "A-52",
+        "title": "Sheet 52",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p51-drawing-0",
+          "page_index": 51,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    },
+    {
+      "profile": {
+        "page_index": 52,
+        "width_pt": 842.0,
+        "height_pt": 1191.0,
+        "rotation": 0,
+        "modality": "hybrid",
+        "vector_text_spans": 0,
+        "vector_paths": 2042,
+        "raster_images": 1,
+        "confidence": 0.72,
+        "routing_reason": "only one native signal is strong; combine native extraction with OCR/CV fallback",
+        "quality_metrics": {
+          "path_density_per_million_pt2": 2036.2537,
+          "text_density_per_million_pt2": 0.0,
+          "mixed_vector_raster": true,
+          "rotation_supported": true
+        },
+        "warnings": [
+          "page has only one strong native vector signal"
+        ]
+      },
+      "semantics": {
+        "page_index": 52,
+        "sheet_number": "A-53",
+        "title": "Sheet 53",
+        "discipline": "architecture",
+        "drawing_type": "unknown",
+        "level": null,
+        "scale_candidates": [],
+        "source": "fused",
+        "confidence": 0.65,
+        "evidence_refs": [],
+        "warnings": [
+          "drawing type could not be resolved deterministically"
+        ]
+      },
+      "quality": {
+        "native_text_coverage": 0.0,
+        "zone_coverage": 0.8925635615372398,
+        "dem_bbox_valid_ratio": 1.0,
+        "evidence_coverage": 1.0,
+        "readiness": "ready",
+        "reasons": []
+      },
+      "zones": [
+        {
+          "zone_id": "p52-drawing-0",
+          "page_index": 52,
+          "type": "drawing",
+          "bbox": {
+            "x0": 0.033705462186183616,
+            "y0": 0.023930290984466834,
+            "x1": 0.9661994988448263,
+            "y1": 0.9811091322942905,
+            "space": "normalized"
+          },
+          "confidence": 0.86,
+          "method": "deterministic",
+          "source_text": [],
+          "needs_review": false
+        }
+      ],
+      "tokens": [],
+      "tables": [],
+      "vocabulary": [],
+      "detections": []
+    }
+  ],
+  "sheet_views": {
+    "level": [
+      {
+        "page_index": 0,
+        "page_number": 1,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 1,
+        "page_number": 2,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 2,
+        "page_number": 3,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 3,
+        "page_number": 4,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 4,
+        "page_number": 5,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 5,
+        "page_number": 6,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 6,
+        "page_number": 7,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 7,
+        "page_number": 8,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 8,
+        "page_number": 9,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 9,
+        "page_number": 10,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 10,
+        "page_number": 11,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 11,
+        "page_number": 12,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 12,
+        "page_number": 13,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 13,
+        "page_number": 14,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 14,
+        "page_number": 15,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 15,
+        "page_number": 16,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 16,
+        "page_number": 17,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 17,
+        "page_number": 18,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 18,
+        "page_number": 19,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 19,
+        "page_number": 20,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 20,
+        "page_number": 21,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 21,
+        "page_number": 22,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 22,
+        "page_number": 23,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 23,
+        "page_number": 24,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 24,
+        "page_number": 25,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 25,
+        "page_number": 26,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 26,
+        "page_number": 27,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 27,
+        "page_number": 28,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 28,
+        "page_number": 29,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 29,
+        "page_number": 30,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 30,
+        "page_number": 31,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 31,
+        "page_number": 32,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 32,
+        "page_number": 33,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 33,
+        "page_number": 34,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 34,
+        "page_number": 35,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 35,
+        "page_number": 36,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 36,
+        "page_number": 37,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 37,
+        "page_number": 38,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 38,
+        "page_number": 39,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 39,
+        "page_number": 40,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 40,
+        "page_number": 41,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 41,
+        "page_number": 42,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 42,
+        "page_number": 43,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 43,
+        "page_number": 44,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 44,
+        "page_number": 45,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 45,
+        "page_number": 46,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 46,
+        "page_number": 47,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 47,
+        "page_number": 48,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 48,
+        "page_number": 49,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 49,
+        "page_number": 50,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 50,
+        "page_number": 51,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 51,
+        "page_number": 52,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 52,
+        "page_number": 53,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      }
+    ],
+    "classification": [
+      {
+        "page_index": 0,
+        "page_number": 1,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 1,
+        "page_number": 2,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 2,
+        "page_number": 3,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 3,
+        "page_number": 4,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 4,
+        "page_number": 5,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 5,
+        "page_number": 6,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 6,
+        "page_number": 7,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 7,
+        "page_number": 8,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 8,
+        "page_number": 9,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 9,
+        "page_number": 10,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 10,
+        "page_number": 11,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 11,
+        "page_number": 12,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 12,
+        "page_number": 13,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 13,
+        "page_number": 14,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 14,
+        "page_number": 15,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 15,
+        "page_number": 16,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 16,
+        "page_number": 17,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 17,
+        "page_number": 18,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 18,
+        "page_number": 19,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 19,
+        "page_number": 20,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 20,
+        "page_number": 21,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 21,
+        "page_number": 22,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 22,
+        "page_number": 23,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 23,
+        "page_number": 24,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 24,
+        "page_number": 25,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 25,
+        "page_number": 26,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 26,
+        "page_number": 27,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 27,
+        "page_number": 28,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 28,
+        "page_number": 29,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 29,
+        "page_number": 30,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 30,
+        "page_number": 31,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 31,
+        "page_number": 32,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 32,
+        "page_number": 33,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 33,
+        "page_number": 34,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 34,
+        "page_number": 35,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 35,
+        "page_number": 36,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 36,
+        "page_number": 37,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 37,
+        "page_number": 38,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 38,
+        "page_number": 39,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 39,
+        "page_number": 40,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 40,
+        "page_number": 41,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 41,
+        "page_number": 42,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 42,
+        "page_number": 43,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 43,
+        "page_number": 44,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 44,
+        "page_number": 45,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 45,
+        "page_number": 46,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 46,
+        "page_number": 47,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 47,
+        "page_number": 48,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 48,
+        "page_number": 49,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 49,
+        "page_number": 50,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 50,
+        "page_number": 51,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 51,
+        "page_number": 52,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 52,
+        "page_number": 53,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      }
+    ],
+    "source": [
+      {
+        "page_index": 0,
+        "page_number": 1,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 1,
+        "page_number": 2,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 2,
+        "page_number": 3,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 3,
+        "page_number": 4,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 4,
+        "page_number": 5,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 5,
+        "page_number": 6,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 6,
+        "page_number": 7,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 7,
+        "page_number": 8,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 8,
+        "page_number": 9,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 9,
+        "page_number": 10,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 10,
+        "page_number": 11,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 11,
+        "page_number": 12,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 12,
+        "page_number": 13,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 13,
+        "page_number": 14,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 14,
+        "page_number": 15,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 15,
+        "page_number": 16,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 16,
+        "page_number": 17,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 17,
+        "page_number": 18,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 18,
+        "page_number": 19,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 19,
+        "page_number": 20,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 20,
+        "page_number": 21,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 21,
+        "page_number": 22,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 22,
+        "page_number": 23,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 23,
+        "page_number": 24,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 24,
+        "page_number": 25,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 25,
+        "page_number": 26,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 26,
+        "page_number": 27,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 27,
+        "page_number": 28,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 28,
+        "page_number": 29,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 29,
+        "page_number": 30,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 30,
+        "page_number": 31,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 31,
+        "page_number": 32,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 32,
+        "page_number": 33,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 33,
+        "page_number": 34,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 34,
+        "page_number": 35,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 35,
+        "page_number": 36,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 36,
+        "page_number": 37,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 37,
+        "page_number": 38,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 38,
+        "page_number": 39,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 39,
+        "page_number": 40,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 40,
+        "page_number": 41,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 41,
+        "page_number": 42,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 42,
+        "page_number": 43,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 43,
+        "page_number": 44,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 44,
+        "page_number": 45,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 45,
+        "page_number": 46,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 46,
+        "page_number": 47,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 47,
+        "page_number": 48,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 48,
+        "page_number": 49,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 49,
+        "page_number": 50,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 50,
+        "page_number": 51,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 51,
+        "page_number": 52,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      },
+      {
+        "page_index": 52,
+        "page_number": 53,
+        "level_key": "unknown",
+        "classification_key": "unknown",
+        "evidence_refs": [],
+        "status": "needs_review",
+        "review_reason": "classification_unknown"
+      }
+    ]
+  },
+  "vocabulary": [],
+  "cross_references": [],
+  "work_items": [],
+  "review_queue": [],
+  "physical_instances": [],
+  "conflicts": [],
+  "construction_graph": {
+    "schema_version": "paax.construction-intelligence-graph.v3",
+    "package_id": "run-3300eab4-c376-444f-be51-ce24d40ce12a",
+    "nodes": [
+      {
+        "node_id": "sheet-c89a750b53b4ffc0cc",
+        "node_type": "Sheet",
+        "label": "Sheet 1",
+        "properties": {
+          "page_index": 0,
+          "page_number": 1,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-5547ca58533ace6344",
+        "node_type": "Sheet",
+        "label": "Sheet 2",
+        "properties": {
+          "page_index": 1,
+          "page_number": 2,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-6b4efa0cab24e666d1",
+        "node_type": "Sheet",
+        "label": "Sheet 3",
+        "properties": {
+          "page_index": 2,
+          "page_number": 3,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-f187798a4d43b7b1af",
+        "node_type": "Sheet",
+        "label": "Sheet 4",
+        "properties": {
+          "page_index": 3,
+          "page_number": 4,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-5b151a4a0be79b0f3b",
+        "node_type": "Sheet",
+        "label": "Sheet 5",
+        "properties": {
+          "page_index": 4,
+          "page_number": 5,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-9a5277fab3ba20bab3",
+        "node_type": "Sheet",
+        "label": "Sheet 6",
+        "properties": {
+          "page_index": 5,
+          "page_number": 6,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-6a4adfca600509152d",
+        "node_type": "Sheet",
+        "label": "Sheet 7",
+        "properties": {
+          "page_index": 6,
+          "page_number": 7,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-d153e44655957d3b34",
+        "node_type": "Sheet",
+        "label": "Sheet 8",
+        "properties": {
+          "page_index": 7,
+          "page_number": 8,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-223a026d3d1f030283",
+        "node_type": "Sheet",
+        "label": "Sheet 9",
+        "properties": {
+          "page_index": 8,
+          "page_number": 9,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-5173891302502e6ffc",
+        "node_type": "Sheet",
+        "label": "Sheet 10",
+        "properties": {
+          "page_index": 9,
+          "page_number": 10,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-09aaf2d73b44178a2a",
+        "node_type": "Sheet",
+        "label": "Sheet 11",
+        "properties": {
+          "page_index": 10,
+          "page_number": 11,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-0e0fb43c9164c759de",
+        "node_type": "Sheet",
+        "label": "Sheet 12",
+        "properties": {
+          "page_index": 11,
+          "page_number": 12,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-a2634d56f4f11f4cd6",
+        "node_type": "Sheet",
+        "label": "Sheet 13",
+        "properties": {
+          "page_index": 12,
+          "page_number": 13,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-7f986395a3a56e5911",
+        "node_type": "Sheet",
+        "label": "Sheet 14",
+        "properties": {
+          "page_index": 13,
+          "page_number": 14,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-d31504c8969dd26a8f",
+        "node_type": "Sheet",
+        "label": "Sheet 15",
+        "properties": {
+          "page_index": 14,
+          "page_number": 15,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-05d0c4c30e9e471a24",
+        "node_type": "Sheet",
+        "label": "Sheet 16",
+        "properties": {
+          "page_index": 15,
+          "page_number": 16,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-0cc2ca9d96f9c58c8d",
+        "node_type": "Sheet",
+        "label": "Sheet 17",
+        "properties": {
+          "page_index": 16,
+          "page_number": 17,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-c9c80f655979639d28",
+        "node_type": "Sheet",
+        "label": "Sheet 18",
+        "properties": {
+          "page_index": 17,
+          "page_number": 18,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-3aee85d81526c4985f",
+        "node_type": "Sheet",
+        "label": "Sheet 19",
+        "properties": {
+          "page_index": 18,
+          "page_number": 19,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-9b0fc271970b6f9706",
+        "node_type": "Sheet",
+        "label": "Sheet 20",
+        "properties": {
+          "page_index": 19,
+          "page_number": 20,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-09e31d685859097f31",
+        "node_type": "Sheet",
+        "label": "Sheet 21",
+        "properties": {
+          "page_index": 20,
+          "page_number": 21,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-6103067cb12c98de2e",
+        "node_type": "Sheet",
+        "label": "Sheet 22",
+        "properties": {
+          "page_index": 21,
+          "page_number": 22,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-5d432b73f8a365f8b3",
+        "node_type": "Sheet",
+        "label": "Sheet 23",
+        "properties": {
+          "page_index": 22,
+          "page_number": 23,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-d7b8dda60c309b3e4d",
+        "node_type": "Sheet",
+        "label": "Sheet 24",
+        "properties": {
+          "page_index": 23,
+          "page_number": 24,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-30468e6581164c9c8f",
+        "node_type": "Sheet",
+        "label": "Sheet 25",
+        "properties": {
+          "page_index": 24,
+          "page_number": 25,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-f439d3ec3be6b94c78",
+        "node_type": "Sheet",
+        "label": "Sheet 26",
+        "properties": {
+          "page_index": 25,
+          "page_number": 26,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-5e244299f2f724973d",
+        "node_type": "Sheet",
+        "label": "Sheet 27",
+        "properties": {
+          "page_index": 26,
+          "page_number": 27,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-3adf0b81217ff60d21",
+        "node_type": "Sheet",
+        "label": "Sheet 28",
+        "properties": {
+          "page_index": 27,
+          "page_number": 28,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-cf0a1f9bbdd9bebfd4",
+        "node_type": "Sheet",
+        "label": "Sheet 29",
+        "properties": {
+          "page_index": 28,
+          "page_number": 29,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-09573ff60f726b44a4",
+        "node_type": "Sheet",
+        "label": "Sheet 30",
+        "properties": {
+          "page_index": 29,
+          "page_number": 30,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-1e2c6f7fb3e3ed84a5",
+        "node_type": "Sheet",
+        "label": "Sheet 31",
+        "properties": {
+          "page_index": 30,
+          "page_number": 31,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-2d385d55eab8023114",
+        "node_type": "Sheet",
+        "label": "Sheet 32",
+        "properties": {
+          "page_index": 31,
+          "page_number": 32,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-02385c8961aec014eb",
+        "node_type": "Sheet",
+        "label": "Sheet 33",
+        "properties": {
+          "page_index": 32,
+          "page_number": 33,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-7d107f0c80022cb977",
+        "node_type": "Sheet",
+        "label": "Sheet 34",
+        "properties": {
+          "page_index": 33,
+          "page_number": 34,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-fdc892e5c0e728f1cd",
+        "node_type": "Sheet",
+        "label": "Sheet 35",
+        "properties": {
+          "page_index": 34,
+          "page_number": 35,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-175c9107c1ad2e92e6",
+        "node_type": "Sheet",
+        "label": "Sheet 36",
+        "properties": {
+          "page_index": 35,
+          "page_number": 36,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-3b716acdeb60795ef4",
+        "node_type": "Sheet",
+        "label": "Sheet 37",
+        "properties": {
+          "page_index": 36,
+          "page_number": 37,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-53f6aa82a3c64d1736",
+        "node_type": "Sheet",
+        "label": "Sheet 38",
+        "properties": {
+          "page_index": 37,
+          "page_number": 38,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-9dbb09df4d4e4e58d0",
+        "node_type": "Sheet",
+        "label": "Sheet 39",
+        "properties": {
+          "page_index": 38,
+          "page_number": 39,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-20122899ca1b964d0e",
+        "node_type": "Sheet",
+        "label": "Sheet 40",
+        "properties": {
+          "page_index": 39,
+          "page_number": 40,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-85ac8808068f995add",
+        "node_type": "Sheet",
+        "label": "Sheet 41",
+        "properties": {
+          "page_index": 40,
+          "page_number": 41,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-343745bc00c5b6e1ce",
+        "node_type": "Sheet",
+        "label": "Sheet 42",
+        "properties": {
+          "page_index": 41,
+          "page_number": 42,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-bb6f877df97a8d1a59",
+        "node_type": "Sheet",
+        "label": "Sheet 43",
+        "properties": {
+          "page_index": 42,
+          "page_number": 43,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-6034669e2548cb5eb2",
+        "node_type": "Sheet",
+        "label": "Sheet 44",
+        "properties": {
+          "page_index": 43,
+          "page_number": 44,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-ff9987b6c6c6b5e5cc",
+        "node_type": "Sheet",
+        "label": "Sheet 45",
+        "properties": {
+          "page_index": 44,
+          "page_number": 45,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-2d81a4edb333ea16f9",
+        "node_type": "Sheet",
+        "label": "Sheet 46",
+        "properties": {
+          "page_index": 45,
+          "page_number": 46,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-061fe988abf2778313",
+        "node_type": "Sheet",
+        "label": "Sheet 47",
+        "properties": {
+          "page_index": 46,
+          "page_number": 47,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-07214fc4117bfcdb90",
+        "node_type": "Sheet",
+        "label": "Sheet 48",
+        "properties": {
+          "page_index": 47,
+          "page_number": 48,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-cca096045811fb52c4",
+        "node_type": "Sheet",
+        "label": "Sheet 49",
+        "properties": {
+          "page_index": 48,
+          "page_number": 49,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-f9b540583671588270",
+        "node_type": "Sheet",
+        "label": "Sheet 50",
+        "properties": {
+          "page_index": 49,
+          "page_number": 50,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-d2c46dbe010f7593cc",
+        "node_type": "Sheet",
+        "label": "Sheet 51",
+        "properties": {
+          "page_index": 50,
+          "page_number": 51,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-29f7cfe94b2f4e0c00",
+        "node_type": "Sheet",
+        "label": "Sheet 52",
+        "properties": {
+          "page_index": 51,
+          "page_number": 52,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      },
+      {
+        "node_id": "sheet-cc8dd5f77403ca2ea5",
+        "node_type": "Sheet",
+        "label": "Sheet 53",
+        "properties": {
+          "page_index": 52,
+          "page_number": 53,
+          "drawing_type": "unknown",
+          "discipline": "architecture"
+        },
+        "evidence_refs": []
+      }
+    ],
+    "edges": [],
+    "communities": [],
+    "metrics": {
+      "nodes": 53,
+      "edges": 0,
+      "conflicts": 0
+    }
+  },
+  "metrics": {
+    "page_count_analyzed": 53,
+    "analyzed_pages": 53,
+    "analysis_mode": "fast",
+    "input_kind": "pdf",
+    "ai_provider_calls": 0,
+    "vector_descriptor_policy": "deferred",
+    "dem_page_count": 53,
+    "dem_coverage": 1.0,
+    "evidence_refs_repaired": 0,
+    "existing_dem_evidence_refs_repaired": 0,
+    "native_pdf_evidence_refs_bridged": 0,
+    "unresolved_evidence_links": 0,
+    "modality_counts": {
+      "hybrid": 53
+    },
+    "drawing_type_counts": {
+      "unknown": 53
+    },
+    "discipline_counts": {
+      "architecture": 53
+    },
+    "page_ready_ratio": 1.0,
+    "vocabulary_entries": 0,
+    "cross_references": 0,
+    "detection_candidates": 0,
+    "work_item_candidates": 0,
+    "review_tasks": 0,
+    "drawing_conflicts": 0,
+    "physical_instance_candidates": 0,
+    "physical_instances_engine_confirmed": 0,
+    "work_items_count_engine_confirmed": 0,
+    "count_channel_differences": [],
+    "element_heights_engine_confirmed": 0,
+    "height_conflicts": 0,
+    "work_items_ready_for_calculation": 0,
+    "physical_counts_auto_accepted": 0,
+    "final_quantities_calculated": 0
+  },
+  "phase_status": {
+    "01_ingestion": "implemented_with_source_manifest",
+    "02_modality_routing": "implemented_with_explainable_quality_profile",
+    "03_coordinate_unification": "implemented",
+    "04_native_vector_extraction": "implemented",
+    "05_page_semantics": "implemented_with_bounded_human_level_scopes",
+    "06_plan_zones": "implemented_deterministic_baseline",
+    "07_native_text_index": "implemented",
+    "08_dem_fusion": "implemented",
+    "09_legend_schedule_vocabulary": "implemented_context_ranked_vocabulary_baseline",
+    "10_cross_sheet_reference": "implemented_discipline_scoped_cross_sheet_resolution",
+    "11_vector_symbol_descriptor": "implemented_with_stroke_topology_baseline",
+    "12_project_specific_similarity": "implemented_with_versioned_project_prototypes",
+    "13_area_segmentation": "implemented_vector_assisted_baseline",
+    "14_line_topology": "implemented_vector_assisted_baseline",
+    "15_geometry_reconstruction": "implemented_topology_and_connected_path_baseline",
+    "16_work_item_maturation": "implemented_conflict_aware_physical_instance_reconstruction",
+    "17_human_review_queue": "implemented_versioned_review_ledger_with_canonical_persistence",
+    "18_active_learning": "implemented_offline_versioned_project_memory_with_canonical_persistence",
+    "19_frontend_delivery": "implemented_human_frontend_contract_and_review_actions",
+    "20_benchmark_observability": "implemented_package_human_conflict_and_physical_count_gates"
+  },
+  "warnings": [
+    "page 10: drawing type could not be resolved deterministically",
+    "page 10: page has only one strong native vector signal",
+    "page 11: drawing type could not be resolved deterministically",
+    "page 11: page has only one strong native vector signal",
+    "page 12: drawing type could not be resolved deterministically",
+    "page 12: page has only one strong native vector signal",
+    "page 13: drawing type could not be resolved deterministically",
+    "page 13: page has only one strong native vector signal",
+    "page 14: drawing type could not be resolved deterministically",
+    "page 14: page has only one strong native vector signal",
+    "page 15: drawing type could not be resolved deterministically",
+    "page 15: page has only one strong native vector signal",
+    "page 16: drawing type could not be resolved deterministically",
+    "page 16: page has only one strong native vector signal",
+    "page 17: drawing type could not be resolved deterministically",
+    "page 17: page has only one strong native vector signal",
+    "page 18: drawing type could not be resolved deterministically",
+    "page 18: page has only one strong native vector signal",
+    "page 19: drawing type could not be resolved deterministically",
+    "page 19: page has only one strong native vector signal",
+    "page 1: drawing type could not be resolved deterministically",
+    "page 1: page has only one strong native vector signal",
+    "page 20: drawing type could not be resolved deterministically",
+    "page 20: page has only one strong native vector signal",
+    "page 21: drawing type could not be resolved deterministically",
+    "page 21: page has only one strong native vector signal",
+    "page 22: drawing type could not be resolved deterministically",
+    "page 22: page has only one strong native vector signal",
+    "page 23: drawing type could not be resolved deterministically",
+    "page 23: page has only one strong native vector signal",
+    "page 24: drawing type could not be resolved deterministically",
+    "page 24: page has only one strong native vector signal",
+    "page 25: drawing type could not be resolved deterministically",
+    "page 25: page has only one strong native vector signal",
+    "page 26: drawing type could not be resolved deterministically",
+    "page 26: page has only one strong native vector signal",
+    "page 27: drawing type could not be resolved deterministically",
+    "page 27: page has only one strong native vector signal",
+    "page 28: drawing type could not be resolved deterministically",
+    "page 28: page has only one strong native vector signal",
+    "page 29: drawing type could not be resolved deterministically",
+    "page 29: page has only one strong native vector signal",
+    "page 2: drawing type could not be resolved deterministically",
+    "page 2: page has only one strong native vector signal",
+    "page 30: drawing type could not be resolved deterministically",
+    "page 30: page has only one strong native vector signal",
+    "page 31: drawing type could not be resolved deterministically",
+    "page 31: page has only one strong native vector signal",
+    "page 32: drawing type could not be resolved deterministically",
+    "page 32: page has only one strong native vector signal",
+    "page 33: drawing type could not be resolved deterministically",
+    "page 33: page has only one strong native vector signal",
+    "page 34: drawing type could not be resolved deterministically",
+    "page 34: page has only one strong native vector signal",
+    "page 35: drawing type could not be resolved deterministically",
+    "page 35: page has only one strong native vector signal",
+    "page 36: drawing type could not be resolved deterministically",
+    "page 36: page has only one strong native vector signal",
+    "page 37: drawing type could not be resolved deterministically",
+    "page 37: page has only one strong native vector signal",
+    "page 38: drawing type could not be resolved deterministically",
+    "page 38: page has only one strong native vector signal",
+    "page 39: drawing type could not be resolved deterministically",
+    "page 39: page has only one strong native vector signal",
+    "page 3: drawing type could not be resolved deterministically",
+    "page 3: page has only one strong native vector signal",
+    "page 40: drawing type could not be resolved deterministically",
+    "page 40: page has only one strong native vector signal",
+    "page 41: drawing type could not be resolved deterministically",
+    "page 41: page has only one strong native vector signal",
+    "page 42: drawing type could not be resolved deterministically",
+    "page 42: page has only one strong native vector signal",
+    "page 43: drawing type could not be resolved deterministically",
+    "page 43: page has only one strong native vector signal",
+    "page 44: drawing type could not be resolved deterministically",
+    "page 44: page has only one strong native vector signal",
+    "page 45: drawing type could not be resolved deterministically",
+    "page 45: page has only one strong native vector signal",
+    "page 46: drawing type could not be resolved deterministically",
+    "page 46: page has only one strong native vector signal",
+    "page 47: drawing type could not be resolved deterministically",
+    "page 47: page has only one strong native vector signal",
+    "page 48: drawing type could not be resolved deterministically",
+    "page 48: page has only one strong native vector signal",
+    "page 49: drawing type could not be resolved deterministically",
+    "page 49: page has only one strong native vector signal",
+    "page 4: drawing type could not be resolved deterministically",
+    "page 4: page has only one strong native vector signal",
+    "page 50: drawing type could not be resolved deterministically",
+    "page 50: page has only one strong native vector signal",
+    "page 51: drawing type could not be resolved deterministically",
+    "page 51: page has only one strong native vector signal",
+    "page 52: drawing type could not be resolved deterministically",
+    "page 52: page has only one strong native vector signal",
+    "page 53: drawing type could not be resolved deterministically",
+    "page 53: page has only one strong native vector signal",
+    "page 5: drawing type could not be resolved deterministically",
+    "page 5: page has only one strong native vector signal",
+    "page 6: drawing type could not be resolved deterministically",
+    "page 6: page has only one strong native vector signal",
+    "page 7: drawing type could not be resolved deterministically",
+    "page 7: page has only one strong native vector signal",
+    "page 8: drawing type could not be resolved deterministically",
+    "page 8: page has only one strong native vector signal",
+    "page 9: drawing type could not be resolved deterministically",
+    "page 9: page has only one strong native vector signal"
+  ]
+}

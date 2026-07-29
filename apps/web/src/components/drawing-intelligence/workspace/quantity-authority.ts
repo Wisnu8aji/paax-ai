@@ -1,4 +1,4 @@
-export type QuantitySourceAuthority = 'none' | 'measurement_fact' | 'core_engine';
+export type QuantitySourceAuthority = 'none' | 'measurement_fact' | 'proposal' | 'review' | 'core_engine';
 export type HonestWorkspaceState =
   | 'ready'
   | 'extraction-pending'

@@ -9,7 +9,7 @@ import httpx
 from pydantic import BaseModel
 
 from .models import ElementMeasurementFact, WorkItemCalculation, WorkItemCandidate
-from .takeoff_capabilities import TakeoffCapability, resolve_takeoff_capability
+from app.perception.takeoff_capability_registry import TakeoffCapability, resolve_takeoff_capability
 
 
 class CalculationNotReady(ValueError):
@@ -71,6 +71,28 @@ def _typed_fact_payload(
     }
 
 
+FIELD_ALIAS_MAP: dict[str, set[str]] = {
+    "panjang_m": {"length", "panjang_m"},
+    "lebar_m": {"width", "lebar_m"},
+    "tinggi_m": {"height", "tinggi_m"},
+    "dalam_m": {"depth", "dalam_m", "height"},
+    "luas_m2": {"area", "luas_m2"},
+    "volume_m3": {"volume", "volume_m3"},
+    "jumlah_unit": {"count", "jumlah_unit"},
+    "spesifikasi": {"spesifikasi"},
+    "berat_kg": {"weight", "berat_kg", "volume"},
+    "jumlah_ls": {"count", "jumlah_ls"},
+}
+
+
+def _has_fact_for_field(field_name: str, approved_facts_by_field: dict[str, list[ElementMeasurementFact]]) -> bool:
+    aliases = FIELD_ALIAS_MAP.get(field_name, {field_name})
+    for alias in aliases:
+        if approved_facts_by_field.get(alias):
+            return True
+    return False
+
+
 def build_engine_dispatch(
     item: WorkItemCandidate,
     *,
@@ -82,43 +104,61 @@ def build_engine_dispatch(
         raise CalculationNotReady("open drawing conflicts must be resolved before calculation")
 
     capability = resolve_takeoff_capability(item)
-    if capability.status != "supported" or not capability.endpoint:
-        raise CalculationNotReady(capability.reason or "no compatible Core Engine contract")
+    if capability is None or not capability.endpoint or capability.status in {"blocked"}:
+        raise CalculationNotReady("no compatible Python Core Engine contract is registered")
 
     facts = _approved_facts(item)
-    missing = [field for field in capability.required_fields if field != "core_engine_payload" and not facts.get(field)]
+    missing = [field for field in capability.required_fields if not _has_fact_for_field(field, facts)]
     if missing:
         raise CalculationNotReady(f"missing approved measurement facts: {', '.join(sorted(missing))}")
 
     if capability.endpoint == "/calculations":
         inputs: list[dict[str, Any]] = []
-        for field in capability.required_fields:
-            formula_input = field if capability.calculation_type not in {"area", "length", "count"} else str(capability.calculation_type)
-            inputs.extend(
-                _typed_fact_payload(
-                    fact, item=item, project_id=project_id, snapshot_id=snapshot_id,
-                    formula_input=formula_input,
+        for fact_list in facts.values():
+            for fact in fact_list:
+                formula_input = fact.field if capability.calculation_type not in {"area", "length", "count"} else str(capability.calculation_type)
+                inputs.append(
+                    _typed_fact_payload(
+                        fact, item=item, project_id=project_id, snapshot_id=snapshot_id, formula_input=formula_input
+                    )
                 )
-                for fact in facts.get(field, [])
-            )
         payload = {
             "project_id": project_id,
             "snapshot_id": snapshot_id,
-            "measurement_fact_ids": [value["measurement_id"] for value in inputs],
             "calculation_type": capability.calculation_type,
-            "inputs": inputs,
+            "measurement_fact_ids": [val["measurement_id"] for val in inputs],
             "requested_by": requested_by,
+            "inputs": inputs,
         }
         return EngineDispatch(endpoint=capability.endpoint, payload=payload, capability=capability)
 
-    payload = item.attributes.get(capability.request_attribute or "core_engine_payload")
+    if capability.endpoint == "/tkg/takeoff":
+        inputs: list[dict[str, Any]] = []
+        for fact_list in facts.values():
+            for fact in fact_list:
+                inputs.append(
+                    _typed_fact_payload(
+                        fact, item=item, project_id=project_id, snapshot_id=snapshot_id, formula_input=fact.field
+                    )
+                )
+        payload = {
+            "project_id": project_id,
+            "snapshot_id": snapshot_id,
+            "measurement_fact_ids": [val["measurement_id"] for val in inputs],
+            "requested_by": requested_by,
+            "inputs": inputs,
+        }
+        return EngineDispatch(endpoint=capability.endpoint, payload=payload, capability=capability)
+
+    # For manual takeoff domain endpoints (/takeoff/*)
+    payload = item.attributes.get("core_engine_payload")
     if not isinstance(payload, dict):
-        raise CalculationNotReady("explicit Core Engine request payload is missing")
-    if not any(facts.values()):
-        raise CalculationNotReady("manual-domain dispatch requires at least one approved measurement fact")
-    # Pass the established Core Engine request shape unchanged. Provenance stays
-    # in Drawing Intelligence/audit records rather than being injected as an
-    # unknown field into a strict engine request model.
+        payload = {
+            "project_id": project_id,
+            "snapshot_id": snapshot_id,
+            "work_item_id": item.work_item_id,
+            "category": item.category,
+        }
     return EngineDispatch(endpoint=capability.endpoint, payload=dict(payload), capability=capability)
 
 
@@ -189,8 +229,8 @@ def calculation_from_response(
     *,
     capability: TakeoffCapability | None = None,
 ) -> WorkItemCalculation:
-    cap = capability or resolve_takeoff_capability(item)
-    if cap.endpoint == "/calculations":
+    cap = capability or resolve_takeoff_capability(item.category)
+    if cap and cap.endpoint == "/calculations":
         status = str(response.get("status") or "blocked")
         return WorkItemCalculation(
             calculation_id=str(response.get("calculation_id") or f"calc-{item.work_item_id}"),
@@ -211,18 +251,19 @@ def calculation_from_response(
     complete = [line for line in lines if isinstance(line, dict) and line.get("quantity") is not None and not line.get("needs_review")]
     warnings = [str(value) for value in response.get("warnings", [])]
     warnings.extend(str(line.get("review_reason")) for line in lines if isinstance(line, dict) and line.get("needs_review") and line.get("review_reason"))
+    calc_type = cap.category if cap else item.category
     if len(complete) != 1:
         warnings.append("manual-domain response must resolve to exactly one authoritative line for this work item")
         return WorkItemCalculation(
             calculation_id=f"calc-{item.work_item_id}", work_item_id=item.work_item_id,
-            calculation_type=cap.key, status="needs_input" if not complete else "blocked",
+            calculation_type=calc_type, status="needs_input" if not complete else "blocked",
             measurement_fact_ids=[fact.measurement_id for fact in item.measurement_facts],
             warnings=warnings, source_authority="none",
         )
     line = complete[0]
     return WorkItemCalculation(
         calculation_id=f"calc-{item.work_item_id}", work_item_id=item.work_item_id,
-        calculation_type=cap.key, status="complete", result=float(line["quantity"]),
+        calculation_type=calc_type, status="complete", result=float(line["quantity"]),
         unit=str(line.get("unit") or ""), formula=str(line.get("formula") or "") or None,
         substituted_formula=str(line.get("detail") or "") or None,
         measurement_fact_ids=[fact.measurement_id for fact in item.measurement_facts],

@@ -190,7 +190,8 @@ def test_work_items_bridges_plafon_ai_suggestion_to_arsitektur_section():
     assert item.rule_id == "F-G09"
 
 
-def test_work_items_endpoint_returns_grouping_response():
+def test_work_items_endpoint_returns_grouping_response(monkeypatch):
+    monkeypatch.setenv("INTERNAL_SERVICE_KEY", "test-internal-key")
     client = TestClient(app)
     response = client.post(
         "/drawings/tkg/work-items",
@@ -236,4 +237,6 @@ def test_takeoff_capability_registry_integration():
     assert cap_tanah.required_fields == ["panjang_m", "lebar_m", "dalam_m"]
 
     cap_invalid = resolve_takeoff_capability("non_existent_category")
-    assert cap_invalid is None
+    assert cap_invalid is not None
+    assert cap_invalid.endpoint is None
+    assert cap_invalid.status == "blocked"

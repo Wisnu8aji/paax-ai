@@ -1,0 +1,376 @@
+   ▲ Next.js 15.5.19
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.6:3000
+
+ ✓ Starting...
+ ✓ Ready in 3.8s
+ ○ Compiling /drawing-intelligence ...
+ ✓ Compiled /drawing-intelligence in 7s (1179 modules)
+ GET /drawing-intelligence 200 in 354ms
+ GET /drawing-intelligence?projectId=proj-clean 200 in 237ms
+ ⚠ Cross origin request detected from 127.0.0.1 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ ○ Compiling /api/drawing-intelligence/[...path] ...
+ ✓ Compiled /api/drawing-intelligence/[...path] in 1814ms (1187 modules)
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 4147ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 4584ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 4564ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 4628ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 4604ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 492ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 4664ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 181ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 261ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 262ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 241ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 256ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 351ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 368ms
+ ○ Compiling /api/document-intelligence/[...path] ...
+ ✓ Compiled /api/document-intelligence/[...path] in 1993ms (1175 modules)
+ GET /drawing-intelligence?projectId=proj-clean 200 in 2872ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 13288ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence?view=summary 200 in 15439ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 15485ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence/pages/0/context 200 in 12677ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/0/image 200 in 15342ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/2/image 200 in 674ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/1/image 200 in 679ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/3/image 200 in 678ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 679ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 2891ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 15995ms
+ GET /drawing-intelligence?projectId=proj-clean 200 in 1499ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 163ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 333ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 321ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 339ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 341ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 204ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 421ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 137ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 210ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 299ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 306ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 366ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 375ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 354ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/0/image 403 in 23344ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 23828ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 23808ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence?view=summary 200 in 23913ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence/pages/0/context 200 in 23723ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/2/image 200 in 2450ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/3/image 200 in 2274ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 2222ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 2602ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/1/image 200 in 2397ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 25958ms
+ GET /drawing-intelligence?projectId=proj-clean 200 in 295ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 190ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 173ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 275ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 231ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 250ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 266ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 263ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 122ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 317ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 475ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 545ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 401ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 549ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 972ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/0/image 403 in 24875ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 25272ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 25150ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence?view=summary 200 in 25221ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence/pages/0/context 200 in 26209ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/2/image 200 in 2235ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/3/image 200 in 2394ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/1/image 200 in 2342ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 946ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 27500ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 2614ms
+ GET /drawing-intelligence?projectId=proj-clean 200 in 363ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 157ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 265ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 270ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 274ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 314ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 322ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 203ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 192ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 436ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 441ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 357ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 555ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 563ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 300ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/0/image 403 in 25848ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 26144ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 26224ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence?view=summary 200 in 26248ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence/pages/0/context 200 in 27927ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/3/image 200 in 2161ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/1/image 200 in 2342ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/2/image 200 in 2276ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 472ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 28431ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 2570ms
+ GET /drawing-intelligence?projectId=proj-clean 200 in 298ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 165ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 194ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 170ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 181ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 201ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 213ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 144ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 145ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 244ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 231ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 290ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 291ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 220ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 336ms
+[TypeError: fetch failed] {
+  [cause]: [Error [SocketError]: other side closed] {
+    code: 'UND_ERR_SOCKET',
+    socket: {
+      localAddress: '127.0.0.1',
+      localPort: 52459,
+      remoteAddress: '127.0.0.1',
+      remotePort: 8083,
+      remoteFamily: 'IPv4',
+      timeout: undefined,
+      bytesWritten: 689,
+      bytesRead: 1644
+    }
+  }
+}
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence?view=summary 500 in 1256ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/0/image 403 in 19938ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 20075ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 20128ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/3/image 200 in 2152ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/2/image 200 in 2073ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/1/image 200 in 21999ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 2239ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence/pages/0/context 200 in 20923ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 21948ms
+ GET /drawing-intelligence?projectId=proj-clean 200 in 334ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 139ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 251ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 261ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 265ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 337ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 320ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 144ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 129ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 226ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 244ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 248ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 275ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 317ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 425ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 17872ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 17945ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence?view=summary 200 in 17852ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 18266ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence/pages/0/context 200 in 18161ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/0/image 200 in 18330ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 656ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/1/image 200 in 602ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 546ms
+ GET /drawing-intelligence?projectId=proj-clean 200 in 355ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 144ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 221ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 195ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 249ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 275ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 277ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 175ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 208ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 220ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 254ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 236ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 328ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 341ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 188ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 16628ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 16790ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence?view=summary 200 in 16603ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/0/image 200 in 17578ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence/pages/0/context 200 in 17561ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/2/image 200 in 2572ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/3/image 200 in 1578ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 2576ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 1549ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/1/image 200 in 2576ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 19174ms
+ GET /drawing-intelligence?projectId=proj-clean 200 in 257ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 155ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 199ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 232ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 264ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 270ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 277ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 184ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 206ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 316ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 311ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 310ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 352ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 324ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 366ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 500 in 20343ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 20553ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 21585ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence?view=summary 200 in 21587ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/0/image 200 in 21587ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence/pages/0/context 200 in 21467ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/1/image 200 in 1542ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 2753ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 1470ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/3/image 200 in 2694ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/2/image 200 in 1538ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 1487ms
+ GET /drawing-intelligence?projectId=proj-clean 200 in 254ms
+[TypeError: terminated] {
+  [cause]: [Error [SocketError]: other side closed] {
+    code: 'UND_ERR_SOCKET',
+    socket: {
+      localAddress: '127.0.0.1',
+      localPort: 52555,
+      remoteAddress: '127.0.0.1',
+      remotePort: 8083,
+      remoteFamily: 'IPv4',
+      timeout: undefined,
+      bytesWritten: 1012,
+      bytesRead: 78827
+    }
+  }
+}
+ ⨯ unhandledRejection: [TypeError: terminated] {
+  [cause]: [Error [SocketError]: other side closed] {
+    code: 'UND_ERR_SOCKET',
+    socket: {
+      localAddress: '127.0.0.1',
+      localPort: 52555,
+      remoteAddress: '127.0.0.1',
+      remotePort: 8083,
+      remoteFamily: 'IPv4',
+      timeout: undefined,
+      bytesWritten: 1012,
+      bytesRead: 78827
+    }
+  }
+}
+ ⨯ unhandledRejection:  [TypeError: terminated] {
+  [cause]: [Error [SocketError]: other side closed] {
+    code: 'UND_ERR_SOCKET',
+    socket: {
+      localAddress: '127.0.0.1',
+      localPort: 52555,
+      remoteAddress: '127.0.0.1',
+      remotePort: 8083,
+      remoteFamily: 'IPv4',
+      timeout: undefined,
+      bytesWritten: 1012,
+      bytesRead: 78827
+    }
+  }
+}
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 142ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 168ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 217ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 184ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 198ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 208ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 159ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 185ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 253ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 265ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 283ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 289ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 195ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 204ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/0/image 403 in 22535ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/1/image 403 in 22383ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 22717ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 22777ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence?view=summary 200 in 22845ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 2434ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 2743ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence/pages/0/context 200 in 2743ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 2582ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/2/image 200 in 25145ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/3/image 200 in 2541ms
+ GET /drawing-intelligence?projectId=proj-clean 200 in 210ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 149ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 181ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 225ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 198ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 219ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 224ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 156ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 169ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/quantity-readiness 200 in 207ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/review-queue 200 in 217ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/civil-work-items 404 in 197ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/sheets 200 in 220ms
+ GET /api/drawing-intelligence/projects/proj-clean/dem/runs 200 in 229ms
+ GET /api/drawing-intelligence/projects/proj-clean/project-graph/summary-views?view_kind=LEVEL_OVERVIEW 200 in 218ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/0/image 403 in 21454ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 21549ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 24795ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence?view=summary 200 in 24799ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/1/image 200 in 24631ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 25551ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/intelligence/pages/0/context 200 in 4258ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/index 200 in 894ms
+ POST /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/artifact-url 200 in 4157ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/2/image 200 in 910ms
+ GET /api/document-intelligence/drawings/dem/3300eab4-c376-444f-be51-ce24d40ce12a/pages/3/image 200 in 905ms
+[TypeError: fetch failed] {
+  [cause]: [Error: read ECONNRESET] {
+    errno: -4077,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}
+[TypeError: fetch failed] {
+  [cause]: [Error: read ECONNRESET] {
+    errno: -4077,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}
+[TypeError: fetch failed] {
+  [cause]: [Error: read ECONNRESET] {
+    errno: -4077,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}
+[TypeError: fetch failed] {
+  [cause]: [Error: read ECONNRESET] {
+    errno: -4077,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}
+[TypeError: fetch failed] {
+  [cause]: [Error: read ECONNRESET] {
+    errno: -4077,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}
+[TypeError: fetch failed] {
+  [cause]: [Error: read ECONNRESET] {
+    errno: -4077,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}

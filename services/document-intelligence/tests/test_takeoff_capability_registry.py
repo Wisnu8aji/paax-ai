@@ -38,7 +38,9 @@ def test_resolve_takeoff_capability_known_categories():
 
 def test_resolve_takeoff_capability_unknown_category():
     cap = resolve_takeoff_capability("unknown_exotic")
-    assert cap is None
+    assert cap is not None
+    assert cap.endpoint is None
+    assert cap.status == "blocked"
 
 
 def test_build_coverage_report_lossless_matching_and_no_premature_authority():
