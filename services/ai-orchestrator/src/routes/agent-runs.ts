@@ -107,6 +107,21 @@ export function createAgentRunsRouter(): Router {
     } catch (error: any) { return res.status(409).json({ error: error.message }); }
   });
 
+  router.post('/:runId/approve', async (req, res) => {
+    try {
+      const run = await store.get(req.params.runId);
+      if (!run) return res.status(404).json({ error: 'agent run not found' });
+      const projectId = String(req.body?.projectId || '').trim();
+      if (!projectId || run.goalSpec.binding.projectId !== projectId) return res.status(403).json({ error: 'project scope mismatch' });
+      const approvalToken = req.body?.approvalToken as AgentApprovalToken | undefined;
+      const next = await executionLoop.executeNextStep(req.params.runId, Number(req.body?.expectedVersion || run.version), {
+        approvalToken,
+        idempotencyKey: req.body?.idempotencyKey,
+      });
+      return res.json(next);
+    } catch (error: any) { return res.status(409).json({ error: error.message }); }
+  });
+
   router.post('/:runId/transition', async (req, res) => {
     try {
       const run = await store.get(req.params.runId);

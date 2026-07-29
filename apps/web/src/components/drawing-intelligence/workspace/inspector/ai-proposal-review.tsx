@@ -26,7 +26,7 @@ export type UserRole = 'estimator' | 'pm' | 'admin' | 'viewer';
 
 export interface AiProposalData {
   trigger: AssistTrigger;
-  deterministic_reason: str;
+  deterministic_reason: string;
   model: string;
   prompt_version: string;
   allowed_fields: string[];

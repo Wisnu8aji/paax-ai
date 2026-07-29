@@ -22,4 +22,3 @@ export * from './core-engine-tool';
 export * from './drawing-tools';
 export * from './execution-loop';
 export * from './quantity-policy';
-export * from './quantity-tool-policy';

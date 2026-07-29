@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
-import { Activity, AlertTriangle, CheckCircle2, Clock3, PauseCircle, PlayCircle, RefreshCw, Wrench } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle2, Clock3, PauseCircle, PlayCircle, RefreshCw, Wrench, ShieldAlert, RotateCcw } from 'lucide-react';
 import { useWorkspace } from '../workspace-store';
 import { normalizeStatusMessage } from '../status-bar';
 
@@ -18,10 +18,29 @@ export type AgentRun = {
   budget?: { maxToolCalls: number; maxTokens: number; maxCostUsd: number; maxDurationMs: number };
   budgetUsage?: { toolCalls: number; tokens: number; costUsd: number; startedAtMs: number };
   auditTimeline?: Array<{ eventId: string; type: string; message: string; createdAt: string }>;
-  invocations?: Array<{ invocationId: string; toolName: string; status: string; idempotencyKey?: string; error?: string }>;
+  invocations?: Array<{
+    invocationId: string;
+    toolName: string;
+    status: string;
+    idempotencyKey?: string;
+    error?: string;
+    output?: unknown;
+  }>;
+  actionRecords?: Array<{
+    actionId: string;
+    idempotencyKey: string;
+    riskTier: string;
+    approvalId?: string;
+    status: string;
+    createdAt: string;
+  }>;
 };
 
 type MissionActionState = 'idle' | 'loading' | 'ready' | 'error' | 'manual';
+
+export interface MissionControlProps {
+  userRole?: 'estimator' | 'pm' | 'admin' | 'viewer';
+}
 
 function safeString(value: unknown, fallback = ''): string {
   if (typeof value === 'string') return value;
@@ -102,6 +121,7 @@ function normalizeRun(raw: any): AgentRun {
     budgetUsage: raw?.budgetUsage,
     auditTimeline: Array.isArray(raw?.auditTimeline) ? raw.auditTimeline : [],
     invocations: Array.isArray(raw?.invocations) ? raw.invocations : [],
+    actionRecords: Array.isArray(raw?.actionRecords) ? raw.actionRecords : [],
   };
 }
 
@@ -114,7 +134,7 @@ function statusIcon(status: string) {
   return <Clock3 size={15} />;
 }
 
-export function MissionControl() {
+export function MissionControl({ userRole = 'estimator' }: MissionControlProps) {
   const { state, dispatch } = useWorkspace();
   const projectId = state.projectId;
   const [runs, setRuns] = useState<AgentRun[]>([]);
@@ -122,6 +142,7 @@ export function MissionControl() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [goal, setGoal] = useState('Audit data kolom Lantai 2, hitung quantity terverifikasi, dan laporkan konflik.');
   const [manualNote, setManualNote] = useState('');
+  const [approvalNote, setApprovalNote] = useState('');
 
   const isMounted = useRef(true);
   const inFlightRef = useRef(false);
@@ -258,7 +279,7 @@ export function MissionControl() {
     await executeTransition(projectId, run, status);
   }, [projectId, actionState, executeTransition]);
 
-  const executeNextStep = useCallback(async (run: AgentRun) => {
+  const executeNextStep = useCallback(async (run: AgentRun, approvalToken?: any) => {
     if (!projectId || actionState === 'loading' || inFlightRef.current) return;
     inFlightRef.current = true;
     const operation = async () => {
@@ -266,8 +287,11 @@ export function MissionControl() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'step', projectId, expectedVersion: run.version,
+          action: 'step',
+          projectId,
+          expectedVersion: run.version,
           idempotencyKey: `${run.runId}:${run.version}`,
+          approvalToken,
         }),
       });
       if (!response.ok) {
@@ -288,6 +312,18 @@ export function MissionControl() {
     } finally { inFlightRef.current = false; }
   }, [projectId, actionState, dispatch, performFetchRuns]);
 
+  const submitApproval = useCallback(async (run: AgentRun) => {
+    if (!projectId || userRole === 'viewer') return;
+    const approvalToken = {
+      tokenId: `appr-${Date.now()}`,
+      projectId,
+      toolName: 'core_engine.calculate_measurement_facts',
+      approvedBy: userRole,
+      expiresAt: new Date(Date.now() + 3600_000).toISOString(),
+    };
+    await executeNextStep(run, approvalToken);
+  }, [projectId, userRole, executeNextStep]);
+
   const handleRetry = useCallback(() => {
     if (inFlightRef.current) return;
     if (lastFailedOpRef.current) {
@@ -303,6 +339,8 @@ export function MissionControl() {
   }, [dispatch]);
 
   const active = useMemo(() => runs.filter((r) => !['completed', 'failed', 'cancelled'].includes(safeString(r.status).toLowerCase())).length, [runs]);
+
+  const canApprove = userRole === 'estimator' || userRole === 'pm' || userRole === 'admin';
 
   return (
     <section style={{ flex: 1, minWidth: 0, overflow: 'auto', padding: 18, background: 'var(--di-bg)' }}>
@@ -360,6 +398,7 @@ export function MissionControl() {
                 </p>
                 <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                   <button
+                    data-testid="retry-mission-btn"
                     onClick={handleRetry}
                     style={{
                       flex: 1,
@@ -428,12 +467,25 @@ export function MissionControl() {
               const progress = taskCount ? Math.round((completedCount / taskCount) * 100) : 0;
               const currentStatus = safeString(run.status).toLowerCase();
 
+              const hasReplay = run.invocations?.some((i) => i.status === 'replayed') || run.actionRecords?.some((a) => a.status === 'replayed');
+              const hasEngineAuthority = run.invocations?.some((i) => (i.output as any)?.sourceAuthority === 'core_engine');
+
               return (
-                <article key={run.runId} style={{ border: '1px solid var(--di-border)', borderRadius: 10, background: 'var(--di-panel)', padding: 12 }}>
+                <article key={run.runId} data-testid="mission-run-card" style={{ border: '1px solid var(--di-border)', borderRadius: 10, background: 'var(--di-panel)', padding: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                     {statusIcon(run.status)}
                     <strong style={{ fontSize: 12 }}>{run.goalSpec?.request}</strong>
-                    <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--di-text3)' }}>{run.status}</span>
+                    <span data-testid="run-status-badge" style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--di-text3)' }}>{run.status}</span>
+                    {hasReplay && (
+                      <span data-testid="replayed-badge" style={{ fontSize: 10, padding: '1px 5px', borderRadius: 4, background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <RotateCcw size={10} /> REPLAYED
+                      </span>
+                    )}
+                    {hasEngineAuthority && (
+                      <span data-testid="core-engine-authority-badge" style={{ fontSize: 10, padding: '1px 5px', borderRadius: 4, background: 'rgba(34, 197, 94, 0.15)', color: '#22c55e', fontWeight: 600 }}>
+                        sourceAuthority: core_engine
+                      </span>
+                    )}
                   </div>
                   <div style={{ height: 5, background: 'var(--di-panel2)', borderRadius: 4, overflow: 'hidden', margin: '10px 0 7px' }}>
                     <div style={{ width: `${progress}%`, height: '100%', background: 'var(--di-accent)' }} />
@@ -442,15 +494,42 @@ export function MissionControl() {
                     {completedCount}/{taskCount} tasks · risk {run.goalSpec?.riskTier} · v{run.version}
                   </div>
                   {run.budget && run.budgetUsage && (
-                    <div style={{ marginTop: 6, fontSize: 10.5, color: 'var(--di-text3)' }}>
+                    <div data-testid="budget-usage-timeline" style={{ marginTop: 6, fontSize: 10.5, color: 'var(--di-text3)' }}>
                       Budget: {run.budgetUsage.toolCalls}/{run.budget.maxToolCalls} tools · {run.budgetUsage.tokens}/{run.budget.maxTokens} tokens · ${run.budgetUsage.costUsd.toFixed(4)}/${run.budget.maxCostUsd.toFixed(2)}
                     </div>
                   )}
+
                   {currentStatus === 'waiting_approval' && (
-                    <div role="alert" style={{ marginTop: 8, padding: 8, borderRadius: 6, background: 'var(--di-warn-bg)', color: 'var(--di-warn)', fontSize: 10.5 }}>
-                      Authoritative tool is waiting for a valid project-scoped approval token. Mission UI cannot self-approve it.
+                    <div data-testid="approval-request-panel" role="alert" style={{ marginTop: 8, padding: 10, borderRadius: 6, background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', color: '#eab308', fontSize: 11 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, marginBottom: 4 }}>
+                        <ShieldAlert size={14} /> Human Approval Required
+                      </div>
+                      Authoritative calculation tool is waiting for valid project-scoped approval. Zero Engine calls executed.
+                      {canApprove ? (
+                        <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            placeholder="Catatan approval (opsional)..."
+                            value={approvalNote}
+                            onChange={(e) => setApprovalNote(e.target.value)}
+                            style={{ flex: 1, height: 26, fontSize: 10.5, padding: '0 6px', background: 'var(--di-bg)', border: '1px solid var(--di-border)', borderRadius: 4, color: 'var(--di-text)' }}
+                          />
+                          <button
+                            data-testid="approve-mission-step-btn"
+                            onClick={() => void submitApproval(run)}
+                            style={{ height: 26, padding: '0 10px', fontSize: 10.5, background: 'var(--di-ok, #22c55e)', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600 }}
+                          >
+                            Approve & Execute Engine Call
+                          </button>
+                        </div>
+                      ) : (
+                        <div data-testid="rbac-denial-notice" style={{ marginTop: 6, color: '#ef4444', fontSize: 10.5 }}>
+                          Role '{userRole}' does not have permission to approve calculation tools. Required: estimator, pm, admin.
+                        </div>
+                      )}
                     </div>
                   )}
+
                   <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                     {run.plan?.tasks?.map((task) => (
                       <span
@@ -469,7 +548,7 @@ export function MissionControl() {
                   </div>
                   <div style={{ marginTop: 9, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {['running', 'waiting_tool'].includes(currentStatus) && (
-                      <button onClick={() => void executeNextStep(run)} disabled={actionState === 'loading'}>
+                      <button data-testid="execute-step-btn" onClick={() => void executeNextStep(run)} disabled={actionState === 'loading'}>
                         Execute next governed step
                       </button>
                     )}
@@ -504,9 +583,9 @@ export function MissionControl() {
                       </button>
                     )}
                   </div>
-                  {run.failure && <div style={{ marginTop: 8, color: 'var(--di-danger)', fontSize: 10.5 }}>{run.failure}</div>}
+                  {run.failure && <div data-testid="run-failure-message" style={{ marginTop: 8, color: 'var(--di-danger, #ef4444)', fontSize: 10.5 }}>{run.failure}</div>}
                   {(run.auditTimeline?.length ?? 0) > 0 && (
-                    <details style={{ marginTop: 8 }}>
+                    <details data-testid="audit-timeline-details" style={{ marginTop: 8 }}>
                       <summary style={{ fontSize: 10.5, cursor: 'pointer' }}>Audit timeline ({run.auditTimeline?.length})</summary>
                       <ol style={{ margin: '6px 0 0', paddingLeft: 18, fontSize: 10, color: 'var(--di-text3)' }}>
                         {run.auditTimeline?.slice(-8).map((event) => <li key={event.eventId}>{event.type}: {event.message}</li>)}
