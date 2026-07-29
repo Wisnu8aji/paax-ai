@@ -1,7 +1,7 @@
 PHASE: 08B
 STATUS: PASS
 STARTING HEAD: f4113292 (Phase 08A final commit)
-FINAL COMMIT: PENDING_COMMIT
+FINAL COMMIT: 2c02ce02
 EXECUTION-LOOP EVIDENCE: AgentExecutionLoop.executeNextStep(runId, expectedVersion) implements one-step-at-a-time persisted execution loop with durable invocation & action records
 STEP-API EVIDENCE: POST /agent-runs/:runId/step handles server-side registered tools, version concurrency, project binding, and approval tokens
 PERSISTENCE/RESUME EVIDENCE: Safely resumes from persisted waiting_tool/waiting_approval states after restart or approval token submission
