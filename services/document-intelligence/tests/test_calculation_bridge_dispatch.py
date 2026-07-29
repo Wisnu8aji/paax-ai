@@ -123,11 +123,13 @@ def test_build_engine_dispatch_tanah():
         ),
     ]
     attributes = {
+        # engine_contract is required for anti-bypass validation (09C correction)
+        "engine_contract": "takeoff.tanah",
         "core_engine_payload": {
             "galian_footplat": [
                 {"kode": "FP1", "b_ft": 2.0, "l_ft": 2.0, "d_gali": 1.5, "n": 1}
             ]
-        }
+        },
     }
     item = _make_candidate("item-tanah-01", "tanah", facts=facts, attributes=attributes)
 

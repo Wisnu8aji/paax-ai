@@ -27,13 +27,20 @@ def test_resolve_takeoff_capability_known_categories():
     assert cap_besi is not None
     assert cap_besi.endpoint == "/tkg/takeoff"
 
-    # Core Engine Takeoff Modules: tanah, dinding, arsitektur, baja, atap, kusen, mep, mep-advanced, smkk
-    for cat in ["tanah", "dinding", "arsitektur", "baja", "atap", "kusen", "mep", "mep-advanced", "smkk"]:
+    # Core Engine Takeoff Modules: tanah, dinding, arsitektur, baja, atap, kusen, mep-advanced, smkk
+    # Note: 'mep' is explicitly blocked (requires engine_contract); 'mep-advanced' has a /takeoff/mep-advanced route
+    for cat in ["tanah", "dinding", "arsitektur", "baja", "atap", "kusen", "mep_advanced", "smkk"]:
         cap = resolve_takeoff_capability(cat)
         assert cap is not None
-        assert cap.endpoint == f"/takeoff/{cat}"
+        expected_endpoint = "/takeoff/mep-advanced" if cat == "mep_advanced" else f"/takeoff/{cat}"
+        assert cap.endpoint == expected_endpoint, f"expected {expected_endpoint} for {cat}, got {cap.endpoint}"
         assert cap.source_authority == "none"
         assert len(cap.required_fields) > 0
+
+    # mep (without contract qualifier) is explicitly blocked in string-based registry
+    cap_mep = resolve_takeoff_capability("mep")
+    assert cap_mep.status == "blocked", f"mep must be blocked; got {cap_mep.status}"
+    assert cap_mep.endpoint is None
 
 
 def test_resolve_takeoff_capability_unknown_category():

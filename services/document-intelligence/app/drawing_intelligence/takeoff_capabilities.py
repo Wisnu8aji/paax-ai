@@ -49,6 +49,7 @@ def resolve_takeoff_capability(
         category = item.category.strip().lower().replace("-", "_").replace(" ", "_")
         fields = _verified_fields(item)
 
+        # ─── Explicitly supported: concrete column ─────────────────────────────
         if category in {"column", "kolom", "concrete_column"}:
             return TakeoffCapability(
                 key="concrete_column_total_volume",
@@ -60,6 +61,43 @@ def resolve_takeoff_capability(
                 category=category,
             )
 
+        # ─── Explicitly blocked: beam — no deterministic Core Engine contract ──
+        if category in {"beam", "balok"}:
+            return _BLOCKED.model_copy(update={
+                "key": category,
+                "reason": "beam volume contract is not yet available at the typed measurement boundary",
+                "category": category,
+            })
+
+        # ─── Explicitly blocked: wall without explicit engine_contract ─────────
+        if category in {"wall"}:
+            return _BLOCKED.model_copy(update={
+                "key": category,
+                "reason": "wall requires a verified area/length basis and explicit takeoff.dinding contract",
+                "category": category,
+            })
+
+        # ─── Explicitly blocked: foundation without explicit subtype ──────────
+        if category in {"foundation", "pondasi"}:
+            return _BLOCKED.model_copy(update={
+                "key": category,
+                "reason": "foundation subtype and an existing engine contract are required",
+                "category": category,
+            })
+
+        # ─── Explicitly blocked: MEP without explicit contract ─────────────────
+        # If engine_contract is explicitly declared, fall through to the manual_contracts check.
+        if category == "mep":
+            contract_check = str(item.attributes.get("engine_contract") or "").strip()
+            if not contract_check:
+                return _BLOCKED.model_copy(update={
+                    "key": "mep",
+                    "reason": "explicit takeoff.mep or takeoff.mep_advanced engine_contract is required",
+                    "category": category,
+                })
+            # Has contract → fall through to preferred/manual_contracts check below
+
+        # ─── preferred basis (area/length/count) via /calculations ────────────
         preferred = str(item.attributes.get("quantity_basis") or "").lower()
         if preferred in {"area", "length", "count"} and preferred in fields:
             return TakeoffCapability(
@@ -72,6 +110,7 @@ def resolve_takeoff_capability(
                 category=category,
             )
 
+        # ─── Explicit engine_contract + payload path ───────────────────────────
         contract = str(item.attributes.get("engine_contract") or "").strip()
         request_payload = item.attributes.get("core_engine_payload")
         manual_contracts: dict[str, str] = {
@@ -97,8 +136,13 @@ def resolve_takeoff_capability(
                 category=category,
             )
 
+        # ─── TKG measurement-fact dispatch ────────────────────────────────────
         if category in {"beton", "bekisting", "besi"}:
-            reqs = ["panjang_m", "lebar_m", "tinggi_m"] if category == "beton" else (["panjang_m", "tinggi_m"] if category == "bekisting" else ["diameter_mm", "panjang_m"])
+            reqs = (
+                ["panjang_m", "lebar_m", "tinggi_m"] if category == "beton"
+                else (["panjang_m", "tinggi_m"] if category == "bekisting"
+                      else ["diameter_mm", "panjang_m"])
+            )
             return TakeoffCapability(
                 key=f"tkg_{category}",
                 endpoint="/tkg/takeoff",
@@ -108,6 +152,7 @@ def resolve_takeoff_capability(
                 category=category,
             )
 
+        # ─── Named-endpoint categories ─────────────────────────────────────────
         if category in {"tanah", "dinding", "arsitektur", "baja", "atap", "kusen", "mep_advanced", "smkk"}:
             req_map = {
                 "tanah": ["panjang_m", "lebar_m", "dalam_m"],
@@ -134,7 +179,7 @@ def resolve_takeoff_capability(
             "balok": "beam volume contract is not yet available at the typed measurement boundary",
             "foundation": "foundation subtype and an existing engine contract are required",
             "pondasi": "foundation subtype and an existing engine contract are required",
-            "wall": "verified area/length basis or takeoff.dinding payload is required",
+            "wall": "verified area/length basis or takeoff.dinding contract is required",
             "dinding": "verified area/length basis or takeoff.dinding payload is required",
             "mep": "explicit takeoff.mep or takeoff.mep_advanced payload is required",
         }
@@ -144,16 +189,38 @@ def resolve_takeoff_capability(
             "category": category,
         })
 
+    # ─── String-based registry (for coverage queries and reporting) ────────────
+    # Phase 09C Correction: beam/wall/foundation/MEP are explicitly blocked.
+    # No aliasing of structurally distinct domains to shared concrete endpoints.
     category_str = item_or_category.strip().lower().replace("-", "_").replace(" ", "_")
-    cat_alias_map = {
-        "column": "beton",
-        "kolom": "beton",
-        "beam": "beton",
-        "balok": "beton",
-        "wall": "dinding",
-        "foundation": "tanah",
+
+    # Explicitly blocked domains — returned immediately without aliasing
+    _EXPLICITLY_BLOCKED: dict[str, str] = {
+        "beam": "beam volume contract is not yet available at the typed measurement boundary",
+        "balok": "beam volume contract is not yet available at the typed measurement boundary",
+        "wall": "wall requires a verified area/length basis and explicit takeoff.dinding contract",
+        "foundation": "foundation subtype and an existing engine contract are required",
+        "pondasi": "foundation subtype and an existing engine contract are required",
+        "mep": "explicit takeoff.mep or takeoff.mep_advanced engine_contract is required",
     }
-    target_cat = cat_alias_map.get(category_str, category_str)
+    if category_str in _EXPLICITLY_BLOCKED:
+        return _BLOCKED.model_copy(update={
+            "key": category_str,
+            "reason": _EXPLICITLY_BLOCKED[category_str],
+            "category": category_str,
+        })
+
+    # Concrete column: supported in string-based registry
+    if category_str in {"column", "kolom", "concrete_column"}:
+        return TakeoffCapability(
+            key="concrete_column_total_volume",
+            endpoint="/calculations",
+            required_fields=["count", "width", "depth", "height"],
+            source_authority="core_engine",
+            status="supported",
+            calculation_type="concrete_column_total_volume",
+            category=category_str,
+        )
 
     req_map_str = {
         "beton": ["panjang_m", "lebar_m", "tinggi_m"],
@@ -165,20 +232,22 @@ def resolve_takeoff_capability(
         "baja": ["berat_kg"],
         "atap": ["luas_m2"],
         "kusen": ["panjang_m"],
-        "mep": ["panjang_m"],
         "mep_advanced": ["panjang_m", "spesifikasi"],
         "mep-advanced": ["panjang_m", "spesifikasi"],
         "smkk": ["jumlah_ls"],
     }
-    if target_cat in req_map_str:
-        endpoint = "/tkg/takeoff" if target_cat in {"beton", "bekisting", "besi"} else f"/takeoff/{target_cat.replace('_', '-')}"
+    if category_str in req_map_str:
+        endpoint = (
+            "/tkg/takeoff" if category_str in {"beton", "bekisting", "besi"}
+            else f"/takeoff/{category_str.replace('_', '-')}"
+        )
         return TakeoffCapability(
-            key=f"cap_{target_cat}",
+            key=f"cap_{category_str}",
             endpoint=endpoint,
-            required_fields=req_map_str[target_cat],
+            required_fields=req_map_str[category_str],
             source_authority="none",
             status="ready",
-            category=target_cat,
+            category=category_str,
             work_type=work_type,
         )
 

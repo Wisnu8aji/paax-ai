@@ -33,15 +33,19 @@ def test_beam_is_explicitly_blocked_without_existing_formula_contract():
     assert "beam volume" in coverage["capability"]["reason"]
 
 
-def test_wall_area_can_use_generic_typed_area_boundary():
+def test_wall_blocked_without_explicit_dinding_contract():
+    """wall without explicit engine_contract (takeoff.dinding) is blocked per domain coverage matrix."""
     cap = resolve_takeoff_capability(item("wall", ("area",), {"quantity_basis": "area"}))
-    assert cap.endpoint == "/calculations" and cap.calculation_type == "area"
+    assert cap.status == "blocked", f"wall must be blocked; got {cap.status}"
+    assert cap.endpoint is None
 
 
-def test_mep_requires_explicit_existing_request_contract_not_category_only():
+def test_mep_requires_explicit_engine_contract_not_category_only():
+    """mep without engine_contract is blocked; with valid contract+payload it resolves."""
     assert resolve_takeoff_capability(item("mep", ("count",))).status == "blocked"
+    # mep with valid engine_contract + core_engine_payload resolves to /takeoff/mep
     cap = resolve_takeoff_capability(item("mep", ("count",), {
-        "engine_contract": "takeoff.mep", "core_engine_payload": {"points": []},
+        "engine_contract": "takeoff.mep", "core_engine_payload": {"pipa": []},
     }))
     assert cap.endpoint == "/takeoff/mep"
 
