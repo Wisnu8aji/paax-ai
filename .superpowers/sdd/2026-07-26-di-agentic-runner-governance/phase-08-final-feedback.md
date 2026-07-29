@@ -1,7 +1,7 @@
 PHASE: 08
 STATUS: PASS
 STARTING HEAD: 70235951 (Phase 08C final commit)
-COMMIT(S): PENDING_COMMIT
+COMMIT(S): 70235951, 56757a24
 MISSION UI EVIDENCE: MissionControl component renders agentic run state, goal request, current step, budget timeline, approval request panel, and audit timeline
 REAL ROUTE/API EVIDENCE: Real Next API proxies (GET /api/agent-runs, POST /api/agent-runs, POST /api/agent-runs/:runId/step, POST /api/agent-runs/:runId/approve) connect Mission UI directly to governed orchestrator routes
 WAITING-APPROVAL/ZERO-CALL EVIDENCE: Authoritative calculation tool stops at waiting_approval with ZERO Engine calls executed prior to valid human approval token submission
