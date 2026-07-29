@@ -114,7 +114,7 @@ test.describe('Phase 06 — Drawing Intelligence Sheet Views', () => {
   });
 
   // ── Case 3: Source order tab page order matching API ──────────────────────
-  test('Original order tab shows page numbers in ascending source order', async ({ page }) => {
+  test('Original order tab shows exactly 53 pages in ascending source order', async ({ page }) => {
     await gotoWithNavigator(page);
 
     await page.getByRole('tab', { name: 'Original order' }).click();
@@ -124,11 +124,12 @@ test.describe('Phase 06 — Drawing Intelligence Sheet Views', () => {
     await expect(page.locator('span.di-mono').first()).toBeVisible({ timeout: 15000 });
     const allMono = await page.locator('span.di-mono').allTextContents();
     const pageNums = allMono.map(s => s.trim()).filter(t => /^p\.\d+$/.test(t));
-    expect(pageNums.length).toBeGreaterThan(0);
+    expect(pageNums.length).toBe(53);
     const nums = pageNums.map(t => parseInt(t.replace('p.', ''), 10)).filter(n => !isNaN(n));
-    expect(nums.length).toBeGreaterThan(0);
-    for (let i = 1; i < nums.length; i++) {
-      expect(nums[i]).toBeGreaterThanOrEqual(nums[i - 1]);
+    expect(nums.length).toBe(53);
+    expect(new Set(nums).size).toBe(53);
+    for (let i = 0; i < 53; i++) {
+      expect(nums[i]).toBe(i + 1);
     }
   });
 
@@ -146,8 +147,8 @@ test.describe('Phase 06 — Drawing Intelligence Sheet Views', () => {
     await expect(zoneSelect).toBeVisible({ timeout: 15000 });
   });
 
-  // ── Filter pill: Needs review toggle & Search integration ─────────────────────────
-  test('Needs review filter pill and search input update filters without refetch', async ({ page }) => {
+  // ── Filter pill: Needs review toggle & Search integration & Clear-all ────
+  test('Needs review filter pill, search input, and clear-all update filters without refetch', async ({ page }) => {
     const indexRequests: string[] = [];
     page.on('request', (req: any) => {
       if (req.url().includes('/index')) indexRequests.push(req.url());
@@ -175,6 +176,14 @@ test.describe('Phase 06 — Drawing Intelligence Sheet Views', () => {
     await searchInput.fill('01');
     await page.waitForTimeout(300);
     expect(indexRequests.length).toBe(beforeCount);
+
+    // Test Clear-all button if visible
+    const clearBtn = page.locator('button').filter({ hasText: 'Clear' }).first();
+    if (await clearBtn.isVisible()) {
+      await clearBtn.click();
+      await page.waitForTimeout(300);
+      expect(indexRequests.length).toBe(beforeCount);
+    }
   });
 
   // ── Case 7: Unavailable thumbnails are explicit, no synthetic image ─────
