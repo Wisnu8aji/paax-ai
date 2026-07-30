@@ -69,14 +69,14 @@ def test_feedback1_matrix_p2_to_p62_coverage():
 
 
 def test_ai_feature_ledger_schema_and_budget_cap():
-    """Verify PAAX_AI_FEATURE_FINAL_LEDGER.json contains all AI entrypoints with max 15 call cap."""
+    """Verify PAAX_AI_FEATURE_FINAL_LEDGER.json contains all AI entrypoints with max 5 call cap."""
     assert AI_FEATURE_LEDGER_JSON.exists()
     with open(AI_FEATURE_LEDGER_JSON, "r", encoding="utf-8") as f:
         raw_data = json.load(f)
 
     if isinstance(raw_data, dict):
         assert "records" in raw_data, "PAAX_AI_FEATURE_FINAL_LEDGER.json dict must contain 'records'"
-        assert raw_data.get("max_calls_per_feature_cap") == 15
+        assert raw_data.get("max_calls_per_feature_cap") == 5
         assert len(raw_data["records"]) >= 7
         for r in raw_data["records"]:
             assert "feature" in r
@@ -87,7 +87,7 @@ def test_ai_feature_ledger_schema_and_budget_cap():
         assert len(raw_data) >= 6
         for idx, feat in enumerate(raw_data):
             assert "feature_id" in feat
-            assert feat.get("max_live_calls", 0) <= 15
+            assert feat.get("max_live_calls", 0) <= 5
 
 
 def test_super_big_plan_16_domain_coverage():

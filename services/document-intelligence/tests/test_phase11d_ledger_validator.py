@@ -36,8 +36,8 @@ def test_ai_feature_ledger_exists_and_schema():
 
     assert data["schema_version"] == "paax.drawing-intelligence.phase11d-final-ledger.v1"
     assert data["model"] == "deepseek/deepseek-v4-flash"
-    assert data["max_calls_per_feature_cap"] == 15
-    assert data["total_records_count"] == 112
+    assert data["max_calls_per_feature_cap"] == 5
+    assert data["total_records_count"] == 42
 
 
 def test_execution_mode_and_network_sent_contracts():
@@ -70,32 +70,32 @@ def test_execution_mode_and_network_sent_contracts():
             assert r["provider_request_id"] is None, f"Non-live mode '{mode}' must set provider_request_id=None"
 
 
-def test_attempt_16_budget_cap_gate():
-    """Verify every feature has an attempt 16 record that is rejected fail-closed before network."""
+def test_attempt_6_budget_cap_gate():
+    """Verify every feature has an attempt 6 record that is rejected fail-closed before network."""
     data = json.loads(LEDGER_PATH.read_text(encoding="utf-8"))
     records = data["records"]
 
     for feature in EXPECTED_FEATURES:
         feat_records = [r for r in records if r["feature"] == feature]
-        assert len(feat_records) == 16, f"Feature {feature} must have 16 attempt records (15 budget + 1 cap test)"
+        assert len(feat_records) == 6, f"Feature {feature} must have 6 attempt records (5 budget + 1 cap test)"
         
-        attempt_16 = next((r for r in feat_records if r["attempt"] == 16), None)
-        assert attempt_16 is not None, f"Feature {feature} missing attempt 16 record"
-        assert attempt_16["execution_mode"] == "budget_rejection"
-        assert attempt_16["network_sent"] is False
-        assert attempt_16["outcome"] == "ATTEMPT_16_REJECTED"
-        assert "budget cap" in attempt_16["reason"].lower()
+        attempt_6 = next((r for r in feat_records if r["attempt"] == 6), None)
+        assert attempt_6 is not None, f"Feature {feature} missing attempt 6 record"
+        assert attempt_6["execution_mode"] == "budget_rejection"
+        assert attempt_6["network_sent"] is False
+        assert attempt_6["outcome"] == "ATTEMPT_6_REJECTED"
+        assert "budget cap" in attempt_6["reason"].lower()
 
 
 def test_per_feature_network_sent_counts_and_provider_backed_pass():
-    """Verify actual network_sent counts per feature <= 15 and genuine live PASS for provider-backed features."""
+    """Verify actual network_sent counts per feature <= 5 and genuine live PASS for provider-backed features."""
     data = json.loads(LEDGER_PATH.read_text(encoding="utf-8"))
     records = data["records"]
 
     for feature in EXPECTED_FEATURES:
         feat_records = [r for r in records if r["feature"] == feature]
         network_calls = [r for r in feat_records if r["network_sent"] is True]
-        assert len(network_calls) <= 15, f"Feature {feature} exceeded max 15 network calls (sent {len(network_calls)})"
+        assert len(network_calls) <= 5, f"Feature {feature} exceeded max 5 network calls (sent {len(network_calls)})"
 
         if feature in PROVIDER_BACKED_FEATURES:
             live_pass = [r for r in feat_records if r["execution_mode"] == "live_provider" and r["outcome"] == "PASS"]

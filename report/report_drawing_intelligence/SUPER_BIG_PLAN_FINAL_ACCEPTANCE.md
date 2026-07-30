@@ -133,7 +133,7 @@ This document provides the 16-domain final acceptance inventory for the PAAX Con
 - **Browser / Service Artifact:** Review queue proposal UI
 - **Real-Data Provenance:** Live DeepSeek V4 Flash proposals via OpenRouter
 - **Current Status:** `verified_previous_phase`
-- **Limitation / Reason:** AI proposals capped at 15 calls; human approval required for count acceptance
+- **Limitation / Reason:** AI proposals capped at 5 calls; human approval required for count acceptance
 - **Re-test Subphase:** Phase 11D
 
 ### Domain 11: Agentic Runtime, Tool Scope, Budget, Idempotency
@@ -215,5 +215,5 @@ This document provides the 16-domain final acceptance inventory for the PAAX Con
 - **Phase 11A (DONE):** Activation gate, evidence inventory, and final test manifest.
 - **Phase 11B (DONE):** Offline & full service test suites, engine anchors, schema parity, security scan.
 - **Phase 11C (DONE):** Real-stack browser E2E (desktop/mobile), PDF viewer image quality, performance, console/network.
-- **Phase 11D (DONE):** Live AI & failure/fallback test suite (bounded max 15 calls/feature), agentic runner, review queue, server handoff.
+- **Phase 11D (DONE):** Live AI & failure/fallback test suite (bounded max 5 calls/feature), agentic runner, review queue, server handoff.
 - **Phase 11E:** Full Word document re-audit, cross-matrix reconciliation, draft PR handoff, terminal decision.
