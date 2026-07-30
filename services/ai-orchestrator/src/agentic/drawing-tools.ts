@@ -21,9 +21,12 @@ export function registerDrawingIntelligenceTools(registry: AgentToolRegistry, ha
   registry.register<ActiveSheetToolInput, unknown>({
     name: 'project_graph.read_active_sheet', scope: 'project_graph:read', sideEffect: 'none', timeoutMs: 15_000,
     execute(input, binding) {
-      const pageIndex = typeof input?.pageIndex === 'number' && Number.isInteger(input.pageIndex) && input.pageIndex >= 0 ? input.pageIndex : 0;
+      // Fail-closed: runId must be non-empty and pageIndex must be a non-negative integer. No silent defaults.
       const runId = String(input?.runId || (input as any)?.demRunId || '').trim();
-      return handlers.readActiveSheet({ ...input, pageIndex, runId }, binding);
+      if (!Number.isInteger(input?.pageIndex) || input.pageIndex < 0 || !runId) {
+        throw new Error('runId and non-negative pageIndex are required');
+      }
+      return handlers.readActiveSheet({ ...input, pageIndex: input.pageIndex, runId }, binding);
     },
   });
   registry.register<ReviewProposalToolInput, unknown>({

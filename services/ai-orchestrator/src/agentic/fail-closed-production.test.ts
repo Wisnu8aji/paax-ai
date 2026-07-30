@@ -7,6 +7,7 @@ describe('Production Fail-Closed Enforcement (No Synthetic Fallbacks)', () => {
     tenantId: 'tenant-test',
     projectId: 'PLHUT-SURAKARTA',
     actorId: 'user-test',
+    conversationId: 'conv-test-001',
     issuedAt: new Date().toISOString(),
     allowedToolScopes: ['drawing:review', 'core:calculate', 'project_graph:read'],
   };
@@ -81,5 +82,38 @@ describe('Production Fail-Closed Enforcement (No Synthetic Fallbacks)', () => {
     ).rejects.toThrow('idempotencyKey is required');
 
     expect(handlers.calculateMeasurementFacts).not.toHaveBeenCalled();
+  });
+
+  test('readActiveSheet must throw when runId is missing or empty — no hardcoded DEM fallback allowed', async () => {
+    const registry = new AgentToolRegistry();
+    const handlers = {
+      readActiveSheet: vi.fn(),
+      reviewProposal: vi.fn(),
+      calculateMeasurementFacts: vi.fn(),
+    };
+    registerDrawingIntelligenceTools(registry, handlers);
+
+    // Missing runId must NOT silently fall back to any hardcoded DEM run ID
+    await expect(
+      registry.execute('project_graph.read_active_sheet', { projectId: 'PLHUT-SURAKARTA', pageIndex: 0, runId: '' } as any, dummyBinding)
+    ).rejects.toThrow('runId and non-negative pageIndex are required');
+
+    expect(handlers.readActiveSheet).not.toHaveBeenCalled();
+  });
+
+  test('readActiveSheet must throw when pageIndex is negative', async () => {
+    const registry = new AgentToolRegistry();
+    const handlers = {
+      readActiveSheet: vi.fn(),
+      reviewProposal: vi.fn(),
+      calculateMeasurementFacts: vi.fn(),
+    };
+    registerDrawingIntelligenceTools(registry, handlers);
+
+    await expect(
+      registry.execute('project_graph.read_active_sheet', { projectId: 'PLHUT-SURAKARTA', pageIndex: -1, runId: 'real-run-id-from-server' } as any, dummyBinding)
+    ).rejects.toThrow('runId and non-negative pageIndex are required');
+
+    expect(handlers.readActiveSheet).not.toHaveBeenCalled();
   });
 });

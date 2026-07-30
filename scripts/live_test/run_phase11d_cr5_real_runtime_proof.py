@@ -141,9 +141,26 @@ def test_agentic_mission_real_runtime() -> dict:
         run_state = json.loads(step_resp.read().decode("utf-8"))
         print(f"    Step: status={run_state['status']}, version={run_state['version']}")
 
-    # Step 5: Governance approval token
+    # Derive measurementFactIds from server step response — fail-closed if not returned
+    pending_approval = run_state.get("pendingApproval") or run_state.get("pending_approval") or {}
+    tool_input_from_server = pending_approval.get("toolInput") or pending_approval.get("tool_input") or {}
+    measurement_fact_ids_from_server: list = tool_input_from_server.get("measurementFactIds") or []
+    if not measurement_fact_ids_from_server:
+        for tc in run_state.get("toolCalls") or run_state.get("tool_calls") or []:
+            mfids = (tc.get("input") or {}).get("measurementFactIds") or []
+            if mfids:
+                measurement_fact_ids_from_server = mfids
+                break
+    if not measurement_fact_ids_from_server:
+        raise RuntimeError(
+            f"Gate 2 BLOCKER: server returned no measurementFactIds in pendingApproval. "
+            f"Cannot submit approval without server-derived IDs. run_state keys: {list(run_state.keys())}"
+        )
+    print(f"  [2C ID DERIVED] measurementFactIds from server: {measurement_fact_ids_from_server}")
+
+    # Step 5: Governance approval token — using server-derived IDs only (no hardcoded identifiers)
     url_appr = f"{url_run}/{run_id}/approve"
-    appr_token_id = f"appr-{run_id}:calculate:eb93e159489e95ef71b5c071e37dfb479b381686426f2a86aca202cf6b38aff8"
+    appr_token_id = f"appr-{run_id}:calculate:{hashlib.sha256(json.dumps(measurement_fact_ids_from_server, sort_keys=True).encode()).hexdigest()}"
     appr_payload = {
         "projectId": PLHUT_PROJECT_ID,
         "token": {
@@ -154,7 +171,7 @@ def test_agentic_mission_real_runtime() -> dict:
             "expiresAt": "2030-01-01T00:00:00Z",
         },
         "idempotencyKey": f"core-mat-{run_id}",
-        "measurementFactIds": ["mf-plhut-001"],
+        "measurementFactIds": measurement_fact_ids_from_server,
     }
     track_network_call("agentic_orchestrator_provider")
     appr_req = urllib.request.Request(url_appr, data=json.dumps(appr_payload).encode("utf-8"), headers=AUTH_HEADERS)
@@ -170,7 +187,7 @@ def test_agentic_mission_real_runtime() -> dict:
             "status": "success",
             "run_id": run_id,
             "idempotency_key": f"core-mat-{run_id}",
-            "measurement_fact_ids": ["mf-plhut-001"],
+            "measurement_fact_ids": measurement_fact_ids_from_server,
         }
         receipt_sha256 = canonical_sha256(core_receipt)
         print(f"  [2C RECEIPT VERIFIED] Core Engine calculation receipt sha256: {receipt_sha256}")

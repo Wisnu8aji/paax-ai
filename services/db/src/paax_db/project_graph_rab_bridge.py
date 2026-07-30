@@ -46,7 +46,7 @@ async def build_rab_bridge_proposal(
             "discipline": node.discipline,
             "properties": node.properties_json,
             "evidence_ids": evidence_by_node.get(node.node_id, []),
-            "ahsp_code": (node.properties_json or {}).get("ahsp_code") or "A.2.3.1.1",
+            "ahsp_code": (node.properties_json or {}).get("ahsp_code") or None,
         }
         for node in nodes
     ]

@@ -112,7 +112,7 @@ export function createAgentRunsRouter(): Router {
       if (!projectId || run.goalSpec.binding.projectId !== projectId) return res.status(403).json({ error: 'project scope mismatch' });
       const approvalToken = req.body?.approvalToken as AgentApprovalToken | undefined;
       const next = await executionLoop.executeNextStep(req.params.runId, Number(req.body?.expectedVersion), {
-        toolInput: { demRunId: '514fb7f2-26fd-5816-9f22-a4a2412688bf', pageIndex: 0, runId: '514fb7f2-26fd-5816-9f22-a4a2412688bf', ...(req.body?.toolInput && typeof req.body.toolInput === 'object' ? req.body.toolInput : {}) },
+        toolInput: req.body?.toolInput && typeof req.body.toolInput === 'object' ? req.body.toolInput : undefined,
         approvalToken,
         idempotencyKey: req.body?.idempotencyKey,
         tokens: Number(req.body?.tokens || 0),
