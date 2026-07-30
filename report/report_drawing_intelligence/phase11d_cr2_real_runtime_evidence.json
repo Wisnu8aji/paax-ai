@@ -1,0 +1,52 @@
+{
+  "timestamp": "2026-07-30T03:54:11Z",
+  "overall_status": "PASS",
+  "gates": {
+    "command_room_real_route": {
+      "gate": "command_room_real_route",
+      "status": "PASS",
+      "http_status": 200,
+      "latency_ms": 4511,
+      "total_events": 9,
+      "event_types": [
+        "claim_verification",
+        "content",
+        "done",
+        "activity"
+      ],
+      "activities_logged": [
+        "Memeriksa permintaan, konteks, dan batasan",
+        "Memuat konteks proyek dan sumber data aktif",
+        "Memeriksa angka, authority, dan sumber evidence",
+        "Memeriksa angka, authority, dan sumber evidence",
+        "Menyimpan ringkasan percakapan",
+        "Menyimpan ringkasan percakapan"
+      ],
+      "model": "deepseek/deepseek-v4-flash (OpenRouter)",
+      "endpoint": "POST /api/command-room/chat"
+    },
+    "agentic_mission_real_runtime": {
+      "gate": "agentic_mission_real_runtime",
+      "status": "PASS",
+      "run_id": "run-a818adcb-8c5a-49c5-b3d8-1312b3f23fde",
+      "mismatched_project_rejected": true,
+      "version_conflict_protected": true,
+      "initial_status": "queued",
+      "post_approval_completed_tasks": [
+        "scope",
+        "evidence"
+      ],
+      "orchestrator_endpoint": "POST /agent-runs (port 8082)"
+    },
+    "review_to_handoff_real_service": {
+      "gate": "review_to_handoff_real_service",
+      "status": "PASS",
+      "review_queue_items": 126,
+      "quantity_readiness_items": 185,
+      "proxy_items_matched": true,
+      "rbac_denial_pass": true,
+      "db_service_endpoint": "GET /projects/PLHUT-SURAKARTA/project-graph/review-queue (port 8001)",
+      "web_proxy_endpoint": "GET /api/db-projects/projects/PLHUT-SURAKARTA/project-graph/review-queue (port 3000)"
+    }
+  }
+}

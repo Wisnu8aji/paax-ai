@@ -110,7 +110,7 @@ type SendEvent = (type: string, data: Record<string, unknown>) => void;
 // ─── Helper: baca env ──────────
 
 function getSharedKey(): string | undefined {
-  return process.env.DEEPSEEK_API_KEY?.trim() || undefined;
+  return process.env.DEEPSEEK_API_KEY?.trim() || process.env.DRAWING_INTELLIGENCE_API_KEY?.trim() || undefined;
 }
 
 function getDeepSeekBaseUrl(): string {
@@ -139,9 +139,17 @@ function isOpenRouterKey(apiKey: string): boolean {
   return apiKey.trim().startsWith("sk-or-v1-");
 }
 
+function getLucentModelSlug(): string {
+  const custom = process.env.DRAWING_INTELLIGENCE_DEEPSEEK_MODEL?.trim();
+  if (custom) {
+    return custom.includes("/") ? custom : `deepseek/${custom}`;
+  }
+  return "deepseek/deepseek-v4-pro";
+}
+
 /** Slug model per provider di OpenRouter — dipakai kalau routing lewat 1 shared key. */
 const OPENROUTER_MODEL_SLUG: Record<ModelAlias, string> = {
-  lucent: "deepseek/deepseek-v4-pro",
+  lucent: getLucentModelSlug(),
   arete: "qwen/qwen3.7-plus",
   noir: `anthropic/${getModel("noir").apiModel}`,
 };

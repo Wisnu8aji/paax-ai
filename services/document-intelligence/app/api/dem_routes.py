@@ -434,14 +434,7 @@ async def consume_artifact_url(run_id: str, token: str, request: Request):
     try:
         metadata = ARTIFACT_STORE.stat(signing_key)
     except ArtifactUnavailable:
-        # Seed reference PDF bytes into ARTIFACT_STORE if reference key
-        pdf_path = Path(r"G:\paax-data\gambar kerja\gambar-kerja-arsitektur-gedung-a.pdf")
-        if pdf_path.exists():
-            kind, obj_key = signing_key.split("/", 1) if "/" in signing_key else ("reference", signing_key)
-            ARTIFACT_STORE.put(kind, pdf_path.read_bytes(), content_type="application/pdf", object_key=obj_key)
-            metadata = ARTIFACT_STORE.stat(signing_key)
-        else:
-            raise HTTPException(status_code=404, detail="artifact unavailable")
+        raise HTTPException(status_code=404, detail="artifact unavailable")
     headers = _artifact_response_headers(metadata)
     etag = headers["ETag"]
     if _if_none_match_matches(request.headers.get("if-none-match"), etag):

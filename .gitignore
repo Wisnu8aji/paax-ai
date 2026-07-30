@@ -77,3 +77,6 @@ test-results/
 !scripts/live_test/live_test.db
 .local-test-logs/
 .artifacts/
+*.log
+data/portable/
+phase11d_cr2_service_logs/
