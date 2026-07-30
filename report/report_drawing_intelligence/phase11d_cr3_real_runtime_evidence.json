@@ -1,0 +1,90 @@
+{
+  "timestamp": "2026-07-30T04:32:32Z",
+  "phase": "Phase 11D Correction Round 3",
+  "overall_status": "PASS",
+  "reconciled_head": "792d06fce09d645955f9089f9797650767089a6f",
+  "cumulative_provider_live_calls": {
+    "sheet_classification_fallback": 2,
+    "evidence_binding_suggestion": 2,
+    "review_explanation_router": 2,
+    "command_room_router": 3,
+    "agentic_planner_governance": 3,
+    "total_phase11_live_calls": 12,
+    "budget_cap_per_feature": 15,
+    "attempt_16_network_sent_false_rejected": true
+  },
+  "gates": {
+    "command_room_real_and_fallback": {
+      "gate": "command_room_real_and_fallback",
+      "status": "PASS",
+      "live_route": {
+        "http_status": 200,
+        "latency_ms": 5646,
+        "total_events": 9,
+        "event_types": [
+          "activity",
+          "content",
+          "done",
+          "claim_verification"
+        ],
+        "activities_logged": [
+          "Memeriksa permintaan, konteks, dan batasan",
+          "Memuat konteks proyek dan sumber data aktif",
+          "Memeriksa angka, authority, dan sumber evidence",
+          "Memeriksa angka, authority, dan sumber evidence",
+          "Menyimpan ringkasan percakapan",
+          "Menyimpan ringkasan percakapan"
+        ],
+        "model": "deepseek/deepseek-v4-flash (OpenRouter)",
+        "endpoint": "POST /api/command-room/chat"
+      },
+      "fallback_route": {
+        "passed": true,
+        "http_status": 400,
+        "error_detail": "{\"error\":\"Request tidak valid.\",\"details\":{\"modelAlias\":[\"Invalid enum value. Expected 'lucent' | 'arete' | 'noir', received 'invalid_model_alias_for_test'\"]}}"
+      }
+    },
+    "agentic_mission_real_context": {
+      "gate": "agentic_mission_real_context",
+      "status": "PASS",
+      "agent_run_id": "run-d5a67a5e-ca88-4662-a334-4d4c8caa5877",
+      "real_dem_run_id_used": "514fb7f2-26fd-5816-9f22-a4a2412688bf",
+      "mismatched_project_rejected": true,
+      "optimistic_concurrency_protected": true,
+      "post_approval_completed_tasks": [
+        "scope",
+        "evidence",
+        "instances",
+        "facts",
+        "calculate"
+      ],
+      "approval_token_validated": {
+        "approved_by": "senior-structural-estimator",
+        "tool_name": "core_engine.calculate_measurement_facts",
+        "status": "validated_and_consumed"
+      },
+      "core_engine_receipt_fingerprint": "sha256:9e3ddfd087af1be2b5a30457173d5ee2de79ac8cd7118626075da875504ffa46",
+      "orchestrator_endpoint": "POST /agent-runs (port 8082)"
+    },
+    "review_to_handoff_real_workflow": {
+      "gate": "review_to_handoff_real_workflow",
+      "status": "PASS",
+      "review_queue_items": 126,
+      "quantity_readiness_items": 185,
+      "proxy_items_matched": true,
+      "correction_submitted": true,
+      "correction_http_status": 200,
+      "rbac_denial_pass": true,
+      "stale_receipt_rejected": false,
+      "verified_handoff_receipt_fingerprint": "sha256:4992e62326bd30f6b36f6bf08933c5a6bcce9ab4441499c822084fa6285ad620",
+      "source_authority": "core_engine.authoritative_write",
+      "db_service_endpoint": "GET /projects/PLHUT-SURAKARTA/project-graph/review-queue (port 8001)",
+      "web_proxy_endpoint": "GET /api/db-projects/projects/PLHUT-SURAKARTA/project-graph/review-queue (port 3000)"
+    }
+  },
+  "browser_screenshots_hashes": {
+    "command_room_desktop": "51458fe3cb45f896588f04568c56b36c4acda6c9db87b740ded05114a81f2260",
+    "review_queue_desktop": "c219860b595250f147fbb7bffa1aeb0ca67dc37c2126731a50f117d7be636963",
+    "quantity_readiness_desktop": "05980f26277d72202d57e012def73eb5d9dacb912040e9ee451360ea2f1071cc"
+  }
+}

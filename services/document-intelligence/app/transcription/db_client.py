@@ -13,7 +13,7 @@ class DemDbClient:
         internal_key: str | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
-        self.base_url = (base_url or os.getenv("DB_API_URL", "http://localhost:8084")).rstrip("/")
+        self.base_url = (base_url or os.getenv("DB_API_URL", "http://localhost:8001")).rstrip("/")
         self.internal_key = internal_key or os.getenv("INTERNAL_SERVICE_KEY", "")
         self._transport = transport
 

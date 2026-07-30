@@ -58,6 +58,7 @@ services = [
         "name": "ai-orchestrator",
         "port": 8082,
         "cwd": REPO_ROOT / "services" / "ai-orchestrator",
+        "env": {"PORT": "8082"},
         "args": ["npx.cmd", "tsx", "src/index.ts"],
     },
 ]
@@ -66,10 +67,13 @@ print("[STARTUP] Launching backend services...")
 for svc in services:
     log_file = LOG_DIR / f"{svc['name']}.log"
     with open(log_file, 'w') as lf:
+        svc_env = env.copy()
+        if "env" in svc:
+            svc_env.update(svc["env"])
         proc = subprocess.Popen(
             svc["args"],
             cwd=svc["cwd"],
-            env=env,
+            env=svc_env,
             stdout=lf,
             stderr=lf,
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,

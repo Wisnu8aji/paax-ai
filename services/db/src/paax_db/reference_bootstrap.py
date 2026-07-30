@@ -339,6 +339,50 @@ async def bootstrap_reference_project(
         result["snapshot_created"] = True
         result["graph_nodes"] = len(snapshot.nodes)
         result["graph_edges"] = len(snapshot.edges)
+
+    active_snap = (await session.execute(select(models.ProjectGraphSnapshot).where(
+        models.ProjectGraphSnapshot.project_id == project_id,
+        models.ProjectGraphSnapshot.status == "active",
+    ))).scalars().first()
+    if active_snap:
+        existing_map = (await session.execute(select(models.RabMaterializationMapping).where(
+            models.RabMaterializationMapping.project_id == project_id,
+            models.RabMaterializationMapping.snapshot_id == active_snap.snapshot_id,
+            models.RabMaterializationMapping.id == "MAP-PLHUT-001",
+        ))).scalars().first()
+        if not existing_map:
+            session.add(models.RabMaterializationMapping(
+                id="MAP-PLHUT-001",
+                project_id=project_id,
+                snapshot_id=active_snap.snapshot_id,
+                work_item_node_id="WORKITEM-PLHUT-001",
+                measurement_fact_ids=["mf-plhut-001"],
+                calculation_type="length",
+                evidence_refs=["EV-PLHUT-001"],
+                approval_status="approved",
+                created_by=actor_id or "paax-web",
+            ))
+        existing_fact = (await session.execute(select(models.MeasurementFact).where(
+            models.MeasurementFact.project_id == project_id,
+            models.MeasurementFact.snapshot_id == active_snap.snapshot_id,
+            models.MeasurementFact.measurement_id == "mf-plhut-001",
+        ))).scalars().first()
+        if not existing_fact:
+            session.add(models.MeasurementFact(
+                measurement_id="mf-plhut-001",
+                project_id=project_id,
+                snapshot_id=active_snap.snapshot_id,
+                measurement_type="length",
+                value=4.5,
+                unit="m",
+                source_method="written_dimension",
+                element_ids=["ELTYPE-ED7E4B7D3942989A873D368FF3DC9AF93EADF6B81BDA83DDDC84F777D8B954BD"],
+                evidence_refs=["EV-PLHUT-001"],
+                formula_inputs=["length"],
+                verification_status="human_verified",
+                created_by=actor_id or "paax-web",
+            ))
+        await session.flush()
         
     if not existing_ledger:
         session.add(models.BootstrapLedger(

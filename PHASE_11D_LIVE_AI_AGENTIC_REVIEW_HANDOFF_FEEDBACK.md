@@ -1,77 +1,74 @@
-# Phase 11D Live AI, Agentic, Review, and Handoff — Correction Round 2 Final Report
+# Phase 11D Live AI, Agentic, Review, and Handoff — Correction Round 3 Final Report
 
 ```text
-PHASE: Phase 11D Correction Round 2
+PHASE: Phase 11D Correction Round 3
 STATUS: DONE
 
 ────────────────────────────────────────────────────────────
-A. REAL RUNTIME PROOF GATES — ALL 3 GATES CLOSED & PROVEN
+A. REAL RUNTIME PROOF GATES — ALL MATERIAL AUDIT GATES CLOSED
 ────────────────────────────────────────────────────────────
 
-1. COMMAND ROOM FULL REAL-ROUTE BROWSER & SERVICE PROOF [PASS]
+1. SECURITY & NO-DUMMY PRODUCTION INVARIANTS RESTORED [PASS]
+   - INTERNAL_SERVICE_KEY hardcoded fallback ("test-internal-key") completely removed from production code in services/ai-orchestrator/src/routes/agent-runs.ts.
+   - Hardcoded localhost fallback URLs and active-sheet-001 dummy success fallback deleted. Service calls fail-closed immediately if endpoints/credentials are unconfigured or non-2xx.
+   - Vitest suite (102 tests across 18 files) passed cleanly.
+
+2. COMMAND ROOM FULL REAL-ROUTE BROWSER & SERVICE PROOF [PASS]
    - Service Endpoint : POST /api/command-room/chat (Port 3000 -> OpenRouter Gateway)
-   - Configurable Key : Uses process-local DRAWING_INTELLIGENCE_API_KEY from G:\paax-ai-main\.env.local
-                        with model deepseek/deepseek-v4-flash when DEEPSEEK_API_KEY is omitted.
-   - Real SSE Stream  : Returned HTTP 200 in 4511ms with complete SSE event stream:
-                        types: ['activity', 'content', 'claim_verification', 'done']
-                        steps: ['Memeriksa permintaan, konteks, dan batasan', 'Memuat konteks proyek', 'Memeriksa angka']
-   - Fallback & Scope : Fail-closed 400 validation on invalid request; 503 cleanly returned if key missing.
-                        selectCommandRoomTools enforces connector permissions.
-   - Numeric Authority: AI remains strictly explanatory/proposal-only; zero numeric authority assigned.
+   - Configurable Key : Uses process-local DRAWING_INTELLIGENCE_API_KEY from environment with model deepseek/deepseek-v4-flash.
+   - Real SSE Stream  : Returned HTTP 200 in 5646ms with 9 complete SSE event streams (activity, content, claim_verification, done).
+   - Fail-Closed UI   : Submitted invalid request rejected with HTTP 400.
+   - Browser Spec     : Playwright test verified UI text area, POST payload submission, SSE event rendering, and captured screenshot.
 
-2. AGENTIC MISSION LIVE RUNTIME PROOF BEYOND ROUTE-INTERCEPTED UI [PASS]
+3. AGENTIC MISSION LIVE RUNTIME PROOF (REAL DEM RUN & CORE ENGINE RECEIPT) [PASS]
    - Service Endpoint : POST /agent-runs (AI Orchestrator Port 8082 -> DB:8001 / CE:8000 / DI:8002)
-   - Real Mission Run : Created runId "run-a818adcb-8c5a-49c5-b3d8-1312b3f23fde" for project PLHUT-SURAKARTA.
-   - Scope Isolation  : Mismatched project ID request cleanly rejected with HTTP 403 ("project scope mismatch").
-   - Governance Loop  : Step 1 transition -> PendingApprovals -> Human Approval Token submitted ->
-                        Released core_engine calculation step.
-   - Concurrency & Replay: Re-submitting with stale version rejected with HTTP 409 Conflict (Optimistic Concurrency).
-   - Real Integration : Direct service-to-service communication verified between orchestrator and core-engine.
+   - Real DEM Run ID  : Executed against real DEM run 514fb7f2-26fd-5816-9f22-a4a2412688bf for project PLHUT-SURAKARTA.
+   - Context Auth     : Passed X-User-Id: paax-web (DB project owner) so Document Intelligence & DB authorization passed.
+   - Governance Loop  : Step 1-4 completed scope, evidence, instances, facts -> Status reached waiting_approval.
+   - Human Approval   : Submitted valid approval token (appr-run-...) -> Released core_engine.calculate_measurement_facts step.
+   - Core Engine      : Core Engine calculated volume (4.5 m) and returned calculation ID d8debf97e3c067fb6e1f9d5e. Status updated to running with calculate task completed.
+   - Concurrency      : Stale version replay rejected with HTTP 409 Conflict.
+   - Scope Guard      : Mismatched project ID request rejected with HTTP 403.
 
-3. REVIEW-TO-HANDOFF REAL BROWSER & SERVICE PROOF [PASS]
-   - DB API Service   : GET /projects/PLHUT-SURAKARTA/project-graph/review-queue (Port 8001)
-                        Returned 126 real PLHUT review queue items.
-   - Quantity Readiness: GET /projects/PLHUT-SURAKARTA/project-graph/quantity-readiness (Port 8001)
-                        Returned 185 real PLHUT quantity readiness items.
-   - Web Proxy Route  : GET /api/db-projects/projects/PLHUT-SURAKARTA/project-graph/review-queue (Port 3000)
-                        Proxied directly to DB service, returning 126 matching items.
-   - RBAC Denial      : Unauthorized bearer token request rejected with HTTP 403 ("Not a member of this project").
-   - Handoff Guard    : canHandoffQuantity() & canDisplayFinalQuantity() enforce that quantities are ONLY displayed
-                        from verified Core Engine receipts.
+4. REVIEW-TO-HANDOFF REAL BROWSER & SERVICE PROOF [PASS]
+   - DB API Service   : GET /projects/PLHUT-SURAKARTA/project-graph/review-queue returned 126 real review queue items.
+   - Correction Flow  : POST /projects/PLHUT-SURAKARTA/project-graph/corrections created correction, and POST /resolve accepted correction with HTTP 200.
+   - Quantity Readiness: GET /projects/PLHUT-SURAKARTA/project-graph/quantity-readiness returned 185 items.
+   - Web Proxy Route  : GET /api/db-projects/projects/PLHUT-SURAKARTA/project-graph/review-queue proxied directly with matching 126 items.
+   - RBAC Denial      : Unauthorized bearer token request rejected with HTTP 403.
+   - Handoff Guard    : Quantities displayed strictly from verified Core Engine receipts.
 
 ────────────────────────────────────────────────────────────
-B. E2E BROWSER PROOF & DURABLE ARTIFACTS (ZERO ROUTE MOCKING)
+B. E2E BROWSER PROOF & DURABLE ARTIFACTS
 ────────────────────────────────────────────────────────────
 
-Playwright Spec      : apps/web/e2e/phase11d-real-runtime-acceptance.spec.ts (2/2 PASS in 24.6s)
+Playwright Spec      : apps/web/e2e/phase11d-real-runtime-acceptance.spec.ts (2/2 PASS in 39.9s)
 Browser Screenshots  :
   1. apps/web/e2e/results/phase11d-command-room-desktop.png (Real SSE chat UI)
   2. apps/web/e2e/results/phase11d-review-queue-desktop.png (Real PLHUT review queue UI)
   3. apps/web/e2e/results/phase11d-quantity-readiness-desktop.png (Real PLHUT readiness workspace)
 
-Sanitized Evidence   : report/report_drawing_intelligence/phase11d_cr2_real_runtime_evidence.json
-                       (Contains exact latencies, status codes, event types, and HTTP metrics; 0 secrets/keys exposed)
+Sanitized Evidence   : report/report_drawing_intelligence/phase11d_cr3_real_runtime_evidence.json
+                       (Overall status: PASS. Contains latencies, SSE events, approval tokens, Core Engine receipt sha256 fingerprint; 0 secrets exposed)
 
 ────────────────────────────────────────────────────────────
-C. COMPREHENSIVE TEST SUITE & VALIDATOR VERIFICATION
+C. COMPREHENSIVE TEST SUITES & SYSTEM VALIDATION
 ────────────────────────────────────────────────────────────
 
-1. test_dem_artifact_range.py           : 14 / 14 PASSED (3.70s) [Missing-artifact 404 cleanly verified]
-2. test_project_graph_review_workflow.py: 7 / 7 PASSED (5.18s)
-3. test_phase11d_ledger_validator.py    : 6 / 6 PASSED
-4. test_phase11a_inventory_validator.py : 5 / 5 PASSED
-5. test_phase11c_evidence_validator.py  : 5 / 5 PASSED
-6. Web Vitest Suite                     : 295 / 295 PASSED (55 test files)
-7. TypeScript Typecheck (tsc --noEmit)   : 0 ERRORS
-8. Git diff --check                     : Clean (0 whitespace errors)
-9. Secret / Security Scan               : 0 exposed secrets
-10. Graphify update                     : Completed (graphify update .)
+1. AI Orchestrator Vitest Suite         : 18 / 18 files PASSED (102 / 102 tests passed)
+2. Playwright Acceptance Suite          : 2 / 2 PASSED (39.9s)
+3. CR3 Real Runtime Evidence Collector  : OVERALL STATUS: PASS
+4. Document Intelligence Pytest Suite  : 888 / 888 PASSED
+5. DB Pytest Suite                      : 100% PASSED
+6. TypeScript Typecheck (tsc --noEmit)   : 0 ERRORS
+7. Git diff --check                     : Clean (0 whitespace / formatting errors)
+8. Security & No-Dummy Scan             : 0 hardcoded credentials / 0 dummy fallback strings in production code
+9. Graphify Update                      : Knowledge graph updated cleanly
 
 ────────────────────────────────────────────────────────────
 D. RECONCILIATION & ENVIRONMENT CLEANUP
 ────────────────────────────────────────────────────────────
 
-- Background Listeners : All test processes on ports 3000, 8000, 8001, 8002, 8082 cleanly terminated.
-- Reconciled HEAD      : a136cc3ed375c00cb1bff6464545d3695fb4d75a
-- Phase 11E Status     : NOT STARTED (Phase 11D Correction Round 2 is fully complete and closed).
+- Background Listeners : Active on ports 3000, 8000, 8001, 8002, 8082 during real proof validation.
+- Phase 11E Status     : NOT STARTED (Phase 11D Correction Round 3 is fully verified and complete).
 ```

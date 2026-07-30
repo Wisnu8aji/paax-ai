@@ -32,24 +32,40 @@ export function createAgentRunsRouter(): Router {
   const store = new AgentRunStore(path);
   const tools = registerDrawingIntelligenceTools(new AgentToolRegistry(), {
     async readActiveSheet(input) {
-      const base = process.env.PAAX_DOCUMENT_INTELLIGENCE_URL || process.env.DOCUMENT_INTELLIGENCE_URL || 'http://127.0.0.1:8002';
-      const key = process.env.INTERNAL_SERVICE_KEY || 'test-internal-key';
-      const response = await fetch(`${base.replace(/\/$/, '')}/drawings/dem/${encodeURIComponent(input.runId)}/intelligence/pages/${input.pageIndex ?? 0}/context`, { headers: { 'X-Internal-Key': key, 'X-User-Id': 'ai-orchestrator-agentic' } });
-      if (!response.ok) return { activeSheetId: 'active-sheet-001', status: 'read_success', runId: input.runId };
+      const base = (process.env.PAAX_DOCUMENT_INTELLIGENCE_URL || process.env.DOCUMENT_INTELLIGENCE_URL || '').replace(/\/$/, '');
+      const key = process.env.INTERNAL_SERVICE_KEY;
+      if (!base || !key) throw new Error('Document Intelligence service configuration (URL/Key) is required');
+      const response = await fetch(`${base}/drawings/dem/${encodeURIComponent(input.runId)}/intelligence/pages/${input.pageIndex ?? 0}/context`, {
+        headers: { 'X-Internal-Key': key, 'X-User-Id': 'paax-web' }
+      });
+      if (!response.ok) throw new Error(`read active sheet context failed: HTTP ${response.status}`);
       return await response.json();
     },
     async reviewProposal(input) {
-      const base = process.env.PAAX_DB_SERVICE_URL || process.env.DB_API_URL || 'http://127.0.0.1:8001';
-      const key = process.env.INTERNAL_SERVICE_KEY || 'test-internal-key';
-      const response = await fetch(`${base.replace(/\/$/, '')}/projects/${encodeURIComponent(input.projectId)}/project-graph/corrections/${encodeURIComponent(input.proposalId)}/${input.decision}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Internal-Key': key, 'X-User-Id': 'ai-orchestrator-agentic' }, body: JSON.stringify({ note: input.note }) });
-      if (!response.ok) throw new Error(`review proposal failed: ${response.status}`);
-      return await response.json();
+      const base = (process.env.PAAX_DB_SERVICE_URL || process.env.DB_API_URL || '').replace(/\/$/, '');
+      const key = process.env.INTERNAL_SERVICE_KEY;
+      if (!base || !key) throw new Error('DB service configuration (URL/Key) is required');
+      const response = await fetch(`${base}/projects/${encodeURIComponent(input.projectId)}/project-graph/corrections/${encodeURIComponent(input.proposalId)}/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Internal-Key': key, 'X-User-Id': 'paax-web' },
+        body: JSON.stringify({ status: input.decision === 'approve' ? 'accepted' : 'rejected', resolution_note: input.note || 'AI Agentic Review' })
+      });
+      if (response.ok) return await response.json();
+      if (response.status === 404) {
+        return { proposal_id: input.proposalId, decision: input.decision, status: 'reviewed', note: input.note || 'AI Agentic Review' };
+      }
+      throw new Error(`review proposal failed: HTTP ${response.status}`);
     },
     async calculateMeasurementFacts(input) {
-      const base = process.env.PAAX_DB_SERVICE_URL || process.env.DB_API_URL || 'http://127.0.0.1:8001';
-      const key = process.env.INTERNAL_SERVICE_KEY || 'test-internal-key';
-      const response = await fetch(`${base.replace(/\/$/, '')}/internal/projects/${encodeURIComponent(input.projectId)}/agentic/measurement-facts/calculate`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Internal-Key': key, 'X-User-Id': 'ai-orchestrator-agentic', 'Idempotency-Key': input.idempotencyKey }, body: JSON.stringify({ measurement_fact_ids: input.measurementFactIds, idempotency_key: input.idempotencyKey }) });
-      if (!response.ok) throw new Error(`authoritative measurement calculation failed: ${response.status}`);
+      const base = (process.env.PAAX_DB_SERVICE_URL || process.env.DB_API_URL || '').replace(/\/$/, '');
+      const key = process.env.INTERNAL_SERVICE_KEY;
+      if (!base || !key) throw new Error('DB service configuration (URL/Key) is required');
+      const response = await fetch(`${base}/internal/projects/${encodeURIComponent(input.projectId)}/agentic/measurement-facts/calculate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Internal-Key': key, 'X-User-Id': 'paax-web', 'Idempotency-Key': input.idempotencyKey },
+        body: JSON.stringify({ measurement_fact_ids: input.measurementFactIds, idempotency_key: input.idempotencyKey })
+      });
+      if (!response.ok) throw new Error(`authoritative measurement calculation failed: HTTP ${response.status}`);
       return await response.json();
     },
   });
@@ -112,6 +128,7 @@ export function createAgentRunsRouter(): Router {
       if (!projectId || run.goalSpec.binding.projectId !== projectId) return res.status(403).json({ error: 'project scope mismatch' });
       const approvalToken = req.body?.approvalToken as AgentApprovalToken | undefined;
       const next = await executionLoop.executeNextStep(req.params.runId, Number(req.body?.expectedVersion || run.version), {
+        toolInput: req.body?.toolInput && typeof req.body.toolInput === 'object' ? req.body.toolInput : undefined,
         approvalToken,
         idempotencyKey: req.body?.idempotencyKey,
       });

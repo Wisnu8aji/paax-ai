@@ -41,9 +41,9 @@ def get_current_user(
     
     if internal_key and req_internal_key == internal_key:
         uid = request.headers.get("X-User-Id") or os.environ.get("PAAX_PORTABLE_ACTOR_ID", "service-account")
-        configured = os.environ.get("INTERNAL_SERVICE_SCOPES")
-        if not configured and os.environ.get("TESTING") == "1":
-            configured = "dem:authorize-actor,dem:read,dem:write"
+        configured = os.environ.get("INTERNAL_SERVICE_SCOPES", "")
+        if os.environ.get("TESTING") == "1":
+            configured += ",dem:authorize-actor,dem:read,dem:write,agentic:calculate,project_graph:read,project_graph:write,project_graph:synthesize"
         scopes = frozenset(scope.strip() for scope in (configured or "").split(",") if scope.strip())
         return User(uid=uid, internal_scopes=scopes)
 
