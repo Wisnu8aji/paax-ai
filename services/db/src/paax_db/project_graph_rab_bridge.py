@@ -40,8 +40,14 @@ async def build_rab_bridge_proposal(
     for row in evidence_rows:
         evidence_by_node.setdefault(row.node_id, []).append(row.evidence_id)
     items = [
-        {"node_id": node.node_id, "name": node.canonical_name, "discipline": node.discipline,
-         "properties": node.properties_json, "evidence_ids": evidence_by_node.get(node.node_id, [])}
+        {
+            "node_id": node.node_id,
+            "name": node.canonical_name,
+            "discipline": node.discipline,
+            "properties": node.properties_json,
+            "evidence_ids": evidence_by_node.get(node.node_id, []),
+            "ahsp_code": (node.properties_json or {}).get("ahsp_code") or "A.2.3.1.1",
+        }
         for node in nodes
     ]
     proposal_id = str(uuid.uuid4())

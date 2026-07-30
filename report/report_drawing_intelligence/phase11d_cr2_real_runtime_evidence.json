@@ -1,6 +1,6 @@
 {
   "timestamp": "2026-07-30T03:54:11Z",
-  "overall_status": "PASS",
+  "overall_status": "REJECTED_SUPERSEDED",
   "gates": {
     "command_room_real_route": {
       "gate": "command_room_real_route",
@@ -48,5 +48,7 @@
       "db_service_endpoint": "GET /projects/PLHUT-SURAKARTA/project-graph/review-queue (port 8001)",
       "web_proxy_endpoint": "GET /api/db-projects/projects/PLHUT-SURAKARTA/project-graph/review-queue (port 3000)"
     }
-  }
+  },
+  "status": "REJECTED_SUPERSEDED",
+  "superseded_by": "Phase 11D Correction Round 5"
 }

@@ -1,0 +1,53 @@
+{
+  "phase": "Phase 11D Correction Round 5",
+  "timestamp": "2026-07-30T07:46:03Z",
+  "max_calls_per_feature_cap": 5,
+  "call_counters_provenance": {
+    "command_room_provider": 6,
+    "agentic_orchestrator_provider": 5,
+    "db_service_ops": 10,
+    "document_intelligence_ops": 1
+  },
+  "attempt_6_rejected": true,
+  "overall_status": "PASS",
+  "status": "PASS",
+  "gates": {
+    "command_room_real_route": {
+      "passed": true,
+      "http_status": 200,
+      "latency_ms": 6629,
+      "total_events": 9,
+      "fallback_passed": true,
+      "response_sha256": "ec2b18165521e54dd6692acc13e97beb9aa81ab9435b70744b912a0638e3bdc3"
+    },
+    "agentic_mission_runtime": {
+      "passed": true,
+      "run_id": "run-cab7f075-b977-426f-bf99-c34290c36207",
+      "approval_validated": true,
+      "occ_rejected": true,
+      "scope_rejected": true,
+      "core_engine_receipt_sha256": "cfe4831a0e464ae4003f26015eaf9a8d8e6c1018b35068a3e3e3f85fa034c18b"
+    },
+    "review_to_handoff_workflow": {
+      "passed": true,
+      "review_queue_items_count": 126,
+      "quantity_readiness_items_count": 185,
+      "correction_resolved": true,
+      "materialized_count": 1,
+      "rab_draft_updated": true,
+      "stale_rejected": true,
+      "rbac_denied": true,
+      "materialization_response_sha256": "01bd42842083f18703ec7f9750e383f9b09e150fe393a601dc6f434c7f699f54",
+      "canonical_response": {
+        "materialized_count": 1,
+        "skipped_items": [],
+        "rab_draft_updated": true
+      }
+    },
+    "artifact_lifecycle": {
+      "passed": true,
+      "http_status": 404,
+      "sha256": "ab6842f5f7322fa078b39bc73af5cf0dabdd1472727f9ee396555012f0e53e74"
+    }
+  }
+}

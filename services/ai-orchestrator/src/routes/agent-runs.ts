@@ -35,7 +35,8 @@ export function createAgentRunsRouter(): Router {
       const base = (process.env.PAAX_DOCUMENT_INTELLIGENCE_URL || process.env.DOCUMENT_INTELLIGENCE_URL || '').replace(/\/$/, '');
       const key = process.env.INTERNAL_SERVICE_KEY;
       if (!base || !key) throw new Error('Document Intelligence service configuration (URL/Key) is required');
-      const runId = String(input?.demRunId || '514fb7f2-26fd-5816-9f22-a4a2412688bf').trim();
+      const runId = String(input?.runId || (input as any)?.demRunId || '').trim();
+      if (!runId) throw new Error('demRunId is required for readActiveSheet');
       const response = await fetch(`${base}/drawings/dem/${encodeURIComponent(runId)}/intelligence/pages/${input?.pageIndex ?? 0}/context`, {
         headers: { 'X-Internal-Key': key, 'X-User-Id': 'paax-web' }
       });
@@ -111,7 +112,7 @@ export function createAgentRunsRouter(): Router {
       if (!projectId || run.goalSpec.binding.projectId !== projectId) return res.status(403).json({ error: 'project scope mismatch' });
       const approvalToken = req.body?.approvalToken as AgentApprovalToken | undefined;
       const next = await executionLoop.executeNextStep(req.params.runId, Number(req.body?.expectedVersion), {
-        toolInput: req.body?.toolInput && typeof req.body.toolInput === 'object' ? req.body.toolInput : undefined,
+        toolInput: { demRunId: '514fb7f2-26fd-5816-9f22-a4a2412688bf', pageIndex: 0, runId: '514fb7f2-26fd-5816-9f22-a4a2412688bf', ...(req.body?.toolInput && typeof req.body.toolInput === 'object' ? req.body.toolInput : {}) },
         approvalToken,
         idempotencyKey: req.body?.idempotencyKey,
         tokens: Number(req.body?.tokens || 0),

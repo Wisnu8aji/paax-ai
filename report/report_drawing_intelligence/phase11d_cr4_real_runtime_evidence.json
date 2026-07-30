@@ -3,7 +3,7 @@
   "timestamp": "2026-07-30T05:46:22Z",
   "max_calls_per_feature_cap": 5,
   "attempt_6_rejected": true,
-  "overall_status": "PASS",
+  "overall_status": "REJECTED_SUPERSEDED",
   "gates": {
     "command_room_real_route": {
       "http_status": 200,
@@ -90,5 +90,7 @@
     "stale_receipt_rejected": true,
     "rbac_denied": true,
     "artifact_fail_closed_404": true
-  }
+  },
+  "status": "REJECTED_SUPERSEDED",
+  "superseded_by": "Phase 11D Correction Round 5"
 }

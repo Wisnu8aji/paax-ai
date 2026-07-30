@@ -1,7 +1,7 @@
 {
   "timestamp": "2026-07-30T04:32:32Z",
   "phase": "Phase 11D Correction Round 3",
-  "overall_status": "PASS",
+  "overall_status": "REJECTED_SUPERSEDED",
   "reconciled_head": "792d06fce09d645955f9089f9797650767089a6f",
   "cumulative_provider_live_calls": {
     "sheet_classification_fallback": 2,
@@ -86,5 +86,7 @@
     "command_room_desktop": "51458fe3cb45f896588f04568c56b36c4acda6c9db87b740ded05114a81f2260",
     "review_queue_desktop": "c219860b595250f147fbb7bffa1aeb0ca67dc37c2126731a50f117d7be636963",
     "quantity_readiness_desktop": "05980f26277d72202d57e012def73eb5d9dacb912040e9ee451360ea2f1071cc"
-  }
+  },
+  "status": "REJECTED_SUPERSEDED",
+  "superseded_by": "Phase 11D Correction Round 5"
 }

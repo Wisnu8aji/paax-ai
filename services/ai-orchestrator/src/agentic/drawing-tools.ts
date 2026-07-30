@@ -21,27 +21,30 @@ export function registerDrawingIntelligenceTools(registry: AgentToolRegistry, ha
   registry.register<ActiveSheetToolInput, unknown>({
     name: 'project_graph.read_active_sheet', scope: 'project_graph:read', sideEffect: 'none', timeoutMs: 15_000,
     execute(input, binding) {
-      if (!Number.isInteger(input.pageIndex) || input.pageIndex < 0 || !input.runId?.trim()) throw new Error('runId and non-negative pageIndex are required');
-      return handlers.readActiveSheet(input, binding);
+      const pageIndex = typeof input?.pageIndex === 'number' && Number.isInteger(input.pageIndex) && input.pageIndex >= 0 ? input.pageIndex : 0;
+      const runId = String(input?.runId || (input as any)?.demRunId || '').trim();
+      return handlers.readActiveSheet({ ...input, pageIndex, runId }, binding);
     },
   });
   registry.register<ReviewProposalToolInput, unknown>({
     name: 'drawing.review_proposal', scope: 'drawing:review', sideEffect: 'draft', timeoutMs: 15_000,
     execute(input, binding) {
-      const proposalId = String(input?.proposalId || 'prop-default-001').trim();
-      const decision = input?.decision === 'reject' ? 'reject' : 'approve';
-      return handlers.reviewProposal({ ...input, proposalId, decision }, binding);
+      const proposalId = String(input?.proposalId || '').trim();
+      if (!proposalId) throw new Error('proposalId is required for review_proposal');
+      if (input?.decision !== 'approve' && input?.decision !== 'reject') throw new Error('decision must be approve or reject');
+      return handlers.reviewProposal(input, binding);
     },
   });
   registry.register<CoreEngineFactsInput, unknown>({
     name: 'core_engine.calculate_measurement_facts', scope: 'core:calculate', sideEffect: 'authoritative_write', timeoutMs: 30_000,
     execute(input, binding) {
       rejectDirectNumericQuantity(input as unknown as Record<string, unknown>);
-      const measurementFactIds = Array.isArray(input?.measurementFactIds) && input.measurementFactIds.length
-        ? input.measurementFactIds
-        : ['mf-plhut-001'];
-      const idempotencyKey = String(input?.idempotencyKey || `core-mat-${Date.now()}`).trim();
-      return handlers.calculateMeasurementFacts({ ...input, measurementFactIds, idempotencyKey }, binding);
+      if (!Array.isArray(input?.measurementFactIds) || input.measurementFactIds.length === 0 || input.measurementFactIds.some((id) => !String(id).trim())) {
+        throw new Error('measurementFactIds must be a non-empty array of valid IDs');
+      }
+      const idempotencyKey = String(input?.idempotencyKey || '').trim();
+      if (!idempotencyKey) throw new Error('idempotencyKey is required for calculate_measurement_facts');
+      return handlers.calculateMeasurementFacts({ ...input, measurementFactIds: input.measurementFactIds.map((id) => String(id).trim()), idempotencyKey }, binding);
     },
   });
   return registry;
