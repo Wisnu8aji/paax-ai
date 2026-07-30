@@ -11,6 +11,23 @@
 
 ---
 
+## Final Root Audit Addendum
+
+The CR5 runtime artifact is retained as historical evidence but is now marked
+`SUPERSEDED_REQUIRES_OWNER_RERUN`: its former provider-failure gate used schema
+rejection and its counter mixed attempts with sent calls. The final harness now
+requires a valid model alias against an isolated process with an unreachable
+provider, rejects missing outage configuration, records `attempts` separately
+from `network_sent`, and rejects attempt 6 before network. Production usage
+metering no longer has a localhost/default-key bypass and quota checks fail
+closed when metering configuration or DB access is unavailable.
+
+No additional live AI call was made during this audit. The source and portable
+PLHUT package are ready for owner audit; the superseded live artifact must not
+be interpreted as a fresh PASS.
+
+---
+
 ## Independent Audit Findings (Post-CR5 Candidate 6f494fbb)
 
 An independent audit was performed against CR5 candidate commit `6f494fbb`. The following blockers were found and corrected:

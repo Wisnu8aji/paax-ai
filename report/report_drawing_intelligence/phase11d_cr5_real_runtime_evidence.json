@@ -9,8 +9,9 @@
     "document_intelligence_ops": 1
   },
   "attempt_6_rejected": true,
-  "overall_status": "PASS",
-  "status": "PASS",
+  "overall_status": "SUPERSEDED_REQUIRES_OWNER_RERUN",
+  "status": "SUPERSEDED_REQUIRES_OWNER_RERUN",
+  "superseded_reason": "Post-audit found that the recorded provider-failure probe was a schema rejection and the counter mixed attempts with network calls. The corrected harness requires a valid-alias isolated provider-outage process and records attempts separately from network_sent.",
   "gates": {
     "command_room_real_route": {
       "passed": true,

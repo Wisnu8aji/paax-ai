@@ -1,5 +1,11 @@
-const DB_API_URL = process.env.DB_API_URL || 'http://localhost:8001';
-const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || 'test-internal-key';
+function meteringConfig(): { dbApiUrl: string; internalKey: string } {
+    const dbApiUrl = process.env.DB_API_URL?.trim().replace(/\/$/, '');
+    const internalKey = process.env.INTERNAL_SERVICE_KEY?.trim();
+    if (!dbApiUrl || !internalKey) {
+        throw new Error('Usage metering requires DB_API_URL and INTERNAL_SERVICE_KEY');
+    }
+    return { dbApiUrl, internalKey };
+}
 
 export type UsageEvent = {
     tenantId: string; operation: string; success: boolean; tokensIn?: number; tokensOut?: number;
@@ -13,9 +19,10 @@ export async function checkQuota(tenantId: string): Promise<{ quota_exceeded: bo
     }
     
     try {
-        const res = await fetch(`${DB_API_URL}/usage/quota/check?tenant_id=${tenantId}`, {
+        const { dbApiUrl, internalKey } = meteringConfig();
+        const res = await fetch(`${dbApiUrl}/usage/quota/check?tenant_id=${tenantId}`, {
             headers: {
-                'X-Internal-Key': INTERNAL_KEY,
+                'X-Internal-Key': internalKey,
                 'X-User-Id': tenantId
             }
         });
@@ -31,7 +38,7 @@ export async function checkQuota(tenantId: string): Promise<{ quota_exceeded: bo
         // Fallback: don't break if db is down
     }
     
-    return { quota_exceeded: false, remaining: 999999 };
+    return { quota_exceeded: true, remaining: 0 };
 }
 
 export async function logUsage(
@@ -48,11 +55,12 @@ export async function logUsage(
     }
     
     try {
-        await fetch(`${DB_API_URL}/usage/log`, {
+        const { dbApiUrl, internalKey } = meteringConfig();
+        await fetch(`${dbApiUrl}/usage/log`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Internal-Key': INTERNAL_KEY,
+                'X-Internal-Key': internalKey,
                 'X-User-Id': tenantId
             },
             body: JSON.stringify({
@@ -75,8 +83,9 @@ export async function logUsage(
 export async function logUsageEvent(event: UsageEvent, fetchImpl: typeof fetch = fetch): Promise<void> {
     if (process.env.METERING_ENABLED === '0') return;
     try {
-        await fetchImpl(`${DB_API_URL}/usage/log`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Internal-Key': INTERNAL_KEY, 'X-User-Id': event.tenantId },
+        const { dbApiUrl, internalKey } = meteringConfig();
+        await fetchImpl(`${dbApiUrl}/usage/log`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Internal-Key': internalKey, 'X-User-Id': event.tenantId },
             body: JSON.stringify({
                 tenant_id: event.tenantId, service: 'ai-orchestrator', operation: event.operation, success: event.success,
                 tokens_in: event.tokensIn, tokens_out: event.tokensOut, latency_ms: event.latencyMs,

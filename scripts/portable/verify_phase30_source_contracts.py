@@ -17,7 +17,7 @@ def check(name: str, condition: bool, detail: str) -> None:
 
 bootstrap = text("scripts/live_test/serve_db_with_fixture.py")
 check("bootstrap_non_destructive", ".unlink(" not in bootstrap, "portable bootstrap must never delete its database")
-check("bootstrap_persistent_db", "paax-portable.db" in bootstrap, "persistent DB filename")
+check("bootstrap_persistent_db", "portable.sqlite" in bootstrap, "persistent external-data-root DB filename")
 check("bootstrap_project_manifest", "project-manifest.json" in bootstrap, "manifest-driven idempotent seed")
 
 start = text("scripts/portable/Start-PLHUT-Local.ps1")
@@ -45,8 +45,14 @@ real_pos = canvas.find("realImageUrl ? <RealPageSvg")
 svg_pos = canvas.find(": sheet ? <SheetPlanSvg")
 check("real_pdf_layer_priority", real_pos >= 0 and svg_pos >= 0 and real_pos < svg_pos, "real source image branch precedes synthetic fallback")
 quantities = text("apps/web/src/components/drawing-intelligence/workspace/dock/quantities-mode.tsx")
-for header in ["Item pekerjaan", "Lokasi / Lantai", "Satuan", "Ukuran", "Jumlah", "Formula", "Volume / Hasil", "Sumber"]:
+for header in ["Item pekerjaan", "Lokasi / Lantai", "Satuan", "Ukuran", "Jumlah", "Volume / Hasil", "Sumber"]:
     check(f"quantity_header::{header}", header in quantities, header)
+quantity_types = text("apps/web/src/components/drawing-intelligence/workspace/di-types.ts")
+check(
+    "quantity_formula_audit_only",
+    "formula: string" in quantity_types and "retained for audit/export" in quantity_types,
+    "formula remains engine-sourced audit/export data, not a primary UI calculation column",
+)
 check("no_user_internal_code_column", ">Code<" not in quantities and ">Kode<" not in quantities, "technical code is not a primary user column")
 check("excel_backup_action", "civilWorkItemsExportUrl" in quantities and "Perhitungan Excel" in quantities, "user can download calculation backup")
 

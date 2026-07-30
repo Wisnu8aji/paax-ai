@@ -37,15 +37,19 @@ test.describe('Phase 11D Correction Round 5 — Real-Stack Browser Acceptance (Z
   });
 
   test('2. Command Room Fail-Closed Provider Outage State (No Interception)', async ({ page }) => {
+    const outageBaseUrl = process.env.PAAX_PROVIDER_OUTAGE_WEB_URL;
+    if (!outageBaseUrl) {
+      throw new Error('PAAX_PROVIDER_OUTAGE_WEB_URL must target an isolated web process with an unreachable provider');
+    }
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('http://127.0.0.1:3000/command-room', { waitUntil: 'domcontentloaded' });
+    await page.goto(`${outageBaseUrl.replace(/\/$/, '')}/command-room`, { waitUntil: 'domcontentloaded' });
 
     const textarea = page.locator('textarea').first();
     await expect(textarea).toBeVisible({ timeout: 15000 });
 
     // Listen for error response from server (provider fail-closed)
     const errorResponsePromise = page.waitForResponse(
-      (resp) => resp.url().includes('/api/command-room/chat') && [400, 422, 500, 503].includes(resp.status()),
+      (resp) => resp.url().includes('/api/command-room/chat') && [500, 502, 503, 504].includes(resp.status()),
       { timeout: 20000 }
     );
 
@@ -55,13 +59,10 @@ test.describe('Phase 11D Correction Round 5 — Real-Stack Browser Acceptance (Z
     // since we cannot control provider process-level failure without interception in a generic spec,
     // we use the official fail-closed path: send to API manually and check UI state
     // IMPORTANT: CR5 §D says "invalid enum 400 bukan provider failure" — so we use process-safe alias
-    await page.evaluate(() => {
-      return fetch('/api/command-room/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ modelAlias: 'arete', messages: [{ role: 'user', content: 'PAAX_TEST_PROVIDER_FAIL_CLOSED_REQUEST' }] })
-      });
-    });
+    const sendButton = page.locator('button[type="submit"], button:has-text("Kirim"), button:has-text("Send"), button[aria-label*="send" i]').first();
+    await expect(sendButton).toBeVisible({ timeout: 5000 });
+    await sendButton.click();
+    await errorResponsePromise;
 
     // Assert error/manual fallback UI state appears (alert, error banner, or manual completion path)
     const errorOrFallback = page.locator('[role="alert"], [class*="error"], [class*="fallback"], .error-state, [aria-live="assertive"]').first();
@@ -73,6 +74,8 @@ test.describe('Phase 11D Correction Round 5 — Real-Stack Browser Acceptance (Z
       console.log('[BROWSER EVIDENCE] Provider failure — manual fallback textarea still accessible.');
     }
 
+    await expect(errorOrFallback).toBeVisible({ timeout: 15000 });
+    await expect(textarea).toBeVisible({ timeout: 5000 });
     await page.screenshot({ path: 'e2e/results/phase11d-command-room-fallback.png', fullPage: true });
     console.log('[BROWSER EVIDENCE] Command Room provider fail-closed state screenshot saved.');
   });
@@ -82,7 +85,7 @@ test.describe('Phase 11D Correction Round 5 — Real-Stack Browser Acceptance (Z
 
     // Navigate to Drawing Intelligence workspace for PLHUT-SURAKARTA
     await page.goto('http://127.0.0.1:3000/drawing-intelligence?projectId=PLHUT-SURAKARTA', { waitUntil: 'domcontentloaded' });
-    await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
+    await page.waitForLoadState('domcontentloaded');
 
     // 3A. Review Queue Tab — assert nonzero items
     const reviewTab = page.locator('button:has-text("Review"), [role="tab"]:has-text("Review")').first();

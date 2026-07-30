@@ -41,14 +41,17 @@ CALL_COUNTERS = {
     "db_service_ops": 0,
     "document_intelligence_ops": 0,
 }
+NETWORK_CALLS_SENT = {feature: 0 for feature in CALL_COUNTERS}
 
 MAX_AI_PROVIDER_CALLS_PER_FEATURE = 5
 
 
 def track_network_call(feature: str):
-    CALL_COUNTERS[feature] = CALL_COUNTERS.get(feature, 0) + 1
-    if feature.endswith("_provider") and CALL_COUNTERS[feature] > MAX_AI_PROVIDER_CALLS_PER_FEATURE:
+    next_attempt = CALL_COUNTERS.get(feature, 0) + 1
+    CALL_COUNTERS[feature] = next_attempt
+    if feature.endswith("_provider") and next_attempt > MAX_AI_PROVIDER_CALLS_PER_FEATURE:
         raise RuntimeError(f"Attempt 6 rejected pre-network for AI provider feature '{feature}': budget cap of {MAX_AI_PROVIDER_CALLS_PER_FEATURE} calls exceeded")
+    NETWORK_CALLS_SENT[feature] = NETWORK_CALLS_SENT.get(feature, 0) + 1
 
 
 def canonical_sha256(data: dict | list) -> str:
@@ -85,16 +88,25 @@ def test_command_room_real_and_fallback() -> dict:
     latency_ms = int((time.time() - start) * 1000)
     print(f"  [1A SUCCESS] Command Room SSE HTTP {status} in {latency_ms}ms | Events: {events_received}")
 
-    # Fallback rejection probe
+    # Provider-outage probe must target an isolated web process configured with
+    # a valid alias and an unreachable provider. Schema 400/422 is not accepted.
     fallback_passed = False
-    track_network_call("command_room_provider")
-    bad_req = urllib.request.Request(url_chat, data=json.dumps({"modelAlias": "invalid_model_alias_for_test", "messages": []}).encode("utf-8"), headers={"Content-Type": "application/json"})
-    try:
-        urllib.request.urlopen(bad_req, timeout=10)
-    except urllib.error.HTTPError as e:
-        if e.code in (400, 422, 500, 503):
-            fallback_passed = True
-            print(f"  [1B FALLBACK PASS] Fail-closed provider failure rejection -> HTTP {e.code}")
+    outage_url = os.environ.get("PAAX_PROVIDER_OUTAGE_COMMAND_ROOM_URL", "").strip()
+    if outage_url:
+        track_network_call("command_room_provider")
+        outage_payload = {
+            "modelAlias": "arete",
+            "messages": [{"role": "user", "content": "Verify provider outage handling."}],
+        }
+        bad_req = urllib.request.Request(outage_url, data=json.dumps(outage_payload).encode("utf-8"), headers={"Content-Type": "application/json"})
+        try:
+            urllib.request.urlopen(bad_req, timeout=10)
+        except urllib.error.HTTPError as e:
+            if e.code in (500, 502, 503, 504):
+                fallback_passed = True
+                print(f"  [1B FALLBACK PASS] Provider outage rejected -> HTTP {e.code}")
+    else:
+        print("  [1B BLOCKED] PAAX_PROVIDER_OUTAGE_COMMAND_ROOM_URL is required")
 
     passed = (status == 200) and (events_received > 0) and fallback_passed
     return {
@@ -399,7 +411,13 @@ def main():
         "phase": "Phase 11D Correction Round 5",
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "max_calls_per_feature_cap": MAX_AI_PROVIDER_CALLS_PER_FEATURE,
-        "call_counters_provenance": CALL_COUNTERS,
+        "call_counters_provenance": {
+            feature: {
+                "attempts": CALL_COUNTERS[feature],
+                "network_sent": NETWORK_CALLS_SENT[feature],
+            }
+            for feature in CALL_COUNTERS
+        },
         "attempt_6_rejected": attempt_6_rejected,
         "overall_status": overall_status,
         "status": overall_status,
