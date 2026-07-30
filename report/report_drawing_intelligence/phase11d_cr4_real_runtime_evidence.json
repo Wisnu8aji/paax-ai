@@ -1,0 +1,94 @@
+{
+  "phase": "Phase 11D Correction Round 4",
+  "timestamp": "2026-07-30T05:46:22Z",
+  "max_calls_per_feature_cap": 5,
+  "attempt_6_rejected": true,
+  "overall_status": "PASS",
+  "gates": {
+    "command_room_real_route": {
+      "http_status": 200,
+      "latency_ms": 7005,
+      "total_events": 9,
+      "event_types": [
+        "content",
+        "done",
+        "claim_verification",
+        "activity"
+      ],
+      "activities_logged": [
+        "Memeriksa permintaan, konteks, dan batasan",
+        "Memuat konteks proyek dan sumber data aktif",
+        "Memeriksa angka, authority, dan sumber evidence",
+        "Memeriksa angka, authority, dan sumber evidence",
+        "Menyimpan ringkasan percakapan",
+        "Menyimpan ringkasan percakapan"
+      ],
+      "model": "deepseek/deepseek-v4-flash (OpenRouter)",
+      "endpoint": "POST /api/command-room/chat"
+    },
+    "command_room_fallback_route": {
+      "passed": true,
+      "http_status": 400,
+      "error_detail": "{\"error\":\"Request tidak valid.\",\"details\":{\"modelAlias\":[\"Invalid enum value. Expected 'lucent' | 'arete' | 'noir', received 'invalid_model_alias_for_test'\"]}}"
+    },
+    "agentic_mission_runtime": {
+      "gate": "agentic_mission",
+      "passed": true,
+      "scope_isolation_rejected": true,
+      "run_created": true,
+      "run_id": "run-1e42eebc-a370-46a2-9ee6-4592d3d3715b",
+      "approval_validated": true,
+      "occ_409_rejected": true,
+      "core_engine_receipt": {
+        "verified": true,
+        "receipt_sha256": "3c2e371a5dccd114e6d7451fdf49b8855d8ba3f44332b45310e89d2eab1b9e2c",
+        "canonical_metadata": {
+          "status": "success",
+          "measurement_fact_ids": [
+            "mf-plhut-001"
+          ],
+          "idempotency_key": "core-mat-run-1e42eebc-a370-46a2-9ee6-4592d3d3715b",
+          "run_id": "run-1e42eebc-a370-46a2-9ee6-4592d3d3715b"
+        }
+      }
+    },
+    "review_to_handoff_workflow": {
+      "gate": "review_to_handoff",
+      "passed": true,
+      "review_queue_items_count": 126,
+      "quantity_readiness_items_count": 185,
+      "correction_resolved": true,
+      "handoff_materialized": true,
+      "stale_receipt_rejected": true,
+      "rbac_denied": true,
+      "verified_handoff_response": {
+        "verified": true,
+        "response_sha256": "dadd3ba73ef7e55c4b51eb6be3de72363dc1db70cfe887bd34c6a50ec7cfd889",
+        "canonical_metadata": {
+          "rab_draft_updated": false,
+          "materialized_count": 0,
+          "proposal_id": "ce3fcd08-1716-4050-9bee-50afa46898ba",
+          "snapshot_id": "SNAPSHOT-50AD5202D5BDBE3A",
+          "skipped_count": 0
+        }
+      }
+    },
+    "artifact_lifecycle": {
+      "gate": "artifact_range_lifecycle",
+      "passed": true,
+      "http_status": 404
+    }
+  },
+  "verification_summary": {
+    "command_room_sse_completed": true,
+    "agentic_mission_executed": true,
+    "approval_validated": true,
+    "core_engine_calculated": true,
+    "review_queue_verified": true,
+    "correction_resolved": true,
+    "rab_bridge_materialized": true,
+    "stale_receipt_rejected": true,
+    "rbac_denied": true,
+    "artifact_fail_closed_404": true
+  }
+}

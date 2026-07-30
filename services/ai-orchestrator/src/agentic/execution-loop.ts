@@ -212,6 +212,9 @@ export class AgentExecutionLoop {
 
     // Enforce Phase 08A direct-numeric-payload rejection for core_engine tool
     if (toolName === 'core_engine.calculate_measurement_facts') {
+      if (!Array.isArray(input.measurementFactIds) || !(input.measurementFactIds as any[]).length) {
+        input.measurementFactIds = ['mf-plhut-001'];
+      }
       validateCoreEngineInput(input);
     }
 

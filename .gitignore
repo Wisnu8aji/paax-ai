@@ -80,3 +80,5 @@ test-results/
 *.log
 data/portable/
 phase11d_cr2_service_logs/
+phase11d_cr4_service_logs/
+runtime_internal_key.txt

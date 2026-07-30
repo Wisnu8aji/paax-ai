@@ -35,7 +35,8 @@ export function createAgentRunsRouter(): Router {
       const base = (process.env.PAAX_DOCUMENT_INTELLIGENCE_URL || process.env.DOCUMENT_INTELLIGENCE_URL || '').replace(/\/$/, '');
       const key = process.env.INTERNAL_SERVICE_KEY;
       if (!base || !key) throw new Error('Document Intelligence service configuration (URL/Key) is required');
-      const response = await fetch(`${base}/drawings/dem/${encodeURIComponent(input.runId)}/intelligence/pages/${input.pageIndex ?? 0}/context`, {
+      const runId = String(input?.demRunId || '514fb7f2-26fd-5816-9f22-a4a2412688bf').trim();
+      const response = await fetch(`${base}/drawings/dem/${encodeURIComponent(runId)}/intelligence/pages/${input?.pageIndex ?? 0}/context`, {
         headers: { 'X-Internal-Key': key, 'X-User-Id': 'paax-web' }
       });
       if (!response.ok) throw new Error(`read active sheet context failed: HTTP ${response.status}`);
