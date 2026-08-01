@@ -12,27 +12,20 @@ import {
   type IndexFilter,
 } from './sheet-navigation';
 
+import { CanonicalSheetThumbnail } from './canonical-sheet-thumbnail';
+
 function SheetThumbnail({ sheetId }: { sheetId: string }) {
   const { state } = useWorkspace();
   const mapping = state.mappedSheets.find((candidate) => candidate.id === sheetId);
-  if (!mapping?.imageUrl) {
-    return (
-      <div
-        role="img"
-        aria-label="Thumbnail unavailable"
-        style={{ display: 'grid', placeItems: 'center', height: 92, background: 'var(--di-paper)', color: 'var(--di-text3)', fontSize: 10 }}
-      >
-        Thumbnail unavailable
-      </div>
-    );
-  }
+  const sheet = state.sheets.find((candidate) => candidate.id === sheetId);
+
   return (
-    <img
-      src={mapping.imageUrl}
+    <CanonicalSheetThumbnail
+      runId={sheet?.runId ?? mapping?.runId}
+      pageIndex={sheet?.pageIndex ?? mapping?.pageIndex}
+      rawUrl={sheet?.imageUrl || mapping?.imageUrl}
       alt="Sheet thumbnail"
-      loading="lazy"
-      decoding="async"
-      style={{ display: 'block', width: '100%', height: 92, objectFit: 'contain', background: 'var(--di-paper)' }}
+      height={92}
     />
   );
 }
@@ -298,24 +291,13 @@ export function FileSheetNavigator() {
                     style={{ overflow: 'hidden', borderColor: active ? 'var(--di-accent)' : undefined, cursor: sheetId ? 'pointer' : 'default', opacity: rowSheet ? 1 : 0.6 }}
                     onClick={() => sheetId && dispatch({ type: 'set-active-sheet', sheetId })}
                   >
-                    {/* Thumbnail â€” lazy; never eager */}
-                    {mapping?.imageUrl ? (
-                      <img
-                        src={mapping.imageUrl}
-                        alt={`Thumbnail page ${entry.page_number}`}
-                        loading="lazy"
-                        decoding="async"
-                        style={{ display: 'block', width: '100%', height: 92, objectFit: 'contain', background: 'var(--di-paper)' }}
-                      />
-                    ) : (
-                      <div
-                        role="img"
-                        aria-label={rowSheet ? 'Thumbnail unavailable' : 'Sheet unavailable â€” index join miss'}
-                        style={{ display: 'grid', placeItems: 'center', height: 92, background: 'var(--di-paper)', color: 'var(--di-text3)', fontSize: 10 }}
-                      >
-                        {rowSheet ? 'Thumbnail unavailable' : 'Sheet not matched'}
-                      </div>
-                    )}
+                    <CanonicalSheetThumbnail
+                      runId={packageIndex?.run_id}
+                      pageIndex={entry.page_index}
+                      rawUrl={mapping?.imageUrl}
+                      alt={`Thumbnail page ${entry.page_number}`}
+                      height={92}
+                    />
                     <div style={{ padding: 8 }}>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
                         <span className="di-mono" style={{ fontWeight: 700 }}>p.{entry.page_number}</span>

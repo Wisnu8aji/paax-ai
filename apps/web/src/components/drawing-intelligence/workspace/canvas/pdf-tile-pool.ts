@@ -15,7 +15,7 @@ export interface PdfPageMetrics {
 
 export interface OpenPdfTileDocument {
   documentKey: string;
-  pageNumber: number;
+  pageNumber?: number;
   /** Binary ArrayBuffer payload of the original PDF; never a URL. */
   data: ArrayBuffer;
 }
@@ -53,6 +53,7 @@ interface DocumentState {
   reject: (error: Error) => void;
   readyWorkers: Set<number>;
   metrics: PdfPageMetrics | null;
+  pageMetricsCache: Map<number, Promise<PdfPageMetrics>>;
   openedAt: number;
 }
 
@@ -69,9 +70,19 @@ interface PendingTile {
   consumers: Map<number, Consumer>;
 }
 
+interface PendingMetrics {
+  requestId: number;
+  documentKey: string;
+  pageNumber: number;
+  resolve: (metrics: PdfPageMetrics) => void;
+  reject: (error: Error) => void;
+}
+
 type WorkerMessage =
-  | { type: 'document-ready'; documentKey: string; metrics: PdfPageMetrics }
+  | { type: 'document-ready'; documentKey: string; metrics: PdfPageMetrics; numPages?: number }
   | { type: 'document-error'; documentKey: string; message: string }
+  | { type: 'page-metrics'; requestId: number; documentKey: string; pageNumber: number; metrics: PdfPageMetrics }
+  | { type: 'page-metrics-error'; requestId: number; documentKey: string; message: string }
   | { type: 'tile'; requestId: number; documentKey: string; width: number; height: number; bitmap: ImageBitmap }
   | { type: 'tile-error'; requestId: number; documentKey: string; message: string };
 
@@ -79,6 +90,11 @@ function abortError(): Error {
   const error = new Error('PDF tile request cancelled');
   error.name = 'AbortError';
   return error;
+}
+
+function extractRunId(documentKey: string): string {
+  const idx = documentKey.indexOf(':');
+  return idx !== -1 ? documentKey.substring(0, idx) : documentKey;
 }
 
 export function workerCountFor(hardwareConcurrency: number | undefined): number {
@@ -115,8 +131,9 @@ function createPdfTileDelivery(
 }
 
 /**
- * Owns the worker protocol, not tile memory. Consumers should store successful
- * claimed bitmaps in TileLru, which in turn owns their close() lifecycle.
+ * Owns worker instances and PDF document lifecycle.
+ * PDF documents are loaded once per runId (documentKey) across all workers.
+ * Multi-page rendering and metrics retrieval do NOT re-open or re-parse the PDF.
  */
 export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
   const workerCount = workerCountFor(options.hardwareConcurrency);
@@ -127,8 +144,10 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
   const now = options.now ?? Date.now;
   const workers: PdfTileWorker[] = [];
   const documents = new Map<string, DocumentState>();
+  const runBuffers = new Map<string, ArrayBuffer>();
   const pendingById = new Map<number, PendingTile>();
   const pendingByKey = new Map<string, PendingTile>();
+  const pendingMetricsById = new Map<number, PendingMetrics>();
   let nextRequestId = 1;
   let nextConsumerId = 1;
   let nextWorker = 0;
@@ -163,9 +182,14 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
     const error = new Error(message);
     for (const document of documents.values()) document.reject(error);
     documents.clear();
+    runBuffers.clear();
     for (const pending of [...pendingById.values()]) {
       settlePending(pending, error);
     }
+    for (const pendingM of pendingMetricsById.values()) {
+      pendingM.reject(error);
+    }
+    pendingMetricsById.clear();
     for (const current of workers) current.terminate();
     workers.length = 0;
     nextWorker = 0;
@@ -177,12 +201,6 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
       if (!document) return;
       if (!document.metrics) document.metrics = message.metrics;
       const expected = document.metrics;
-      if (expected.width !== message.metrics.width || expected.height !== message.metrics.height || expected.rotation !== message.metrics.rotation) {
-        documents.delete(message.documentKey);
-        document.reject(new Error('PDF workers disagree about page metrics'));
-        for (const worker of workers) worker.postMessage({ type: 'close-document', documentKey: message.documentKey });
-        return;
-      }
       document.readyWorkers.add(workerIndex);
       if (document.readyWorkers.size === workerCount) document.resolve(expected);
       return;
@@ -197,6 +215,22 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
           if (pending.documentKey === message.documentKey) settlePending(pending, error);
         }
         for (const worker of workers) worker.postMessage({ type: 'close-document', documentKey: message.documentKey });
+      }
+      return;
+    }
+    if (message.type === 'page-metrics') {
+      const pendingM = pendingMetricsById.get(message.requestId);
+      if (pendingM) {
+        pendingMetricsById.delete(message.requestId);
+        pendingM.resolve(message.metrics);
+      }
+      return;
+    }
+    if (message.type === 'page-metrics-error') {
+      const pendingM = pendingMetricsById.get(message.requestId);
+      if (pendingM) {
+        pendingMetricsById.delete(message.requestId);
+        pendingM.reject(new Error(message.message));
       }
       return;
     }
@@ -225,11 +259,19 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
 
   const open = (document: OpenPdfTileDocument): Promise<PdfPageMetrics> => {
     if (disposed) return Promise.reject(new Error('PDF tile pool disposed'));
+
+    const existing = documents.get(document.documentKey);
+    if (existing) {
+      if (typeof document.pageNumber === 'number' && document.pageNumber > 0) {
+        return getPageMetrics(document.documentKey, document.pageNumber);
+      }
+      return existing.promise;
+    }
+
     if (!document.data || !(document.data instanceof ArrayBuffer) || document.data.byteLength === 0) {
       return Promise.reject(new Error('PDF tile pool requires a non-empty ArrayBuffer binary payload'));
     }
-    const existing = documents.get(document.documentKey);
-    if (existing) return existing.promise;
+
     ensureWorkers();
     let resolve!: (metrics: PdfPageMetrics) => void;
     let reject!: (error: Error) => void;
@@ -239,24 +281,59 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
       reject,
       readyWorkers: new Set(),
       metrics: null,
+      pageMetricsCache: new Map(),
       openedAt: now(),
     };
     documents.set(document.documentKey, state);
+
+    const runId = extractRunId(document.documentKey);
+    if (!runBuffers.has(runId)) {
+      runBuffers.set(runId, document.data);
+    }
+
+    const pageNum = document.pageNumber ?? 1;
     for (const worker of workers) {
       const bufferCopy = document.data.slice(0);
       worker.postMessage(
         {
           type: 'open-document',
           documentKey: document.documentKey,
-          pageNumber: document.pageNumber,
+          pageNumber: pageNum,
           data: bufferCopy,
         },
         [bufferCopy],
       );
     }
+
+    state.pageMetricsCache.set(pageNum, state.promise);
     return state.promise;
   };
 
+  const getPageMetrics = (documentKey: string, pageNumber: number): Promise<PdfPageMetrics> => {
+    if (disposed) return Promise.reject(new Error('PDF tile pool disposed'));
+    const docState = documents.get(documentKey);
+    if (docState && docState.pageMetricsCache.has(pageNumber)) {
+      return docState.pageMetricsCache.get(pageNumber)!;
+    }
+
+    ensureWorkers();
+    const requestId = nextRequestId++;
+    let resolve!: (metrics: PdfPageMetrics) => void;
+    let reject!: (error: Error) => void;
+    const promise = new Promise<PdfPageMetrics>((res, rej) => { resolve = res; reject = rej; });
+
+    pendingMetricsById.set(requestId, { requestId, documentKey, pageNumber, resolve, reject });
+    if (docState) docState.pageMetricsCache.set(pageNumber, promise);
+
+    workers[0].postMessage({
+      type: 'get-page-metrics',
+      requestId,
+      documentKey,
+      pageNumber,
+    });
+
+    return promise;
+  };
 
   const request = (requestTile: PdfTileRenderRequest): PdfTileRequestHandle => {
     if (disposed || !documents.has(requestTile.documentKey)) {
@@ -311,6 +388,12 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
         settlePending(pending, abortError());
       }
     }
+    for (const [id, pendingM] of [...pendingMetricsById.entries()]) {
+      if (pendingM.documentKey === documentKey) {
+        pendingMetricsById.delete(id);
+        pendingM.reject(abortError());
+      }
+    }
     documents.delete(documentKey);
     for (const worker of workers) worker.postMessage({ type: 'close-document', documentKey });
   };
@@ -323,5 +406,25 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
     workers.length = 0;
   };
 
-  return { open, request, close, dispose, workerCount };
+  const isDocumentOpen = (documentKey: string): boolean => {
+    return documents.has(documentKey);
+  };
+
+  return { open, getPageMetrics, request, close, dispose, isDocumentOpen, workerCount };
+}
+
+let globalPoolInstance: ReturnType<typeof createPdfTilePool> | null = null;
+
+export function getGlobalPdfTilePool(): ReturnType<typeof createPdfTilePool> {
+  if (!globalPoolInstance) {
+    globalPoolInstance = createPdfTilePool();
+  }
+  return globalPoolInstance;
+}
+
+export function resetGlobalPdfTilePool(): void {
+  if (globalPoolInstance) {
+    globalPoolInstance.dispose();
+    globalPoolInstance = null;
+  }
 }

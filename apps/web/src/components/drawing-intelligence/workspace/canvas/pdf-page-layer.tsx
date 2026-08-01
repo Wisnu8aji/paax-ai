@@ -1,53 +1,63 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { fetchPdfArtifactUrl, normalizeArtifactExpiry, PDF_ARTIFACT_REFRESH_SKEW_MS } from '../../drawing-intelligence-api';
+import { normalizeArtifactExpiry } from '../../drawing-intelligence-api';
 import { fetchPdfBinary } from './pdf-binary-cache';
-import { TileLru, PdfTilePyramid, type TileViewport, type PdfTileRequest } from './pdf-tile-pyramid';
-import { createPdfTilePool, type PdfPageMetrics } from './pdf-tile-pool';
+import {
+  createPdfTilePool,
+  getGlobalPdfTilePool,
+  resetGlobalPdfTilePool,
+  type PdfPageMetrics,
+  type PdfTileDelivery,
+} from './pdf-tile-pool';
+import {
+  PdfTilePyramid,
+  TileLru,
+  type PdfTileRequest,
+  type TileViewport,
+} from './pdf-tile-pyramid';
 
-let globalPdfTilePool: ReturnType<typeof createPdfTilePool> | null = null;
-let globalTileCache: TileLru | null = null;
+let globalPoolInstance: ReturnType<typeof createPdfTilePool> | null = null;
 
-export function getGlobalPdfTilePool() {
-  if (!globalPdfTilePool) globalPdfTilePool = createPdfTilePool();
-  return globalPdfTilePool;
+export function getGlobalPdfTilePool(): ReturnType<typeof createPdfTilePool> {
+  if (!globalPoolInstance) {
+    globalPoolInstance = createPdfTilePool();
+  }
+  return globalPoolInstance;
 }
 
-export function getGlobalTileCache() {
-  if (!globalTileCache) globalTileCache = new TileLru(96 * 1024 * 1024);
-  return globalTileCache;
-}
-
-export function resetGlobalPdfTilePool() {
-  if (globalPdfTilePool) {
-    globalPdfTilePool.dispose();
-    globalPdfTilePool = null;
+export function resetGlobalPdfTilePool(): void {
+  if (globalPoolInstance) {
+    globalPoolInstance.dispose();
+    globalPoolInstance = null;
   }
 }
 
-export function resetGlobalTileCache() {
-  if (globalTileCache) {
-    globalTileCache.dispose();
-    globalTileCache = null;
+let globalTileCacheInstance: TileLru | null = null;
+
+export function getGlobalTileCache(): TileLru {
+  if (!globalTileCacheInstance) {
+    globalTileCacheInstance = new TileLru();
+  }
+  return globalTileCacheInstance;
+}
+
+export function resetGlobalTileCache(): void {
+  if (globalTileCacheInstance) {
+    globalTileCacheInstance.dispose();
+    globalTileCacheInstance = null;
   }
 }
 
-export function shouldRefreshArtifactUrl(expiresAt: string | number, now = new Date()): boolean {
-  const normalized = normalizeArtifactExpiry(expiresAt);
-  return new Date(normalized).getTime() - now.getTime() <= PDF_ARTIFACT_REFRESH_SKEW_MS;
-}
-
-function areTileGeometriesEqual(a: PdfTileRequest, b: PdfTileRequest): boolean {
-  return (
-    a.tx === b.tx &&
-    a.ty === b.ty &&
-    a.x === b.x &&
-    a.y === b.y &&
-    a.width === b.width &&
-    a.height === b.height &&
-    a.density === b.density
-  );
+export function shouldRefreshArtifactUrl(expiresAt: string | number, now: Date = new Date()): boolean {
+  try {
+    const normalized = normalizeArtifactExpiry(expiresAt);
+    const expTime = new Date(normalized).getTime();
+    const nowTime = now.getTime();
+    return expTime - nowTime < 60000;
+  } catch {
+    return true;
+  }
 }
 
 export interface PdfPageLayerProps {
@@ -61,13 +71,14 @@ export interface PdfPageLayerProps {
   tileCache?: TileLru;
 }
 
-/** Original-PDF-only tile layer. Signed URLs and binary buffers live strictly in client memory. */
+function areTileGeometriesEqual(a: PdfTileRequest, b: PdfTileRequest): boolean {
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height && a.density === b.density;
+}
+
 export function PdfPageLayer({
   runId,
   pageIndex,
   viewport,
-  fallbackWidth,
-  fallbackHeight,
   onMetrics,
   tilePool,
   tileCache,
@@ -102,7 +113,10 @@ export function PdfPageLayer({
   const [painted, setPainted] = useState(new Map<string, { tile: PdfTileRequest; revision: number }>());
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
+
   const documentKey = `${runId}:${pageIndex}`;
+  const pageNumber = pageIndex + 1;
+
   const onMetricsRef = useRef(onMetrics);
   onMetricsRef.current = onMetrics;
 
@@ -126,7 +140,8 @@ export function PdfPageLayer({
       try {
         const buffer = await fetchPdfBinary(runId);
         if (cancelled || openGenRef.current !== gen) return;
-        const verified = await pool.open({ documentKey, pageNumber: pageIndex + 1, data: buffer });
+
+        const verified = await pool.open({ documentKey, pageNumber, data: buffer });
         if (cancelled || openGenRef.current !== gen) return;
         activeOpenGenRef.current = gen;
         setMetrics(verified);
@@ -139,7 +154,6 @@ export function PdfPageLayer({
     };
 
     void open(currentGen);
-
 
     return () => {
       cancelled = true;
@@ -154,52 +168,56 @@ export function PdfPageLayer({
         if (cacheRef.current === cache) cacheRef.current = null;
       }
     };
-  }, [runId, pageIndex, documentKey, retry, tilePool, tileCache]);
+  }, [runId, pageIndex, documentKey, pageNumber, retry, tilePool, tileCache]);
 
-  const dimensions = metrics ?? { width: fallbackWidth, height: fallbackHeight, rotation: 0 };
-  const pyramid = useMemo(() => new PdfTilePyramid({ pageKey: documentKey, width: dimensions.width, height: dimensions.height }), [documentKey, dimensions.width, dimensions.height]);
+  const pyramid = useMemo(
+    () => (metrics ? new PdfTilePyramid({ pageKey: documentKey, width: metrics.width, height: metrics.height }) : null),
+    [metrics, documentKey],
+  );
 
   useEffect(() => {
     const currentGen = openGenRef.current;
-    if (!metrics || error || activeOpenGenRef.current !== currentGen) return;
+    if (!metrics || !pyramid || error || activeOpenGenRef.current !== currentGen) return;
 
-    const logicalViewport: TileViewport = {
-      ...viewport,
-      x: viewport.x * dimensions.width,
-      y: viewport.y * dimensions.height,
-      width: viewport.width * dimensions.width,
-      height: viewport.height * dimensions.height,
-    };
-    const pool = poolRef.current;
-    const cache = cacheRef.current;
-    if (!pool || !cache) return;
+    const pool = poolRef.current ?? (tilePool || getGlobalPdfTilePool());
+    const cache = cacheRef.current ?? (tileCache || getGlobalTileCache());
 
-    const visible = pyramid.visibleTiles(logicalViewport);
-    const detailTiles = pyramid.visibleDetailTiles(logicalViewport).filter((tile) => tile.density > 4);
-    const desiredKeys = new Set([...visible, ...detailTiles].map((tile) => tile.key));
+    const visible = pyramid.visibleTiles(viewport);
+    const detailTiles = pyramid.visibleDetailTiles(viewport);
+
+    const desiredKeys = new Set(visible.map((t) => t.key));
     desiredKeysRef.current = desiredKeys;
-    const protectedKeys = desiredKeys;
 
-    setPainted((previous) => new Map([...previous].filter(([key]) => protectedKeys.has(key))));
-
-    for (const [key, entry] of activeRequestsRef.current.entries()) {
+    for (const [key, requestEntry] of [...activeRequestsRef.current.entries()]) {
       if (!desiredKeys.has(key)) {
-        entry.cancel();
+        requestEntry.cancel();
         activeRequestsRef.current.delete(key);
       }
     }
 
-    const requestTile = (tile: PdfTileRequest) => {
-      if (cache.has(tile.key)) return;
-      if (activeRequestsRef.current.has(tile.key)) return;
-      if (!desiredKeysRef.current.has(tile.key)) return;
+    setPainted((prev) => {
+      let changed = false;
+      const next = new Map(prev);
+      for (const key of prev.keys()) {
+        if (!desiredKeys.has(key)) {
+          next.delete(key);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
 
-      const identity = Symbol();
-      const handle = pool.request({ documentKey, pageNumber: pageIndex + 1, tile });
+    const protectedKeys = new Set(desiredKeys);
+
+    const requestTile = (tile: PdfTileRequest) => {
+      if (activeRequestsRef.current.has(tile.key)) return;
+
+      const identity = Symbol(tile.key);
+      const handle = pool.request({ documentKey, pageNumber, tile });
       activeRequestsRef.current.set(tile.key, { identity, cancel: handle.cancel });
 
       handle.promise
-        .then((delivery) => {
+        .then((delivery: PdfTileDelivery) => {
           const entry = activeRequestsRef.current.get(tile.key);
           if (
             entry?.identity !== identity ||
@@ -214,10 +232,11 @@ export function PdfPageLayer({
           if (bitmap) {
             cache.set(tile.key, bitmap, delivery.width * delivery.height * 4, protectedKeys);
           }
+
           if (cache.has(tile.key)) {
-            setPainted((previous) => {
-              const existing = previous.get(tile.key);
-              const next = new Map(previous);
+            setPainted((prev) => {
+              const existing = prev.get(tile.key);
+              const next = new Map(prev);
               const revision = existing ? existing.revision + 1 : 1;
               next.set(tile.key, { tile, revision });
               return next;
@@ -233,19 +252,19 @@ export function PdfPageLayer({
     };
 
     for (const tile of visible) {
-      const cached = cache.get(tile.key);
+      const cached = cache.has(tile.key) ? cache.get(tile.key) : undefined;
       if (cached) {
-        setPainted((previous) => {
-          const existing = previous.get(tile.key);
+        setPainted((prev) => {
+          const existing = prev.get(tile.key);
           if (!existing) {
-            const next = new Map(previous);
+            const next = new Map(prev);
             next.set(tile.key, { tile, revision: 1 });
             return next;
           }
           if (areTileGeometriesEqual(existing.tile, tile)) {
-            return previous;
+            return prev;
           }
-          const next = new Map(previous);
+          const next = new Map(prev);
           next.set(tile.key, { tile, revision: existing.revision });
           return next;
         });
@@ -257,27 +276,67 @@ export function PdfPageLayer({
     const detailTimer = window.setTimeout(() => {
       if (openGenRef.current !== currentGen || activeOpenGenRef.current !== currentGen) return;
       for (const tile of detailTiles) {
+        desiredKeysRef.current.add(tile.key);
         requestTile(tile);
       }
     }, 125);
 
     return () => {
       window.clearTimeout(detailTimer);
-      // Wait, we shouldn't close pool here because it's shared!
-      // But we DO need to cancel active requests from this layer!
     };
-  }, [metrics, viewport.x, viewport.y, viewport.width, viewport.height, viewport.zoom, viewport.dpr, error, pyramid, documentKey, pageIndex, dimensions.width, dimensions.height]);
+  }, [metrics, viewport, error, pyramid, documentKey, pageNumber]);
 
+  if (error) {
+    return (
+      <button type="button" onClick={() => setRetry((value) => value + 1)}>
+        Retry PDF: {error}
+      </button>
+    );
+  }
 
-  if (error) return <button type="button" onClick={() => setRetry((value) => value + 1)}>Retry PDF: {error}</button>;
-  if (!metrics) return <div role="status">Loading original PDF…</div>;
-  return <div data-testid="pdf-page-layer" style={{ position: 'relative', width: '100%', height: '100%', aspectRatio: `${metrics.width} / ${metrics.height}` }}>
-    {[...painted.entries()].map(([key, { tile, revision }]) => <TileCanvas key={key} tile={tile} revision={revision} cache={cacheRef.current} pageWidth={metrics.width} pageHeight={metrics.height} />)}
-  </div>;
+  if (!metrics) {
+    return <div role="status">Loading original PDF…</div>;
+  }
+
+  return (
+    <div
+      data-testid="pdf-page-layer"
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        aspectRatio: `${metrics.width} / ${metrics.height}`,
+      }}
+    >
+      {[...painted.entries()].map(([key, { tile, revision }]) => (
+        <TileCanvas
+          key={key}
+          tile={tile}
+          revision={revision}
+          cache={cacheRef.current}
+          pageWidth={metrics.width}
+          pageHeight={metrics.height}
+        />
+      ))}
+    </div>
+  );
 }
 
-function TileCanvas({ tile, revision, cache, pageWidth, pageHeight }: { tile: PdfTileRequest; revision: number; cache: TileLru | null; pageWidth: number; pageHeight: number }) {
+function TileCanvas({
+  tile,
+  revision,
+  cache,
+  pageWidth,
+  pageHeight,
+}: {
+  tile: PdfTileRequest;
+  revision: number;
+  cache: TileLru | null;
+  pageWidth: number;
+  pageHeight: number;
+}) {
   const ref = useRef<HTMLCanvasElement | null>(null);
+
   useEffect(() => {
     if (!cache) return;
     const bitmap = cache.peek(tile.key);
@@ -290,5 +349,19 @@ function TileCanvas({ tile, revision, cache, pageWidth, pageHeight }: { tile: Pd
       context.drawImage(bitmap, 0, 0);
     }
   }, [tile.key, revision, cache]);
-  return <canvas ref={ref} aria-hidden="true" style={{ position: 'absolute', left: `${tile.x / tile.density / pageWidth * 100}%`, top: `${tile.y / tile.density / pageHeight * 100}%`, width: `${tile.width / tile.density / pageWidth * 100}%`, height: `${tile.height / tile.density / pageHeight * 100}%`, zIndex: tile.density > 4 ? 2 : 1 }} />;
+
+  return (
+    <canvas
+      ref={ref}
+      aria-hidden="true"
+      style={{
+        position: 'absolute',
+        left: `${(tile.x / tile.density / pageWidth) * 100}%`,
+        top: `${(tile.y / tile.density / pageHeight) * 100}%`,
+        width: `${(tile.width / tile.density / pageWidth) * 100}%`,
+        height: `${(tile.height / tile.density / pageHeight) * 100}%`,
+        zIndex: tile.density > 4 ? 2 : 1,
+      }}
+    />
+  );
 }

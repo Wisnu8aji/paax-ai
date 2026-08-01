@@ -1,0 +1,43 @@
+import { describe, expect, it } from 'vitest';
+import { resolveCanonicalThumbnailUrl, deriveCanonicalSheetId } from '../sheet-thumbnail-resolver';
+
+describe('sheet-thumbnail-resolver', () => {
+  it('normalizes raw /drawings/... URL to /api/document-intelligence/drawings/...', () => {
+    const result = resolveCanonicalThumbnailUrl({
+      rawUrl: '/drawings/dem/run-123/pages/0/thumbnail?width=320',
+    });
+    expect(result).toBe('/api/document-intelligence/drawings/dem/run-123/pages/0/thumbnail?width=320');
+  });
+
+  it('normalizes raw /projects/... URL to /api/drawing-intelligence/projects/...', () => {
+    const result = resolveCanonicalThumbnailUrl({
+      rawUrl: '/projects/proj-456/pages/0/thumbnail',
+    });
+    expect(result).toBe('/api/drawing-intelligence/projects/proj-456/pages/0/thumbnail');
+  });
+
+  it('preserves already proxy-prefixed URLs', () => {
+    const result = resolveCanonicalThumbnailUrl({
+      rawUrl: '/api/document-intelligence/drawings/dem/run-123/pages/0/thumbnail?width=320',
+    });
+    expect(result).toBe('/api/document-intelligence/drawings/dem/run-123/pages/0/thumbnail?width=320');
+  });
+
+  it('generates canonical proxy URL from runId and pageIndex when rawUrl is missing', () => {
+    const result = resolveCanonicalThumbnailUrl({
+      runId: 'run-789',
+      pageIndex: 5,
+      width: 320,
+    });
+    expect(result).toBe('/api/document-intelligence/drawings/dem/run-789/pages/5/thumbnail?width=320');
+  });
+
+  it('returns null when neither rawUrl nor (runId + pageIndex) are provided', () => {
+    const result = resolveCanonicalThumbnailUrl({});
+    expect(result).toBeNull();
+  });
+
+  it('derives canonical sheet ID correctly', () => {
+    expect(deriveCanonicalSheetId('run-xyz', 3)).toBe('run-xyz-page-3');
+  });
+});

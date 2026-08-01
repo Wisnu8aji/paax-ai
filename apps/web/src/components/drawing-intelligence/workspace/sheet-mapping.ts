@@ -10,6 +10,8 @@ function optionalNumber(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
+import { resolveCanonicalThumbnailUrl } from './sheet-thumbnail-resolver';
+
 /** Maps only fields returned by DEM; unknown stays null and is never inferred. */
 export function mapProjectDemSheet(sheet: ProjectDemSheetResponse): ProjectSheetMapping {
   return {
@@ -26,12 +28,11 @@ export function mapProjectDemSheet(sheet: ProjectDemSheetResponse): ProjectSheet
     widthPx: optionalNumber(sheet.width_px),
     heightPx: optionalNumber(sheet.height_px),
     status: sheet.status,
-    imageUrl: (() => {
-      const url = optionalString(sheet.thumbnail_url);
-      if (!url) return null;
-      if (url.startsWith('/projects/')) return `/api/drawing-intelligence${url}`;
-      if (url.startsWith('/drawings/')) return `/api/document-intelligence${url}`;
-      return url;
-    })(),
+    imageUrl: resolveCanonicalThumbnailUrl({
+      rawUrl: sheet.thumbnail_url,
+      runId: sheet.run_id,
+      pageIndex: sheet.page_index,
+      fallback: false,
+    }),
   };
 }

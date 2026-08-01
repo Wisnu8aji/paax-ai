@@ -1,4 +1,5 @@
 import type { Discipline, DrawingType, Sheet } from './di-types';
+import { resolveCanonicalThumbnailUrl } from './sheet-thumbnail-resolver';
 
 export interface LevelDisplay {
   floorId: string;
@@ -124,6 +125,10 @@ export function mapRawDemSheetToSheet(item: any): Sheet {
     analyzedOn: item.analyzed_on || item.completed_at || null,
     aiConfidence: typeof item.confidence === 'number' ? Math.round(item.confidence <= 1 ? item.confidence * 100 : item.confidence) : null,
     geometry: { widthMm: sourceWidth, heightMm: sourceHeight, gridX: [], gridY: [], rooms: [] },
-    imageUrl: item.thumbnail_url || item.imageUrl || (item.run_id && item.page_index !== undefined ? `/api/document-intelligence/drawings/dem/${item.run_id}/pages/${item.page_index}/thumbnail?width=320` : null),
+    imageUrl: resolveCanonicalThumbnailUrl({
+      rawUrl: item.thumbnail_url || item.imageUrl,
+      runId: item.run_id,
+      pageIndex: item.page_index,
+    }),
   };
 }

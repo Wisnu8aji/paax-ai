@@ -88,18 +88,15 @@ function SheetMenu({ onAction }: { onAction: (label: string) => void }) {
   );
 }
 
+import { CanonicalSheetThumbnail } from './canonical-sheet-thumbnail';
+
 function GalleryCard({ sheet, showTitles, onToast }: { sheet: Sheet; showTitles: boolean; onToast: (m: string) => void }) {
   const { state, dispatch } = useWorkspace();
-  const [imageError, setImageError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
 
   const checked = state.selectedSheetIds.includes(sheet.id);
   const needsReview = sheet.status === 'needs-review' || sheet.reviewIssueCount > 0;
 
   const mapping = state.mappedSheets.find((candidate) => candidate.id === sheet.id);
-  const imageUrl = sheet.imageUrl || mapping?.imageUrl || (sheet.runId && sheet.pageIndex !== undefined ? `/api/document-intelligence/drawings/dem/${sheet.runId}/pages/${sheet.pageIndex}/thumbnail?width=320` : null);
-
-  const effectiveUrl = imageUrl && retryKey > 0 ? `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}_r=${retryKey}` : imageUrl;
 
   return (
     <div
@@ -117,47 +114,13 @@ function GalleryCard({ sheet, showTitles, onToast }: { sheet: Sheet; showTitles:
       }}
     >
       <div style={{ position: 'relative', aspectRatio: '16 / 10', background: 'var(--di-paper)', overflow: 'hidden' }}>
-        {effectiveUrl && !imageError ? (
-          <img
-            src={effectiveUrl}
-            alt={sheet.title || sheet.code}
-            loading="lazy"
-            decoding="async"
-            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <div
-            role="img"
-            aria-label="Gambar sheet tidak tersedia"
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              height: '100%',
-              padding: 12,
-              background: 'var(--di-paper)',
-              color: 'var(--di-text2)',
-              fontSize: 11,
-              textAlign: 'center',
-            }}
-          >
-            <span>Gambar sheet tidak dapat dimuat</span>
-            <button
-              className="di-btn di-btn-ghost"
-              style={{ height: 22, fontSize: 10, padding: '0 8px' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setImageError(false);
-                setRetryKey((k) => k + 1);
-              }}
-            >
-              Coba lagi
-            </button>
-          </div>
-        )}
+        <CanonicalSheetThumbnail
+          runId={sheet.runId}
+          pageIndex={sheet.pageIndex}
+          rawUrl={sheet.imageUrl || mapping?.imageUrl}
+          alt={sheet.title || sheet.code}
+          height="100%"
+        />
         <input
           type="checkbox"
           checked={checked}
