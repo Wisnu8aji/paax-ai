@@ -1,4 +1,11 @@
-# Final Audit B2 — Definition-of-Done Evidence Ledger
+> [!WARNING]
+> **SUPERSEDED AUDIT REPORT**  
+> Laporan audit lama ini telah digantikan oleh audit runtime live terbaru pada **1 Agustus 2026**.  
+> Silakan merujuk ke laporan audit final yang sah:
+> - [PHASE_3_MISSION_AGENTIC_INTEGRATION_FEEDBACK.md](file:///G:/paax-ai-contextual-integration/PHASE_3_MISSION_AGENTIC_INTEGRATION_FEEDBACK.md)
+> - [FINAL_FEEDBACK1_AND_SUPER_BIG_PLAN_ACCEPTANCE_AUDIT.md](file:///G:/paax-ai-contextual-integration/FINAL_FEEDBACK1_AND_SUPER_BIG_PLAN_ACCEPTANCE_AUDIT.md)
+
+# PAAX Drawing Intelligence Final Audit B2 Evidence Ledger
 
 Audit date: 2026-07-19. Read-only, Graphify-first. Status is deliberately conservative: **not a completion declaration**.
 

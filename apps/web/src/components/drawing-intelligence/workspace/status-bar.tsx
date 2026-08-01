@@ -12,11 +12,11 @@ export function normalizeStatusMessage(value: unknown): string {
   return typeof value === 'string' && value.trim() ? value : 'Workspace ready';
 }
 
-function statusDotColor(message: string, running: boolean): string {
-  const m = message.toLowerCase();
+export function statusDotColor(message: unknown, running?: boolean): string {
+  const m = typeof message === 'string' ? message.toLowerCase() : '';
   if (running || m.includes('progress') || m.includes('uploading')) return 'var(--di-accent)';
   if (m.includes('ready') || m.includes('complete') || m.includes('sent')) return 'var(--di-ok)';
-  if (m.includes('cancel') || m.includes('fail')) return 'var(--di-err)';
+  if (m.includes('cancel') || m.includes('fail') || m.includes('err')) return 'var(--di-err)';
   return 'var(--di-info)';
 }
 

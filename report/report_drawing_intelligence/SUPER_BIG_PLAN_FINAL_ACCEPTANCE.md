@@ -1,3 +1,10 @@
+> [!WARNING]
+> **SUPERSEDED AUDIT REPORT**  
+> Laporan audit lama ini telah digantikan oleh audit runtime live terbaru pada **1 Agustus 2026**.  
+> Silakan merujuk ke laporan audit final yang sah:
+> - [PHASE_3_MISSION_AGENTIC_INTEGRATION_FEEDBACK.md](file:///G:/paax-ai-contextual-integration/PHASE_3_MISSION_AGENTIC_INTEGRATION_FEEDBACK.md)
+> - [FINAL_FEEDBACK1_AND_SUPER_BIG_PLAN_ACCEPTANCE_AUDIT.md](file:///G:/paax-ai-contextual-integration/FINAL_FEEDBACK1_AND_SUPER_BIG_PLAN_ACCEPTANCE_AUDIT.md)
+
 # PAAX Super Big Plan Final Whole-System Acceptance Matrix
 
 **Document Status:** `IN_PROGRESS` (Phase 11C Real-Stack Browser Complete)
