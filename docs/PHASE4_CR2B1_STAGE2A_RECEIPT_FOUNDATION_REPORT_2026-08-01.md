@@ -32,3 +32,10 @@ The migration preservation test applies the migration to a pre-revision SQLite m
 - `migrate_portable_schema.py` now detects the verified historical state where the 0038 recommendation table exists but Alembic is still stamped 0037. It validates the table shape before stamping 0038 and applying 0039; unknown partial states fail closed.
 
 Portable-copy proof: a copy of `G:\PAAX-Data\db\portable.sqlite` migrated from the verified partial-0038 state to `0039_calculation_receipts`, retained its project row, and gained both `calculation_receipts` and mapping `revision`.
+
+## Active portable migration and restart proof
+
+- Backup: `G:\PAAX-Data\backups\phase4-stage2b-before-0039-20260801.zip` (SHA-256 `14152c7f5d97c4e00ecf34df1827ede098008ae740ce72109c6a408f2002383c`).
+- The active portable database migrated to `0039_calculation_receipts`; `PRAGMA integrity_check` returned `ok`.
+- No PLHUT receipt was created during migration or verification: active receipt count remains `0`.
+- The live civil-work-items API, called through the local web proxy credential, reports `engine_verified=0`, `measurement_verified=1`, and zero receipt-backed items. The existing 4.5 m fact therefore remains a measurement fact, not an invented engine result.
