@@ -242,6 +242,16 @@ class DemPage(Base):
     error = Column(String, nullable=True)
     input_hash = Column(String, nullable=True)
     result = Column(JSON, nullable=True)
+    # Canonical package-index projection.  Written only by an explicit
+    # materialization job; read endpoints must never populate these fields.
+    paax_classification = Column(String, nullable=True)
+    paax_discipline = Column(String, nullable=True)
+    paax_level = Column(String, nullable=True)
+    paax_non_level_category = Column(String, nullable=True)
+    paax_classification_status = Column(String, nullable=True)
+    paax_classification_source = Column(String, nullable=True)
+    paax_rule_version = Column(String, nullable=True)
+    paax_review_decision = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

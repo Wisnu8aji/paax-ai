@@ -793,27 +793,23 @@ async def get_drawing_package_index(
             raise HTTPException(status_code=403, detail="not a member of this project")
         raise
 
-    analysis_key = f"drawing-intelligence/runs/{run_id}/package-analysis.json"
     try:
-        analysis = DrawingPackageAnalysis.model_validate_json(ARTIFACT_STORE.get(analysis_key))
-        index = build_drawing_package_index(analysis)
-        index.run_id = run_id
-    except ArtifactUnavailable:
+        canonical = await db_client.get_canonical_package_index(project_id, run_id)
         entries = [
             MultiAxisSheetEntry(
-                page_index=i,
-                page_number=i + 1,
-                sheet_code="unknown",
-                sheet_title=f"Sheet {i + 1}",
-                level=LevelAxis(value="unknown", status=AxisStatus.UNKNOWN),
-                view=ViewAxis(value="unknown", status=AxisStatus.UNKNOWN),
-                classification=ClassificationAxis(value="unknown", status=AxisStatus.UNKNOWN),
+                page_index=page["page_index"],
+                page_number=page["page_number"],
+                sheet_code=page.get("sheet_code", "unknown"),
+                sheet_title=page.get("title", "unknown"),
+                level=LevelAxis(value=page.get("level", "unknown"), status=AxisStatus.UNKNOWN if page.get("level") == "UNASSIGNED" else AxisStatus.CONFIRMED),
+                view=ViewAxis(value=page.get("classification", "unknown"), status=AxisStatus.UNKNOWN if page.get("classification_status") == "needs_review" else AxisStatus.CONFIRMED),
+                classification=ClassificationAxis(value=page.get("classification", "unknown"), status=AxisStatus.UNKNOWN if page.get("classification_status") == "needs_review" else AxisStatus.CONFIRMED),
                 revision=RevisionAxis(value="unknown", status=AxisStatus.UNKNOWN),
                 zone=ZoneAxis(value="unknown", status=AxisStatus.UNKNOWN),
-                needs_review=True,
-                review_reasons=["package_analysis_pending"],
+                needs_review=page.get("classification_status") == "needs_review",
+                review_reasons=["canonical_package_index_needs_review"] if page.get("classification_status") == "needs_review" else [],
             )
-            for i in range(run.get("total_pages", 0))
+            for page in canonical["pages"]
         ]
         index = DrawingPackageIndex(
             package_id=f"run-{run_id}",
@@ -822,9 +818,11 @@ async def get_drawing_package_index(
             document_sha256=run.get("document_hash", ""),
             total_pages=len(entries),
             entries=entries,
-            unknown_axis_count=len(entries) * 5,
-            needs_review_count=len(entries),
+            unknown_axis_count=sum(3 for entry in entries if entry.needs_review),
+            needs_review_count=sum(1 for entry in entries if entry.needs_review),
         )
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(status_code=exc.response.status_code, detail="canonical package index is unavailable") from exc
 
     filtered_entries = index.entries
     if level:

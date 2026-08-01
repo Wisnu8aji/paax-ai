@@ -681,7 +681,7 @@ async def get_project_source_pdf(id: str):
 
 
 from functools import lru_cache
-from .package_index import build_package_index_from_dem_pages
+from .package_index import build_package_index_from_dem_pages, build_package_index_from_db
 from .civil_work_items_live import build_live_civil_work_items
 
 @lru_cache(maxsize=128)
@@ -739,19 +739,62 @@ async def get_page_thumbnail(id: str, page_index: int, width: int = Query(400, g
     "/projects/{id}/drawing-intelligence/package-analysis",
     dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
 )
-async def get_project_package_analysis(id: str, db: AsyncSession = Depends(get_db)):
-    res = await db.execute(
-        select(models.DemPage)
-        .join(models.DemRun, models.DemRun.id == models.DemPage.run_id)
-        .where(models.DemRun.project_id == id)
-        .order_by(models.DemPage.page_index.asc())
-    )
-    pages = res.scalars().all()
-    if not pages:
-        raise HTTPException(status_code=404, detail="No DEM pages found for package analysis")
-    dem_pages_data = [{"page_index": p.page_index, "result": p.result} for p in pages]
-    manifest = build_package_index_from_dem_pages(dem_pages_data, id)
+async def get_project_package_analysis(id: str, run_id: Optional[str] = None, db: AsyncSession = Depends(get_db)):
+    # Canonical persisted index only.  This read endpoint never classifies or writes.
+    data_root_str = os.environ.get("PAAX_DATA_ROOT", "G:\\PAAX-Data")
+    db_path = Path(data_root_str) / "db" / "portable.sqlite"
+    if not db_path.is_file():
+        raise HTTPException(status_code=503, detail="Canonical package index store is unavailable")
+
+    try:
+        manifest = build_package_index_from_db(db_path, id, run_id)
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
     return manifest
+
+
+@app.post(
+    "/projects/{id}/drawing-intelligence/package-analysis/materialize",
+    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+)
+async def materialize_project_package_analysis(
+    id: str,
+    request: schemas.PackageIndexMaterializeRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Write the canonical index for one explicitly-scoped DEM run.
+
+    The read endpoint above is intentionally side-effect free.  Existing human
+    correction decisions are preserved during re-materialization.
+    """
+    run = (await db.execute(select(models.DemRun).where(
+        models.DemRun.id == request.run_id,
+        models.DemRun.project_id == id,
+    ))).scalars().first()
+    if run is None:
+        raise HTTPException(status_code=404, detail="DEM run is not part of this project")
+    pages = (await db.execute(select(models.DemPage).where(
+        models.DemPage.run_id == request.run_id,
+    ).order_by(models.DemPage.page_index))).scalars().all()
+    if not pages:
+        raise HTTPException(status_code=409, detail="DEM run has no pages to materialize")
+    manifest = build_package_index_from_dem_pages(
+        [{"page_index": page.page_index, "status": page.status, "result": page.result} for page in pages], id,
+    )
+    by_page = {entry["page_index"]: entry for entry in manifest["pages"]}
+    for page in pages:
+        entry = by_page[page.page_index]
+        if page.paax_review_decision in {"approved", "corrected"}:
+            continue
+        page.paax_classification = entry["classification"]
+        page.paax_discipline = entry["discipline"]
+        page.paax_level = entry["level"]
+        page.paax_non_level_category = entry["non_level_category"]
+        page.paax_classification_status = entry["classification_status"]
+        page.paax_classification_source = "keyword_rules_v1"
+        page.paax_rule_version = "keyword_rules_v1"
+    await db.commit()
+    return {"project_id": id, "run_id": str(request.run_id), "materialized_pages": len(pages)}
 
 
 def _load_civil_work_items(project_id: str) -> dict[str, Any]:

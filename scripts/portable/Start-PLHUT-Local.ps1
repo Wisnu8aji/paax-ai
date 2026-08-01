@@ -28,6 +28,22 @@ try {
 $keyFile = Join-Path $runtimeDir "internal-service.key"
 if (-not (Test-Path $keyFile)) { [IO.File]::WriteAllText($keyFile, ([guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N"))) }
 
+# The runtime key is deliberately a file-only secret.  The launcher injects it
+# into the child process environment block below; it is never serialised into a
+# batch file, command line, manifest, or log.  Windows supports a user-only DACL
+# for this local key file, so fail closed if that cannot be applied.
+try {
+    $keyAcl = Get-Acl -LiteralPath $keyFile
+    $keyAcl.SetAccessRuleProtection($true, $false)
+    foreach ($rule in @($keyAcl.Access)) { [void]$keyAcl.RemoveAccessRule($rule) }
+    $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+    $keyRule = New-Object System.Security.AccessControl.FileSystemAccessRule($currentUser, "FullControl", "Allow")
+    $keyAcl.SetAccessRule($keyRule)
+    Set-Acl -LiteralPath $keyFile -AclObject $keyAcl
+} catch {
+    throw "Tidak dapat menerapkan ACL user-only pada runtime key file. Startup dihentikan: $($_.Exception.Message)"
+}
+
 $env:PYTHONUTF8="1"
 $env:PAAX_REPO_ROOT=$repoRoot
 $env:PAAX_COMMIT=$gitCommit
@@ -90,19 +106,54 @@ function Start-ServiceProcess([string]$Name,[string]$FilePath,[string[]]$Argumen
 
     $outLog = Join-Path $runtimeDir "$Name.out.log"
     $errLog = Join-Path $runtimeDir "$Name.err.log"
-    $cmdLine = "cmd.exe /c `"`"$FilePath`" " + ($Arguments -join " ") + " > `"$outLog`" 2> `"$errLog`"`""
 
-    $result = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{
-        CommandLine = $cmdLine
-        CurrentDirectory = $WorkingDirectory
+    # Remove stale non-secret launcher artifacts left by the rejected Phase 4
+    # attempt.  A service is started directly with ProcessStartInfo so its
+    # environment block exists only in memory.
+    Remove-Item (Join-Path $runtimeDir "$Name.launch.bat") -Force -ErrorAction SilentlyContinue
+
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $psi.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
+    $psi.WorkingDirectory = $WorkingDirectory
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.FileName = $FilePath
+    $psi.Arguments = ($Arguments | ForEach-Object {
+        if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\\"') + '"' } else { $_ }
+    }) -join ' '
+
+    $runtimeEnvironment = @(
+        'PYTHONUTF8','PAAX_REPO_ROOT','PAAX_COMMIT','PAAX_BRANCH','PAAX_DIRTY',
+        'PAAX_PORTABLE_ACTOR_ID','PAAX_DATA_ROOT','PAAX_PORTABLE_DATA_DIR',
+        'INTERNAL_SERVICE_KEY','INTERNAL_SERVICE_SCOPES','DB_API_URL',
+        'NEXT_PUBLIC_DB_API_URL','NEXT_PUBLIC_USE_DB','CORE_ENGINE_URL',
+        'NEXT_PUBLIC_CORE_ENGINE_URL','DOCUMENT_INTELLIGENCE_URL',
+        'NEXT_PUBLIC_DOCUMENT_INTELLIGENCE_URL','AI_ORCHESTRATOR_URL',
+        'PAAX_AGENT_RUN_STORE','PAAX_AGENT_EVENT_JOURNAL','PAAX_AGENT_DEAD_LETTER',
+        'PAAX_TAKEOFF_STORE','PAAX_ENTITY_LINK_STORE'
+    )
+    foreach ($name in $runtimeEnvironment) {
+        $value = [Environment]::GetEnvironmentVariable($name, 'Process')
+        if ([string]::IsNullOrWhiteSpace($value)) { throw "Runtime environment '$name' kosong; startup dihentikan." }
+        $psi.EnvironmentVariables[$name] = $value
     }
 
-    if ($result.ReturnValue -ne 0) {
-        throw "Gagal menjalankan service $Name. WMI ReturnValue: $($result.ReturnValue)"
-    }
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $psi
+    if (-not $process.Start()) { throw "Gagal menjalankan service $Name melalui ProcessStartInfo." }
+    $process.BeginOutputReadLine()
+    $process.BeginErrorReadLine()
+    Register-ObjectEvent -InputObject $process -EventName OutputDataReceived -MessageData $outLog -Action {
+        if ($Event.SourceEventArgs.Data) { Add-Content -LiteralPath $Event.MessageData -Value $Event.SourceEventArgs.Data }
+    } | Out-Null
+    Register-ObjectEvent -InputObject $process -EventName ErrorDataReceived -MessageData $errLog -Action {
+        if ($Event.SourceEventArgs.Data) { Add-Content -LiteralPath $Event.MessageData -Value $Event.SourceEventArgs.Data }
+    } | Out-Null
 
-    Set-Content $pidFile $result.ProcessId
-    Write-Host "Started $Name (PID $($result.ProcessId))"
+    Set-Content -LiteralPath $pidFile -Value $process.Id
+    Write-Host "Started $Name (PID $($process.Id))"
 }
 
 function Wait-Health([string]$Name,[string]$Url,[int]$Seconds=90) {

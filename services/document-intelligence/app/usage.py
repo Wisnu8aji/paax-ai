@@ -5,7 +5,18 @@ from pydantic import BaseModel
 from typing import Optional
 
 DB_API_URL = os.environ.get("DB_API_URL", "http://localhost:8001")
-INTERNAL_KEY = os.environ.get("INTERNAL_SERVICE_KEY", "test-internal-key")
+
+# SECURITY: INTERNAL_SERVICE_KEY must come from environment.
+# No hardcoded fallback — fail-closed outside TESTING=1 mode.
+_raw_key = os.environ.get("INTERNAL_SERVICE_KEY")
+if not _raw_key and os.environ.get("TESTING") != "1":
+    raise RuntimeError(
+        "INTERNAL_SERVICE_KEY is not set. "
+        "Set it via environment before starting document-intelligence. "
+        "In test environments, set TESTING=1."
+    )
+INTERNAL_KEY = _raw_key or "test-internal-key-testing-only"
+
 
 class QuotaCheckResult(BaseModel):
     quota_exceeded: bool

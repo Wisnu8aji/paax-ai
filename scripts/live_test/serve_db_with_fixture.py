@@ -42,6 +42,12 @@ async def bootstrap_plhut() -> dict:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+    # Legacy portable databases created via create_all have no Alembic row.
+    # Audit/stamp/apply explicitly before serving any authenticated request;
+    # package-index readers never perform schema work themselves.
+    from scripts.portable.migrate_portable_schema import migrate
+    migrate(REPO_ROOT, db_file, backup=False)
+
     async with async_session_maker() as session:
         result = await bootstrap_reference_project(
             session=session,

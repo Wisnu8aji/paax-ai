@@ -13,7 +13,9 @@
       "require": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts --clean",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
@@ -23,6 +25,7 @@
   "devDependencies": {
     "@paax/tsconfig": "workspace:*",
     "@types/jest": "^29.5.0",
+    "@types/node": "^22.0.0",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.0",
     "tsup": "^8.0.0",

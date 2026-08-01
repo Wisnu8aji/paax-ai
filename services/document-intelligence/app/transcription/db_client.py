@@ -92,6 +92,16 @@ class DemDbClient:
             response.raise_for_status()
             return response.json()
 
+    async def get_canonical_package_index(self, project_id: str, run_id: str) -> dict:
+        """Read the DB-owned canonical index; this call never asks DI to rebuild it."""
+        async with await self._client() as client:
+            response = await client.get(
+                f"/projects/{project_id}/drawing-intelligence/package-analysis",
+                params={"run_id": run_id},
+            )
+            response.raise_for_status()
+            return response.json()
+
     async def authorize_artifact(self, project_id: str, artifact_key: str, *, actor_id: str, action: str = "read") -> None:
         async with httpx.AsyncClient(base_url=self.base_url, transport=self._transport, headers={"X-Internal-Key": self.internal_key, "X-User-Id": actor_id}) as client:
             path = "artifact-delete-access" if action == "delete" else "artifact-access"

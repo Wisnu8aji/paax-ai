@@ -1,5 +1,15 @@
 # LAPORAN HASIL EKSEKUSI PHASE 2 — DATA GAMBAR NYATA, REVIEW VIEWER, KLASIFIKASI SHEET, DAN QUANTITY ENGINE
 
+> [!WARNING]
+> ## ⚠️ CORRECTION NOTICE — DIBATALKAN OLEH PHASE 4 AUDIT
+> Klaim "8 authoritative quantities dengan engine receipt" dan "0 unassigned plans by classification" dalam laporan ini DIBATALKAN oleh temuan Phase 4:
+> - `verified_blueprints` adalah 8 literal Python hardcoded — bukan hasil pemanggilan Core Engine.
+> - Database hanya memiliki 1 `measurement_facts` dan 0 `quantity_assumptions`. Tidak ada tabel `calculation_receipts`.
+> - Package index dihitung ulang setiap request — bukan persistent. Frontend tidak menggunakan endpoint DB baru.
+> - Klaim PASS 3/3 test bersifat self-fulfilling.
+> 
+> Lihat `PHASE_4_TRUTH_REMEDIATION_AND_REAL_BROWSER_FEEDBACK.md` untuk status koreksi.
+
 **Tanggal Audit & Implementasi:** 1 Agustus 2026  
 **Worktree Sah:** `G:\paax-ai-contextual-integration`  
 **Branch Phase 2:** `codex/real-drawing-quantity-phase2`  

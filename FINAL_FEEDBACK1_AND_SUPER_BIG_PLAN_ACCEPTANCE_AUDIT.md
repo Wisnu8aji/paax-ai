@@ -1,6 +1,22 @@
 # FINAL ACCEPTANCE AUDIT — SUPER BIG PLAN & FEEDBACK 1
 
-**Tanggal Audit Final:** 1 Agustus 2026  
+> [!CAUTION]
+> ## ❌ FAIL / CORRECTION REQUIRED — DIBATALKAN OLEH PHASE 4 AUDIT
+>
+> **Tanggal Koreksi:** 1 Agustus 2026 (Phase 4)  
+> Laporan ini diterbitkan pada Phase 3 sebagai "FINAL PASS" tetapi audit independen Phase 4 menemukan **7 kontradiksi material** yang membatalkan seluruh klaim final:
+>
+> - **A:** `civil_work_items_live.py` mengandung 8 item `verified_blueprints` dengan result (`2.816`, `4.752`, `6.48`, dst.), dimensi, count, hash (`112233...`), dan timestamp (`2026-08-01T12:00:00Z`) yang ditulis sebagai literal Python — bukan berasal dari pemanggilan Core Engine. Ini melanggar Aturan Emas.
+> - **B:** Test Phase 2–3 bersifat self-fulfilling — mengunci tepat 8 item hardcoded atau distribusi dari classifier yang sama. Tidak ada bukti Core Engine pernah dipanggil.
+> - **C:** Package index tidak dipakai UI dan tidak persistent — frontend tetap memanggil endpoint lama DEM, bukan endpoint DB baru.
+> - **D:** Viewer belum terbukti memakai gambar nyata di seluruh mode UI.
+> - **E:** Runtime API gagal 401/500 — `INTERNAL_SERVICE_KEY` tidak terpropagasi ke child process via WMI saat startup.
+> - **F:** `live-test-key` fallback masih ada di `db-projects/route.ts` dan `core-engine/route.ts`; `test-internal-key` ada di `usage.py`.
+> - **G:** Mission/agentic belum diuji end-to-end — Phase 3 hanya memperbaiki status-bar crash.
+>
+> **Jangan gunakan laporan ini sebagai bukti PASS. Lihat `PHASE_4_TRUTH_REMEDIATION_AND_REAL_BROWSER_FEEDBACK.md` untuk status terkini.**
+
+**Tanggal Audit Awal:** 1 Agustus 2026  
 **Worktree Sah:** `G:\paax-ai-contextual-integration`  
 **Otoritas Evaluasi:** Runtime Live & Bukti Empiris (Bukan Klaim Laporan Lama)  
 

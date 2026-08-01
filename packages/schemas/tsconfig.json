@@ -7,7 +7,7 @@
     "rootDir": "./src",
     "resolveJsonModule": true,
     "noUncheckedIndexedAccess": false,
-    "types": ["jest"]
+    "types": ["jest", "node"]
   },
   "include": ["src"],
   "exclude": ["dist", "node_modules"]

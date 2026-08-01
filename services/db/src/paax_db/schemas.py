@@ -375,6 +375,11 @@ class DemPageUpdate(BaseModel):
     result: Optional[dict] = None
 
 
+class PackageIndexMaterializeRequest(BaseModel):
+    """Explicit project/run command; it is never issued by an index reader."""
+    run_id: uuid.UUID
+
+
 class ActiveSheetRevisionResponse(BaseModel):
     revision_id: str
     document_id: str
