@@ -49,7 +49,8 @@ def test_legacy_portable_copy_stamps_baseline_and_applies_0037(tmp_path: Path):
     assert _counts(target) == before_counts
     assert _checksum(target) == before_checksum
     with sqlite3.connect(target) as connection:
-        assert connection.execute("SELECT version_num FROM alembic_version").fetchone()[0] == "0037_package_index_materialization"
+        assert connection.execute("SELECT version_num FROM alembic_version").fetchone()[0] == "0038_agent_review_recommendations"
+        assert connection.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='agent_review_recommendations'").fetchone()
         columns = {row[1] for row in connection.execute("PRAGMA table_info(dem_pages)")}
     assert {"paax_classification", "paax_discipline", "paax_level", "paax_classification_status"} <= columns
 

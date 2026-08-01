@@ -47,16 +47,17 @@ export function createAgentRunsRouter(): Router {
       const base = (process.env.PAAX_DB_SERVICE_URL || process.env.DB_API_URL || '').replace(/\/$/, '');
       const key = process.env.INTERNAL_SERVICE_KEY;
       if (!base || !key) throw new Error('DB service configuration (URL/Key) is required');
-      const response = await fetch(`${base}/projects/${encodeURIComponent(input.projectId)}/project-graph/corrections/${encodeURIComponent(input.proposalId)}/resolve`, {
+      const snapshotId = String((input as any).snapshotId || '').trim();
+      const idempotencyKey = String((input as any).idempotencyKey || '').trim();
+      if (!snapshotId || !idempotencyKey) throw new Error('snapshotId and idempotencyKey are required for review recommendation');
+      const response = await fetch(`${base}/projects/${encodeURIComponent(input.projectId)}/project-graph/recommendations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Internal-Key': key, 'X-User-Id': 'paax-web' },
-        body: JSON.stringify({ status: input.decision === 'approve' ? 'accepted' : 'rejected', resolution_note: input.note || 'AI Agentic Review' })
+        body: JSON.stringify({ snapshot_id: snapshotId, target_type: 'project_graph_correction', target_id: input.proposalId,
+          recommendation: input.decision === 'approve' ? 'recommend_accept' : 'recommend_reject', rationale: input.note || 'Agent recommendation; human review required', evidence_refs: [], agent_run_id: (input as any).agentRunId || null, tool_call_id: (input as any).toolCallId || null, metadata: {}, idempotency_key: idempotencyKey })
       });
       if (response.ok) return await response.json();
-      if (response.status === 404) {
-        return { proposal_id: input.proposalId, decision: input.decision, status: 'reviewed', note: input.note || 'AI Agentic Review' };
-      }
-      throw new Error(`review proposal failed: HTTP ${response.status}`);
+      throw new Error(`review recommendation failed: HTTP ${response.status}`);
     },
     async calculateMeasurementFacts(input) {
       const base = (process.env.PAAX_DB_SERVICE_URL || process.env.DB_API_URL || '').replace(/\/$/, '');

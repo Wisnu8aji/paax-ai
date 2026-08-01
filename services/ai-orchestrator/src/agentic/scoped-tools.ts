@@ -70,20 +70,18 @@ export function createDefaultScopedToolRegistry(): ScopedToolRegistry {
 
   registry.register({
     toolName: 'drawing.review_proposal',
-    description: 'Review an AI fallback proposal and record human decision.',
+    description: 'Write an advisory recommendation for human review; never resolve a proposal.',
     riskTier: 'medium',
-    requiresApproval: false,
+    requiresApproval: true,
     handler: async (input: unknown, binding: ProjectContextBinding) => {
       const payload = (input as Record<string, unknown>) ?? {};
       if (payload.projectId && payload.projectId !== binding.projectId) {
         throw new Error(`Project binding mismatch: expected ${binding.projectId}, got ${payload.projectId}`);
       }
-      return {
-        projectId: binding.projectId,
-        proposalId: payload.proposalId ?? 'prop-001',
-        decision: payload.decision ?? 'accepted',
-        status: 'review_recorded',
-      };
+      const proposalId = String(payload.proposalId ?? '').trim();
+      if (!proposalId) throw new Error('proposalId is required for human review recommendation');
+      const decision = payload.decision === 'reject' ? 'recommend_reject' : payload.decision === 'approve' ? 'recommend_accept' : 'needs_human_review';
+      return { projectId: binding.projectId, proposalId, recommendation: decision, status: 'pending_human_review' };
     },
   });
 

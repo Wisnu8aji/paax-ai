@@ -1407,6 +1407,43 @@ async def list_project_graph_corrections(
     return corrections
 
 
+async def _recommendation_target_exists(db: AsyncSession, *, project_id: str, snapshot_id: str, target_type: str, target_id: str) -> bool:
+    table = {
+        "project_graph_correction": models.ProjectGraphCorrection,
+        "rab_bridge_proposal": models.RabBridgeProposal,
+        "rab_materialization_mapping": models.RabMaterializationMapping,
+    }[target_type]
+    return (await db.execute(select(table).where(
+        table.id == target_id, table.project_id == project_id, table.snapshot_id == snapshot_id,
+    ))).scalars().first() is not None
+
+
+@app.post("/projects/{id}/project-graph/recommendations", response_model=schemas.AgentReviewRecommendationResponse,
+          status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker(["estimator", "pm", "owner"], service_scope="agent:propose"))])
+async def create_agent_review_recommendation(id: str, request: schemas.AgentReviewRecommendationCreate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    if not await _recommendation_target_exists(db, project_id=id, snapshot_id=request.snapshot_id, target_type=request.target_type, target_id=request.target_id):
+        raise HTTPException(status_code=404, detail="recommendation target is not in this project snapshot")
+    existing = (await db.execute(select(models.AgentReviewRecommendation).where(
+        models.AgentReviewRecommendation.project_id == id,
+        models.AgentReviewRecommendation.idempotency_key == request.idempotency_key,
+    ))).scalars().first()
+    if existing:
+        return existing
+    row = models.AgentReviewRecommendation(project_id=id, created_by_service_identity=user.uid, **request.model_dump())
+    db.add(row)
+    _audit_project_action(db, project_id=id, actor=user.uid, action="agent.review.recommended", target_id=row.recommendation_id)
+    await db.commit(); await db.refresh(row)
+    return row
+
+
+@app.get("/projects/{id}/project-graph/recommendations", response_model=List[schemas.AgentReviewRecommendationResponse],
+         dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))])
+async def list_agent_review_recommendations(id: str, snapshot_id: Optional[str] = None, db: AsyncSession = Depends(get_db)):
+    query = select(models.AgentReviewRecommendation).where(models.AgentReviewRecommendation.project_id == id)
+    if snapshot_id: query = query.where(models.AgentReviewRecommendation.snapshot_id == snapshot_id)
+    return (await db.execute(query.order_by(models.AgentReviewRecommendation.created_at.desc()))).scalars().all()
+
+
 @app.post(
     "/projects/{id}/project-graph/corrections/{correction_id}/resolve",
     response_model=schemas.ProjectGraphCorrectionResponse,

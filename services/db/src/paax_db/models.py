@@ -675,6 +675,26 @@ class ProjectGraphCorrectionAudit(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
+class AgentReviewRecommendation(Base):
+    __tablename__ = "agent_review_recommendations"
+    recommendation_id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    snapshot_id = Column(String, nullable=False, index=True)
+    target_type = Column(String, nullable=False)
+    target_id = Column(String, nullable=False)
+    recommendation = Column(String, nullable=False)
+    rationale = Column(Text, nullable=False)
+    evidence_refs = Column(JSON_DOCUMENT, nullable=False, default=list)
+    agent_run_id = Column(String, nullable=True)
+    tool_call_id = Column(String, nullable=True)
+    metadata_json = Column("metadata", JSON_DOCUMENT, nullable=False, default=dict)
+    created_by_service_identity = Column(String, nullable=False)
+    idempotency_key = Column(String, nullable=False)
+    superseded_by = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    __table_args__ = (UniqueConstraint("project_id", "idempotency_key", name="uq_agent_review_recommendation_idempotency"),)
+
+
 class MeasurementFact(Base):
     """Immutable, typed quantity input scoped to one project graph snapshot."""
     __tablename__ = "measurement_facts"

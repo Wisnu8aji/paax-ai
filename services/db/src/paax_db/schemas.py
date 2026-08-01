@@ -527,6 +527,28 @@ class ProjectGraphCorrectionResponse(ProjectGraphCorrectionCreate):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AgentReviewRecommendationCreate(BaseModel):
+    snapshot_id: str
+    target_type: Literal["project_graph_correction", "rab_bridge_proposal", "rab_materialization_mapping"]
+    target_id: str
+    recommendation: Literal["recommend_accept", "recommend_reject", "needs_human_review"]
+    rationale: str = Field(min_length=1, max_length=4000)
+    evidence_refs: List[str] = Field(default_factory=list)
+    agent_run_id: Optional[str] = None
+    tool_call_id: Optional[str] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    idempotency_key: str = Field(min_length=1, max_length=255)
+
+
+class AgentReviewRecommendationResponse(AgentReviewRecommendationCreate):
+    recommendation_id: str
+    project_id: str
+    created_by_service_identity: str
+    superseded_by: Optional[str] = None
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ReviewReason(BaseModel):
     code: str
     message: str

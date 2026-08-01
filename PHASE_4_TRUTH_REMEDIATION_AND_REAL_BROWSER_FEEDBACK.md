@@ -110,3 +110,10 @@ PHASE 4 CR2A FAIL/BLOCKED — DO NOT CONTINUE
 - Final checks: `23 passed, 0 skipped`, web production build passes, schema typecheck passes, credential scanner passes (432 files), DI dummy gate passes, and Graphify is updated after final source changes.
 
 PHASE 4 CR2A PASS — READY FOR CR2B UI/AGENTIC/BROWSER
+
+## CORRECTION ROUND 2B1 — STAGE 1A RECOMMENDATION PERSISTENCE CHECKPOINT
+
+- Added official migration `0038_agent_review_recommendations` with immutable, project/snapshot-scoped advisory recommendations and project/idempotency uniqueness.
+- Added aligned ORM, Pydantic, and `@paax/schemas` Zod contracts plus DB create/list endpoints. Target identity must resolve in the supplied project snapshot; a recommendation never mutates the target.
+- Agent review routing now writes an advisory recommendation and fails closed on upstream errors. The direct correction resolve call, synthetic 404 success object, synthetic proposal ID, and default accepted decision were removed.
+- Evidence: portable-copy migration passes; focused agent tool tests pass (8); schemas typecheck passes; credential scanner passes. Full CR2B1 receipt, service identity registry, live workflow, and restart gates remain intentionally pending Stage 1B/2.

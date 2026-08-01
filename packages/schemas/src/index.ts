@@ -3613,3 +3613,15 @@ export const CoverageRowSchema = z.object({
   reason: z.string().nullable().optional(),
 });
 export type CoverageRowSchemaType = z.infer<typeof CoverageRowSchema>;
+
+export const AgentReviewRecommendationTargetSchema = z.enum(["project_graph_correction", "rab_bridge_proposal", "rab_materialization_mapping"]);
+export const AgentReviewRecommendationSchema = z.object({
+  recommendation_id: z.string().uuid(), project_id: z.string().min(1), snapshot_id: z.string().min(1),
+  target_type: AgentReviewRecommendationTargetSchema, target_id: z.string().min(1),
+  recommendation: z.enum(["recommend_accept", "recommend_reject", "needs_human_review"]),
+  rationale: z.string().min(1), evidence_refs: z.array(z.string()).default([]), agent_run_id: z.string().nullable().optional(),
+  tool_call_id: z.string().nullable().optional(), metadata: z.record(z.unknown()).default({}),
+  idempotency_key: z.string().min(1), created_by_service_identity: z.string().min(1),
+  superseded_by: z.string().nullable().optional(), created_at: rfc3339TimestampSchema,
+});
+export type AgentReviewRecommendation = z.infer<typeof AgentReviewRecommendationSchema>;
