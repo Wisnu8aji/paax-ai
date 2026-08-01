@@ -24,6 +24,8 @@ class FakeWorker implements PdfTileWorker {
   }
 }
 
+const mockPdfBuffer = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37]).buffer;
+
 const request = {
   documentKey: 'run-1:A-101',
   pageNumber: 1,
@@ -38,7 +40,7 @@ describe('createPdfTilePool', () => {
       workers.push(worker);
       return worker;
     } });
-    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' });
+    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
     workers.forEach((worker) => worker.emit({ type: 'document-ready', documentKey: request.documentKey, metrics: { width: 841.89, height: 595.28, rotation: 0 } }));
 
     await expect(opening).resolves.toEqual({ width: 841.89, height: 595.28, rotation: 0 });
@@ -53,7 +55,7 @@ describe('createPdfTilePool', () => {
       return worker;
     } });
 
-    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' });
+    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
     expect(workers).toHaveLength(3);
     workers.forEach((worker) => worker.emit({ type: 'document-ready', documentKey: request.documentKey }));
     await opening;
@@ -84,7 +86,7 @@ describe('createPdfTilePool', () => {
       workers.push(worker);
       return worker;
     } });
-    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' });
+    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
     workers.forEach((w) => w.emit({ type: 'document-ready', documentKey: request.documentKey }));
     await opening;
 
@@ -119,7 +121,7 @@ describe('createPdfTilePool', () => {
       workers.push(worker);
       return worker;
     } });
-    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' });
+    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
     workers.forEach((w) => w.emit({ type: 'document-ready', documentKey: request.documentKey }));
     await opening;
 
@@ -144,7 +146,7 @@ describe('createPdfTilePool', () => {
       workers.push(worker);
       return worker;
     } });
-    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' });
+    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
     workers.forEach((w) => w.emit({ type: 'document-ready', documentKey: request.documentKey }));
     await opening;
 
@@ -178,7 +180,7 @@ describe('createPdfTilePool', () => {
       workers.push(worker);
       return worker;
     } });
-    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' });
+    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
     workers.forEach((w) => w.emit({ type: 'document-ready', documentKey: request.documentKey }));
     await opening;
 
@@ -194,7 +196,7 @@ describe('createPdfTilePool', () => {
     pool.dispose();
   });
 
-  it('rejects untrusted source URLs before creating a worker and shares document-open failures', async () => {
+  it('rejects invalid or empty ArrayBuffer data before creating a worker and shares document-open failures', async () => {
     const workers: FakeWorker[] = [];
     const pool = createPdfTilePool({ workerFactory: () => {
       const worker = new FakeWorker();
@@ -202,11 +204,11 @@ describe('createPdfTilePool', () => {
       return worker;
     } });
 
-    await expect(pool.open({ documentKey: 'bad', pageNumber: 1, url: 'https://example.test/thumbnail.png' })).rejects.toThrow('authorised artifact URL');
+    await expect(pool.open({ documentKey: 'bad', pageNumber: 1, data: new ArrayBuffer(0) })).rejects.toThrow('non-empty ArrayBuffer');
     expect(workers).toHaveLength(0);
 
-    const first = pool.open({ documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' });
-    const second = pool.open({ documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' });
+    const first = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
+    const second = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
     workers.forEach((worker) => worker.emit({ type: 'document-error', documentKey: request.documentKey, message: 'bad pdf' }));
 
     await expect(first).rejects.toThrow('bad pdf');
@@ -221,7 +223,7 @@ describe('createPdfTilePool', () => {
       workers.push(worker);
       return worker;
     } });
-    const source = { documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' };
+    const source = { documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer };
     const first = pool.open(source);
     workers[0].emit({ type: 'document-error', documentKey: request.documentKey, message: 'bad pdf' });
 
@@ -241,7 +243,7 @@ describe('createPdfTilePool', () => {
       workers.push(worker);
       return worker;
     } });
-    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' });
+    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
 
     workers[0].emitError('worker crashed');
 
@@ -256,7 +258,7 @@ describe('createPdfTilePool', () => {
       workers.push(worker);
       return worker;
     } });
-    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' });
+    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
     workers.forEach((worker) => worker.emit({ type: 'document-ready', documentKey: request.documentKey }));
     await opening;
     const first = pool.request(request);
@@ -276,7 +278,7 @@ describe('createPdfTilePool', () => {
       workers.push(worker);
       return worker;
     } });
-    const source = { documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' };
+    const source = { documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer };
     const first = pool.open(source);
     workers[0].emitError('worker crashed');
     await expect(first).rejects.toThrow('worker crashed');
@@ -296,7 +298,7 @@ describe('createPdfTilePool', () => {
       workers.push(worker);
       return worker;
     } });
-    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, url: '/api/document-intelligence/drawings/dem/run-1/artifact?token=signed' });
+    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
     workers.forEach((worker) => worker.emit({ type: 'document-ready', documentKey: request.documentKey }));
     await opening;
     const pending = pool.request(request);

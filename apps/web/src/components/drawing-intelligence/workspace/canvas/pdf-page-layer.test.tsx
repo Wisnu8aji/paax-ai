@@ -30,6 +30,12 @@ vi.mock('../../drawing-intelligence-api', async (importOriginal: () => Promise<t
   };
 });
 
+vi.mock('./pdf-binary-cache', () => ({
+  fetchPdfBinary: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37]).buffer),
+  clearPdfBinaryCache: vi.fn(),
+  validatePdfMagicHeader: vi.fn(),
+}));
+
 vi.mock('./pdf-tile-pool', () => {
   return {
     createPdfTilePool: vi.fn(() => ({
@@ -43,6 +49,7 @@ vi.mock('./pdf-tile-pool', () => {
     })),
   };
 });
+
 
 describe('Artifact Expiry Normalization', () => {
   it('artifact expires_at accepts ISO string, epoch seconds number, epoch seconds numeric string, epoch milliseconds number/string, boundary cases, and rejects invalid/ambiguous input', () => {
@@ -594,95 +601,45 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
     expect(pool2.request).toHaveBeenCalled();
   });
 
-  it('does not request tiles during signed URL refresh open pending gap when viewport changes', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-07-26T12:00:00.000Z'));
-    try {
-      const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
-      const now = Date.now();
-      mockFetchArtifact.mockResolvedValueOnce({
-        url: '/api/document-intelligence/drawings/dem/run-refresh/artifact?token=first',
-        expiresAt: new Date(now + 120_000).toISOString(),
-      });
+  it('single-flight binary transport prevents redundant signed URL refresh loops during canvas rendering', async () => {
+    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
+    mockFetchArtifact.mockResolvedValue({
+      url: '/api/document-intelligence/drawings/dem/run-refresh/artifact?token=first',
+      expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    });
 
-      let resolveRefreshOpen!: (m: any) => void;
-      const refreshOpenPromise = new Promise<any>((res) => { resolveRefreshOpen = res; });
+    const poolInstance = {
+      open: vi.fn().mockResolvedValue({ width: 1000, height: 800, rotation: 0 }),
+      request: vi.fn().mockReturnValue({
+        promise: new Promise(() => {}),
+        cancel: vi.fn(),
+      }),
+      close: vi.fn(),
+      dispose: vi.fn(),
+    };
+    vi.mocked(createPdfTilePool).mockReturnValueOnce(poolInstance as any);
 
-      const poolInstance = {
-        open: vi.fn()
-          .mockResolvedValueOnce({ width: 1000, height: 800, rotation: 0 })
-          .mockReturnValueOnce(refreshOpenPromise),
-        request: vi.fn().mockReturnValue({
-          promise: new Promise(() => {}),
-          cancel: vi.fn(),
-        }),
-        close: vi.fn(),
-        dispose: vi.fn(),
-      };
-      vi.mocked(createPdfTilePool).mockReturnValueOnce(poolInstance as any);
+    const viewport1 = { x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 };
+    render(
+      <PdfPageLayer
+        runId="run-refresh"
+        pageIndex={0}
+        viewport={viewport1}
+        fallbackWidth={800}
+        fallbackHeight={600}
+      />
+    );
 
-      const viewport1 = { x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 };
-      const { rerender } = render(
-        <PdfPageLayer
-          runId="run-refresh"
-          pageIndex={0}
-          viewport={viewport1}
-          fallbackWidth={800}
-          fallbackHeight={600}
-        />
-      );
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
 
-      await act(async () => {
-        await Promise.resolve();
-        await Promise.resolve();
-      });
-
-      const initialRequestCount = poolInstance.request.mock.calls.length;
-      expect(initialRequestCount).toBeGreaterThan(0);
-
-      mockFetchArtifact.mockResolvedValueOnce({
-        url: '/api/document-intelligence/drawings/dem/run-refresh/artifact?token=second',
-        expiresAt: new Date(now + 240_000).toISOString(),
-      });
-
-      await act(async () => {
-        vi.advanceTimersByTime(60_000);
-        await Promise.resolve();
-        await Promise.resolve();
-      });
-
-      expect(poolInstance.close).toHaveBeenCalledWith('run-refresh:0');
-      expect(poolInstance.open).toHaveBeenCalledTimes(2);
-
-      const viewport2 = { x: 0.2, y: 0.2, width: 0.5, height: 0.5, zoom: 1, dpr: 1 };
-      rerender(
-        <PdfPageLayer
-          runId="run-refresh"
-          pageIndex={0}
-          viewport={viewport2}
-          fallbackWidth={800}
-          fallbackHeight={600}
-        />
-      );
-
-      await act(async () => {
-        await Promise.resolve();
-      });
-
-      expect(poolInstance.request).toHaveBeenCalledTimes(initialRequestCount);
-
-      await act(async () => {
-        resolveRefreshOpen({ width: 1000, height: 800, rotation: 0 });
-        await Promise.resolve();
-        await Promise.resolve();
-      });
-
-      expect(poolInstance.request.mock.calls.length).toBeGreaterThan(initialRequestCount);
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(poolInstance.open).toHaveBeenCalledTimes(1);
+    expect(poolInstance.close).not.toHaveBeenCalled();
   });
 });
+
 
 describe('Phase 3B1: Metadata-only React state and cache.peek rendering', () => {
   beforeEach(() => {

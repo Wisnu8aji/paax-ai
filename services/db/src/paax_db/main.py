@@ -27,13 +27,37 @@ from .core_engine_factory import build_core_engine_client
 from .calculation_receipts import ReceiptValidationError, advance_mapping_revision, calculate_receipt
 from .rab_bridge_lifecycle import transition
 from .usage_telemetry import emit_best_effort, usage_logger_from_env
+from contextlib import asynccontextmanager
 from .engineering_context import build_engineering_context, validate_civil_work_items_payload
 from .project_graph_sheet_context import get_active_sheet_context
+from .reference_bootstrap import bootstrap_reference_project
+from .database import async_session_maker
 from . import workspace_router
 
-app = FastAPI(title="PAAX DB API", description="Server-side persistent storage for PAAX AI")
+repo_root = Path(__file__).resolve().parents[3]
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    manifest_path = repo_root / "fixtures" / "plhut" / "project-manifest.json"
+    if manifest_path.exists():
+        async with async_session_maker() as session:
+            try:
+                await bootstrap_reference_project(
+                    session=session,
+                    manifest_path=manifest_path,
+                    actor_id="paax-web",
+                    reference_key="plhut-surakarta-2024",
+                    is_default=True,
+                )
+                await session.commit()
+            except Exception as exc:
+                raise RuntimeError(f"Official startup artifact reconciliation failed: {exc}") from exc
+    yield
+
+app = FastAPI(title="PAAX DB API", description="Server-side persistent storage for PAAX AI", lifespan=lifespan)
 
 app.include_router(workspace_router.router)
+
 
 app.add_middleware(
     CORSMiddleware,

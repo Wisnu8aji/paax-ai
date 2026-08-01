@@ -5,8 +5,7 @@ type OpenMessage = {
   type: 'open-document';
   documentKey: string;
   pageNumber: number;
-  url: string;
-  rangeChunkSize: number;
+  data: ArrayBuffer;
 };
 type RenderMessage = {
   type: 'render-tile';
@@ -91,11 +90,7 @@ async function openDocument(message: OpenMessage): Promise<void> {
   let loadingTask: ReturnType<typeof pdfjs.getDocument> | undefined;
   try {
     loadingTask = pdfjs.getDocument({
-      url: message.url,
-      rangeChunkSize: message.rangeChunkSize,
-      disableRange: false,
-      disableStream: true,
-      disableAutoFetch: true,
+      data: new Uint8Array(message.data),
       verbosity: 0,
       CanvasFactory: WorkerCanvasFactory,
       FilterFactory: WorkerFilterFactory,
@@ -108,9 +103,10 @@ async function openDocument(message: OpenMessage): Promise<void> {
     post({ type: 'document-ready', documentKey: message.documentKey, metrics: { width: viewport.width, height: viewport.height, rotation: viewport.rotation } });
   } catch (error) {
     await loadingTask?.destroy().catch(() => undefined);
-    post({ type: 'document-error', documentKey: message.documentKey, message: String(error) });
+    post({ type: 'document-error', documentKey: message.documentKey, message: error instanceof Error ? error.message : String(error) });
   }
 }
+
 
 async function renderTile(message: RenderMessage): Promise<void> {
   const entry = documents.get(message.documentKey);

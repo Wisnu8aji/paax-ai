@@ -6,7 +6,7 @@ import json
 import uuid
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import func
 
@@ -22,6 +22,23 @@ synthesize_project_graph = None
 
 import sys
 
+LocalArtifactStore = None
+
+def _get_local_artifact_store():
+    global LocalArtifactStore
+    if LocalArtifactStore is not None:
+        return LocalArtifactStore
+    di_src = repo_root / "services" / "document-intelligence"
+    if di_src.is_dir() and str(di_src) not in sys.path:
+        sys.path.insert(0, str(di_src))
+    try:
+        from app.artifact_storage import LocalArtifactStore as LAS
+        LocalArtifactStore = LAS
+    except Exception:
+        LocalArtifactStore = None
+    return LocalArtifactStore
+
+
 def _get_drawing_evidence_sheet():
     global DrawingEvidenceSheet
     if DrawingEvidenceSheet is not None:
@@ -35,6 +52,7 @@ def _get_drawing_evidence_sheet():
     except Exception:
         DrawingEvidenceSheet = None
     return DrawingEvidenceSheet
+
 
 
 def _get_synthesize_project_graph():
@@ -213,6 +231,7 @@ async def bootstrap_reference_project(
     actor_id: str,
     reference_key: str = "plhut-surakarta-2024",
     is_default: bool = True,
+    artifact_store_root: Path | None = None,
 ) -> dict:
     """Bootstrap a reference project idempotently from a manifest.
     
@@ -231,13 +250,109 @@ async def bootstrap_reference_project(
     fixture_version = manifest["fixture_version"]
     run_id = uuid.uuid5(uuid.NAMESPACE_URL, f"PAAX-REFERENCE-{reference_key.upper()}-{fixture_version}")
     fixture_hash = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+    canonical_artifact_key = f"original-pdf/runs/{run_id}"
+
+    # 1. Always enforce artifact key repair in DB regardless of bootstrap ledger state
+    ref_runs = (await session.execute(
+        select(models.DemRun).where(
+            or_(
+                models.DemRun.id == run_id,
+                models.DemRun.project_id == project_id,
+                models.DemRun.artifact_key == f"reference://{reference_key}",
+                models.DemRun.artifact_key == "reference://plhut-surakarta-2024",
+                models.DemRun.artifact_key.like("reference://%"),
+            )
+        )
+    )).scalars().all()
+
+    for r in ref_runs:
+        if not r.artifact_key or r.artifact_key.startswith("reference://") or r.artifact_key == f"reference://{reference_key}":
+            r.artifact_key = canonical_artifact_key
+            session.add(r)
+    await session.flush()
+
+    # 2. Always seed and reconcile canonical PDF artifact in ArtifactStore
+    source_pdf_path = manifest_path.parent / manifest["source_document"]["path"]
+    if not source_pdf_path.exists():
+        raise RuntimeError(f"Reference source PDF missing: {source_pdf_path}")
     
+    pdf_bytes = source_pdf_path.read_bytes()
+    if hashlib.sha256(pdf_bytes).hexdigest() != manifest["source_document"]["sha256"]:
+        raise RuntimeError(f"Reference source PDF checksum mismatch for {source_pdf_path}")
+
+    import fitz
+    try:
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        page_count = doc.page_count
+        doc.close()
+    except Exception as exc:
+        raise RuntimeError(f"Reference source PDF is corrupted or invalid PDF: {exc}") from exc
+
+    expected_pages = manifest["source_document"].get("page_count", 88)
+    if page_count != expected_pages:
+        raise RuntimeError(f"Reference source PDF page count mismatch: got {page_count}, expected {expected_pages}")
+
+    # Default artifact store root: services/document-intelligence/.artifacts
+    art_root = artifact_store_root or (repo_root / "services" / "document-intelligence" / ".artifacts")
+    LocalArtifactStoreCls = _get_local_artifact_store()
+    if LocalArtifactStoreCls is None:
+        raise RuntimeError("LocalArtifactStore class unavailable")
+    artifact_store = LocalArtifactStoreCls(art_root)
+
+    expected_hash = manifest["source_document"]["sha256"]
+    need_seed = True
+    if artifact_store.exists(canonical_artifact_key):
+        try:
+            existing_bytes = artifact_store.get(canonical_artifact_key)
+            if hashlib.sha256(existing_bytes).hexdigest() == expected_hash:
+                need_seed = False
+        except Exception:
+            pass
+
+    if need_seed:
+        artifact_store.put(
+            kind="original-pdf",
+            data=pdf_bytes,
+            content_type=manifest["source_document"].get("mime_type", "application/pdf"),
+            object_key=f"runs/{run_id}",
+        )
+    # Also ensure legacy project-id alias if present
+    alias_key = f"original-pdf/runs/{project_id}"
+    need_alias_seed = True
+    if artifact_store.exists(alias_key):
+        try:
+            alias_bytes = artifact_store.get(alias_key)
+            if hashlib.sha256(alias_bytes).hexdigest() == expected_hash:
+                need_alias_seed = False
+        except Exception:
+            pass
+
+    if need_alias_seed:
+        artifact_store.put(
+            kind="original-pdf",
+            data=pdf_bytes,
+            content_type=manifest["source_document"].get("mime_type", "application/pdf"),
+            object_key=f"runs/{project_id}",
+        )
+
+    # Reconcile artifact availability & magic bytes (Fail closed)
+    try:
+        stored_bytes = artifact_store.get(canonical_artifact_key)
+        if len(stored_bytes) < 5 or stored_bytes[:5] != b"%PDF-":
+            raise RuntimeError("Stored PDF artifact does not start with magic header %PDF-")
+    except Exception as exc:
+        raise RuntimeError(
+            f"Startup artifact reconciliation failed for reference key '{reference_key}': "
+            f"canonical artifact '{canonical_artifact_key}' is not available or valid in ArtifactStore: {exc}"
+        ) from exc
+
     existing_ledger = await session.get(models.BootstrapLedger, {"reference_key": reference_key, "fixture_version": fixture_version})
     if existing_ledger and existing_ledger.fixture_hash == fixture_hash:
         return existing_ledger.result
 
     SheetModel = _get_drawing_evidence_sheet()
     synthesizer = _get_synthesize_project_graph()
+
 
     sheets = [
         SheetModel.model_validate_json(path.read_text(encoding="utf-8"))

@@ -2,6 +2,10 @@
 
 Panduan ini adalah satu-satunya alur portable yang boleh digunakan untuk menjalankan PAAX PLHUT pada komputer ini. Panduan berlaku bagi pengguna maupun AI executor.
 
+**Revisi panduan:** integrasi PDF binary worker, canonical artifact PLHUT, serta thumbnail nyata Review/Analyze/Sheets.
+
+Status `COMPLETED` pada file feedback bukan pengganti release gate. Versi remediasi hanya boleh dijalankan untuk audit setelah seluruh perubahannya sudah di-commit, build production dibuat dari commit tersebut, dan worktree kembali bersih.
+
 ## 1. Lokasi yang benar
 
 Repository produk terbaru:
@@ -77,7 +81,18 @@ if ($expectedRepo -ne "G:\paax-ai-contextual-integration") { throw "Folder repos
 if ($dirty) { throw "Worktree memiliki perubahan belum di-commit. Jangan menjalankan build audit." }
 ```
 
-Baseline fungsi terakhir yang wajib sudah tercakup adalah `f1f44d2d`. HEAD boleh lebih baru karena pembaruan dokumentasi atau koreksi lanjutan, tetapi harus disengaja, worktree bersih, dan seluruh server kemudian melaporkan HEAD baru yang sama.
+Jangan memakai nomor commit lama yang ditulis pada panduan atau laporan sebagai patokan tunggal. Patokan runtime adalah `HEAD` lokal yang sudah direview dan di-commit. Remediasi PDF terbaru wajib mempunyai seluruh file berikut pada commit yang sama:
+
+```text
+apps/web/src/components/drawing-intelligence/workspace/canvas/pdf-binary-cache.ts
+apps/web/src/components/drawing-intelligence/workspace/canvas/pdf-page-layer.tsx
+apps/web/src/components/drawing-intelligence/workspace/canvas/pdf-tile-pool.ts
+apps/web/src/components/drawing-intelligence/workspace/canvas/pdf-tile.worker.ts
+services/db/src/paax_db/reference_bootstrap.py
+services/document-intelligence/tests/test_phase_c_thumbnails.py
+```
+
+Jika `git status --porcelain` masih menghasilkan output, jangan melakukan audit final. Selesaikan review/commit pada branch remediasi terlebih dahulu; jangan menyalin sebagian file ke branch lain.
 
 ## 5. Hentikan runtime lama
 
@@ -121,6 +136,8 @@ Jangan lanjut jika build gagal atau file berikut tidak ada:
 G:\paax-ai-contextual-integration\apps\web\.next\BUILD_ID
 ```
 
+Build ulang ini wajib setelah perubahan viewer PDF walaupun dependency tidak berubah. Jalur binary worker berada di bundle browser; menjalankan bundle lama akan tetap menghasilkan error viewer lama meskipun backend sudah diperbaiki.
+
 ## 7. API key AI
 
 Engine dan viewer dasar tidak boleh bergantung pada AI. Untuk Command Room/AI fallback, isi variabel yang diperlukan pada `.env.local` tanpa menampilkan nilainya.
@@ -163,6 +180,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\portable\Start-PLHUT-Local.ps
 Jangan menambahkan `-SkipOptionalServices`.
 
 Startup resmi akan memeriksa port/runtime lama, membuat credential berbeda per service, menyimpan raw credential pada file ber-ACL user-only, membuat registry hash-only, memasukkan credential melalui environment memory, menjalankan migration/bootstrap, menjalankan enam service, menunggu health HTTP 200, dan menulis runtime manifest tanpa secret.
+
+Pada versi remediasi PDF, bootstrap PLHUT juga harus merekonsiliasi `artifact_key` lama menjadi `original-pdf/runs/{run_id}`, memvalidasi PDF sumber 88 halaman, serta menyiapkan artifact PDF canonical sebelum viewer dipakai. Proses pertama dapat lebih lama karena PDF asli sekitar 26 MB divalidasi dan disalin. Jangan menghentikan startup selama proses tersebut masih berjalan.
+
+Sesudah startup, periksa log DB. Startup belum boleh dianggap berhasil bila log berisi `Bootstrap failed`, `artifact reconciliation failed`, checksum mismatch, page-count mismatch, atau source PDF missing. Pesan health HTTP 200 saja tidak cukup untuk melewati gate artifact.
 
 Jangan membuat `internal-service.key`, `live-test-key`, atau `.launch.bat`. Mekanisme lama tersebut tidak digunakan.
 
@@ -231,17 +252,77 @@ if project != 1 or pages != 88 or revision != "0039_calculation_receipts":
 
 Jumlah receipt engine dapat tetap `0` bila evidence/fact PLHUT belum cukup. Nilai `0` lebih benar daripada quantity palsu.
 
-## 13. Pemeriksaan UI awal
+## 13. Verifikasi PDF canonical dan thumbnail nyata
+
+Jalankan setelah enam health endpoint lulus. Pemeriksaan ini tidak memakai API key AI dan tidak melakukan analisis ulang 88 halaman.
+
+```powershell
+Set-Location -LiteralPath "G:\paax-ai-contextual-integration"
+
+$runId = "514fb7f2-26fd-5816-9f22-a4a2412688bf"
+$base = "http://127.0.0.1:3000/api/document-intelligence/drawings/dem/$runId"
+
+$issued = Invoke-RestMethod -Method Post -Uri "$base/artifact-url" -TimeoutSec 30
+if (-not $issued.token) { throw "Token artifact PDF tidak diterbitkan." }
+if ([string]$issued.artifact_key -like "reference://*") {
+  throw "Artifact key legacy masih aktif: $($issued.artifact_key)"
+}
+
+Add-Type -AssemblyName System.Net.Http
+$client = [System.Net.Http.HttpClient]::new()
+try {
+  $artifactUrl = "$base/artifact?token=$([uri]::EscapeDataString([string]$issued.token))"
+  $pdfResponse = $client.GetAsync($artifactUrl).GetAwaiter().GetResult()
+  if (-not $pdfResponse.IsSuccessStatusCode) {
+    throw "Artifact PDF gagal: HTTP $([int]$pdfResponse.StatusCode)"
+  }
+  $pdfBytes = $pdfResponse.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult()
+  $magic = [Text.Encoding]::ASCII.GetString($pdfBytes, 0, [Math]::Min(5, $pdfBytes.Length))
+  if ($pdfResponse.Content.Headers.ContentType.MediaType -ne "application/pdf" -or $magic -ne "%PDF-") {
+    throw "Respons artifact bukan PDF asli yang valid."
+  }
+
+  foreach ($page in 0,6,38,56,87) {
+    $thumbnailResponse = $client.GetAsync("$base/pages/$page/thumbnail?width=320").GetAwaiter().GetResult()
+    if (-not $thumbnailResponse.IsSuccessStatusCode) {
+      throw "Thumbnail halaman $page gagal: HTTP $([int]$thumbnailResponse.StatusCode)"
+    }
+    $thumbnailBytes = $thumbnailResponse.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult()
+    if ($thumbnailResponse.Content.Headers.ContentType.MediaType -ne "image/png" -or $thumbnailBytes.Length -eq 0) {
+      throw "Thumbnail halaman $page bukan PNG nyata."
+    }
+    Write-Host "OK thumbnail halaman $page - $($thumbnailBytes.Length) bytes"
+  }
+
+  Write-Host "OK PDF canonical - $($pdfBytes.Length) bytes, header %PDF-"
+}
+finally {
+  $client.Dispose()
+}
+```
+
+Artifact dan thumbnail lokal merupakan data turunan yang direkonsiliasi dari PDF fixture resmi. Lokasi adapter lokal saat ini adalah:
+
+```text
+G:\paax-ai-contextual-integration\services\document-intelligence\.artifacts
+```
+
+Folder tersebut bukan database pengguna dan tidak perlu disalin manual. Namun jangan menghapusnya ketika server sedang berjalan. Startup resmi harus mampu menyemai ulang PDF canonical bila artifact hilang atau tidak cocok.
+
+## 14. Pemeriksaan UI awal
 
 1. buka `http://127.0.0.1:3000`;
 2. pilih `PLHUT-SURAKARTA`;
 3. buka Drawing Intelligence;
 4. periksa Files, Sheets, Review, Quantities, Mission, dan Handoff;
 5. catat error console/network tanpa menampilkan secret.
+6. pada Review dan Analyze, pindah beberapa halaman dan pastikan tidak muncul `Retry PDF` atau `Invalid PDF url data`;
+7. pada Sheets, pastikan gambar halaman nyata muncul, bukan placeholder, dan tombol retry tidak tampil pada kondisi normal;
+8. buka Developer Tools hanya bila diperlukan dan pastikan tidak ada HTTP 4xx/5xx untuk `artifact-url`, `artifact`, atau `thumbnail`.
 
 Jangan mengganti empty, blocked, needs-review, atau missing-evidence dengan data dummy.
 
-## 14. Menghentikan semua server
+## 15. Menghentikan semua server
 
 ```powershell
 Set-Location -LiteralPath "G:\paax-ai-contextual-integration"
@@ -250,7 +331,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\portable\Stop-PLHUT-Local.ps1
 
 Database, PDF, artifact, registry, dan data proyek tidak dihapus.
 
-## 15. Menjalankan ulang setelah update source
+## 16. Menjalankan ulang setelah update source
 
 ```powershell
 Set-Location -LiteralPath "G:\paax-ai-contextual-integration"
@@ -267,7 +348,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\portable\Start-PLHUT-Local.ps
 
 Ulangi verifikasi enam health endpoint.
 
-## 16. Pemecahan masalah
+## 17. Pemecahan masalah
 
 ### UI versi lama
 
@@ -277,6 +358,22 @@ Ulangi verifikasi enam health endpoint.
 - build ulang web production;
 - start melalui script resmi;
 - jangan menjalankan `pnpm dev`.
+
+### Review/Analyze menampilkan `Invalid PDF url data`
+
+- pastikan file `pdf-binary-cache.ts` sudah tercakup pada commit aktif;
+- hentikan seluruh server melalui script resmi;
+- jalankan ulang `pnpm --dir apps/web build`;
+- start kembali melalui script resmi dan lakukan hard refresh browser;
+- jangan meneruskan URL artifact langsung ke `pdfjs.getDocument` di worker.
+
+### Thumbnail Sheets HTTP 500 atau gambar tidak muncul
+
+- jalankan kembali verifikasi pada Bagian 12 dan Bagian 13;
+- pastikan database memakai artifact key `original-pdf/runs/514fb7f2-26fd-5816-9f22-a4a2412688bf`;
+- periksa `db-plhut.err.log` dan `document-intelligence.err.log`;
+- pastikan artifact PDF canonical lolos header `%PDF-`, checksum, dan 88 halaman;
+- jangan menghapus database, menambah thumbnail dummy, atau menjalankan script live-test sebagai pengganti startup resmi.
 
 ### Build web tidak tersedia
 
@@ -311,7 +408,7 @@ Manifest/health tidak boleh memuat raw credential.
 
 Periksa hanya nama variabel yang diperlukan pada `.env.local`, jangan nilainya. Setelah memperbaiki environment, stop/start seluruh stack.
 
-## 17. Perintah ringkas
+## 18. Perintah ringkas
 
 Jika dependency, build, dan migration sudah siap:
 

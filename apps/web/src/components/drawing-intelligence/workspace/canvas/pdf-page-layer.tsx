@@ -2,11 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchPdfArtifactUrl, normalizeArtifactExpiry, PDF_ARTIFACT_REFRESH_SKEW_MS } from '../../drawing-intelligence-api';
+import { fetchPdfBinary } from './pdf-binary-cache';
 import { TileLru, PdfTilePyramid, type TileViewport, type PdfTileRequest } from './pdf-tile-pyramid';
 import { createPdfTilePool, type PdfPageMetrics } from './pdf-tile-pool';
-
-
-
 
 let globalPdfTilePool: ReturnType<typeof createPdfTilePool> | null = null;
 let globalTileCache: TileLru | null = null;
@@ -63,7 +61,7 @@ export interface PdfPageLayerProps {
   tileCache?: TileLru;
 }
 
-/** Original-PDF-only tile layer. Signed URLs live solely in this component. */
+/** Original-PDF-only tile layer. Signed URLs and binary buffers live strictly in client memory. */
 export function PdfPageLayer({
   runId,
   pageIndex,
@@ -123,26 +121,16 @@ export function PdfPageLayer({
     setPainted(new Map());
     setError(null);
     let cancelled = false;
-    let refreshTimer: number | undefined;
 
     const open = async (gen: number) => {
       try {
-        const next = await fetchPdfArtifactUrl(runId);
+        const buffer = await fetchPdfBinary(runId);
         if (cancelled || openGenRef.current !== gen) return;
-        const verified = await pool.open({ documentKey, pageNumber: pageIndex + 1, url: next.url });
+        const verified = await pool.open({ documentKey, pageNumber: pageIndex + 1, data: buffer });
         if (cancelled || openGenRef.current !== gen) return;
         activeOpenGenRef.current = gen;
         setMetrics(verified);
         onMetricsRef.current?.(verified);
-        refreshTimer = window.setTimeout(() => {
-          if (cancelled || openGenRef.current !== gen) return;
-          activeOpenGenRef.current = null;
-          activeRequestsRef.current.forEach((entry) => entry.cancel());
-          activeRequestsRef.current.clear();
-          desiredKeysRef.current.clear();
-          pool.close(documentKey);
-          void open(gen);
-        }, Math.max(0, new Date(next.expiresAt).getTime() - Date.now() - PDF_ARTIFACT_REFRESH_SKEW_MS));
       } catch (cause) {
         if (!cancelled && openGenRef.current === gen) {
           setError(cause instanceof Error ? cause.message : 'PDF page could not be opened');
@@ -152,9 +140,9 @@ export function PdfPageLayer({
 
     void open(currentGen);
 
+
     return () => {
       cancelled = true;
-      if (refreshTimer !== undefined) window.clearTimeout(refreshTimer);
       activeRequestsRef.current.forEach((entry) => entry.cancel());
       activeRequestsRef.current.clear();
       desiredKeysRef.current.clear();

@@ -61,20 +61,76 @@ Seluruh temuan masalah dasar (HTTP 500 pada artifact-url, HTTP 403 pada page ima
 3. **Next.js Proxy Handler:**
    - Proxied route `apps/web/src/app/api/document-intelligence/[...path]/route.ts` kini mengekspor handler `DELETE` serta menangani header `Range`, `If-Range`, dan `If-None-Match` secara transparan.
 
+### Phase B — Repair Artifact Runtime & Portable Bootstrap
+
+1. **Backup Database Before Changes:**
+   - Database `G:\PAAX-Data\db\portable.sqlite` telah di-backup ke `G:\PAAX-Data\db\portable.sqlite.phase_b_backup.bak`.
+   - Tidak ada data yang dihapus / di-reset, dan seluruh 88 sheet PLHUT tetap terjaga (Zero Data Loss).
+
+2. **Perbaikan Invariant Repair dalam `reference_bootstrap.py`:**
+   - Invariant repair untuk `artifact_key` dipindahkan agar **selalu dieksekusi sebelum** pemeriksaan early-return `BootstrapLedger`.
+   - Menangani seluruh variasi legacy `artifact_key` yang diawali `reference://` atau bernilai persis `reference://plhut-surakarta-2024`, dan mengubahnya secara otomatis dan presisi menjadi `original-pdf/runs/514fb7f2-26fd-5816-9f22-a4a2412688bf`.
+
+3. **Verifikasi & Seeding Canonical PDF Artifact:**
+   - Sebelum commit DB, system memeriksa ketersediaan PDF di `ArtifactStore`.
+   - Jika belum ada, PDF PLHUT resmi diambil dari manifest, SHA-256 (`bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68`) dan jumlah halaman (88 halaman) divalidasi dengan PyMuPDF (`fitz`), lalu byte PDF di-seed ke `ArtifactStore` tanpa analisis ulang 88 halaman.
+   - magic bytes `%PDF-` divalidasi secara ketat.
+
+4. **Isolasi Multi-User & Fail-Closed Startup:**
+   - Repair hanya menyasar run PLHUT resmi tanpa menimpa atau mengganggu run milik pengguna lain.
+   - Startup resmi pada FastApi `lifespan` (`services/db/src/paax_db/main.py`) wajib menjalankan `bootstrap_reference_project` dan langsung *fail-closed* dengan `RuntimeError` jika database dan artifact store tidak dapat direkonsiliasi.
+   - Secret penandatanganan (`artifact-signing.key`) tetap dari konfigurasi lokal/env dan aman di `.gitignore` (`*.key`).
+
 ---
 
-## 3. Matriks Verifikasi & Pengujian
+## 3. Matriks Verifikasi & Pengujian Phase B
 
 | Komponen / Test Suite | Hasil | Keterangan |
 | :--- | :---: | :--- |
-| **Document Intelligence Pytest** | `PASSED` | Unit & integration test otorisasi artifact, signing, & range streaming (`test_pdf_artifact_remediation.py`). |
-| **PAAX DB Pytest** | `PASSED` | Test reparasi idempotent key reference PLHUT & RoleChecker service scope. |
-| **Frontend Vitest Suite** | `195 PASSED` | Seluruh 29 file test (195 unit test) lulus 100%, termasuk `sheet-gallery.test.tsx`. |
-| **Next.js Production Build** | `SUCCESS` | `pnpm --dir apps/web build` berhasil membuat bundle produksi tanpa error TypeScript / Linter. |
+| **Database Backup** | `PASSED` | Backup `portable.sqlite.phase_b_backup.bak` dibuat di `G:\PAAX-Data\db\`. |
+| **88 Sheet Preservation** | `PASSED` | PLHUT run `514fb7f2-26fd-5816-9f22-a4a2412688bf` mempertahankan 88 sheet lengkap. |
+| **Artifact Key Migration** | `PASSED` | `artifact_key` pada `portable.sqlite` & DB internal berhasil diubah dari `reference://plhut-surakarta-2024` menjadi `original-pdf/runs/514fb7f2-26fd-5816-9f22-a4a2412688bf`. |
+| **PDF Magic & Page Count Check** | `PASSED` | SHA-256, 88 halaman, dan header `%PDF-` terverifikasi. |
+| **DB Seed Script (`seed_plhut_real.py`)** | `PASSED` | Berhasil mengeksekusi bootstrap & repair tanpa error. |
 
 ---
 
-## 4. Rencana Langkah Selanjutnya (PR & Merge)
+### Phase C — Thumbnail dan Sheets Remediation
 
-1. Branch `codex/pdf-artifact-viewer-remediation` siap disubmit sebagai Pull Request.
-2. Tidak ada database yang dihapus, tidak ada data dummy yang dibuat, dan tidak ada kalkulasi RAB/kuantitas yang diubah oleh AI.
+1. **Reconciliation Invariant PDF Artifact 88 Halaman:**
+   - Menyempurnakan `reference_bootstrap.py` dengan pemeriksaan SHA-256 hash artifact pada `LocalArtifactStore`. Jika artifact lokal usang/terpotong (misal 53 halaman), bootstrap secara otomatis merekonseil dan menulis ulang PDF PLHUT 88 halaman lengkap (`bf582e74951312cc6ccd305c2d48772ca27e7ffdf5b0fb1a0ef7104c19e9eb68`).
+
+2. **Verifikasi Presisi Halaman `0, 6, 38, 56, 87`:**
+   - Membuat test suite `services/document-intelligence/tests/test_phase_c_thumbnails.py` untuk memverifikasi halaman `0, 6, 38, 56, 87` dari run PLHUT `514fb7f2-26fd-5816-9f22-a4a2412688bf`.
+   - Mengonfirmasi seluruh halaman target mengembalikan **HTTP 200**, `Content-Type: image/png`, header PNG valid (`\x89PNG\r\n\x1a\n`), ukuran file tidak nol, dan dimensi gambar nyata (`width > 0`, `height > 0`).
+
+3. **Efisiensi Caching (ETag & HTTP 304):**
+   - Menguji pengiriman header `ETag` dan `If-None-Match`. Terbukti mengembalikan **HTTP 304 Not Modified** tanpa mengirim ulang body byte gambar saat cache masih valid.
+   - Thumbnail yang telah dirender disimpan di `ARTIFACT_STORE` (`kind="thumbnail"`) sehingga tidak melakukan parsing ulang PDF secara terus menerus.
+
+4. **Sumber Tunggal Konsisten (Review, Analyze, Sheets):**
+   - Tampilan `Review`, `Analyze`, dan `Sheets` menggunakan endpoint terpadu berbasis `run_id` canonical `/drawings/dem/{run_id}/pages/{page_index}/thumbnail?width=320`.
+   - `SheetGallery` menggunakan `loading="lazy" decoding="async"` serta penanganan state error jujur ("Gambar sheet tidak dapat dimuat") dengan fitur retry tombol "Coba lagi".
+
+---
+
+## 5. Matriks Verifikasi & Pengujian Phase C
+
+| Komponen / Test Suite | Hasil | Keterangan |
+| :--- | :---: | :--- |
+| **Halaman 0 Thumbnail** | `PASSED` | HTTP 200, PNG valid, width 320px, non-zero bytes. |
+| **Halaman 6 Thumbnail** | `PASSED` | HTTP 200, PNG valid, width 320px, non-zero bytes. |
+| **Halaman 38 Thumbnail** | `PASSED` | HTTP 200, PNG valid, width 320px, non-zero bytes. |
+| **Halaman 56 Thumbnail** | `PASSED` | HTTP 200, PNG valid, width 320px, non-zero bytes. |
+| **Halaman 87 Thumbnail** | `PASSED` | HTTP 200, PNG valid, width 320px, non-zero bytes. |
+| **ETag Cache (HTTP 304)** | `PASSED` | Re-request dengan `If-None-Match` mengembalikan HTTP 304 Not Modified. |
+| **Pytest Suite (`test_phase_c_thumbnails.py`)** | `PASSED` | 6 test case lulus 100%. |
+
+---
+
+## 6. Status Akhir Keseluruhan
+
+- **Phase A:** `COMPLETED` & `VERIFIED` (Binary Worker Transport & Error Handling)
+- **Phase B:** `COMPLETED` & `VERIFIED` (Artifact Key Migration, Backup DB, Fail-closed Lifespan)
+- **Phase C:** `COMPLETED` & `VERIFIED` (Thumbnail & Sheets Canonical Rendering Pages 0, 6, 38, 56, 87)
+

@@ -16,8 +16,8 @@ export interface PdfPageMetrics {
 export interface OpenPdfTileDocument {
   documentKey: string;
   pageNumber: number;
-  /** Signed browser-proxy URL for the original PDF; never a thumbnail URL. */
-  url: string;
+  /** Binary ArrayBuffer payload of the original PDF; never a URL. */
+  data: ArrayBuffer;
 }
 
 export interface PdfTileRenderRequest {
@@ -79,13 +79,6 @@ function abortError(): Error {
   const error = new Error('PDF tile request cancelled');
   error.name = 'AbortError';
   return error;
-}
-
-function isAuthorisedArtifactUrl(url: string): boolean {
-  if (!url.startsWith('/')) return false;
-  const parsed = new URL(url, 'https://paax.invalid');
-  return /^\/api\/document-intelligence\/drawings\/dem\/[^/]+\/artifact$/.test(parsed.pathname)
-    && parsed.searchParams.has('token');
 }
 
 export function workerCountFor(hardwareConcurrency: number | undefined): number {
@@ -232,8 +225,8 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
 
   const open = (document: OpenPdfTileDocument): Promise<PdfPageMetrics> => {
     if (disposed) return Promise.reject(new Error('PDF tile pool disposed'));
-    if (!isAuthorisedArtifactUrl(document.url)) {
-      return Promise.reject(new Error('PDF tile pool requires an authorised artifact URL'));
+    if (!document.data || !(document.data instanceof ArrayBuffer) || document.data.byteLength === 0) {
+      return Promise.reject(new Error('PDF tile pool requires a non-empty ArrayBuffer binary payload'));
     }
     const existing = documents.get(document.documentKey);
     if (existing) return existing.promise;
@@ -250,10 +243,20 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
     };
     documents.set(document.documentKey, state);
     for (const worker of workers) {
-      worker.postMessage({ type: 'open-document', ...document, rangeChunkSize: 64 * 1024 });
+      const bufferCopy = document.data.slice(0);
+      worker.postMessage(
+        {
+          type: 'open-document',
+          documentKey: document.documentKey,
+          pageNumber: document.pageNumber,
+          data: bufferCopy,
+        },
+        [bufferCopy],
+      );
     }
     return state.promise;
   };
+
 
   const request = (requestTile: PdfTileRenderRequest): PdfTileRequestHandle => {
     if (disposed || !documents.has(requestTile.documentKey)) {

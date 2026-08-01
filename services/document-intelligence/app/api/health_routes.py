@@ -30,14 +30,17 @@ def health_check():
     try:
         from paax_db.runtime_identity import get_runtime_identity
         runtime_identity = get_runtime_identity("document-intelligence")
-    except ImportError:
-        import sys
-        from pathlib import Path
-        db_src = Path(__file__).resolve().parents[3] / "services" / "db" / "src"
-        if str(db_src) not in sys.path:
-            sys.path.insert(0, str(db_src))
-        from paax_db.runtime_identity import get_runtime_identity
-        runtime_identity = get_runtime_identity("document-intelligence")
+    except Exception:
+        try:
+            import sys
+            from pathlib import Path
+            db_src = Path(__file__).resolve().parents[4] / "services" / "db" / "src"
+            if str(db_src) not in sys.path:
+                sys.path.insert(0, str(db_src))
+            from paax_db.runtime_identity import get_runtime_identity
+            runtime_identity = get_runtime_identity("document-intelligence")
+        except Exception:
+            runtime_identity = {"service": "document-intelligence", "mode": "standalone"}
 
     return {
         "status": "ok", 
