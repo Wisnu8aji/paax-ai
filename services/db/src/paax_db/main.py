@@ -1433,7 +1433,7 @@ async def create_agent_review_recommendation(id: str, request: schemas.AgentRevi
     db.add(row)
     _audit_project_action(db, project_id=id, actor=user.uid, action="agent.review.recommended", target_id=row.recommendation_id)
     await db.commit(); await db.refresh(row)
-    return row
+    return _agent_review_recommendation_response(row)
 
 
 @app.get("/projects/{id}/project-graph/recommendations", response_model=List[schemas.AgentReviewRecommendationResponse],
@@ -1441,7 +1441,34 @@ async def create_agent_review_recommendation(id: str, request: schemas.AgentRevi
 async def list_agent_review_recommendations(id: str, snapshot_id: Optional[str] = None, db: AsyncSession = Depends(get_db)):
     query = select(models.AgentReviewRecommendation).where(models.AgentReviewRecommendation.project_id == id)
     if snapshot_id: query = query.where(models.AgentReviewRecommendation.snapshot_id == snapshot_id)
-    return (await db.execute(query.order_by(models.AgentReviewRecommendation.created_at.desc()))).scalars().all()
+    rows = (await db.execute(query.order_by(models.AgentReviewRecommendation.created_at.desc()))).scalars().all()
+    return [_agent_review_recommendation_response(row) for row in rows]
+
+
+def _agent_review_recommendation_response(row: models.AgentReviewRecommendation) -> dict:
+    """Map the ORM's ``metadata_json`` column explicitly.
+
+    SQLAlchemy reserves ``metadata`` on declarative models, so relying on
+    Pydantic's attribute lookup would serialize Base.metadata rather than the
+    persisted recommendation payload.
+    """
+    return {
+        "recommendation_id": row.recommendation_id,
+        "project_id": row.project_id,
+        "snapshot_id": row.snapshot_id,
+        "target_type": row.target_type,
+        "target_id": row.target_id,
+        "recommendation": row.recommendation,
+        "rationale": row.rationale,
+        "evidence_refs": row.evidence_refs,
+        "agent_run_id": row.agent_run_id,
+        "tool_call_id": row.tool_call_id,
+        "metadata": row.metadata_json,
+        "idempotency_key": row.idempotency_key,
+        "created_by_service_identity": row.created_by_service_identity,
+        "superseded_by": row.superseded_by,
+        "created_at": row.created_at,
+    }
 
 
 @app.post(

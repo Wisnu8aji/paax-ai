@@ -135,11 +135,14 @@ async def test_registry_allows_web_human_approval_but_denies_agent_resolve(tmp_p
         assert (await client.post("/projects/PROJECT-A/project-graph/snapshots", json=snapshot, headers=web)).status_code == 200
         assert (await client.post("/projects/PROJECT-A/project-graph/corrections", json={"id": "CORR-1", "snapshot_id": "SNAP-A", "target_type": "node", "target_id": "J2", "correction_type": "rename", "proposed_value": {"canonical_name": "Jendela J2"}, "rationale": "Sheet label"}, headers=web)).status_code == 200
         recommendation = await client.post("/projects/PROJECT-A/project-graph/recommendations", json={"snapshot_id": "SNAP-A", "target_type": "project_graph_correction", "target_id": "CORR-1", "recommendation": "recommend_accept", "rationale": "Evidence supports human review", "idempotency_key": "agent-run-1"}, headers=agent)
+        listed = await client.get("/projects/PROJECT-A/project-graph/recommendations", headers=web)
         denied = await client.post("/projects/PROJECT-A/project-graph/corrections/CORR-1/resolve", json={"status": "resolved", "resolution_note": "agent must not resolve"}, headers=agent)
         approved = await client.post("/projects/PROJECT-A/project-graph/corrections/CORR-1/resolve", json={"status": "resolved", "resolution_note": "human review"}, headers=web)
 
     assert recommendation.status_code == 201
     assert recommendation.json()["created_by_service_identity"] == "ai-orchestrator"
+    assert listed.status_code == 200
+    assert listed.json()[0]["metadata"] == {}
     assert denied.status_code == 403
     assert approved.status_code == 200
 
