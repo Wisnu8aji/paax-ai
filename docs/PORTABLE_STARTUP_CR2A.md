@@ -1,7 +1,7 @@
 # Portable startup (CR2A)
 
-This procedure starts the six local PAAX services from one runtime identity
-without serialising the internal service key into a launcher, command line,
+This procedure starts the six local PAAX services with scoped, per-service
+identities without serialising a raw credential into a launcher, command line,
 manifest, or log.
 
 1. Stop the existing stack and verify the six ports are clear.
@@ -32,10 +32,14 @@ owner/PM DB endpoint. The reader endpoint never creates columns or entries.
 .\scripts\portable\Start-PLHUT-Local.ps1 -DataRoot G:\PAAX-Data
 ```
 
-The launcher applies a user-only ACL to `runtime\internal-service.key`, creates
-children with `ProcessStartInfo` and an in-memory environment block, and waits
-for each authenticated dependency. It fails closed on foreign port ownership,
-migration failure, or a mismatched runtime identity.
+The launcher creates one user-only ACL credential file per service under
+`runtime\service-credentials`, then writes `runtime\service-identities.json`
+containing hashes, identities, and scopes only. Children receive only their own
+raw credential through the in-memory `ProcessStartInfo` environment block.
+The registry is authoritative; a wrong credential, caller-supplied scope, or
+caller-supplied actor header cannot elevate access. Health endpoints remain
+credential-free. Re-running the launcher retains existing credentials; rotate
+one service by replacing only its protected key file before restart.
 
 5. Run the live acceptance suite only after all six ports listen. Valid probes
 must be 200; the suite separately verifies missing and invalid credentials fail
