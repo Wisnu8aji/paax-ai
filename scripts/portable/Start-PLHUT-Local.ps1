@@ -60,7 +60,7 @@ $serviceIdentities = [ordered]@{
     "document-intelligence" = @{ identity = "document-intelligence"; scopes = @("dem:read", "dem:write", "dem:delete", "dem:authorize-actor", "di:access", "core:access") }
     "ai-orchestrator" = @{ identity = "ai-orchestrator"; scopes = @("agent:propose", "agent:calculate", "agent:read", "core:access", "di:access") }
     "site-agent" = @{ identity = "site-agent"; scopes = @("site:access", "core:access") }
-    "web" = @{ identity = "web-user-proxy"; actor_id = "local-desktop-user"; scopes = @("human:approve", "core:access", "di:access", "agent:access", "site:access") }
+    "web" = @{ identity = "web-user-proxy"; actor_id = "paax-web"; scopes = @("human:approve", "core:access", "di:access", "agent:access", "site:access") }
 }
 $serviceEnvironment = @{}
 $registryIdentities = @()
@@ -245,7 +245,7 @@ if (-not $SkipOptionalServices) {
 # rather than falling back to that unstable development server.
 $webBuildId = Join-Path $repoRoot "apps\web\.next\BUILD_ID"
 if (-not (Test-Path $webBuildId)) { throw "Web production bundle tidak ditemukan. Jalankan 'pnpm --dir apps/web build' sebelum startup portable." }
-$serviceEnvironment["web"]["PAAX_PORTABLE_ACTOR_ID"] = "local-desktop-user"
+$serviceEnvironment["web"]["PAAX_PORTABLE_ACTOR_ID"] = "paax-web"
 Start-ServiceProcess "web" "pnpm.cmd" @("--dir","apps/web","start","--hostname","127.0.0.1") $repoRoot 3000 $serviceEnvironment["web"]
 Wait-Health "web" "http://127.0.0.1:3000/api/health" 180
 
