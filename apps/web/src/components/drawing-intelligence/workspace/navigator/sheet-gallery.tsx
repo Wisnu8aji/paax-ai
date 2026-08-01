@@ -90,8 +90,16 @@ function SheetMenu({ onAction }: { onAction: (label: string) => void }) {
 
 function GalleryCard({ sheet, showTitles, onToast }: { sheet: Sheet; showTitles: boolean; onToast: (m: string) => void }) {
   const { state, dispatch } = useWorkspace();
+  const [imageError, setImageError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
+
   const checked = state.selectedSheetIds.includes(sheet.id);
   const needsReview = sheet.status === 'needs-review' || sheet.reviewIssueCount > 0;
+
+  const mapping = state.mappedSheets.find((candidate) => candidate.id === sheet.id);
+  const imageUrl = sheet.imageUrl || mapping?.imageUrl || (sheet.runId && sheet.pageIndex !== undefined ? `/api/document-intelligence/drawings/dem/${sheet.runId}/pages/${sheet.pageIndex}/thumbnail?width=320` : null);
+
+  const effectiveUrl = imageUrl && retryKey > 0 ? `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}_r=${retryKey}` : imageUrl;
 
   return (
     <div
@@ -108,26 +116,59 @@ function GalleryCard({ sheet, showTitles, onToast }: { sheet: Sheet; showTitles:
         dispatch({ type: 'set-mode', mode: 'review' });
       }}
     >
-      <div style={{ position: 'relative', aspectRatio: '16 / 10', background: 'var(--di-paper)' }}>
-        <SheetPlanSvg
-          sheet={sheet}
-          elements={[]}
-          overlays={{ room: true, 'grid-axis': true }}
-          selectedElementId={null}
-          hoveredElementId={null}
-          thumbnail
-        />
+      <div style={{ position: 'relative', aspectRatio: '16 / 10', background: 'var(--di-paper)', overflow: 'hidden' }}>
+        {effectiveUrl && !imageError ? (
+          <img
+            src={effectiveUrl}
+            alt={sheet.title || sheet.code}
+            loading="lazy"
+            decoding="async"
+            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <div
+            role="img"
+            aria-label="Gambar sheet tidak tersedia"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              height: '100%',
+              padding: 12,
+              background: 'var(--di-paper)',
+              color: 'var(--di-text2)',
+              fontSize: 11,
+              textAlign: 'center',
+            }}
+          >
+            <span>Gambar sheet tidak dapat dimuat</span>
+            <button
+              className="di-btn di-btn-ghost"
+              style={{ height: 22, fontSize: 10, padding: '0 8px' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setImageError(false);
+                setRetryKey((k) => k + 1);
+              }}
+            >
+              Coba lagi
+            </button>
+          </div>
+        )}
         <input
           type="checkbox"
           checked={checked}
           onClick={(e) => e.stopPropagation()}
           onChange={() => dispatch({ type: 'toggle-sheet-selection', sheetId: sheet.id })}
-          style={{ position: 'absolute', top: 8, left: 8, width: 15, height: 15, cursor: 'pointer' }}
+          style={{ position: 'absolute', top: 8, left: 8, width: 15, height: 15, cursor: 'pointer', zIndex: 10 }}
           aria-label={`Select ${sheet.code}`}
         />
         <span
           className="di-mono di-pill"
-          style={{ position: 'absolute', bottom: 8, left: 8, fontSize: 10 }}
+          style={{ position: 'absolute', bottom: 8, left: 8, fontSize: 10, zIndex: 10 }}
         >
           {sheet.scale ?? '—'}
         </span>

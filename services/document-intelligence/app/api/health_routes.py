@@ -27,13 +27,23 @@ def health_check():
     configured_providers = [name for name, key in provider_keys.items() if key]
     ai_provider_configured = bool(configured_providers)
     
-    from paax_db.runtime_identity import get_runtime_identity
+    try:
+        from paax_db.runtime_identity import get_runtime_identity
+        runtime_identity = get_runtime_identity("document-intelligence")
+    except ImportError:
+        import sys
+        from pathlib import Path
+        db_src = Path(__file__).resolve().parents[3] / "services" / "db" / "src"
+        if str(db_src) not in sys.path:
+            sys.path.insert(0, str(db_src))
+        from paax_db.runtime_identity import get_runtime_identity
+        runtime_identity = get_runtime_identity("document-intelligence")
 
     return {
         "status": "ok", 
         "service": "document-intelligence", 
         "version": "0.5.0",
-        "runtime_identity": get_runtime_identity("document-intelligence"),
+        "runtime_identity": runtime_identity,
         "mode": "real_ai" if ai_provider_configured else "fallback_demo",
         "ai_provider_configured": ai_provider_configured,
         "providers": configured_providers,

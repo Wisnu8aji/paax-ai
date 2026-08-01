@@ -942,11 +942,7 @@ async def list_project_dem_sheets(id: str, db: AsyncSession = Depends(get_db)):
             confidence=min(confidence_values) if confidence_values else None,
             width_px=source.get("width_px") if isinstance(source.get("width_px"), int) else None,
             height_px=source.get("height_px") if isinstance(source.get("height_px"), int) else None,
-            thumbnail_url=(
-                f"/projects/{id}/source-document/pages/{page.page_index}/image"
-                if (run.artifact_key or "").startswith(("fixture://", "portable://"))
-                else f"/drawings/dem/{run.id}/pages/{page.page_index}/image"
-            ),
+            thumbnail_url=f"/drawings/dem/{run.id}/pages/{page.page_index}/thumbnail?width=320",
         ))
     return sheets
 
@@ -1011,7 +1007,7 @@ async def get_dem_run(id: str, db: AsyncSession = Depends(get_db), user: User = 
     return run
 
 
-@app.post("/internal/projects/{id}/artifact-access", dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))])
+@app.post("/internal/projects/{id}/artifact-access", dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"], service_scope="dem:read"))])
 async def authorize_project_artifact(id: str, body: dict, db: AsyncSession = Depends(get_db)):
     """DB is the sole authority for artifact project scope; keys are verified against a DEM run."""
     key = body.get("artifact_key")
@@ -1025,7 +1021,7 @@ async def authorize_project_artifact(id: str, body: dict, db: AsyncSession = Dep
     return {"authorized": True}
 
 
-@app.post("/internal/projects/{id}/artifact-delete-access", dependencies=[Depends(RoleChecker(["owner"]))])
+@app.post("/internal/projects/{id}/artifact-delete-access", dependencies=[Depends(RoleChecker(["owner"], service_scope="dem:delete"))])
 async def authorize_project_artifact_deletion(id: str, body: dict, db: AsyncSession = Depends(get_db)):
     """Deletion is owner-only and the DB verifies the object key belongs to this project."""
     key = body.get("artifact_key")
@@ -1051,25 +1047,22 @@ async def authorize_actor_for_project(body: dict, db: AsyncSession = Depends(get
     user's internal-service branch); a Firebase end-user JWT gets a User with
     empty internal_scopes and is rejected below -- this endpoint answers on
     behalf of another actor, which only a trusted service may ask.
-
-    project_id here is the resource's real project id (the DEM run/synthesis
-    request's project_id after it's been resolved server-side), never an
-    unauthenticated value trusted purely from the public request body --
-    dem_routes.py resolves it from the run before calling this endpoint for
-    routes that operate on an existing run (synthesize/status), and passes
-    the request's own project_id straight through only for /start, where
-    there is no existing run yet to resolve it from.
     """
     if "dem:authorize-actor" not in user.internal_scopes:
         raise HTTPException(status_code=403, detail="service identity missing scope 'dem:authorize-actor'")
     actor_id = body.get("actor_id")
     project_id = body.get("project_id")
+    required_role = body.get("required_role")
     if not isinstance(actor_id, str) or not actor_id:
         raise HTTPException(status_code=400, detail="actor_id required")
     if not isinstance(project_id, str) or not project_id:
         raise HTTPException(status_code=403, detail="resource has no project scope")
-    if not await is_project_member_or_owner(project_id, actor_id, db):
-        raise HTTPException(status_code=403, detail="actor is not a member of this project")
+    if required_role == "owner":
+        if not await is_project_owner(project_id, actor_id, db):
+            raise HTTPException(status_code=403, detail="actor is not an owner of this project")
+    else:
+        if not await is_project_member_or_owner(project_id, actor_id, db):
+            raise HTTPException(status_code=403, detail="actor is not a member of this project")
     return {"authorized": True, "actor_id": actor_id, "project_id": project_id}
 
 

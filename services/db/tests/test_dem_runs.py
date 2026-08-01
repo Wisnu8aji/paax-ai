@@ -181,7 +181,7 @@ async def test_list_project_dem_sheets():
         assert sheets[0]["confidence"] == 0.94
         assert sheets[0]["width_px"] == 4961
         assert sheets[0]["height_px"] == 3508
-        assert sheets[0]["thumbnail_url"] == f"/drawings/dem/{run1['id']}/pages/0/image"
+        assert sheets[0]["thumbnail_url"] == f"/drawings/dem/{run1['id']}/pages/0/thumbnail?width=320"
 
         empty_proj_res = await ac.post(
             "/projects",

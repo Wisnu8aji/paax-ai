@@ -170,6 +170,7 @@ export interface Sheet {
   analyzedOn: string | null;
   aiConfidence: number | null; // 0..100 — dari pipeline, bukan dihitung UI
   geometry: SheetGeometry;
+  imageUrl?: string | null;
 }
 
 /** Server-mapped DEM metadata. `null` means the backend did not provide it. */

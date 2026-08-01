@@ -82,7 +82,12 @@ def _validate_normalized_points(points: list[tuple[float, float]]) -> None:
 
 async def _authorized_run_pdf(run_id: str, user: User) -> tuple[dict, bytes]:
     db_client = DemDbClient()
-    run = await db_client.get_run(run_id)
+    try:
+        run = await db_client.get_run(run_id)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 404:
+            raise HTTPException(status_code=404, detail="run source artifact is unavailable")
+        raise
     project_id = run.get("project_id")
     artifact_key = run.get("artifact_key")
     if not project_id or not artifact_key:
@@ -91,8 +96,12 @@ async def _authorized_run_pdf(run_id: str, user: User) -> tuple[dict, bytes]:
         await db_client.authorize_actor_for_project(user.uid, project_id)
         await db_client.authorize_artifact(project_id, artifact_key, actor_id=user.uid)
     except httpx.HTTPStatusError as exc:
-        if exc.response.status_code == 403:
-            raise HTTPException(status_code=403, detail="not a member of this project")
+        status_code = exc.response.status_code
+        if status_code in (401, 403, 404, 410, 503):
+            detail = "not a member of this project" if status_code == 403 else "artifact access denied"
+            raise HTTPException(status_code=status_code, detail=detail)
+        raise
+    except HTTPException:
         raise
     except Exception:
         raise HTTPException(status_code=403, detail="artifact access denied")
@@ -362,12 +371,28 @@ async def get_page_thumbnail(
 
 @router.post("/{run_id}/artifact-url")
 async def issue_artifact_url(run_id: str, user: User = Depends(get_current_user)):
-    run = await DemDbClient().get_run(run_id)
+    db_client = DemDbClient()
+    try:
+        run = await db_client.get_run(run_id)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 404:
+            raise HTTPException(status_code=404, detail="artifact not found")
+        raise
+    except Exception:
+        raise HTTPException(status_code=404, detail="artifact not found")
+
     project_id, key = run.get("project_id"), run.get("artifact_key")
     if not project_id or not key:
         raise HTTPException(status_code=404, detail="artifact not found")
-    db_client = DemDbClient()
-    await db_client.authorize_artifact(project_id, key, actor_id=user.uid)
+
+    try:
+        await db_client.authorize_actor_for_project(user.uid, project_id)
+        await db_client.authorize_artifact(project_id, key, actor_id=user.uid)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 403:
+            raise HTTPException(status_code=403, detail="not a member of this project")
+        raise
+
     if (await db_client.get_artifact_retention(run_id)).get("deleted_at"):
         raise HTTPException(status_code=410, detail="artifact has been deleted")
     _rate_limit(user.uid, project_id, "sign")
@@ -463,13 +488,28 @@ async def consume_artifact_url(run_id: str, token: str, request: Request):
 
 @router.delete("/{run_id}/artifact")
 async def delete_artifact(run_id: str, user: User = Depends(get_current_user)):
-    run = await DemDbClient().get_run(run_id)
+    db_client = DemDbClient()
+    try:
+        run = await db_client.get_run(run_id)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 404:
+            raise HTTPException(status_code=404, detail="artifact not found")
+        raise
+    except Exception:
+        raise HTTPException(status_code=404, detail="artifact not found")
+
     project_id, key = run.get("project_id"), run.get("artifact_key")
     if not project_id or not key:
         raise HTTPException(status_code=404, detail="artifact not found")
-    # DB role enforcement is authoritative; delete never accepts a caller key/path.
-    db_client = DemDbClient()
-    await db_client.authorize_artifact(project_id, key, actor_id=user.uid, action="delete")
+
+    try:
+        await db_client.authorize_actor_for_project(user.uid, project_id, required_role="owner")
+        await db_client.authorize_artifact(project_id, key, actor_id=user.uid, action="delete")
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 403:
+            raise HTTPException(status_code=403, detail="only project owner can delete artifact")
+        raise
+
     _rate_limit(user.uid, project_id, "delete")
     await db_client.mark_artifact_deleted(run_id, actor_id=user.uid)
     try:

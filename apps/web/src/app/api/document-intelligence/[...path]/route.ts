@@ -60,3 +60,7 @@ export async function GET(request: Request, context: RouteContext) {
 export async function POST(request: Request, context: RouteContext) {
   return proxyDocumentIntelligence(request, context);
 }
+
+export async function DELETE(request: Request, context: RouteContext) {
+  return proxyDocumentIntelligence(request, context);
+}

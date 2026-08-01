@@ -27,7 +27,7 @@ async def test_rab_bridge_only_returns_reviewable_evidence_backed_inputs_without
 
     assert proposal.status == "requires_human_approval"
     assert proposal.snapshot_id == "SNAP-A"
-    assert proposal.items == [{"node_id": "TYPE-J2", "name": "Jendela J2", "discipline": "architecture", "properties": {"specification": "aluminium"}, "evidence_ids": ["EV-J2"]}]
+    assert proposal.items == [{"node_id": "TYPE-J2", "name": "Jendela J2", "discipline": "architecture", "properties": {"specification": "aluminium"}, "evidence_ids": ["EV-J2"], "ahsp_code": None}]
     assert not hasattr(proposal, "volume")
     assert not hasattr(proposal, "amount")
 
@@ -79,6 +79,7 @@ async def test_rab_bridge_endpoint_success_for_lapangan():
         "discipline": "architecture",
         "properties": {"material": "wood"},
         "evidence_ids": ["EV-1"],
+        "ahsp_code": None,
     }
     assert data["items"][1] == {
         "node_id": "NODE-2",
@@ -86,6 +87,7 @@ async def test_rab_bridge_endpoint_success_for_lapangan():
         "discipline": "architecture",
         "properties": {"material": "aluminum"},
         "evidence_ids": ["EV-2"],
+        "ahsp_code": None,
     }
     # Pastikan tidak ada field kalkulasi (Aturan Emas)
     for item in data["items"]:

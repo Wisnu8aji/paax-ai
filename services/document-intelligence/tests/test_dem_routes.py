@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 
 os.environ.setdefault("INTERNAL_SERVICE_KEY", "test-internal-key")
+os.environ.setdefault("TESTING", "1")
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -128,6 +129,7 @@ async def test_signed_artifact_url_is_bound_to_its_project_key_and_expiry(monkey
         store = LocalArtifactStore(__import__("pathlib").Path(tmp_dir))
         store.put("original-pdf", b"%PDF-1.7", content_type="application/pdf", object_key="runs/run-123/source.pdf")
         with patch("app.api.dem_routes.DemDbClient.get_run", new=AsyncMock(return_value=run)), \
+             patch("app.api.dem_routes.DemDbClient.authorize_actor_for_project", new=AsyncMock()), \
              patch("app.api.dem_routes.DemDbClient.authorize_artifact", new=AsyncMock()), \
              patch("app.api.dem_routes.DemDbClient.get_artifact_retention", new=AsyncMock(return_value={"deleted_at": None})), \
              patch.object(dem_routes, "ARTIFACT_STORE", store):
@@ -156,6 +158,7 @@ async def test_artifact_deletion_is_owner_authorized_audited_and_rate_limited():
         store = LocalArtifactStore(__import__("pathlib").Path(tmp_dir))
         store.put("original-pdf", b"%PDF-1.7", content_type="application/pdf", object_key="runs/run-123/source.pdf")
         with patch("app.api.dem_routes.DemDbClient.get_run", new=AsyncMock(return_value=run)), \
+             patch("app.api.dem_routes.DemDbClient.authorize_actor_for_project", new=AsyncMock()), \
              patch("app.api.dem_routes.DemDbClient.authorize_artifact", new=AsyncMock()), \
              patch("app.api.dem_routes.DemDbClient.mark_artifact_deleted", new=AsyncMock()) as mark_deleted, \
              patch.object(dem_routes, "ARTIFACT_STORE", store):
@@ -183,8 +186,10 @@ async def test_issuing_artifact_url_fails_closed_without_a_configured_signing_se
     monkeypatch.delenv("ARTIFACT_SIGNING_SECRET", raising=False)
     monkeypatch.delenv("TESTING", raising=False)
     monkeypatch.setenv("ENV", "production")
+    monkeypatch.setenv("PAAX_ENABLE_LEGACY_SINGLE_KEY_COMPAT", "1")
     run = {"id": "run-500", "project_id": "PROJECT-A", "artifact_key": "original-pdf/runs/run-500/source.pdf"}
     with patch("app.api.dem_routes.DemDbClient.get_run", new=AsyncMock(return_value=run)), \
+         patch("app.api.dem_routes.DemDbClient.authorize_actor_for_project", new=AsyncMock()), \
          patch("app.api.dem_routes.DemDbClient.authorize_artifact", new=AsyncMock()), \
          patch("app.api.dem_routes.DemDbClient.get_artifact_retention", new=AsyncMock(return_value={"deleted_at": None})):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:

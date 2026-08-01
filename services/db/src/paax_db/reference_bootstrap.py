@@ -276,6 +276,7 @@ async def bootstrap_reference_project(
         result["reference_marked"] = True
 
     run = await session.get(models.DemRun, run_id)
+    canonical_artifact_key = f"original-pdf/runs/{run_id}"
     if run is None:
         first = sheets[0]
         run = models.DemRun(
@@ -288,9 +289,11 @@ async def bootstrap_reference_project(
             status="synthesis_complete",
             provider=first.generation.provider,
             prompt_version=first.generation.prompt_version,
-            artifact_key=f"reference://{reference_key}",
+            artifact_key=canonical_artifact_key,
         )
         session.add(run)
+    elif run.artifact_key and (run.artifact_key.startswith("reference://") or run.artifact_key == f"reference://{reference_key}"):
+        run.artifact_key = canonical_artifact_key
 
     existing_pages = set((await session.execute(
         select(models.DemPage.page_index).where(models.DemPage.run_id == run_id)

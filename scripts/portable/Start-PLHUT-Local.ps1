@@ -83,6 +83,16 @@ foreach ($serviceName in $serviceIdentities.Keys) {
     # Raw credential enters only this in-memory per-child environment object.
     $serviceEnvironment[$serviceName] = @{ INTERNAL_SERVICE_KEY = $credential }
 }
+
+$artifactSigningKeyPath = Join-Path $credentialDir "artifact-signing.key"
+if (-not (Test-Path $artifactSigningKeyPath)) {
+    [IO.File]::WriteAllText($artifactSigningKeyPath, ([guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N")))
+}
+Set-UserOnlyFileAcl -Path $artifactSigningKeyPath
+$artifactSigningSecret = (Get-Content -LiteralPath $artifactSigningKeyPath -Raw).Trim()
+if ($artifactSigningSecret.Length -lt 32) { throw "Runtime artifact signing secret tidak valid; startup dihentikan." }
+$serviceEnvironment["document-intelligence"]["ARTIFACT_SIGNING_SECRET"] = $artifactSigningSecret
+
 $serviceIdentityRegistry = Join-Path $runtimeDir "service-identities.json"
 $registry = [ordered]@{ version = 1; identities = $registryIdentities }
 [IO.File]::WriteAllText($serviceIdentityRegistry, (ConvertTo-Json $registry -Depth 5))
