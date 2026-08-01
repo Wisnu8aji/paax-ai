@@ -16,13 +16,38 @@ export interface PdfPageDimensions {
   height: number;
 }
 
-export interface TileViewport {
+export interface NormalizedViewport {
   x: number;
   y: number;
   width: number;
   height: number;
   zoom: number;
   dpr: number;
+}
+
+export interface PdfLogicalViewport {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  zoom: number;
+  dpr: number;
+}
+
+export type TileViewport = PdfLogicalViewport;
+
+export function toLogicalViewport(
+  normalized: NormalizedViewport,
+  metrics: { width: number; height: number },
+): PdfLogicalViewport {
+  return {
+    x: normalized.x * metrics.width,
+    y: normalized.y * metrics.height,
+    width: normalized.width * metrics.width,
+    height: normalized.height * metrics.height,
+    zoom: normalized.zoom,
+    dpr: normalized.dpr,
+  };
 }
 
 export interface PdfTileRequest {

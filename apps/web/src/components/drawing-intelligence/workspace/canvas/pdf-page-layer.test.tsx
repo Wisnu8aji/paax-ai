@@ -36,8 +36,10 @@ vi.mock('./pdf-binary-cache', () => ({
   validatePdfMagicHeader: vi.fn(),
 }));
 
-vi.mock('./pdf-tile-pool', () => {
+vi.mock('./pdf-tile-pool', async (importOriginal: () => Promise<typeof import('./pdf-tile-pool')>) => {
+  const actual = await importOriginal();
   return {
+    ...actual,
     createPdfTilePool: vi.fn(() => ({
       open: vi.fn().mockResolvedValue({ width: 1000, height: 800, rotation: 0 }),
       request: vi.fn().mockReturnValue({
@@ -47,6 +49,8 @@ vi.mock('./pdf-tile-pool', () => {
       close: vi.fn(),
       dispose: vi.fn(),
     })),
+    getGlobalPdfTilePool: vi.fn(() => (createPdfTilePool as any)()),
+    resetGlobalPdfTilePool: vi.fn(),
   };
 });
 
@@ -317,10 +321,12 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
         viewport={viewport}
         fallbackWidth={800}
         fallbackHeight={600}
+        tilePool={poolInstance as any}
       />
     );
 
     await act(async () => {
+      await Promise.resolve();
       await Promise.resolve();
       await Promise.resolve();
     });
@@ -374,10 +380,12 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
         viewport={viewport}
         fallbackWidth={800}
         fallbackHeight={600}
+        tilePool={poolInstance as any}
       />
     );
 
     await act(async () => {
+      await Promise.resolve();
       await Promise.resolve();
       await Promise.resolve();
     });
@@ -433,6 +441,7 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
         viewport={viewport}
         fallbackWidth={800}
         fallbackHeight={600}
+        tilePool={poolInstance as any}
       />
     );
 
@@ -463,20 +472,15 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
       expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
     });
 
-    const createdPools: Array<{ dispose: ReturnType<typeof vi.fn>; open: ReturnType<typeof vi.fn>; request: ReturnType<typeof vi.fn> }> = [];
-    vi.mocked(createPdfTilePool).mockImplementation(() => {
-      const p = {
-        open: vi.fn().mockResolvedValue({ width: 1000, height: 800, rotation: 0 }),
-        request: vi.fn().mockReturnValue({
-          promise: new Promise(() => {}),
-          cancel: vi.fn(),
-        }),
-        close: vi.fn(),
-        dispose: vi.fn(),
-      };
-      createdPools.push(p);
-      return p as any;
-    });
+    const pool1 = {
+      open: vi.fn().mockResolvedValue({ width: 1000, height: 800, rotation: 0 }),
+      request: vi.fn().mockReturnValue({
+        promise: new Promise(() => {}),
+        cancel: vi.fn(),
+      }),
+      close: vi.fn(),
+      dispose: vi.fn(),
+    };
 
     const viewport = { x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 };
     const { unmount } = render(
@@ -487,6 +491,7 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
           viewport={viewport}
           fallbackWidth={800}
           fallbackHeight={600}
+          tilePool={pool1 as any}
         />
       </React.StrictMode>
     );
@@ -496,16 +501,9 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
       await Promise.resolve();
     });
 
-    expect(createdPools.length).toBe(2);
-    expect(createdPools[0].dispose).toHaveBeenCalledTimes(1);
-    expect(createdPools[1].dispose).toHaveBeenCalledTimes(0);
-    expect(createdPools[0].request).not.toHaveBeenCalled();
-    expect(createdPools[1].open).toHaveBeenCalledWith(expect.objectContaining({ documentKey: 'run-strict:0', pageNumber: 1 }));
+    expect(pool1.open).toHaveBeenCalledWith(expect.objectContaining({ documentKey: 'run-strict:0', pageNumber: 1 }));
 
     unmount();
-
-    expect(createdPools[0].dispose).toHaveBeenCalledTimes(1);
-    expect(createdPools[1].dispose).toHaveBeenCalledTimes(1);
   });
 
   it('tile requests do not start for a new document until pool.open for that exact document generation resolves', async () => {
@@ -527,7 +525,6 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
       close: vi.fn(),
       dispose: vi.fn(),
     };
-    vi.mocked(createPdfTilePool).mockReturnValueOnce(pool1 as any);
 
     const viewport = { x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 };
     const { rerender } = render(
@@ -537,6 +534,7 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
         viewport={viewport}
         fallbackWidth={800}
         fallbackHeight={600}
+        tilePool={pool1 as any}
       />
     );
 
@@ -567,7 +565,6 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
       close: vi.fn(),
       dispose: vi.fn(),
     };
-    vi.mocked(createPdfTilePool).mockReturnValueOnce(pool2 as any);
 
     mockFetchArtifact.mockResolvedValueOnce({
       url: '/api/document-intelligence/drawings/dem/run-2/artifact?token=xyz',
@@ -581,6 +578,7 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
         viewport={viewport}
         fallbackWidth={800}
         fallbackHeight={600}
+        tilePool={pool2 as any}
       />
     );
 
@@ -617,7 +615,6 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
       close: vi.fn(),
       dispose: vi.fn(),
     };
-    vi.mocked(createPdfTilePool).mockReturnValueOnce(poolInstance as any);
 
     const viewport1 = { x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 };
     render(
@@ -627,6 +624,7 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
         viewport={viewport1}
         fallbackWidth={800}
         fallbackHeight={600}
+        tilePool={poolInstance as any}
       />
     );
 
@@ -688,10 +686,12 @@ describe('Phase 3B1: Metadata-only React state and cache.peek rendering', () => 
         viewport={viewport}
         fallbackWidth={800}
         fallbackHeight={600}
+        tilePool={poolInstance as any}
       />
     );
 
     await act(async () => {
+      await Promise.resolve();
       await Promise.resolve();
       await Promise.resolve();
     });
@@ -756,10 +756,12 @@ describe('Phase 3B1: Metadata-only React state and cache.peek rendering', () => 
         viewport={viewport}
         fallbackWidth={800}
         fallbackHeight={600}
+        tilePool={poolInstance as any}
       />
     );
 
     await act(async () => {
+      await Promise.resolve();
       await Promise.resolve();
       await Promise.resolve();
     });
@@ -827,10 +829,12 @@ describe('Phase 3B1: Metadata-only React state and cache.peek rendering', () => 
         viewport={viewport1}
         fallbackWidth={800}
         fallbackHeight={600}
+        tilePool={poolInstance as any}
       />
     );
 
     await act(async () => {
+      await Promise.resolve();
       await Promise.resolve();
       await Promise.resolve();
     });
@@ -862,10 +866,12 @@ describe('Phase 3B1: Metadata-only React state and cache.peek rendering', () => 
         viewport={viewport2}
         fallbackWidth={800}
         fallbackHeight={600}
+        tilePool={poolInstance as any}
       />
     );
 
     await act(async () => {
+      await Promise.resolve();
       await Promise.resolve();
     });
 
@@ -935,10 +941,12 @@ describe('Phase 3B1: Metadata-only React state and cache.peek rendering', () => 
         viewport={viewport}
         fallbackWidth={1000}
         fallbackHeight={800}
+        tilePool={poolInstance as any}
       />
     );
 
     await act(async () => {
+      await Promise.resolve();
       await Promise.resolve();
       await Promise.resolve();
     });
@@ -973,6 +981,7 @@ describe('Phase 3B1: Metadata-only React state and cache.peek rendering', () => 
         viewport={{ ...viewport, x: 0.001 }}
         fallbackWidth={1000}
         fallbackHeight={800}
+        tilePool={poolInstance as any}
       />
     );
 
@@ -1040,10 +1049,12 @@ describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellatio
         viewport={viewport1}
         fallbackWidth={1000}
         fallbackHeight={800}
+        tilePool={poolInstance as any}
       />
     );
 
     await act(async () => {
+      await Promise.resolve();
       await Promise.resolve();
       await Promise.resolve();
     });
@@ -1061,6 +1072,7 @@ describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellatio
         viewport={viewport2}
         fallbackWidth={1000}
         fallbackHeight={800}
+        tilePool={poolInstance as any}
       />
     );
 
@@ -1120,6 +1132,7 @@ describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellatio
         viewport={viewport1}
         fallbackWidth={1000}
         fallbackHeight={800}
+        tilePool={poolInstance as any}
       />
     );
 
@@ -1200,10 +1213,12 @@ describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellatio
         viewport={viewport1}
         fallbackWidth={1000}
         fallbackHeight={800}
+        tilePool={poolInstance as any}
       />
     );
 
     await act(async () => {
+      await Promise.resolve();
       await Promise.resolve();
       await Promise.resolve();
     });
@@ -1219,6 +1234,7 @@ describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellatio
         viewport={{ ...viewport1, x: 0.5 }}
         fallbackWidth={1000}
         fallbackHeight={800}
+        tilePool={poolInstance as any}
       />
     );
 
@@ -1234,6 +1250,7 @@ describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellatio
         viewport={{ ...viewport1, x: 0 }}
         fallbackWidth={1000}
         fallbackHeight={800}
+        tilePool={poolInstance as any}
       />
     );
 
@@ -1300,10 +1317,12 @@ describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellatio
           viewport={viewport}
           fallbackWidth={1000}
           fallbackHeight={800}
+          tilePool={poolInstance as any}
         />
       );
 
       await act(async () => {
+        await Promise.resolve();
         await Promise.resolve();
         await Promise.resolve();
       });
@@ -1363,10 +1382,12 @@ describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellatio
         viewport={viewport}
         fallbackWidth={1000}
         fallbackHeight={800}
+        tilePool={poolInstance1 as any}
       />
     );
 
     await act(async () => {
+      await Promise.resolve();
       await Promise.resolve();
       await Promise.resolve();
     });
@@ -1387,6 +1408,7 @@ describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellatio
         viewport={viewport}
         fallbackWidth={1000}
         fallbackHeight={800}
+        tilePool={poolInstance1 as any}
       />
     );
 

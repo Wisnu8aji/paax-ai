@@ -61,15 +61,40 @@ Command: pytest -v
 Result: 897 passed, 5 skipped (902 total tests) in 187.30s
 ```
 
+
 ---
 
-## 3. Mandatory Golden Rules Compliance
+## 4. Correction Round 2 — Disposed Pool and Viewport Coordinate Mismatch Remediation
 
-1. **AI Never Calculates ("AI TIDAK PERNAH MENGHITUNG")**:
-   - Zero RAB/AHSP/Quantity math in frontend TS or LLM layers.
-   - All thumbnail and document rendering logic remains purely structural and display-bound.
-2. **Graphify-First Workflow**:
-   - Navigation and dependency analysis executed graph-first via Knowledge Graph before file edits.
-3. **Branching & PR Discipline**:
-   - Developed exclusively on `codex/sheet-navigation-gallery-viewer-performance`.
-   - Ready to push branch and open Pull Request for owner review without merging to `main`.
+**Status**: `COMPLETED & FULLY VERIFIED` (Target Vitest 41/41 Passed 100%, Frontend Suite 317/317 Passed 100%)
+
+### 4.1 Audit Findings & Root Causes Identified
+1. **Broken Global Singleton Exports & Disposed Pool Error**:
+   - Deletion of `getGlobalPdfTilePool` and `resetGlobalPdfTilePool` from `pdf-page-layer.tsx` broke contract with existing tests and callers.
+   - Calling `pool.dispose()` inside `useEffect` cleanup of `PdfPageLayer` during page changes (`pageIndex`) destroyed worker threads and closed the tile pool prematurely, emitting `Retry PDF: PDF tile pool disposed`.
+2. **Viewport Coordinate Cutoff on Zoom**:
+   - `DrawingCanvas.tsx` passed `viewport` in normalized fraction scale (`0..1`).
+   - `PdfPageLayer.tsx` forwarded this normalized viewport directly into `PdfTilePyramid.visibleTiles(viewport)`, which interprets coordinates as logical PDF points (`0..metrics.width`).
+   - When given `x:0, y:0, width:1, height:1`, `PdfTilePyramid` computed bounds as `1 * density` (1px out of 1000px width), requesting ONLY tile `(0,0)` and cutting off 99% of the page.
+
+### 4.2 Architectural Fixes Applied
+1. **Single Owner & Canonical Singleton (`pdf-tile-pool.ts` & `pdf-page-layer.tsx`)**:
+   - `getGlobalPdfTilePool` and `resetGlobalPdfTilePool` consolidated in `pdf-tile-pool.ts` and re-exported from `pdf-page-layer.tsx`.
+   - `PdfPageLayer` uses `getGlobalPdfTilePool()` when no custom `tilePool` prop is passed.
+   - Page transitions (`pageIndex` change) call `pool.close(documentKey)` to cancel in-flight tile requests for that page without disposing workers or destroying the open `PDFDocumentProxy`.
+   - Worker document state and binary ArrayBuffers are keyed by `runId` across workers, eliminating redundant binary copies and re-parsing.
+2. **Normalized to Logical Viewport Translation**:
+   - Added `NormalizedViewport`, `PdfLogicalViewport`, and `toLogicalViewport` helpers in `pdf-tile-pyramid.ts`.
+   - `PdfPageLayer` translates incoming `viewport` (0..1 fraction) into `PdfLogicalViewport` (`0..metrics.width` / `0..metrics.height`) at the boundary before querying pyramid visible tiles.
+   - `DrawingCanvas` refits initial zoom when real PDF aspect ratio metrics arrive via `onMetrics` if the user has not manually adjusted zoom/pan.
+
+### 4.3 Verification & Test Results
+- **Target Vitest Suite (`pdf-page-layer`, `pdf-tile-pool`, `pdf-tile-pyramid`)**:
+  ```
+  Test Files  3 passed (3)
+       Tests  41 passed (41)
+    Duration  4.59s
+  ```
+- **Full Frontend Vitest Suite**: 317/317 Passed (100%).
+- **TypeScript Typecheck**: Clean (0 errors).
+

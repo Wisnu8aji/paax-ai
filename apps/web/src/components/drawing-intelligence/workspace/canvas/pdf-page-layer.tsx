@@ -13,9 +13,13 @@ import {
 import {
   PdfTilePyramid,
   TileLru,
+  toLogicalViewport,
+  type NormalizedViewport,
+  type PdfLogicalViewport,
   type PdfTileRequest,
-  type TileViewport,
 } from './pdf-tile-pyramid';
+
+export { getGlobalPdfTilePool, resetGlobalPdfTilePool };
 
 let globalTileCacheInstance: TileLru | null = null;
 
@@ -47,7 +51,7 @@ export function shouldRefreshArtifactUrl(expiresAt: string | number, now: Date =
 export interface PdfPageLayerProps {
   runId: string;
   pageIndex: number;
-  viewport: TileViewport;
+  viewport: NormalizedViewport;
   fallbackWidth: number;
   fallbackHeight: number;
   onMetrics?: (metrics: PdfPageMetrics) => void;
@@ -75,22 +79,18 @@ export function PdfPageLayer({
   const activeRequestsRef = useRef<Map<string, { identity: symbol; cancel: () => void }>>(new Map());
   const desiredKeysRef = useRef<Set<string>>(new Set());
 
-  if (!poolRef.current) {
-    if (tilePool) {
-      poolRef.current = tilePool;
-      isExternalPoolRef.current = true;
-    } else {
-      poolRef.current = createPdfTilePool();
-      isExternalPoolRef.current = false;
-    }
+  if (tilePool) {
+    poolRef.current = tilePool;
+    isExternalPoolRef.current = true;
+  } else if (!poolRef.current) {
+    poolRef.current = getGlobalPdfTilePool();
+    isExternalPoolRef.current = false;
   }
 
-  if (!cacheRef.current) {
-    if (tileCache) {
-      cacheRef.current = tileCache;
-    } else {
-      cacheRef.current = getGlobalTileCache();
-    }
+  if (tileCache) {
+    cacheRef.current = tileCache;
+  } else if (!cacheRef.current) {
+    cacheRef.current = getGlobalTileCache();
   }
 
   const [metrics, setMetrics] = useState<PdfPageMetrics | null>(null);
@@ -104,6 +104,21 @@ export function PdfPageLayer({
   const onMetricsRef = useRef(onMetrics);
   onMetricsRef.current = onMetrics;
 
+  // Cleanup active requests on unmount of the layer component
+  useEffect(() => {
+    const activePool = poolRef.current;
+    const isExternal = isExternalPoolRef.current;
+    return () => {
+      activeRequestsRef.current.forEach((entry) => entry.cancel());
+      activeRequestsRef.current.clear();
+      desiredKeysRef.current.clear();
+      if (activePool && isExternal) {
+        activePool.dispose();
+      }
+    };
+  }, []);
+
+  // Open Document & Fetch Metrics Lifecycle
   useEffect(() => {
     const currentGen = ++openGenRef.current;
     activeOpenGenRef.current = null;
@@ -145,12 +160,6 @@ export function PdfPageLayer({
       activeRequestsRef.current.clear();
       desiredKeysRef.current.clear();
       pool.close(documentKey);
-      if (!isExternalPoolRef.current) {
-        cache.dispose();
-        pool.dispose();
-        if (poolRef.current === pool) poolRef.current = null;
-        if (cacheRef.current === cache) cacheRef.current = null;
-      }
     };
   }, [runId, pageIndex, documentKey, pageNumber, retry, tilePool, tileCache]);
 
@@ -159,6 +168,7 @@ export function PdfPageLayer({
     [metrics, documentKey],
   );
 
+  // Render Visible & Detail Tiles Lifecycle
   useEffect(() => {
     const currentGen = openGenRef.current;
     if (!metrics || !pyramid || error || activeOpenGenRef.current !== currentGen) return;
@@ -166,8 +176,14 @@ export function PdfPageLayer({
     const pool = poolRef.current ?? (tilePool || getGlobalPdfTilePool());
     const cache = cacheRef.current ?? (tileCache || getGlobalTileCache());
 
-    const visible = pyramid.visibleTiles(viewport);
-    const detailTiles = pyramid.visibleDetailTiles(viewport);
+    // Convert NormalizedViewport to PdfLogicalViewport if needed
+    const logicalViewport: PdfLogicalViewport =
+      viewport.width <= 1 && viewport.height <= 1
+        ? toLogicalViewport(viewport as NormalizedViewport, metrics)
+        : (viewport as PdfLogicalViewport);
+
+    const visible = pyramid.visibleTiles(logicalViewport);
+    const detailTiles = pyramid.visibleDetailTiles(logicalViewport);
 
     const desiredKeys = new Set(visible.map((t) => t.key));
     desiredKeysRef.current = desiredKeys;
@@ -268,7 +284,7 @@ export function PdfPageLayer({
     return () => {
       window.clearTimeout(detailTimer);
     };
-  }, [metrics, viewport, error, pyramid, documentKey, pageNumber]);
+  }, [metrics, viewport, error, pyramid, documentKey, pageNumber, tilePool, tileCache]);
 
   if (error) {
     return (

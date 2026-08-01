@@ -110,6 +110,12 @@ export function DrawingCanvas() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.activeSheetId]);
 
+  useEffect(() => {
+    if (pdfMetrics && !userAdjustedRef.current) {
+      fitSheet();
+    }
+  }, [pdfMetrics, fitSheet]);
+
   useEffect(() => () => { if (panFrameRef.current !== null) cancelAnimationFrame(panFrameRef.current); }, []);
 
   useEffect(() => {
