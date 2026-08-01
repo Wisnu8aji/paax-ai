@@ -151,9 +151,15 @@ def _as_aware_utc(value: datetime.datetime) -> datetime.datetime:
         return value.replace(tzinfo=datetime.timezone.utc)
     return value.astimezone(datetime.timezone.utc)
 
+from .runtime_identity import get_runtime_identity
+
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "service": "db",
+        "runtime_identity": get_runtime_identity("db"),
+    }
 
 @app.get("/projects", response_model=List[schemas.ProjectResponse])
 async def list_projects(db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
@@ -914,8 +920,22 @@ async def create_dem_run(run: schemas.DemRunCreate, db: AsyncSession = Depends(g
 
 @app.get("/dem/runs/{id}", response_model=schemas.DemRunResponse, dependencies=[Depends(get_current_user)])
 async def get_dem_run(id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
-    result = await db.execute(select(models.DemRun).where(models.DemRun.id == id))
-    run = result.scalars().first()
+    run = None
+    try:
+        run_uuid = uuid.UUID(id)
+        result = await db.execute(select(models.DemRun).where(models.DemRun.id == run_uuid))
+        run = result.scalars().first()
+    except (ValueError, TypeError, AttributeError):
+        pass
+
+    if not run:
+        result = await db.execute(
+            select(models.DemRun)
+            .where(models.DemRun.project_id == id)
+            .order_by(models.DemRun.created_at.desc())
+        )
+        run = result.scalars().first()
+
     if not run:
         raise HTTPException(status_code=404, detail="DEM run not found")
     await require_project_access(run.project_id, db, user, service_scope="dem:read")
@@ -1148,8 +1168,41 @@ async def read_active_sheet_context(id: str, page_index: int, db: AsyncSession =
         proj = (await db.execute(select(models.Project).where(models.Project.id == id))).scalars().first()
         if not proj:
             raise HTTPException(status_code=404, detail="Project not found")
-        snapshot = {"snapshot_id": "empty", "nodes": [], "edges": [], "review_queue": []}
-    return get_active_sheet_context(snapshot, page_index, project_id=id)
+        snapshot_dict = {"snapshot_id": "empty", "nodes": [], "edges": [], "review_queue": []}
+    else:
+        nodes_rows = (await db.execute(select(models.ProjectGraphNode).where(models.ProjectGraphNode.snapshot_id == snapshot.snapshot_id))).scalars().all()
+        edges_rows = (await db.execute(select(models.ProjectGraphEdge).where(models.ProjectGraphEdge.snapshot_id == snapshot.snapshot_id))).scalars().all()
+        nodes_list = [
+            {
+                "id": n.node_id,
+                "node_id": n.node_id,
+                "canonical_name": n.canonical_name,
+                "node_type": n.node_type,
+                "discipline": n.discipline,
+                "confidence": float(n.confidence),
+                "properties": n.properties_json or {},
+                "properties_json": n.properties_json or {},
+            }
+            for n in nodes_rows
+        ]
+        edges_list = [
+            {
+                "edge_id": e.edge_id,
+                "source": e.source_node_id,
+                "target": e.target_node_id,
+                "relation": e.relation,
+                "confidence": float(e.confidence),
+            }
+            for e in edges_rows
+        ]
+        review_queue = await build_review_queue(db, project_id=id, snapshot_id=snapshot.snapshot_id)
+        snapshot_dict = {
+            "snapshot_id": snapshot.snapshot_id,
+            "nodes": nodes_list,
+            "edges": edges_list,
+            "review_queue": review_queue,
+        }
+    return get_active_sheet_context(snapshot_dict, page_index, project_id=id)
 
 
 @app.post(

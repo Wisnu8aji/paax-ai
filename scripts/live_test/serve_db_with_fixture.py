@@ -21,7 +21,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-MANIFEST_PATH = REPO_ROOT / "scripts" / "live_test" / "fixtures" / "plhut" / "project-manifest.json"
+MANIFEST_PATH = (
+    REPO_ROOT / "fixtures" / "plhut" / "project-manifest.json"
+    if (REPO_ROOT / "fixtures" / "plhut" / "project-manifest.json").exists()
+    else REPO_ROOT / "scripts" / "live_test" / "fixtures" / "plhut" / "project-manifest.json"
+)
 
 # Fixed actor identity for local desktop use cases
 PORTABLE_ACTOR_ID = "local-desktop-user"
@@ -61,3 +65,5 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
+    import uvicorn
+    uvicorn.run("paax_db.main:app", host="127.0.0.1", port=8001, log_level="info")

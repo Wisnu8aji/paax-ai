@@ -158,13 +158,17 @@ def calculate_from_measurements(req: CalculationRequest):
 
 
 # ----------------------------- Endpoints -----------------------------
+from paax_db.runtime_identity import get_runtime_identity
+
 @app.get("/health")
 def health():
     return {
         "status": "ok",
+        "service": "core-engine",
         "version": "0.6.0",
         "ahsp_items": len(STORE.ahsp),
         "regions": list(STORE.regions),
+        "runtime_identity": get_runtime_identity("core-engine"),
     }
 
 

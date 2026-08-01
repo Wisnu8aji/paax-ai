@@ -1,11 +1,11 @@
+import { NextResponse } from "next/server";
 import path from "path";
 import { execSync } from "child_process";
-import type { Request, Response } from "express";
 
 const START_TIME = new Date().toISOString();
 
-export function healthHandler(_req: Request, res: Response) {
-  const repoRoot = process.env.PAAX_REPO_ROOT || (process.cwd().includes("services") ? path.resolve(process.cwd(), "../..") : process.cwd());
+export async function GET() {
+  const repoRoot = process.env.PAAX_REPO_ROOT || path.resolve(process.cwd(), "../..");
   let commit = process.env.PAAX_COMMIT || "";
   let branch = process.env.PAAX_BRANCH || "";
   let dirty = process.env.PAAX_DIRTY === "true" || process.env.PAAX_DIRTY === "1";
@@ -29,16 +29,15 @@ export function healthHandler(_req: Request, res: Response) {
     }
   }
 
-  return res.json({
+  return NextResponse.json({
     status: "ok",
-    service: "ai-orchestrator",
-    version: "0.1.0",
+    service: "web",
     runtime_identity: {
       repo_root: repoRoot,
       commit,
       branch,
       dirty,
-      service_name: "ai-orchestrator",
+      service_name: "web",
       pid: process.pid,
       process_start_time: START_TIME,
       data_root: process.env.PAAX_DATA_ROOT || "G:\\PAAX-Data",

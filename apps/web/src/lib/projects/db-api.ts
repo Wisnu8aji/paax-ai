@@ -148,13 +148,13 @@ export interface WorkspaceSession {
 
 export const dbApiWorkspaceRepository = {
   async getHead(): Promise<WorkspaceHead | null> {
-    const res = await fetch('/api/workspace/head');
+    const res = await fetch('/api/db-projects/workspace/head');
     if (!res.ok) return null;
     return res.json();
   },
 
   async patchHead(patch: Partial<WorkspaceHead>): Promise<WorkspaceHead> {
-    const res = await fetch('/api/workspace/head', {
+    const res = await fetch('/api/db-projects/workspace/head', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(patch),
@@ -164,13 +164,13 @@ export const dbApiWorkspaceRepository = {
   },
 
   async getSession(projectId: string): Promise<WorkspaceSession | null> {
-    const res = await fetch(`/api/workspace/project/${projectId}/session`);
+    const res = await fetch(`/api/db-projects/workspace/project/${projectId}/session`);
     if (!res.ok) return null;
     return res.json();
   },
 
   async patchSession(projectId: string, patch: Partial<WorkspaceSession>): Promise<WorkspaceSession> {
-    const res = await fetch(`/api/workspace/project/${projectId}/session`, {
+    const res = await fetch(`/api/db-projects/workspace/project/${projectId}/session`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(patch),

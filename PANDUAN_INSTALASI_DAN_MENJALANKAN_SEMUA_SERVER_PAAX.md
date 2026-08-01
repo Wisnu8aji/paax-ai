@@ -108,18 +108,18 @@ http://127.0.0.1:3000
 
 ## 6. Memastikan server aktif
 
-Jalankan pemeriksaan berikut:
+Jalankan pemeriksaan HTTP 200 dan verifikasi `runtime_identity`:
 
 ```powershell
-Invoke-WebRequest http://127.0.0.1:8001/health -UseBasicParsing
-Invoke-WebRequest http://127.0.0.1:8081/health -UseBasicParsing
-Invoke-WebRequest http://127.0.0.1:8082/health -UseBasicParsing
-Invoke-WebRequest http://127.0.0.1:8083/health -UseBasicParsing
-Invoke-WebRequest http://127.0.0.1:3000 -UseBasicParsing
+Invoke-RestMethod http://127.0.0.1:8001/health
+Invoke-RestMethod http://127.0.0.1:8081/health
+Invoke-RestMethod http://127.0.0.1:8082/health
+Invoke-RestMethod http://127.0.0.1:8083/health
+Invoke-RestMethod http://127.0.0.1:8085/health
+Invoke-RestMethod http://127.0.0.1:3000/api/health
 ```
 
-Respons HTTP di bawah 500 menandakan layanan dapat dijangkau. Script startup
-juga akan menampilkan `READY` untuk setiap layanan yang sehat.
+Seluruh endpoint WAJIB mengembalikan status HTTP 200 dengan `status: "ok"` dan `runtime_identity.repo_root` yang menunjuk tepat ke `G:\paax-ai-contextual-integration`. Jangan menerima kriteria "HTTP di bawah 500". Script startup tidak akan menyatakan READY sebelum seluruh 6 service membuktikan identitas build dan readiness yang sama.
 
 ## 7. Proyek PLHUT
 
@@ -233,6 +233,29 @@ File penting biasanya memiliki akhiran:
 *.err.log
 *.pid
 ```
+
+### UI terlihat versi lama / Service berjalan dari folder salah
+
+Jika tampilan UI tidak mencerminkan versi terbaru atau fitur baru tidak muncul:
+
+1. Hentikan seluruh service PAAX secara aman:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\scripts\portable\Stop-PLHUT-Local.ps1 -DataRoot "G:\PAAX-Data"
+   ```
+2. Periksa apakah ada proses PAAX lama yang masih menggantung:
+   ```powershell
+   Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like "*paax*" -or $_.CommandLine -like "*uvicorn*" } | Select-Object ProcessId, ExecutablePath, CommandLine
+   ```
+3. Pastikan terminal aktif berada pada folder yang benar:
+   ```powershell
+   cd G:\paax-ai-contextual-integration
+   git status
+   ```
+4. Jalankan ulang server dan periksa `runtime_identity`:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\scripts\portable\Start-PLHUT-Local.ps1 -DataRoot "G:\PAAX-Data"
+   Invoke-RestMethod http://127.0.0.1:3000/api/health
+   ```
 
 ### Command Room tidak dapat memanggil AI
 

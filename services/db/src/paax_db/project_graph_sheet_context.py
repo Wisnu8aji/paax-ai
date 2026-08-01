@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 
 def get_active_sheet_context(
-    snapshot: dict[str, Any],
+    snapshot: Any,
     page_index: int,
     *,
     project_id: str,
@@ -13,9 +13,19 @@ def get_active_sheet_context(
     if not snapshot:
         raise HTTPException(status_code=404, detail=f"Project graph snapshot not found for project: {project_id}")
 
-    nodes = snapshot.get("nodes", [])
-    edges = snapshot.get("edges", [])
-    review_queue = snapshot.get("review_queue", [])
+    if hasattr(snapshot, "snapshot_json") and isinstance(getattr(snapshot, "snapshot_json"), dict):
+        snapshot = getattr(snapshot, "snapshot_json")
+
+    if isinstance(snapshot, dict):
+        nodes = snapshot.get("nodes", [])
+        edges = snapshot.get("edges", [])
+        review_queue = snapshot.get("review_queue", [])
+        snapshot_id = snapshot.get("snapshot_id", "active-snapshot")
+    else:
+        nodes = getattr(snapshot, "nodes", []) or []
+        edges = getattr(snapshot, "edges", []) or []
+        review_queue = getattr(snapshot, "review_queue", []) or []
+        snapshot_id = getattr(snapshot, "snapshot_id", "active-snapshot")
 
     # Filter nodes for page_index
     matched_nodes = []
@@ -60,6 +70,13 @@ def get_active_sheet_context(
     # Filter review queue rows for page_index
     matched_review_rows = []
     for row in review_queue:
+        if isinstance(row, str):
+            try:
+                row = json.loads(row)
+            except Exception:
+                continue
+        if not isinstance(row, dict):
+            continue
         r_page = row.get("page_index")
         r_refs = row.get("evidence_refs") or []
         if (r_page is not None and int(r_page) == page_index) or any(
@@ -72,6 +89,7 @@ def get_active_sheet_context(
         {
             str(ref)
             for item in matched_nodes + matched_edges + matched_review_rows
+            if isinstance(item, dict)
             for ref in item.get("evidence_refs", [])
             if str(ref).strip()
         }
@@ -80,7 +98,7 @@ def get_active_sheet_context(
     return {
         "project_id": project_id,
         "page_index": page_index,
-        "snapshot_id": snapshot.get("snapshot_id", "active-snapshot"),
+        "snapshot_id": snapshot_id,
         "nodes": matched_nodes,
         "edges": matched_edges,
         "review_queue": matched_review_rows,

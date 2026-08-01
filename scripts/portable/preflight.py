@@ -125,13 +125,38 @@ def main() -> int:
         check(f"python_module_{module}", importlib.util.find_spec(module) is not None, module)
     check("node_package_manifest", (ROOT / "pnpm-lock.yaml").is_file(), "pnpm-lock.yaml")
 
+    import urllib.request
+
     for port in (8001, 8081, 8083, 8085, 3000):
         sock = socket.socket()
         sock.settimeout(0.2)
         busy = sock.connect_ex(("127.0.0.1", port)) == 0
         sock.close()
-        ok = not busy or args.allow_running
-        state = "already running (allowed)" if busy and args.allow_running else ("available" if not busy else "already in use")
+        
+        ok = True
+        state = "available"
+        if busy:
+            if not args.allow_running:
+                ok = False
+                state = "already in use"
+            else:
+                # Validate that the listening service belongs to this repository
+                health_url = f"http://127.0.0.1:{port}/api/health" if port == 3000 else f"http://127.0.0.1:{port}/health"
+                try:
+                    req = urllib.request.Request(health_url, headers={"User-Agent": "PAAX-Preflight"})
+                    with urllib.request.urlopen(req, timeout=1.5) as resp:
+                        data = json.loads(resp.read().decode("utf-8"))
+                        svc_repo = data.get("runtime_identity", {}).get("repo_root", "")
+                        if Path(svc_repo).resolve() == ROOT.resolve():
+                            ok = True
+                            state = f"already running (same repo: {ROOT})"
+                        else:
+                            ok = False
+                            state = f"occupied by different repo or unknown service ({svc_repo or 'no identity'})"
+                except Exception as exc:  # noqa: BLE001
+                    ok = False
+                    state = f"occupied by non-PAAX process or unreachable endpoint ({exc})"
+
         check(f"port_{port}_available", ok, state)
 
     failed = [item for item in checks if not item["ok"]]

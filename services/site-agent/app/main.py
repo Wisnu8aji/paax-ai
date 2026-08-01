@@ -50,9 +50,17 @@ app.add_middleware(
 )
 
 
+from paax_db.runtime_identity import get_runtime_identity
+
 @app.get("/healthz")
+@app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "service": "site-agent", "version": "0.1.0"}
+    return {
+        "status": "ok",
+        "service": "site-agent",
+        "version": "0.1.0",
+        "runtime_identity": get_runtime_identity("site-agent"),
+    }
 
 
 @app.post("/site-logs", response_model=SiteLogRecord, status_code=201)
