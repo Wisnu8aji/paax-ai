@@ -680,52 +680,86 @@ async def get_project_source_pdf(id: str):
     return FileResponse(source, media_type="application/pdf", filename=source.name)
 
 
-@app.get(
-    "/projects/{id}/source-document/pages/{page_index}/image",
-    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
-)
-async def render_project_source_page(id: str, page_index: int, width: int = Query(1800, ge=300, le=3200)):
-    source = _portable_source_pdf(id)
+from functools import lru_cache
+from .package_index import build_package_index_from_dem_pages
+from .civil_work_items_live import build_live_civil_work_items
+
+@lru_cache(maxsize=128)
+def _render_pdf_page_png_cached(pdf_path_str: str, page_index: int, width: int) -> bytes:
     try:
         import fitz
     except ImportError as exc:
         raise HTTPException(status_code=503, detail="PyMuPDF renderer is unavailable") from exc
-    document = fitz.open(source)
+    document = fitz.open(pdf_path_str)
     try:
         if page_index < 0 or page_index >= document.page_count:
-            raise HTTPException(status_code=404, detail="Page index out of range")
+            raise ValueError("Page index out of range")
         page = document.load_page(page_index)
-        zoom = min(4.0, max(0.5, width / max(1.0, page.rect.width)))
+        zoom = min(4.0, max(0.2, width / max(1.0, page.rect.width)))
         pixmap = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
-        payload = pixmap.tobytes("png")
+        return pixmap.tobytes("png")
+    finally:
+        document.close()
+
+
+@app.get(
+    "/projects/{id}/source-document/pages/{page_index}/image",
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def render_project_source_page(id: str, page_index: int, width: int = Query(1800, ge=200, le=3200)):
+    source = _portable_source_pdf(id)
+    try:
+        payload = _render_pdf_page_png_cached(str(source), page_index, width)
         return Response(
             content=payload,
             media_type="image/png",
             headers={"Cache-Control": "public, max-age=86400, immutable", "X-PAAX-Source-Page": str(page_index)},
         )
-    finally:
-        document.close()
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@app.get(
+    "/projects/{id}/pages/{page_index}/artifact",
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def get_page_artifact(id: str, page_index: int, width: int = Query(1800, ge=200, le=3200)):
+    return await render_project_source_page(id, page_index, width)
+
+
+@app.get(
+    "/projects/{id}/pages/{page_index}/thumbnail",
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def get_page_thumbnail(id: str, page_index: int, width: int = Query(400, ge=100, le=800)):
+    return await render_project_source_page(id, page_index, width)
+
+
+@app.get(
+    "/projects/{id}/drawing-intelligence/package-analysis",
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def get_project_package_analysis(id: str, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(
+        select(models.DemPage)
+        .join(models.DemRun, models.DemRun.id == models.DemPage.run_id)
+        .where(models.DemRun.project_id == id)
+        .order_by(models.DemPage.page_index.asc())
+    )
+    pages = res.scalars().all()
+    if not pages:
+        raise HTTPException(status_code=404, detail="No DEM pages found for package analysis")
+    dem_pages_data = [{"page_index": p.page_index, "result": p.result} for p in pages]
+    manifest = build_package_index_from_dem_pages(dem_pages_data, id)
+    return manifest
 
 
 def _load_civil_work_items(project_id: str) -> dict[str, Any]:
-    manifest = _portable_project_manifest(project_id)
-    if not manifest or not manifest.get("civil_work_items"):
-        raise HTTPException(status_code=404, detail="Civil Work Item projection not found")
-    path = (_portable_repo_root() / manifest["civil_work_items"]).resolve()
-    if not path.is_file() or _portable_repo_root() not in path.parents:
-        raise HTTPException(status_code=404, detail="Civil Work Item artifact not found")
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise HTTPException(status_code=409, detail="Civil Work Item artifact is invalid") from exc
-    errors = validate_civil_work_items_payload(
-        payload,
-        expected_project_id=project_id,
-        expected_source_sha256=manifest.get("source_document", {}).get("sha256"),
-    )
-    if errors:
-        raise HTTPException(status_code=409, detail={"message": "Civil Work Item integrity validation failed", "errors": errors})
-    return payload
+    data_root_str = os.environ.get("PAAX_DATA_ROOT", "G:\\PAAX-Data")
+    db_path = Path(data_root_str) / "db" / "portable.sqlite"
+    if not db_path.is_file():
+        db_path = (_portable_repo_root() / "fixtures" / "plhut" / "portable.sqlite").resolve()
+    return build_live_civil_work_items(db_path, project_id)
 
 
 @app.get(
@@ -734,19 +768,7 @@ def _load_civil_work_items(project_id: str) -> dict[str, Any]:
 )
 async def list_civil_work_items(id: str):
     payload = _load_civil_work_items(id)
-    items = payload.get("items", [])
-    return {
-        **payload,
-        "summary": {
-            "total": len(items),
-            "ready": sum(item.get("readiness") == "ready" for item in items),
-            "needs_review": sum(item.get("readiness") == "needs_review" for item in items),
-            "by_location": {
-                location: sum(item.get("location") == location for item in items)
-                for location in sorted({str(item.get("location")) for item in items})
-            },
-        },
-    }
+    return payload
 
 
 @app.post(

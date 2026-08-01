@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 TARGETS = [
     ROOT / "apps/web/src/components/drawing-intelligence",
     ROOT / "services/document-intelligence/app",
+    ROOT / "services/db/src/paax_db",
 ]
 EXCLUDED_PARTS = {"__tests__", "__fixtures__", "fixtures", "tests"}
 FORBIDDEN = [
@@ -19,6 +20,7 @@ FORBIDDEN = [
     re.compile(r"demo sheets prepared", re.I),
     re.compile(r"Coming soon", re.I),
     re.compile(r"2\.4\s*\*\s*1024\s*\*\s*1024"),
+    re.compile(r"civil-work-items\.json"),
 ]
 
 
