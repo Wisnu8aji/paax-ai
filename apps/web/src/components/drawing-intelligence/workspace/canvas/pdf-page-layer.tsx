@@ -17,22 +17,6 @@ import {
   type TileViewport,
 } from './pdf-tile-pyramid';
 
-let globalPoolInstance: ReturnType<typeof createPdfTilePool> | null = null;
-
-export function getGlobalPdfTilePool(): ReturnType<typeof createPdfTilePool> {
-  if (!globalPoolInstance) {
-    globalPoolInstance = createPdfTilePool();
-  }
-  return globalPoolInstance;
-}
-
-export function resetGlobalPdfTilePool(): void {
-  if (globalPoolInstance) {
-    globalPoolInstance.dispose();
-    globalPoolInstance = null;
-  }
-}
-
 let globalTileCacheInstance: TileLru | null = null;
 
 export function getGlobalTileCache(): TileLru {
