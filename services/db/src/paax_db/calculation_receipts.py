@@ -132,12 +132,15 @@ async def _approved_mapping_and_facts(
 
 def _canonical_request(
     *, project_id: str, mapping: models.RabMaterializationMapping, facts: list[models.MeasurementFact],
-    approval: models.RabMaterializationMappingAudit,
+    approval: models.RabMaterializationMappingAudit, requested_by: str,
 ) -> dict[str, Any]:
     fact_payloads = [_fact_payload(fact) for fact in facts]
     return {
         "project_id": project_id,
         "snapshot_id": mapping.snapshot_id,
+        "calculation_type": mapping.calculation_type,
+        "requested_by": requested_by,
+        "inputs": fact_payloads,
         "mapping": {
             "id": mapping.id,
             "revision": mapping.revision,
@@ -177,7 +180,10 @@ async def calculate_receipt(
     mapping, facts, approval = await _approved_mapping_and_facts(
         session, project_id=project_id, mapping_id=mapping_id, measurement_fact_ids=measurement_fact_ids,
     )
-    request = _canonical_request(project_id=project_id, mapping=mapping, facts=facts, approval=approval)
+    request = _canonical_request(
+        project_id=project_id, mapping=mapping, facts=facts, approval=approval,
+        requested_by=requested_by_actor or requested_by_service,
+    )
     input_hash = _input_hash(request)
     equivalent = (await session.execute(select(models.CalculationReceipt).where(
         models.CalculationReceipt.project_id == project_id,

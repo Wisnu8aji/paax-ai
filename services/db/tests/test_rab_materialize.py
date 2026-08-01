@@ -17,8 +17,8 @@ class CompleteEngineTransport:
     def post(self, path, *, json, headers, timeout):
         self.calls.append((path, json, headers, timeout))
         return type("Response", (), {"status_code": 200, "json": lambda self: {
-            "calculation_id": "CALC-1", "status": "complete", "result": 12.5, "unit": "m3",
-            "formula": "width x depth x height", "substituted_formula": "0.2 x 0.25 x 250 = 12.5",
+            "calculation_id": "CALC-1", "status": "complete", "result": 0.2, "unit": "m",
+            "formula": "sum(length)", "substituted_formula": "0.2",
             "input_sources": [{"measurement_id": "MF-W", "source_method": "written_dimension", "unit": "m"}],
             "engine_version": "0.6.0", "warnings": ["fixture warning"],
         }})()
@@ -38,11 +38,12 @@ async def _seed_materialization_fixture(*, mapping: bool):
         await session.flush()
 
         session.add(models.RabBridgeProposal(id="PROP-1", project_id="PROJECT-A", snapshot_id="SNAP-A", node_ids=["NODE-1"], status="approved", created_by="OWNER-A", payload={"items": [{"node_id": "NODE-1", "name": "Kolom beton", "discipline": "structure", "ahsp_code": "A.4.4.1.20", "evidence_ids": ["EV-1"], "properties": {}}]}))
-        session.add(models.MeasurementFact(measurement_id="MF-W", project_id="PROJECT-A", snapshot_id="SNAP-A", measurement_type="length", value=Decimal("0.2"), unit="m", source_method="written_dimension", element_ids=["NODE-1"], evidence_refs=["EV-1"], formula_inputs=["width"], verification_status="human_verified", audit_metadata={}))
+        session.add(models.MeasurementFact(measurement_id="MF-W", project_id="PROJECT-A", snapshot_id="SNAP-A", measurement_type="length", value=Decimal("0.2"), unit="m", source_method="written_dimension", element_ids=["NODE-1"], evidence_refs=["EV-1"], formula_inputs=["length"], verification_status="human_verified", audit_metadata={}))
         await session.flush()
 
         if mapping:
-            session.add(models.RabMaterializationMapping(id="MAP-1", project_id="PROJECT-A", snapshot_id="SNAP-A", work_item_node_id="NODE-1", measurement_fact_ids=["MF-W"], calculation_type="concrete_column_volume", evidence_refs=["EV-1"], approval_status="approved", created_by="OWNER-A"))
+            session.add(models.RabMaterializationMapping(id="MAP-1", project_id="PROJECT-A", snapshot_id="SNAP-A", work_item_node_id="NODE-1", measurement_fact_ids=["MF-W"], calculation_type="length", evidence_refs=["EV-1"], approval_status="approved", created_by="OWNER-A", revision=1))
+            session.add(models.RabMaterializationMappingAudit(id="MAP-AUDIT-1", mapping_id="MAP-1", action="approved", actor="OWNER-A", revision_before=0, revision_after=1, metadata_json={}))
         await session.commit()
 
 
@@ -69,13 +70,14 @@ async def test_materialization_persists_complete_engine_response_and_authenticat
         draft = (await session.execute(select(models.RabDraft).where(models.RabDraft.project_id == "PROJECT-A"))).scalar_one()
         line = draft.payload["lines"][0]
     assert {key: line[key] for key in ("calculation_id", "calculation_formula", "calculation_substituted_formula", "calculation_input_sources", "calculation_engine_version", "calculation_status", "calculation_warnings", "measurement_mapping_id", "ahsp_selection_approved", "snapshot_id", "proposal_revision", "created_by")} == {
-        "calculation_id": "CALC-1", "calculation_formula": "width x depth x height", "calculation_substituted_formula": "0.2 x 0.25 x 250 = 12.5", "calculation_input_sources": [{"measurement_id": "MF-W", "source_method": "written_dimension", "unit": "m"}], "calculation_engine_version": "0.6.0", "calculation_status": "complete", "calculation_warnings": ["fixture warning"], "measurement_mapping_id": "MAP-1", "ahsp_selection_approved": True, "snapshot_id": "SNAP-A", "proposal_revision": 1, "created_by": "OWNER-A"}
+        "calculation_id": "CALC-1", "calculation_formula": "sum(length)", "calculation_substituted_formula": "0.2", "calculation_input_sources": [{"measurement_id": "MF-W", "source_method": "written_dimension", "unit": "m"}], "calculation_engine_version": "0.6.0", "calculation_status": "complete", "calculation_warnings": [], "measurement_mapping_id": "MAP-1", "ahsp_selection_approved": True, "snapshot_id": "SNAP-A", "proposal_revision": 1, "created_by": "OWNER-A"}
+    assert line["calculation_receipt_id"]
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         replay = await client.post("/projects/PROJECT-A/project-graph/rab-bridge/PROP-1/materialize", headers={"X-Internal-Key": "test-internal-key", "X-User-Id": "OWNER-A", "Idempotency-Key": "MATERIALIZE-1"})
     assert replay.status_code == 200 and replay.json() == response.json()
     async with TestSession() as session:
         immutable_line = (await session.execute(select(models.RabDraft).where(models.RabDraft.project_id == "PROJECT-A"))).scalar_one().payload["lines"][0]
-    assert immutable_line["calculation_id"] == "CALC-1" and immutable_line["calculation_warnings"] == ["fixture warning"]
+    assert immutable_line["calculation_id"] == "CALC-1" and immutable_line["calculation_warnings"] == []
 
 
 @pytest.mark.asyncio
@@ -108,12 +110,14 @@ async def test_mapping_workflow_derives_provenance_from_approved_scoped_facts_an
         mapping = created.json()
         assert created.status_code == 201 and mapping["approval_status"] == "pending_approval" and mapping["evidence_refs"] == ["EV-1"]
         updated = await client.put(f"/projects/PROJECT-A/project-graph/rab-materialization-mappings/{mapping['id']}", headers=headers, json={"work_item_node_id": "NODE-1", "measurement_fact_ids": ["MF-W"], "calculation_type": "length"})
-        assert updated.status_code == 200 and updated.json()["calculation_type"] == "length"
+        assert updated.status_code == 200 and updated.json()["calculation_type"] == "length" and updated.json()["revision"] == 2
         resolved = await client.post(f"/projects/PROJECT-A/project-graph/rab-materialization-mappings/{mapping['id']}/resolve", headers=headers, json={"status": "approved"})
-    assert resolved.status_code == 200 and resolved.json()["approval_status"] == "approved"
+    assert resolved.status_code == 200 and resolved.json()["approval_status"] == "approved" and resolved.json()["revision"] == 3
     async with TestSession() as session:
         audits = (await session.execute(select(models.RabMaterializationMappingAudit))).scalars().all()
-    assert [(row.action, row.actor) for row in audits] == [("created", "OWNER-A"), ("updated", "OWNER-A"), ("approved", "OWNER-A")]
+    assert [(row.action, row.actor, row.revision_before, row.revision_after) for row in audits] == [
+        ("created", "OWNER-A", None, None), ("updated", "OWNER-A", 1, 2), ("approved", "OWNER-A", 2, 3),
+    ]
 
 @pytest.mark.asyncio
 async def test_agentic_calculation_resolves_only_approved_mapping_and_returns_engine_response_unchanged(monkeypatch):
@@ -138,34 +142,27 @@ async def test_agentic_calculation_resolves_only_approved_mapping_and_returns_en
                     "X-User-Id": "ai-orchestrator-agentic",
                     "Idempotency-Key": "AGENT-CALC-1",
                 },
-                json={"measurement_fact_ids": ["MF-W"], "idempotency_key": "AGENT-CALC-1"},
+                json={"mapping_id": "MAP-1", "measurement_fact_ids": ["MF-W"], "idempotency_key": "AGENT-CALC-1"},
             )
     finally:
         app.dependency_overrides.pop(get_core_engine_client, None)
 
     assert response.status_code == 200
-    assert response.json() == {
-        "calculation_id": "CALC-1",
-        "status": "complete",
-        "result": 12.5,
-        "unit": "m3",
-        "formula": "width x depth x height",
-        "substituted_formula": "0.2 x 0.25 x 250 = 12.5",
-        "input_sources": [{"measurement_id": "MF-W", "source_method": "written_dimension", "unit": "m"}],
-        "engine_version": "0.6.0",
-        "warnings": ["fixture warning"],
-    }
+    payload = response.json()
+    assert payload["status"] == "complete" and payload["mapping_id"] == "MAP-1"
+    assert payload["human_approval_event_id"] == "MAP-AUDIT-1"
+    assert payload["result"] == "0.200000000"
     assert transport.calls[0][0] == "/calculations"
     request = transport.calls[0][1]
     assert request["project_id"] == "PROJECT-A"
     assert request["snapshot_id"] == "SNAP-A"
     assert request["measurement_fact_ids"] == ["MF-W"]
-    assert request["calculation_type"] == "concrete_column_volume"
+    assert request["calculation_type"] == "length"
     assert request["requested_by"] == "ai-orchestrator-agentic"
     assert float(request["inputs"][0]["value"]) == 0.2
     async with TestSession() as session:
         audits = (await session.execute(select(models.ToolCallAudit).where(
-            models.ToolCallAudit.tool_name == "agentic.core_engine.calculate.completed"
+            models.ToolCallAudit.tool_name == "agentic.core_engine.calculate.persisted"
         ))).scalars().all()
     assert len(audits) == 1 and audits[0].project_id == "PROJECT-A"
 
@@ -188,7 +185,7 @@ async def test_registry_agent_identity_can_request_engine_calculation(tmp_path, 
             response = await client.post(
                 "/internal/projects/PROJECT-A/agentic/measurement-facts/calculate",
                 headers={"X-Internal-Key": "agent-secret", "Idempotency-Key": "REGISTRY-AGENT-CALC-1"},
-                json={"measurement_fact_ids": ["MF-W"], "idempotency_key": "REGISTRY-AGENT-CALC-1"},
+                json={"mapping_id": "MAP-1", "measurement_fact_ids": ["MF-W"], "idempotency_key": "REGISTRY-AGENT-CALC-1"},
             )
     finally:
         app.dependency_overrides.pop(get_core_engine_client, None)
@@ -218,13 +215,13 @@ async def test_agentic_calculation_fails_closed_without_mapping_or_with_numeric_
             unmapped = await client.post(
                 "/internal/projects/PROJECT-A/agentic/measurement-facts/calculate",
                 headers=headers,
-                json={"measurement_fact_ids": ["MF-W"], "idempotency_key": "AGENT-CALC-2"},
+                json={"mapping_id": "missing", "measurement_fact_ids": ["MF-W"], "idempotency_key": "AGENT-CALC-2"},
             )
             numeric = await client.post(
                 "/internal/projects/PROJECT-A/agentic/measurement-facts/calculate",
                 headers=headers,
                 json={
-                    "measurement_fact_ids": ["MF-W"],
+                    "mapping_id": "missing", "measurement_fact_ids": ["MF-W"],
                     "idempotency_key": "AGENT-CALC-2",
                     "quantity": 999,
                 },

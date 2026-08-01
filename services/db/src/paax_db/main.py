@@ -24,6 +24,7 @@ from .project_graph_rab_bridge import build_rab_bridge_proposal
 from .project_graph_review import active_correction_overlays, build_quantity_readiness, build_review_queue
 from .core_engine_client import CoreEngineUnavailable
 from .core_engine_factory import build_core_engine_client
+from .calculation_receipts import ReceiptValidationError, advance_mapping_revision, calculate_receipt
 from .rab_bridge_lifecycle import transition
 from .usage_telemetry import emit_best_effort, usage_logger_from_env
 from .engineering_context import build_engineering_context, validate_civil_work_items_payload
@@ -851,8 +852,10 @@ async def export_civil_work_items(id: str):
         cell.font = Font(bold=True)
         cell.fill = PatternFill("solid", fgColor="D9EAF7")
         cell.alignment = Alignment(horizontal="center", vertical="center")
-    for item in payload.get("items", []):
+    handoff_items = [item for item in payload.get("items", []) if item.get("status") == "engine_verified"]
+    for item in handoff_items:
         source_text = "; ".join(f"Hal. {ref['page']} — {ref['role']}" for ref in item.get("source_refs", []))
+        source_text = "; ".join(f"Hal. {ref.get('page', '-')} - {ref.get('role', 'unknown')}" for ref in item.get("source_refs", []))
         result_value = item.get("result")
         if result_value is None and item.get("unit") == "unit":
             result_value = item.get("count")
@@ -880,6 +883,7 @@ async def export_civil_work_items(id: str):
     about.append(["Source PDF SHA-256", payload.get("source_document_sha256")])
     about.append(["Authority", "PDF asli + Measurement Facts terverifikasi + Core Engine"])
     about.append(["Catatan", "Kolom praktis tidak dihitung volumenya sebelum dimensi/tinggi terverifikasi."])
+    about.append(["Handoff exclusion", f"{len(payload.get('items', [])) - len(handoff_items)} item without an active complete receipt was excluded."])
     stream = BytesIO()
     workbook.save(stream)
     stream.seek(0)
@@ -1622,67 +1626,44 @@ async def resolve_rab_bridge_proposal(id: str, proposal_id: str, request: schema
 
 @app.post(
     "/internal/projects/{id}/agentic/measurement-facts/calculate",
+    response_model=schemas.CalculationReceiptResponse,
     dependencies=[Depends(RoleChecker(["owner", "pm"], service_scope="agent:calculate"))],
 )
 async def calculate_agentic_measurement_facts(
     id: str,
-    request: schemas.AgenticMeasurementCalculationRequest,
+    request: schemas.CalculationReceiptRequest,
     http_request: Request,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     core_engine_client: Any | None = Depends(get_core_engine_client),
 ):
-    """Resolve approved facts and calculation type server-side, then return the
-    Core Engine response unchanged. The agent supplies identities only; it never
-    supplies dimensions, formulae, or an authoritative numeric result.
+    """Persist one receipt from an already-human-approved mapping.
+
+    Agents can supply identifiers only. The canonical receipt boundary loads
+    all numeric facts and is the only component that calls the Core Engine.
     """
     header_key = http_request.headers.get("Idempotency-Key")
     if not header_key or header_key != request.idempotency_key:
         raise HTTPException(status_code=422, detail="matching Idempotency-Key header and body are required")
-    snapshot = await get_active_snapshot(db, id)
-    if snapshot is None:
-        raise HTTPException(status_code=409, detail="active project graph snapshot is required")
-
-    requested_ids = list(request.measurement_fact_ids)
-    requested_set = set(requested_ids)
-    mappings = (await db.execute(select(models.RabMaterializationMapping).where(
-        models.RabMaterializationMapping.project_id == id,
-        models.RabMaterializationMapping.snapshot_id == snapshot.snapshot_id,
-        models.RabMaterializationMapping.approval_status == "approved",
-    ))).scalars().all()
-    matching = [mapping for mapping in mappings if set(mapping.measurement_fact_ids or []) == requested_set]
-    if not matching:
-        raise HTTPException(status_code=422, detail="approved calculation mapping was not found for the supplied Measurement Facts")
-    if len(matching) != 1:
-        raise HTTPException(status_code=409, detail="Measurement Facts resolve to multiple approved calculation mappings")
-    mapping = matching[0]
-    facts = await _approved_scoped_measurement_facts(
-        db, project_id=id, snapshot_id=snapshot.snapshot_id, measurement_fact_ids=requested_ids,
-    )
     if core_engine_client is None:
         raise HTTPException(status_code=503, detail="Core Engine client is not configured")
-
-    engine_request = {
-        "project_id": id,
-        "snapshot_id": snapshot.snapshot_id,
-        "measurement_fact_ids": requested_ids,
-        "calculation_type": mapping.calculation_type,
-        "requested_by": user.uid,
-        "inputs": [_measurement_fact_engine_input(fact) for fact in facts],
-    }
     try:
-        calculation = core_engine_client.calculate(engine_request)
+        receipt = await calculate_receipt(
+            db, project_id=id, mapping_id=request.mapping_id,
+            measurement_fact_ids=list(request.measurement_fact_ids), idempotency_key=request.idempotency_key,
+            requested_by_service=getattr(user, "service_identity", None) or user.uid, requested_by_actor=user.uid,
+            core_engine_client=core_engine_client,
+        )
     except CoreEngineUnavailable as exc:
-        _audit_project_action(db, project_id=id, actor=user.uid, action="agentic.core_engine.calculate.failed", target_id=mapping.id, success=False)
+        _audit_project_action(db, project_id=id, actor=user.uid, action="agentic.core_engine.calculate.failed", target_id=request.mapping_id, success=False)
         await db.commit()
         raise HTTPException(status_code=503, detail="Core Engine unavailable; quantity remains blocked") from exc
-    if calculation.get("status") != "complete" or calculation.get("result") is None or not calculation.get("unit"):
-        _audit_project_action(db, project_id=id, actor=user.uid, action="agentic.core_engine.calculate.invalid", target_id=mapping.id, success=False)
-        await db.commit()
-        raise HTTPException(status_code=422, detail="Core Engine did not return a complete authoritative result")
-    _audit_project_action(db, project_id=id, actor=user.uid, action="agentic.core_engine.calculate.completed", target_id=mapping.id)
+    except ReceiptValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    _audit_project_action(db, project_id=id, actor=user.uid, action="agentic.core_engine.calculate.persisted", target_id=receipt.receipt_id)
     await db.commit()
-    return calculation
+    await db.refresh(receipt)
+    return receipt
 
 
 @app.post(
@@ -1739,10 +1720,10 @@ async def update_rab_materialization_mapping(
     mapping.measurement_fact_ids = request.measurement_fact_ids
     mapping.calculation_type = request.calculation_type
     mapping.evidence_refs = list(dict.fromkeys(ref for fact in facts for ref in fact.evidence_refs))
-    db.add(models.RabMaterializationMappingAudit(
-        mapping_id=mapping.id, action="updated", actor=user.uid,
-        metadata_json={"measurement_fact_ids": mapping.measurement_fact_ids, "evidence_refs": mapping.evidence_refs},
-    ))
+    await advance_mapping_revision(
+        db, mapping=mapping, action="updated", actor=user.uid,
+        metadata={"measurement_fact_ids": mapping.measurement_fact_ids, "evidence_refs": mapping.evidence_refs},
+    )
     await db.commit()
     await db.refresh(mapping)
     return mapping
@@ -1905,10 +1886,10 @@ async def resolve_rab_materialization_mapping(
     mapping.approval_status = request.status
     mapping.reviewed_by = user.uid
     mapping.reviewed_at = _utc_now()
-    db.add(models.RabMaterializationMappingAudit(
-        mapping_id=mapping.id, action=request.status, actor=user.uid,
-        metadata_json={"measurement_fact_ids": mapping.measurement_fact_ids, "evidence_refs": mapping.evidence_refs},
-    ))
+    await advance_mapping_revision(
+        db, mapping=mapping, action=request.status, actor=user.uid,
+        metadata={"measurement_fact_ids": mapping.measurement_fact_ids, "evidence_refs": mapping.evidence_refs},
+    )
     await db.commit()
     await db.refresh(mapping)
     return mapping
@@ -1981,44 +1962,25 @@ async def materialize_rab_bridge_proposal(
             continue
 
         fact_ids = list(mapping.measurement_fact_ids or [])
-        facts = (await db.execute(select(models.MeasurementFact).where(
-            models.MeasurementFact.project_id == id,
-            models.MeasurementFact.snapshot_id == proposal.snapshot_id,
-            models.MeasurementFact.measurement_id.in_(fact_ids),
-        ))).scalars().all() if fact_ids else []
-        facts_by_id = {fact.measurement_id: fact for fact in facts}
-        if set(fact_ids) != set(facts_by_id) or any(
-            fact.verification_status not in {"human_verified", "engine_verified"} or fact.superseded_at is not None
-            for fact in facts
-        ):
-            skipped_items.append(schemas.SkippedItem(node_id=node_id, reason="blocked_unapproved_or_missing_measurement_fact"))
-            continue
-        request = {
-            "project_id": id,
-            "snapshot_id": proposal.snapshot_id,
-            "measurement_fact_ids": fact_ids,
-            "calculation_type": mapping.calculation_type,
-            "requested_by": user.uid,
-            "inputs": [{
-                "measurement_id": fact.measurement_id, "project_id": fact.project_id, "snapshot_id": fact.snapshot_id,
-                "measurement_type": fact.measurement_type, "value": str(fact.value), "unit": fact.unit,
-                "source_method": fact.source_method, "element_ids": fact.element_ids, "evidence_refs": fact.evidence_refs,
-                "formula_inputs": fact.formula_inputs, "verification_status": fact.verification_status,
-                "created_by": fact.created_by, "audit_metadata": fact.audit_metadata,
-                "supersedes_measurement_id": fact.supersedes_measurement_id,
-            } for fact in (facts_by_id[fact_id] for fact_id in fact_ids)],
-        }
         try:
-            calculation = core_engine_client.calculate(request)
+            receipt = await calculate_receipt(
+                db, project_id=id, mapping_id=mapping.id, measurement_fact_ids=fact_ids,
+                idempotency_key=f"rab-materialize:{proposal.id}:{proposal.revision}:{mapping.id}",
+                requested_by_service=getattr(user, "service_identity", None) or user.uid,
+                requested_by_actor=user.uid, core_engine_client=core_engine_client,
+            )
         except CoreEngineUnavailable:
             skipped_items.append(schemas.SkippedItem(node_id=node_id, reason="blocked_core_engine_unavailable"))
             continue
-        if calculation.get("status") != "complete" or calculation.get("result") is None or not calculation.get("unit"):
-            skipped_items.append(schemas.SkippedItem(node_id=node_id, reason=f"blocked_core_engine_{calculation.get('status', 'invalid_response')}"))
+        except ReceiptValidationError as exc:
+            skipped_items.append(schemas.SkippedItem(node_id=node_id, reason=f"blocked_receipt_validation:{str(exc)}"))
+            continue
+        if receipt.status != "complete" or receipt.result is None or not receipt.unit:
+            skipped_items.append(schemas.SkippedItem(node_id=node_id, reason=f"blocked_receipt_{receipt.status}"))
             continue
 
-        volume = calculation["result"]
-        volume_source = "core_engine_typed_measurements"
+        volume = str(receipt.result)
+        volume_source = "persisted_calculation_receipt"
             
         if not ahsp_code:
             skipped_items.append(schemas.SkippedItem(node_id=node_id, reason="missing_ahsp_code"))
@@ -2037,13 +1999,16 @@ async def materialize_rab_bridge_proposal(
         }
         line["measurement_mapping_id"] = mapping.id
         line["measurement_fact_ids"] = fact_ids
-        line["calculation_id"] = calculation.get("calculation_id")
-        line["calculation_status"] = calculation["status"]
-        line["calculation_formula"] = calculation.get("formula")
-        line["calculation_substituted_formula"] = calculation.get("substituted_formula")
-        line["calculation_input_sources"] = calculation.get("input_sources", [])
-        line["calculation_engine_version"] = calculation.get("engine_version")
-        line["calculation_warnings"] = calculation.get("warnings", [])
+        line["calculation_receipt_id"] = receipt.receipt_id
+        line["calculation_id"] = receipt.engine_calculation_id
+        line["calculation_status"] = receipt.status
+        line["calculation_formula"] = receipt.formula_id
+        line["calculation_substituted_formula"] = receipt.substituted_formula
+        line["calculation_input_sources"] = [{
+            "measurement_id": fact["measurement_id"], "source_method": fact["source_method"], "unit": fact["unit"],
+        } for fact in receipt.canonical_request.get("inputs", [])]
+        line["calculation_engine_version"] = receipt.engine_version
+        line["calculation_warnings"] = []
         line["mapping_evidence_refs"] = mapping.evidence_refs
         line["ahsp_selection_approved"] = True
         line["ahsp_approved_by"] = proposal.reviewed_by

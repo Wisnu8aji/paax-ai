@@ -114,9 +114,84 @@ def build_live_civil_work_items(db_path: Path, project_id: str = "PLHUT-SURAKART
     not_applicable = 0
 
     domain_counts: Dict[str, int] = {}
+    verified_element_ids = set()
 
     # ------------------------------------------------------------------ #
-    # SECTION 1: Engine-verified items from measurement_facts persistence  #
+    # SECTION 1: Engine-verified items from active persisted receipts.    #
+    # ------------------------------------------------------------------ #
+    receipt_fact_ids = set()
+    has_receipts = cur.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='calculation_receipts'"
+    ).fetchone() is not None
+    if has_receipts:
+        receipt_rows = cur.execute("""
+            SELECT cr.receipt_id, cr.mapping_id, cr.mapping_revision,
+                   cr.work_item_node_id, cr.measurement_fact_ids, cr.result,
+                   cr.unit, cr.formula_id, cr.engine_version, cr.evidence_refs,
+                   cr.canonical_request, cr.human_approval_event_id, cr.approved_by
+            FROM calculation_receipts cr
+            JOIN rab_materialization_mapping_audits approval
+              ON approval.id = cr.human_approval_event_id
+             AND approval.action = 'approved'
+             AND approval.revision_after = cr.mapping_revision
+            WHERE cr.project_id = ?
+              AND cr.status = 'complete'
+              AND cr.superseded_at IS NULL
+              AND cr.human_approval_event_id IS NOT NULL
+              AND cr.approved_by IS NOT NULL
+            ORDER BY cr.created_at ASC
+        """, (project_id,)).fetchall()
+        for row in receipt_rows:
+            (receipt_id, mapping_id, mapping_revision, work_item_node_id, fact_ids_json,
+             result, unit, formula_id, engine_version, evidence_json, request_json,
+             approval_event_id, approved_by) = row
+            try:
+                fact_ids = json.loads(fact_ids_json) if fact_ids_json else []
+                canonical = json.loads(request_json) if request_json else {}
+                evidence_refs = json.loads(evidence_json) if evidence_json else []
+            except (TypeError, ValueError):
+                # A corrupt receipt cannot become a quantity authority.
+                continue
+            facts = canonical.get("facts") or []
+            element_ids = [element_id for fact in facts for element_id in (fact.get("element_ids") or [])]
+            node_id = work_item_node_id or (element_ids[0] if element_ids else None)
+            node_info = {}
+            if node_id:
+                cur.execute("""
+                    SELECT node_id, canonical_name, node_type, discipline, level_id
+                    FROM project_graph_nodes WHERE node_id = ?
+                """, (node_id,))
+                node_row = cur.fetchone()
+                if node_row:
+                    node_info = dict(zip(["node_id", "canonical_name", "node_type", "discipline", "level_id"], node_row))
+            display_name = node_info.get("canonical_name") or f"Receipt {receipt_id}"
+            level = node_info.get("level_id") or "Tidak Diketahui"
+            discipline = node_info.get("discipline") or "STR"
+            source_pages = _node_evidence_pages(cur, node_id) if node_id else []
+            domain = "Struktur Kolom" if "column" in (canonical.get("calculation_type") or "").lower() else "Lainnya / Tidak Terklasifikasi"
+            domain_counts[domain] = domain_counts.get(domain, 0) + 1
+            items.append({
+                "id": f"receipt-{receipt_id}", "display_name": display_name,
+                "technical_code": (node_id or receipt_id)[:32], "discipline": discipline.upper(),
+                "lbs_path": ["Bangunan Utama", level, display_name],
+                "wbs_section": "03 00 00 â€“ Pekerjaan Struktur", "wbs_group": domain,
+                "category": canonical.get("calculation_type"), "location": level, "unit": unit,
+                "dimensions": None, "dimensions_display": None, "count": None,
+                "formula": formula_id, "result": str(result), "result_display": f"{result} {unit}",
+                "status": "engine_verified", "source_authority": "calculation_receipt_db",
+                "source_pages": source_pages,
+                "source_refs": [{"role": "calculation_receipt", "receipt_id": receipt_id, "page": page} for page in source_pages],
+                "evidence_refs": evidence_refs, "measurement_fact_ids": fact_ids,
+                "mapping_id": mapping_id, "mapping_revision": mapping_revision,
+                "calculation_receipt_id": receipt_id, "engine_version": engine_version,
+                "approval_lineage": {"human_approval_event_id": approval_event_id, "approved_by": approved_by},
+            })
+            receipt_fact_ids.update(fact_ids)
+            verified_element_ids.update(element_ids)
+            engine_verified += 1
+
+    # ------------------------------------------------------------------ #
+    # SECTION 2: Human-verified facts remain measurement_verified only.   #
     # ------------------------------------------------------------------ #
     cur.execute("""
         SELECT
@@ -137,11 +212,13 @@ def build_live_civil_work_items(db_path: Path, project_id: str = "PLHUT-SURAKART
     """, (project_id,))
     verified_rows = cur.fetchall()
 
-    verified_element_ids = set()
     for row in verified_rows:
         (meas_id, proj_id, meas_type, value, unit, src_method, el_ids_json,
          ev_refs_json, formula_json, v_status, created_at,
          mapping_id, work_item_node_id, calc_type, approval_status, map_created) = row
+
+        if meas_id in receipt_fact_ids:
+            continue
 
         el_ids = []
         try:
@@ -220,7 +297,7 @@ def build_live_civil_work_items(db_path: Path, project_id: str = "PLHUT-SURAKART
         items.append(item)
 
     # ------------------------------------------------------------------ #
-    # SECTION 2: Candidate inventory from project_graph_nodes              #
+    # SECTION 3: Candidate inventory from project_graph_nodes              #
     # ------------------------------------------------------------------ #
     cur.execute("""
         SELECT node_id, node_type, canonical_name, normalized_name, discipline, level_id,
@@ -318,7 +395,7 @@ def build_live_civil_work_items(db_path: Path, project_id: str = "PLHUT-SURAKART
         merged_candidates += 1
 
     # ------------------------------------------------------------------ #
-    # SECTION 3: Reconciliation summary                                    #
+    # SECTION 4: Reconciliation summary                                    #
     # ------------------------------------------------------------------ #
     payload = {
         "schema_version": "3.0-live-phase4",

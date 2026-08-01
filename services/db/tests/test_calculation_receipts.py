@@ -1,11 +1,12 @@
 from decimal import Decimal
+from datetime import datetime, timezone
 import importlib.util
 from pathlib import Path
 
 import pytest
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from sqlalchemy import Column, MetaData, String, Table, create_engine, select, text
+from sqlalchemy import Column, MetaData, String, Table, create_engine, select, text, update
 
 from paax_db import models
 
@@ -100,6 +101,9 @@ async def test_calculation_service_persists_canonical_approved_lineage_and_reuse
         assert receipt.fact_lineage[0]["evidence_refs"] == ["EV-1"]
         assert receipt.fact_lineage[0]["formula_inputs"] == ["length"]
         assert receipt.canonical_request["facts"][0]["value"] == "4.500000000"
+        assert receipt.canonical_request["calculation_type"] == "length"
+        assert receipt.canonical_request["inputs"][0]["measurement_id"] == "RECEIPT-FACT"
+        assert receipt.canonical_request["requested_by"] == "OWNER"
         assert receipt.result == Decimal("4.500000000")
         assert verify_calculation_receipt(receipt) is True
 
@@ -148,6 +152,34 @@ async def test_changed_mapping_revision_supersedes_prior_receipt_without_losing_
         assert second.mapping_revision == 4
         assert old.status == "superseded" and old.superseded_at is not None
         assert old.result == Decimal("4.500000000")
+
+
+@pytest.mark.asyncio
+async def test_calculation_service_rejects_stale_or_cross_project_mapping_before_engine_call():
+    from .conftest import TestSession
+    from paax_db.calculation_receipts import ReceiptValidationError, calculate_receipt
+
+    await _seed_approved_receipt_inputs()
+    engine = _CompleteLengthEngine()
+    async with TestSession() as session:
+        await session.execute(update(models.MeasurementFact).where(
+            models.MeasurementFact.measurement_id == "RECEIPT-FACT"
+        ).values(superseded_at=datetime.now(timezone.utc)))
+        await session.commit()
+    async with TestSession() as session:
+        with pytest.raises(ReceiptValidationError, match="active human-verified"):
+            await calculate_receipt(
+                session, project_id="RECEIPT-PROJECT", mapping_id="RECEIPT-MAPPING",
+                measurement_fact_ids=["RECEIPT-FACT"], idempotency_key="stale-input",
+                requested_by_service="ai-orchestrator", requested_by_actor="OWNER", core_engine_client=engine,
+            )
+        with pytest.raises(ReceiptValidationError, match="human-approved"):
+            await calculate_receipt(
+                session, project_id="OTHER-PROJECT", mapping_id="RECEIPT-MAPPING",
+                measurement_fact_ids=["RECEIPT-FACT"], idempotency_key="cross-project",
+                requested_by_service="ai-orchestrator", requested_by_actor="OWNER", core_engine_client=engine,
+            )
+    assert engine.calls == 0
 
 
 def test_calculation_receipt_migration_preserves_existing_mapping_as_revision_one():

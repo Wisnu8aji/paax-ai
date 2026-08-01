@@ -24,6 +24,13 @@ REQUIRED_TABLES = {
 }
 REQUIRED_DEM_PAGE_COLUMNS = {"id", "run_id", "page_index", "status", "result"}
 BASELINE = "0036"
+PARTIAL_0038_PREDECESSOR = "0037_package_index_materialization"
+PARTIAL_0038_REVISION = "0038_agent_review_recommendations"
+REQUIRED_0038_COLUMNS = {
+    "recommendation_id", "project_id", "snapshot_id", "target_type", "target_id",
+    "recommendation", "rationale", "evidence_refs", "metadata",
+    "created_by_service_identity", "idempotency_key", "created_at",
+}
 
 
 def digest(path: Path) -> str:
@@ -53,6 +60,33 @@ def migration_config(repo_root: Path, database: Path) -> Config:
     return config
 
 
+def migration_start_revision(database: Path) -> str | None:
+    """Return a safe stamp target for a known partially-applied portable DB.
+
+    A prior portable repair created the 0038 table but left Alembic at 0037.
+    Replaying 0038 would fail; stamping is safe only after the complete 0038
+    table shape is verified. Unknown partial states remain fail-closed.
+    """
+    with sqlite3.connect(database) as connection:
+        has_version = connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='alembic_version'"
+        ).fetchone()
+        if not has_version:
+            return BASELINE
+        version = connection.execute("SELECT version_num FROM alembic_version").fetchone()
+        if not version or version[0] != PARTIAL_0038_PREDECESSOR:
+            return None
+        has_receipt_recommendations = connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='agent_review_recommendations'"
+        ).fetchone()
+        if not has_receipt_recommendations:
+            return None
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(agent_review_recommendations)")}
+        if REQUIRED_0038_COLUMNS - columns:
+            raise RuntimeError("Partial 0038 table shape is incomplete; refusing to stamp migration history")
+    return PARTIAL_0038_REVISION
+
+
 def migrate(repo_root: Path, database: Path, *, backup: bool) -> None:
     if not database.is_file():
         raise FileNotFoundError(database)
@@ -64,12 +98,8 @@ def migrate(repo_root: Path, database: Path, *, backup: bool) -> None:
         if digest(backup_path) != before:
             raise RuntimeError("Portable database backup checksum mismatch")
     config = migration_config(repo_root, database)
-    with sqlite3.connect(database) as connection:
-        version_table = connection.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='alembic_version'"
-        ).fetchone()
-    if version_table is None:
-        command.stamp(config, BASELINE)
+    if stamp := migration_start_revision(database):
+        command.stamp(config, stamp)
     command.upgrade(config, "head")
     audit_legacy_baseline(database)
     with sqlite3.connect(database) as connection:

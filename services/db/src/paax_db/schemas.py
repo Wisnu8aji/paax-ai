@@ -656,6 +656,7 @@ class RabMaterializationMappingCreate(BaseModel):
 
 
 class AgenticMeasurementCalculationRequest(BaseModel):
+    mapping_id: str = Field(min_length=1)
     measurement_fact_ids: List[str] = Field(min_length=1)
     idempotency_key: str = Field(min_length=1, max_length=200)
 
@@ -923,6 +924,7 @@ class ProjectGraphSummaryViewResponse(BaseModel):
 
 
 class AgenticMeasurementCalculationRequest(BaseModel):
+    mapping_id: str = Field(min_length=1)
     measurement_fact_ids: List[str] = Field(min_length=1)
     idempotency_key: str = Field(min_length=1)
 

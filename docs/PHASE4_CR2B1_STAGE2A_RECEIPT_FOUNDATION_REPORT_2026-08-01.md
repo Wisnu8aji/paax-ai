@@ -22,3 +22,13 @@ No HTTP route, RAB materialization handler, quantity/handoff reader, or PLHUT da
 - `graphify update .` completed after code changes.
 
 The migration preservation test applies the migration to a pre-revision SQLite mapping record and verifies it remains present with revision `1`.
+
+## Stage 2B route wiring
+
+- The internal agent calculation endpoint now accepts only `mapping_id`, ordered fact IDs, and an idempotency key, and returns the persisted `CalculationReceipt` contract.
+- RAB Bridge materialization and the internal agent endpoint both call the same `calculate_receipt` service. RAB lines retain only the persisted receipt reference and its engine provenance; no transient engine result is returned as authority.
+- Pending mapping edits and approval/rejection transitions increment mapping revision and write before/after revisions to the mapping audit. Approved mappings remain non-editable through the pending-edit endpoint.
+- The civil-work-items ledger reads `engine_verified` only from active `complete` receipts whose exact approval audit revision remains valid. Associated human facts are not duplicated; blocked, needs-input, superseded, or invalid-lineage receipts are excluded. The XLSX export includes only these active engine-verified receipt lines.
+- `migrate_portable_schema.py` now detects the verified historical state where the 0038 recommendation table exists but Alembic is still stamped 0037. It validates the table shape before stamping 0038 and applying 0039; unknown partial states fail closed.
+
+Portable-copy proof: a copy of `G:\PAAX-Data\db\portable.sqlite` migrated from the verified partial-0038 state to `0039_calculation_receipts`, retained its project row, and gained both `calculation_receipts` and mapping `revision`.
