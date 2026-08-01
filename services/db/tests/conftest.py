@@ -11,7 +11,10 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
 os.environ.setdefault("INTERNAL_SERVICE_KEY", "test-internal-key")
-os.environ.setdefault("INTERNAL_SERVICE_SCOPES", "dem:read,dem:write,dem:delete,project_graph:synthesize,dem:authorize-actor")
+os.environ.setdefault("INTERNAL_SERVICE_SCOPES", "dem:read,dem:write,dem:delete,project_graph:synthesize,dem:authorize-actor,agent:calculate,human:approve")
+# Existing suite fixtures deliberately exercise the documented rollback path;
+# production portable startup leaves this compatibility flag unset.
+os.environ.setdefault("PAAX_ENABLE_LEGACY_SINGLE_KEY_COMPAT", "1")
 
 from paax_db.database import Base, get_db
 from paax_db.main import app

@@ -1,3 +1,4 @@
+import hmac
 import os
 from typing import Optional, List, FrozenSet
 from fastapi import Request, HTTPException, Security, Depends
@@ -12,11 +13,17 @@ except ImportError:  # Portable/offline runtime may intentionally use internal s
     credentials = None
     FIREBASE_ADMIN_AVAILABLE = False
 from pydantic import BaseModel
+from .service_identity_registry import ServiceIdentityRegistryError, resolve_service_identity
 
 class User(BaseModel):
     uid: str
     email: Optional[str] = None
     internal_scopes: FrozenSet[str] = frozenset()
+    service_identity: Optional[str] = None
+
+    @property
+    def is_service_identity(self) -> bool:
+        return self.service_identity is not None
 
 # Inisialisasi Firebase Admin jika belum
 if FIREBASE_ADMIN_AVAILABLE and not firebase_admin._apps:
@@ -33,19 +40,34 @@ def get_current_user(
     request: Request,
     auth_header: Optional[HTTPAuthorizationCredentials] = Security(security)
 ) -> Optional[User]:
-    # 1. Cek Service-to-Service auth dulu (X-Internal-Key)
-    internal_key = os.environ.get("INTERNAL_SERVICE_KEY")
-    if not internal_key and os.environ.get("TESTING") == "1":
-        internal_key = "test-internal-key"
     req_internal_key = request.headers.get("X-Internal-Key")
-    
-    if internal_key and req_internal_key == internal_key:
-        uid = request.headers.get("X-User-Id") or os.environ.get("PAAX_PORTABLE_ACTOR_ID", "service-account")
-        configured = os.environ.get("INTERNAL_SERVICE_SCOPES", "")
-        if os.environ.get("TESTING") == "1":
-            configured += ",dem:authorize-actor,dem:read,dem:write,agentic:calculate,project_graph:read,project_graph:write,project_graph:synthesize"
-        scopes = frozenset(scope.strip() for scope in (configured or "").split(",") if scope.strip())
-        return User(uid=uid, internal_scopes=scopes)
+    registry_path = os.environ.get("PAAX_SERVICE_IDENTITY_REGISTRY", "").strip()
+    if registry_path:
+        try:
+            resolved = resolve_service_identity(registry_path, req_internal_key or "")
+        except ServiceIdentityRegistryError as exc:
+            raise HTTPException(status_code=503, detail="internal service identity registry is unavailable") from exc
+        if resolved is not None:
+            # Both actor and scopes are deployment data.  Do not permit an
+            # HTTP header or child-process environment to self-elevate them.
+            return User(
+                uid=resolved.actor_id or resolved.identity,
+                internal_scopes=resolved.scopes,
+                service_identity=resolved.identity,
+            )
+        # A configured registry is authoritative: never fall through to a
+        # legacy shared key after a failed credential match.
+        if req_internal_key:
+            raise HTTPException(status_code=401, detail="Invalid internal service credential")
+
+    # Explicit rollback only.  Normal portable startup does not set this flag.
+    if os.environ.get("PAAX_ENABLE_LEGACY_SINGLE_KEY_COMPAT") == "1":
+        internal_key = os.environ.get("INTERNAL_SERVICE_KEY")
+        if internal_key and req_internal_key and hmac.compare_digest(req_internal_key, internal_key):
+            uid = request.headers.get("X-User-Id") or os.environ.get("PAAX_PORTABLE_ACTOR_ID", "service-account")
+            configured = os.environ.get("INTERNAL_SERVICE_SCOPES", "")
+            scopes = frozenset(scope.strip() for scope in configured.split(",") if scope.strip())
+            return User(uid=uid, internal_scopes=scopes, service_identity="legacy-single-key")
 
     # 2. Cek Firebase JWT
     if not auth_header:
@@ -83,12 +105,13 @@ from sqlalchemy.future import select
 from . import models
 
 class RoleChecker:
-    def __init__(self, allowed_roles: List[str], service_scope: Optional[str] = None):
+    def __init__(self, allowed_roles: List[str], service_scope: Optional[str] = None, *, human_approval: bool = False):
         self.allowed_roles = allowed_roles
         # Optional explicit scope a trusted internal-service identity may present
         # instead of a human project role. Deployment config grants this scope
         # (INTERNAL_SERVICE_SCOPES); the caller cannot self-elevate with a header.
         self.service_scope = service_scope
+        self.human_approval = human_approval
 
     async def __call__(
         self,
@@ -96,6 +119,13 @@ class RoleChecker:
         db: AsyncSession = Depends(get_db),
         user: User = Depends(get_current_user)
     ):
+        if self.human_approval and user.is_service_identity:
+            rollback_human = (
+                user.service_identity == "legacy-single-key"
+                and os.environ.get("PAAX_ENABLE_LEGACY_SINGLE_KEY_COMPAT") == "1"
+            )
+            if (user.service_identity != "web-user-proxy" and not rollback_human) or "human:approve" not in user.internal_scopes:
+                raise HTTPException(status_code=403, detail="human approval requires web-user-proxy identity with human:approve scope")
         if self.service_scope and self.service_scope in user.internal_scopes:
             return user
 
@@ -146,9 +176,9 @@ async def require_project_access(
     proves the caller is a known service, not that it may touch this project.
     An end-user caller must be a member (or owner) of the project.
     """
-    if user.internal_scopes:
-        if service_scope in user.internal_scopes:
-            return
+    if user.is_service_identity and service_scope in user.internal_scopes:
+        return
+    if user.is_service_identity and user.service_identity != "web-user-proxy":
         raise HTTPException(status_code=403, detail=f"service identity missing scope '{service_scope}'")
 
     if not project_id:

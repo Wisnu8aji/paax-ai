@@ -1447,7 +1447,7 @@ async def list_agent_review_recommendations(id: str, snapshot_id: Optional[str] 
 @app.post(
     "/projects/{id}/project-graph/corrections/{correction_id}/resolve",
     response_model=schemas.ProjectGraphCorrectionResponse,
-    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+    dependencies=[Depends(RoleChecker(["owner", "pm"], human_approval=True))],
 )
 async def resolve_project_graph_correction(
     id: str, correction_id: str, request: schemas.ProjectGraphCorrectionResolve, http_request: Request, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
@@ -1569,7 +1569,7 @@ async def get_quantity_readiness(id: str, db: AsyncSession = Depends(get_db)):
 @app.post(
     "/projects/{id}/project-graph/rab-bridge/{proposal_id}/resolve",
     response_model=schemas.RabBridgeResponse,
-    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+    dependencies=[Depends(RoleChecker(["owner", "pm"], human_approval=True))],
 )
 async def resolve_rab_bridge_proposal(id: str, proposal_id: str, request: schemas.RabBridgeProposalResolve, http_request: Request, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
     proposal = (await db.execute(select(models.RabBridgeProposal).where(
@@ -1595,7 +1595,7 @@ async def resolve_rab_bridge_proposal(id: str, proposal_id: str, request: schema
 
 @app.post(
     "/internal/projects/{id}/agentic/measurement-facts/calculate",
-    dependencies=[Depends(RoleChecker(["owner", "pm"], service_scope="agentic:calculate"))],
+    dependencies=[Depends(RoleChecker(["owner", "pm"], service_scope="agent:calculate"))],
 )
 async def calculate_agentic_measurement_facts(
     id: str,
@@ -1860,7 +1860,7 @@ async def get_durable_job(job_id: str, db: AsyncSession = Depends(get_db)):
 @app.post(
     "/projects/{id}/project-graph/rab-materialization-mappings/{mapping_id}/resolve",
     response_model=schemas.RabMaterializationMappingResponse,
-    dependencies=[Depends(RoleChecker(["owner", "pm"]))],
+    dependencies=[Depends(RoleChecker(["owner", "pm"], human_approval=True))],
 )
 async def resolve_rab_materialization_mapping(
     id: str, mapping_id: str, request: schemas.RabMaterializationMappingResolve, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user),

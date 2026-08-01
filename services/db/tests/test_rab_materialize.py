@@ -1,4 +1,6 @@
 from decimal import Decimal
+import hashlib
+import json
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -120,8 +122,8 @@ async def test_agentic_calculation_resolves_only_approved_mapping_and_returns_en
 
     await _seed_materialization_fixture(mapping=True)
     monkeypatch.setenv(
-        "INTERNAL_SERVICE_SCOPES",
-        "dem:read,dem:write,dem:delete,project_graph:synthesize,dem:authorize-actor,agentic:calculate",
+            "INTERNAL_SERVICE_SCOPES",
+            "dem:read,dem:write,dem:delete,project_graph:synthesize,dem:authorize-actor,agent:calculate",
     )
     transport = CompleteEngineTransport()
     app.dependency_overrides[get_core_engine_client] = lambda: CoreEngineClient(
@@ -169,11 +171,38 @@ async def test_agentic_calculation_resolves_only_approved_mapping_and_returns_en
 
 
 @pytest.mark.asyncio
+async def test_registry_agent_identity_can_request_engine_calculation(tmp_path, monkeypatch):
+    await _seed_materialization_fixture(mapping=True)
+    registry = tmp_path / "service-identities.json"
+    registry.write_text(json.dumps({"version": 1, "identities": [{
+        "identity": "ai-orchestrator",
+        "credential_sha256": hashlib.sha256(b"agent-secret").hexdigest(),
+        "scopes": ["agent:propose", "agent:calculate"],
+    }]}), encoding="utf-8")
+    monkeypatch.setenv("PAAX_SERVICE_IDENTITY_REGISTRY", str(registry))
+    monkeypatch.delenv("PAAX_ENABLE_LEGACY_SINGLE_KEY_COMPAT", raising=False)
+    transport = CompleteEngineTransport()
+    app.dependency_overrides[get_core_engine_client] = lambda: CoreEngineClient(transport, internal_key="core-engine-test-key")
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                "/internal/projects/PROJECT-A/agentic/measurement-facts/calculate",
+                headers={"X-Internal-Key": "agent-secret", "Idempotency-Key": "REGISTRY-AGENT-CALC-1"},
+                json={"measurement_fact_ids": ["MF-W"], "idempotency_key": "REGISTRY-AGENT-CALC-1"},
+            )
+    finally:
+        app.dependency_overrides.pop(get_core_engine_client, None)
+
+    assert response.status_code == 200
+    assert transport.calls[0][1]["requested_by"] == "ai-orchestrator"
+
+
+@pytest.mark.asyncio
 async def test_agentic_calculation_fails_closed_without_mapping_or_with_numeric_payload(monkeypatch):
     await _seed_materialization_fixture(mapping=False)
     monkeypatch.setenv(
-        "INTERNAL_SERVICE_SCOPES",
-        "dem:read,dem:write,dem:delete,project_graph:synthesize,dem:authorize-actor,agentic:calculate",
+            "INTERNAL_SERVICE_SCOPES",
+            "dem:read,dem:write,dem:delete,project_graph:synthesize,dem:authorize-actor,agent:calculate",
     )
     transport = CompleteEngineTransport()
     app.dependency_overrides[get_core_engine_client] = lambda: CoreEngineClient(
