@@ -18,7 +18,7 @@ import os
 from typing import Any, Optional
 
 import httpx
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from .models import (
@@ -28,6 +28,7 @@ from .models import (
     SiteLogRecord,
 )
 from .store import get_log_by_date, get_logs, save_log
+from .auth import require_site_access
 
 CORE_ENGINE_URL = os.getenv("CORE_ENGINE_URL", "http://127.0.0.1:8081")
 DB_API_URL = os.getenv("DB_API_URL", "http://127.0.0.1:8084")
@@ -64,7 +65,7 @@ def health() -> dict:
 
 
 @app.post("/site-logs", response_model=SiteLogRecord, status_code=201)
-def create_site_log(inp: SiteLogInput) -> SiteLogRecord:
+def create_site_log(inp: SiteLogInput, _user=Depends(require_site_access)) -> SiteLogRecord:
     """
     Simpan laporan harian lapangan.
 
@@ -79,6 +80,7 @@ def list_site_logs(
     project_id: str = Query(..., description="ID proyek"),
     from_date: Optional[str] = Query(None, alias="from", description="ISO date filter mulai"),
     to_date: Optional[str] = Query(None, alias="to", description="ISO date filter akhir"),
+    _user=Depends(require_site_access),
 ) -> list[SiteLogRecord]:
     """
     Ambil riwayat laporan harian lapangan untuk satu proyek.
@@ -97,6 +99,7 @@ async def get_deviation(
     # core_engine_url override (untuk testing)
     core_url: Optional[str] = Query(None, description="Override URL core-engine (testing)"),
     db_url: Optional[str] = Query(None, description="Override URL db-api (testing)"),
+    _user=Depends(require_site_access),
 ) -> DeviationResult:
     """
     Bandingkan rencana vs realisasi pada tanggal tertentu.

@@ -57,10 +57,10 @@ New-Item -ItemType Directory -Force -Path $credentialDir | Out-Null
 $serviceIdentities = [ordered]@{
     "db-plhut" = @{ identity = "db-plhut"; scopes = @() }
     "core-engine" = @{ identity = "core-engine"; scopes = @() }
-    "document-intelligence" = @{ identity = "document-intelligence"; scopes = @("dem:read", "dem:write", "dem:delete", "dem:authorize-actor") }
-    "ai-orchestrator" = @{ identity = "ai-orchestrator"; scopes = @("agent:propose", "agent:calculate") }
-    "site-agent" = @{ identity = "site-agent"; scopes = @() }
-    "web" = @{ identity = "web-user-proxy"; actor_id = "local-desktop-user"; scopes = @("human:approve") }
+    "document-intelligence" = @{ identity = "document-intelligence"; scopes = @("dem:read", "dem:write", "dem:delete", "dem:authorize-actor", "di:access", "core:access") }
+    "ai-orchestrator" = @{ identity = "ai-orchestrator"; scopes = @("agent:propose", "agent:calculate", "agent:read", "core:access", "di:access") }
+    "site-agent" = @{ identity = "site-agent"; scopes = @("site:access", "core:access") }
+    "web" = @{ identity = "web-user-proxy"; actor_id = "local-desktop-user"; scopes = @("human:approve", "core:access", "di:access", "agent:access", "site:access") }
 }
 $serviceEnvironment = @{}
 $registryIdentities = @()

@@ -109,9 +109,9 @@ app.add_middleware(
 )
 
 from fastapi import APIRouter, Depends
-from .auth import get_current_user
+from .auth import get_current_user, require_service_scope
 
-api_router = APIRouter(dependencies=[Depends(get_current_user)])
+api_router = APIRouter(dependencies=[Depends(get_current_user), Depends(require_service_scope("core:access"))])
 
 
 STORE = load_data()

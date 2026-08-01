@@ -30,13 +30,13 @@ app.add_middleware(
 )
 
 from fastapi import Depends
-from .auth import get_current_user
+from .auth import get_current_user, require_di_access
 
 app.include_router(health_routes.router)
-app.include_router(upload_routes.router, dependencies=[Depends(get_current_user)])
-app.include_router(pdf_routes.router, dependencies=[Depends(get_current_user)])
-app.include_router(excel_routes.router, dependencies=[Depends(get_current_user)])
-app.include_router(tkg_routes.router, dependencies=[Depends(get_current_user)])
-app.include_router(dem_routes.router, dependencies=[Depends(get_current_user)])
-app.include_router(intelligence_routes.router, dependencies=[Depends(get_current_user)])
-app.include_router(advanced_intelligence_routes.router, dependencies=[Depends(get_current_user)])
+app.include_router(upload_routes.router, dependencies=[Depends(get_current_user), Depends(require_di_access)])
+app.include_router(pdf_routes.router, dependencies=[Depends(get_current_user), Depends(require_di_access)])
+app.include_router(excel_routes.router, dependencies=[Depends(get_current_user), Depends(require_di_access)])
+app.include_router(tkg_routes.router, dependencies=[Depends(get_current_user), Depends(require_di_access)])
+app.include_router(dem_routes.router, dependencies=[Depends(get_current_user), Depends(require_di_access)])
+app.include_router(intelligence_routes.router, dependencies=[Depends(get_current_user), Depends(require_di_access)])
+app.include_router(advanced_intelligence_routes.router, dependencies=[Depends(get_current_user), Depends(require_di_access)])
