@@ -2204,6 +2204,7 @@ export const RabMaterializationMappingSchema = z.object({
   calculation_type: z.enum(["concrete_column_volume", "length", "area", "count"]),
   evidence_refs: z.array(z.string()).default([]),
   approval_status: z.enum(["pending_approval", "approved", "rejected"]),
+  revision: z.number().int().positive().default(1),
   created_by: z.string().nullish(),
   reviewed_by: z.string().nullish(),
   reviewed_at: z.string().nullish(),
@@ -2215,6 +2216,47 @@ export const RabMaterializationMappingResolveSchema = z.object({
   status: z.enum(["approved", "rejected"]),
 });
 export type RabMaterializationMappingResolve = z.infer<typeof RabMaterializationMappingResolveSchema>;
+
+/** Identifier-only input. The DB receipt boundary reconstructs all numeric inputs. */
+export const CalculationReceiptRequestSchema = z.object({
+  mapping_id: z.string().min(1),
+  measurement_fact_ids: z.array(z.string().min(1)).min(1).refine((ids) => new Set(ids).size === ids.length, "measurement_fact_ids must be unique"),
+  idempotency_key: z.string().min(1).max(200),
+});
+export type CalculationReceiptRequest = z.infer<typeof CalculationReceiptRequestSchema>;
+
+export const CalculationReceiptSchema = z.object({
+  receipt_id: z.string(),
+  project_id: z.string(),
+  snapshot_id: z.string(),
+  mapping_id: z.string(),
+  mapping_revision: z.number().int().positive(),
+  work_item_node_id: z.string(),
+  measurement_fact_ids: z.array(z.string()),
+  fact_lineage: z.array(z.record(z.unknown())),
+  calculation_type: z.enum(["concrete_column_volume", "length", "area", "count"]),
+  rule_id: z.string().nullish(),
+  engine_version: z.string().nullish(),
+  canonical_request: z.record(z.unknown()),
+  input_hash: z.string().length(64),
+  engine_calculation_id: z.string().nullish(),
+  status: z.enum(["complete", "blocked", "needs_input", "superseded"]),
+  // Decimal stays string at the web boundary; parsing it as JS number loses precision.
+  result: z.string().nullish(),
+  unit: z.string().nullish(),
+  formula_id: z.string().nullish(),
+  substituted_formula: z.string().nullish(),
+  evidence_refs: z.array(z.string()).default([]),
+  human_approval_event_id: z.string().nullish(),
+  approved_by: z.string().nullish(),
+  requested_by_service: z.string(),
+  requested_by_actor: z.string().nullish(),
+  idempotency_key: z.string(),
+  parent_receipt_id: z.string().nullish(),
+  created_at: z.string(),
+  superseded_at: z.string().nullish(),
+});
+export type CalculationReceipt = z.infer<typeof CalculationReceiptSchema>;
 
 export const RabBridgeV2AhspCandidateSchema = z.object({
   ahsp_code: z.string(), description: z.string(), unit: z.string(), score: z.number(),

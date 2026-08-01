@@ -678,10 +678,57 @@ class RabMaterializationMappingResponse(RabMaterializationMappingCreate):
     snapshot_id: str
     evidence_refs: List[str] = Field(default_factory=list)
     approval_status: Literal["pending_approval", "approved", "rejected"]
+    revision: int = Field(default=1, ge=1)
     created_by: Optional[str] = None
     reviewed_by: Optional[str] = None
     reviewed_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CalculationReceiptRequest(BaseModel):
+    """Identifier-only public contract; the server constructs all engine input."""
+    mapping_id: str = Field(min_length=1)
+    measurement_fact_ids: List[str] = Field(min_length=1)
+    idempotency_key: str = Field(min_length=1, max_length=200)
+
+    @model_validator(mode="after")
+    def require_unique_measurement_fact_ids(self):
+        if len(set(self.measurement_fact_ids)) != len(self.measurement_fact_ids):
+            raise ValueError("measurement_fact_ids must be unique")
+        return self
+
+
+class CalculationReceiptResponse(BaseModel):
+    receipt_id: str
+    project_id: str
+    snapshot_id: str
+    mapping_id: str
+    mapping_revision: int = Field(ge=1)
+    work_item_node_id: str
+    measurement_fact_ids: List[str]
+    fact_lineage: List[Dict[str, Any]]
+    calculation_type: Literal["concrete_column_volume", "length", "area", "count"]
+    rule_id: Optional[str] = None
+    engine_version: Optional[str] = None
+    canonical_request: Dict[str, Any]
+    input_hash: str = Field(min_length=64, max_length=64)
+    engine_calculation_id: Optional[str] = None
+    status: Literal["complete", "blocked", "needs_input", "superseded"]
+    result: Optional[Decimal] = None
+    unit: Optional[str] = None
+    formula_id: Optional[str] = None
+    substituted_formula: Optional[str] = None
+    evidence_refs: List[str] = Field(default_factory=list)
+    human_approval_event_id: Optional[str] = None
+    approved_by: Optional[str] = None
+    requested_by_service: str
+    requested_by_actor: Optional[str] = None
+    idempotency_key: str
+    parent_receipt_id: Optional[str] = None
+    created_at: datetime
+    superseded_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 

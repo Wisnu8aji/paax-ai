@@ -695,6 +695,72 @@ class AgentReviewRecommendation(Base):
     __table_args__ = (UniqueConstraint("project_id", "idempotency_key", name="uq_agent_review_recommendation_idempotency"),)
 
 
+class CalculationReceipt(Base):
+    """Immutable deterministic-engine authority; never an LLM-produced result."""
+    __tablename__ = "calculation_receipts"
+    receipt_id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    snapshot_id = Column(String, nullable=False, index=True)
+    mapping_id = Column(String, nullable=False, index=True)
+    mapping_revision = Column(Integer, nullable=False)
+    work_item_node_id = Column(String, nullable=False)
+    measurement_fact_ids = Column(JSON_DOCUMENT, nullable=False)
+    fact_lineage = Column(JSON_DOCUMENT, nullable=False)
+    calculation_type = Column(String, nullable=False)
+    rule_id = Column(String, nullable=True)
+    engine_version = Column(String, nullable=True)
+    canonical_request = Column(JSON_DOCUMENT, nullable=False)
+    input_hash = Column(String(64), nullable=False, index=True)
+    engine_calculation_id = Column(String, nullable=True)
+    status = Column(String, nullable=False, index=True)
+    result = Column(Numeric(24, 9), nullable=True)
+    unit = Column(String, nullable=True)
+    formula_id = Column(String, nullable=True)
+    substituted_formula = Column(Text, nullable=True)
+    evidence_refs = Column(JSON_DOCUMENT, nullable=False)
+    human_approval_event_id = Column(String, ForeignKey("rab_materialization_mapping_audits.id", ondelete="RESTRICT"), nullable=True)
+    approved_by = Column(String, nullable=True)
+    requested_by_service = Column(String, nullable=False)
+    requested_by_actor = Column(String, nullable=True)
+    idempotency_key = Column(String, nullable=False)
+    parent_receipt_id = Column(String, ForeignKey("calculation_receipts.receipt_id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    superseded_at = Column(DateTime(timezone=True), nullable=True)
+    __table_args__ = (
+        UniqueConstraint("project_id", "idempotency_key", name="uq_calculation_receipt_idempotency"),
+        Index(
+            "uq_calculation_receipt_complete_input_mapping_revision",
+            "project_id", "mapping_id", "mapping_revision", "input_hash",
+            unique=True,
+            sqlite_where=text("status = 'complete'"),
+            postgresql_where=text("status = 'complete'"),
+        ),
+        CheckConstraint("status IN ('complete','blocked','needs_input','superseded')", name="ck_calculation_receipt_status"),
+        CheckConstraint("status != 'complete' OR (result IS NOT NULL AND unit IS NOT NULL)", name="ck_calculation_receipt_complete_result"),
+        CheckConstraint("status NOT IN ('blocked','needs_input') OR result IS NULL", name="ck_calculation_receipt_noncomplete_no_result"),
+    )
+
+
+class CalculationReceiptAudit(Base):
+    __tablename__ = "calculation_receipt_audits"
+    audit_id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    receipt_id = Column(String, ForeignKey("calculation_receipts.receipt_id", ondelete="CASCADE"), nullable=False, index=True)
+    action = Column(String, nullable=False)
+    actor = Column(String, nullable=True)
+    metadata_json = Column("metadata", JSON_DOCUMENT, nullable=False, default=dict)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+@event.listens_for(CalculationReceipt, "before_update")
+def prevent_calculation_receipt_update(mapper, connection, target):
+    raise ValueError("CalculationReceipt records are immutable")
+
+
+@event.listens_for(CalculationReceipt, "before_delete")
+def prevent_calculation_receipt_delete(mapper, connection, target):
+    raise ValueError("CalculationReceipt records are immutable")
+
+
 class MeasurementFact(Base):
     """Immutable, typed quantity input scoped to one project graph snapshot."""
     __tablename__ = "measurement_facts"
@@ -814,6 +880,7 @@ class RabMaterializationMapping(Base):
     calculation_type = Column(String, nullable=False)
     evidence_refs = Column(JSON_DOCUMENT, nullable=False, default=list)
     approval_status = Column(String, nullable=False, default="pending_approval", index=True)
+    revision = Column(Integer, nullable=False, default=1, server_default="1")
     created_by = Column(String, nullable=True)
     reviewed_by = Column(String, nullable=True)
     reviewed_at = Column(DateTime(timezone=True), nullable=True)
@@ -831,6 +898,8 @@ class RabMaterializationMappingAudit(Base):
     mapping_id = Column(String, ForeignKey("rab_materialization_mappings.id", ondelete="CASCADE"), nullable=False, index=True)
     action = Column(String, nullable=False)
     actor = Column(String, nullable=True)
+    revision_before = Column(Integer, nullable=True)
+    revision_after = Column(Integer, nullable=True)
     metadata_json = Column("metadata", JSON_DOCUMENT, nullable=False, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
