@@ -306,6 +306,21 @@ class TestRuntimeAPIProbes:
         except urllib.error.URLError as e:
             pytest.fail(f"Live acceptance requires web service on port 3000: {e}")
 
+    def _post_web(self, path: str, payload: dict, timeout: int = 10) -> tuple:
+        request = urllib.request.Request(
+            f"{self.WEB_BASE}{path}",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                return response.status, response.read()
+        except urllib.error.HTTPError as error:
+            return error.code, error.read()
+        except urllib.error.URLError as error:
+            pytest.fail(f"Live acceptance requires web service on port 3000: {error}")
+
     def _get_db(self, path: str, timeout: int = 10) -> tuple:
         key = self._get_internal_key()
         assert key, "Live acceptance requires an internal key from the protected runtime key file"
@@ -425,3 +440,84 @@ class TestRuntimeAPIProbes:
             except urllib.error.URLError as error:
                 pytest.fail(f"Live acceptance requires DB service on port 8001: {error}")
             assert status in (401, 503), f"Bad internal credential must fail closed, got {status}"
+
+    def test_launcher_runtime_key_acl_and_nonleak(self):
+        """The launcher keeps the runtime key file-only and user-private."""
+        data_root = Path(os.environ.get("PAAX_DATA_ROOT", "G:/PAAX-Data"))
+        key_file = data_root / "runtime" / "internal-service.key"
+        assert key_file.is_file(), "Secure portable startup must create a runtime key file"
+        assert not list((data_root / "runtime").glob("*.launch.bat")), "Secret-bearing launcher batch files are forbidden"
+        key = key_file.read_text(encoding="utf-8").strip()
+        assert len(key) >= 32
+        powershell = (
+            "$p='" + str(key_file).replace("'", "''") + "'; "
+            "$a=Get-Acl -LiteralPath $p; $u=[System.Security.Principal.WindowsIdentity]::GetCurrent().Name; "
+            "$r=@($a.Access); $mine=@($r | Where-Object { $_.IdentityReference.Value -eq $u -and -not $_.IsInherited -and $_.AccessControlType -eq 'Allow' -and (($_.FileSystemRights -band [System.Security.AccessControl.FileSystemRights]::FullControl) -eq [System.Security.AccessControl.FileSystemRights]::FullControl) }); "
+            "if($a.Owner -ne $u -or $r.Count -ne 1 -or $mine.Count -ne 1){exit 1}; "
+            "$leak=Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($env:PAAX_RUNTIME_KEY_CHECK) }; if($leak){exit 2}"
+        )
+        env = os.environ.copy()
+        env["PAAX_RUNTIME_KEY_CHECK"] = key
+        result = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", powershell],
+            cwd=str(REPO_ROOT), env=env, capture_output=True, text=True,
+        )
+        assert result.returncode == 0, "Runtime key ACL is not user-only or key leaked to a command line"
+
+    def test_cr2a_authenticated_web_gateway_contracts(self):
+        """CR2A reads use the web gateway, canonical index, and Core Engine."""
+        project_id = "PLHUT-SURAKARTA"
+        run_id = "514fb7f2-26fd-5816-9f22-a4a2412688bf"
+        paths = {
+            "/api/health": "health",
+            "/api/db-projects/projects": "project list",
+            f"/api/db-projects/projects/{project_id}": "project detail",
+            f"/api/db-projects/projects/{project_id}/drawing-intelligence/package-analysis?run_id={run_id}": "canonical package index",
+            f"/api/db-projects/projects/{project_id}/project-graph/civil-work-items": "civil ledger",
+            f"/api/db-projects/projects/{project_id}/project-graph/review-queue": "review queue",
+            f"/api/db-projects/projects/{project_id}/project-graph/corrections": "correction ledger",
+            f"/api/db-projects/projects/{project_id}/project-graph/rab-bridge/proposals": "handoff proposals",
+            f"/api/db-projects/projects/{project_id}/source-document/pdf": "source PDF",
+            f"/api/db-projects/projects/{project_id}/source-document/pages/0/image?width=400": "source page image",
+            f"/api/db-projects/projects/{project_id}/pages/0/thumbnail?width=400": "source thumbnail",
+            f"/api/document-intelligence/drawings/dem/{run_id}/index": "DI canonical index adapter",
+            f"/api/agent-runs?projectId={project_id}": "Mission runs",
+        }
+        payloads = {}
+        for path, label in paths.items():
+            status, body = self._get_web(path, timeout=30)
+            assert status == 200, f"{label} must return 200 through web, got {status}"
+            payloads[path] = body
+
+        package_path = f"/api/db-projects/projects/{project_id}/drawing-intelligence/package-analysis?run_id={run_id}"
+        package = json.loads(payloads[package_path])
+        assert package["total_pages"] == 88
+        assert [page["page_number"] for page in package["pages"]] == list(range(1, 89))
+        di_index = json.loads(payloads[f"/api/document-intelligence/drawings/dem/{run_id}/index"])
+        assert di_index["total_pages"] == package["total_pages"]
+        assert [entry["page_number"] for entry in di_index["entries"]] == list(range(1, 89))
+        assert isinstance(json.loads(payloads[f"/api/agent-runs?projectId={project_id}"]), list)
+        assert json.loads(payloads[f"/api/db-projects/projects/{project_id}/project-graph/rab-bridge/proposals"]) == []
+
+        # The known human-approved source fact is passed through unchanged.  The
+        # expected length anchor is 4.5 m; TypeScript and this test do not derive it.
+        request = {
+            "project_id": project_id,
+            "snapshot_id": "SNAPSHOT-50AD5202D5BDBE3A",
+            "measurement_fact_ids": ["mf-plhut-001"],
+            "calculation_type": "length",
+            "requested_by": "paax-web",
+            "inputs": [{
+                "measurement_id": "mf-plhut-001", "project_id": project_id,
+                "snapshot_id": "SNAPSHOT-50AD5202D5BDBE3A", "measurement_type": "length",
+                "value": 4.5, "unit": "m", "source_method": "written_dimension",
+                "element_ids": ["ELTYPE-ED7E4B7D3942989A873D368FF3DC9AF93EADF6B81BDA83DDDC84F777D8B954BD"],
+                "evidence_refs": ["EV-PLHUT-001"], "formula_inputs": ["length"],
+                "verification_status": "human_verified", "created_by": "paax-web", "audit_metadata": {},
+            }],
+        }
+        status, body = self._post_web("/api/core-engine/calculations", request)
+        assert status == 200, f"Core Engine calculation must return 200 through web, got {status}"
+        result = json.loads(body)
+        assert result["status"] == "complete"
+        assert result["result"] == 4.5 and result["unit"] == "m"

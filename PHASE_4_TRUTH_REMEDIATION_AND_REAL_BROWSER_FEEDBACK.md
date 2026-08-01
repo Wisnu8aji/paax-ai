@@ -98,3 +98,15 @@ PHASE 4 CR1 FAIL/BLOCKED — DO NOT MERGE
 - Graphify update juga belum hijau pada CR1 (timeout 120 detik).
 
 PHASE 4 CR2A FAIL/BLOCKED — DO NOT CONTINUE
+
+## CORRECTION ROUND 2A — FINAL EVIDENCE UPDATE
+
+- Typecheck blocker resolved without excluding tests: `@types/node` is declared for `@paax/schemas` and the schema test imports `z` explicitly. `pnpm --filter @paax/schemas typecheck` now passes.
+- Portable DB proof: representative-copy migration preserves checksum and core row counts; active DB revision is `0037_package_index_materialization`; backup `G:\PAAX-Data\db\portable.sqlite.pre-cr2a.bak` exists; persisted run `514fb7f2-26fd-5816-9f22-a4a2412688bf` reads exactly 88 pages in source order (page numbers 1–88).
+- Secure startup proof: `Start-PLHUT-Local.ps1` launches child services with an in-memory `ProcessStartInfo` environment block, never a batch wrapper. The runtime key ACL has one explicit current-user FullControl rule; test verifies no `*.launch.bat` and no key value in a process command line.
+- Startup proof: after clean stop/start, ports `3000`, `8001`, `8081`, `8082`, `8083`, and `8085` serve health using the same repository, branch, and commit identity. The launcher uses the verified production web bundle because Windows Next development mode was observed to hang after proxy-route compilation.
+- API proof through web: health; project list/detail; canonical package index; civil ledger; review queue; correction ledger; source PDF/page/thumbnail; DI canonical-index adapter; Mission run read; empty Handoff proposal list; and Core Engine calculation all return 200. The known human-approved 4.5 m fact is passed unchanged to Core Engine; it remains stateless and creates no receipt.
+- Fail-closed proof: missing and invalid direct DB internal keys return 401/503. Active DB still has `engine_verified_measurements=0`; no engine receipt or final engineering quantity was invented.
+- Final checks: `23 passed, 0 skipped`, web production build passes, schema typecheck passes, credential scanner passes (432 files), DI dummy gate passes, and Graphify is updated after final source changes.
+
+PHASE 4 CR2A PASS — READY FOR CR2B UI/AGENTIC/BROWSER

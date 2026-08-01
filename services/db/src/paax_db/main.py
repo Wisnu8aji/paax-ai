@@ -737,7 +737,7 @@ async def get_page_thumbnail(id: str, page_index: int, width: int = Query(400, g
 
 @app.get(
     "/projects/{id}/drawing-intelligence/package-analysis",
-    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"], service_scope="dem:read"))],
 )
 async def get_project_package_analysis(id: str, run_id: Optional[str] = None, db: AsyncSession = Depends(get_db)):
     # Canonical persisted index only.  This read endpoint never classifies or writes.
@@ -1387,6 +1387,24 @@ async def create_project_graph_correction(
     _audit_project_action(db, project_id=id, actor=user.uid, action="project_graph.correction.created", target_id=correction.id)
     await db.commit()
     return correction
+
+
+@app.get(
+    "/projects/{id}/project-graph/corrections",
+    response_model=List[schemas.ProjectGraphCorrectionResponse],
+    dependencies=[Depends(RoleChecker(["estimator", "pm", "lapangan", "owner"]))],
+)
+async def list_project_graph_corrections(
+    id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Read the durable correction ledger without creating or resolving one."""
+    corrections = (await db.execute(
+        select(models.ProjectGraphCorrection)
+        .where(models.ProjectGraphCorrection.project_id == id)
+        .order_by(models.ProjectGraphCorrection.created_at.desc())
+    )).scalars().all()
+    return corrections
 
 
 @app.post(

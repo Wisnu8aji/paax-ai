@@ -34,12 +34,31 @@ if (-not (Test-Path $keyFile)) { [IO.File]::WriteAllText($keyFile, ([guid]::NewG
 # for this local key file, so fail closed if that cannot be applied.
 try {
     $keyAcl = Get-Acl -LiteralPath $keyFile
-    $keyAcl.SetAccessRuleProtection($true, $false)
-    foreach ($rule in @($keyAcl.Access)) { [void]$keyAcl.RemoveAccessRule($rule) }
     $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-    $keyRule = New-Object System.Security.AccessControl.FileSystemAccessRule($currentUser, "FullControl", "Allow")
-    $keyAcl.SetAccessRule($keyRule)
-    Set-Acl -LiteralPath $keyFile -AclObject $keyAcl
+    $currentRule = @($keyAcl.Access | Where-Object {
+        $_.IdentityReference.Value -eq $currentUser -and
+        $_.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow -and
+        -not $_.IsInherited -and
+        (($_.FileSystemRights -band [System.Security.AccessControl.FileSystemRights]::FullControl) -eq [System.Security.AccessControl.FileSystemRights]::FullControl)
+    })
+    $aclAlreadyPrivate = $keyAcl.Owner -eq $currentUser -and $currentRule.Count -eq 1 -and @($keyAcl.Access).Count -eq 1
+    if (-not $aclAlreadyPrivate) {
+        # icacls changes only the DACL (not the SACL), avoiding a SeSecurityPrivilege
+        # requirement on standard local Windows accounts.  Re-read and verify below;
+        # uncertainty remains fail-closed.
+        & icacls $keyFile /inheritance:r /grant:r "$currentUser`:(F)" | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "icacls failed with exit code $LASTEXITCODE" }
+        $keyAcl = Get-Acl -LiteralPath $keyFile
+        $currentRule = @($keyAcl.Access | Where-Object {
+            $_.IdentityReference.Value -eq $currentUser -and
+            $_.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow -and
+            -not $_.IsInherited -and
+            (($_.FileSystemRights -band [System.Security.AccessControl.FileSystemRights]::FullControl) -eq [System.Security.AccessControl.FileSystemRights]::FullControl)
+        })
+        if ($keyAcl.Owner -ne $currentUser -or $currentRule.Count -ne 1 -or @($keyAcl.Access).Count -ne 1) {
+            throw "runtime key file ACL is not user-only after enforcement"
+        }
+    }
 } catch {
     throw "Tidak dapat menerapkan ACL user-only pada runtime key file. Startup dihentikan: $($_.Exception.Message)"
 }
@@ -194,7 +213,13 @@ if (-not $SkipOptionalServices) {
     Wait-Health "site-agent" "http://127.0.0.1:8085/health" 90
 }
 
-Start-ServiceProcess "web" "pnpm.cmd" @("--dir","apps/web","dev","--hostname","127.0.0.1","--port","3000") $repoRoot 3000
+# The portable runtime uses a verified production bundle.  `next dev` can stop
+# accepting connections on Windows after a proxy route is compiled, which makes
+# a health-only startup falsely appear ready.  Fail closed when no bundle exists
+# rather than falling back to that unstable development server.
+$webBuildId = Join-Path $repoRoot "apps\web\.next\BUILD_ID"
+if (-not (Test-Path $webBuildId)) { throw "Web production bundle tidak ditemukan. Jalankan 'pnpm --dir apps/web build' sebelum startup portable." }
+Start-ServiceProcess "web" "pnpm.cmd" @("--dir","apps/web","start","--hostname","127.0.0.1") $repoRoot 3000
 Wait-Health "web" "http://127.0.0.1:3000/api/health" 180
 
 function Get-PidSafe([string]$Path) {

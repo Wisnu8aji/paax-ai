@@ -3,11 +3,16 @@ import asyncio
 import json
 import logging
 import os
+import sys
 from pathlib import Path
 
-from paax_db.data_root import resolve_data_root
-
-data_root = resolve_data_root()
+# DATABASE_URL must be selected before *any* paax_db import.  The package
+# initialiser imports repository types which in turn initialise the SQLAlchemy
+# engine; resolving the data root through paax_db before this assignment caused
+# a portable launch to retain a caller's PostgreSQL URL.  The portable launcher
+# supplies PAAX_DATA_ROOT explicitly, while this fallback retains the documented
+# local default for direct invocation.
+data_root = Path(os.environ.get("PAAX_DATA_ROOT", "G:/PAAX-Data")).expanduser().resolve()
 db_file = data_root / "db" / "portable.sqlite"
 db_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -45,7 +50,10 @@ async def bootstrap_plhut() -> dict:
     # Legacy portable databases created via create_all have no Alembic row.
     # Audit/stamp/apply explicitly before serving any authenticated request;
     # package-index readers never perform schema work themselves.
-    from scripts.portable.migrate_portable_schema import migrate
+    portable_scripts = REPO_ROOT / "scripts" / "portable"
+    if str(portable_scripts) not in sys.path:
+        sys.path.insert(0, str(portable_scripts))
+    from migrate_portable_schema import migrate
     migrate(REPO_ROOT, db_file, backup=False)
 
     async with async_session_maker() as session:
