@@ -25,6 +25,15 @@ import { Minimap } from './minimap';
 import { SelectionContextBar } from './selection-context-bar';
 import { RealPageSvg } from './real-page-svg';
 import { PdfPageLayer } from './pdf-page-layer';
+import type { PdfCoverageChangeEvent } from './pdf-page-layer';
+import type { PdfPageMetrics } from './pdf-tile-pool';
+import {
+  documentKeyFor,
+  nextCoverageState,
+  shouldApplyFit,
+  type CoverageState,
+  type FitRecord,
+} from './drawing-canvas-fit';
 import type { InteractiveMeasurementCandidate } from '../../drawing-intelligence-api';
 
 /** lebar dasar render SVG pada zoom=1 (px) — 100% ≈ lebar A1 landscape wajar */
@@ -38,6 +47,14 @@ const MAX_ZOOM = 8;
  * rendering the whole canvas subtree on every animation frame (P2).
  */
 const LIVE_VIEWPORT_SYNC_MS = 100;
+/**
+ * Wheel-settle window for temporary `will-change: transform` promotion. One
+ * bounded timer only: repeated wheel events reset its deadline; pointer-up,
+ * pointer-cancel, sheet switch, and unmount clear it immediately. 150 ms sits
+ * just above the layer's 125 ms detail pass and the 100 ms viewport sync, so
+ * the promotion survives the sharpening pass and is released right after.
+ */
+export const WHEEL_SETTLE_MS = 150;
 
 const MemoCanvasToolbar = memo(CanvasToolbar);
 const MemoZoomBar = memo(ZoomBar);
@@ -52,12 +69,79 @@ export function DrawingCanvas() {
   const selectedElement = useSelectedElement();
   const mappedSheet = state.mappedSheets.find((candidate) => candidate.id === state.activeSheetId) ?? null;
   const realImageUrl = mappedSheet?.imageUrl ?? null;
+  const toolRunId = sheet?.runId ?? mappedSheet?.runId ?? null;
+  const toolPageIndex = sheet?.pageIndex ?? mappedSheet?.pageIndex ?? null;
   const [pdfMetrics, setPdfMetrics] = useState<{ width: number; height: number } | null>(null);
   /**
-   * Metrics cache keyed by `runId:pageIndex` (P3): switching sheets must not
-   * reset metrics and trigger a second fit jump once a sheet was already opened.
+   * Key of the document the current `pdfMetrics` belongs to. The metrics-fit
+   * effect is gated by it so a stale state value from the previous sheet can
+   * never drive a fit for the newly active document (Task 4 invariant 1/2).
+   */
+  const pdfMetricsKeyRef = useRef<string | null>(null);
+  /**
+   * Metrics cache keyed by `documentKey` (`runId:pageIndex`, P3): switching
+   * sheets must not reset metrics and trigger a second fit jump once a sheet
+   * was already opened.
    */
   const metricsCacheRef = useRef(new Map<string, { width: number; height: number }>());
+  const activeDocumentKey = useMemo(
+    () => (toolRunId !== null && toolPageIndex !== null ? documentKeyFor(toolRunId, toolPageIndex) : null),
+    [toolRunId, toolPageIndex],
+  );
+  /**
+   * Latest active document key, readable from any async callback. Mirrored
+   * during render (same pattern as PdfPageLayer's callback refs) so a stale
+   * callback is recognized instantly, not one commit later.
+   */
+  const activeKeyRef = useRef<string | null>(activeDocumentKey);
+  activeKeyRef.current = activeDocumentKey;
+  /**
+   * One stable metrics handler per document key, created once per key.
+   * Callback identity is a pure function of the document key, never of mutable
+   * current state, so a re-render cannot retarget an in-flight old-document
+   * callback at the new document (Task 4 invariant 3).
+   */
+  const metricsHandlerByKeyRef = useRef(new Map<string, (metrics: PdfPageMetrics) => void>());
+  const metricsHandlerFor = (key: string): ((metrics: PdfPageMetrics) => void) => {
+    let handler = metricsHandlerByKeyRef.current.get(key);
+    if (!handler) {
+      handler = (metrics) => {
+        metricsCacheRef.current.set(key, { width: metrics.width, height: metrics.height });
+        if (key === activeKeyRef.current) {
+          pdfMetricsKeyRef.current = key;
+          setPdfMetrics({ width: metrics.width, height: metrics.height });
+        }
+      };
+      metricsHandlerByKeyRef.current.set(key, handler);
+    }
+    return handler;
+  };
+  /**
+   * Coverage readiness keyed by the active document and the monotonically
+   * accepted generation (Task 4 invariant 4): `ready:false` reveals the
+   * matching underlay before a viewport transition exposes a hole; matching or
+   * newer `ready:true` hides it. Wrong-document and older-generation events
+   * are ignored by `nextCoverageState`.
+   */
+  const [coverage, setCoverage] = useState<CoverageState | null>(null);
+  const handleCoverageChange = useCallback((event: PdfCoverageChangeEvent) => {
+    setCoverage((previous) => nextCoverageState(previous, event));
+  }, []);
+  /**
+   * Temporary `will-change: transform` promotion for the single page surface.
+   * Enabled only while dragging and during the wheel-settle window, so the
+   * browser GPU compositor is not asked to keep a permanent layer. No state
+   * updates happen per animation frame — only on drag start/end and settle.
+   */
+  const [transformPromoted, setTransformPromoted] = useState(false);
+  const settleTimerRef = useRef<number | null>(null);
+  const armSettleTimer = useCallback(() => {
+    if (settleTimerRef.current !== null) window.clearTimeout(settleTimerRef.current);
+    settleTimerRef.current = window.setTimeout(() => {
+      settleTimerRef.current = null;
+      setTransformPromoted(false);
+    }, WHEEL_SETTLE_MS);
+  }, []);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pageTransformRef = useRef<HTMLDivElement | null>(null);
   const pendingPanRef = useRef<{ panX: number; panY: number } | null>(null);
@@ -65,26 +149,22 @@ export function DrawingCanvas() {
   const [spaceDown, setSpaceDown] = useState(false);
   const [toolBusy, setToolBusy] = useState(false);
   const [toolResult, setToolResult] = useState<InteractiveMeasurementCandidate | null>(null);
-  const toolRunId = sheet?.runId ?? mappedSheet?.runId ?? null;
-  const toolPageIndex = sheet?.pageIndex ?? mappedSheet?.pageIndex ?? null;
   const dragRef = useRef<{ startX: number; startY: number; panX: number; panY: number; button: number } | null>(null);
   const [dragging, setDragging] = useState(false);
+  /** User zoom/pan since the current document became active (design §8). */
+  const userAdjustedRef = useRef(false);
 
   const { zoom, panX, panY, tool } = state.canvas;
 
-  const computeAspect = useCallback(
-    (metricsOverride: { width: number; height: number } | null | undefined): number => {
-      const m = metricsOverride ?? pdfMetrics;
-      if (m) return m.height / m.width;
-      if (mappedSheet?.widthPx && mappedSheet.heightPx) return mappedSheet.heightPx / mappedSheet.widthPx;
-      if (sheet) {
-        return (sheet.geometry.heightMm + (PLAN_MARGIN + 1900) * 2) / (sheet.geometry.widthMm + (PLAN_MARGIN + 1900) * 2);
-      }
-      return 1;
-    },
-    [pdfMetrics, mappedSheet, sheet],
-  );
-  const aspect = computeAspect(null);
+  const computeAspect = useCallback((): number => {
+    if (pdfMetrics) return pdfMetrics.height / pdfMetrics.width;
+    if (mappedSheet?.widthPx && mappedSheet.heightPx) return mappedSheet.heightPx / mappedSheet.widthPx;
+    if (sheet) {
+      return (sheet.geometry.heightMm + (PLAN_MARGIN + 1900) * 2) / (sheet.geometry.widthMm + (PLAN_MARGIN + 1900) * 2);
+    }
+    return 1;
+  }, [pdfMetrics, mappedSheet, sheet]);
+  const aspect = computeAspect();
   const baseW = BASE_WIDTH_PX;
   const baseH = BASE_WIDTH_PX * aspect;
 
@@ -94,19 +174,36 @@ export function DrawingCanvas() {
   );
 
   /**
-   * Fit sheet ke container dengan padding. `metricsOverride` makes the target
-   * aspect explicit: on a sheet switch the cached metrics may differ from the
-   * current React state (which still belongs to the previous sheet), so relying
-   * on the state-derived aspect would fit against the wrong page ratio (P3).
+   * Provisional aspect from thumbnail dimensions or sheet geometry only —
+   * never from `pdfMetrics`, which may still belong to the previous sheet
+   * during a switch (Task 4 invariant 1).
    */
-  const fitSheet = useCallback(
-    (metricsOverride?: { width: number; height: number } | null) => {
+  const fallbackSheetAspect = useCallback((): number => {
+    if (mappedSheet?.widthPx && mappedSheet.heightPx) return mappedSheet.heightPx / mappedSheet.widthPx;
+    if (sheet) {
+      return (sheet.geometry.heightMm + (PLAN_MARGIN + 1900) * 2) / (sheet.geometry.widthMm + (PLAN_MARGIN + 1900) * 2);
+    }
+    return 1;
+  }, [mappedSheet, sheet]);
+
+  /**
+   * Record of the exact aspect/source last applied by `fitSheetForRecord`
+   * (design §8): later decisions compare against it, never against
+   * `baseH/baseW` recomputed from the newly received metrics.
+   */
+  const fitRecordRef = useRef<FitRecord | null>(null);
+
+  /**
+   * Fit sheet ke container dengan padding untuk record aspek eksplisit, lalu
+   * catat persis aspek yang dipakai.
+   */
+  const fitSheetForRecord = useCallback(
+    (record: FitRecord) => {
       const el = containerRef.current;
       if (!el) return;
       userAdjustedRef.current = false;
-      const targetAspect = computeAspect(metricsOverride ?? null);
       const fitW = BASE_WIDTH_PX;
-      const fitH = BASE_WIDTH_PX * targetAspect;
+      const fitH = BASE_WIDTH_PX * record.aspect;
       const pad = 48;
       const zw = (el.clientWidth - pad * 2) / fitW;
       const zh = (el.clientHeight - pad * 2) / fitH;
@@ -116,9 +213,27 @@ export function DrawingCanvas() {
         panX: (el.clientWidth - fitW * z) / 2,
         panY: (el.clientHeight - fitH * z) / 2,
       });
+      fitRecordRef.current = record;
     },
-    [computeAspect, setCanvas],
+    [setCanvas],
   );
+
+  /**
+   * Manual/structural fit (resize, dblclick, Ctrl+0, toolbar): re-fit against
+   * the last applied aspect, or the current state aspect before any record.
+   * A record belonging to a different document key is never reused.
+   */
+  const fitSheet = useCallback(() => {
+    const record: FitRecord =
+      fitRecordRef.current && fitRecordRef.current.documentKey === activeDocumentKey
+        ? fitRecordRef.current
+        : {
+            documentKey: activeDocumentKey ?? '',
+            aspect: computeAspect(),
+            source: pdfMetrics ? 'pdf-metrics' : 'sheet-dimensions',
+          };
+    fitSheetForRecord(record);
+  }, [fitSheetForRecord, activeDocumentKey, computeAspect, pdfMetrics]);
 
   const zoomTo = useCallback(
     (nextZoom: number, cx?: number, cy?: number) => {
@@ -138,52 +253,66 @@ export function DrawingCanvas() {
   );
 
   // Fit pertama kali & saat ganti sheet; refit saat container berubah ukuran
-  // selama user belum mengatur zoom manual.
-  const userAdjustedRef = useRef(false);
+  // selama user belum mengatur zoom manual. Semua keputusan keyed ke satu
+  // document key aktif; callback lama tidak bisa menjadi fallback sheet baru.
   useEffect(() => {
     userAdjustedRef.current = false;
+    // Bersihkan state drag/wheel yang masih berjalan (invariant 6/7).
+    if (panFrameRef.current !== null) cancelAnimationFrame(panFrameRef.current);
+    panFrameRef.current = null;
+    pendingPanRef.current = null;
+    dragRef.current = null;
+    setDragging(false);
+    lastViewportSyncRef.current = 0;
+    setLivePan(null);
+    if (settleTimerRef.current !== null) {
+      window.clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = null;
+    }
+    setTransformPromoted(false);
+    const key = activeDocumentKey;
+    if (!key) return;
     // P3: reuse cached PDF metrics for this run/page instead of dropping to the
     // thumbnail-aspect fallback, so revisiting a sheet does not refit twice.
-    const cached =
-      toolRunId !== null && toolPageIndex !== null
-        ? (metricsCacheRef.current.get(`${toolRunId}:${toolPageIndex}`) ?? null)
-        : null;
+    const cached = metricsCacheRef.current.get(key) ?? null;
+    pdfMetricsKeyRef.current = key;
     setPdfMetrics(cached);
-    // Fit with the cached metrics' aspect explicitly (the state still holds the
-    // previous sheet's metrics at this point).
-    fitSheet(cached);
+    // Reveal the matching underlay immediately; the layer's first `ready:false`
+    // candidate keeps it visible until an atomic commit hides it.
+    setCoverage({ documentKey: key, generation: 0, ready: false });
+    const record: FitRecord = cached
+      ? { documentKey: key, aspect: cached.height / cached.width, source: 'pdf-cache' }
+      : { documentKey: key, aspect: fallbackSheetAspect(), source: 'sheet-dimensions' };
+    if (shouldApplyFit(fitRecordRef.current, record)) {
+      fitSheetForRecord(record);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.activeSheetId]);
 
-  const handleMetrics = useCallback(
-    (metrics: { width: number; height: number; rotation: number }) => {
-      if (toolRunId === null || toolPageIndex === null) return;
-      metricsCacheRef.current.set(`${toolRunId}:${toolPageIndex}`, metrics);
-      setPdfMetrics(metrics);
-    },
-    [toolRunId, toolPageIndex],
-  );
-
-  // Thumbnail underlay stays visible until the PDF tile layer has actually
-  // painted its first tile — even when metrics are cached (sheet switch),
-  // so the canvas never shows a blank gap (P1/P3).
-  const [layerPainted, setLayerPainted] = useState(false);
+  // Exact metrics untuk dokumen aktif boleh memicu paling banyak satu fit
+  // korektif, dan hanya kalau user belum zoom/pan manual sejak dokumen ini
+  // aktif. Dijaga oleh key tempat `pdfMetrics` berasal, jadi nilai state basi
+  // dari sheet sebelumnya tidak pernah menggerakkan fit dokumen baru (§8).
   useEffect(() => {
-    setLayerPainted(false);
-  }, [state.activeSheetId]);
-  const handleFirstPaint = useCallback(() => setLayerPainted(true), []);
-
-  useEffect(() => {
-    if (pdfMetrics && !userAdjustedRef.current) {
-      const currentAspect = baseH / baseW;
-      const newAspect = pdfMetrics.height / pdfMetrics.width;
-      if (Math.abs(currentAspect - newAspect) > 0.005) {
-        fitSheet();
-      }
+    if (!pdfMetrics || !activeDocumentKey) return;
+    if (pdfMetricsKeyRef.current !== activeDocumentKey) return;
+    const next: FitRecord = {
+      documentKey: activeDocumentKey,
+      aspect: pdfMetrics.height / pdfMetrics.width,
+      source: 'pdf-metrics',
+    };
+    if (!userAdjustedRef.current && shouldApplyFit(fitRecordRef.current, next)) {
+      fitSheetForRecord(next);
     }
-  }, [pdfMetrics, fitSheet, baseH, baseW]);
+  }, [pdfMetrics, activeDocumentKey, fitSheetForRecord]);
 
-  useEffect(() => () => { if (panFrameRef.current !== null) cancelAnimationFrame(panFrameRef.current); }, []);
+  useEffect(
+    () => () => {
+      if (panFrameRef.current !== null) cancelAnimationFrame(panFrameRef.current);
+      if (settleTimerRef.current !== null) window.clearTimeout(settleTimerRef.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     const el = containerRef.current;
@@ -239,11 +368,15 @@ export function DrawingCanvas() {
       const el = containerRef.current;
       if (!el) return;
       userAdjustedRef.current = true;
+      // Wheel settles as a burst: promote the GPU layer for the settle window
+      // and let repeated wheels reset the deadline (invariant 6).
+      setTransformPromoted(true);
+      armSettleTimer();
       const rect = el.getBoundingClientRect();
       const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
       zoomTo(zoom * factor, e.clientX - rect.left, e.clientY - rect.top);
     },
-    [zoom, zoomTo],
+    [zoom, zoomTo, armSettleTimer],
   );
 
   const onPointerDown = useCallback(
@@ -288,6 +421,7 @@ export function DrawingCanvas() {
       (e.target as Element).setPointerCapture?.(e.pointerId);
       dragRef.current = { startX: e.clientX, startY: e.clientY, panX, panY, button: e.button };
       setDragging(true);
+      setTransformPromoted(true);
     },
     [spaceDown, tool, panX, panY, zoom, baseW, baseH, toolRunId, toolPageIndex, dispatch],
   );
@@ -307,7 +441,9 @@ export function DrawingCanvas() {
           const pending = pendingPanRef.current;
           if (pending) {
             // Visual pan is imperative (CSS transform, no React render per frame).
-            if (pageTransformRef.current) pageTransformRef.current.style.transform = `translate(${pending.panX}px, ${pending.panY}px) scale(${zoom})`;
+            if (pageTransformRef.current) {
+              pageTransformRef.current.style.transform = `translate3d(${pending.panX}px, ${pending.panY}px, 0) scale(${zoom})`;
+            }
             // The tile layer follows at ~10 Hz so tiles ahead of the drag are
             // prefetched without re-rendering the canvas subtree every frame.
             const now = performance.now();
@@ -322,6 +458,10 @@ export function DrawingCanvas() {
     [zoom],
   );
 
+  // Pointer-up convergence: flush the latest pending pan into committed state
+  // even if the RAF never fired, cancel the frame, clear the temporary GPU
+  // promotion and the live-pan sync so the declarative transform (committed
+  // panX/panY/zoom) and the DOM transform agree in the same event batch.
   const onPointerUp = useCallback(() => {
     if (panFrameRef.current !== null) cancelAnimationFrame(panFrameRef.current);
     panFrameRef.current = null;
@@ -331,6 +471,11 @@ export function DrawingCanvas() {
     lastViewportSyncRef.current = 0;
     setLivePan(null);
     setDragging(false);
+    if (settleTimerRef.current !== null) {
+      window.clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = null;
+    }
+    setTransformPromoted(false);
   }, [setCanvas]);
 
   const curPanX = livePan ? livePan.panX : panX;
@@ -418,19 +563,23 @@ export function DrawingCanvas() {
       >
         <div
           ref={pageTransformRef}
+          data-testid="di-canvas-page-surface"
           style={{
             position: 'absolute',
             top: 0,
             left: 0,
             width: baseW,
             height: baseH,
-            transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+            transform: `translate3d(${panX}px, ${panY}px, 0) scale(${zoom})`,
             transformOrigin: '0 0',
+            // Satu-satunya layer page yang dipromosikan ke GPU compositor;
+            // will-change hanya aktif selama drag/wheel-settle (invariant 5/6).
+            willChange: transformPromoted ? 'transform' : undefined,
             // tanpa transition — kanvas mengutamakan responsivitas (§23)
           }}
         >
           {mappedSheet ? <>
-            {mappedSheet.imageUrl && !layerPainted && (
+            {mappedSheet.imageUrl && (
               <img
                 src={mappedSheet.imageUrl}
                 alt=""
@@ -444,6 +593,10 @@ export function DrawingCanvas() {
                   objectFit: 'contain',
                   zIndex: 0,
                   pointerEvents: 'none',
+                  // Thumbnail underlay selalu mounted di bawah compositor; hanya
+                  // visibility/opacity yang berubah, geometri tidak (invariant 4).
+                  visibility: coverage ? (coverage.ready ? 'hidden' : 'visible') : 'visible',
+                  opacity: coverage ? (coverage.ready ? 0 : 1) : 1,
                 }}
               />
             )}
@@ -454,8 +607,8 @@ export function DrawingCanvas() {
               fallbackWidth={mappedSheet.widthPx ?? baseW}
               fallbackHeight={mappedSheet.heightPx ?? baseH}
               viewport={{ x: viewport?.x ?? 0, y: viewport?.y ?? 0, width: viewport?.w ?? 1, height: viewport?.h ?? 1, zoom, dpr: typeof window === 'undefined' ? 1 : window.devicePixelRatio }}
-              onMetrics={handleMetrics}
-              onFirstPaint={handleFirstPaint}
+              onMetrics={metricsHandlerFor(activeDocumentKey ?? '')}
+              onCoverageChange={handleCoverageChange}
             />
             <div style={{ position: 'absolute', inset: 0 }}><MemoRealPageSvg
             imageUrl={null}
