@@ -1,11 +1,39 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi, beforeEach, beforeAll, afterAll } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, act, cleanup } from '@testing-library/react';
 import React from 'react';
-import { shouldRefreshArtifactUrl, PdfPageLayer, resetGlobalPdfTilePool, resetGlobalTileCache } from './pdf-page-layer';
-import { TileLru, PdfTilePyramid, type TileViewport } from './pdf-tile-pyramid';
+
+declare module 'vitest' {
+  interface Assertion<T = any> {
+    toHaveAttribute(name: string, value?: string): T;
+  }
+  interface AsymmetricMatchersContaining {
+    toHaveAttribute(name: string, value?: string): void;
+  }
+}
+
+expect.extend({
+  toHaveAttribute(element: Element, name: string, value?: string) {
+    const actual = element.getAttribute(name);
+    const pass = value === undefined ? actual !== null : actual === value;
+    return {
+      pass,
+      message: () =>
+        `expected element to have attribute "${name}"${value !== undefined ? ` = "${value}"` : ''} but got "${actual}"`,
+    };
+  },
+});
+import {
+  shouldRefreshArtifactUrl,
+  PdfPageLayer,
+  resetGlobalPdfTilePool,
+  resetGlobalTileCache,
+} from './pdf-page-layer';
+import { TileLru } from './pdf-tile-pyramid';
 import { createPdfTilePool } from './pdf-tile-pool';
 import { normalizeArtifactExpiry, fetchPdfArtifactUrl } from '../../drawing-intelligence-api';
+import * as compositorModule from './pdf-tile-compositor';
+import type { PdfTileCompositor } from './pdf-tile-compositor';
 
 let getContextSpy: ReturnType<typeof vi.spyOn>;
 
@@ -16,10 +44,14 @@ beforeEach(() => {
   vi.restoreAllMocks();
   getContextSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation((contextId: string) => {
     if (contextId === '2d') {
-      return { drawImage: vi.fn() } as unknown as CanvasRenderingContext2D;
+      return { drawImage: vi.fn(), clearRect: vi.fn() } as unknown as CanvasRenderingContext2D;
     }
     return null;
   });
+});
+
+afterEach(() => {
+  cleanup();
 });
 
 vi.mock('../../drawing-intelligence-api', async (importOriginal: () => Promise<typeof import('../../drawing-intelligence-api')>) => {
@@ -54,6 +86,86 @@ vi.mock('./pdf-tile-pool', async (importOriginal: () => Promise<typeof import('.
   };
 });
 
+const FIT = { x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 };
+
+function bitmap(width = 512, height = 512) {
+  return { width, height, close: vi.fn() };
+}
+
+type Delivery = { width: number; height: number; claim: ReturnType<typeof vi.fn> };
+
+function controlledPool(
+  metrics = { width: 1000, height: 800, rotation: 0 },
+  opts: { failKeys?: Set<string> } = {},
+) {
+  const resolvers = new Map<string, Array<(delivery: Delivery) => void>>();
+  const requestedKeys: string[] = [];
+  const cancels: Array<ReturnType<typeof vi.fn>> = [];
+  const pool = {
+    open: vi.fn().mockResolvedValue(metrics),
+    request: vi.fn().mockImplementation(({ tile }: { tile: { key: string } }) => {
+      requestedKeys.push(tile.key);
+      if (opts.failKeys?.has(tile.key)) {
+        return { promise: Promise.reject(new Error('tile failed')), cancel: vi.fn() };
+      }
+      let resolve!: (delivery: Delivery) => void;
+      const promise = new Promise<Delivery>((res) => { resolve = res; });
+      const list = resolvers.get(tile.key) ?? [];
+      list.push(resolve);
+      resolvers.set(tile.key, list);
+      const cancel = vi.fn();
+      cancels.push(cancel);
+      return { promise, cancel };
+    }),
+    close: vi.fn(),
+    dispose: vi.fn(),
+  };
+  return { pool, resolvers, requestedKeys, cancels };
+}
+
+function deliver(resolvers: Map<string, Array<(delivery: Delivery) => void>>, key: string, bmp = bitmap()) {
+  const list = resolvers.get(key);
+  if (!list || list.length === 0) throw new Error(`no pending request for ${key}`);
+  const delivery: Delivery = {
+    width: bmp.width,
+    height: bmp.height,
+    claim: vi.fn().mockReturnValue(bmp),
+  };
+  list[list.length - 1](delivery);
+  return delivery;
+}
+
+async function flush() {
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+}
+
+function layer() {
+  return screen.getByTestId('pdf-page-layer');
+}
+
+function renderNormalizedFitLayer(
+  pool: ReturnType<typeof controlledPool>['pool'],
+  runId = 'run-fit',
+  viewport = FIT,
+  extra: Partial<React.ComponentProps<typeof PdfPageLayer>> = {},
+) {
+  return render(
+    <PdfPageLayer
+      runId={runId}
+      pageIndex={0}
+      viewport={viewport}
+      viewportSpace="normalized"
+      fallbackWidth={1000}
+      fallbackHeight={800}
+      tilePool={pool as any}
+      {...extra}
+    />,
+  );
+}
 
 describe('Artifact Expiry Normalization', () => {
   it('artifact expires_at accepts ISO string, epoch seconds number, epoch seconds numeric string, epoch milliseconds number/string, boundary cases, and rejects invalid/ambiguous input', () => {
@@ -207,7 +319,7 @@ describe('PdfPageLayer Component Mount and Page Transitions', () => {
   });
 });
 
-describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
+describe('Worker and Document Generation Lifecycle', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -219,12 +331,12 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
       expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
     });
 
-    const resolvers1: Array<(result: any) => void> = [];
+    const resolvers1: Array<(result: Delivery) => void> = [];
     const pool1 = {
       open: vi.fn().mockResolvedValue({ width: 1000, height: 800, rotation: 0 }),
       request: vi.fn().mockImplementation(() => {
-        let resolve: (result: any) => void;
-        const promise = new Promise<any>((res) => { resolve = res; });
+        let resolve: (result: Delivery) => void;
+        const promise = new Promise<Delivery>((res) => { resolve = res; });
         resolvers1.push(resolve!);
         return { promise, cancel: vi.fn() };
       }),
@@ -271,6 +383,7 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
         viewport={viewport}
         fallbackWidth={800}
         fallbackHeight={600}
+        tilePool={pool2 as any}
       />
     );
 
@@ -299,12 +412,12 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
       expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
     });
 
-    const resolvers: Array<(result: any) => void> = [];
+    const resolvers: Array<(result: Delivery) => void> = [];
     const poolInstance = {
       open: vi.fn().mockResolvedValue({ width: 1000, height: 800, rotation: 0 }),
       request: vi.fn().mockImplementation(() => {
-        let resolve: (result: any) => void;
-        const promise = new Promise<any>((res) => { resolve = res; });
+        let resolve: (result: Delivery) => void;
+        const promise = new Promise<Delivery>((res) => { resolve = res; });
         resolvers.push(resolve!);
         return { promise, cancel: vi.fn() };
       }),
@@ -355,15 +468,15 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
       expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
     });
 
-    const resolvers: Array<(result: any) => void> = [];
+    const resolvers: Array<(result: Delivery) => void> = [];
     const poolInstance = {
       open: vi.fn().mockImplementation(() => {
         resolvers.length = 0;
         return Promise.resolve({ width: 1000, height: 800, rotation: 0 });
       }),
       request: vi.fn().mockImplementation(() => {
-        let resolve: (result: any) => void;
-        const promise = new Promise<any>((res) => { resolve = res; });
+        let resolve: (result: Delivery) => void;
+        const promise = new Promise<Delivery>((res) => { resolve = res; });
         resolvers.push(resolve!);
         return { promise, cancel: vi.fn() };
       }),
@@ -419,12 +532,12 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
       expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
     });
 
-    const requests: Array<(result: any) => void> = [];
+    const requests: Array<(result: Delivery) => void> = [];
     const poolInstance = {
       open: vi.fn().mockResolvedValue({ width: 1000, height: 800, rotation: 0 }),
       request: vi.fn().mockImplementation(() => {
-        let resolve: (result: any) => void;
-        const promise = new Promise<any>((res) => { resolve = res; });
+        let resolve: (result: Delivery) => void;
+        const promise = new Promise<Delivery>((res) => { resolve = res; });
         requests.push(resolve!);
         return { promise, cancel: vi.fn() };
       }),
@@ -638,1018 +751,91 @@ describe('Worker and Document Generation Lifecycle (Phase 2B & 3A)', () => {
   });
 });
 
-
-describe('Phase 3B1: Metadata-only React state and cache.peek rendering', () => {
+describe('Atomic generations: committed/candidate state and coverage transitions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('active delivery draws from cache.peek, sizing canvas and calling drawImage', async () => {
-    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
-    mockFetchArtifact.mockResolvedValue({
-      url: '/api/document-intelligence/drawings/dem/run-3b1/artifact?token=abc',
-      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-    });
+  it('keeps the committed generation until every visible candidate tile is ready', async () => {
+    const { pool, resolvers } = controlledPool();
+    const onCoverageChange = vi.fn();
+    const { container } = renderNormalizedFitLayer(pool, 'run-brief1', FIT, { onCoverageChange });
+    await flush();
 
-    const drawImageSpy = vi.fn();
-    getContextSpy.mockImplementation((contextId: string) => {
-      if (contextId === '2d') {
-        return { drawImage: drawImageSpy } as unknown as CanvasRenderingContext2D;
-      }
-      return null;
-    });
+    expect(pool.request).toHaveBeenCalledTimes(4);
 
-    const peekSpy = vi.spyOn(TileLru.prototype, 'peek');
+    deliver(resolvers, 'run-brief1:0:1:0:0');
+    deliver(resolvers, 'run-brief1:0:1:0:1');
+    await flush();
 
-    const resolvers: Array<(result: any) => void> = [];
-    const poolInstance = {
-      open: vi.fn().mockImplementation(() => {
-        resolvers.length = 0;
-        return Promise.resolve({ width: 1000, height: 800, rotation: 0 });
-      }),
-      request: vi.fn().mockImplementation(() => {
-        let resolve: (result: any) => void;
-        const promise = new Promise<any>((res) => { resolve = res; });
-        resolvers.push(resolve!);
-        return { promise, cancel: vi.fn() };
-      }),
-      close: vi.fn(),
-      dispose: vi.fn(),
-    };
-    vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
+    expect(layer()).toHaveAttribute('data-committed-generation', '0');
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'false');
+    expect(layer()).toHaveAttribute('data-coverage-ratio', '0.000');
 
-    const viewport = { x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 };
-    render(
-      <PdfPageLayer
-        runId="run-3b1"
-        pageIndex={0}
-        viewport={viewport}
-        fallbackWidth={800}
-        fallbackHeight={600}
-        tilePool={poolInstance as any}
-      />
+    deliver(resolvers, 'run-brief1:0:1:1:0');
+    deliver(resolvers, 'run-brief1:0:1:1:1');
+    await flush();
+
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'true');
+    expect(layer()).toHaveAttribute('data-committed-generation', '1');
+    expect(layer()).toHaveAttribute('data-coverage-ratio', '1.000');
+    expect(container.querySelectorAll('canvas')).toHaveLength(1);
+    expect(onCoverageChange).toHaveBeenCalledWith(
+      expect.objectContaining({ documentKey: 'run-brief1:0', generation: 1, ready: false, coverage: 0 }),
     );
-
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
-    const mockBitmap = { width: 512, height: 512, close: vi.fn() };
-    const delivery = {
-      width: 512,
-      height: 512,
-      claim: vi.fn().mockReturnValue(mockBitmap),
-    };
-
-    await act(async () => {
-      resolvers[0](delivery);
-      await Promise.resolve();
-    });
-
-    expect(peekSpy).toHaveBeenCalledWith('run-3b1:0:1:0:0');
-    expect(drawImageSpy).toHaveBeenCalledWith(mockBitmap, 0, 0);
-
-    peekSpy.mockRestore();
+    expect(onCoverageChange).toHaveBeenCalledWith(
+      expect.objectContaining({ documentKey: 'run-brief1:0', generation: 1, ready: true, coverage: 1, renderer: 'canvas2d' }),
+    );
   });
 
-  it('an evicted/missing key in TileLru does not call drawImage', async () => {
-    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
-    mockFetchArtifact.mockResolvedValue({
-      url: '/api/document-intelligence/drawings/dem/run-evicted/artifact?token=abc',
-      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-    });
+  it('a single ready tile never commits a multi-tile viewport and never reports coverage-ready', async () => {
+    const { pool, resolvers } = controlledPool();
+    const onCoverageChange = vi.fn();
+    renderNormalizedFitLayer(pool, 'run-brief2', FIT, { onCoverageChange });
+    await flush();
 
-    const drawImageSpy = vi.fn();
-    getContextSpy.mockImplementation((contextId: string) => {
-      if (contextId === '2d') {
-        return { drawImage: drawImageSpy } as unknown as CanvasRenderingContext2D;
-      }
-      return null;
-    });
+    deliver(resolvers, 'run-brief2:0:1:0:0');
+    await flush();
 
-    const peekSpy = vi.spyOn(TileLru.prototype, 'peek').mockReturnValue(undefined);
+    expect(layer()).toHaveAttribute('data-committed-generation', '0');
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'false');
+    expect(onCoverageChange).not.toHaveBeenCalledWith(expect.objectContaining({ ready: true }));
 
-    const resolvers: Array<(result: any) => void> = [];
-    const poolInstance = {
-      open: vi.fn().mockImplementation(() => {
-        resolvers.length = 0;
-        return Promise.resolve({ width: 1000, height: 800, rotation: 0 });
-      }),
-      request: vi.fn().mockImplementation(() => {
-        let resolve: (result: any) => void;
-        const promise = new Promise<any>((res) => { resolve = res; });
-        resolvers.push(resolve!);
-        return { promise, cancel: vi.fn() };
-      }),
-      close: vi.fn(),
-      dispose: vi.fn(),
-    };
-    vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
+    deliver(resolvers, 'run-brief2:0:1:0:1');
+    deliver(resolvers, 'run-brief2:0:1:1:0');
+    deliver(resolvers, 'run-brief2:0:1:1:1');
+    await flush();
 
-    const viewport = { x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 };
-    render(
-      <PdfPageLayer
-        runId="run-evicted"
-        pageIndex={0}
-        viewport={viewport}
-        fallbackWidth={800}
-        fallbackHeight={600}
-        tilePool={poolInstance as any}
-      />
-    );
-
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
-    const mockBitmap = { width: 512, height: 512, close: vi.fn() };
-    const delivery = {
-      width: 512,
-      height: 512,
-      claim: vi.fn().mockReturnValue(mockBitmap),
-    };
-
-    await act(async () => {
-      resolvers[0](delivery);
-      await Promise.resolve();
-    });
-
-    expect(peekSpy).toHaveBeenCalledWith('run-evicted:0:1:0:0');
-    expect(drawImageSpy).not.toHaveBeenCalled();
-
-    peekSpy.mockRestore();
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'true');
+    expect(onCoverageChange).toHaveBeenCalledWith(expect.objectContaining({ ready: true, generation: 1 }));
+    expect(onCoverageChange.mock.calls.filter((c: any) => c[0].ready === true)).toHaveLength(1);
   });
 
-  it('same tile key updated with new bitmap re-renders TileCanvas and calls drawImage with new bitmap via revision', async () => {
-    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
-    mockFetchArtifact.mockResolvedValue({
-      url: '/api/document-intelligence/drawings/dem/run-same-key/artifact?token=abc',
-      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-    });
+  it('cached tiles enter readyKeys immediately without being re-requested', async () => {
+    const cache = new TileLru();
+    cache.set('run-cache:0:1:0:0', bitmap() as unknown as ImageBitmap, 512 * 512 * 4);
+    cache.set('run-cache:0:1:0:1', bitmap() as unknown as ImageBitmap, 512 * 512 * 4);
 
-    const drawImageSpy = vi.fn();
-    getContextSpy.mockImplementation((contextId: string) => {
-      if (contextId === '2d') {
-        return { drawImage: drawImageSpy } as unknown as CanvasRenderingContext2D;
-      }
-      return null;
-    });
+    const { pool, resolvers } = controlledPool();
+    renderNormalizedFitLayer(pool, 'run-cache', FIT, { tileCache: cache as any });
+    await flush();
 
-    const mockBitmapA = { width: 512, height: 512, close: vi.fn(), id: 'bitmapA' };
-    const mockBitmapB = { width: 512, height: 512, close: vi.fn(), id: 'bitmapB' };
+    expect(pool.request).toHaveBeenCalledTimes(2);
+    expect(pool.request).toHaveBeenCalledWith(expect.objectContaining({ tile: expect.objectContaining({ key: 'run-cache:0:1:1:0' }) }));
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'false');
 
-    const resolvers: Array<(delivery: any) => void> = [];
+    deliver(resolvers, 'run-cache:0:1:1:0');
+    deliver(resolvers, 'run-cache:0:1:1:1');
+    await flush();
+
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'true');
+    expect(layer()).toHaveAttribute('data-committed-generation', '1');
+  });
+
+  it('normalizes a viewport with width and height above one through the production wiring', async () => {
     const requestedTiles: any[] = [];
     const poolInstance = {
-      open: vi.fn().mockImplementation(() => {
-        resolvers.length = 0;
-        return Promise.resolve({ width: 1000, height: 800, rotation: 0 });
-      }),
-      request: vi.fn().mockImplementation(({ tile }: any) => {
-        requestedTiles.push(tile);
-        let resolve: (delivery: any) => void;
-        const promise = new Promise<any>((res) => { resolve = res; });
-        resolvers.push(resolve!);
-        return { promise, cancel: vi.fn() };
-      }),
-      close: vi.fn(),
-      dispose: vi.fn(),
-    };
-    vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
-
-    const viewport1 = { x: 0, y: 0, width: 0.1, height: 0.1, zoom: 1, dpr: 1 };
-    const { rerender } = render(
-      <PdfPageLayer
-        runId="run-same-key"
-        pageIndex={0}
-        viewport={viewport1}
-        fallbackWidth={800}
-        fallbackHeight={600}
-        tilePool={poolInstance as any}
-      />
-    );
-
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
-    expect(resolvers.length).toBe(1);
-
-    const deliveryA = {
-      width: 512,
-      height: 512,
-      claim: vi.fn().mockReturnValue(mockBitmapA),
-    };
-
-    await act(async () => {
-      resolvers[0](deliveryA);
-      await Promise.resolve();
-    });
-
-    expect(drawImageSpy).toHaveBeenCalledWith(mockBitmapA, 0, 0);
-    drawImageSpy.mockClear();
-
-    const hasSpy = vi.spyOn(TileLru.prototype, 'has').mockReturnValueOnce(false);
-    const getSpy = vi.spyOn(TileLru.prototype, 'get').mockReturnValueOnce(undefined);
-
-    const viewport2 = { x: 0.05, y: 0, width: 0.1, height: 0.1, zoom: 1, dpr: 1 };
-    rerender(
-      <PdfPageLayer
-        runId="run-same-key"
-        pageIndex={0}
-        viewport={viewport2}
-        fallbackWidth={800}
-        fallbackHeight={600}
-        tilePool={poolInstance as any}
-      />
-    );
-
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
-    expect(resolvers.length).toBe(2);
-    expect(requestedTiles[0].key).toBe(requestedTiles[1].key);
-
-    const deliveryB = {
-      width: 512,
-      height: 512,
-      claim: vi.fn().mockReturnValue(mockBitmapB),
-    };
-
-    await act(async () => {
-      resolvers[1](deliveryB);
-      await Promise.resolve();
-    });
-
-    expect(drawImageSpy).toHaveBeenCalledWith(mockBitmapB, 0, 0);
-
-    hasSpy.mockRestore();
-    getSpy.mockRestore();
-  });
-
-  it('updates tile metadata on cache hit when geometry changes for same key without incrementing revision or re-triggering drawImage', async () => {
-    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
-    mockFetchArtifact.mockResolvedValue({
-      url: '/api/document-intelligence/drawings/dem/run-meta/artifact?token=abc',
-      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-    });
-
-    const drawImageSpy = vi.fn();
-    getContextSpy.mockImplementation((contextId: string) => {
-      if (contextId === '2d') {
-        return { drawImage: drawImageSpy } as unknown as CanvasRenderingContext2D;
-      }
-      return null;
-    });
-
-    const tileV1 = { key: 'run-meta:0:1:0:0', tx: 0, ty: 0, x: 0, y: 0, width: 400, height: 400, density: 1 };
-    const tileV2 = { key: 'run-meta:0:1:0:0', tx: 0, ty: 0, x: 0, y: 0, width: 500, height: 400, density: 1 };
-
-    const visibleTilesSpy = vi.spyOn(PdfTilePyramid.prototype, 'visibleTiles')
-      .mockImplementation((vp: TileViewport) => vp.x > 0 ? [tileV2] : [tileV1]);
-
-    const resolvers: Array<(delivery: any) => void> = [];
-    const poolInstance = {
-      open: vi.fn().mockImplementation(() => {
-        resolvers.length = 0;
-        return Promise.resolve({ width: 1000, height: 800, rotation: 0 });
-      }),
-      request: vi.fn().mockImplementation(() => {
-        let resolve: (delivery: any) => void;
-        const promise = new Promise<any>((res) => { resolve = res; });
-        resolvers.push(resolve!);
-        return { promise, cancel: vi.fn() };
-      }),
-      close: vi.fn(),
-      dispose: vi.fn(),
-    };
-    vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
-
-    const viewport = { x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 };
-    const { container, rerender } = render(
-      <PdfPageLayer
-        runId="run-meta"
-        pageIndex={0}
-        viewport={viewport}
-        fallbackWidth={1000}
-        fallbackHeight={800}
-        tilePool={poolInstance as any}
-      />
-    );
-
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
-    expect(resolvers.length).toBe(1);
-
-    const mockBitmap = { width: 400, height: 400, close: vi.fn() };
-    const delivery = {
-      width: 400,
-      height: 400,
-      claim: vi.fn().mockReturnValue(mockBitmap),
-    };
-
-    await act(async () => {
-      resolvers[0](delivery);
-      await Promise.resolve();
-    });
-
-    expect(drawImageSpy).toHaveBeenCalledTimes(1);
-    drawImageSpy.mockClear();
-
-    const canvasBefore = container.querySelector('canvas');
-    expect(canvasBefore).not.toBeNull();
-    expect(canvasBefore?.style.width).toBe('40%');
-
-    // Rerender with slight viewport change dependency to re-trigger useEffect
-    // visibleTiles returns tileV2 (same key, width 500)
-    rerender(
-      <PdfPageLayer
-        runId="run-meta"
-        pageIndex={0}
-        viewport={{ ...viewport, x: 0.001 }}
-        fallbackWidth={1000}
-        fallbackHeight={800}
-        tilePool={poolInstance as any}
-      />
-    );
-
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    // Cache hit: no second pool.request
-    expect(resolvers.length).toBe(1);
-
-    // Canvas width updated to 50%
-    const canvasAfter = container.querySelector('canvas');
-    expect(canvasAfter?.style.width).toBe('50%');
-
-    // drawImage was NOT called again because revision was preserved
-    expect(drawImageSpy).not.toHaveBeenCalled();
-
-    visibleTilesSpy.mockRestore();
-  });
-});
-
-describe('P1: render-generation retain window (anti-flicker tile swap)', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('onFirstPaint fires exactly once per opened document, after the first tile is painted', async () => {
-    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
-    mockFetchArtifact.mockResolvedValue({
-      url: '/api/document-intelligence/drawings/dem/run-firstpaint/artifact?token=abc',
-      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-    });
-
-    const requests: Array<(delivery: any) => void> = [];
-    const poolInstance = {
-      open: vi.fn().mockImplementation(() => {
-        requests.length = 0;
-        return Promise.resolve({ width: 1000, height: 800, rotation: 0 });
-      }),
-      request: vi.fn().mockImplementation(() => {
-        let resolve!: (delivery: any) => void;
-        const promise = new Promise<any>((res) => { resolve = res; });
-        requests.push(resolve!);
-        return { promise, cancel: vi.fn() };
-      }),
-      close: vi.fn(),
-      dispose: vi.fn(),
-    };
-    vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
-
-    const onFirstPaint = vi.fn();
-    const { rerender } = render(
-      <PdfPageLayer
-        runId="run-firstpaint"
-        pageIndex={0}
-        viewport={{ x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 }}
-        fallbackWidth={1000}
-        fallbackHeight={800}
-        tilePool={poolInstance as any}
-        onFirstPaint={onFirstPaint}
-      />
-    );
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
-    expect(onFirstPaint).not.toHaveBeenCalled();
-    const bitmap = { width: 512, height: 512, close: vi.fn() };
-    await act(async () => {
-      requests[0]({ width: 512, height: 512, claim: vi.fn().mockReturnValue(bitmap) });
-      await Promise.resolve();
-    });
-    expect(onFirstPaint).toHaveBeenCalledTimes(1);
-
-    // Another tile for the same document must NOT re-fire
-    await act(async () => {
-      requests[1]?.({ width: 512, height: 512, claim: vi.fn().mockReturnValue(bitmap) });
-      await Promise.resolve();
-    });
-    expect(onFirstPaint).toHaveBeenCalledTimes(1);
-
-    // Document switch resets the latch; paint again -> fires once more
-    mockFetchArtifact.mockResolvedValueOnce({
-      url: '/api/document-intelligence/drawings/dem/run-second/artifact?token=xyz',
-      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-    });
-    rerender(
-      <PdfPageLayer
-        runId="run-second"
-        pageIndex={0}
-        viewport={{ x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 }}
-        fallbackWidth={1000}
-        fallbackHeight={800}
-        tilePool={poolInstance as any}
-        onFirstPaint={onFirstPaint}
-      />
-    );
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-    expect(onFirstPaint).toHaveBeenCalledTimes(1);
-    await act(async () => {
-      requests[0]({ width: 512, height: 512, claim: vi.fn().mockReturnValue(bitmap) });
-      await Promise.resolve();
-    });
-    expect(onFirstPaint).toHaveBeenCalledTimes(2);
-  });
-
-  function makePool(requests: Array<(delivery: any) => void>, requestedTiles: any[]) {
-    return {
-      open: vi.fn().mockImplementation(() => {
-        requests.length = 0;
-        return Promise.resolve({ width: 1000, height: 800, rotation: 0 });
-      }),
-      request: vi.fn().mockImplementation(({ tile }: any) => {
-        requestedTiles.push(tile);
-        let resolve!: (delivery: any) => void;
-        const promise = new Promise<any>((res) => { resolve = res; });
-        requests.push(resolve!);
-        return { promise, cancel: vi.fn() };
-      }),
-      close: vi.fn(),
-      dispose: vi.fn(),
-    };
-  }
-
-  it('a tile leaving the viewport stays painted until the retain window passes, then is evicted (bounded, not cache.has forever)', async () => {
-    vi.useFakeTimers();
-    try {
-      const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
-      mockFetchArtifact.mockResolvedValue({
-        url: '/api/document-intelligence/drawings/dem/run-retain/artifact?token=abc',
-        expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-      });
-
-      const tileA = { key: 'run-retain:0:1:0:0', tx: 0, ty: 0, x: 0, y: 0, width: 400, height: 400, density: 1 };
-      const tileB = { key: 'run-retain:0:1:1:0', tx: 1, ty: 0, x: 400, y: 0, width: 400, height: 400, density: 1 };
-      const visibleTilesSpy = vi.spyOn(PdfTilePyramid.prototype, 'visibleTiles')
-        .mockImplementation((vp: TileViewport) => vp.x > 0 ? [tileB] : [tileA]);
-      const detailTilesSpy = vi.spyOn(PdfTilePyramid.prototype, 'visibleDetailTiles').mockReturnValue([]);
-
-      const requests: Array<(delivery: any) => void> = [];
-      const requestedTiles: any[] = [];
-      const poolInstance = makePool(requests, requestedTiles);
-      vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
-
-      const drawImageSpy = vi.fn();
-      getContextSpy.mockImplementation((contextId: string) => {
-        if (contextId === '2d') return { drawImage: drawImageSpy } as unknown as CanvasRenderingContext2D;
-        return null;
-      });
-
-      const { container, rerender } = render(
-        <PdfPageLayer
-          runId="run-retain"
-          pageIndex={0}
-          viewport={{ x: 0, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 }}
-          fallbackWidth={1000}
-          fallbackHeight={800}
-          tilePool={poolInstance as any}
-        />
-      );
-
-      await act(async () => {
-        await Promise.resolve();
-        await Promise.resolve();
-        await Promise.resolve();
-      });
-
-      // Deliver tile A so it is painted
-      const bitmapA = { width: 400, height: 400, close: vi.fn() };
-      await act(async () => {
-        requests[0]({ width: 400, height: 400, claim: vi.fn().mockReturnValue(bitmapA) });
-        await Promise.resolve();
-      });
-      expect(container.querySelectorAll('canvas')).toHaveLength(1);
-
-      // Pan away: tile A leaves the viewport, tile B is requested but not yet delivered
-      rerender(
-        <PdfPageLayer
-          runId="run-retain"
-          pageIndex={0}
-          viewport={{ x: 0.5, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 }}
-          fallbackWidth={1000}
-          fallbackHeight={800}
-          tilePool={poolInstance as any}
-        />
-      );
-      await act(async () => {
-        await Promise.resolve();
-        await Promise.resolve();
-      });
-
-      // Old tile A must NOT be unmounted instantly (anti-flicker retain)
-      expect(container.querySelectorAll('canvas')).toHaveLength(1);
-
-      // Deliver tile B so the new generation has painted coverage
-      const bitmapB = { width: 400, height: 400, close: vi.fn() };
-      await act(async () => {
-        requests[1]({ width: 400, height: 400, claim: vi.fn().mockReturnValue(bitmapB) });
-        await Promise.resolve();
-      });
-      expect(container.querySelectorAll('canvas')).toHaveLength(2);
-
-      // Retain window passes -> stale tile A is evicted (bounded)
-      await act(async () => {
-        vi.advanceTimersByTime(400);
-        await Promise.resolve();
-      });
-      expect(container.querySelectorAll('canvas')).toHaveLength(1);
-      expect(requestedTiles.map((t) => t.key)).toContain(tileB.key);
-
-      visibleTilesSpy.mockRestore();
-      detailTilesSpy.mockRestore();
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('old tiles are held while new-generation tiles are still rendering (no zero-visible swap window)', async () => {
-    vi.useFakeTimers();
-    try {
-      const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
-      mockFetchArtifact.mockResolvedValue({
-        url: '/api/document-intelligence/drawings/dem/run-hold/artifact?token=abc',
-        expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-      });
-
-      const tileA = { key: 'run-hold:0:1:0:0', tx: 0, ty: 0, x: 0, y: 0, width: 400, height: 400, density: 1 };
-      const tileB = { key: 'run-hold:0:1:1:0', tx: 1, ty: 0, x: 400, y: 0, width: 400, height: 400, density: 1 };
-      const visibleTilesSpy = vi.spyOn(PdfTilePyramid.prototype, 'visibleTiles')
-        .mockImplementation((vp: TileViewport) => vp.x > 0 ? [tileB] : [tileA]);
-      const detailTilesSpy = vi.spyOn(PdfTilePyramid.prototype, 'visibleDetailTiles').mockReturnValue([]);
-
-      const requests: Array<(delivery: any) => void> = [];
-      const poolInstance = makePool(requests, []);
-      vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
-
-      const { container, rerender } = render(
-        <PdfPageLayer
-          runId="run-hold"
-          pageIndex={0}
-          viewport={{ x: 0, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 }}
-          fallbackWidth={1000}
-          fallbackHeight={800}
-          tilePool={poolInstance as any}
-        />
-      );
-      await act(async () => {
-        await Promise.resolve();
-        await Promise.resolve();
-        await Promise.resolve();
-      });
-      const bitmapA = { width: 400, height: 400, close: vi.fn() };
-      await act(async () => {
-        requests[0]({ width: 400, height: 400, claim: vi.fn().mockReturnValue(bitmapA) });
-        await Promise.resolve();
-      });
-      expect(container.querySelectorAll('canvas')).toHaveLength(1);
-
-      // Pan to B; B's request stays pending (slow worker) — tile A must remain visible
-      rerender(
-        <PdfPageLayer
-          runId="run-hold"
-          pageIndex={0}
-          viewport={{ x: 0.5, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 }}
-          fallbackWidth={1000}
-          fallbackHeight={800}
-          tilePool={poolInstance as any}
-        />
-      );
-      await act(async () => {
-        await Promise.resolve();
-        await Promise.resolve();
-      });
-      expect(requests.length).toBe(2);
-
-      // Advance well past the retain window: request still pending -> old tile retained
-      await act(async () => {
-        vi.advanceTimersByTime(600);
-        await Promise.resolve();
-      });
-      expect(container.querySelectorAll('canvas')).toHaveLength(1);
-
-      // Now B settles -> swap happens; after the retain window old A is gone
-      const bitmapB = { width: 400, height: 400, close: vi.fn() };
-      await act(async () => {
-        requests[1]({ width: 400, height: 400, claim: vi.fn().mockReturnValue(bitmapB) });
-        await Promise.resolve();
-      });
-      await act(async () => {
-        vi.advanceTimersByTime(500);
-        await Promise.resolve();
-      });
-      expect(container.querySelectorAll('canvas')).toHaveLength(1);
-
-      visibleTilesSpy.mockRestore();
-      detailTilesSpy.mockRestore();
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-});
-
-describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellation', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('rapid pan between two viewports sharing one tile: overlap handle cancel not called and pool.request for that key remains exactly once; leaving key is cancelled', async () => {
-    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
-    mockFetchArtifact.mockResolvedValue({
-      url: '/api/document-intelligence/drawings/dem/run-pan/artifact?token=abc',
-      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-    });
-
-    const cancelA = vi.fn();
-    const cancelShared = vi.fn();
-    const cancelB = vi.fn();
-
-    const tileA = { key: 'run-pan:0:1:0:0', tx: 0, ty: 0, x: 0, y: 0, width: 400, height: 400, density: 1 };
-    const tileShared = { key: 'run-pan:0:1:1:0', tx: 1, ty: 0, x: 400, y: 0, width: 400, height: 400, density: 1 };
-    const tileB = { key: 'run-pan:0:1:2:0', tx: 2, ty: 0, x: 800, y: 0, width: 400, height: 400, density: 1 };
-
-    const visibleTilesSpy = vi.spyOn(PdfTilePyramid.prototype, 'visibleTiles')
-      .mockImplementation((vp: TileViewport) => vp.x > 0 ? [tileShared, tileB] : [tileA, tileShared]);
-
-    const requestedKeys: string[] = [];
-    const poolInstance = {
-      open: vi.fn().mockImplementation(() => Promise.resolve({ width: 1000, height: 800, rotation: 0 })),
-      request: vi.fn().mockImplementation(({ tile }: any) => {
-        requestedKeys.push(tile.key);
-        let cancel = cancelA;
-        if (tile.key === tileShared.key) cancel = cancelShared;
-        if (tile.key === tileB.key) cancel = cancelB;
-        return { promise: new Promise(() => {}), cancel };
-      }),
-      close: vi.fn(),
-      dispose: vi.fn(),
-    };
-    vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
-
-    const viewport1 = { x: 0, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 };
-    const { rerender } = render(
-      <PdfPageLayer
-        runId="run-pan"
-        pageIndex={0}
-        viewport={viewport1}
-        fallbackWidth={1000}
-        fallbackHeight={800}
-        tilePool={poolInstance as any}
-      />
-    );
-
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
-    expect(requestedKeys).toEqual([tileA.key, tileShared.key]);
-    expect(cancelA).not.toHaveBeenCalled();
-    expect(cancelShared).not.toHaveBeenCalled();
-
-    // Rerender with viewport2 sharing tileShared
-    const viewport2 = { x: 0.2, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 };
-    rerender(
-      <PdfPageLayer
-        runId="run-pan"
-        pageIndex={0}
-        viewport={viewport2}
-        fallbackWidth={1000}
-        fallbackHeight={800}
-        tilePool={poolInstance as any}
-      />
-    );
-
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    // Overlap handle cancel not called
-    expect(cancelShared).not.toHaveBeenCalled();
-    // Leaving key cancelled
-    expect(cancelA).toHaveBeenCalledTimes(1);
-    // Request for tileShared remains exactly once
-    expect(requestedKeys.filter((k) => k === tileShared.key).length).toBe(1);
-    // tileB requested
-    expect(requestedKeys).toContain(tileB.key);
-
-    visibleTilesSpy.mockRestore();
-  });
-
-  it('kept overlap request resolving after old effect cleanup still claims/caches/draws for new viewport', async () => {
-    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
-    mockFetchArtifact.mockResolvedValue({
-      url: '/api/document-intelligence/drawings/dem/run-kept/artifact?token=abc',
-      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-    });
-
-    const drawImageSpy = vi.fn();
-    getContextSpy.mockImplementation((contextId: string) => {
-      if (contextId === '2d') {
-        return { drawImage: drawImageSpy } as unknown as CanvasRenderingContext2D;
-      }
-      return null;
-    });
-
-    const tileShared = { key: 'run-kept:0:1:0:0', tx: 0, ty: 0, x: 0, y: 0, width: 400, height: 400, density: 1 };
-
-    const visibleTilesSpy = vi.spyOn(PdfTilePyramid.prototype, 'visibleTiles')
-      .mockReturnValue([tileShared]);
-
-    let resolveShared!: (delivery: any) => void;
-    const poolInstance = {
-      open: vi.fn().mockImplementation(() => Promise.resolve({ width: 1000, height: 800, rotation: 0 })),
-      request: vi.fn().mockImplementation(({ tile }: any) => {
-        const promise = new Promise<any>((res) => { resolveShared = res; });
-        return { promise, cancel: vi.fn() };
-      }),
-      close: vi.fn(),
-      dispose: vi.fn(),
-    };
-    vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
-
-    const viewport1 = { x: 0, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 };
-    const { rerender } = render(
-      <PdfPageLayer
-        runId="run-kept"
-        pageIndex={0}
-        viewport={viewport1}
-        fallbackWidth={1000}
-        fallbackHeight={800}
-        tilePool={poolInstance as any}
-      />
-    );
-
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
-    // Viewport change, causing old effect cleanup to run
-    const viewport2 = { x: 0.05, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 };
-    rerender(
-      <PdfPageLayer
-        runId="run-kept"
-        pageIndex={0}
-        viewport={viewport2}
-        fallbackWidth={1000}
-        fallbackHeight={800}
-      />
-    );
-
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    // Now request resolves after old effect cleanup
-    const mockBitmap = { width: 400, height: 400, close: vi.fn() };
-    const delivery = {
-      width: 400,
-      height: 400,
-      claim: vi.fn().mockReturnValue(mockBitmap),
-    };
-
-    await act(async () => {
-      resolveShared(delivery);
-      await Promise.resolve();
-    });
-
-    expect(delivery.claim).toHaveBeenCalledTimes(1);
-    expect(drawImageSpy).toHaveBeenCalledWith(mockBitmap, 0, 0);
-
-    visibleTilesSpy.mockRestore();
-  });
-
-  it('old settled handler cannot remove a newer same-key entry', async () => {
-    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
-    mockFetchArtifact.mockResolvedValue({
-      url: '/api/document-intelligence/drawings/dem/run-settle/artifact?token=abc',
-      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-    });
-
-    const tile1 = { key: 'run-settle:0:1:0:0', tx: 0, ty: 0, x: 0, y: 0, width: 400, height: 400, density: 1 };
-    const tile2 = { key: 'run-settle:0:1:1:0', tx: 1, ty: 0, x: 400, y: 0, width: 400, height: 400, density: 1 };
-    const visibleTilesSpy = vi.spyOn(PdfTilePyramid.prototype, 'visibleTiles')
-      .mockImplementation((vp: TileViewport) => vp.x > 0 ? [tile2] : [tile1]);
-
-    const resolvers: Array<(delivery: any) => void> = [];
-    const poolInstance = {
-      open: vi.fn().mockImplementation(() => {
-        resolvers.length = 0;
-        return Promise.resolve({ width: 1000, height: 800, rotation: 0 });
-      }),
-      request: vi.fn().mockImplementation(() => {
-        let resolve: (delivery: any) => void;
-        const promise = new Promise<any>((res) => { resolve = res; });
-        resolvers.push(resolve!);
-        return { promise, cancel: vi.fn() };
-      }),
-      close: vi.fn(),
-      dispose: vi.fn(),
-    };
-    vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
-
-    const viewport1 = { x: 0, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 };
-    const { rerender } = render(
-      <PdfPageLayer
-        runId="run-settle"
-        pageIndex={0}
-        viewport={viewport1}
-        fallbackWidth={1000}
-        fallbackHeight={800}
-        tilePool={poolInstance as any}
-      />
-    );
-
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
-    expect(resolvers.length).toBe(1);
-    const req1Resolver = resolvers[0];
-
-    // Pan away so tile1 is no longer desired and request 1 is cancelled
-    rerender(
-      <PdfPageLayer
-        runId="run-settle"
-        pageIndex={0}
-        viewport={{ ...viewport1, x: 0.5 }}
-        fallbackWidth={1000}
-        fallbackHeight={800}
-        tilePool={poolInstance as any}
-      />
-    );
-
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    // Pan back so tile1 is requested again (request 2)
-    rerender(
-      <PdfPageLayer
-        runId="run-settle"
-        pageIndex={0}
-        viewport={{ ...viewport1, x: 0 }}
-        fallbackWidth={1000}
-        fallbackHeight={800}
-        tilePool={poolInstance as any}
-      />
-    );
-
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    expect(resolvers.length).toBe(3);
-    const req2Resolver = resolvers[2];
-
-    // Now old request 1 settles
-    const mockBitmapOld = { width: 400, height: 400, close: vi.fn() };
-    await act(async () => {
-      req1Resolver({ width: 400, height: 400, claim: vi.fn().mockReturnValue(mockBitmapOld) });
-      await Promise.resolve();
-    });
-
-    // Request 2 delivery now resolves
-    const mockBitmapNew = { width: 400, height: 400, close: vi.fn() };
-    const claimNew = vi.fn().mockReturnValue(mockBitmapNew);
-    await act(async () => {
-      req2Resolver({ width: 400, height: 400, claim: claimNew });
-      await Promise.resolve();
-    });
-
-    // Request 2 delivery MUST BE CLAIMED because old settle handler did NOT delete request 2's active entry!
-    expect(claimNew).toHaveBeenCalledTimes(1);
-
-    visibleTilesSpy.mockRestore();
-  });
-
-  it('mocked visible/detail duplicate key causes one visible immediate request and no delayed duplicate', async () => {
-    vi.useFakeTimers();
-    try {
-      const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
-      mockFetchArtifact.mockResolvedValue({
-        url: '/api/document-intelligence/drawings/dem/run-dedup/artifact?token=abc',
-        expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-      });
-
-      const tileDup = { key: 'run-dedup:0:5:0:0', tx: 0, ty: 0, x: 0, y: 0, width: 400, height: 400, density: 5 };
-
-      const visibleTilesSpy = vi.spyOn(PdfTilePyramid.prototype, 'visibleTiles')
-        .mockReturnValue([tileDup]);
-      const detailTilesSpy = vi.spyOn(PdfTilePyramid.prototype, 'visibleDetailTiles')
-        .mockReturnValue([tileDup]);
-
-      const poolInstance = {
-        open: vi.fn().mockImplementation(() => Promise.resolve({ width: 1000, height: 800, rotation: 0 })),
-        request: vi.fn().mockReturnValue({
-          promise: new Promise(() => {}),
-          cancel: vi.fn(),
-        }),
-        close: vi.fn(),
-        dispose: vi.fn(),
-      };
-      vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
-
-      const viewport = { x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 };
-      render(
-        <PdfPageLayer
-          runId="run-dedup"
-          pageIndex={0}
-          viewport={viewport}
-          fallbackWidth={1000}
-          fallbackHeight={800}
-          tilePool={poolInstance as any}
-        />
-      );
-
-      await act(async () => {
-        await Promise.resolve();
-        await Promise.resolve();
-        await Promise.resolve();
-      });
-
-      expect(poolInstance.request).toHaveBeenCalledTimes(1);
-      expect(poolInstance.request).toHaveBeenCalledWith(expect.objectContaining({ tile: tileDup }));
-
-      // Fast-forward detail timer (125ms)
-      await act(async () => {
-        vi.advanceTimersByTime(200);
-        await Promise.resolve();
-      });
-
-      // No second request for tileDup
-      expect(poolInstance.request).toHaveBeenCalledTimes(1);
-
-      visibleTilesSpy.mockRestore();
-      detailTilesSpy.mockRestore();
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('P0 regression: normalized viewport with width AND height > 1 must cover the right page edge (>= 99%)', async () => {
-    // Fit zoom on a wide container: w=1.153, h=1.568 — both > 1 — but the
-    // viewport IS normalized (fractions of baseW/baseH). The legacy heuristic
-    // (width<=1 && height<=1) misclassified this as logical/page-space and
-    // only ever requested ~86% of the page width, leaving the right side blank.
-    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
-    mockFetchArtifact.mockResolvedValue({
-      url: '/api/document-intelligence/drawings/dem/run-p0/artifact?token=abc',
-      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-    });
-
-    const requestedTiles: any[] = [];
-    const poolInstance = {
-      open: vi.fn().mockImplementation(() => {
-        requestedTiles.length = 0;
-        return Promise.resolve({ width: 1191, height: 842, rotation: 0 });
-      }),
+      open: vi.fn().mockResolvedValue({ width: 1191, height: 842, rotation: 0 }),
       request: vi.fn().mockImplementation(({ tile }: any) => {
         requestedTiles.push(tile);
         return { promise: new Promise(() => {}), cancel: vi.fn() };
@@ -1657,7 +843,6 @@ describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellatio
       close: vi.fn(),
       dispose: vi.fn(),
     };
-    vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
 
     const viewport = { x: -0.08, y: 0, width: 1.153, height: 1.568, zoom: 0.447, dpr: 1 };
     render(
@@ -1672,36 +857,20 @@ describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellatio
       />
     );
 
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
+    await flush();
 
     expect(requestedTiles.length).toBeGreaterThan(0);
-    // Coverage of the right edge in logical PDF page px: (tile.x + tile.width) / density
     const pageWidth = 1191;
     const maxRight = Math.max(...requestedTiles.map((t) => (t.x + t.width) / t.density));
-    const coverage = Math.min(1, maxRight / pageWidth);
-    expect(coverage).toBeGreaterThanOrEqual(0.99);
-    // Two tile columns must be requested at density 0.5 for this viewport
+    expect(Math.min(1, maxRight / pageWidth)).toBeGreaterThanOrEqual(0.99);
     const columns = new Set(requestedTiles.map((t) => t.tx));
     expect(columns.size).toBeGreaterThanOrEqual(2);
   });
 
-  it('P0 regression: normalized viewport with width > 1 but height <= 1 also covers the right edge', async () => {
-    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
-    mockFetchArtifact.mockResolvedValue({
-      url: '/api/document-intelligence/drawings/dem/run-p0b/artifact?token=abc',
-      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-    });
-
+  it('normalized viewport with width > 1 but height <= 1 also covers the right edge', async () => {
     const requestedTiles: any[] = [];
     const poolInstance = {
-      open: vi.fn().mockImplementation(() => {
-        requestedTiles.length = 0;
-        return Promise.resolve({ width: 1191, height: 842, rotation: 0 });
-      }),
+      open: vi.fn().mockResolvedValue({ width: 1191, height: 842, rotation: 0 }),
       request: vi.fn().mockImplementation(({ tile }: any) => {
         requestedTiles.push(tile);
         return { promise: new Promise(() => {}), cancel: vi.fn() };
@@ -1709,7 +878,6 @@ describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellatio
       close: vi.fn(),
       dispose: vi.fn(),
     };
-    vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
 
     const viewport = { x: -0.05, y: 0, width: 1.03, height: 0.9, zoom: 0.6, dpr: 1 };
     render(
@@ -1724,11 +892,7 @@ describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellatio
       />
     );
 
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
+    await flush();
 
     expect(requestedTiles.length).toBeGreaterThan(0);
     const pageWidth = 1191;
@@ -1736,81 +900,466 @@ describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellatio
     expect(Math.min(1, maxRight / pageWidth)).toBeGreaterThanOrEqual(0.99);
   });
 
-  it('unmount/document switch cancels all active requests', async () => {
-    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
-    mockFetchArtifact.mockResolvedValue({
-      url: '/api/document-intelligence/drawings/dem/run-unmount/artifact?token=abc',
-      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-    });
+  it('onFirstPaint fires exactly once per opened document, after full visible coverage commits', async () => {
+    const { pool, resolvers } = controlledPool();
+    const onFirstPaint = vi.fn();
+    const { rerender } = renderNormalizedFitLayer(pool, 'run-fp', FIT, { onFirstPaint });
+    await flush();
 
-    const cancel1 = vi.fn();
-    const cancel2 = vi.fn();
-    let count = 0;
+    deliver(resolvers, 'run-fp:0:1:0:0');
+    await flush();
+    expect(onFirstPaint).not.toHaveBeenCalled();
 
-    const poolInstance1 = {
-      open: vi.fn().mockImplementation(() => Promise.resolve({ width: 1000, height: 800, rotation: 0 })),
-      request: vi.fn().mockImplementation(() => {
-        count++;
-        return { promise: new Promise(() => {}), cancel: count === 1 ? cancel1 : cancel2 };
-      }),
-      close: vi.fn(),
-      dispose: vi.fn(),
-    };
-    vi.mocked(createPdfTilePool).mockReturnValue(poolInstance1 as any);
-
-    const tile1 = { key: 'run-unmount:0:1:0:0', tx: 0, ty: 0, x: 0, y: 0, width: 400, height: 400, density: 1 };
-    const tile2 = { key: 'run-unmount:0:1:1:0', tx: 1, ty: 0, x: 400, y: 0, width: 400, height: 400, density: 1 };
-
-    const visibleTilesSpy = vi.spyOn(PdfTilePyramid.prototype, 'visibleTiles')
-      .mockReturnValue([tile1, tile2]);
-
-    const viewport = { x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 };
-    const { rerender } = render(
-      <PdfPageLayer
-        runId="run-unmount"
-        pageIndex={0}
-        viewport={viewport}
-        fallbackWidth={1000}
-        fallbackHeight={800}
-        tilePool={poolInstance1 as any}
-      />
-    );
-
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
-    expect(cancel1).not.toHaveBeenCalled();
-    expect(cancel2).not.toHaveBeenCalled();
-
-    // Document switch
-    mockFetchArtifact.mockResolvedValueOnce({
-      url: '/api/document-intelligence/drawings/dem/run-next/artifact?token=xyz',
-      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-    });
+    deliver(resolvers, 'run-fp:0:1:0:1');
+    deliver(resolvers, 'run-fp:0:1:1:0');
+    deliver(resolvers, 'run-fp:0:1:1:1');
+    await flush();
+    expect(onFirstPaint).toHaveBeenCalledTimes(1);
 
     rerender(
       <PdfPageLayer
-        runId="run-next"
+        runId="run-fp"
         pageIndex={0}
-        viewport={viewport}
+        viewport={{ ...FIT, x: 0.1 }}
+        viewportSpace="normalized"
         fallbackWidth={1000}
         fallbackHeight={800}
-        tilePool={poolInstance1 as any}
+        tilePool={pool as any}
+        onFirstPaint={onFirstPaint}
       />
     );
+    await flush();
+    expect(onFirstPaint).toHaveBeenCalledTimes(1);
 
+    rerender(
+      <PdfPageLayer
+        runId="run-fp2"
+        pageIndex={0}
+        viewport={FIT}
+        viewportSpace="normalized"
+        fallbackWidth={1000}
+        fallbackHeight={800}
+        tilePool={pool as any}
+        onFirstPaint={onFirstPaint}
+      />
+    );
+    await flush();
+
+    deliver(resolvers, 'run-fp2:0:1:0:0');
+    deliver(resolvers, 'run-fp2:0:1:0:1');
+    deliver(resolvers, 'run-fp2:0:1:1:0');
+    deliver(resolvers, 'run-fp2:0:1:1:1');
+    await flush();
+    expect(onFirstPaint).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the committed manifest and coverage signal while a replacement candidate is in flight', async () => {
+    const { pool, resolvers } = controlledPool();
+    const onCoverageChange = vi.fn();
+    const { rerender } = renderNormalizedFitLayer(pool, 'run-zoom', FIT, { onCoverageChange });
+    await flush();
+
+    for (const key of ['run-zoom:0:1:0:0', 'run-zoom:0:1:0:1', 'run-zoom:0:1:1:0', 'run-zoom:0:1:1:1']) {
+      deliver(resolvers, key);
+    }
+    await flush();
+
+    expect(layer()).toHaveAttribute('data-committed-generation', '1');
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'true');
+    const falseCalls = onCoverageChange.mock.calls.filter((c: any) => c[0].ready === false).length;
+
+    rerender(
+      <PdfPageLayer
+        runId="run-zoom"
+        pageIndex={0}
+        viewport={{ x: 0.25, y: 0.25, width: 0.5, height: 0.5, zoom: 2, dpr: 1 }}
+        viewportSpace="normalized"
+        fallbackWidth={1000}
+        fallbackHeight={800}
+        tilePool={pool as any}
+        onCoverageChange={onCoverageChange}
+      />
+    );
+    await flush();
+
+    expect(layer()).toHaveAttribute('data-committed-generation', '1');
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'true');
+    expect(onCoverageChange.mock.calls.filter((c: any) => c[0].ready === false).length).toBe(falseCalls);
+
+    const visibleZoomKeys: string[] = [];
+    for (let tx = 0; tx <= 2; tx += 1) {
+      for (let ty = 0; ty <= 2; ty += 1) visibleZoomKeys.push(`run-zoom:0:2:${tx}:${ty}`);
+    }
+    for (const key of visibleZoomKeys) deliver(resolvers, key);
+    await flush();
+
+    expect(layer()).toHaveAttribute('data-committed-generation', '2');
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'true');
+    expect(onCoverageChange).toHaveBeenCalledWith(expect.objectContaining({ ready: true, generation: 2 }));
+    expect(onCoverageChange.mock.calls.filter((c: any) => c[0].ready === true)).toHaveLength(2);
+  });
+
+  it('detail tiles recommit the same generation progressively without refiring readiness', async () => {
+    vi.useFakeTimers();
+    try {
+      const drawImageSpy = vi.fn();
+      getContextSpy.mockImplementation((contextId: string) => {
+        if (contextId === '2d') return { drawImage: drawImageSpy, clearRect: vi.fn() } as unknown as CanvasRenderingContext2D;
+        return null;
+      });
+
+      const { pool, resolvers } = controlledPool();
+      const onCoverageChange = vi.fn();
+      const { rerender } = renderNormalizedFitLayer(pool, 'run-detail', FIT, { onCoverageChange });
+      await flush();
+
+      for (const key of ['run-detail:0:1:0:0', 'run-detail:0:1:0:1', 'run-detail:0:1:1:0', 'run-detail:0:1:1:1']) {
+        deliver(resolvers, key);
+      }
+      await flush();
+      expect(layer()).toHaveAttribute('data-committed-generation', '1');
+      expect(onCoverageChange.mock.calls.filter((c: any) => c[0].ready === true)).toHaveLength(1);
+      const baseDrawCalls = drawImageSpy.mock.calls.length;
+      expect(baseDrawCalls).toBe(4);
+
+      await act(async () => {
+        vi.advanceTimersByTime(200);
+        await Promise.resolve();
+      });
+      expect(pool.request).toHaveBeenCalledTimes(4);
+
+      rerender(
+        <PdfPageLayer
+          runId="run-detail"
+          pageIndex={0}
+          viewport={{ x: 0.25, y: 0.25, width: 0.5, height: 0.5, zoom: 3, dpr: 1 }}
+          viewportSpace="normalized"
+          fallbackWidth={1000}
+          fallbackHeight={800}
+          tilePool={pool as any}
+          onCoverageChange={onCoverageChange}
+        />
+      );
+      await flush();
+      await act(async () => {
+        vi.advanceTimersByTime(200);
+        await Promise.resolve();
+      });
+
+      const detailKeys: string[] = [];
+      for (let tx = 1; tx <= 4; tx += 1) {
+        for (let ty = 1; ty <= 4; ty += 1) detailKeys.push(`run-detail:0:3:${tx}:${ty}`);
+      }
+      const zoomBaseKeys: string[] = [];
+      for (let tx = 1; tx <= 5; tx += 1) {
+        for (let ty = 1; ty <= 5; ty += 1) zoomBaseKeys.push(`run-detail:0:4:${tx}:${ty}`);
+      }
+      for (const key of zoomBaseKeys) deliver(resolvers, key);
+      await flush();
+
+      expect(layer()).toHaveAttribute('data-committed-generation', '2');
+      expect(onCoverageChange.mock.calls.filter((c: any) => c[0].ready === true)).toHaveLength(2);
+
+      for (const key of detailKeys) deliver(resolvers, key);
+      await flush();
+
+      expect(layer()).toHaveAttribute('data-committed-generation', '2');
+      expect(onCoverageChange.mock.calls.filter((c: any) => c[0].ready === true)).toHaveLength(2);
+      expect(drawImageSpy.mock.calls.length).toBeGreaterThan(baseDrawCalls);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('re-emits ready:false when a committed hole becomes visible and re-commits after the missing tile arrives', async () => {
+    const { pool, resolvers } = controlledPool();
+    const onCoverageChange = vi.fn();
+    const { rerender } = renderNormalizedFitLayer(pool, 'run-hole', { ...FIT, zoom: 4 }, { onCoverageChange });
+    await flush();
+
+    const gridKeys: string[] = [];
+    for (let tx = 0; tx < 8; tx += 1) {
+      for (let ty = 0; ty < 7; ty += 1) gridKeys.push(`run-hole:0:4:${tx}:${ty}`);
+    }
+    for (const key of gridKeys.filter((k) => k !== 'run-hole:0:4:7:6')) deliver(resolvers, key);
+    await flush();
+
+    expect(layer()).toHaveAttribute('data-committed-generation', '1');
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'true');
+
+    rerender(
+      <PdfPageLayer
+        runId="run-hole"
+        pageIndex={0}
+        viewport={{ x: 0.83, y: 0.75, width: 0.17, height: 0.25, zoom: 4, dpr: 1 }}
+        viewportSpace="normalized"
+        fallbackWidth={1000}
+        fallbackHeight={800}
+        tilePool={pool as any}
+        onCoverageChange={onCoverageChange}
+      />
+    );
+    await flush();
+
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'false');
+    expect(onCoverageChange).toHaveBeenLastCalledWith(expect.objectContaining({ ready: false, generation: 2 }));
+
+    deliver(resolvers, 'run-hole:0:4:7:6');
+    await flush();
+
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'true');
+    expect(layer()).toHaveAttribute('data-committed-generation', '2');
+    expect(onCoverageChange).toHaveBeenLastCalledWith(expect.objectContaining({ ready: true, generation: 2 }));
+  });
+
+  it('a delivery for a key that left the viewport cannot claim or commit', async () => {
+    const { pool, resolvers } = controlledPool({ width: 1600, height: 800, rotation: 0 });
+    const { rerender } = renderNormalizedFitLayer(pool, 'run-depart', { x: 0, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 });
+    await flush();
+
+    expect(pool.request).toHaveBeenCalledTimes(6);
+
+    rerender(
+      <PdfPageLayer
+        runId="run-depart"
+        pageIndex={0}
+        viewport={{ x: 0.5, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 }}
+        viewportSpace="normalized"
+        fallbackWidth={1000}
+        fallbackHeight={800}
+        tilePool={pool as any}
+      />
+    );
+    await flush();
+
+    const departed = resolvers.get('run-depart:0:1:0:0');
+    expect(departed).toBeDefined();
+    const bmp = bitmap();
+    const delivery: Delivery = { width: 512, height: 512, claim: vi.fn().mockReturnValue(bmp) };
     await act(async () => {
+      departed![0](delivery);
       await Promise.resolve();
     });
 
-    // Document switch cancels all active requests
-    expect(cancel1).toHaveBeenCalledTimes(1);
-    expect(cancel2).toHaveBeenCalledTimes(1);
+    expect(delivery.claim).not.toHaveBeenCalled();
+    expect(layer()).toHaveAttribute('data-committed-generation', '0');
+  });
 
-    visibleTilesSpy.mockRestore();
+  it('reuses same-key in-flight work for the successor candidate after viewport churn', async () => {
+    const { pool, resolvers } = controlledPool();
+    const { rerender } = renderNormalizedFitLayer(pool, 'run-reuse', { x: 0, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 });
+    await flush();
+
+    expect(pool.request).toHaveBeenCalledTimes(4);
+
+    rerender(
+      <PdfPageLayer
+        runId="run-reuse"
+        pageIndex={0}
+        viewport={{ x: 0.1, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 }}
+        viewportSpace="normalized"
+        fallbackWidth={1000}
+        fallbackHeight={800}
+        tilePool={pool as any}
+      />
+    );
+    await flush();
+
+    expect(pool.request).toHaveBeenCalledTimes(4);
+    expect(resolvers.get('run-reuse:0:1:0:0')).toHaveLength(1);
+
+    const delivery = deliver(resolvers, 'run-reuse:0:1:0:0');
+    deliver(resolvers, 'run-reuse:0:1:0:1');
+    deliver(resolvers, 'run-reuse:0:1:1:0');
+    deliver(resolvers, 'run-reuse:0:1:1:1');
+    await flush();
+
+    expect(delivery.claim).toHaveBeenCalledTimes(1);
+    expect(layer()).toHaveAttribute('data-committed-generation', '2');
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'true');
+  });
+
+  it('an old cancelled same-key delivery cannot supersede the newer request', async () => {
+    const { pool, resolvers } = controlledPool({ width: 1600, height: 800, rotation: 0 });
+    const { rerender } = renderNormalizedFitLayer(pool, 'run-settle2', { x: 0, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 });
+    await flush();
+
+    expect(pool.request).toHaveBeenCalledTimes(6);
+
+    rerender(
+      <PdfPageLayer
+        runId="run-settle2"
+        pageIndex={0}
+        viewport={{ x: 0.5, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 }}
+        viewportSpace="normalized"
+        fallbackWidth={1000}
+        fallbackHeight={800}
+        tilePool={pool as any}
+      />
+    );
+    await flush();
+
+    rerender(
+      <PdfPageLayer
+        runId="run-settle2"
+        pageIndex={0}
+        viewport={{ x: 0, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 }}
+        viewportSpace="normalized"
+        fallbackWidth={1000}
+        fallbackHeight={800}
+        tilePool={pool as any}
+      />
+    );
+    await flush();
+
+    await flush();
+    expect(pool.request).toHaveBeenCalledTimes(10);
+
+    const oldDelivery: Delivery = { width: 512, height: 512, claim: vi.fn().mockReturnValue(bitmap()) };
+    await act(async () => {
+      resolvers.get('run-settle2:0:1:0:0')![0](oldDelivery);
+      await Promise.resolve();
+    });
+    expect(oldDelivery.claim).not.toHaveBeenCalled();
+
+    const newDelivery = deliver(resolvers, 'run-settle2:0:1:0:0');
+    deliver(resolvers, 'run-settle2:0:1:0:1');
+    deliver(resolvers, 'run-settle2:0:1:1:0');
+    deliver(resolvers, 'run-settle2:0:1:1:1');
+    await flush();
+
+    expect(newDelivery.claim).toHaveBeenCalledTimes(1);
+    expect(layer()).toHaveAttribute('data-committed-generation', '3');
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'true');
+  });
+
+  it('detail requests never duplicate base requests for the same keys', async () => {
+    vi.useFakeTimers();
+    try {
+      const { pool } = controlledPool();
+      renderNormalizedFitLayer(pool, 'run-dedup2', FIT);
+      await flush();
+      expect(pool.request).toHaveBeenCalledTimes(4);
+
+      await act(async () => {
+        vi.advanceTimersByTime(200);
+        await Promise.resolve();
+      });
+      expect(pool.request).toHaveBeenCalledTimes(4);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('a failed tile leaves the candidate uncommitted and coverage-ready false', async () => {
+    const { pool, resolvers } = controlledPool(
+      { width: 1000, height: 800, rotation: 0 },
+      { failKeys: new Set(['run-fail:0:1:1:0']) },
+    );
+    renderNormalizedFitLayer(pool, 'run-fail', FIT);
+    await flush();
+
+    deliver(resolvers, 'run-fail:0:1:0:0');
+    deliver(resolvers, 'run-fail:0:1:0:1');
+    deliver(resolvers, 'run-fail:0:1:1:1');
+    await flush();
+
+    expect(layer()).toHaveAttribute('data-committed-generation', '0');
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'false');
+  });
+
+  it('continuous 100ms viewport churn cannot postpone retirement past the absolute deadline', async () => {
+    vi.useFakeTimers();
+    try {
+      const releaseMock = vi.fn();
+      const fakeCompositor = {
+        kind: 'canvas2d',
+        upload: vi.fn(),
+        commit: vi.fn(),
+        render: vi.fn(),
+        release: releaseMock,
+        diagnostics: vi.fn().mockReturnValue({
+          renderer: 'canvas2d',
+          committedGeneration: null,
+          textureCount: 0,
+          estimatedTextureBytes: 0,
+          contextLost: false,
+        }),
+        dispose: vi.fn(),
+      } as unknown as PdfTileCompositor;
+      const spy = vi.spyOn(compositorModule, 'createPdfTileCompositor').mockReturnValue(fakeCompositor);
+
+      const { pool } = controlledPool();
+      const { rerender } = renderNormalizedFitLayer(pool, 'run-churn', { ...FIT, x: 0 });
+      await flush();
+
+      let viewportChanges = 0;
+      for (let i = 1; i <= 20; i += 1) {
+        await act(async () => {
+          rerender(
+            <PdfPageLayer
+              runId="run-churn"
+              pageIndex={0}
+              viewport={{ x: i * 0.05, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 }}
+              viewportSpace="normalized"
+              fallbackWidth={1000}
+              fallbackHeight={800}
+              tilePool={pool as any}
+            />
+          );
+          vi.advanceTimersByTime(100);
+          await Promise.resolve();
+        });
+        viewportChanges += 1;
+      }
+
+      const staleGenerationCount = viewportChanges - releaseMock.mock.calls.length;
+      expect(staleGenerationCount).toBeLessThanOrEqual(1);
+      expect(releaseMock).toHaveBeenCalled();
+
+      spy.mockRestore();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('document switch cancels all active requests and resets committed generation state', async () => {
+    const { pool, cancels } = controlledPool();
+    const { rerender } = renderNormalizedFitLayer(pool, 'run-switch-a', FIT);
+    await flush();
+
+    expect(cancels.length).toBe(4);
+    const beforeSwitch = [...cancels];
+
+    rerender(
+      <PdfPageLayer
+        runId="run-switch-b"
+        pageIndex={0}
+        viewport={FIT}
+        viewportSpace="normalized"
+        fallbackWidth={1000}
+        fallbackHeight={800}
+        tilePool={pool as any}
+      />
+    );
+    await flush();
+
+    expect(pool.close).toHaveBeenCalledWith('run-switch-a:0');
+    expect(beforeSwitch.every((c) => c.mock.calls.length === 1)).toBe(true);
+    expect(layer()).toHaveAttribute('data-committed-generation', '0');
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'false');
+  });
+
+  it('unmount cancels all active requests and disposes layer-owned resources', async () => {
+    const { pool, cancels } = controlledPool();
+    const { unmount } = renderNormalizedFitLayer(pool, 'run-unmount2', FIT);
+    await flush();
+
+    expect(cancels.length).toBe(4);
+
+    unmount();
+
+    expect(cancels.every((c) => c.mock.calls.length === 1)).toBe(true);
+    expect(pool.dispose).toHaveBeenCalledTimes(1);
   });
 });
-
