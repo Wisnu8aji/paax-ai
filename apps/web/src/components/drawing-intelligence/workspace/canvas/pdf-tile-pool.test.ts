@@ -313,4 +313,413 @@ describe('createPdfTilePool', () => {
     pool.dispose();
     expect(workers.every((worker) => worker.terminate.mock.calls.length === 1)).toBe(true);
   });
+
+  it('waits for initial document readiness before requesting another page metrics', async () => {
+    const workers: FakeWorker[] = [];
+    const pool = createPdfTilePool({ workerFactory: () => {
+      const worker = new FakeWorker();
+      workers.push(worker);
+      return worker;
+    } });
+    const pageOne = pool.open({ documentKey: 'run:0', pageNumber: 1, data: mockPdfBuffer });
+    const pageTwo = pool.open({ documentKey: 'run:1', pageNumber: 2, data: mockPdfBuffer });
+
+    expect(messagesOfType(workers[0], 'get-page-metrics')).toHaveLength(0);
+
+    readyAllWorkers(workers, 'run:0');
+    await pageOne;
+
+    const metricsMessages = messagesOfType(workers[0], 'get-page-metrics');
+    expect(metricsMessages).toHaveLength(1);
+    workers[0].emit({
+      type: 'page-metrics',
+      requestId: (metricsMessages[0] as any).requestId,
+      documentKey: 'run:1',
+      pageNumber: 2,
+      metrics: { width: 300, height: 400, rotation: 0 },
+    });
+    await expect(pageTwo).resolves.toEqual({ width: 300, height: 400, rotation: 0 });
+    pool.dispose();
+  });
+
+  it('removes a rejected page metrics cache entry so the page can be reopened', async () => {
+    const workers: FakeWorker[] = [];
+    const pool = createPdfTilePool({ workerFactory: () => {
+      const worker = new FakeWorker();
+      workers.push(worker);
+      return worker;
+    } });
+    const pageOne = pool.open({ documentKey: 'run:0', pageNumber: 1, data: mockPdfBuffer });
+    readyAllWorkers(workers, 'run:0');
+    await pageOne;
+
+    const firstAttempt = pool.open({ documentKey: 'run:1', pageNumber: 2, data: mockPdfBuffer });
+    const metricsMessage = messagesOfType(workers[0], 'get-page-metrics')[0] as any;
+    workers[0].emit({ type: 'page-metrics-error', requestId: metricsMessage.requestId, documentKey: 'run:1', message: 'page exploded' });
+    await expect(firstAttempt).rejects.toThrow('page exploded');
+
+    const retry = pool.open({ documentKey: 'run:1', pageNumber: 2, data: mockPdfBuffer });
+    const retryMessage = messagesOfType(workers[0], 'get-page-metrics')[1] as any;
+    expect(retryMessage).toBeDefined();
+    workers[0].emit({
+      type: 'page-metrics',
+      requestId: retryMessage.requestId,
+      documentKey: 'run:1',
+      pageNumber: 2,
+      metrics: { width: 500, height: 600, rotation: 0 },
+    });
+    await expect(retry).resolves.toEqual({ width: 500, height: 600, rotation: 0 });
+    pool.dispose();
+  });
+
+  it('close aborts in-flight page metrics and evicts the exact cache entry so reopen retries', async () => {
+    const workers: FakeWorker[] = [];
+    const pool = createPdfTilePool({ workerFactory: () => {
+      const worker = new FakeWorker();
+      workers.push(worker);
+      return worker;
+    } });
+    const pageOne = pool.open({ documentKey: 'run:0', pageNumber: 1, data: mockPdfBuffer });
+    readyAllWorkers(workers, 'run:0');
+    await pageOne;
+
+    const attempt = pool.open({ documentKey: 'run:1', pageNumber: 2, data: mockPdfBuffer });
+    expect(messagesOfType(workers[0], 'get-page-metrics')).toHaveLength(1);
+    pool.close('run:1');
+    await expect(attempt).rejects.toMatchObject({ name: 'AbortError' });
+
+    const reopened = pool.open({ documentKey: 'run:1', pageNumber: 2, data: mockPdfBuffer });
+    const retryMessage = messagesOfType(workers[0], 'get-page-metrics')[1] as any;
+    expect(retryMessage).toBeDefined();
+    workers[0].emit({
+      type: 'page-metrics',
+      requestId: retryMessage.requestId,
+      documentKey: 'run:1',
+      pageNumber: 2,
+      metrics: { width: 700, height: 800, rotation: 0 },
+    });
+    await expect(reopened).resolves.toEqual({ width: 700, height: 800, rotation: 0 });
+    pool.dispose();
+  });
+
+  it('times out a pending page metrics request, evicts the cache entry, and allows retry', async () => {
+    vi.useFakeTimers();
+    try {
+      const workers: FakeWorker[] = [];
+      const pool = createPdfTilePool({ requestTimeoutMs: 1000, workerFactory: () => {
+        const worker = new FakeWorker();
+        workers.push(worker);
+        return worker;
+      } });
+      const pageOne = pool.open({ documentKey: 'run:0', pageNumber: 1, data: mockPdfBuffer });
+      readyAllWorkers(workers, 'run:0');
+      await pageOne;
+
+      const attempt = pool.open({ documentKey: 'run:1', pageNumber: 2, data: mockPdfBuffer });
+      attempt.catch(() => undefined);
+      await vi.advanceTimersByTimeAsync(1001);
+      await expect(attempt).rejects.toThrow('timed out');
+
+      // late metrics for the timed-out request id are harmless
+      workers[0].emit({
+        type: 'page-metrics',
+        requestId: (messagesOfType(workers[0], 'get-page-metrics')[0] as any).requestId,
+        documentKey: 'run:1',
+        pageNumber: 2,
+        metrics: { width: 1, height: 1, rotation: 0 },
+      });
+
+      const retry = pool.open({ documentKey: 'run:1', pageNumber: 2, data: mockPdfBuffer });
+      const retryMessage = messagesOfType(workers[0], 'get-page-metrics')[1] as any;
+      expect(retryMessage).toBeDefined();
+      workers[0].emit({
+        type: 'page-metrics',
+        requestId: retryMessage.requestId,
+        documentKey: 'run:1',
+        pageNumber: 2,
+        metrics: { width: 900, height: 1000, rotation: 0 },
+      });
+      await expect(retry).resolves.toEqual({ width: 900, height: 1000, rotation: 0 });
+      pool.dispose();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('times out a tile request, posts cancellation once, and clears pending state', async () => {
+    vi.useFakeTimers();
+    try {
+      const workers: FakeWorker[] = [];
+      const pool = createPdfTilePool({ requestTimeoutMs: 1000, workerFactory: () => {
+        const worker = new FakeWorker();
+        workers.push(worker);
+        return worker;
+      } });
+      const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
+      readyAllWorkers(workers, request.documentKey);
+      await opening;
+
+      const handle = pool.request(request);
+      handle.promise.catch(() => undefined);
+      await vi.advanceTimersByTimeAsync(1001);
+      await expect(handle.promise).rejects.toThrow('timed out');
+
+      const cancels = workers.flatMap((worker) => worker.messages).filter((message: any) => message.type === 'cancel') as any[];
+      expect(cancels).toHaveLength(1);
+      expect(cancels[0].requestId).toBe(1);
+
+      const lateBitmap = { close: vi.fn() } as unknown as ImageBitmap;
+      workers[0].emit({ type: 'tile', requestId: 1, documentKey: request.documentKey, width: 512, height: 512, bitmap: lateBitmap });
+      expect(lateBitmap.close).toHaveBeenCalledOnce();
+
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(workers.flatMap((worker) => worker.messages).filter((message: any) => message.type === 'cancel')).toHaveLength(1);
+      pool.dispose();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('resolves delivery before the timeout boundary and never settles twice', async () => {
+    vi.useFakeTimers();
+    try {
+      const workers: FakeWorker[] = [];
+      const pool = createPdfTilePool({ requestTimeoutMs: 1000, workerFactory: () => {
+        const worker = new FakeWorker();
+        workers.push(worker);
+        return worker;
+      } });
+      const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
+      readyAllWorkers(workers, request.documentKey);
+      await opening;
+
+      const handle = pool.request(request);
+      await vi.advanceTimersByTimeAsync(999);
+      const bitmap = { close: vi.fn() } as unknown as ImageBitmap;
+      let claimed: ImageBitmap | null = null;
+      handle.promise.then((delivery) => {
+        claimed = delivery.claim();
+      });
+      workers[0].emit({ type: 'tile', requestId: 1, documentKey: request.documentKey, width: 512, height: 512, bitmap });
+      const delivery = await handle.promise;
+      expect(delivery.width).toBe(512);
+      expect(claimed).toBe(bitmap);
+      expect(bitmap.close).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(workers.flatMap((worker) => worker.messages).filter((message: any) => message.type === 'cancel')).toHaveLength(0);
+      handle.cancel();
+      pool.dispose();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('cancelling one consumer of a shared tile keeps the other consumer and worker work alive', async () => {
+    const workers: FakeWorker[] = [];
+    const pool = createPdfTilePool({ workerFactory: () => {
+      const worker = new FakeWorker();
+      workers.push(worker);
+      return worker;
+    } });
+    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
+    readyAllWorkers(workers, request.documentKey);
+    await opening;
+
+    const first = pool.request(request);
+    const second = pool.request(request);
+    first.cancel();
+    await expect(first.promise).rejects.toMatchObject({ name: 'AbortError' });
+    expect(workers.flatMap((worker) => worker.messages).filter((message: any) => message.type === 'cancel')).toHaveLength(0);
+
+    const bitmap = { close: vi.fn() } as unknown as ImageBitmap;
+    let claimed: ImageBitmap | null = null;
+    second.promise.then((delivery) => {
+      claimed = delivery.claim();
+    });
+    workers[0].emit({ type: 'tile', requestId: 1, documentKey: request.documentKey, width: 512, height: 512, bitmap });
+    const delivery = await second.promise;
+    expect(delivery.width).toBe(512);
+    expect(claimed).toBe(bitmap);
+    expect(bitmap.close).not.toHaveBeenCalled();
+
+    const third = pool.request(request);
+    third.cancel();
+    expect(workers.flatMap((worker) => worker.messages).filter((message: any) => message.type === 'cancel')).toHaveLength(1);
+    await expect(third.promise).rejects.toMatchObject({ name: 'AbortError' });
+    pool.dispose();
+  });
+
+  it('ignores late tile/metrics messages after close and dispose without double-closing bitmaps', async () => {
+    const workers: FakeWorker[] = [];
+    const pool = createPdfTilePool({ workerFactory: () => {
+      const worker = new FakeWorker();
+      workers.push(worker);
+      return worker;
+    } });
+    const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
+    readyAllWorkers(workers, request.documentKey);
+    await opening;
+
+    const pending = pool.request(request);
+    pool.close(request.documentKey);
+    await expect(pending.promise).rejects.toMatchObject({ name: 'AbortError' });
+
+    const lateBitmap = { close: vi.fn() } as unknown as ImageBitmap;
+    workers[0].emit({ type: 'tile', requestId: 1, documentKey: request.documentKey, width: 512, height: 512, bitmap: lateBitmap });
+    expect(lateBitmap.close).toHaveBeenCalledOnce();
+
+    workers[0].emit({
+      type: 'page-metrics',
+      requestId: 4242,
+      documentKey: request.documentKey,
+      pageNumber: 5,
+      metrics: { width: 1, height: 1, rotation: 0 },
+    });
+
+    pool.dispose();
+    const afterDisposeBitmap = { close: vi.fn() } as unknown as ImageBitmap;
+    workers[0].emit({ type: 'tile', requestId: 4242, documentKey: request.documentKey, width: 10, height: 10, bitmap: afterDisposeBitmap });
+    expect(afterDisposeBitmap.close).toHaveBeenCalledOnce();
+    workers[0].emit({ type: 'document-ready', documentKey: request.documentKey });
+  });
+
+  it('close page does not destroy same-run document state; closeRun releases the run destructively', async () => {
+    const workers: FakeWorker[] = [];
+    const pool = createPdfTilePool({ workerFactory: () => {
+      const worker = new FakeWorker();
+      workers.push(worker);
+      return worker;
+    } });
+    const pageOne = pool.open({ documentKey: 'run:0', pageNumber: 1, data: mockPdfBuffer });
+    readyAllWorkers(workers, 'run:0');
+    await pageOne;
+
+    pool.close('run:0');
+    expect(workers.every((worker) => worker.messages.some((message: any) => message.type === 'close-document'))).toBe(true);
+    expect(workers.some((worker) => worker.messages.some((message: any) => message.type === 'close-run'))).toBe(false);
+
+    const pageTwo = pool.open({ documentKey: 'run:1', pageNumber: 2, data: mockPdfBuffer });
+    const metricsMessage = messagesOfType(workers[0], 'get-page-metrics')[0] as any;
+    workers[0].emit({
+      type: 'page-metrics',
+      requestId: metricsMessage.requestId,
+      documentKey: 'run:1',
+      pageNumber: 2,
+      metrics: { width: 300, height: 400, rotation: 0 },
+    });
+    await expect(pageTwo).resolves.toEqual({ width: 300, height: 400, rotation: 0 });
+
+    const handle = pool.request({ ...request, documentKey: 'run:0', tile: { ...request.tile, key: 'run:0:1:0:0' } });
+    const tileBitmap = { close: vi.fn() } as unknown as ImageBitmap;
+    workers[0].emit({ type: 'tile', requestId: 2, documentKey: 'run:0', width: 512, height: 512, bitmap: tileBitmap });
+    const delivery = await handle.promise;
+    expect(delivery.width).toBe(512);
+
+    pool.closeRun('run');
+    expect(workers.every((worker) => worker.messages.some((message: any) => message.type === 'close-run'))).toBe(true);
+    expect(pool.isDocumentOpen('run:0')).toBe(false);
+    expect(pool.isDocumentOpen('run:1')).toBe(false);
+
+    const reopened = pool.open({ documentKey: 'run:0', pageNumber: 1, data: mockPdfBuffer });
+    expect(workers[0].messages.filter((message: any) => message.type === 'open-document').length).toBeGreaterThan(0);
+    readyAllWorkers(workers, 'run:0');
+    await expect(reopened).resolves.toMatchObject({ width: 100, height: 200 });
+    pool.dispose();
+  });
+
+  it('clears pending timers and work when a worker crashes', async () => {
+    vi.useFakeTimers();
+    try {
+      const workers: FakeWorker[] = [];
+      const pool = createPdfTilePool({ requestTimeoutMs: 1000, workerFactory: () => {
+        const worker = new FakeWorker();
+        workers.push(worker);
+        return worker;
+      } });
+      const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
+      readyAllWorkers(workers, request.documentKey);
+      await opening;
+
+      const handle = pool.request(request);
+      const metricsAttempt = pool.open({ documentKey: 'run:1', pageNumber: 2, data: mockPdfBuffer });
+      workers[0].emitError('worker crashed');
+
+      await expect(handle.promise).rejects.toThrow('worker crashed');
+      await expect(metricsAttempt).rejects.toThrow('worker crashed');
+      await vi.advanceTimersByTimeAsync(5000);
+
+      const lateBitmap = { close: vi.fn() } as unknown as ImageBitmap;
+      workers[0].emit({ type: 'tile', requestId: 1, documentKey: request.documentKey, width: 512, height: 512, bitmap: lateBitmap });
+      expect(lateBitmap.close).toHaveBeenCalledOnce();
+      pool.dispose();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('dispose rejects pending work, clears timers, and is idempotent', async () => {
+    vi.useFakeTimers();
+    try {
+      const workers: FakeWorker[] = [];
+      const pool = createPdfTilePool({ requestTimeoutMs: 1000, workerFactory: () => {
+        const worker = new FakeWorker();
+        workers.push(worker);
+        return worker;
+      } });
+      const opening = pool.open({ documentKey: request.documentKey, pageNumber: 1, data: mockPdfBuffer });
+      readyAllWorkers(workers, request.documentKey);
+      await opening;
+
+      const handle = pool.request(request);
+      pool.dispose();
+      await expect(handle.promise).rejects.toMatchObject({ name: 'AbortError' });
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(workers.flatMap((worker) => worker.messages).filter((message: any) => message.type === 'cancel')).toHaveLength(0);
+
+      const afterDispose = pool.request(request);
+      await expect(afterDispose.promise).rejects.toThrow('disposed');
+
+      const bitmap = { close: vi.fn() } as unknown as ImageBitmap;
+      workers[0].emit({ type: 'tile', requestId: 1, documentKey: request.documentKey, width: 512, height: 512, bitmap });
+      expect(bitmap.close).toHaveBeenCalledOnce();
+      pool.dispose();
+      expect(workers.every((worker) => worker.terminate.mock.calls.length === 1)).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps request ids and pending counts bounded under open/close/cancel churn', async () => {
+    const workers: FakeWorker[] = [];
+    const pool = createPdfTilePool({ workerFactory: () => {
+      const worker = new FakeWorker();
+      workers.push(worker);
+      return worker;
+    } });
+    for (let i = 0; i < 10; i++) {
+      const documentKey = `run${i}:1`;
+      const opening = pool.open({ documentKey, pageNumber: 1, data: mockPdfBuffer });
+      readyAllWorkers(workers, documentKey);
+      await opening;
+      const handle = pool.request({ ...request, documentKey, tile: { ...request.tile, key: `${documentKey}:1:0:0` } });
+      handle.cancel();
+      await expect(handle.promise).rejects.toMatchObject({ name: 'AbortError' });
+      pool.close(documentKey);
+      pool.closeRun(`run${i}`);
+    }
+    expect(workers.flatMap((worker) => worker.messages).filter((message: any) => message.type === 'render-tile')).toHaveLength(10);
+    expect(workers.flatMap((worker) => worker.messages).filter((message: any) => message.type === 'cancel')).toHaveLength(10);
+    expect(workers.flatMap((worker) => worker.messages).filter((message: any) => message.type === 'close-run')).toHaveLength(10);
+    pool.dispose();
+    expect(workers.every((worker) => worker.terminate.mock.calls.length === 1)).toBe(true);
+  });
 });
+
+function messagesOfType(worker: FakeWorker, type: string): unknown[] {
+  return worker.messages.filter((message: any) => message.type === type);
+}
+
+function readyAllWorkers(workers: FakeWorker[], documentKey: string): void {
+  workers.forEach((worker) => worker.emit({ type: 'document-ready', documentKey }));
+}

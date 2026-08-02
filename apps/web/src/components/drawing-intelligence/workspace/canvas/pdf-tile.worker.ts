@@ -1,5 +1,6 @@
 // pdf.js is supplied by the Apache-2.0 `pdfjs-dist` package dependency.
 import * as pdfjs from 'pdfjs-dist';
+import { PdfTileWorkerQueue } from './pdf-tile-worker-queue';
 
 type OpenMessage = {
   type: 'open-document';
@@ -21,14 +22,15 @@ type RenderMessage = {
   tile: { x: number; y: number; width: number; height: number; density: number };
 };
 type CloseMessage = { type: 'close-document'; documentKey: string };
-type CancelMessage = { type: 'cancel'; requestId: number };
-type IncomingMessage = OpenMessage | GetPageMetricsMessage | RenderMessage | CloseMessage | CancelMessage;
+type CloseRunMessage = { type: 'close-run'; runId: string };
+type CancelMessage = { type: 'cancel'; requestId: number; documentKey: string };
+type IncomingMessage = OpenMessage | GetPageMetricsMessage | RenderMessage | CloseMessage | CloseRunMessage | CancelMessage;
 
 interface PdfDocumentEntry {
   loadingTask: ReturnType<typeof pdfjs.getDocument>;
   document: Awaited<ReturnType<typeof pdfjs.getDocument>['promise']>;
   pages: Map<number, Awaited<ReturnType<Awaited<ReturnType<typeof pdfjs.getDocument>['promise']>['getPage']>>>;
-  renderQueue: RenderMessage[];
+  renderQueue: PdfTileWorkerQueue<RenderMessage>;
   activeRenders: number;
   refCount: number;
 }
@@ -79,8 +81,10 @@ const scope = self as unknown as {
 };
 const documentsByRun = new Map<string, PdfDocumentEntry>();
 const documentAliases = new Map<string, string>();
-const cancelled = new Set<number>();
 const renderTasks = new Map<number, { documentKey: string; cancel(): void }>();
+// Monotonic per-run generation: an open that started before closeRun must not
+// resurrect a destroyed entry after its awaits resume.
+const runGenerations = new Map<string, number>();
 
 function post(message: unknown, transfer?: Transferable[]): void {
   scope.postMessage(message, transfer ?? []);
@@ -91,34 +95,45 @@ function extractRunId(documentKey: string): string {
   return idx !== -1 ? documentKey.substring(0, idx) : documentKey;
 }
 
-async function closeDocument(documentKey: string, forceDestroy = false): Promise<void> {
+async function closeDocument(documentKey: string): Promise<void> {
   const runId = extractRunId(documentKey);
+  const entry = documentsByRun.get(runId);
   for (const [requestId, task] of [...renderTasks.entries()]) {
     if (task.documentKey === documentKey || extractRunId(task.documentKey) === runId) {
-      cancelled.add(requestId);
+      entry?.renderQueue.cancel(requestId);
       task.cancel();
     }
   }
 
   documentAliases.delete(documentKey);
 
-  const entry = documentsByRun.get(runId);
   if (entry) {
     // Drop queued renders of this run so a closed document cannot keep an
     // unbounded backlog of dead work in the FIFO queue.
-    entry.renderQueue = entry.renderQueue.filter(
-      (message) =>
-        !cancelled.has(message.requestId) &&
-        message.documentKey !== documentKey &&
-        extractRunId(message.documentKey) !== runId,
-    );
-  } else {
-    return;
+    entry.renderQueue.removeDocument(documentKey, runId);
+  }
+}
+
+async function closeRun(runId: string): Promise<void> {
+  const entry = documentsByRun.get(runId);
+  for (const [requestId, task] of [...renderTasks.entries()]) {
+    if (extractRunId(task.documentKey) === runId) {
+      entry?.renderQueue.cancel(requestId);
+      task.cancel();
+    }
   }
 
-  if (forceDestroy) {
+  for (const [documentKey, aliasRun] of [...documentAliases.entries()]) {
+    if (aliasRun === runId || extractRunId(documentKey) === runId) {
+      documentAliases.delete(documentKey);
+    }
+  }
+
+  if (entry) {
     documentsByRun.delete(runId);
+    entry.renderQueue.removeDocument(runId, runId);
     entry.pages.clear();
+    runGenerations.set(runId, (runGenerations.get(runId) ?? 0) + 1);
     await entry.document.destroy();
   }
 }
@@ -134,12 +149,14 @@ async function getOrFetchPage(entry: PdfDocumentEntry, pageNumber: number) {
 
 async function openDocument(message: OpenMessage): Promise<void> {
   const runId = extractRunId(message.documentKey);
+  const generation = runGenerations.get(runId) ?? 0;
   documentAliases.set(message.documentKey, runId);
 
   let entry = documentsByRun.get(runId);
   if (entry) {
     try {
       const page = await getOrFetchPage(entry, message.pageNumber);
+      if (runGenerations.get(runId) !== generation) return;
       const viewport = page.getViewport({ scale: 1 });
       post({
         type: 'document-ready',
@@ -148,7 +165,9 @@ async function openDocument(message: OpenMessage): Promise<void> {
         metrics: { width: viewport.width, height: viewport.height, rotation: viewport.rotation },
       });
     } catch (error) {
-      post({ type: 'document-error', documentKey: message.documentKey, message: error instanceof Error ? error.message : String(error) });
+      if (runGenerations.get(runId) === generation) {
+        post({ type: 'document-error', documentKey: message.documentKey, message: error instanceof Error ? error.message : String(error) });
+      }
     }
     return;
   }
@@ -163,17 +182,26 @@ async function openDocument(message: OpenMessage): Promise<void> {
       ownerDocument: scope as unknown as Document,
     });
     const document = await loadingTask.promise;
+    if (runGenerations.get(runId) !== generation) {
+      await loadingTask.destroy().catch(() => undefined);
+      return;
+    }
     entry = {
       loadingTask,
       document,
       pages: new Map(),
-      renderQueue: [],
+      renderQueue: new PdfTileWorkerQueue<RenderMessage>(),
       activeRenders: 0,
       refCount: 1,
     };
     documentsByRun.set(runId, entry);
 
     const page = await getOrFetchPage(entry, message.pageNumber);
+    if (runGenerations.get(runId) !== generation) {
+      documentsByRun.delete(runId);
+      await entry.document.destroy().catch(() => undefined);
+      return;
+    }
     const viewport = page.getViewport({ scale: 1 });
     post({
       type: 'document-ready',
@@ -183,7 +211,9 @@ async function openDocument(message: OpenMessage): Promise<void> {
     });
   } catch (error) {
     await loadingTask?.destroy().catch(() => undefined);
-    post({ type: 'document-error', documentKey: message.documentKey, message: error instanceof Error ? error.message : String(error) });
+    if (runGenerations.get(runId) === generation) {
+      post({ type: 'document-error', documentKey: message.documentKey, message: error instanceof Error ? error.message : String(error) });
+    }
   }
 }
 
@@ -216,14 +246,14 @@ async function renderTile(message: RenderMessage): Promise<void> {
     post({ type: 'tile-error', requestId: message.requestId, documentKey: message.documentKey, message: 'PDF document is not open' });
     return;
   }
-  entry.renderQueue.push(message);
+  entry.renderQueue.enqueue(message);
   pumpRenders(entry);
 }
 
 function pumpRenders(entry: PdfDocumentEntry): void {
-  while (entry.activeRenders < MAX_RENDER_CONCURRENCY && entry.renderQueue.length > 0) {
-    const message = entry.renderQueue.shift()!;
-    if (cancelled.has(message.requestId)) continue;
+  while (entry.activeRenders < MAX_RENDER_CONCURRENCY) {
+    const message = entry.renderQueue.take();
+    if (!message) break;
     entry.activeRenders += 1;
     void runSingleRender(entry, message).finally(() => {
       entry.activeRenders -= 1;
@@ -235,7 +265,7 @@ function pumpRenders(entry: PdfDocumentEntry): void {
 async function runSingleRender(entry: PdfDocumentEntry, message: RenderMessage): Promise<void> {
   try {
     const page = await getOrFetchPage(entry, message.pageNumber);
-    if (cancelled.has(message.requestId)) return;
+    if (entry.renderQueue.isCancelled(message.requestId)) return;
     const canvas = new OffscreenCanvas(message.tile.width, message.tile.height);
     const context = canvas.getContext('2d');
     if (!context) throw new Error('OffscreenCanvas 2D context unavailable');
@@ -247,16 +277,16 @@ async function runSingleRender(entry: PdfDocumentEntry, message: RenderMessage):
     renderTasks.set(message.requestId, { documentKey: message.documentKey, cancel: () => renderTask.cancel() });
     await renderTask.promise;
     renderTasks.delete(message.requestId);
-    if (cancelled.has(message.requestId)) return;
+    if (entry.renderQueue.isCancelled(message.requestId)) return;
     const bitmap = canvas.transferToImageBitmap();
     post({ type: 'tile', requestId: message.requestId, documentKey: message.documentKey, width: message.tile.width, height: message.tile.height, bitmap }, [bitmap]);
   } catch (error) {
     renderTasks.delete(message.requestId);
-    if (!cancelled.has(message.requestId)) {
+    if (!entry.renderQueue.isCancelled(message.requestId)) {
       post({ type: 'tile-error', requestId: message.requestId, documentKey: message.documentKey, message: String(error) });
     }
   } finally {
-    cancelled.delete(message.requestId);
+    entry.renderQueue.complete(message.requestId);
   }
 }
 
@@ -266,8 +296,10 @@ scope.onmessage = (event: MessageEvent<IncomingMessage>) => {
   if (message.type === 'get-page-metrics') void getPageMetrics(message);
   if (message.type === 'render-tile') void renderTile(message);
   if (message.type === 'close-document') void closeDocument(message.documentKey);
+  if (message.type === 'close-run') void closeRun(message.runId);
   if (message.type === 'cancel') {
-    cancelled.add(message.requestId);
+    const entry = documentsByRun.get(extractRunId(message.documentKey));
+    entry?.renderQueue.cancel(message.requestId);
     renderTasks.get(message.requestId)?.cancel();
   }
 };

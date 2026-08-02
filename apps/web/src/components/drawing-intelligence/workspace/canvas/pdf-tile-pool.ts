@@ -45,7 +45,11 @@ export interface PdfTilePoolOptions {
   hardwareConcurrency?: number;
   workerFactory?: () => PdfTileWorker;
   now?: () => number;
+  requestTimeoutMs?: number;
 }
+
+/** Default bounded deadline for every tile and page-metrics request. */
+export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 
 interface DocumentState {
   promise: Promise<PdfPageMetrics>;
@@ -53,8 +57,9 @@ interface DocumentState {
   reject: (error: Error) => void;
   readyWorkers: Set<number>;
   metrics: PdfPageMetrics | null;
-  pageMetricsCache: Map<number, Promise<PdfPageMetrics>>;
+  pageMetricsCache: Map<string, Promise<PdfPageMetrics>>;
   openedAt: number;
+  settled: boolean;
 }
 
 interface Consumer {
@@ -68,6 +73,7 @@ interface PendingTile {
   documentKey: string;
   worker: PdfTileWorker;
   consumers: Map<number, Consumer>;
+  timeoutHandle: ReturnType<typeof setTimeout> | null;
 }
 
 interface PendingMetrics {
@@ -75,7 +81,9 @@ interface PendingMetrics {
   documentKey: string;
   pageNumber: number;
   resolve: (metrics: PdfPageMetrics) => void;
-  reject: (error: Error) => void;
+  /** Settles the promise and evicts the exact cached entry; safe to call once. */
+  fail: (error: Error) => void;
+  timeoutHandle: ReturnType<typeof setTimeout> | null;
 }
 
 type WorkerMessage =
@@ -95,6 +103,10 @@ function abortError(): Error {
 function extractRunId(documentKey: string): string {
   const idx = documentKey.indexOf(':');
   return idx !== -1 ? documentKey.substring(0, idx) : documentKey;
+}
+
+function metricsCacheKey(documentKey: string, pageNumber: number): string {
+  return `${documentKey}:${pageNumber}`;
 }
 
 export function workerCountFor(hardwareConcurrency: number | undefined): number {
@@ -142,6 +154,7 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
     { type: 'module' },
   ));
   const now = options.now ?? Date.now;
+  const requestTimeoutMs = options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
   const workers: PdfTileWorker[] = [];
   const documents = new Map<string, DocumentState>();
   const runBuffers = new Map<string, ArrayBuffer>();
@@ -172,8 +185,15 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
   };
 
   const settlePending = (pending: PendingTile, error: Error) => {
+    if (pendingById.get(pending.requestId) !== pending) return;
+    if (pending.timeoutHandle !== null) {
+      clearTimeout(pending.timeoutHandle);
+      pending.timeoutHandle = null;
+    }
     pendingById.delete(pending.requestId);
-    pendingByKey.delete(pending.key);
+    if (pendingByKey.get(pending.key) === pending) {
+      pendingByKey.delete(pending.key);
+    }
     for (const consumer of pending.consumers.values()) consumer.reject(error);
     pending.consumers.clear();
   };
@@ -187,9 +207,8 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
       settlePending(pending, error);
     }
     for (const pendingM of pendingMetricsById.values()) {
-      pendingM.reject(error);
+      pendingM.fail(error);
     }
-    pendingMetricsById.clear();
     for (const current of workers) current.terminate();
     workers.length = 0;
     nextWorker = 0;
@@ -201,13 +220,20 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
   };
 
   const onMessage = (workerIndex: number, message: WorkerMessage) => {
+    if (disposed) {
+      if (message.type === 'tile') discardBitmap(message.bitmap);
+      return;
+    }
     if (message.type === 'document-ready') {
       const document = getDocState(message.documentKey);
       if (!document) return;
       if (!document.metrics) document.metrics = message.metrics;
       const expected = document.metrics;
       document.readyWorkers.add(workerIndex);
-      if (document.readyWorkers.size === workerCount) document.resolve(expected);
+      if (document.readyWorkers.size === workerCount) {
+        document.settled = true;
+        document.resolve(expected);
+      }
       return;
     }
     if (message.type === 'document-error') {
@@ -224,6 +250,11 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
             settlePending(pending, error);
           }
         }
+        for (const pendingM of [...pendingMetricsById.values()]) {
+          if (pendingM.documentKey === message.documentKey || extractRunId(pendingM.documentKey) === runId) {
+            pendingM.fail(error);
+          }
+        }
         for (const worker of workers) worker.postMessage({ type: 'close-document', documentKey: message.documentKey });
       }
       return;
@@ -231,6 +262,10 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
     if (message.type === 'page-metrics') {
       const pendingM = pendingMetricsById.get(message.requestId);
       if (pendingM) {
+        if (pendingM.timeoutHandle !== null) {
+          clearTimeout(pendingM.timeoutHandle);
+          pendingM.timeoutHandle = null;
+        }
         pendingMetricsById.delete(message.requestId);
         pendingM.resolve(message.metrics);
       }
@@ -238,10 +273,7 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
     }
     if (message.type === 'page-metrics-error') {
       const pendingM = pendingMetricsById.get(message.requestId);
-      if (pendingM) {
-        pendingMetricsById.delete(message.requestId);
-        pendingM.reject(new Error(message.message));
-      }
+      if (pendingM) pendingM.fail(new Error(message.message));
       return;
     }
     if (message.type === 'tile') {
@@ -250,8 +282,14 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
         discardBitmap(message.bitmap);
         return;
       }
+      if (pending.timeoutHandle !== null) {
+        clearTimeout(pending.timeoutHandle);
+        pending.timeoutHandle = null;
+      }
       pendingById.delete(pending.requestId);
-      pendingByKey.delete(pending.key);
+      if (pendingByKey.get(pending.key) === pending) {
+        pendingByKey.delete(pending.key);
+      }
 
       const { delivery, closeIfUnclaimed } = createPdfTileDelivery(message.width, message.height, message.bitmap);
 
@@ -275,9 +313,9 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
     const pageNum = document.pageNumber ?? 1;
 
     if (existing) {
-      if (existing.pageMetricsCache.has(pageNum)) {
-        return existing.pageMetricsCache.get(pageNum)!;
-      }
+      // Reuse the exact cached promise, or chain a page-metrics request from
+      // the exact current run open promise so a second page-open never races
+      // the document readiness and never re-opens the PDF.
       return getPageMetrics(document.documentKey, pageNum);
     }
 
@@ -296,6 +334,7 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
       metrics: null,
       pageMetricsCache: new Map(),
       openedAt: now(),
+      settled: false,
     };
     documents.set(document.documentKey, state);
     documents.set(runId, state);
@@ -317,26 +356,45 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
       );
     }
 
-    state.pageMetricsCache.set(pageNum, state.promise);
+    state.pageMetricsCache.set(metricsCacheKey(document.documentKey, pageNum), state.promise);
     return state.promise;
   };
 
-  const getPageMetrics = (documentKey: string, pageNumber: number): Promise<PdfPageMetrics> => {
-    if (disposed) return Promise.reject(new Error('PDF tile pool disposed'));
+  const postPageMetricsRequest = (documentKey: string, pageNumber: number): Promise<PdfPageMetrics> => {
     const docState = getDocState(documentKey);
-    if (docState && docState.pageMetricsCache.has(pageNumber)) {
-      return docState.pageMetricsCache.get(pageNumber)!;
-    }
-
-    ensureWorkers();
+    if (!docState) return Promise.reject(new Error('PDF document is not open'));
+    const cacheKey = metricsCacheKey(documentKey, pageNumber);
     const requestId = nextRequestId++;
     let resolve!: (metrics: PdfPageMetrics) => void;
     let reject!: (error: Error) => void;
     const promise = new Promise<PdfPageMetrics>((res, rej) => { resolve = res; reject = rej; });
 
-    pendingMetricsById.set(requestId, { requestId, documentKey, pageNumber, resolve, reject });
-    if (docState) docState.pageMetricsCache.set(pageNumber, promise);
-
+    const pendingM: PendingMetrics = {
+      requestId,
+      documentKey,
+      pageNumber,
+      resolve,
+      fail: (error: Error) => {
+        if (pendingMetricsById.get(requestId) !== pendingM) return;
+        pendingMetricsById.delete(requestId);
+        if (pendingM.timeoutHandle !== null) {
+          clearTimeout(pendingM.timeoutHandle);
+          pendingM.timeoutHandle = null;
+        }
+        // Evict only the exact cached promise still current so reopen can retry.
+        if (docState.pageMetricsCache.get(cacheKey) === promise) {
+          docState.pageMetricsCache.delete(cacheKey);
+        }
+        reject(error);
+      },
+      timeoutHandle: null,
+    };
+    pendingM.timeoutHandle = setTimeout(() => {
+      pendingM.timeoutHandle = null;
+      pendingM.fail(new Error('PDF page metrics request timed out'));
+    }, requestTimeoutMs);
+    pendingMetricsById.set(requestId, pendingM);
+    docState.pageMetricsCache.set(cacheKey, promise);
     workers[0].postMessage({
       type: 'get-page-metrics',
       requestId,
@@ -347,25 +405,73 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
     return promise;
   };
 
+  const getPageMetrics = (documentKey: string, pageNumber: number): Promise<PdfPageMetrics> => {
+    if (disposed) return Promise.reject(new Error('PDF tile pool disposed'));
+    const docState = getDocState(documentKey);
+    if (!docState) return Promise.reject(new Error('PDF document is not open'));
+    const cacheKey = metricsCacheKey(documentKey, pageNumber);
+    const cached = docState.pageMetricsCache.get(cacheKey);
+    if (cached) return cached;
+
+    if (!docState.settled) {
+      // Never request metrics from a worker before the run's document-open
+      // promise is ready; chain from the exact current open promise instead.
+      const chained = docState.promise.then(
+        () => postPageMetricsRequest(documentKey, pageNumber),
+        (error: Error) => Promise.reject(error),
+      );
+      chained.catch(() => {
+        if (docState.pageMetricsCache.get(cacheKey) === chained) {
+          docState.pageMetricsCache.delete(cacheKey);
+        }
+      });
+      docState.pageMetricsCache.set(cacheKey, chained);
+      return chained;
+    }
+
+    return postPageMetricsRequest(documentKey, pageNumber);
+  };
+
+  const timeoutTile = (pending: PendingTile) => {
+    if (pendingById.get(pending.requestId) !== pending) return;
+    pending.timeoutHandle = null;
+    pendingById.delete(pending.requestId);
+    if (pendingByKey.get(pending.key) === pending) {
+      pendingByKey.delete(pending.key);
+    }
+    // Mark the request cancelled on the worker exactly once; the pool maps are
+    // already cleared so a late delivery can only be discarded.
+    pending.worker.postMessage({ type: 'cancel', requestId: pending.requestId, documentKey: pending.documentKey });
+    const error = new Error('PDF tile request timed out');
+    for (const consumer of pending.consumers.values()) consumer.reject(error);
+    pending.consumers.clear();
+  };
+
   const request = (requestTile: PdfTileRenderRequest): PdfTileRequestHandle => {
-    if (disposed || !getDocState(requestTile.documentKey)) {
+    if (disposed) {
+      return { promise: Promise.reject(new Error('PDF tile pool disposed')), cancel: () => undefined };
+    }
+    if (!getDocState(requestTile.documentKey)) {
       return { promise: Promise.reject(new Error('PDF document is not open')), cancel: () => undefined };
     }
     let pending = pendingByKey.get(requestTile.tile.key);
     if (!pending) {
       const worker = workers[nextWorker++ % workers.length];
-      pending = {
+      const created: PendingTile = {
         requestId: nextRequestId++,
         key: requestTile.tile.key,
         documentKey: requestTile.documentKey,
         worker,
         consumers: new Map(),
+        timeoutHandle: null,
       };
-      pendingById.set(pending.requestId, pending);
-      pendingByKey.set(pending.key, pending);
+      pending = created;
+      pendingById.set(created.requestId, created);
+      pendingByKey.set(created.key, created);
+      created.timeoutHandle = setTimeout(() => timeoutTile(created), requestTimeoutMs);
       worker.postMessage({
         type: 'render-tile',
-        requestId: pending.requestId,
+        requestId: created.requestId,
         documentKey: requestTile.documentKey,
         pageNumber: requestTile.pageNumber,
         tile: requestTile.tile,
@@ -383,11 +489,15 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
       pending?.consumers.delete(consumerId);
       rejectConsumer(abortError());
       if (pending && pending.consumers.size === 0) {
+        if (pending.timeoutHandle !== null) {
+          clearTimeout(pending.timeoutHandle);
+          pending.timeoutHandle = null;
+        }
         pendingById.delete(pending.requestId);
         if (pendingByKey.get(pending.key) === pending) {
           pendingByKey.delete(pending.key);
         }
-        pending.worker.postMessage({ type: 'cancel', requestId: pending.requestId });
+        pending.worker.postMessage({ type: 'cancel', requestId: pending.requestId, documentKey: pending.documentKey });
       }
     };
     return { promise, cancel };
@@ -397,14 +507,13 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
     const runId = extractRunId(documentKey);
     for (const pending of [...pendingById.values()]) {
       if (pending.documentKey === documentKey || extractRunId(pending.documentKey) === runId) {
-        pending.worker.postMessage({ type: 'cancel', requestId: pending.requestId });
+        pending.worker.postMessage({ type: 'cancel', requestId: pending.requestId, documentKey: pending.documentKey });
         settlePending(pending, abortError());
       }
     }
-    for (const [id, pendingM] of [...pendingMetricsById.entries()]) {
+    for (const pendingM of [...pendingMetricsById.values()]) {
       if (pendingM.documentKey === documentKey || extractRunId(pendingM.documentKey) === runId) {
-        pendingMetricsById.delete(id);
-        pendingM.reject(abortError());
+        pendingM.fail(abortError());
       }
     }
     documents.delete(documentKey);
@@ -412,22 +521,43 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
   };
 
   const closeRun = (runId: string) => {
-    close(runId);
-    documents.delete(runId);
+    const error = abortError();
+    for (const pending of [...pendingById.values()]) {
+      if (extractRunId(pending.documentKey) === runId) {
+        settlePending(pending, error);
+      }
+    }
+    for (const pendingM of [...pendingMetricsById.values()]) {
+      if (extractRunId(pendingM.documentKey) === runId) {
+        pendingM.fail(error);
+      }
+    }
+    const runStates = new Set<DocumentState>();
+    for (const key of [...documents.keys()]) {
+      if (key === runId || extractRunId(key) === runId) {
+        const state = documents.get(key);
+        if (state) runStates.add(state);
+        documents.delete(key);
+      }
+    }
+    for (const state of runStates) state.reject(error);
     runBuffers.delete(runId);
-    for (const worker of workers) worker.postMessage({ type: 'close-document', documentKey: runId });
+    for (const worker of workers) worker.postMessage({ type: 'close-run', runId });
   };
 
   const dispose = () => {
     if (disposed) return;
     disposed = true;
-    for (const key of [...documents.keys()]) {
-      for (const pending of [...pendingById.values()]) {
-        settlePending(pending, abortError());
-      }
-    }
+    const error = abortError();
+    for (const document of documents.values()) document.reject(error);
     documents.clear();
     runBuffers.clear();
+    for (const pending of [...pendingById.values()]) {
+      settlePending(pending, error);
+    }
+    for (const pendingM of pendingMetricsById.values()) {
+      pendingM.fail(error);
+    }
     for (const worker of workers) worker.terminate();
     workers.length = 0;
   };
