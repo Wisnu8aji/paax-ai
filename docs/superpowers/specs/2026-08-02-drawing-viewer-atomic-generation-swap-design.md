@@ -69,11 +69,11 @@ When WebGL2 is unavailable, context creation fails, or the context is lost repea
 
 ### 5.1 GPU compositor
 
-The preferred presentation path uses one viewport-sized WebGL2 canvas instead of one DOM canvas per visible tile.
+The preferred presentation path uses one page-aligned WebGL2 canvas clipped by the viewer viewport instead of one DOM canvas per visible tile.
 
 - Each ready `ImageBitmap` is uploaded to a texture associated with its tile key and revision.
 - Logical tile rectangles are transformed to clip space in the vertex shader.
-- Pan and zoom update transform uniforms; they do not redraw PDF vectors or recreate React tile elements.
+- Pan and zoom update the single page-surface transform; they do not redraw PDF vectors or recreate React tile elements.
 - Committed and candidate generations have separate texture/key manifests.
 - The candidate manifest becomes active only after the production coverage helper reports readiness.
 - Generation swap occurs at an animation-frame boundary so a frame cannot contain a partially replaced manifest.
@@ -115,7 +115,7 @@ Overscan improves future pan smoothness but does not gate the initial atomic swa
 
 ## 7. Fallback and first paint
 
-`onFirstPaint` is replaced or redefined as a coverage-ready signal. The thumbnail underlay must not disappear after only the first tile.
+`onFirstPaint` is replaced by a bidirectional coverage-change signal keyed by document and render generation. The thumbnail underlay must not disappear after only the first tile, and it must become visible again before a pan/zoom/resize candidate exposes an area not covered by the committed manifest.
 
 Fallback priority:
 
@@ -123,7 +123,7 @@ Fallback priority:
 2. Matching sheet thumbnail/low-resolution underlay.
 3. Loading indicator only when neither is available.
 
-The underlay and tile page use the same page aspect and positioning. Removing the underlay must not change geometry. A short opacity transition is allowed only after coverage readiness and must respect reduced-motion preferences; correctness does not depend on the transition.
+The underlay stays mounted beneath the tile page and uses the same page aspect and positioning. Toggling its visibility must not change geometry. A short opacity transition is allowed only after coverage readiness and must respect reduced-motion preferences; correctness does not depend on the transition.
 
 ## 8. Sheet metrics and single-fit
 
@@ -141,7 +141,7 @@ Rules:
 ## 9. Pan and zoom behavior
 
 - Pointer movement remains an imperative CSS transform on each animation frame.
-- On the WebGL2 path, pan and zoom are applied as compositor transform uniforms at the animation-frame boundary; CSS may position the single compositor surface but must not create one compositor layer per tile.
+- On the WebGL2 path, tile geometry is transformed to clip space by the compositor, while pan and zoom move the single page-aligned surface through `translate3d(... ) scale(...)` at the animation-frame boundary so the browser GPU compositor handles interaction. The implementation must not create one compositor layer per tile or redraw PDF vectors on the main thread.
 - React viewport synchronization may remain throttled, but it must not reset an absolute stale-tile deadline indefinitely.
 - On pointer release, the committed canvas state and imperative transform must converge in the same event batch.
 - Zoom creates a new candidate base generation while the committed generation or underlay stays visible.
