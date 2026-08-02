@@ -112,6 +112,10 @@ class FakeWebGl2 {
 
   readonly drawnKeyGroups: string[][] = [];
   failCompile: boolean;
+  readonly createdBuffers: Array<Record<string, unknown>> = [];
+  readonly bufferPayloads: Array<{ buffer: Record<string, unknown>; data: number[] }> = [];
+  readonly drawCallLog: Array<{ key: string | undefined; first: number; count: number }> = [];
+  private boundBuffer: Record<string, unknown> | null = null;
   private boundTexture: { __paaxTileKey?: string } | null = null;
   private drawnInGroup: string[] = [];
 
@@ -122,6 +126,19 @@ class FakeWebGl2 {
   lastDrawnKeys(): string[] {
     if (this.drawnInGroup.length > 0) return [...this.drawnInGroup];
     return this.drawnKeyGroups.length > 0 ? [...this.drawnKeyGroups[this.drawnKeyGroups.length - 1]] : [];
+  }
+
+  lastPositionPayload(): number[] | undefined {
+    const positionBuffer = this.createdBuffers[0];
+    let last: number[] | undefined;
+    for (const payload of this.bufferPayloads) {
+      if (payload.buffer === positionBuffer) last = payload.data;
+    }
+    return last;
+  }
+
+  lastDrawCall(): { key: string | undefined; first: number; count: number } | null {
+    return this.drawCallLog.length > 0 ? { ...this.drawCallLog[this.drawCallLog.length - 1] } : null;
   }
 
   createShader(_type: number): Record<string, unknown> {
@@ -158,10 +175,16 @@ class FakeWebGl2 {
   }
 
   createBuffer(): Record<string, unknown> {
-    return {};
+    const buffer: Record<string, unknown> = {};
+    this.createdBuffers.push(buffer);
+    return buffer;
   }
-  bindBuffer(_target: number, _buffer: Record<string, unknown> | null): void {}
-  bufferData(_target: number, _data: unknown, _usage: number): void {}
+  bindBuffer(_target: number, buffer: Record<string, unknown> | null): void {
+    this.boundBuffer = buffer;
+  }
+  bufferData(_target: number, data: unknown, _usage: number): void {
+    if (this.boundBuffer) this.bufferPayloads.push({ buffer: this.boundBuffer, data: Array.from(data as ArrayLike<number>) });
+  }
   deleteBuffer(_buffer: Record<string, unknown> | null): void {}
   enableVertexAttribArray(_location: number): void {}
   vertexAttribPointer(_location: number, _size: number, _type: number, _normalized: boolean, _stride: number, _offset: number): void {}
@@ -181,8 +204,10 @@ class FakeWebGl2 {
     _internalformat: number,
     _format: number,
     _type: number,
-    _source: ImageBitmap,
-  ): void {}
+    source: ImageBitmap,
+  ): void {
+    if ((source as unknown as { closed?: boolean }).closed) throw new Error('fake closed bitmap');
+  }
   activeTexture(_texture: number): void {}
   uniform1i(_location: { name: string } | null, _value: number): void {}
   uniform2f(_location: { name: string } | null, _x: number, _y: number): void {}
@@ -200,6 +225,7 @@ class FakeWebGl2 {
   blendEquation(_mode: number): void {}
   drawArrays(_mode: number, _first: number, _count: number): void {
     const key = this.boundTexture?.__paaxTileKey;
+    this.drawCallLog.push({ key, first: _first, count: _count });
     if (key) this.drawnInGroup.push(key);
   }
 }
@@ -337,5 +363,61 @@ describe('pdf tile compositor', () => {
     expect(activeCanvas?.listenerCount('webglcontextrestored')).toBe(0);
     emit('webglcontextlost', { preventDefault() {} });
     emit('webglcontextrestored', {});
+  });
+
+  it('writes distinct per-tile geometry into each manifest offset', async () => {
+    const compositor = createWithFakeWebGl();
+    const tileA = tile('a', 256, 256, 1, { x: 0, y: 0, width: 100, height: 200 });
+    const tileB = tile('b', 256, 256, 1, { x: 400, y: 300, width: 200, height: 100 });
+    compositor.commit(frame(1, [tileA, tileB]));
+    await flushFrames();
+    expect(activeFakeGl?.lastPositionPayload()).toEqual([
+      0, 0, 100, 0, 0, 200, 100, 0, 100, 200, 0, 200,
+      400, 300, 600, 300, 400, 400, 600, 300, 600, 400, 400, 400,
+    ]);
+  });
+
+  it('draws a later tile with its own manifest offset when an earlier texture is unavailable', async () => {
+    const compositor = createWithFakeWebGl();
+    const tileA = tile('a', 256, 256, 1, { x: 0, y: 0, width: 100, height: 200 });
+    const tileB = tile('b', 256, 256, 1, { x: 400, y: 300, width: 200, height: 100 });
+    (tileA.bitmap as unknown as { closed?: boolean }).closed = true;
+    compositor.commit(frame(1, [tileA, tileB]));
+    await flushFrames();
+    expect(lastDrawnKeys()).toEqual(['b']);
+    expect(activeFakeGl?.lastDrawCall()).toMatchObject({ key: 'b', first: 6, count: 6 });
+  });
+
+  it('preserves the committed revision descriptor across candidate upload and context restore', async () => {
+    const compositor = createWithFakeWebGl();
+    compositor.upload(tile('a', 256, 256, 1));
+    compositor.commit(frame(1, [tile('a', 256, 256, 1)]));
+    await flushFrames();
+    compositor.upload(tile('a', 256, 256, 2));
+    await flushFrames();
+    emit('webglcontextlost', { preventDefault() {} });
+    emit('webglcontextrestored', {});
+    await flushFrames();
+    expect(compositor.diagnostics()).toMatchObject({ contextLost: false, textureCount: 2 });
+    expect(lastDrawnKeys()).toEqual(['a']);
+  });
+
+  it('materializes one-shot release iterables so backend bookkeeping receives them', () => {
+    const compositor = createWithFakeWebGl();
+    compositor.upload(tile('a'));
+    compositor.upload(tile('b'));
+    function* keys(): Generator<string> {
+      yield 'a';
+      yield 'b';
+    }
+    compositor.release(keys());
+    expect(compositor.diagnostics()).toMatchObject({ textureCount: 0, estimatedTextureBytes: 0 });
+  });
+
+  it('scales page coordinates to the canvas size in Canvas2D', () => {
+    const compositor = createWithNoWebGl();
+    const tileA = tile('a', 256, 256, 1, { x: 256, y: 128, width: 512, height: 384 });
+    compositor.commit(frame(1, [tileA], 1024, 1024));
+    expect(fake2dDrawCalls()).toEqual([{ bitmap: tileA.bitmap, x: 200, y: 75, width: 400, height: 225 }]);
   });
 });

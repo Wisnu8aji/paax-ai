@@ -43,10 +43,18 @@ export class Canvas2dTileCompositorBackend implements CompositorBackend {
     const width = this.canvas.width;
     const height = this.canvas.height;
     if (width <= 0 || height <= 0) return;
+    const scaleX = width / frame.pageWidth;
+    const scaleY = height / frame.pageHeight;
     ctx.clearRect(0, 0, width, height);
     for (const tile of frame.tiles) {
       try {
-        ctx.drawImage(tile.bitmap, tile.rect.x, tile.rect.y, tile.rect.width, tile.rect.height);
+        ctx.drawImage(
+          tile.bitmap,
+          tile.rect.x * scaleX,
+          tile.rect.y * scaleY,
+          tile.rect.width * scaleX,
+          tile.rect.height * scaleY,
+        );
       } catch {
         // A bitmap closed by TileLru is no longer drawable; skip it.
       }

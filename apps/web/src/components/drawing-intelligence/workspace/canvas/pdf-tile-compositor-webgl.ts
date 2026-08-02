@@ -59,7 +59,7 @@ void main() {
 }
 `;
 
-function textureId(key: string, revision: number): string {
+export function textureId(key: string, revision: number): string {
   return `${key}\u0000${revision}`;
 }
 
@@ -169,19 +169,19 @@ export class WebGlTileCompositorBackend implements CompositorBackend {
     gl.uniform2f(this.uPageSizeLocation, this.pageWidth, this.pageHeight);
     gl.activeTexture(gl.TEXTURE0);
     gl.uniform1i(this.uTexLocation, 0);
-    let index = 0;
-    for (const tile of this.committedTiles) {
+    for (let index = 0; index < this.committedTiles.length; index += 1) {
+      const tile = this.committedTiles[index];
       const entry = this.textures.get(textureId(tile.key, tile.revision));
       if (!entry?.texture) continue;
       gl.bindTexture(gl.TEXTURE_2D, entry.texture);
       gl.drawArrays(gl.TRIANGLES, index * 6, 6);
-      index += 1;
     }
   }
 
   release(keys: Iterable<string>): void {
+    const materialized = Array.from(keys);
     const idsToDelete: string[] = [];
-    for (const key of keys) {
+    for (const key of materialized) {
       for (const [id, entry] of this.textures) {
         if (entry.key !== key) continue;
         if (this.manifestReferences(entry)) {
@@ -382,39 +382,25 @@ export class WebGlTileCompositorBackend implements CompositorBackend {
     const gl = this.gl;
     const positions = new Float32Array(tiles.length * 12);
     const uvs = new Float32Array(tiles.length * 12);
-    const corners: number[] = [];
-    for (const tile of tiles) {
+    for (let i = 0; i < tiles.length; i += 1) {
+      const tile = tiles[i];
       const x0 = tile.rect.x;
       const y0 = tile.rect.y;
       const x1 = tile.rect.x + tile.rect.width;
       const y1 = tile.rect.y + tile.rect.height;
-      corners[0] = x0;
-      corners[1] = y0;
-      corners[2] = x1;
-      corners[3] = y0;
-      corners[4] = x0;
-      corners[5] = y1;
-      corners[6] = x1;
-      corners[7] = y0;
-      corners[8] = x1;
-      corners[9] = y1;
-      corners[10] = x0;
-      corners[11] = y1;
-    }
-    for (let i = 0; i < tiles.length; i += 1) {
       const offset = i * 12;
-      positions[offset] = corners[0];
-      positions[offset + 1] = corners[1];
-      positions[offset + 2] = corners[2];
-      positions[offset + 3] = corners[3];
-      positions[offset + 4] = corners[4];
-      positions[offset + 5] = corners[5];
-      positions[offset + 6] = corners[6];
-      positions[offset + 7] = corners[7];
-      positions[offset + 8] = corners[8];
-      positions[offset + 9] = corners[9];
-      positions[offset + 10] = corners[10];
-      positions[offset + 11] = corners[11];
+      positions[offset] = x0;
+      positions[offset + 1] = y0;
+      positions[offset + 2] = x1;
+      positions[offset + 3] = y0;
+      positions[offset + 4] = x0;
+      positions[offset + 5] = y1;
+      positions[offset + 6] = x1;
+      positions[offset + 7] = y0;
+      positions[offset + 8] = x1;
+      positions[offset + 9] = y1;
+      positions[offset + 10] = x0;
+      positions[offset + 11] = y1;
       uvs[offset] = 0;
       uvs[offset + 1] = 0;
       uvs[offset + 2] = 1;

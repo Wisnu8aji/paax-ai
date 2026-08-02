@@ -1,5 +1,5 @@
 import type { LogicalRect } from './pdf-tile-coverage';
-import { WebGlTileCompositorBackend, type CompositorBackend } from './pdf-tile-compositor-webgl';
+import { textureId, WebGlTileCompositorBackend, type CompositorBackend } from './pdf-tile-compositor-webgl';
 import { Canvas2dTileCompositorBackend } from './pdf-tile-compositor-canvas2d';
 
 export type PdfTileRendererKind = 'webgl2' | 'canvas2d';
@@ -89,13 +89,13 @@ class PdfTileCompositorWrapper implements PdfTileCompositor {
   }
 
   upload(tile: CompositorTile): void {
-    this.descriptors.set(tile.key, tile);
+    this.descriptors.set(textureId(tile.key, tile.revision), tile);
     this.backend.upload(tile);
   }
 
   commit(frame: CompositorFrame): void {
     this.committedFrame = frame;
-    for (const tile of frame.tiles) this.descriptors.set(tile.key, tile);
+    for (const tile of frame.tiles) this.descriptors.set(textureId(tile.key, tile.revision), tile);
     this.backend.commit(frame);
   }
 
@@ -104,8 +104,15 @@ class PdfTileCompositorWrapper implements PdfTileCompositor {
   }
 
   release(keys: Iterable<string>): void {
-    for (const key of keys) this.descriptors.delete(key);
-    this.backend.release(keys);
+    const materialized = Array.from(keys);
+    for (const key of materialized) {
+      for (const [id, descriptor] of this.descriptors) {
+        if (descriptor.key !== key) continue;
+        if (this.manifestReferences(descriptor)) continue;
+        this.descriptors.delete(id);
+      }
+    }
+    this.backend.release(materialized);
   }
 
   diagnostics(): CompositorDiagnostics {
@@ -132,6 +139,15 @@ class PdfTileCompositorWrapper implements PdfTileCompositor {
     this.backend.onContextLost();
     this.lossCount += 1;
     if (this.lossCount >= 2) this.swapToCanvas2d();
+  }
+
+  private manifestReferences(descriptor: CompositorTile): boolean {
+    const frame = this.committedFrame;
+    if (!frame) return false;
+    for (const tile of frame.tiles) {
+      if (tile.key === descriptor.key && tile.revision === descriptor.revision) return true;
+    }
+    return false;
   }
 
   private handleContextRestored(): void {
