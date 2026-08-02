@@ -210,7 +210,7 @@ export interface PdfTileCompositor {
 export function createPdfTileCompositor(canvas: HTMLCanvasElement): PdfTileCompositor;
 ```
 
-The factory returns one stable failover wrapper. The wrapper owns the current WebGL2 or Canvas2D backend, retains only manifest/key metadata, and can replace the WebGL2 backend after repeated context loss without changing the object held by React. `TileLru` owns every supplied bitmap and all calls to `ImageBitmap.close()`.
+The factory returns one stable failover wrapper. The wrapper owns the current WebGL2 or Canvas2D backend and retains non-owning `CompositorTile` descriptors for uploaded/committed manifests so it can re-upload or redraw after context restoration. `TileLru` protects those keys, owns every supplied bitmap, and owns every call to `ImageBitmap.close()`; the wrapper must drop descriptors on `release`/`dispose` and never close a bitmap. The wrapper can replace the WebGL2 backend after repeated context loss without changing the object held by React.
 
 - [ ] **Step 1: Run Graphify for cache and bitmap ownership**
 
