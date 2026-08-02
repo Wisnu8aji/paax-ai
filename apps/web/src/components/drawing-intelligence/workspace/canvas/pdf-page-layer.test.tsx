@@ -28,8 +28,9 @@ import {
   PdfPageLayer,
   resetGlobalPdfTilePool,
   resetGlobalTileCache,
+  OVERSCAN_MARGIN_PCT,
 } from './pdf-page-layer';
-import { TileLru } from './pdf-tile-pyramid';
+import { TileLru, PdfTilePyramid, toLogicalViewport } from './pdf-tile-pyramid';
 import { createPdfTilePool } from './pdf-tile-pool';
 import { normalizeArtifactExpiry, fetchPdfArtifactUrl } from '../../drawing-intelligence-api';
 import * as compositorModule from './pdf-tile-compositor';
@@ -141,6 +142,72 @@ async function flush() {
     await Promise.resolve();
     await Promise.resolve();
   });
+}
+
+async function flushFrame() {
+  await act(async () => {
+    await new Promise<void>((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (!done) {
+          done = true;
+          resolve();
+        }
+      };
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(finish);
+      window.setTimeout(finish, 30);
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+}
+
+function makeFakeCompositor(overrides: Partial<PdfTileCompositor> = {}) {
+  const upload = vi.fn();
+  const commit = vi.fn();
+  const release = vi.fn();
+  const compositor = {
+    kind: 'canvas2d',
+    upload,
+    commit,
+    render: vi.fn(),
+    release,
+    diagnostics: vi.fn().mockReturnValue({
+      renderer: 'canvas2d',
+      committedGeneration: null,
+      textureCount: 0,
+      estimatedTextureBytes: 0,
+      contextLost: false,
+    }),
+    dispose: vi.fn(),
+    ...overrides,
+  } as unknown as PdfTileCompositor;
+  return { compositor, upload, commit, release };
+}
+
+function makeContextFakeCompositor() {
+  const state = { renderer: 'webgl2' as 'webgl2' | 'canvas2d', contextLost: false, textureCount: 2 };
+  const upload = vi.fn();
+  const commit = vi.fn();
+  const release = vi.fn();
+  const compositor = {
+    get kind() {
+      return state.renderer;
+    },
+    upload,
+    commit,
+    render: vi.fn(),
+    release,
+    diagnostics: vi.fn(() => ({
+      renderer: state.renderer,
+      committedGeneration: null,
+      textureCount: state.contextLost ? 0 : state.textureCount,
+      estimatedTextureBytes: 0,
+      contextLost: state.contextLost,
+    })),
+    dispose: vi.fn(),
+  } as unknown as PdfTileCompositor;
+  return { compositor, state, upload, commit, release };
 }
 
 function layer() {
@@ -1271,29 +1338,24 @@ describe('Atomic generations: committed/candidate state and coverage transitions
   it('continuous 100ms viewport churn cannot postpone retirement past the absolute deadline', async () => {
     vi.useFakeTimers();
     try {
-      const releaseMock = vi.fn();
-      const fakeCompositor = {
-        kind: 'canvas2d',
-        upload: vi.fn(),
-        commit: vi.fn(),
-        render: vi.fn(),
-        release: releaseMock,
-        diagnostics: vi.fn().mockReturnValue({
-          renderer: 'canvas2d',
-          committedGeneration: null,
-          textureCount: 0,
-          estimatedTextureBytes: 0,
-          contextLost: false,
-        }),
-        dispose: vi.fn(),
-      } as unknown as PdfTileCompositor;
+      const { compositor: fakeCompositor, release: releaseMock } = makeFakeCompositor();
       const spy = vi.spyOn(compositorModule, 'createPdfTileCompositor').mockReturnValue(fakeCompositor);
 
       const { pool } = controlledPool();
       const { rerender } = renderNormalizedFitLayer(pool, 'run-churn', { ...FIT, x: 0 });
       await flush();
 
-      let viewportChanges = 0;
+      const pyramid = new PdfTilePyramid({ pageKey: 'run-churn:0', width: 1000, height: 800 });
+      const metrics = { width: 1000, height: 800 };
+      const desiredByStep: Array<Set<string>> = [];
+      const seenKeys = new Set<string>();
+      for (let i = 0; i <= 20; i += 1) {
+        const logical = toLogicalViewport({ x: i * 0.05, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 }, metrics);
+        const keys = new Set(pyramid.visibleTiles(logical, OVERSCAN_MARGIN_PCT).map((t) => t.key));
+        for (const key of keys) seenKeys.add(key);
+        desiredByStep.push(keys);
+      }
+
       for (let i = 1; i <= 20; i += 1) {
         await act(async () => {
           rerender(
@@ -1310,11 +1372,24 @@ describe('Atomic generations: committed/candidate state and coverage transitions
           vi.advanceTimersByTime(100);
           await Promise.resolve();
         });
-        viewportChanges += 1;
       }
 
-      const staleGenerationCount = viewportChanges - releaseMock.mock.calls.length;
-      expect(staleGenerationCount).toBeLessThanOrEqual(1);
+      const finalKeys = desiredByStep[desiredByStep.length - 1];
+      const staleKeys = [...seenKeys].filter((key) => !finalKeys.has(key));
+      expect(staleKeys.length).toBeGreaterThan(0);
+
+      const releasedKeys = new Set<string>();
+      for (const call of releaseMock.mock.calls) {
+        for (const key of call[0] as string[]) releasedKeys.add(key);
+      }
+      for (const key of staleKeys) {
+        expect(releasedKeys.has(key)).toBe(true);
+      }
+      for (const call of releaseMock.mock.calls) {
+        for (const key of call[0] as string[]) {
+          expect(finalKeys.has(key)).toBe(false);
+        }
+      }
       expect(releaseMock).toHaveBeenCalled();
 
       spy.mockRestore();
@@ -1361,5 +1436,284 @@ describe('Atomic generations: committed/candidate state and coverage transitions
 
     expect(cancels.every((c) => c.mock.calls.length === 1)).toBe(true);
     expect(pool.dispose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Fix round 1: revision hygiene, context-loss observation, incremental upload', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('clears revision/bitmap bookkeeping on document lifecycle (A→B→A restarts revisions at 1)', async () => {
+    const { compositor: fakeCompositor, commit: commitMock } = makeFakeCompositor();
+    const spy = vi.spyOn(compositorModule, 'createPdfTileCompositor').mockReturnValue(fakeCompositor);
+
+    const aKeys = ['run-rev-a:0:1:0:0', 'run-rev-a:0:1:0:1', 'run-rev-a:0:1:1:0', 'run-rev-a:0:1:1:1'];
+    const bKeys = ['run-rev-b:0:1:0:0', 'run-rev-b:0:1:0:1', 'run-rev-b:0:1:1:0', 'run-rev-b:0:1:1:1'];
+    const { pool, resolvers } = controlledPool();
+    const renderLayer = (runId: string, cache: TileLru) =>
+      render(
+        <PdfPageLayer
+          runId={runId}
+          pageIndex={0}
+          viewport={FIT}
+          viewportSpace="normalized"
+          fallbackWidth={1000}
+          fallbackHeight={800}
+          tilePool={pool as any}
+          tileCache={cache as any}
+        />
+      );
+
+    const first = renderLayer('run-rev-a', new TileLru());
+    await flush();
+    for (const key of aKeys) deliver(resolvers, key);
+    await flush();
+    expect(layer()).toHaveAttribute('data-committed-generation', '1');
+
+    first.rerender(<PdfPageLayer runId="run-rev-b" pageIndex={0} viewport={FIT} viewportSpace="normalized" fallbackWidth={1000} fallbackHeight={800} tilePool={pool as any} tileCache={new TileLru() as any} />);
+    await flush();
+    for (const key of bKeys) deliver(resolvers, key);
+    await flush();
+    expect(layer()).toHaveAttribute('data-committed-generation', '2');
+
+    first.rerender(<PdfPageLayer runId="run-rev-a" pageIndex={0} viewport={FIT} viewportSpace="normalized" fallbackWidth={1000} fallbackHeight={800} tilePool={pool as any} tileCache={new TileLru() as any} />);
+    await flush();
+    for (const key of aKeys) deliver(resolvers, key, bitmap());
+    await flush();
+
+    const frames = commitMock.mock.calls.map((c: any) => c[0]);
+    expect(frames).toHaveLength(3);
+    expect(frames[2].tiles.map((t: any) => t.revision)).toEqual([1, 1, 1, 1]);
+    expect(frames[2].tiles.map((t: any) => t.key)).toEqual(expect.arrayContaining(aKeys));
+
+    spy.mockRestore();
+  });
+
+  it('context loss immediately exposes lost diagnostics and emits ready:false for the committed generation', async () => {
+    const { compositor, state } = makeContextFakeCompositor();
+    const spy = vi.spyOn(compositorModule, 'createPdfTileCompositor').mockReturnValue(compositor);
+    const onCoverageChange = vi.fn();
+    const { pool, resolvers } = controlledPool();
+    const { container } = renderNormalizedFitLayer(pool, 'run-loss', FIT, { onCoverageChange });
+    await flush();
+
+    for (const key of ['run-loss:0:1:0:0', 'run-loss:0:1:0:1', 'run-loss:0:1:1:0', 'run-loss:0:1:1:1']) {
+      deliver(resolvers, key);
+    }
+    await flush();
+    expect(layer()).toHaveAttribute('data-committed-generation', '1');
+    expect(onCoverageChange).toHaveBeenLastCalledWith(expect.objectContaining({ ready: true, generation: 1 }));
+
+    const canvas = container.querySelector('canvas');
+    expect(canvas).not.toBeNull();
+    state.contextLost = true;
+    await act(async () => {
+      canvas!.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+      await Promise.resolve();
+    });
+
+    expect(layer()).toHaveAttribute('data-context-lost', 'true');
+    expect(layer()).toHaveAttribute('data-renderer-kind', 'webgl2');
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'false');
+    expect(layer()).toHaveAttribute('data-committed-generation', '1');
+    expect(onCoverageChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ ready: false, generation: 1, renderer: 'webgl2' }),
+    );
+
+    spy.mockRestore();
+  });
+
+  it('context restore updates diagnostics and re-emits ready:true for the committed generation after the frame boundary', async () => {
+    const { compositor, state } = makeContextFakeCompositor();
+    const spy = vi.spyOn(compositorModule, 'createPdfTileCompositor').mockReturnValue(compositor);
+    const onCoverageChange = vi.fn();
+    const { pool, resolvers } = controlledPool();
+    const { container } = renderNormalizedFitLayer(pool, 'run-restore', FIT, { onCoverageChange });
+    await flush();
+
+    for (const key of ['run-restore:0:1:0:0', 'run-restore:0:1:0:1', 'run-restore:0:1:1:0', 'run-restore:0:1:1:1']) {
+      deliver(resolvers, key);
+    }
+    await flush();
+    expect(layer()).toHaveAttribute('data-committed-generation', '1');
+
+    const canvas = container.querySelector('canvas');
+    state.contextLost = true;
+    await act(async () => {
+      canvas!.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+      await Promise.resolve();
+    });
+    expect(layer()).toHaveAttribute('data-context-lost', 'true');
+
+    state.contextLost = false;
+    await act(async () => {
+      canvas!.dispatchEvent(new Event('webglcontextrestored'));
+    });
+    await flushFrame();
+
+    expect(layer()).toHaveAttribute('data-context-lost', 'false');
+    expect(layer()).toHaveAttribute('data-renderer-kind', 'webgl2');
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'true');
+    expect(onCoverageChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ ready: true, generation: 1, renderer: 'webgl2' }),
+    );
+
+    spy.mockRestore();
+  });
+
+  it('Canvas2D failover on repeated loss updates renderer diagnostics and re-emits ready:true', async () => {
+    const { compositor, state } = makeContextFakeCompositor();
+    const spy = vi.spyOn(compositorModule, 'createPdfTileCompositor').mockReturnValue(compositor);
+    const onCoverageChange = vi.fn();
+    const { pool, resolvers } = controlledPool();
+    const { container } = renderNormalizedFitLayer(pool, 'run-failover', FIT, { onCoverageChange });
+    await flush();
+
+    for (const key of ['run-failover:0:1:0:0', 'run-failover:0:1:0:1', 'run-failover:0:1:1:0', 'run-failover:0:1:1:1']) {
+      deliver(resolvers, key);
+    }
+    await flush();
+    expect(layer()).toHaveAttribute('data-committed-generation', '1');
+
+    const canvas = container.querySelector('canvas');
+    state.renderer = 'canvas2d';
+    state.contextLost = false;
+    await act(async () => {
+      canvas!.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+      await Promise.resolve();
+    });
+
+    expect(layer()).toHaveAttribute('data-renderer-kind', 'canvas2d');
+    expect(layer()).toHaveAttribute('data-context-lost', 'false');
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'true');
+    expect(onCoverageChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ ready: true, generation: 1, renderer: 'canvas2d' }),
+    );
+
+    spy.mockRestore();
+  });
+
+  it('stale context events after unmount do nothing', async () => {
+    const { compositor, state } = makeContextFakeCompositor();
+    const spy = vi.spyOn(compositorModule, 'createPdfTileCompositor').mockReturnValue(compositor);
+    const onCoverageChange = vi.fn();
+    const { pool, resolvers } = controlledPool();
+    const { container, unmount } = renderNormalizedFitLayer(pool, 'run-stale', FIT, { onCoverageChange });
+    await flush();
+
+    for (const key of ['run-stale:0:1:0:0', 'run-stale:0:1:0:1', 'run-stale:0:1:1:0', 'run-stale:0:1:1:1']) {
+      deliver(resolvers, key);
+    }
+    await flush();
+    const callsBefore = onCoverageChange.mock.calls.length;
+
+    const canvas = container.querySelector('canvas');
+    unmount();
+
+    state.contextLost = true;
+    await act(async () => {
+      canvas!.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+      await Promise.resolve();
+    });
+    expect(onCoverageChange.mock.calls.length).toBe(callsBefore);
+
+    await act(async () => {
+      canvas!.dispatchEvent(new Event('webglcontextrestored'));
+    });
+    await flushFrame();
+    expect(onCoverageChange.mock.calls.length).toBe(callsBefore);
+
+    spy.mockRestore();
+  });
+
+  it('uploads ready tiles incrementally before commit and reuses the exact uploaded descriptors at commit', async () => {
+    const { compositor: fakeCompositor, upload: uploadMock, commit: commitMock } = makeFakeCompositor({
+      kind: 'webgl2',
+    });
+    const spy = vi.spyOn(compositorModule, 'createPdfTileCompositor').mockReturnValue(fakeCompositor);
+    const onCoverageChange = vi.fn();
+    const { pool, resolvers } = controlledPool();
+    renderNormalizedFitLayer(pool, 'run-upload', FIT, { onCoverageChange });
+    await flush();
+
+    expect(uploadMock).not.toHaveBeenCalled();
+    expect(commitMock).not.toHaveBeenCalled();
+
+    deliver(resolvers, 'run-upload:0:1:0:0');
+    await flush();
+
+    expect(uploadMock).toHaveBeenCalledTimes(1);
+    expect(uploadMock).toHaveBeenCalledWith(expect.objectContaining({ key: 'run-upload:0:1:0:0', revision: 1 }));
+    expect(layer()).toHaveAttribute('data-committed-generation', '0');
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'false');
+    expect(commitMock).not.toHaveBeenCalled();
+    expect(onCoverageChange).not.toHaveBeenCalledWith(expect.objectContaining({ ready: true }));
+
+    deliver(resolvers, 'run-upload:0:1:0:1');
+    await flush();
+    expect(uploadMock).toHaveBeenCalledTimes(2);
+    expect(layer()).toHaveAttribute('data-committed-generation', '0');
+
+    deliver(resolvers, 'run-upload:0:1:1:0');
+    deliver(resolvers, 'run-upload:0:1:1:1');
+    await flush();
+
+    expect(uploadMock).toHaveBeenCalledTimes(4);
+    expect(commitMock).toHaveBeenCalledTimes(1);
+    const frame = commitMock.mock.calls[0][0];
+    expect(frame.tiles.map((t: any) => t.key)).toEqual(expect.arrayContaining([
+      'run-upload:0:1:0:0',
+      'run-upload:0:1:0:1',
+      'run-upload:0:1:1:0',
+      'run-upload:0:1:1:1',
+    ]));
+    expect(frame.tiles.map((t: any) => t.revision)).toEqual([1, 1, 1, 1]);
+    for (const call of uploadMock.mock.calls) {
+      expect(frame.tiles).toContain(call[0]);
+    }
+    expect(layer()).toHaveAttribute('data-committed-generation', '1');
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'true');
+
+    spy.mockRestore();
+  });
+
+  it('retirement never releases an uploaded key still desired by the current candidate', async () => {
+    vi.useFakeTimers();
+    try {
+      const { compositor: fakeCompositor, release: releaseMock } = makeFakeCompositor({ kind: 'webgl2' });
+      const spy = vi.spyOn(compositorModule, 'createPdfTileCompositor').mockReturnValue(fakeCompositor);
+
+      const { pool, resolvers } = controlledPool();
+      const { rerender } = renderNormalizedFitLayer(pool, 'run-keep', { x: 0, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 });
+      await flush();
+
+      deliver(resolvers, 'run-keep:0:1:0:0');
+      await flush();
+      expect(layer()).toHaveAttribute('data-committed-generation', '0');
+
+      await act(async () => {
+        rerender(
+          <PdfPageLayer
+            runId="run-keep"
+            pageIndex={0}
+            viewport={{ x: 0.1, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 }}
+            viewportSpace="normalized"
+            fallbackWidth={1000}
+            fallbackHeight={800}
+            tilePool={pool as any}
+          />
+        );
+        await Promise.resolve();
+      });
+      vi.advanceTimersByTime(200);
+      await flush();
+
+      expect(releaseMock).not.toHaveBeenCalled();
+
+      spy.mockRestore();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

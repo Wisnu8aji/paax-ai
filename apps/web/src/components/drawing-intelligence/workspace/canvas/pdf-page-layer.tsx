@@ -126,6 +126,7 @@ interface RenderGeneration {
   detailTiles: PdfTileRequest[];
   desiredAllKeys: Set<string>;
   readyKeys: Set<string>;
+  readyTiles: Map<string, CompositorTile>;
   startedAt: number;
   retireDeadline: number;
   viewport: LogicalRect;
@@ -195,6 +196,13 @@ export function PdfPageLayer({
   const revisionByKeyRef = useRef<Map<string, number>>(new Map());
   const uploadedBitmapRef = useRef<Map<string, { bitmap: ImageBitmap; revision: number }>>(new Map());
   const diagnosticsRef = useRef<LayerDiagnostics>(INITIAL_DIAGNOSTICS);
+  const contextObserverRef = useRef<{
+    canvas: HTMLCanvasElement;
+    lost: (event: Event) => void;
+    restored: (event: Event) => void;
+  } | null>(null);
+  const contextRestoreFrameRef = useRef<number | null>(null);
+  const contextRestoredGenRef = useRef<number | null>(null);
 
   if (tilePool) {
     poolRef.current = tilePool;
@@ -245,15 +253,118 @@ export function PdfPageLayer({
   const ensureCompositor = (): PdfTileCompositor | null => {
     if (!compositorRef.current && canvasRef.current) {
       compositorRef.current = createPdfTileCompositor(canvasRef.current);
+      if (compositorRef.current && !contextObserverRef.current) {
+        const canvas = canvasRef.current;
+        const lost = () => handleContextLost();
+        const restored = () => handleContextRestored();
+        contextObserverRef.current = { canvas, lost, restored };
+        canvas.addEventListener('webglcontextlost', lost);
+        canvas.addEventListener('webglcontextrestored', restored);
+      }
     }
     return compositorRef.current;
   };
 
+  const cancelPendingContextFrame = () => {
+    if (contextRestoreFrameRef.current !== null) {
+      const handle = contextRestoreFrameRef.current;
+      contextRestoreFrameRef.current = null;
+      if (typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(handle);
+      } else {
+        window.clearTimeout(handle);
+      }
+    }
+  };
+
   const disposeCompositor = () => {
+    cancelPendingContextFrame();
     if (compositorRef.current) {
       compositorRef.current.dispose();
       compositorRef.current = null;
     }
+    const observer = contextObserverRef.current;
+    if (observer) {
+      observer.canvas.removeEventListener('webglcontextlost', observer.lost);
+      observer.canvas.removeEventListener('webglcontextrestored', observer.restored);
+      contextObserverRef.current = null;
+    }
+  };
+
+  const onRestoredFrame = (compositor: PdfTileCompositor, renderer: PdfTileRendererKind) => {
+    const current = candidateRef.current;
+    if (!current) return;
+    if (openGenRef.current !== current.openGeneration || activeOpenGenRef.current !== current.openGeneration) return;
+    const diag = compositor.diagnostics();
+    const committed = committedRef.current;
+    const covered =
+      committed && committed.documentKey === current.documentKey
+        ? clippedUnionCoverage(current.viewport, current.page, committed.rects) >= COVERAGE_READY_THRESHOLD
+        : false;
+    updateDiagnostics({
+      contextLost: diag.contextLost,
+      renderer: diag.renderer,
+      coverageReady: covered,
+      coverageRatio: covered ? 1 : 0,
+      textureCount: diag.textureCount,
+    });
+    if (committed && committed.documentKey === current.documentKey && contextRestoredGenRef.current !== committed.generation) {
+      contextRestoredGenRef.current = committed.generation;
+      onCoverageChangeRef.current?.({
+        documentKey: committed.documentKey,
+        generation: committed.generation,
+        ready: true,
+        coverage: 1,
+        renderer: diag.renderer,
+      });
+    }
+  };
+
+  const handleContextLost = () => {
+    const compositor = compositorRef.current;
+    const current = candidateRef.current;
+    if (!compositor || !current) return;
+    if (openGenRef.current !== current.openGeneration || activeOpenGenRef.current !== current.openGeneration) return;
+    const diag = compositor.diagnostics();
+    if (diag.renderer === 'canvas2d') {
+      // Repeated loss: the compositor already swapped to Canvas2D and
+      // re-committed the stored manifest synchronously, so the fallback
+      // frame boundary has passed.
+      onRestoredFrame(compositor, diag.renderer);
+      return;
+    }
+    if (!diag.contextLost) return;
+    contextRestoredGenRef.current = null;
+    updateDiagnostics({
+      contextLost: true,
+      renderer: diag.renderer,
+      coverageReady: false,
+      coverageRatio: 0,
+      textureCount: diag.textureCount,
+    });
+    onCoverageChangeRef.current?.({
+      documentKey: current.documentKey,
+      generation: committedRef.current?.generation ?? current.id,
+      ready: false,
+      coverage: 0,
+      renderer: diag.renderer,
+    });
+  };
+
+  const handleContextRestored = () => {
+    const compositor = compositorRef.current;
+    if (!compositor) return;
+    if (contextRestoreFrameRef.current !== null) return;
+    const defer =
+      typeof requestAnimationFrame === 'function'
+        ? (callback: () => void) => requestAnimationFrame(callback)
+        : (callback: () => void) => window.setTimeout(callback, 0);
+    const handle = defer(() => {
+      contextRestoreFrameRef.current = null;
+      if (compositorRef.current !== compositor) return;
+      onRestoredFrame(compositor, compositor.diagnostics().renderer);
+    });
+    contextRestoreFrameRef.current = handle as number;
   };
 
   const clearRetireQueue = () => {
@@ -264,6 +375,14 @@ export function PdfPageLayer({
     retireQueueRef.current = [];
   };
 
+  const releaseRetireEntry = (entry: RetireEntry) => {
+    const currentKeys = candidateRef.current?.desiredAllKeys;
+    const keys = [...entry.keys].filter((key) => !currentKeys?.has(key));
+    if (keys.length > 0) {
+      compositorRef.current?.release(keys);
+    }
+  };
+
   const scheduleRetirement = () => {
     if (retireTimerRef.current !== null) return;
     const fireDue = () => {
@@ -272,7 +391,7 @@ export function PdfPageLayer({
       const due = retireQueueRef.current.filter((entry) => entry.deadline <= now);
       retireQueueRef.current = retireQueueRef.current.filter((entry) => entry.deadline > now);
       for (const entry of due) {
-        compositorRef.current?.release(entry.keys);
+        releaseRetireEntry(entry);
       }
     };
     const now = performance.now();
@@ -292,7 +411,7 @@ export function PdfPageLayer({
 
   const flushRetireQueue = () => {
     for (const entry of retireQueueRef.current) {
-      compositorRef.current?.release(entry.keys);
+      releaseRetireEntry(entry);
     }
     clearRetireQueue();
   };
@@ -318,6 +437,8 @@ export function PdfPageLayer({
       candidateRef.current = null;
       committedRef.current = null;
       protectedKeysRef.current = new Set();
+      revisionByKeyRef.current.clear();
+      uploadedBitmapRef.current.clear();
       if (activePool && isExternal) {
         activePool.dispose();
       }
@@ -338,6 +459,7 @@ export function PdfPageLayer({
     activeOpenGenRef.current = null;
     notifiedFirstPaintRef.current = null;
     readyEmittedRef.current = null;
+    contextRestoredGenRef.current = null;
     activeRequestsRef.current.forEach((entry) => entry.cancel());
     activeRequestsRef.current.clear();
     clearRetireQueue();
@@ -345,6 +467,8 @@ export function PdfPageLayer({
     candidateRef.current = null;
     committedRef.current = null;
     protectedKeysRef.current = new Set();
+    revisionByKeyRef.current.clear();
+    uploadedBitmapRef.current.clear();
     updateDiagnostics({ committedGeneration: null, coverageReady: false, coverageRatio: 0 });
 
     const pool = poolRef.current ?? (tilePool || getGlobalPdfTilePool());
@@ -383,6 +507,8 @@ export function PdfPageLayer({
       candidateRef.current = null;
       committedRef.current = null;
       protectedKeysRef.current = new Set();
+      revisionByKeyRef.current.clear();
+      uploadedBitmapRef.current.clear();
       pool.close(documentKey);
     };
   }, [runId, pageIndex, documentKey, pageNumber, retry, tilePool, tileCache]);
@@ -444,6 +570,7 @@ export function PdfPageLayer({
       detailTiles,
       desiredAllKeys,
       readyKeys: new Set(),
+      readyTiles: new Map(),
       startedAt: performance.now(),
       retireDeadline: performance.now() + VIEWPORT_RETIRE_MS,
       viewport: viewportRect,
@@ -486,6 +613,23 @@ export function PdfPageLayer({
       }
     }
 
+    const registerReadyTile = (candidateToUpdate: RenderGeneration, tile: PdfTileRequest) => {
+      if (candidateRef.current !== candidateToUpdate) return;
+      if (candidateToUpdate.readyKeys.has(tile.key)) return;
+      const bitmap = cache.peek(tile.key);
+      if (!bitmap) return;
+      const revision = nextRevisionFor(tile.key, bitmap);
+      const descriptor: CompositorTile = {
+        key: tile.key,
+        revision,
+        bitmap,
+        rect: tileLogicalRect(tile),
+      };
+      candidateToUpdate.readyKeys.add(tile.key);
+      candidateToUpdate.readyTiles.set(tile.key, descriptor);
+      compositorRef.current?.upload(descriptor);
+    };
+
     const requestTile = (tile: PdfTileRequest) => {
       if (activeRequestsRef.current.has(tile.key)) return;
 
@@ -508,7 +652,7 @@ export function PdfPageLayer({
           if (!cache.set(tile.key, bitmap, bytes, protectedKeysRef.current)) return;
           if (candidateRef.current !== current || !current.desiredAllKeys.has(tile.key)) return;
 
-          current.readyKeys.add(tile.key);
+          registerReadyTile(current, tile);
           recomputeReadiness(current);
         })
         .catch(() => undefined)
@@ -536,10 +680,6 @@ export function PdfPageLayer({
       if (candidateRef.current !== candidateToCommit) return;
       if (!compositorRef.current) return;
 
-      const tileByKey = new Map<string, PdfTileRequest>();
-      for (const tile of candidateToCommit.desiredRequestTiles) tileByKey.set(tile.key, tile);
-      for (const tile of candidateToCommit.detailTiles) tileByKey.set(tile.key, tile);
-
       const orderedKeys: string[] = [];
       const seen = new Set<string>();
       for (const tile of candidateToCommit.desiredVisibleTiles) {
@@ -564,17 +704,9 @@ export function PdfPageLayer({
       const frameTiles: CompositorTile[] = [];
       const committedKeys = new Set<string>();
       for (const key of orderedKeys) {
-        if (!candidateToCommit.readyKeys.has(key)) continue;
-        const bitmap = cache.peek(key);
-        if (!bitmap) continue;
-        const tile = tileByKey.get(key);
-        if (!tile) continue;
-        frameTiles.push({
-          key,
-          revision: nextRevisionFor(key, bitmap),
-          bitmap,
-          rect: tileLogicalRect(tile),
-        });
+        const descriptor = candidateToCommit.readyTiles.get(key);
+        if (!descriptor) continue;
+        frameTiles.push(descriptor);
         committedKeys.add(key);
       }
       if (frameTiles.length === 0) return;
@@ -643,7 +775,7 @@ export function PdfPageLayer({
 
     for (const tile of desiredRequestTiles) {
       if (cache.peek(tile.key)) {
-        candidate.readyKeys.add(tile.key);
+        registerReadyTile(candidate, tile);
       } else {
         requestTile(tile);
       }
@@ -671,7 +803,7 @@ export function PdfPageLayer({
         current.desiredAllKeys.add(tile.key);
         protectedKeysRef.current.add(tile.key);
         if (cache.peek(tile.key)) {
-          current.readyKeys.add(tile.key);
+          registerReadyTile(current, tile);
           recomputeReadiness(current);
         } else {
           requestTile(tile);
