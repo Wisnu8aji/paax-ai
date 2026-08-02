@@ -93,22 +93,24 @@ export class PdfTilePyramid {
     this.dimensions = dimensions;
   }
 
-  visibleTiles(viewport: TileViewport): PdfTileRequest[] {
+  visibleTiles(viewport: TileViewport, overscanMarginPct = 0): PdfTileRequest[] {
     const density = chooseTileDensity(viewport);
-    return this.tilesForDensity(viewport, density);
+    return this.tilesForDensity(viewport, density, overscanMarginPct);
   }
 
-  visibleDetailTiles(viewport: TileViewport): PdfTileRequest[] {
-    return this.tilesForDensity(viewport, chooseDetailTileDensity(viewport));
+  visibleDetailTiles(viewport: TileViewport, overscanMarginPct = 0): PdfTileRequest[] {
+    return this.tilesForDensity(viewport, chooseDetailTileDensity(viewport), overscanMarginPct);
   }
 
-  private tilesForDensity(viewport: TileViewport, density: number): PdfTileRequest[] {
+  private tilesForDensity(viewport: TileViewport, density: number, overscanMarginPct = 0): PdfTileRequest[] {
     const pageWidth = Math.ceil(this.dimensions.width * density);
     const pageHeight = Math.ceil(this.dimensions.height * density);
-    const left = Math.max(0, Math.floor(viewport.x * density));
-    const top = Math.max(0, Math.floor(viewport.y * density));
-    const right = Math.min(pageWidth, Math.ceil((viewport.x + viewport.width) * density));
-    const bottom = Math.min(pageHeight, Math.ceil((viewport.y + viewport.height) * density));
+    const marginX = viewport.width * overscanMarginPct;
+    const marginY = viewport.height * overscanMarginPct;
+    const left = Math.max(0, Math.floor((viewport.x - marginX) * density));
+    const top = Math.max(0, Math.floor((viewport.y - marginY) * density));
+    const right = Math.min(pageWidth, Math.ceil((viewport.x + viewport.width + marginX) * density));
+    const bottom = Math.min(pageHeight, Math.ceil((viewport.y + viewport.height + marginY) * density));
     if (right <= left || bottom <= top) return [];
 
     const txStart = Math.floor(left / PDF_TILE_SIZE);

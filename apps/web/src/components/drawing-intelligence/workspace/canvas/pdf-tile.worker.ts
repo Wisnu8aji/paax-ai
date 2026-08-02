@@ -28,9 +28,17 @@ interface PdfDocumentEntry {
   loadingTask: ReturnType<typeof pdfjs.getDocument>;
   document: Awaited<ReturnType<typeof pdfjs.getDocument>['promise']>;
   pages: Map<number, Awaited<ReturnType<Awaited<ReturnType<typeof pdfjs.getDocument>['promise']>['getPage']>>>;
-  chain: Promise<void>;
+  renderQueue: RenderMessage[];
+  activeRenders: number;
   refCount: number;
 }
+
+/**
+ * pdf.js serializes renders per canvas; each tile uses a fresh OffscreenCanvas,
+ * so concurrent renders on the same page are safe. A small FIFO queue with 2
+ * concurrent slots per worker cuts sequential pop-in time without racing.
+ */
+const MAX_RENDER_CONCURRENCY = 2;
 
 class WorkerCanvasFactory {
   create(width: number, height: number) {
@@ -95,7 +103,18 @@ async function closeDocument(documentKey: string, forceDestroy = false): Promise
   documentAliases.delete(documentKey);
 
   const entry = documentsByRun.get(runId);
-  if (!entry) return;
+  if (entry) {
+    // Drop queued renders of this run so a closed document cannot keep an
+    // unbounded backlog of dead work in the FIFO queue.
+    entry.renderQueue = entry.renderQueue.filter(
+      (message) =>
+        !cancelled.has(message.requestId) &&
+        message.documentKey !== documentKey &&
+        extractRunId(message.documentKey) !== runId,
+    );
+  } else {
+    return;
+  }
 
   if (forceDestroy) {
     documentsByRun.delete(runId);
@@ -148,7 +167,8 @@ async function openDocument(message: OpenMessage): Promise<void> {
       loadingTask,
       document,
       pages: new Map(),
-      chain: Promise.resolve(),
+      renderQueue: [],
+      activeRenders: 0,
       refCount: 1,
     };
     documentsByRun.set(runId, entry);
@@ -196,35 +216,48 @@ async function renderTile(message: RenderMessage): Promise<void> {
     post({ type: 'tile-error', requestId: message.requestId, documentKey: message.documentKey, message: 'PDF document is not open' });
     return;
   }
-  const render = async () => {
-    try {
-      const page = await getOrFetchPage(entry, message.pageNumber);
-      if (cancelled.has(message.requestId)) return;
-      const canvas = new OffscreenCanvas(message.tile.width, message.tile.height);
-      const context = canvas.getContext('2d');
-      if (!context) throw new Error('OffscreenCanvas 2D context unavailable');
-      const renderTask = page.render({
-        canvasContext: context as unknown as CanvasRenderingContext2D,
-        viewport: page.getViewport({ scale: message.tile.density }),
-        transform: [1, 0, 0, 1, -message.tile.x, -message.tile.y],
-      });
-      renderTasks.set(message.requestId, { documentKey: message.documentKey, cancel: () => renderTask.cancel() });
-      await renderTask.promise;
-      renderTasks.delete(message.requestId);
-      if (cancelled.has(message.requestId)) return;
-      const bitmap = canvas.transferToImageBitmap();
-      post({ type: 'tile', requestId: message.requestId, documentKey: message.documentKey, width: message.tile.width, height: message.tile.height, bitmap }, [bitmap]);
-    } catch (error) {
-      renderTasks.delete(message.requestId);
-      if (!cancelled.has(message.requestId)) {
-        post({ type: 'tile-error', requestId: message.requestId, documentKey: message.documentKey, message: String(error) });
-      }
-    } finally {
-      cancelled.delete(message.requestId);
+  entry.renderQueue.push(message);
+  pumpRenders(entry);
+}
+
+function pumpRenders(entry: PdfDocumentEntry): void {
+  while (entry.activeRenders < MAX_RENDER_CONCURRENCY && entry.renderQueue.length > 0) {
+    const message = entry.renderQueue.shift()!;
+    if (cancelled.has(message.requestId)) continue;
+    entry.activeRenders += 1;
+    void runSingleRender(entry, message).finally(() => {
+      entry.activeRenders -= 1;
+      pumpRenders(entry);
+    });
+  }
+}
+
+async function runSingleRender(entry: PdfDocumentEntry, message: RenderMessage): Promise<void> {
+  try {
+    const page = await getOrFetchPage(entry, message.pageNumber);
+    if (cancelled.has(message.requestId)) return;
+    const canvas = new OffscreenCanvas(message.tile.width, message.tile.height);
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('OffscreenCanvas 2D context unavailable');
+    const renderTask = page.render({
+      canvasContext: context as unknown as CanvasRenderingContext2D,
+      viewport: page.getViewport({ scale: message.tile.density }),
+      transform: [1, 0, 0, 1, -message.tile.x, -message.tile.y],
+    });
+    renderTasks.set(message.requestId, { documentKey: message.documentKey, cancel: () => renderTask.cancel() });
+    await renderTask.promise;
+    renderTasks.delete(message.requestId);
+    if (cancelled.has(message.requestId)) return;
+    const bitmap = canvas.transferToImageBitmap();
+    post({ type: 'tile', requestId: message.requestId, documentKey: message.documentKey, width: message.tile.width, height: message.tile.height, bitmap }, [bitmap]);
+  } catch (error) {
+    renderTasks.delete(message.requestId);
+    if (!cancelled.has(message.requestId)) {
+      post({ type: 'tile-error', requestId: message.requestId, documentKey: message.documentKey, message: String(error) });
     }
-  };
-  entry.chain = entry.chain.then(render, render);
-  await entry.chain;
+  } finally {
+    cancelled.delete(message.requestId);
+  }
 }
 
 scope.onmessage = (event: MessageEvent<IncomingMessage>) => {

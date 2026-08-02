@@ -9,6 +9,7 @@
  */
 
 import {
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -30,6 +31,20 @@ import type { InteractiveMeasurementCandidate } from '../../drawing-intelligence
 const BASE_WIDTH_PX = 1400;
 const MIN_ZOOM = 0.08;
 const MAX_ZOOM = 8;
+/**
+ * Live-pan viewport sync cadence. The visual pan runs on a CSS transform every
+ * rAF (imperative, no React render); the tile layer only needs to follow the
+ * viewport ~10x/s so tiles ahead of the drag can be requested without re-
+ * rendering the whole canvas subtree on every animation frame (P2).
+ */
+const LIVE_VIEWPORT_SYNC_MS = 100;
+
+const MemoCanvasToolbar = memo(CanvasToolbar);
+const MemoZoomBar = memo(ZoomBar);
+const MemoMinimap = memo(Minimap);
+const MemoSelectionContextBar = memo(SelectionContextBar);
+const MemoRealPageSvg = memo(RealPageSvg);
+const MemoSheetPlanSvg = memo(SheetPlanSvg);
 
 export function DrawingCanvas() {
   const { state, dispatch } = useWorkspace();
@@ -38,6 +53,11 @@ export function DrawingCanvas() {
   const mappedSheet = state.mappedSheets.find((candidate) => candidate.id === state.activeSheetId) ?? null;
   const realImageUrl = mappedSheet?.imageUrl ?? null;
   const [pdfMetrics, setPdfMetrics] = useState<{ width: number; height: number } | null>(null);
+  /**
+   * Metrics cache keyed by `runId:pageIndex` (P3): switching sheets must not
+   * reset metrics and trigger a second fit jump once a sheet was already opened.
+   */
+  const metricsCacheRef = useRef(new Map<string, { width: number; height: number }>());
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pageTransformRef = useRef<HTMLDivElement | null>(null);
   const pendingPanRef = useRef<{ panX: number; panY: number } | null>(null);
@@ -52,13 +72,19 @@ export function DrawingCanvas() {
 
   const { zoom, panX, panY, tool } = state.canvas;
 
-  const aspect = pdfMetrics
-    ? pdfMetrics.height / pdfMetrics.width
-    : mappedSheet?.widthPx && mappedSheet.heightPx
-      ? mappedSheet.heightPx / mappedSheet.widthPx
-      : sheet
-    ? (sheet.geometry.heightMm + (PLAN_MARGIN + 1900) * 2) / (sheet.geometry.widthMm + (PLAN_MARGIN + 1900) * 2)
-        : 1;
+  const computeAspect = useCallback(
+    (metricsOverride: { width: number; height: number } | null | undefined): number => {
+      const m = metricsOverride ?? pdfMetrics;
+      if (m) return m.height / m.width;
+      if (mappedSheet?.widthPx && mappedSheet.heightPx) return mappedSheet.heightPx / mappedSheet.widthPx;
+      if (sheet) {
+        return (sheet.geometry.heightMm + (PLAN_MARGIN + 1900) * 2) / (sheet.geometry.widthMm + (PLAN_MARGIN + 1900) * 2);
+      }
+      return 1;
+    },
+    [pdfMetrics, mappedSheet, sheet],
+  );
+  const aspect = computeAspect(null);
   const baseW = BASE_WIDTH_PX;
   const baseH = BASE_WIDTH_PX * aspect;
 
@@ -67,21 +93,32 @@ export function DrawingCanvas() {
     [dispatch, state.canvas],
   );
 
-  /** Fit sheet ke container dengan padding. */
-  const fitSheet = useCallback(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    userAdjustedRef.current = false;
-    const pad = 48;
-    const zw = (el.clientWidth - pad * 2) / baseW;
-    const zh = (el.clientHeight - pad * 2) / baseH;
-    const z = Math.max(MIN_ZOOM, Math.min(zw, zh));
-    setCanvas({
-      zoom: z,
-      panX: (el.clientWidth - baseW * z) / 2,
-      panY: (el.clientHeight - baseH * z) / 2,
-    });
-  }, [baseW, baseH, setCanvas]);
+  /**
+   * Fit sheet ke container dengan padding. `metricsOverride` makes the target
+   * aspect explicit: on a sheet switch the cached metrics may differ from the
+   * current React state (which still belongs to the previous sheet), so relying
+   * on the state-derived aspect would fit against the wrong page ratio (P3).
+   */
+  const fitSheet = useCallback(
+    (metricsOverride?: { width: number; height: number } | null) => {
+      const el = containerRef.current;
+      if (!el) return;
+      userAdjustedRef.current = false;
+      const targetAspect = computeAspect(metricsOverride ?? null);
+      const fitW = BASE_WIDTH_PX;
+      const fitH = BASE_WIDTH_PX * targetAspect;
+      const pad = 48;
+      const zw = (el.clientWidth - pad * 2) / fitW;
+      const zh = (el.clientHeight - pad * 2) / fitH;
+      const z = Math.max(MIN_ZOOM, Math.min(zw, zh));
+      setCanvas({
+        zoom: z,
+        panX: (el.clientWidth - fitW * z) / 2,
+        panY: (el.clientHeight - fitH * z) / 2,
+      });
+    },
+    [computeAspect, setCanvas],
+  );
 
   const zoomTo = useCallback(
     (nextZoom: number, cx?: number, cy?: number) => {
@@ -105,16 +142,46 @@ export function DrawingCanvas() {
   const userAdjustedRef = useRef(false);
   useEffect(() => {
     userAdjustedRef.current = false;
-    setPdfMetrics(null);
-    fitSheet();
+    // P3: reuse cached PDF metrics for this run/page instead of dropping to the
+    // thumbnail-aspect fallback, so revisiting a sheet does not refit twice.
+    const cached =
+      toolRunId !== null && toolPageIndex !== null
+        ? (metricsCacheRef.current.get(`${toolRunId}:${toolPageIndex}`) ?? null)
+        : null;
+    setPdfMetrics(cached);
+    // Fit with the cached metrics' aspect explicitly (the state still holds the
+    // previous sheet's metrics at this point).
+    fitSheet(cached);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.activeSheetId]);
 
+  const handleMetrics = useCallback(
+    (metrics: { width: number; height: number; rotation: number }) => {
+      if (toolRunId === null || toolPageIndex === null) return;
+      metricsCacheRef.current.set(`${toolRunId}:${toolPageIndex}`, metrics);
+      setPdfMetrics(metrics);
+    },
+    [toolRunId, toolPageIndex],
+  );
+
+  // Thumbnail underlay stays visible until the PDF tile layer has actually
+  // painted its first tile — even when metrics are cached (sheet switch),
+  // so the canvas never shows a blank gap (P1/P3).
+  const [layerPainted, setLayerPainted] = useState(false);
+  useEffect(() => {
+    setLayerPainted(false);
+  }, [state.activeSheetId]);
+  const handleFirstPaint = useCallback(() => setLayerPainted(true), []);
+
   useEffect(() => {
     if (pdfMetrics && !userAdjustedRef.current) {
-      fitSheet();
+      const currentAspect = baseH / baseW;
+      const newAspect = pdfMetrics.height / pdfMetrics.width;
+      if (Math.abs(currentAspect - newAspect) > 0.005) {
+        fitSheet();
+      }
     }
-  }, [pdfMetrics, fitSheet]);
+  }, [pdfMetrics, fitSheet, baseH, baseW]);
 
   useEffect(() => () => { if (panFrameRef.current !== null) cancelAnimationFrame(panFrameRef.current); }, []);
 
@@ -225,6 +292,9 @@ export function DrawingCanvas() {
     [spaceDown, tool, panX, panY, zoom, baseW, baseH, toolRunId, toolPageIndex, dispatch],
   );
 
+  const [livePan, setLivePan] = useState<{ panX: number; panY: number } | null>(null);
+  const lastViewportSyncRef = useRef(0);
+
   const onPointerMove = useCallback(
     (e: React.PointerEvent) => {
       const d = dragRef.current;
@@ -235,7 +305,17 @@ export function DrawingCanvas() {
         panFrameRef.current = requestAnimationFrame(() => {
           panFrameRef.current = null;
           const pending = pendingPanRef.current;
-          if (pending && pageTransformRef.current) pageTransformRef.current.style.transform = `translate(${pending.panX}px, ${pending.panY}px) scale(${zoom})`;
+          if (pending) {
+            // Visual pan is imperative (CSS transform, no React render per frame).
+            if (pageTransformRef.current) pageTransformRef.current.style.transform = `translate(${pending.panX}px, ${pending.panY}px) scale(${zoom})`;
+            // The tile layer follows at ~10 Hz so tiles ahead of the drag are
+            // prefetched without re-rendering the canvas subtree every frame.
+            const now = performance.now();
+            if (now - lastViewportSyncRef.current >= LIVE_VIEWPORT_SYNC_MS) {
+              lastViewportSyncRef.current = now;
+              setLivePan(pending);
+            }
+          }
         });
       }
     },
@@ -248,19 +328,53 @@ export function DrawingCanvas() {
     if (pendingPanRef.current) setCanvas(pendingPanRef.current);
     pendingPanRef.current = null;
     dragRef.current = null;
+    lastViewportSyncRef.current = 0;
+    setLivePan(null);
     setDragging(false);
   }, [setCanvas]);
+
+  const curPanX = livePan ? livePan.panX : panX;
+  const curPanY = livePan ? livePan.panY : panY;
 
   const viewport = useMemo(() => {
     const el = containerRef.current;
     if (!el) return null;
     return {
-      x: -panX / zoom / baseW,
-      y: -panY / zoom / baseH,
+      x: -curPanX / zoom / baseW,
+      y: -curPanY / zoom / baseH,
       w: el.clientWidth / zoom / baseW,
       h: el.clientHeight / zoom / baseH,
     };
-  }, [panX, panY, zoom, baseW, baseH]);
+  }, [curPanX, curPanY, zoom, baseW, baseH]);
+
+  // Stable callbacks/arrays so memoized SVG children skip re-renders when the
+  // live-pan viewport syncs (up to ~10x/s) (P2).
+  const handleSelectElement = useCallback(
+    (elementId: string | null) => dispatch({ type: 'select-element', elementId }),
+    [dispatch],
+  );
+  const handleHoverElement = useCallback(
+    (elementId: string | null) => dispatch({ type: 'hover-element', elementId }),
+    [dispatch],
+  );
+  const canvasElements = useMemo(
+    () => state.elements.filter((element) => element.sheetId === (mappedSheet?.id ?? sheet?.id)),
+    [state.elements, mappedSheet?.id, sheet?.id],
+  );
+  const handleMinimapNavigate = useCallback(
+    (fx: number, fy: number) => {
+      const el = containerRef.current;
+      if (!el) return;
+      setCanvas({
+        panX: el.clientWidth / 2 - fx * baseW * zoom,
+        panY: el.clientHeight / 2 - fy * baseH * zoom,
+      });
+    },
+    [setCanvas, baseW, baseH, zoom],
+  );
+  const handleZoomIn = useCallback(() => zoomTo(zoom * 1.2), [zoomTo, zoom]);
+  const handleZoomOut = useCallback(() => zoomTo(zoom / 1.2), [zoomTo, zoom]);
+  const handleActualSize = useCallback(() => zoomTo(1), [zoomTo]);
 
   if (!sheet && !mappedSheet) {
     return (
@@ -290,7 +404,7 @@ export function DrawingCanvas() {
 
   return (
     <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--di-canvas-bg)' }}>
-      <CanvasToolbar />
+      <MemoCanvasToolbar />
       <div
         ref={containerRef}
         data-testid="di-canvas-viewport"
@@ -300,7 +414,7 @@ export function DrawingCanvas() {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        onDoubleClick={fitSheet}
+        onDoubleClick={() => fitSheet()}
       >
         <div
           ref={pageTransformRef}
@@ -316,27 +430,46 @@ export function DrawingCanvas() {
           }}
         >
           {mappedSheet ? <>
+            {mappedSheet.imageUrl && !layerPainted && (
+              <img
+                src={mappedSheet.imageUrl}
+                alt=""
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  zIndex: 0,
+                  pointerEvents: 'none',
+                }}
+              />
+            )}
             <PdfPageLayer
               runId={mappedSheet.runId}
               pageIndex={mappedSheet.pageIndex}
+              viewportSpace="normalized"
               fallbackWidth={mappedSheet.widthPx ?? baseW}
               fallbackHeight={mappedSheet.heightPx ?? baseH}
               viewport={{ x: viewport?.x ?? 0, y: viewport?.y ?? 0, width: viewport?.w ?? 1, height: viewport?.h ?? 1, zoom, dpr: typeof window === 'undefined' ? 1 : window.devicePixelRatio }}
-              onMetrics={setPdfMetrics}
+              onMetrics={handleMetrics}
+              onFirstPaint={handleFirstPaint}
             />
-            <div style={{ position: 'absolute', inset: 0 }}><RealPageSvg
+            <div style={{ position: 'absolute', inset: 0 }}><MemoRealPageSvg
             imageUrl={null}
-            elements={state.elements.filter((element) => element.sheetId === (mappedSheet?.id ?? sheet?.id))}
+            elements={canvasElements}
             selectedElementId={state.selectedElementId}
-            onSelectElement={(id) => dispatch({ type: 'select-element', elementId: id })}
-          /></div></> : realImageUrl ? <RealPageSvg imageUrl={realImageUrl} elements={state.elements.filter((element) => element.sheetId === sheet?.id)} selectedElementId={state.selectedElementId} onSelectElement={(id) => dispatch({ type: 'select-element', elementId: id })} /> : sheet ? <SheetPlanSvg
+            onSelectElement={handleSelectElement}
+          /></div></> : realImageUrl ? <MemoRealPageSvg imageUrl={realImageUrl} elements={canvasElements} selectedElementId={state.selectedElementId} onSelectElement={handleSelectElement} /> : sheet ? <MemoSheetPlanSvg
             sheet={sheet}
-            elements={state.elements}
+            elements={canvasElements}
             overlays={state.overlays}
             selectedElementId={state.selectedElementId}
             hoveredElementId={state.hoveredElementId}
-            onSelectElement={(id) => dispatch({ type: 'select-element', elementId: id })}
-            onHoverElement={(id) => dispatch({ type: 'hover-element', elementId: id })}
+            onSelectElement={handleSelectElement}
+            onHoverElement={handleHoverElement}
           /> : null}
         </div>
 
@@ -380,30 +513,23 @@ export function DrawingCanvas() {
           </div>
         )}
 
-        {selectedElement && <SelectionContextBar element={selectedElement} />}
+        {selectedElement && <MemoSelectionContextBar element={selectedElement} />}
 
-        <ZoomBar
+        <MemoZoomBar
           zoom={zoom}
           scaleLabel={sheet?.scale ?? mappedSheet?.scale ?? '—'}
-          onZoomIn={() => zoomTo(zoom * 1.2)}
-          onZoomOut={() => zoomTo(zoom / 1.2)}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
           onFit={fitSheet}
-          onActualSize={() => zoomTo(1)}
+          onActualSize={handleActualSize}
         />
 
-        {sheet && <Minimap
+        {sheet && <MemoMinimap
           sheet={sheet}
-          elements={state.elements}
+          elements={canvasElements}
           overlays={state.overlays}
           viewport={viewport}
-          onNavigate={(fx, fy) => {
-            const el = containerRef.current;
-            if (!el) return;
-            setCanvas({
-              panX: el.clientWidth / 2 - fx * baseW * zoom,
-              panY: el.clientHeight / 2 - fy * baseH * zoom,
-            });
-          }}
+          onNavigate={handleMinimapNavigate}
         />}
       </div>
     </div>

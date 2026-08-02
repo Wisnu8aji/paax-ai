@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { normalizeArtifactExpiry } from '../../drawing-intelligence-api';
@@ -20,6 +20,23 @@ import {
 } from './pdf-tile-pyramid';
 
 export { getGlobalPdfTilePool, resetGlobalPdfTilePool };
+
+/**
+ * Tile retain window: a tile that left the viewport stays painted for at most
+ * this long, so the new generation has time to render and swap without a
+ * blank frame. Eviction is generation-aware (P1), never driven by cache.has.
+ */
+export const VIEWPORT_RETAIN_MS = 250;
+/** How long to postpone stale-tile eviction while new tiles are still in flight. */
+export const VIEWPORT_EVICT_RETRY_MS = 100;
+/** Debounce for the settled detail pass (zoom-settle sharpening). */
+export const DETAIL_PASS_MS = 125;
+/**
+ * Overscan margin as a fraction of the viewport size, per side. Only valid
+ * because the coordinate space is now explicit (viewportSpace) â€” overscan is
+ * a smoothness buffer, not a coordinate-space fix (P0).
+ */
+export const OVERSCAN_MARGIN_PCT = 0.35;
 
 let globalTileCacheInstance: TileLru | null = null;
 
@@ -48,13 +65,29 @@ export function shouldRefreshArtifactUrl(expiresAt: string | number, now: Date =
   }
 }
 
+export type ViewportSpace = 'normalized' | 'logical';
+
 export interface PdfPageLayerProps {
   runId: string;
   pageIndex: number;
   viewport: NormalizedViewport;
+  /**
+   * Explicit coordinate-space contract for `viewport`. The legacy heuristic
+   * (width<=1 && height<=1) misclassified normalized fit viewports whose width
+   * and/or height exceed 1 as logical/page-space, blanking the right page edge.
+   * Defaults to 'normalized' â€” DrawingCanvas always sends normalized fractions
+   * of the base page, so old call sites keep working unchanged.
+   */
+  viewportSpace?: ViewportSpace;
   fallbackWidth: number;
   fallbackHeight: number;
   onMetrics?: (metrics: PdfPageMetrics) => void;
+  /**
+   * Fired once per opened document after the first tile has been painted, so
+   * the caller can hide a low-resolution underlay exactly when real tiles
+   * cover the page (no blank gap during sheet switches with cached metrics).
+   */
+  onFirstPaint?: () => void;
   tilePool?: ReturnType<typeof createPdfTilePool>;
   tileCache?: TileLru;
 }
@@ -63,11 +96,21 @@ function areTileGeometriesEqual(a: PdfTileRequest, b: PdfTileRequest): boolean {
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height && a.density === b.density;
 }
 
+/** A painted tile entry, tagged with the render generation that produced it. */
+interface PaintedEntry {
+  tile: PdfTileRequest;
+  revision: number;
+  generation: number;
+  paintedAt: number;
+}
+
 export function PdfPageLayer({
   runId,
   pageIndex,
   viewport,
+  viewportSpace = 'normalized',
   onMetrics,
+  onFirstPaint,
   tilePool,
   tileCache,
 }: PdfPageLayerProps) {
@@ -78,6 +121,8 @@ export function PdfPageLayer({
   const activeOpenGenRef = useRef<number | null>(null);
   const activeRequestsRef = useRef<Map<string, { identity: symbol; cancel: () => void }>>(new Map());
   const desiredKeysRef = useRef<Set<string>>(new Set());
+  const renderGenRef = useRef(0);
+  const evictTimerRef = useRef<number | null>(null);
 
   if (tilePool) {
     poolRef.current = tilePool;
@@ -94,7 +139,7 @@ export function PdfPageLayer({
   }
 
   const [metrics, setMetrics] = useState<PdfPageMetrics | null>(null);
-  const [painted, setPainted] = useState(new Map<string, { tile: PdfTileRequest; revision: number }>());
+  const [painted, setPainted] = useState(new Map<string, PaintedEntry>());
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
 
@@ -103,6 +148,22 @@ export function PdfPageLayer({
 
   const onMetricsRef = useRef(onMetrics);
   onMetricsRef.current = onMetrics;
+  const onFirstPaintRef = useRef(onFirstPaint);
+  onFirstPaintRef.current = onFirstPaint;
+  const notifiedFirstPaintRef = useRef<string | null>(null);
+
+  // Fire onFirstPaint exactly once per opened document, after the first tile
+  // of THAT document is actually painted (P3: thumbnail underlay stays until
+  // real tiles cover). The painted map may still hold previous-document tiles
+  // on the same commit where the open effect resets it, so guard by tile key.
+  useEffect(() => {
+    if (painted.size === 0) return;
+    const hasCurrentDocTiles = [...painted.values()].some((entry) => entry.tile.key.startsWith(`${documentKey}:`));
+    if (!hasCurrentDocTiles) return;
+    if (notifiedFirstPaintRef.current === documentKey) return;
+    notifiedFirstPaintRef.current = documentKey;
+    onFirstPaintRef.current?.();
+  }, [painted, documentKey]);
 
   // Cleanup active requests on unmount of the layer component
   useEffect(() => {
@@ -122,6 +183,7 @@ export function PdfPageLayer({
   useEffect(() => {
     const currentGen = ++openGenRef.current;
     activeOpenGenRef.current = null;
+    notifiedFirstPaintRef.current = null;
     activeRequestsRef.current.forEach((entry) => entry.cancel());
     activeRequestsRef.current.clear();
     desiredKeysRef.current.clear();
@@ -176,14 +238,19 @@ export function PdfPageLayer({
     const pool = poolRef.current ?? (tilePool || getGlobalPdfTilePool());
     const cache = cacheRef.current ?? (tileCache || getGlobalTileCache());
 
-    // Convert NormalizedViewport to PdfLogicalViewport if needed
-    const logicalViewport: PdfLogicalViewport =
-      viewport.width <= 1 && viewport.height <= 1
-        ? toLogicalViewport(viewport as NormalizedViewport, metrics)
-        : (viewport as PdfLogicalViewport);
+    const gen = ++renderGenRef.current;
 
-    const visible = pyramid.visibleTiles(logicalViewport);
-    const detailTiles = pyramid.visibleDetailTiles(logicalViewport);
+    // Explicit coordinate-space contract: DrawingCanvas always sends normalized
+    // fractions of the base page. Legacy heuristic removed â€” normalized
+    // viewports whose width/height exceed 1 (fit zoom on wide containers) were
+    // misclassified as logical space, blanking the right page edge.
+    const logicalViewport: PdfLogicalViewport =
+      viewportSpace === 'logical'
+        ? (viewport as PdfLogicalViewport)
+        : toLogicalViewport(viewport as NormalizedViewport, metrics);
+
+    const visible = pyramid.visibleTiles(logicalViewport, OVERSCAN_MARGIN_PCT);
+    const detailTiles = pyramid.visibleDetailTiles(logicalViewport, OVERSCAN_MARGIN_PCT);
 
     const desiredKeys = new Set(visible.map((t) => t.key));
     desiredKeysRef.current = desiredKeys;
@@ -195,11 +262,20 @@ export function PdfPageLayer({
       }
     }
 
+    // Generation-aware eviction (P1): a tile that left the viewport is only
+    // removed once the current generation has painted coverage AND its retain
+    // window has passed. The legacy `!cache.has(key)` guard held stale canvases
+    // forever, leaking DOM canvases; a cache hit is not a replacement.
+    // `next.size > 1` keeps at least one painted tile when no replacement
+    // generation has painted yet, so the view can never go zero-visible.
     setPainted((prev) => {
       let changed = false;
       const next = new Map(prev);
-      for (const key of prev.keys()) {
-        if (!desiredKeys.has(key)) {
+      const now = performance.now();
+      for (const [key, entry] of prev) {
+        if (desiredKeys.has(key)) continue;
+        const newGenHasCoverage = [...next.values()].some((candidate) => candidate.generation === gen);
+        if (entry.generation < gen && now - entry.paintedAt > VIEWPORT_RETAIN_MS && (newGenHasCoverage || next.size > 1)) {
           next.delete(key);
           changed = true;
         }
@@ -238,7 +314,7 @@ export function PdfPageLayer({
               const existing = prev.get(tile.key);
               const next = new Map(prev);
               const revision = existing ? existing.revision + 1 : 1;
-              next.set(tile.key, { tile, revision });
+              next.set(tile.key, { tile, revision, generation: gen, paintedAt: performance.now() });
               return next;
             });
           }
@@ -256,16 +332,16 @@ export function PdfPageLayer({
       if (cached) {
         setPainted((prev) => {
           const existing = prev.get(tile.key);
-          if (!existing) {
-            const next = new Map(prev);
-            next.set(tile.key, { tile, revision: 1 });
-            return next;
-          }
-          if (areTileGeometriesEqual(existing.tile, tile)) {
+          if (existing && areTileGeometriesEqual(existing.tile, tile)) {
             return prev;
           }
           const next = new Map(prev);
-          next.set(tile.key, { tile, revision: existing.revision });
+          next.set(tile.key, {
+            tile,
+            revision: existing ? existing.revision : 1,
+            generation: gen,
+            paintedAt: performance.now(),
+          });
           return next;
         });
       } else {
@@ -279,12 +355,51 @@ export function PdfPageLayer({
         desiredKeysRef.current.add(tile.key);
         requestTile(tile);
       }
-    }, 125);
+    }, DETAIL_PASS_MS);
+
+    // Bounded stale-tile cleanup. While a replacement generation is still in
+    // flight (active requests), postpone the eviction so the view never goes
+    // zero-visible; otherwise drop tiles whose retain window has passed, but
+    // keep at least one painted tile when nothing from the current generation
+    // has painted yet (e.g. every in-flight request errored).
+    if (evictTimerRef.current !== null) {
+      window.clearTimeout(evictTimerRef.current);
+      evictTimerRef.current = null;
+    }
+    const scheduleEvict = (delayMs: number) => {
+      evictTimerRef.current = window.setTimeout(() => {
+        evictTimerRef.current = null;
+        if (activeRequestsRef.current.size > 0) {
+          scheduleEvict(VIEWPORT_EVICT_RETRY_MS);
+          return;
+        }
+        setPainted((prev) => {
+          let changed = false;
+          const next = new Map(prev);
+          const now = performance.now();
+          for (const [key, entry] of prev) {
+            if (!desiredKeysRef.current.has(key) && now - entry.paintedAt > VIEWPORT_RETAIN_MS) {
+              const newGenHasCoverage = [...next.values()].some((candidate) => candidate.generation === gen);
+              if (newGenHasCoverage || next.size > 1) {
+                next.delete(key);
+                changed = true;
+              }
+            }
+          }
+          return changed ? next : prev;
+        });
+      }, delayMs);
+    };
+    scheduleEvict(VIEWPORT_RETAIN_MS);
 
     return () => {
       window.clearTimeout(detailTimer);
+      if (evictTimerRef.current !== null) {
+        window.clearTimeout(evictTimerRef.current);
+        evictTimerRef.current = null;
+      }
     };
-  }, [metrics, viewport, error, pyramid, documentKey, pageNumber, tilePool, tileCache]);
+  }, [metrics, viewport, error, pyramid, documentKey, pageNumber, tilePool, tileCache, viewportSpace]);
 
   if (error) {
     return (
@@ -295,7 +410,7 @@ export function PdfPageLayer({
   }
 
   if (!metrics) {
-    return <div role="status">Loading original PDF…</div>;
+    return <div role="status">Loading original PDFâ€¦</div>;
   }
 
   return (
@@ -365,3 +480,4 @@ function TileCanvas({
     />
   );
 }
+

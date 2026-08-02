@@ -6,10 +6,18 @@ import {
   TileLru,
   chooseDetailTileDensity,
   chooseTileDensity,
+  toLogicalViewport,
+  type PdfTileRequest,
 } from './pdf-tile-pyramid';
 
 function bitmap() {
   return { close: vi.fn() } as unknown as ImageBitmap;
+}
+
+/** Max right edge reached by the tile set, as a fraction of the page width. */
+function rightCoverage(tiles: PdfTileRequest[], pageWidth: number): number {
+  const maxRight = Math.max(...tiles.map((tile) => (tile.x + tile.width) / tile.density));
+  return Math.min(1, maxRight / pageWidth);
 }
 
 describe('PdfTilePyramid', () => {
@@ -40,6 +48,39 @@ describe('PdfTilePyramid', () => {
     const at101 = pyramid.visibleTiles({ x: 0, y: 0, width: 200, height: 200, zoom: 1.01, dpr: 1 });
     const at149 = pyramid.visibleTiles({ x: 0, y: 0, width: 200, height: 200, zoom: 1.49, dpr: 1 });
     expect(at101.map((tile) => tile.key)).toEqual(at149.map((tile) => tile.key));
+  });
+
+  it('P0 anchor: normalized fit viewport (w>1, h>1) converted to logical space covers >= 99% of the right edge', () => {
+    // Real measured state at fit zoom on a 722x694 container, 1400x~990 base:
+    // w=1.153, h=1.568, zoom=0.447. Manual anchor: density grid 0.5, tile 512px,
+    // page 1191x842 -> columns tx=0 and tx=1, right edge (512+84)/0.5 = 1192/1191.
+    const pyramid = new PdfTilePyramid({ pageKey: 'A-101', width: 1191, height: 842 });
+    const logical = toLogicalViewport(
+      { x: -0.08, y: 0, width: 1.153, height: 1.568, zoom: 0.447, dpr: 1 },
+      { width: 1191, height: 842 },
+    );
+    const tiles = pyramid.visibleTiles(logical);
+    expect(logical.width).toBeGreaterThan(1191);
+    expect(rightCoverage(tiles, 1191)).toBeGreaterThanOrEqual(0.99);
+    expect(new Set(tiles.map((tile) => tile.tx)).size).toBeGreaterThanOrEqual(2);
+  });
+
+  it('P0 anchor: width>1, height<=1 normalized viewport also covers the right edge after conversion', () => {
+    const pyramid = new PdfTilePyramid({ pageKey: 'A-101', width: 1191, height: 842 });
+    const logical = toLogicalViewport(
+      { x: -0.05, y: 0, width: 1.03, height: 0.9, zoom: 0.6, dpr: 1 },
+      { width: 1191, height: 842 },
+    );
+    const tiles = pyramid.visibleTiles(logical);
+    expect(rightCoverage(tiles, 1191)).toBeGreaterThanOrEqual(0.99);
+  });
+
+  it('P0 anchor: legacy 1x1 viewport still resolves to the initial full-page tile set', () => {
+    const pyramid = new PdfTilePyramid({ pageKey: 'A-101', width: 1191, height: 842 });
+    const logical = toLogicalViewport({ x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 }, { width: 1191, height: 842 });
+    const tiles = pyramid.visibleTiles(logical);
+    expect(rightCoverage(tiles, 1191)).toBeGreaterThanOrEqual(0.99);
+    expect(tiles.length).toBeGreaterThan(0);
   });
 });
 

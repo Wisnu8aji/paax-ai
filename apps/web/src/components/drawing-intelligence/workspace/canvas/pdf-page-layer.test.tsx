@@ -1003,6 +1003,293 @@ describe('Phase 3B1: Metadata-only React state and cache.peek rendering', () => 
   });
 });
 
+describe('P1: render-generation retain window (anti-flicker tile swap)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('onFirstPaint fires exactly once per opened document, after the first tile is painted', async () => {
+    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
+    mockFetchArtifact.mockResolvedValue({
+      url: '/api/document-intelligence/drawings/dem/run-firstpaint/artifact?token=abc',
+      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+    });
+
+    const requests: Array<(delivery: any) => void> = [];
+    const poolInstance = {
+      open: vi.fn().mockImplementation(() => {
+        requests.length = 0;
+        return Promise.resolve({ width: 1000, height: 800, rotation: 0 });
+      }),
+      request: vi.fn().mockImplementation(() => {
+        let resolve!: (delivery: any) => void;
+        const promise = new Promise<any>((res) => { resolve = res; });
+        requests.push(resolve!);
+        return { promise, cancel: vi.fn() };
+      }),
+      close: vi.fn(),
+      dispose: vi.fn(),
+    };
+    vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
+
+    const onFirstPaint = vi.fn();
+    const { rerender } = render(
+      <PdfPageLayer
+        runId="run-firstpaint"
+        pageIndex={0}
+        viewport={{ x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 }}
+        fallbackWidth={1000}
+        fallbackHeight={800}
+        tilePool={poolInstance as any}
+        onFirstPaint={onFirstPaint}
+      />
+    );
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(onFirstPaint).not.toHaveBeenCalled();
+    const bitmap = { width: 512, height: 512, close: vi.fn() };
+    await act(async () => {
+      requests[0]({ width: 512, height: 512, claim: vi.fn().mockReturnValue(bitmap) });
+      await Promise.resolve();
+    });
+    expect(onFirstPaint).toHaveBeenCalledTimes(1);
+
+    // Another tile for the same document must NOT re-fire
+    await act(async () => {
+      requests[1]?.({ width: 512, height: 512, claim: vi.fn().mockReturnValue(bitmap) });
+      await Promise.resolve();
+    });
+    expect(onFirstPaint).toHaveBeenCalledTimes(1);
+
+    // Document switch resets the latch; paint again -> fires once more
+    mockFetchArtifact.mockResolvedValueOnce({
+      url: '/api/document-intelligence/drawings/dem/run-second/artifact?token=xyz',
+      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+    });
+    rerender(
+      <PdfPageLayer
+        runId="run-second"
+        pageIndex={0}
+        viewport={{ x: 0, y: 0, width: 1, height: 1, zoom: 1, dpr: 1 }}
+        fallbackWidth={1000}
+        fallbackHeight={800}
+        tilePool={poolInstance as any}
+        onFirstPaint={onFirstPaint}
+      />
+    );
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(onFirstPaint).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      requests[0]({ width: 512, height: 512, claim: vi.fn().mockReturnValue(bitmap) });
+      await Promise.resolve();
+    });
+    expect(onFirstPaint).toHaveBeenCalledTimes(2);
+  });
+
+  function makePool(requests: Array<(delivery: any) => void>, requestedTiles: any[]) {
+    return {
+      open: vi.fn().mockImplementation(() => {
+        requests.length = 0;
+        return Promise.resolve({ width: 1000, height: 800, rotation: 0 });
+      }),
+      request: vi.fn().mockImplementation(({ tile }: any) => {
+        requestedTiles.push(tile);
+        let resolve!: (delivery: any) => void;
+        const promise = new Promise<any>((res) => { resolve = res; });
+        requests.push(resolve!);
+        return { promise, cancel: vi.fn() };
+      }),
+      close: vi.fn(),
+      dispose: vi.fn(),
+    };
+  }
+
+  it('a tile leaving the viewport stays painted until the retain window passes, then is evicted (bounded, not cache.has forever)', async () => {
+    vi.useFakeTimers();
+    try {
+      const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
+      mockFetchArtifact.mockResolvedValue({
+        url: '/api/document-intelligence/drawings/dem/run-retain/artifact?token=abc',
+        expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+      });
+
+      const tileA = { key: 'run-retain:0:1:0:0', tx: 0, ty: 0, x: 0, y: 0, width: 400, height: 400, density: 1 };
+      const tileB = { key: 'run-retain:0:1:1:0', tx: 1, ty: 0, x: 400, y: 0, width: 400, height: 400, density: 1 };
+      const visibleTilesSpy = vi.spyOn(PdfTilePyramid.prototype, 'visibleTiles')
+        .mockImplementation((vp: TileViewport) => vp.x > 0 ? [tileB] : [tileA]);
+      const detailTilesSpy = vi.spyOn(PdfTilePyramid.prototype, 'visibleDetailTiles').mockReturnValue([]);
+
+      const requests: Array<(delivery: any) => void> = [];
+      const requestedTiles: any[] = [];
+      const poolInstance = makePool(requests, requestedTiles);
+      vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
+
+      const drawImageSpy = vi.fn();
+      getContextSpy.mockImplementation((contextId: string) => {
+        if (contextId === '2d') return { drawImage: drawImageSpy } as unknown as CanvasRenderingContext2D;
+        return null;
+      });
+
+      const { container, rerender } = render(
+        <PdfPageLayer
+          runId="run-retain"
+          pageIndex={0}
+          viewport={{ x: 0, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 }}
+          fallbackWidth={1000}
+          fallbackHeight={800}
+          tilePool={poolInstance as any}
+        />
+      );
+
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      // Deliver tile A so it is painted
+      const bitmapA = { width: 400, height: 400, close: vi.fn() };
+      await act(async () => {
+        requests[0]({ width: 400, height: 400, claim: vi.fn().mockReturnValue(bitmapA) });
+        await Promise.resolve();
+      });
+      expect(container.querySelectorAll('canvas')).toHaveLength(1);
+
+      // Pan away: tile A leaves the viewport, tile B is requested but not yet delivered
+      rerender(
+        <PdfPageLayer
+          runId="run-retain"
+          pageIndex={0}
+          viewport={{ x: 0.5, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 }}
+          fallbackWidth={1000}
+          fallbackHeight={800}
+          tilePool={poolInstance as any}
+        />
+      );
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      // Old tile A must NOT be unmounted instantly (anti-flicker retain)
+      expect(container.querySelectorAll('canvas')).toHaveLength(1);
+
+      // Deliver tile B so the new generation has painted coverage
+      const bitmapB = { width: 400, height: 400, close: vi.fn() };
+      await act(async () => {
+        requests[1]({ width: 400, height: 400, claim: vi.fn().mockReturnValue(bitmapB) });
+        await Promise.resolve();
+      });
+      expect(container.querySelectorAll('canvas')).toHaveLength(2);
+
+      // Retain window passes -> stale tile A is evicted (bounded)
+      await act(async () => {
+        vi.advanceTimersByTime(400);
+        await Promise.resolve();
+      });
+      expect(container.querySelectorAll('canvas')).toHaveLength(1);
+      expect(requestedTiles.map((t) => t.key)).toContain(tileB.key);
+
+      visibleTilesSpy.mockRestore();
+      detailTilesSpy.mockRestore();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('old tiles are held while new-generation tiles are still rendering (no zero-visible swap window)', async () => {
+    vi.useFakeTimers();
+    try {
+      const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
+      mockFetchArtifact.mockResolvedValue({
+        url: '/api/document-intelligence/drawings/dem/run-hold/artifact?token=abc',
+        expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+      });
+
+      const tileA = { key: 'run-hold:0:1:0:0', tx: 0, ty: 0, x: 0, y: 0, width: 400, height: 400, density: 1 };
+      const tileB = { key: 'run-hold:0:1:1:0', tx: 1, ty: 0, x: 400, y: 0, width: 400, height: 400, density: 1 };
+      const visibleTilesSpy = vi.spyOn(PdfTilePyramid.prototype, 'visibleTiles')
+        .mockImplementation((vp: TileViewport) => vp.x > 0 ? [tileB] : [tileA]);
+      const detailTilesSpy = vi.spyOn(PdfTilePyramid.prototype, 'visibleDetailTiles').mockReturnValue([]);
+
+      const requests: Array<(delivery: any) => void> = [];
+      const poolInstance = makePool(requests, []);
+      vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
+
+      const { container, rerender } = render(
+        <PdfPageLayer
+          runId="run-hold"
+          pageIndex={0}
+          viewport={{ x: 0, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 }}
+          fallbackWidth={1000}
+          fallbackHeight={800}
+          tilePool={poolInstance as any}
+        />
+      );
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      const bitmapA = { width: 400, height: 400, close: vi.fn() };
+      await act(async () => {
+        requests[0]({ width: 400, height: 400, claim: vi.fn().mockReturnValue(bitmapA) });
+        await Promise.resolve();
+      });
+      expect(container.querySelectorAll('canvas')).toHaveLength(1);
+
+      // Pan to B; B's request stays pending (slow worker) — tile A must remain visible
+      rerender(
+        <PdfPageLayer
+          runId="run-hold"
+          pageIndex={0}
+          viewport={{ x: 0.5, y: 0, width: 0.5, height: 1, zoom: 1, dpr: 1 }}
+          fallbackWidth={1000}
+          fallbackHeight={800}
+          tilePool={poolInstance as any}
+        />
+      );
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(requests.length).toBe(2);
+
+      // Advance well past the retain window: request still pending -> old tile retained
+      await act(async () => {
+        vi.advanceTimersByTime(600);
+        await Promise.resolve();
+      });
+      expect(container.querySelectorAll('canvas')).toHaveLength(1);
+
+      // Now B settles -> swap happens; after the retain window old A is gone
+      const bitmapB = { width: 400, height: 400, close: vi.fn() };
+      await act(async () => {
+        requests[1]({ width: 400, height: 400, claim: vi.fn().mockReturnValue(bitmapB) });
+        await Promise.resolve();
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(500);
+        await Promise.resolve();
+      });
+      expect(container.querySelectorAll('canvas')).toHaveLength(1);
+
+      visibleTilesSpy.mockRestore();
+      detailTilesSpy.mockRestore();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -1344,6 +1631,109 @@ describe('Phase 3B2: Persistent in-flight request dedup and surgical cancellatio
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('P0 regression: normalized viewport with width AND height > 1 must cover the right page edge (>= 99%)', async () => {
+    // Fit zoom on a wide container: w=1.153, h=1.568 — both > 1 — but the
+    // viewport IS normalized (fractions of baseW/baseH). The legacy heuristic
+    // (width<=1 && height<=1) misclassified this as logical/page-space and
+    // only ever requested ~86% of the page width, leaving the right side blank.
+    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
+    mockFetchArtifact.mockResolvedValue({
+      url: '/api/document-intelligence/drawings/dem/run-p0/artifact?token=abc',
+      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+    });
+
+    const requestedTiles: any[] = [];
+    const poolInstance = {
+      open: vi.fn().mockImplementation(() => {
+        requestedTiles.length = 0;
+        return Promise.resolve({ width: 1191, height: 842, rotation: 0 });
+      }),
+      request: vi.fn().mockImplementation(({ tile }: any) => {
+        requestedTiles.push(tile);
+        return { promise: new Promise(() => {}), cancel: vi.fn() };
+      }),
+      close: vi.fn(),
+      dispose: vi.fn(),
+    };
+    vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
+
+    const viewport = { x: -0.08, y: 0, width: 1.153, height: 1.568, zoom: 0.447, dpr: 1 };
+    render(
+      <PdfPageLayer
+        runId="run-p0"
+        pageIndex={0}
+        viewport={viewport}
+        viewportSpace="normalized"
+        fallbackWidth={1400}
+        fallbackHeight={990}
+        tilePool={poolInstance as any}
+      />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(requestedTiles.length).toBeGreaterThan(0);
+    // Coverage of the right edge in logical PDF page px: (tile.x + tile.width) / density
+    const pageWidth = 1191;
+    const maxRight = Math.max(...requestedTiles.map((t) => (t.x + t.width) / t.density));
+    const coverage = Math.min(1, maxRight / pageWidth);
+    expect(coverage).toBeGreaterThanOrEqual(0.99);
+    // Two tile columns must be requested at density 0.5 for this viewport
+    const columns = new Set(requestedTiles.map((t) => t.tx));
+    expect(columns.size).toBeGreaterThanOrEqual(2);
+  });
+
+  it('P0 regression: normalized viewport with width > 1 but height <= 1 also covers the right edge', async () => {
+    const mockFetchArtifact = vi.mocked(fetchPdfArtifactUrl);
+    mockFetchArtifact.mockResolvedValue({
+      url: '/api/document-intelligence/drawings/dem/run-p0b/artifact?token=abc',
+      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+    });
+
+    const requestedTiles: any[] = [];
+    const poolInstance = {
+      open: vi.fn().mockImplementation(() => {
+        requestedTiles.length = 0;
+        return Promise.resolve({ width: 1191, height: 842, rotation: 0 });
+      }),
+      request: vi.fn().mockImplementation(({ tile }: any) => {
+        requestedTiles.push(tile);
+        return { promise: new Promise(() => {}), cancel: vi.fn() };
+      }),
+      close: vi.fn(),
+      dispose: vi.fn(),
+    };
+    vi.mocked(createPdfTilePool).mockReturnValue(poolInstance as any);
+
+    const viewport = { x: -0.05, y: 0, width: 1.03, height: 0.9, zoom: 0.6, dpr: 1 };
+    render(
+      <PdfPageLayer
+        runId="run-p0b"
+        pageIndex={0}
+        viewport={viewport}
+        viewportSpace="normalized"
+        fallbackWidth={1400}
+        fallbackHeight={990}
+        tilePool={poolInstance as any}
+      />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(requestedTiles.length).toBeGreaterThan(0);
+    const pageWidth = 1191;
+    const maxRight = Math.max(...requestedTiles.map((t) => (t.x + t.width) / t.density));
+    expect(Math.min(1, maxRight / pageWidth)).toBeGreaterThanOrEqual(0.99);
   });
 
   it('unmount/document switch cancels all active requests', async () => {
