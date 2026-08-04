@@ -249,3 +249,82 @@ def test_join_inline_does_not_fabricate_for_bare_labels():
     result = join_written_dimensions(work_items=[item], dem_pages={43: page})
     updated = result.work_items[0]
     assert not [f for f in updated.measurement_facts if f.field in {"width", "depth"}]
+
+
+# ─── Cycle-002 C2-2: golden-family alias, RAFTER profile, materials, span ───
+
+def test_join_lintel_alias_lt1_reaches_lintel_labels():
+    # Item LT1 (from the sheet title "TABEL BALOK LT.1") is the same lintel
+    # family as LINTEL; "Lintel 15X10" labels must join 150×100 mm.
+    page = _load_page("page-0046")
+    lt1 = _candidate("w-LT1", "beam", "LT1", 46)
+    result = join_written_dimensions(work_items=[lt1], dem_pages={46: page})
+    updated = result.work_items[0]
+    widths = [f for f in updated.measurement_facts if f.field == "width"]
+    depths = [f for f in updated.measurement_facts if f.field == "depth"]
+    assert widths and depths
+    assert widths[0].value == 150.0
+    assert depths[0].value == 100.0
+    assert result.metrics["inline_label_dimension_joins"] >= 1
+
+
+def test_join_rafter_steel_profile_from_label():
+    # "RAFTER 150X75X5X7" on page-0054 is a written steel profile (C2-2).
+    page = _load_page("page-0054")
+    rafter = _candidate("w-RAFTER", "steel_profile", "RAFTER", 54)
+    result = join_written_dimensions(work_items=[rafter], dem_pages={54: page})
+    updated = result.work_items[0]
+    widths = [f for f in updated.measurement_facts if f.field == "width"]
+    depths = [f for f in updated.measurement_facts if f.field == "depth"]
+    # Steel convention: width = flange h (75), depth = nominal b (150).
+    assert widths and depths
+    assert widths[0].value == 75.0
+    assert depths[0].value == 150.0
+
+
+def test_join_foundation_material_dimension_from_legend():
+    # "F1 = FLOOR ex.HOMOGENEOUS TILE 600x600mm" is a written section for F1.
+    page = _load_page("page-0016")
+    f1 = _candidate("w-F1", "foundation", "F1", 16)
+    result = join_written_dimensions(work_items=[f1], dem_pages={16: page})
+    updated = result.work_items[0]
+    widths = [f for f in updated.measurement_facts if f.field == "width"]
+    depths = [f for f in updated.measurement_facts if f.field == "depth"]
+    assert widths and depths
+    assert widths[0].value == 600.0
+    assert depths[0].value == 600.0
+    assert result.metrics["materials_section_joins"] >= 1
+
+
+def test_join_material_dimension_does_not_hit_architectural_codes():
+    # L2 = CERAMIC TILE on page-0006 must NOT become a structural section.
+    page = _load_page("page-0006")
+    l2 = _candidate("w-L2", "lighting_fixture", "L2", 6)
+    result = join_written_dimensions(work_items=[l2], dem_pages={6: page})
+    updated = result.work_items[0]
+    assert not [f for f in updated.measurement_facts if f.field in {"width", "depth"}]
+
+
+def test_join_beam_span_from_nearby_dimension_with_ambiguity_guard():
+    # RB1 on page-0054 sits next to the 7000 mm span dimension (unambiguous).
+    page = _load_page("page-0054")
+    rb1 = _candidate("w-RB1", "beam", "RB1", 54)
+    result = join_written_dimensions(work_items=[rb1], dem_pages={54: page})
+    updated = result.work_items[0]
+    spans = [f for f in updated.measurement_facts if f.field == "span_length"]
+    assert spans
+    assert spans[0].value == 7000.0
+    assert "span_length" not in updated.missing_information
+    assert result.metrics["beam_span_length_joins"] >= 1
+
+
+def test_join_beam_span_rejects_ambiguous_shared_dimension():
+    # CG2A on page-0043 has several grid dimensions at comparable distance;
+    # the ambiguity guard must NOT attach a fabricated span.
+    page = _load_page("page-0043")
+    cg2a = _candidate("w-CG2A", "beam", "CG2A", 43)
+    result = join_written_dimensions(work_items=[cg2a], dem_pages={43: page})
+    updated = result.work_items[0]
+    spans = [f for f in updated.measurement_facts if f.field == "span_length"]
+    assert not spans
+    assert "span_length" in updated.missing_information

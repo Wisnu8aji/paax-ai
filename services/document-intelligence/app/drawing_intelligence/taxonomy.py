@@ -345,9 +345,11 @@ def dimensions_text(attributes: dict[str, Any]) -> str | None:
 _K2_CODE_RE = re.compile(r"(?<![A-Z0-9])([A-Z]{1,5}-?\d{1,3}[A-Z]?)")
 
 # 4-part steel profile: "WF 200X100X5.5X8", "H 150X150X7X10",
-# "Gording 150x50x20x2.3".
+# "Gording 150x50x20x2.3", "RAFTER 150X75X5X7" (Cycle-002 C2-2: the roof
+# truss detail on page-0054 labels its rafter section inline as
+# "RAFTER 150X75X5X7" — a real written steel profile, same convention).
 _K2_STEEL_PROFILE_RE = re.compile(
-    r"\b(WF1?|H|GD|GORDING)\s*(\d{1,4})\s*[xX×]\s*(\d{1,4})\s*[xX×]\s*(\d+(?:\.\d+)?)\s*[xX×]\s*(\d+(?:\.\d+)?)\b",
+    r"\b(WF1?|H|GD|GORDING|RAFTER)\s*(\d{1,4})\s*[xX×]\s*(\d{1,4})\s*[xX×]\s*(\d+(?:\.\d+)?)\s*[xX×]\s*(\d+(?:\.\d+)?)\b",
     re.I,
 )
 
