@@ -175,6 +175,49 @@ def test_category_from_code_ambiguous_prefixes_need_context():
     assert category_from_code(None) == "unknown"
 
 
+# Cycle-002 P1: concrete-grade (K-225/K-250/K-275) and the MEP digitless
+# family (CU/CO/CG/PAH) are registered engine codes.
+
+
+def test_category_from_code_concrete_grade_not_column():
+    # Three-digit K codes are the standard Indonesian mutu-beton family —
+    # never columns (K1/K2/K-01 stay columns).
+    assert category_from_code("K-225") == "concrete_grade"
+    assert category_from_code("K-250") == "concrete_grade"
+    assert category_from_code("K-275") == "concrete_grade"
+    assert category_from_code("K1") == "column"
+    assert category_from_code("K-01") == "column"
+
+
+def test_category_from_code_mep_digitless():
+    assert category_from_code("CU") == "electrical_fixture"
+    assert category_from_code("CO") == "plumbing_fixture"
+    assert category_from_code("CG") == "plumbing_fixture"
+    assert category_from_code("PAH") == "pipe"
+    assert category_from_code("KUSEN") == "door_frame"
+
+
+def test_extract_item_code_mep_digitless():
+    assert extract_item_code("CU") == "CU"
+    assert extract_item_code("CO") == "CO"
+    assert extract_item_code("CG") == "CG"
+    assert extract_item_code("PAH") == "PAH"
+    assert extract_item_code("KUSEN") == "KUSEN"
+    # Free text stays rejected even when it embeds a digitless-looking word.
+    assert extract_item_code("JALAN") is None
+    assert extract_item_code("DENAH") is None
+
+
+def test_name_formatter_new_cycle_p1_categories():
+    assert name_formatter(category="concrete_grade", code="K-225") == "Mutu Beton K-225"
+    assert name_formatter(category="floor_finish", code="F1") == "Lantai Keramik F1"
+    assert name_formatter(category="door_frame", code="KUS1") == "Kusen Aluminium KUS1"
+    # Code is required — no canonical name invented without it.
+    assert name_formatter(category="concrete_grade") is None
+    assert name_formatter(category="floor_finish") is None
+    assert name_formatter(category="door_frame") is None
+
+
 def test_taxonomy_registry_patterns_accept_golden_codes():
     for code, category in (
         ("K1", "column"), ("K2", "column"), ("B2", "beam"), ("G1", "beam"),

@@ -36,6 +36,7 @@ from urllib import error, request
 
 from .models import WorkItemCandidate
 from .taxonomy import (
+    _DIGITLESS_CODE_CATEGORY,
     dimensions_text,
     extract_item_code,
 )
@@ -101,6 +102,12 @@ MAX_FEW_SHOT_PER_CATEGORY = 5
 # Item-code grammar (Master Plan §4.2 L4).
 _CODE_GRAMMAR = re.compile(r"^[A-Z]{1,5}-?\d{1,3}[A-Z]?$")
 
+# Cycle-002 P1: digitless element type codes the engine accepts (BL,
+# PEDESTAL, RAFTER, WF, CU, CO, CG, PAH, KUSEN, …).  The AI validator must
+# never accept a code the engine rejects, so the single source of truth is
+# the engine's taxonomy `_DIGITLESS_CODE_CATEGORY` — not a duplicated list.
+_REGISTERED_DIGITLESS_CODES = frozenset(_DIGITLESS_CODE_CATEGORY)
+
 # Cycle-002 C2-4: dimensions that count as "connected" for an item — the same
 # set the M4 dimension-linking metric uses.  An item whose engine/human
 # verified facts carry one of these fields has connected dimensions, so it is
@@ -110,12 +117,17 @@ _DIMENSION_FIELDS = frozenset(
 )
 
 # Canonical vocabulary for AI proposals — the engine's taxonomy registry keys.
+# Cycle-002 P1: completed for parity with the engine _REGISTRY — kuda_kuda,
+# trekstang, water_tank, concrete_grade, floor_finish, door_frame (kusen) were
+# missing; "roof"/"stair" were never registry keys and are removed so the AI
+# can only propose categories the engine can actually classify.
 _ALLOWED_CATEGORY_VOCABULARY = frozenset(
     {
         "column", "beam", "slab", "foundation", "sloof", "wall",
-        "door", "window", "door_window_assembly", "ceiling_type",
-        "steel_profile", "gording", "pipe", "kusen", "roof",
-        "stair", "lighting_fixture", "electrical_fixture",
+        "door", "window", "door_frame", "door_window_assembly", "ceiling_type",
+        "steel_profile", "gording", "kuda_kuda", "pipe", "trekstang",
+        "floor_finish", "concrete_grade", "water_tank",
+        "lighting_fixture", "electrical_fixture",
         "fire_safety_fixture", "hvac_fixture", "plumbing_fixture",
     }
 )
@@ -595,7 +607,13 @@ def validate_quantity_proposal(
         }
     type_code = proposal.get("type_code")
     if type_code is not None and str(type_code).strip():
-        if not _CODE_GRAMMAR.fullmatch(str(type_code).strip()):
+        code_value = str(type_code).strip()
+        # Cycle-002 P1: the validator accepts a type_code when EITHER the
+        # Master Plan §4.2 numeric grammar matches OR the code is a registered
+        # engine digitless code (BL/PEDESTAL/RAFTER/WF/CU/CO/CG/PAH/KUSEN…).
+        # Free text ("JALAN") still fails because it is not in the engine
+        # dictionary — the AI validator and the engine share one source.
+        if not (_CODE_GRAMMAR.fullmatch(code_value) or code_value in _REGISTERED_DIGITLESS_CODES):
             return {
                 "valid": False,
                 "reason": "type_code does not match Master Plan §4.2 L4 grammar",
@@ -638,7 +656,9 @@ def build_assist_prompt(
         "category WAJIB salah satu dari vocabulary engine: "
         + ", ".join(sorted(_ALLOWED_CATEGORY_VOCABULARY))
         + ". "
-        "type_code mengikuti grammar [A-Z]{1,5}-?\\d{1,3}[A-Z]? (contoh: K1, PC1, WF1). "
+        "type_code mengikuti grammar [A-Z]{1,5}-?\\d{1,3}[A-Z]? atau kode "
+        "digitless terdaftar engine (contoh: K1, PC1, WF1, BL, CU, PAH, KUSEN). "
+        "JANGAN mengusulkan kode yang tidak terdaftar. "
         "evidence_refs WAJIB berisi minimal satu ref yang disediakan pada konteks "
         "(evidence dari JSON-1: bbox + page). DILARANG mengarang evidence. "
         "DILARANG mengisi count, volume, result, source_authority. "

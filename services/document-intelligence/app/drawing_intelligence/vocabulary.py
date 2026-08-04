@@ -8,6 +8,7 @@ from typing import Any
 from .dem_adapter import iter_observations, normalize_dem_bbox
 from .models import PageIntelligence, SheetSemanticProfile, VocabularyEntry
 from .taxonomy import (
+    _DIGITLESS_CODE_CATEGORY,
     category_from_code,
     label_looks_like_document_noise,
     parse_inline_dimensions,
@@ -34,6 +35,13 @@ def canonical_key(value: str | None) -> str | None:
     match = _CODE_RE.search(upper)
     if match:
         return re.sub(r"[.\s]+", "", match.group(1).upper())
+    # Cycle-002 P1: digitless MEP/structural codes (CU, CO, CG, PAH, KUSEN,
+    # BL, WF, …) are real element type codes when the label IS exactly the
+    # code.  Free text ("JALAN", "DENAH") never matches because the taxonomy
+    # dictionary only registers the bounded element family.
+    stripped = upper.strip(" ():[]-.")
+    if stripped in _DIGITLESS_CODE_CATEGORY:
+        return stripped
     return None
 
 

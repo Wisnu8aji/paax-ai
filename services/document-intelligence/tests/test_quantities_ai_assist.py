@@ -253,6 +253,47 @@ def test_bad_type_code_grammar_rejected():
     assert "type_code does not match" in result["reason"]
 
 
+# Cycle-002 P1: the AI validator must accept the engine's registered digitless
+# codes (BL/PEDESTAL/RAFTER/WF/CU/CO/CG/PAH/KUSEN…) while still rejecting
+# arbitrary free text — one source of truth, the engine taxonomy dictionary.
+
+
+def test_digitless_type_code_registered_accepted():
+    decision = make_decision()
+    for code in ("BL", "PEDESTAL", "RAFTER", "WF", "CU", "CO", "CG", "PAH", "KUSEN"):
+        result = validate_quantity_proposal(
+            decision=decision,
+            proposal={"category": "beam", "type_code": code, "evidence_refs": ["ev-label-k1-1"]},
+            supplied_evidence_refs={"ev-label-k1-1"},
+        )
+        assert result["valid"] is True, f"{code} should be accepted"
+
+
+def test_digitless_type_code_free_text_rejected():
+    decision = make_decision()
+    for code in ("JALAN", "DENAH", "CATATAN", "RANDOMWORD"):
+        result = validate_quantity_proposal(
+            decision=decision,
+            proposal={"category": "beam", "type_code": code, "evidence_refs": ["ev-label-k1-1"]},
+            supplied_evidence_refs={"ev-label-k1-1"},
+        )
+        assert result["valid"] is False, f"{code} must stay rejected"
+
+
+def test_new_engine_categories_accepted_in_ai_vocabulary():
+    decision = make_decision()
+    for category in (
+        "concrete_grade", "floor_finish", "door_frame", "kuda_kuda",
+        "trekstang", "water_tank",
+    ):
+        result = validate_quantity_proposal(
+            decision=decision,
+            proposal={"category": category, "evidence_refs": ["ev-label-k1-1"]},
+            supplied_evidence_refs={"ev-label-k1-1"},
+        )
+        assert result["valid"] is True, f"category {category} should be accepted"
+
+
 def test_category_outside_taxonomy_rejected():
     decision = make_decision()
     result = validate_quantity_proposal(

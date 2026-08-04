@@ -68,6 +68,20 @@ def _category_is_compatible(category: str, semantic: SheetSemanticProfile) -> bo
             "floor_plan", "door_window_plan", "partition_plan", "ceiling_plan",
             "finish_plan", "roof_plan",
         }
+    if category == "concrete_grade":
+        # Cycle-002 P1/P2: mutu beton (K-225/K-250/K-275) appears on
+        # structural detail sheets (page-0035 DETAIL STANDARD UNTUK PEKERJAAN
+        # STRUKTUR) and structural schedules — never on electrical plans.
+        return semantic.discipline == "structure" or semantic.drawing_type in {
+            "detail", "schedule", "column_plan", "beam_plan", "slab_plan",
+            "foundation_plan",
+        }
+    if category == "door_frame":
+        # Cycle-002 P1: kusen is architectural — DETAIL KUSEN sheets,
+        # door/window plans, and finish plans.
+        return semantic.discipline == "architecture" or semantic.drawing_type in {
+            "door_window_plan", "detail", "finish_plan", "floor_plan",
+        }
     if category == "lighting_fixture":
         return semantic.drawing_type == "lighting_plan"
     if category == "electrical_fixture":

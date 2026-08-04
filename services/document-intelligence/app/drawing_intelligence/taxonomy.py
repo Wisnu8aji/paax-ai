@@ -50,12 +50,21 @@ _REGISTRY: dict[str, WorkTaxonomy] = {
     "pipe": WorkTaxonomy(
         "pipe", "plumbing", "Pipa", "Pipa",
         "Saluran pipa untuk air, udara, atau bahan lainnya.",
-        "line", ("diameter",), re.compile(r"^(?:PIPA|P)-?\d{0,3}[A-Z]?$", re.I),
+        "line", ("diameter",), re.compile(r"^(?:PIPA|PAH|P)-?\d{0,3}[A-Z]?$", re.I),
     ),
     "slab": WorkTaxonomy(
         "slab", "structure", "Pelat", "Pelat lantai/atap",
         "Bidang struktur horizontal yang membentuk lantai atau atap.",
         "area", ("thickness",), re.compile(r"^(?:PL|SLAB|P|S)-?\d{1,3}[A-Z]?$", re.I),
+    ),
+    # Cycle-002 P2: mutu beton (K-225/K-250/K-275) on structural detail
+    # sheets (page-0035, evidence ev-label-concrete-grade).  Three-digit K
+    # codes are the standard Indonesian concrete-grade family (K-225, K-250,
+    # K-300, …); single/two-digit K codes stay columns (K1, K2, K-01).
+    "concrete_grade": WorkTaxonomy(
+        "concrete_grade", "structure", "Mutu Beton", "Mutu beton / kuat tekan",
+        "Kualitas mutu beton (K-225, K-250, K-275, …) pada gambar struktur.",
+        "object", ("dimensions",), re.compile(r"^K-?\d{3}$", re.I),
     ),
     "foundation": WorkTaxonomy(
         "foundation", "structure", "Fondasi", "Fondasi bangunan",
@@ -82,10 +91,28 @@ _REGISTRY: dict[str, WorkTaxonomy] = {
         "Satu unit bukaan yang menggabungkan daun pintu dan bidang jendela.",
         "object", ("dimensions",), re.compile(r"^PJ-?\d{1,3}[A-Z]?$", re.I),
     ),
+    # Cycle-002 P1/P2: kusen (door frame) per Master Plan §4.2 naming
+    # dictionary — "Kusen Aluminium K1".  KUS/KSN prefixes keep kusen codes
+    # from colliding with column K codes; the digitless "KUSEN" label itself
+    # resolves via _DIGITLESS_CODE_CATEGORY.
+    "door_frame": WorkTaxonomy(
+        "door_frame", "architecture", "Kusen", "Kusen pintu/jendela",
+        "Rangka bukaan pintu atau jendela (kusen).",
+        "object", ("dimensions",), re.compile(r"^(?:KUS|KSN)-?\d{0,3}[A-Z]?$", re.I),
+    ),
     "ceiling_type": WorkTaxonomy(
         "ceiling_type", "architecture", "Tipe Plafon", "Plafon",
         "Jenis bidang plafon yang ditandai pada rencana plafon.",
         "area", (), re.compile(r"^C-?\d{1,3}[A-Z]?$", re.I),
+    ),
+    # Cycle-002 P2: penutup lantai (floor finish) on finish_plan sheets —
+    # "Denah Pola Lantai" F1/F2 (keramik/homogeneous tile).  Sheet-context
+    # (finish_plan) outranks the bare-F foundation prefix; the category is
+    # never selected by code grammar alone (not in _REGISTRY_SCAN_ORDER).
+    "floor_finish": WorkTaxonomy(
+        "floor_finish", "architecture", "Lantai", "Penutup lantai / finishing",
+        "Jenis penutup lantai (keramik, granit, homogeneous tile) pada rencana pola lantai.",
+        "area", (), re.compile(r"^F-?\d{1,3}[A-Z]?$", re.I),
     ),
     "steel_profile": WorkTaxonomy(
         "steel_profile", "structure", "Profil Baja", "Elemen baja struktur",
@@ -105,7 +132,7 @@ _REGISTRY: dict[str, WorkTaxonomy] = {
     "electrical_fixture": WorkTaxonomy(
         "electrical_fixture", "electrical", "Perlengkapan Elektrikal", "Titik listrik",
         "Perlengkapan seperti sakelar, stop kontak, panel, atau titik daya.",
-        "object", (), re.compile(r"^(?:STK|SK|SW|P|LP|EP)-?\d{0,3}[A-Z]?$", re.I),
+        "object", (), re.compile(r"^(?:STK|SK|SW|CU|P|LP|EP)-?\d{0,3}[A-Z]?$", re.I),
     ),
     "fire_safety_fixture": WorkTaxonomy(
         "fire_safety_fixture", "fire_safety", "Perlengkapan Proteksi Kebakaran", "Peralatan keselamatan kebakaran",
@@ -120,7 +147,7 @@ _REGISTRY: dict[str, WorkTaxonomy] = {
     "plumbing_fixture": WorkTaxonomy(
         "plumbing_fixture", "plumbing", "Perlengkapan Plumbing", "Peralatan air dan sanitasi",
         "Perlengkapan sanitasi atau titik jaringan air.",
-        "object", (), re.compile(r"^(?:WC|FD|CO|WST|UR|PL)-?\d{0,3}[A-Z]?$", re.I),
+        "object", (), re.compile(r"^(?:WC|FD|CO|CG|WST|UR|PL)-?\d{0,3}[A-Z]?$", re.I),
     ),
     # P5: bak kontrol / water tank on drainage plans (page-0086 "DENAH
     # SALURAN AIR HUJAN" table "BAK KONTROL / 60x60 | 60x60 | 60x60").
@@ -440,6 +467,11 @@ _NAMING_DICTIONARY: dict[str, tuple[str, tuple[str, ...]]] = {
     "hvac_fixture": ("Peralatan Tata Udara {code}", ("code",)),
     "plumbing_fixture": ("Perlengkapan Plumbing {code}", ("code",)),
     "water_tank": ("Bak Kontrol {code}", ("code",)),
+    # Cycle-002 P1: new canonical entries — mutu beton (K-225), penutup lantai
+    # (F1/F2 keramik), kusen (KUS/KSN).  All follow Master Plan §4.2 templates.
+    "concrete_grade": ("Mutu Beton {code}", ("code",)),
+    "floor_finish": ("Lantai {jenis} {code}", ("code",)),
+    "door_frame": ("Kusen {jenis} {code}", ("code",)),
 }
 
 # Deterministic scan order for code → category.  Ambiguous single-letter
@@ -453,21 +485,28 @@ _REGISTRY_SCAN_ORDER: tuple[str, ...] = (
     "slab",                   # PL / SLAB / S
     "steel_profile",          # WF / KD
     "trekstang",              # TS (tension rod atap)
+    "concrete_grade",         # K-225 / K-250 / K-275 (3-digit K = mutu beton)
     "column",                 # K / C
     "beam",                   # B / G / RB / CG / CB / BL / SL
     "wall",                   # WALL / DW / DND
     "door",                   # D / P
+    "door_frame",             # KUS / KSN (kusen)
     "ceiling_type",           # C
     "lighting_fixture",       # L / TL / DL / SL / LP
-    "electrical_fixture",     # STK / SK / SW / P / LP / EP
+    "electrical_fixture",     # STK / SK / SW / CU / P / LP / EP
     "fire_safety_fixture",    # APAR / FA / FD / HD / HYD
     "hvac_fixture",           # AC / FCU / AHU / EF
-    "plumbing_fixture",       # WC / FD / CO / WST / UR / PL
+    "plumbing_fixture",       # WC / FD / CO / CG / WST / UR / PL
 )
 
 # Digitless codes are legal element type codes in the wild ("BL" on page-0050,
 # "GORDING", "PIPA").  They only resolve when the label is exactly the code,
 # so "JALAN" or "DENAH" never become items.
+# Cycle-002 P1: the MEP digitless family (CU/CO/CG/PAH) joins the dictionary —
+# CU (bus bar / breaker on electrical sheets), CO/CG (clean-out / drain
+# fittings on air-kotor sheets), PAH (pipa air hujan).  CO also matches the
+# plumbing_fixture code pattern; explicit registration keeps the AI validator
+# and the engine on the same single source of truth.
 _DIGITLESS_CODE_CATEGORY: dict[str, str] = {
     "BL": "beam",
     "GORDING": "gording",
@@ -481,6 +520,11 @@ _DIGITLESS_CODE_CATEGORY: dict[str, str] = {
     "RAFTER": "steel_profile",
     "PEDESTAL": "foundation",
     "BAK KONTROL": "water_tank",
+    "CU": "electrical_fixture",
+    "CO": "plumbing_fixture",
+    "CG": "plumbing_fixture",
+    "PAH": "pipe",
+    "KUSEN": "door_frame",
 }
 
 # ─── R1: golden definition resolution (K0 golden set) ─────────────────────────
@@ -813,13 +857,24 @@ def name_formatter(
         if not code:
             return None
         return template.format(code=code)
+    # Cycle-002 P1: penutup lantai (F1/F2 keramik) and kusen (KUS/KSN).
+    # Like door/window, the material/jenis has a deterministic default and the
+    # code is required — the canonical name is never invented without a code.
+    if category == "floor_finish":
+        if not code:
+            return None
+        return template.format(jenis=jenis or "Keramik", code=code)
+    if category == "door_frame":
+        if not code:
+            return None
+        return template.format(jenis=jenis or "Aluminium", code=code)
     # R3 fixture/MEP + roof-steel family: {code}-only templates.  A missing
     # code means the item cannot be named canonically (raw label fallback).
     if category in {
         "gording", "kuda_kuda", "pipe", "trekstang",
         "door_window_assembly", "lighting_fixture", "electrical_fixture",
         "fire_safety_fixture", "hvac_fixture", "plumbing_fixture",
-        "water_tank",
+        "water_tank", "concrete_grade",
     }:
         if not code:
             return None
