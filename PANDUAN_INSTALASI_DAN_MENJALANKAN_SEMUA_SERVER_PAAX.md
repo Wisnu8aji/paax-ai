@@ -206,6 +206,13 @@ Jangan membuat `internal-service.key`, `live-test-key`, atau `.launch.bat`. Meka
 
 Buka aplikasi hanya melalui `http://127.0.0.1:3000`.
 
+### 10.1 Host resmi: 127.0.0.1 (bukan localhost)
+
+- **Host resmi = `http://127.0.0.1:3000`.** Server PAAX hanya bind `127.0.0.1`, dan browser memperlakukan `localhost` sebagai origin terpisah dengan cache/service-worker sendiri.
+- **PENTING — `NEXT_PUBLIC_USE_DB=true` WAJIB ada di `apps/web/.env.local`.** Tanpa variabel ini frontend memakai backend `localStorage` (data browser lokal kosong/lama) sehingga proyek PLHUT hilang atau tampil versi lama tanpa update. Dengan `true`, frontend memakai DB API (`/api/db-projects`) yang berisi PLHUT + klasifikasi terbaru. Setelah mengubah env ini, wajib `pnpm --dir apps/web build` ulang lalu restart stack.
+- **`DOCUMENT_INTELLIGENCE_URL=http://127.0.0.1:8083`** (bukan 8002) di `apps/web/.env.local` — port 8002 sudah tidak dipakai; jika salah, modul Review/Quantities tidak mendapat data.
+- Bila sebelumnya membuka `localhost:3000` dan melihat versi lama: lakukan hard refresh (Ctrl+Shift+R) atau buka `127.0.0.1:3000` setelah restart. Cache browser per-origin dapat menyajikan bundle lama.
+
 ## 11. Verifikasi identitas — wajib
 
 ```powershell
