@@ -2,7 +2,7 @@
 
 Panduan ini adalah satu-satunya alur portable yang boleh digunakan untuk menjalankan PAAX PLHUT pada komputer ini. Panduan berlaku bagi pengguna maupun AI executor.
 
-**Revisi panduan:** integrasi PDF binary worker, canonical artifact PLHUT, serta thumbnail nyata Review/Analyze/Sheets.
+**Revisi panduan:** integrasi PDF binary worker, canonical artifact PLHUT, thumbnail nyata Review/Analyze/Sheets, acceptance manual compositor GPU viewer Gambar Kerja, **perbaikan blur resolusi (Tier 1: surface buffer 8192 + tile density 8 + detail pass proaktif 80 ms + thumbnail 800 px + DPI 300)**, **engine klasifikasi quantities (K0–K4 + bridge balok/kolom)**, dan **AI-assist live melalui endpoint opencode-go** (bukan api.deepseek.com).
 
 Status `COMPLETED` pada file feedback bukan pengganti release gate. Versi remediasi hanya boleh dijalankan untuk audit setelah seluruh perubahannya sudah di-commit, build production dibuat dari commit tersebut, dan worktree kembali bersih.
 
@@ -86,7 +86,12 @@ Jangan memakai nomor commit lama yang ditulis pada panduan atau laporan sebagai 
 ```text
 apps/web/src/components/drawing-intelligence/workspace/canvas/pdf-binary-cache.ts
 apps/web/src/components/drawing-intelligence/workspace/canvas/pdf-page-layer.tsx
+apps/web/src/components/drawing-intelligence/workspace/canvas/pdf-tile-compositor.ts
+apps/web/src/components/drawing-intelligence/workspace/canvas/pdf-tile-compositor-webgl.ts
+apps/web/src/components/drawing-intelligence/workspace/canvas/pdf-tile-compositor-canvas2d.ts
+apps/web/src/components/drawing-intelligence/workspace/canvas/pdf-tile-coverage.ts
 apps/web/src/components/drawing-intelligence/workspace/canvas/pdf-tile-pool.ts
+apps/web/src/components/drawing-intelligence/workspace/canvas/pdf-tile-worker-queue.ts
 apps/web/src/components/drawing-intelligence/workspace/canvas/pdf-tile.worker.ts
 services/db/src/paax_db/reference_bootstrap.py
 services/document-intelligence/tests/test_phase_c_thumbnails.py
@@ -145,6 +150,7 @@ Engine dan viewer dasar tidak boleh bergantung pada AI. Untuk Command Room/AI fa
 - Jangan taruh key di source, prompt, log, screenshot, laporan, atau `.env.example`.
 - Setelah environment berubah, stop dan start seluruh stack.
 - AI hanya membantu klasifikasi/proposal/penjelasan; angka tetap berasal dari Core Engine.
+- **AI-assist quantities** memakai `PAAX_TEST_API_KEY` (key opencode-go) dengan endpoint `https://opencode.ai/zen/go/v1/chat/completions` dan User-Agent `curl/8.5.0` (tanpa UA ini, Cloudflare mengembalikan HTTP 403 browser_signature_banned; endpoint `api.deepseek.com` lama tidak cocok dengan key ini). Model AI yang diizinkan: `deepseek-v4-flash` saja.
 
 ## 8. Backup dan migration database
 
@@ -322,6 +328,30 @@ Folder tersebut bukan database pengguna dan tidak perlu disalin manual. Namun ja
 
 Jangan mengganti empty, blocked, needs-review, atau missing-evidence dengan data dummy.
 
+### 14.1 Acceptance manual viewer Gambar Kerja setelah perubahan frontend
+
+Setelah perubahan pada `drawing-canvas`, `pdf-page-layer`, compositor, coverage, tile pool, atau worker, pemeriksaan UI awal di atas belum cukup. Jalankan seluruh instruksi manual rinci berikut:
+
+```text
+G:\paax-ai-contextual-integration\docs\plans\2026-08-02-manual-acceptance-gambar-kerja-viewer-flicker-right-crop.md
+```
+
+Minimum gate manual:
+
+1. fit awal dan sisi kanan halaman utuh;
+2. 12 gerakan pan kiri/kanan tanpa blank atau kedipan;
+3. zoom in/out dan fit tanpa crop kanan;
+4. navigasi A→B→A tanpa aspect atau frame dokumen lama;
+5. resize dan DPR 2 bila tersedia;
+6. WebGL context loss memperlihatkan fallback lalu restore atau failover dengan aman;
+7. Console/Network bebas error viewer dan HTTP 4xx/5xx relevan.
+
+Pada kondisi stabil, elemen `[data-testid="pdf-page-layer"]` wajib melaporkan `data-coverage-ready="true"`, `data-coverage-ratio` minimal `0.99`, `data-materialized-tile-count` tidak kurang dari `data-committed-tile-count`, committed tile lebih dari nol, dan `data-context-lost="false"`. Renderer normal di browser yang mendukungnya adalah `webgl2`; `canvas2d` merupakan fallback yang sah.
+
+Jika `data-coverage-ready="true"` sementara tile belum seluruhnya termaterialisasi, viewport menjadi putih, sisi kanan hilang, atau satu kedipan dapat diulang, hasilnya **FAIL**. Jangan menutupi kegagalan dengan thumbnail dummy, delay tambahan, atau menghapus data/cache pengguna.
+
+Validasi terhadap working tree yang belum di-commit hanya boleh disebut **manual pre-commit validation**. Runtime tersebut tidak boleh dinyatakan release-ready karena `runtime_identity.dirty` masih `true`. Simpan branch, HEAD, `git status --short`, screenshot, diagnostik, dan hasil pada folder bukti yang ditentukan oleh instruksi rinci.
+
 ## 15. Menghentikan semua server
 
 ```powershell
@@ -374,6 +404,15 @@ Ulangi verifikasi enam health endpoint.
 - periksa `db-plhut.err.log` dan `document-intelligence.err.log`;
 - pastikan artifact PDF canonical lolos header `%PDF-`, checksum, dan 88 halaman;
 - jangan menghapus database, menambah thumbnail dummy, atau menjalankan script live-test sebagai pengganti startup resmi.
+
+### Viewer Gambar Kerja berkedip atau sisi kanan terpotong
+
+- pastikan build web dibuat ulang setelah perubahan viewer dan browser sudah hard refresh;
+- pastikan runtime berasal dari `G:\paax-ai-contextual-integration`, bukan worktree lama;
+- jalankan acceptance manual Bagian 14.1 dan simpan diagnostik `coverage`, committed/materialized tile, renderer, upload failure, dan context loss;
+- jika fallback hilang ketika `coverage-ready=false`, atau `coverage-ready=true` saat materialized tile kurang dari committed tile, hentikan acceptance dan laporkan sebagai kegagalan kritis;
+- jangan memperbaiki gejala dengan timeout/delay arbitrer, menyembunyikan fallback lebih cepat, mengganti PDF dengan gambar dummy, atau mematikan jalur GPU secara permanen;
+- jangan menyatakan masalah selesai hanya karena satu halaman tampak benar saat diam; pan, zoom, fit, resize, A→B→A, dan context loss wajib diperiksa.
 
 ### Build web tidak tersedia
 
