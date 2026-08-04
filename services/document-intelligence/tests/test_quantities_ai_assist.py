@@ -287,6 +287,36 @@ def test_only_deepseek_v4_flash_model_allowed():
         QuantitiesAiAssistClient(api_key="fake-key", model="gemini-2.5-flash")
 
 
+def test_default_api_url_is_opencode_go_endpoint():
+    # Root-cause regression (cycle-002): DEFAULT_API_URL pointed at
+    # api.deepseek.com, which 401s the PAAX_TEST_API_KEY (issued for
+    # opencode.ai/zen/go/v1). The default must be the opencode-go
+    # chat-completions endpoint so `QuantitiesAiAssistClient.from_env()`
+    # hits the provider the key is valid for.
+    assert DEFAULT_API_URL == "https://opencode.ai/zen/go/v1/chat/completions"
+    assert "/chat/completions" in DEFAULT_API_URL
+    assert "api.deepseek.com" not in DEFAULT_API_URL
+
+
+def test_client_sends_cloudflare_safe_user_agent():
+    # Second root cause: opencode.ai is behind Cloudflare and returns
+    # HTTP 403 Error 1010 for the default Python-urllib UA. The client must
+    # send a curl-style UA so the WAF lets the request through.
+    from app.drawing_intelligence.quantities_ai_assist import DEFAULT_USER_AGENT
+
+    assert DEFAULT_USER_AGENT.startswith("curl/")
+    calls: list = []
+    client = QuantitiesAiAssistClient(
+        api_key="fake",
+        urlopen=fake_urlopen_factory({"choices": [{"message": {"content": '{"category": "column"}'}}]}, calls=calls),
+    )
+    assert client.generate_json(system_prompt="s", user_prompt="u") == {"category": "column"}
+    assert calls, "expected at least one captured request"
+    sent_headers = {k.lower(): v for k, v in calls[0].headers.items()}
+    assert sent_headers.get("user-agent") == DEFAULT_USER_AGENT
+    assert "Python-urllib" not in sent_headers.get("user-agent", "")
+
+
 def test_client_never_leaks_key_in_repr():
     client = QuantitiesAiAssistClient(api_key="supersecret-value-12345")
     rendered = repr(client)

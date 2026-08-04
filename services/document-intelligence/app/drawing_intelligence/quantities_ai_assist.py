@@ -50,7 +50,16 @@ from app.perception.ai_assist.contracts import (
 QUANTITY_ASSIST_MODEL = "deepseek-v4-flash"
 SUPPORTED_ASSIST_MODELS = frozenset({"deepseek-v4-flash"})
 PAAX_API_KEY_ENV = "PAAX_TEST_API_KEY"
-DEFAULT_API_URL = "https://api.deepseek.com/chat/completions"
+# OpenAI-compatible chat-completions endpoint for the PAAX opencode-go
+# provider.  The PAAX_TEST_API_KEY is issued for opencode.ai/zen/go/v1, so the
+# legacy api.deepseek.com endpoint would 401 — keep this URL in sync with the
+# key (00_governance/.env).  Model stays deepseek-v4-flash ONLY (Owner
+# directive, Master Plan §4.4).
+DEFAULT_API_URL = "https://opencode.ai/zen/go/v1/chat/completions"
+# opencode.ai sits behind Cloudflare, which returns HTTP 403 Error 1010
+# ("browser_signature_banned") for the default Python-urllib user-agent.
+# A curl-style UA passes the WAF (verified: probe 200 OK, deepseek-v4-flash).
+DEFAULT_USER_AGENT = "curl/8.5.0"
 PROMPT_VERSION = "quantities-assist-v1"
 DEFAULT_TIMEOUT_SECONDS = 30.0
 DEFAULT_MAX_RETRIES = 1  # worker retry contract: max 1 retry per dispatch
@@ -242,6 +251,7 @@ class QuantitiesAiAssistClient:
         sleep: Callable[[float], None] = time.sleep,
         max_retries: int = DEFAULT_MAX_RETRIES,
         usage_logger: Callable[..., Any] | None = None,
+        user_agent: str = DEFAULT_USER_AGENT,
     ) -> None:
         if model not in SUPPORTED_ASSIST_MODELS:
             raise ValueError(
@@ -260,6 +270,7 @@ class QuantitiesAiAssistClient:
         self._sleep = sleep
         self.max_retries = max_retries
         self._usage_logger = usage_logger
+        self.user_agent = user_agent
 
     @classmethod
     def from_env(
@@ -296,6 +307,7 @@ class QuantitiesAiAssistClient:
                 "Accept": "application/json",
                 "Authorization": f"Bearer {self._api_key}",
                 "Content-Type": "application/json",
+                "User-Agent": self.user_agent,
             },
             method="POST",
         )
@@ -980,6 +992,7 @@ __all__ = [
     "DEFAULT_API_URL",
     "DEFAULT_MAX_RETRIES",
     "DEFAULT_TIMEOUT_SECONDS",
+    "DEFAULT_USER_AGENT",
     "MIN_FEW_SHOT_PER_CATEGORY",
     "MAX_FEW_SHOT_PER_CATEGORY",
     "PAAX_API_KEY_ENV",
