@@ -2,7 +2,9 @@
 
 Panduan ini adalah satu-satunya alur portable yang boleh digunakan untuk menjalankan PAAX PLHUT pada komputer ini. Panduan berlaku bagi pengguna maupun AI executor.
 
-**Revisi panduan:** integrasi PDF binary worker, canonical artifact PLHUT, thumbnail nyata Review/Analyze/Sheets, acceptance manual compositor GPU viewer Gambar Kerja, **perbaikan blur resolusi (Tier 1: surface buffer 8192 + tile density 8 + detail pass proaktif 80 ms + thumbnail 800 px + DPI 300)**, **engine klasifikasi quantities (K0–K4 + bridge balok/kolom)**, dan **AI-assist live melalui endpoint opencode-go** (bukan api.deepseek.com).
+**Revisi panduan:** integrasi PDF binary worker, canonical artifact PLHUT, thumbnail nyata Review/Analyze/Sheets, acceptance manual compositor GPU viewer Gambar Kerja, **perbaikan blur resolusi (Tier 1: surface buffer 8192 + tile density 8 + detail pass proaktif 80 ms + thumbnail 800 px + DPI 300 + normalisasi width 800 di frontend)**, **engine klasifikasi quantities (K0–K4 + bridge balok/kolom + P1–P5: sinkronisasi AI-validator, sheet-context override, joiner MEP/profil, trigger AI = konfirmasi, dedup lintas konteks)**, dan **AI-assist live melalui endpoint opencode-go** (bukan api.deepseek.com).
+
+> **Versi terpasang saat ini (2026-08-04):** commit `642898ff` (puncak P1–P5) — verifikasi: 6/6 health, DB PLHUT 88 halaman revision `0039_calculation_receipts`, PDF canonical 25,8 MB, thumbnail 800px, Quantities engine baru (106 work items; M1/M5 PASS; M4 78,7%; M8 50,9% — target bertahap §9.2). Untuk menampilkan hasil engine terbaru pada tab Quantities, jalankan **Analyze** ulang pada proyek PLHUT (data persisted di DB berasal dari analisis 30-Jul sebelum engine P1–P5; kode engine sudah terpasang dan siap dipakai).
 
 Status `COMPLETED` pada file feedback bukan pengganti release gate. Versi remediasi hanya boleh dijalankan untuk audit setelah seluruh perubahannya sudah di-commit, build production dibuat dari commit tersebut, dan worktree kembali bersih.
 
