@@ -11,6 +11,7 @@ from .taxonomy import (
     humanize_missing_information,
     is_user_presentable,
     level_display_name,
+    name_formatter,
     presentability_reasons,
     resolve_user_category,
     suppression_reasons,
@@ -268,6 +269,9 @@ def build_human_delivery(analysis: DrawingPackageAnalysis) -> dict[str, Any]:
         elif item.count_authority == "human_confirmed":
             status, status_label = "human_confirmed", "Dikonfirmasi reviewer"
         dimensions = dimensions_text(item.attributes)
+        canonical_name = name_formatter(
+            category=resolved_category, code=item.code, level=level,
+        )
         rendered = {
             "work_item_id": item.work_item_id,
             "category": resolved_category,
@@ -277,7 +281,9 @@ def build_human_delivery(analysis: DrawingPackageAnalysis) -> dict[str, Any]:
             "technical_name": taxonomy.technical_name,
             "plain_name": taxonomy.plain_name,
             "plain_description": taxonomy.plain_description,
-            "display_name": f"{taxonomy.technical_name} {item.code}".strip() if item.code else taxonomy.technical_name,
+            "display_name": canonical_name or (
+                f"{taxonomy.technical_name} {item.code}".strip() if item.code else taxonomy.technical_name
+            ),
             "level": None if level == "unknown" else level,
             "level_label": level_display_name(level),
             "status": status,

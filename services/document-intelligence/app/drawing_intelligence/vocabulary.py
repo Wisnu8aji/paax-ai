@@ -7,6 +7,7 @@ from typing import Any
 
 from .dem_adapter import iter_observations, normalize_dem_bbox
 from .models import PageIntelligence, SheetSemanticProfile, VocabularyEntry
+from .taxonomy import category_from_code, parse_inline_dimensions
 from .text_index import normalize_text
 
 _CODE_RE = re.compile(r"\b([A-Z]{1,5}(?:[.-]?[A-Z0-9]{0,5})?\d[A-Z0-9.-]*|[A-Z]{1,4}\d{1,3}[A-Z]?)\b", re.I)
@@ -72,24 +73,10 @@ def infer_category(key: str, *, title: str = "", raw: str = "") -> str:
     ):
         return "plumbing_fixture"
 
-    # Project code grammar is a fallback only after explicit context.
-    if re.fullmatch(r"BV-?\d+[A-Z]?", key):
-        return "window"
-    if re.fullmatch(r"PC-?\d+[A-Z]?", key):
-        return "foundation"
-    if re.fullmatch(r"S-?\d+[A-Z]?", key):
-        return "slab"
-    if re.fullmatch(r"(?:WF|KD)-?\d+[A-Z]?", key) or "WF " in context:
-        return "steel_profile"
-    if re.fullmatch(r"K-?\d+[A-Z]?", key):
-        return "column"
-    if re.fullmatch(r"(?:G|B|RB|CG|CB|BL|SL)-?\d+[A-Z]?", key):
-        return "beam"
-    if re.fullmatch(r"D\d+[A-Z]?", key):
-        return "door"
-    if re.fullmatch(r"(?:W|J)\d+[A-Z]?", key):
-        return "window"
-    return "unknown"
+    # Project code grammar is a fallback only after explicit context.  The
+    # taxonomy `_REGISTRY` is the single source of code-pattern truth (K2),
+    # replacing the previous scattered raw regexes.
+    return category_from_code(key, title=title, raw=raw)
 
 
 def _bbox_distance(a, b) -> float:
@@ -108,20 +95,30 @@ def _dimension_value(row: dict[str, Any]) -> dict[str, Any] | None:
         term in normalized for term in ("PINTU", "JENDELA", "WINDOW", "DOOR")
     ):
         return None
-    match = _DIMENSION_RE.search(raw)
-    if not match:
+    # K2 deterministic inline-dimension parser (taxonomy): handles plain
+    # sections ("400 x 400 mm"), cm shorthand for lintel/latei ("Lintel 15X10"
+    # → 150×100 mm), and steel profiles ("WF 200X100X5.5X8").
+    parsed = parse_inline_dimensions(raw)
+    if not parsed:
         return None
-    first, second = int(match.group(1)), int(match.group(2))
-    unit = (match.group(3) or row.get("unit") or "mm").lower()
-    if unit == "cm":
-        first *= 10
-        second *= 10
-        unit = "mm"
-    elif unit == "m":
-        first *= 1000
-        second *= 1000
-        unit = "mm"
-    return {"width": first, "depth": second, "a": first, "b": second, "unit": unit, "raw": raw}
+    width = parsed.get("width")
+    depth = parsed.get("depth")
+    unit = parsed.get("unit") or "mm"
+    if width is not None and depth is not None:
+        return {
+            "width": width, "depth": depth, "a": width, "b": depth,
+            "unit": unit, "raw": raw, "source": parsed.get("source", "inline_text"),
+        }
+    if parsed.get("thickness") is not None:
+        thickness = parsed["thickness"]
+        return {"thickness": thickness, "unit": unit, "raw": raw, "source": parsed.get("source", "inline_thickness")}
+    if parsed.get("profile"):
+        return {
+            "profile": parsed["profile"], "b": parsed["b"], "h": parsed["h"],
+            "tw": parsed["tw"], "tf": parsed["tf"], "unit": unit,
+            "raw": raw, "source": parsed.get("source", "inline_steel_profile"),
+        }
+    return None
 
 
 def build_project_vocabulary(

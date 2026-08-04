@@ -243,6 +243,122 @@ def classify_drawing_type(title: str | None) -> str:
     return "unknown"
 
 
+# ─── K1: sheet-context → base category (deterministic, 0% AI) ────────────────
+#
+# Master Plan §4.2/§4.3: the sheet title is the strongest untapped signal for
+# the L2 base category BEFORE label-level parsing.  "DENAH KOLOM LANTAI 1"
+# → STR / column / L1; "TABEL BALOK" → beam.  This mapping is used to
+# pre-classify items and to constrain label parsing to the sheet's own
+# structural family.  It never guesses: unknown titles stay unknown.
+
+_DRAWING_TYPE_CATEGORY: dict[str, str] = {
+    "column_plan": "column",
+    "beam_plan": "beam",
+    "slab_plan": "slab",
+    "foundation_plan": "foundation",
+    "ceiling_plan": "ceiling_type",
+    "door_window_plan": "door_window_assembly",
+    "partition_plan": "wall",
+    "roof_plan": "roof",
+    "finish_plan": "floor_finish",
+    "lighting_plan": "lighting_fixture",
+    "power_plan": "electrical_fixture",
+    "fire_safety_plan": "fire_safety_fixture",
+    "hvac_plan": "hvac_fixture",
+    "plumbing_plan": "plumbing_fixture",
+    "drainage_plan": "plumbing_fixture",
+    "lightning_protection": "electrical_fixture",
+}
+
+_TITLE_CATEGORY_KEYWORDS: tuple[tuple[str, str], ...] = (
+    ("KOLOM", "column"),
+    ("BALOK", "beam"),
+    ("SLOOF", "sloof"),
+    ("SLOOP", "sloof"),
+    ("LINTEL", "beam"),
+    ("PELAT", "slab"),
+    ("SLAB", "slab"),
+    ("FOOTPLAT", "foundation"),
+    ("PONDASI", "foundation"),
+    ("FONDASI", "foundation"),
+    ("PILE CAP", "foundation"),
+    ("PLAFOND", "ceiling_type"),
+    ("PLAFON", "ceiling_type"),
+    ("CEILING", "ceiling_type"),
+    ("PINTU & JENDELA", "door_window_assembly"),
+    ("PINTU DAN JENDELA", "door_window_assembly"),
+    ("PINTU", "door"),
+    ("JENDELA", "window"),
+    ("PARTISI", "wall"),
+    ("GORDING", "gording"),
+    ("KUDA-KUDA", "kuda_kuda"),
+    ("KUDA KUDA", "kuda_kuda"),
+    ("ATAP", "roof"),
+    ("ROOF", "roof"),
+    ("TITIK LAMPU", "lighting_fixture"),
+    ("LIGHTING", "lighting_fixture"),
+    ("STOP KONTAK", "electrical_fixture"),
+    ("SAKLAR", "electrical_fixture"),
+    ("POWER PLAN", "electrical_fixture"),
+    ("AIR BERSIH", "plumbing_fixture"),
+    ("AIR KOTOR", "plumbing_fixture"),
+    ("AIR BEKAS", "plumbing_fixture"),
+    ("AIR HUJAN", "plumbing_fixture"),
+    ("PLUMBING", "plumbing_fixture"),
+    ("SANITARY", "plumbing_fixture"),
+    ("APAR", "fire_safety_fixture"),
+    ("ALARM", "fire_safety_fixture"),
+    ("DETECTOR", "fire_safety_fixture"),
+    ("HYDRANT", "fire_safety_fixture"),
+    ("DENAH AC", "hvac_fixture"),
+    ("HVAC", "hvac_fixture"),
+)
+
+# Keyword phrases that must be matched only as whole words / at word boundary;
+# e.g. "KOLOM" must not be triggered by "KOLOMNISASI" inside a note.
+_WORD_CATEGORY_KEYS = frozenset({"KOLOM", "BALOK", "PELAT", "PINTU", "JENDELA", "ATAP"})
+
+
+def sheet_context_category(*, title: str = "", drawing_type: str = "unknown") -> str:
+    """Deterministic base category from the sheet title and drawing type.
+
+    Title keywords take precedence because they are the explicit sheet
+    identity ("TABEL BALOK" is a beam schedule regardless of drawing_type).
+    The drawing type mapping is the fallback for terse titles.
+    """
+    upper = normalize_text(title or "")
+    for keyword, category in _TITLE_CATEGORY_KEYWORDS:
+        if keyword in _WORD_CATEGORY_KEYS:
+            if re.search(rf"(?<![A-Z]){re.escape(keyword)}(?![A-Z])", upper):
+                return category
+        elif keyword in upper:
+            return category
+    return _DRAWING_TYPE_CATEGORY.get(drawing_type, "unknown")
+
+
+def classify_sheet_context(
+    *,
+    title: str = "",
+    drawing_type: str | None = None,
+    discipline: str | None = None,
+) -> dict[str, Any]:
+    """K1 — sheet-context classification: discipline + category + level.
+
+    Pure deterministic engine (0% AI).  Composes existing sheet_identity
+    helpers so the sheet title yields the L1 discipline, L2 base category,
+    and spatial level BEFORE label-level parsing runs.
+    """
+    resolved_type = drawing_type or classify_drawing_type(title)
+    resolved_discipline = discipline or canonical_discipline(None, title)
+    return {
+        "title": title or None,
+        "drawing_type": resolved_type,
+        "category": sheet_context_category(title=title, drawing_type=resolved_type),
+        "discipline": resolved_discipline,
+        "level": infer_level(title),
+    }
+
+
 def infer_level(*values: str | None) -> str | None:
     """Infer a canonical spatial level without assuming a fixed building.
 
