@@ -82,6 +82,12 @@ def _category_is_compatible(category: str, semantic: SheetSemanticProfile) -> bo
         return semantic.discipline == "architecture" or semantic.drawing_type in {
             "door_window_plan", "detail", "finish_plan", "floor_plan",
         }
+    if category == "floor_finish":
+        # Cycle-002 P2: floor-finish labels (F1/F2 keramik) belong on
+        # finish_plan ("Denah Pola Lantai") sheets only.  Without this gate a
+        # correct floor_finish classification would be downgraded to unknown
+        # by the compatibility check below.
+        return semantic.drawing_type == "finish_plan" or semantic.discipline == "architecture"
     if category == "lighting_fixture":
         return semantic.drawing_type == "lighting_plan"
     if category == "electrical_fixture":
@@ -117,6 +123,9 @@ def _definition_for(
         "slab_plan": "slab",
         "door_window_plan": "door_window_assembly",
         "ceiling_plan": "ceiling_type",
+        # Cycle-002 P2: finish_plan sheet-context outranks the bare-F
+        # foundation prefix — F1/F2 on "Denah Pola Lantai" is floor finish.
+        "finish_plan": "floor_finish",
     }.get(semantic.drawing_type)
     definitions.sort(
         key=lambda item: (
@@ -171,7 +180,11 @@ def link_cross_references(
             if category_name not in {"element_labels", "symbols"}:
                 continue
             raw = str(row.get("raw") or row.get("normalized") or "")
-            key = canonical_key(str(row.get("normalized") or raw))
+            # Cycle-002 P2: DEM symbols carry a descriptive `normalized` that
+            # hides the compact code (page-0016 F1 → "Floor Homogeneous Tile
+            # 600x600mm").  Prefer the normalized key, but fall back to the
+            # raw label so F1/F2 still become floor-finish items.
+            key = canonical_key(str(row.get("normalized") or raw)) or canonical_key(raw)
             if not key or label_looks_like_document_noise(raw, key):
                 continue
             box = normalize_dem_bbox(row.get("bbox"), source)

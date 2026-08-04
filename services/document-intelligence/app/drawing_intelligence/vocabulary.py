@@ -58,6 +58,27 @@ def infer_category(key: str, *, title: str = "", raw: str = "") -> str:
     if golden and golden[0].upper() == str(key).upper():
         return golden[1]
 
+    # Cycle-002 P2: sheet-context overrides (Master Plan §4.3 K1 — the sheet
+    # title is the strongest deterministic signal, above label prefixes).
+    # 1) finish_plan → floor_finish: bare F<digits> (F1/F2 keramik) would
+    #    otherwise match the foundation prefix; the finish_plan sheet context
+    #    outranks the prefix so F1 never becomes "Pondasi Footplat".
+    if re.fullmatch(r"F-?\d{1,3}[A-Z]?", key) and any(
+        marker in context for marker in (
+            "POLA LANTAI", "FINISH PLAN", "FINISHING", "KERAMIK", "GRANIT",
+            "HOMOGENEOUS TILE", "HOMOGENOUS TILE",
+        )
+    ):
+        return "floor_finish"
+    # 2) concrete-grade evidence → concrete_grade: "Concrete Grade K-225" /
+    #    "MUTU BETON K-250" labels are mutu beton, not columns.  A bare
+    #    K-225 (no marker) still resolves via the taxonomy K-\d{3} pattern in
+    #    category_from_code, so the evidence marker is a fast-path override.
+    if re.fullmatch(r"K-?\d{3}", key) and any(
+        marker in raw_context for marker in ("CONCRETE GRADE", "MUTU BETON", "KUAT TEKAN", "MUTU")
+    ):
+        return "concrete_grade"
+
     # Explicit construction words in the actual label/definition outrank code
     # grammar.  The title is used only to disambiguate a plausible domain code;
     # it must not turn every background label on an MEP sheet into an MEP item.
@@ -191,7 +212,11 @@ def build_project_vocabulary(
             if category not in {"element_labels", "symbols"}:
                 continue
             raw = str(row.get("raw") or row.get("normalized") or "")
-            key = canonical_key(str(row.get("normalized") or raw))
+            # Cycle-002 P2: DEM symbols carry a descriptive `normalized` that
+            # hides the compact code (page-0016 F1 → "Floor Homogeneous Tile
+            # 600x600mm").  Prefer the normalized key, but fall back to the
+            # raw label so F1/F2 still become floor-finish items.
+            key = canonical_key(str(row.get("normalized") or raw)) or canonical_key(raw)
             if not key:
                 continue
             # R1 K2 noise filter: project title-block labels (e.g.

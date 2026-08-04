@@ -26,6 +26,8 @@ from app.drawing_intelligence.sheet_identity import (
     infer_level,
     sheet_context_category,
 )
+from app.drawing_intelligence.cross_reference import _category_is_compatible
+from app.drawing_intelligence.models import SheetSemanticProfile
 from app.drawing_intelligence.taxonomy import (
     category_from_code,
     dimensions_text,
@@ -237,6 +239,70 @@ def test_infer_category_uses_sheet_context_disambiguation():
     assert infer_category("SL1", title="DENAH TITIK LAMPU LANTAI 1", raw="SL1") == "lighting_fixture"
     assert infer_category("PC1", title="DENAH FOOTPLAT", raw="PC1") == "foundation"
     assert infer_category("K1", title="DENAH KOLOM LANTAI 1", raw="Kolom K1") == "column"
+
+
+# Cycle-002 P2: sheet-context overrides — finish_plan beats the F prefix and
+# concrete-grade evidence beats the K column prefix.
+
+
+def test_infer_category_finish_plan_overrides_foundation_prefix():
+    # F1/F2 on "Denah Pola Lantai" (finish_plan) are floor finishes, never
+    # "Pondasi Footplat".
+    assert infer_category("F1", title="Denah Pola Lantai 1", raw="F1") == "floor_finish"
+    assert infer_category("F2", title="DENAH POLA LANTAI 2", raw="F2") == "floor_finish"
+    assert infer_category("F1", title="DENAH POLA LANTAI 1", raw="F1 = FLOOR ex.HOMOGENEOUS TILE 600x600mm") == "floor_finish"
+    # The override is sheet-scoped: on a real foundation sheet F codes stay
+    # foundation (no regression).
+    assert infer_category("F1", title="DENAH FOOTPLAT", raw="F1") == "foundation"
+    assert infer_category("F2", title="DENAH PONDASI", raw="F2") == "foundation"
+
+
+def test_infer_category_concrete_grade_evidence():
+    assert infer_category("K-225", title="DETAIL STRUKTUR", raw="Concrete Grade K-225") == "concrete_grade"
+    assert infer_category("K-250", title="DETAIL STRUKTUR", raw="MUTU BETON: K-250") == "concrete_grade"
+    assert infer_category("K-275", title="DETAIL STRUKTUR", raw="K-275") == "concrete_grade"
+    # Column codes are not affected by the concrete-grade override.
+    assert infer_category("K1", title="DENAH KOLOM LANTAI 1", raw="Kolom K1") == "column"
+    assert infer_category("K-01", title="DENAH KOLOM LANTAI 1", raw="K-01") == "column"
+
+
+def test_infer_category_sl1_lighting_sheet_context_stable():
+    # SL1 remains lighting on lampu sheets and beam on structural sheets —
+    # the sheet-context ambiguity resolution is stable.
+    assert infer_category("SL1", title="DENAH TITIK LAMPU LANTAI 1", raw="SL1") == "lighting_fixture"
+    assert infer_category("SL1", title="DENAH TITIK LAMPU LANTAI 2", raw="SL1: SPOT LIGHT, OUTDOOR, LED 10 W") == "lighting_fixture"
+    assert infer_category("SL1", title="DENAH BALOK LANTAI 1", raw="SL1") == "beam"
+
+
+# Cycle-002 P2: cross-reference compatibility gates — a correct
+# sheet-context classification must never be downgraded to unknown.
+
+
+def _sem(*, drawing_type: str = "unknown", discipline: str = "unknown") -> SheetSemanticProfile:
+    return SheetSemanticProfile(
+        page_index=0,
+        drawing_type=drawing_type,  # type: ignore[arg-type]
+        discipline=discipline,  # type: ignore[arg-type]
+    )
+
+
+def test_category_is_compatible_floor_finish_on_finish_plan():
+    assert _category_is_compatible("floor_finish", _sem(drawing_type="finish_plan", discipline="architecture"))
+    assert _category_is_compatible("floor_finish", _sem(drawing_type="finish_plan")) is True
+    # floor_finish is not compatible with structural sheets.
+    assert _category_is_compatible("floor_finish", _sem(drawing_type="foundation_plan", discipline="structure")) is False
+    # And a (wrong) foundation classification of F1 is rejected on finish_plan,
+    # so the vocabulary definition cannot drag it back to foundation.
+    assert _category_is_compatible("foundation", _sem(drawing_type="finish_plan", discipline="architecture")) is False
+
+
+def test_category_is_compatible_concrete_grade_and_door_frame():
+    assert _category_is_compatible("concrete_grade", _sem(drawing_type="detail", discipline="structure"))
+    assert _category_is_compatible("concrete_grade", _sem(drawing_type="schedule", discipline="structure"))
+    assert _category_is_compatible("concrete_grade", _sem(drawing_type="lighting_plan", discipline="electrical")) is False
+    assert _category_is_compatible("door_frame", _sem(drawing_type="detail", discipline="architecture"))
+    assert _category_is_compatible("door_frame", _sem(drawing_type="door_window_plan", discipline="architecture"))
+    assert _category_is_compatible("door_frame", _sem(drawing_type="column_plan", discipline="structure")) is False
 
 
 # ── K2: inline dimension parsing ──────────────────────────────────────────────
