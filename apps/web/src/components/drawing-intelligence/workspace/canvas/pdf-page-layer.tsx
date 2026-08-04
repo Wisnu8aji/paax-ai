@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useEffect, useMemo, useRef, useState } from 'react';
 import { normalizeArtifactExpiry } from '../../drawing-intelligence-api';
 import { fetchPdfBinary } from './pdf-binary-cache';
 import {
@@ -36,7 +36,7 @@ export { getGlobalPdfTilePool, resetGlobalPdfTilePool };
  */
 export const VIEWPORT_RETIRE_MS = 100;
 /** Debounce for the settled detail pass (zoom-settle sharpening). */
-export const DETAIL_PASS_MS = 125;
+export const DETAIL_PASS_MS = 80;
 /**
  * Overscan margin as a fraction of the viewport size, per side. Only valid
  * because the coordinate space is now explicit (viewportSpace) — overscan is
@@ -45,7 +45,76 @@ export const DETAIL_PASS_MS = 125;
 export const OVERSCAN_MARGIN_PCT = 0.35;
 
 export const COVERAGE_READY_THRESHOLD = 0.99;
-export const MAX_PAGE_SURFACE_BUFFER = 4096;
+/**
+ * Maximum compositor drawing-buffer side in device px. 8192 covers an A1
+ * landscape page (2482x1755 pt) at DPR 2 (~4964 px) without browser downscale,
+ * and also the same page at DPR 3 (~7446 px). Weak devices fall back to 4096.
+ */
+export const MAX_PAGE_SURFACE_BUFFER = 8192;
+/** Safe fallback for limited devices (low memory / small GPU texture budget). */
+export const FALLBACK_PAGE_SURFACE_BUFFER = 4096;
+/**
+ * Separate LRU byte budget for settled detail tiles so the sharper detail
+ * pass can never evict the interactive 0.25x-8x working set (B3). Kept below
+ * the shared 96 MiB interactive budget so total GPU memory stays bounded.
+ */
+export const DETAIL_TILE_CACHE_BYTES = 64 * 1024 * 1024;
+
+let detectedPageSurfaceBufferLimit: number | null = null;
+
+/**
+ * Device capability detection for the page surface buffer. Primary signal is
+ * WebGL2 MAX_TEXTURE_SIZE; navigator.deviceMemory < 4GB and a failed 8192px
+ * canvas allocation both select the safe 4096 fallback. Memoized because the
+ * probes allocate throwaway canvases/contexts on every call.
+ */
+export function detectPageSurfaceBufferLimit(): number {
+  if (detectedPageSurfaceBufferLimit !== null) return detectedPageSurfaceBufferLimit;
+  detectedPageSurfaceBufferLimit = computePageSurfaceBufferLimit();
+  return detectedPageSurfaceBufferLimit;
+}
+
+/** Test hook: drop the memoized capability result so probes re-run. */
+export function resetDetectedPageSurfaceBufferLimit(): void {
+  detectedPageSurfaceBufferLimit = null;
+}
+
+function computePageSurfaceBufferLimit(): number {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return FALLBACK_PAGE_SURFACE_BUFFER;
+  }
+  try {
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    if (typeof nav.deviceMemory === 'number' && nav.deviceMemory > 0 && nav.deviceMemory < 4) {
+      return FALLBACK_PAGE_SURFACE_BUFFER;
+    }
+  } catch {
+    // deviceMemory is optional; keep probing.
+  }
+  try {
+    const probe = document.createElement('canvas');
+    const gl = probe.getContext('webgl2');
+    if (gl) {
+      const maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number | undefined;
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      if (typeof maxTextureSize === 'number' && maxTextureSize > 0) {
+        return maxTextureSize >= MAX_PAGE_SURFACE_BUFFER ? MAX_PAGE_SURFACE_BUFFER : FALLBACK_PAGE_SURFACE_BUFFER;
+      }
+    }
+  } catch {
+    // WebGL2 unavailable or context creation failed; fall through to allocation probe.
+  }
+  try {
+    const probe = document.createElement('canvas');
+    probe.width = MAX_PAGE_SURFACE_BUFFER;
+    probe.height = MAX_PAGE_SURFACE_BUFFER;
+    const ctx = probe.getContext('2d');
+    if (ctx) return MAX_PAGE_SURFACE_BUFFER;
+  } catch {
+    // Allocation failed; use the safe fallback.
+  }
+  return FALLBACK_PAGE_SURFACE_BUFFER;
+}
 
 let globalTileCacheInstance: TileLru | null = null;
 
@@ -60,6 +129,27 @@ export function resetGlobalTileCache(): void {
   if (globalTileCacheInstance) {
     globalTileCacheInstance.dispose();
     globalTileCacheInstance = null;
+  }
+}
+
+let globalDetailTileCacheInstance: TileLru | null = null;
+
+/**
+ * Byte-bounded LRU dedicated to settled detail tiles (separate budget, B3).
+ * Keeping it distinct from the interactive cache means the high-density detail
+ * pass can never evict the working set needed for pan/zoom smoothness.
+ */
+export function getGlobalDetailTileCache(): TileLru {
+  if (!globalDetailTileCacheInstance) {
+    globalDetailTileCacheInstance = new TileLru(DETAIL_TILE_CACHE_BYTES);
+  }
+  return globalDetailTileCacheInstance;
+}
+
+export function resetGlobalDetailTileCache(): void {
+  if (globalDetailTileCacheInstance) {
+    globalDetailTileCacheInstance.dispose();
+    globalDetailTileCacheInstance = null;
   }
 }
 
@@ -115,6 +205,8 @@ export interface PdfPageLayerProps {
   onFirstPaint?: () => void;
   tilePool?: ReturnType<typeof createPdfTilePool>;
   tileCache?: TileLru;
+  /** Separate LRU for settled detail tiles; defaults to the global detail cache. */
+  detailTileCache?: TileLru;
 }
 
 interface RenderGeneration {
@@ -124,11 +216,12 @@ interface RenderGeneration {
   desiredVisibleTiles: PdfTileRequest[];
   desiredRequestTiles: PdfTileRequest[];
   detailTiles: PdfTileRequest[];
+  /** Keys of detail tiles that are NOT part of the base/overscan working set. */
+  detailKeys: Set<string>;
   desiredAllKeys: Set<string>;
   readyKeys: Set<string>;
   readyTiles: Map<string, CompositorTile>;
   startedAt: number;
-  retireDeadline: number;
   viewport: LogicalRect;
   page: LogicalRect;
 }
@@ -148,19 +241,25 @@ interface RetireEntry {
 
 interface LayerDiagnostics {
   committedGeneration: number | null;
+  committedTileCount: number;
+  materializedTileCount: number;
   coverageReady: boolean;
   coverageRatio: number;
   renderer: PdfTileRendererKind | null;
   textureCount: number;
+  uploadFailures: number;
   contextLost: boolean;
 }
 
 const INITIAL_DIAGNOSTICS: LayerDiagnostics = {
   committedGeneration: null,
+  committedTileCount: 0,
+  materializedTileCount: 0,
   coverageReady: false,
   coverageRatio: 0,
   renderer: null,
   textureCount: 0,
+  uploadFailures: 0,
   contextLost: false,
 };
 
@@ -176,12 +275,21 @@ export function PdfPageLayer({
   onFirstPaint,
   tilePool,
   tileCache,
+  detailTileCache,
 }: PdfPageLayerProps) {
   const poolRef = useRef<ReturnType<typeof createPdfTilePool> | null>(null);
   const cacheRef = useRef<TileLru | null>(null);
+  const detailCacheRef = useRef<TileLru | null>(null);
   const isExternalPoolRef = useRef(false);
   const openGenRef = useRef(0);
   const activeOpenGenRef = useRef<number | null>(null);
+  /**
+   * Document the current `metrics` state belongs to. The render effect runs in
+   * the layout phase, which is BEFORE the (passive) open effect can reset
+   * `metrics` after a document switch — without this gate it would create a
+   * candidate from the previous document's metrics under the new document key.
+   */
+  const metricsDocumentRef = useRef<string | null>(null);
   const activeRequestsRef = useRef<Map<string, { identity: symbol; cancel: () => void }>>(new Map());
   const renderGenRef = useRef(0);
   const candidateRef = useRef<RenderGeneration | null>(null);
@@ -203,6 +311,19 @@ export function PdfPageLayer({
   } | null>(null);
   const contextRestoreFrameRef = useRef<number | null>(null);
   const contextRestoredGenRef = useRef<number | null>(null);
+  /** Pending detail-pass handle (idle callback or settle timeout). */
+  const detailPassHandleRef = useRef<{ kind: 'idle' | 'timeout'; handle: number } | null>(null);
+
+  const clearDetailPass = () => {
+    const pending = detailPassHandleRef.current;
+    if (!pending) return;
+    detailPassHandleRef.current = null;
+    if (pending.kind === 'idle') {
+      if (typeof cancelIdleCallback === 'function') cancelIdleCallback(pending.handle);
+    } else {
+      window.clearTimeout(pending.handle);
+    }
+  };
 
   if (tilePool) {
     poolRef.current = tilePool;
@@ -216,6 +337,12 @@ export function PdfPageLayer({
     cacheRef.current = tileCache;
   } else if (!cacheRef.current) {
     cacheRef.current = getGlobalTileCache();
+  }
+
+  if (detailTileCache) {
+    detailCacheRef.current = detailTileCache;
+  } else if (!detailCacheRef.current) {
+    detailCacheRef.current = getGlobalDetailTileCache();
   }
 
   const [metrics, setMetrics] = useState<PdfPageMetrics | null>(null);
@@ -238,10 +365,13 @@ export function PdfPageLayer({
     const merged: LayerDiagnostics = { ...current, ...next };
     if (
       merged.committedGeneration === current.committedGeneration &&
+      merged.committedTileCount === current.committedTileCount &&
+      merged.materializedTileCount === current.materializedTileCount &&
       merged.coverageReady === current.coverageReady &&
       merged.coverageRatio === current.coverageRatio &&
       merged.renderer === current.renderer &&
       merged.textureCount === current.textureCount &&
+      merged.uploadFailures === current.uploadFailures &&
       merged.contextLost === current.contextLost
     ) {
       return;
@@ -299,22 +429,33 @@ export function PdfPageLayer({
     const committed = committedRef.current;
     const covered =
       committed && committed.documentKey === current.documentKey
-        ? clippedUnionCoverage(current.viewport, current.page, committed.rects) >= COVERAGE_READY_THRESHOLD
-        : false;
+        ? clippedUnionCoverage(current.viewport, current.page, committed.rects)
+        : 0;
+    const materializedReady =
+      diag.committedTileCount > 0 && diag.materializedTileCount >= diag.committedTileCount;
+    const coveredReady = !diag.contextLost && materializedReady && covered >= COVERAGE_READY_THRESHOLD;
     updateDiagnostics({
       contextLost: diag.contextLost,
       renderer: diag.renderer,
-      coverageReady: covered,
-      coverageRatio: covered ? 1 : 0,
+      coverageReady: coveredReady,
+      coverageRatio: covered,
+      committedTileCount: diag.committedTileCount,
+      materializedTileCount: diag.materializedTileCount,
       textureCount: diag.textureCount,
+      uploadFailures: diag.uploadFailures,
     });
-    if (committed && committed.documentKey === current.documentKey && contextRestoredGenRef.current !== committed.generation) {
+    if (
+      committed &&
+      committed.documentKey === current.documentKey &&
+      coveredReady &&
+      contextRestoredGenRef.current !== committed.generation
+    ) {
       contextRestoredGenRef.current = committed.generation;
       onCoverageChangeRef.current?.({
         documentKey: committed.documentKey,
         generation: committed.generation,
         ready: true,
-        coverage: 1,
+        coverage: covered,
         renderer: diag.renderer,
       });
     }
@@ -340,11 +481,17 @@ export function PdfPageLayer({
       renderer: diag.renderer,
       coverageReady: false,
       coverageRatio: 0,
+      committedTileCount: diag.committedTileCount,
+      materializedTileCount: diag.materializedTileCount,
       textureCount: diag.textureCount,
+      uploadFailures: diag.uploadFailures,
     });
+    // Report the committed generation, or 0 when nothing is committed yet —
+    // never the current candidate id, which is not a committed generation
+    // (Task 3 deferred minor).
     onCoverageChangeRef.current?.({
       documentKey: current.documentKey,
-      generation: committedRef.current?.generation ?? current.id,
+      generation: committedRef.current?.generation ?? 0,
       ready: false,
       coverage: 0,
       renderer: diag.renderer,
@@ -430,6 +577,7 @@ export function PdfPageLayer({
     const activePool = poolRef.current;
     const isExternal = isExternalPoolRef.current;
     return () => {
+      clearDetailPass();
       activeRequestsRef.current.forEach((entry) => entry.cancel());
       activeRequestsRef.current.clear();
       clearRetireQueue();
@@ -469,12 +617,21 @@ export function PdfPageLayer({
     protectedKeysRef.current = new Set();
     revisionByKeyRef.current.clear();
     uploadedBitmapRef.current.clear();
-    updateDiagnostics({ committedGeneration: null, coverageReady: false, coverageRatio: 0 });
+    updateDiagnostics({
+      committedGeneration: null,
+      committedTileCount: 0,
+      materializedTileCount: 0,
+      coverageReady: false,
+      coverageRatio: 0,
+      textureCount: 0,
+      uploadFailures: 0,
+    });
 
     const pool = poolRef.current ?? (tilePool || getGlobalPdfTilePool());
     const cache = cacheRef.current ?? (tileCache || getGlobalTileCache());
     poolRef.current = pool;
     cacheRef.current = cache;
+    metricsDocumentRef.current = null;
     setMetrics(null);
     setError(null);
     let cancelled = false;
@@ -487,6 +644,7 @@ export function PdfPageLayer({
         const verified = await pool.open({ documentKey, pageNumber, data: buffer });
         if (cancelled || openGenRef.current !== gen) return;
         activeOpenGenRef.current = gen;
+        metricsDocumentRef.current = documentKey;
         setMetrics(verified);
         onMetricsRef.current?.(verified);
       } catch (cause) {
@@ -500,6 +658,7 @@ export function PdfPageLayer({
 
     return () => {
       cancelled = true;
+      clearDetailPass();
       activeRequestsRef.current.forEach((entry) => entry.cancel());
       activeRequestsRef.current.clear();
       clearRetireQueue();
@@ -511,7 +670,7 @@ export function PdfPageLayer({
       uploadedBitmapRef.current.clear();
       pool.close(documentKey);
     };
-  }, [runId, pageIndex, documentKey, pageNumber, retry, tilePool, tileCache]);
+  }, [runId, pageIndex, documentKey, pageNumber, retry, tilePool, tileCache, detailTileCache]);
 
   const pyramid = useMemo(
     () => (metrics ? new PdfTilePyramid({ pageKey: documentKey, width: metrics.width, height: metrics.height }) : null),
@@ -519,14 +678,20 @@ export function PdfPageLayer({
   );
 
   // Render Visible & Detail Tiles Lifecycle — one candidate per viewport state.
-  useEffect(() => {
+  // Runs in the layout phase so coverage signals (`ready:false` reveal,
+  // `ready:true` hide) land before the browser paints the next frame: a
+  // viewport change that exposes an uncovered area must never produce even one
+  // painted frame with the underlay still hidden.
+  useLayoutEffect(() => {
     const currentOpenGen = openGenRef.current;
-    if (!metrics || !pyramid || error || activeOpenGenRef.current !== currentOpenGen) return;
+    if (!metrics || metricsDocumentRef.current !== documentKey || !pyramid || error || activeOpenGenRef.current !== currentOpenGen) return;
 
     const pool = poolRef.current ?? (tilePool || getGlobalPdfTilePool());
     const cache = cacheRef.current ?? (tileCache || getGlobalTileCache());
+    const detailCache = detailCacheRef.current ?? (detailTileCache || getGlobalDetailTileCache());
     poolRef.current = pool;
     cacheRef.current = cache;
+    detailCacheRef.current = detailCache;
 
     const compositor = ensureCompositor();
     if (!compositor) return;
@@ -548,6 +713,11 @@ export function PdfPageLayer({
     const desiredRequestTiles = pyramid.visibleTiles(logicalViewport, OVERSCAN_MARGIN_PCT);
     const detailTiles = pyramid.visibleDetailTiles(logicalViewport, OVERSCAN_MARGIN_PCT);
     const desiredAllKeys = new Set(desiredRequestTiles.map((tile) => tile.key));
+    // Detail tiles that are NOT already part of the base/overscan working set.
+    // These are the tiles the proactive/settled detail pass adds and caches in
+    // the separate detail LRU (B3); keys shared with the base set stay in the
+    // interactive cache so a single key is never split across two LRUs.
+    const detailKeys = new Set(detailTiles.filter((tile) => !desiredAllKeys.has(tile.key)).map((tile) => tile.key));
 
     const gen = ++renderGenRef.current;
 
@@ -568,11 +738,11 @@ export function PdfPageLayer({
       desiredVisibleTiles,
       desiredRequestTiles,
       detailTiles,
+      detailKeys,
       desiredAllKeys,
       readyKeys: new Set(),
       readyTiles: new Map(),
       startedAt: performance.now(),
-      retireDeadline: performance.now() + VIEWPORT_RETIRE_MS,
       viewport: viewportRect,
       page: pageRect,
     };
@@ -587,7 +757,16 @@ export function PdfPageLayer({
         ? clippedUnionCoverage(viewportRect, pageRect, committed.rects)
         : 0;
 
-    if (committedCoverage < COVERAGE_READY_THRESHOLD) {
+    const compositorDiagnostics = compositor.diagnostics();
+    const committedMaterialized =
+      compositorDiagnostics.committedTileCount > 0 &&
+      compositorDiagnostics.materializedTileCount >= compositorDiagnostics.committedTileCount;
+    const committedReady =
+      !compositorDiagnostics.contextLost &&
+      committedMaterialized &&
+      committedCoverage >= COVERAGE_READY_THRESHOLD;
+
+    if (!committedReady) {
       onCoverageChangeRef.current?.({
         documentKey,
         generation: gen,
@@ -596,13 +775,15 @@ export function PdfPageLayer({
         renderer: compositor.kind,
       });
     }
-    const compositorDiagnostics = compositor.diagnostics();
     updateDiagnostics({
       committedGeneration: committed?.generation ?? null,
-      coverageReady: committedCoverage >= COVERAGE_READY_THRESHOLD,
+      committedTileCount: compositorDiagnostics.committedTileCount,
+      materializedTileCount: compositorDiagnostics.materializedTileCount,
+      coverageReady: committedReady,
       coverageRatio: committedCoverage,
       renderer: compositor.kind,
       textureCount: compositorDiagnostics.textureCount,
+      uploadFailures: compositorDiagnostics.uploadFailures,
       contextLost: compositorDiagnostics.contextLost,
     });
 
@@ -616,7 +797,8 @@ export function PdfPageLayer({
     const registerReadyTile = (candidateToUpdate: RenderGeneration, tile: PdfTileRequest) => {
       if (candidateRef.current !== candidateToUpdate) return;
       if (candidateToUpdate.readyKeys.has(tile.key)) return;
-      const bitmap = cache.peek(tile.key);
+      const sourceCache = candidateToUpdate.detailKeys.has(tile.key) ? detailCache : cache;
+      const bitmap = sourceCache.peek(tile.key);
       if (!bitmap) return;
       const revision = nextRevisionFor(tile.key, bitmap);
       const descriptor: CompositorTile = {
@@ -649,7 +831,8 @@ export function PdfPageLayer({
           const bitmap = delivery.claim();
           if (!bitmap) return;
           const bytes = delivery.width * delivery.height * 4;
-          if (!cache.set(tile.key, bitmap, bytes, protectedKeysRef.current)) return;
+          const targetCache = current.detailKeys.has(tile.key) ? detailCache : cache;
+          if (!targetCache.set(tile.key, bitmap, bytes, protectedKeysRef.current)) return;
           if (candidateRef.current !== current || !current.desiredAllKeys.has(tile.key)) return;
 
           registerReadyTile(current, tile);
@@ -673,6 +856,42 @@ export function PdfPageLayer({
       };
       if (isGenerationReady(input, COVERAGE_READY_THRESHOLD)) {
         commitCandidate(candidateToCheck);
+      }
+    };
+
+    // B3 proactive detail pass: run the sharper detail tiles for a candidate.
+    // Reused by both the settle timer (80ms after a viewport change) and the
+    // proactive first-paint trigger (requestIdleCallback, so the sharper
+    // overview/fit view never waits for a full settle window).
+    const runDetailPass = (targetGen: number) => {
+      detailPassHandleRef.current = null;
+      if (openGenRef.current !== currentOpenGen || activeOpenGenRef.current !== currentOpenGen) return;
+      const current = candidateRef.current;
+      if (!current || current.id !== targetGen) return;
+      for (const tile of current.detailTiles) {
+        if (current.desiredAllKeys.has(tile.key)) continue;
+        current.desiredAllKeys.add(tile.key);
+        protectedKeysRef.current.add(tile.key);
+        const sourceCache = current.detailKeys.has(tile.key) ? detailCache : cache;
+        if (sourceCache.peek(tile.key)) {
+          registerReadyTile(current, tile);
+          recomputeReadiness(current);
+        } else {
+          requestTile(tile);
+        }
+      }
+    };
+
+    const scheduleDetailPass = (targetGen: number, proactive: boolean) => {
+      clearDetailPass();
+      const fire = () => runDetailPass(targetGen);
+      if (proactive && typeof requestIdleCallback === 'function') {
+        // Fire as soon as the browser is idle (bounded by the settle timeout).
+        const handle = requestIdleCallback(fire, { timeout: DETAIL_PASS_MS }) as unknown as number;
+        detailPassHandleRef.current = { kind: 'idle', handle };
+      } else {
+        const handle = window.setTimeout(fire, proactive ? 0 : DETAIL_PASS_MS);
+        detailPassHandleRef.current = { kind: 'timeout', handle };
       }
     };
 
@@ -732,6 +951,15 @@ export function PdfPageLayer({
       };
       compositorRef.current.commit(frame);
 
+      // Exact clipped-union coverage of the committed rects over the candidate
+      // viewport — reported instead of a hardcoded `1` (Task 3 deferred minor).
+      const exactCoverage = clippedUnionCoverage(
+        candidateToCommit.viewport,
+        candidateToCommit.page,
+        frameTiles.map((tile) => tile.rect),
+      );
+      const afterCommit = compositorRef.current.diagnostics();
+
       if (previous && previous.generation !== candidateToCommit.id) {
         const retired = [...previous.keys].filter((key) => !committedKeys.has(key));
         if (retired.length > 0) compositorRef.current.release(retired);
@@ -745,30 +973,53 @@ export function PdfPageLayer({
       };
       protectedKeysRef.current = new Set([...committedKeys, ...candidateToCommit.desiredAllKeys]);
 
-      if (readyEmittedRef.current !== candidateToCommit.id) {
+      const materializedReady =
+        afterCommit.committedTileCount === frameTiles.length &&
+        afterCommit.materializedTileCount >= frameTiles.length;
+      const coverageReady =
+        !afterCommit.contextLost && materializedReady && exactCoverage >= COVERAGE_READY_THRESHOLD;
+      if (readyEmittedRef.current !== candidateToCommit.id && coverageReady) {
         readyEmittedRef.current = candidateToCommit.id;
         onCoverageChangeRef.current?.({
           documentKey,
           generation: candidateToCommit.id,
           ready: true,
-          coverage: 1,
-          renderer: compositorRef.current.kind,
+          coverage: exactCoverage,
+          renderer: afterCommit.renderer,
         });
         if (notifiedFirstPaintRef.current !== documentKey) {
           notifiedFirstPaintRef.current = documentKey;
           onFirstPaintRef.current?.();
+          // B3 proactive detail pass: start sharpening the settled crop as soon
+          // as the first atomic commit lands instead of waiting for the full
+          // settle window. `requestIdleCallback` keeps it off the critical path.
+          scheduleDetailPass(candidateToCommit.id, true);
         }
+      } else if (!coverageReady) {
+        onCoverageChangeRef.current?.({
+          documentKey,
+          generation: candidateToCommit.id,
+          ready: false,
+          coverage: exactCoverage,
+          renderer: afterCommit.renderer,
+        });
       }
 
       flushRetireQueue();
 
-      const afterCommit = compositorRef.current.diagnostics();
+      // Report the exact clipped-union coverage of the committed manifest, not
+      // a hardcoded 1, and never claim coverage-ready while the context is
+      // lost: a lost compositor cannot draw, so the underlay must stay visible
+      // until a successful restore re-emits ready:true (Task 3 deferred minor).
       updateDiagnostics({
         committedGeneration: candidateToCommit.id,
-        coverageReady: true,
-        coverageRatio: 1,
+        committedTileCount: afterCommit.committedTileCount,
+        materializedTileCount: afterCommit.materializedTileCount,
+        coverageReady,
+        coverageRatio: exactCoverage,
         renderer: afterCommit.renderer,
         textureCount: afterCommit.textureCount,
+        uploadFailures: afterCommit.uploadFailures,
         contextLost: afterCommit.contextLost,
       });
     };
@@ -784,8 +1035,12 @@ export function PdfPageLayer({
     const canvas = canvasRef.current;
     if (canvas) {
       const dpr = Number.isFinite(viewport.dpr) && viewport.dpr > 0 ? viewport.dpr : 1;
-      const bufferWidth = Math.max(1, Math.min(MAX_PAGE_SURFACE_BUFFER, Math.round((canvas.clientWidth || fallbackWidth) * dpr)));
-      const bufferHeight = Math.max(1, Math.min(MAX_PAGE_SURFACE_BUFFER, Math.round((canvas.clientHeight || fallbackHeight) * dpr)));
+      // B1: device-capability detection selects 8192 on capable devices and
+      // falls back to 4096 for weak devices (low deviceMemory / small WebGL2
+      // texture budget / failed 8192px allocation).
+      const bufferLimit = detectPageSurfaceBufferLimit();
+      const bufferWidth = Math.max(1, Math.min(bufferLimit, Math.round((canvas.clientWidth || fallbackWidth) * dpr)));
+      const bufferHeight = Math.max(1, Math.min(bufferLimit, Math.round((canvas.clientHeight || fallbackHeight) * dpr)));
       if (canvas.width !== bufferWidth || canvas.height !== bufferHeight) {
         canvas.width = bufferWidth;
         canvas.height = bufferHeight;
@@ -794,27 +1049,15 @@ export function PdfPageLayer({
 
     recomputeReadiness(candidate);
 
-    const detailTimer = window.setTimeout(() => {
-      if (openGenRef.current !== currentOpenGen || activeOpenGenRef.current !== currentOpenGen) return;
-      const current = candidateRef.current;
-      if (!current || current.id !== gen) return;
-      for (const tile of detailTiles) {
-        if (current.desiredAllKeys.has(tile.key)) continue;
-        current.desiredAllKeys.add(tile.key);
-        protectedKeysRef.current.add(tile.key);
-        if (cache.peek(tile.key)) {
-          registerReadyTile(current, tile);
-          recomputeReadiness(current);
-        } else {
-          requestTile(tile);
-        }
-      }
-    }, DETAIL_PASS_MS);
+    // B3 settle path: the detail pass still fires 80ms after a viewport change
+    // (fallback for interactive pan/zoom), complementing the proactive
+    // first-paint trigger inside commitCandidate.
+    scheduleDetailPass(gen, false);
 
     return () => {
-      window.clearTimeout(detailTimer);
+      clearDetailPass();
     };
-  }, [metrics, viewport, error, pyramid, documentKey, pageNumber, tilePool, tileCache, viewportSpace]);
+  }, [metrics, viewport, error, pyramid, documentKey, pageNumber, tilePool, tileCache, detailTileCache, viewportSpace]);
 
   if (error) {
     return (
@@ -834,9 +1077,12 @@ export function PdfPageLayer({
       data-document-key={documentKey}
       data-renderer-kind={diagnostics.renderer ?? ''}
       data-committed-generation={diagnostics.committedGeneration ?? 0}
+      data-committed-tile-count={diagnostics.committedTileCount}
+      data-materialized-tile-count={diagnostics.materializedTileCount}
       data-coverage-ready={diagnostics.coverageReady ? 'true' : 'false'}
       data-coverage-ratio={diagnostics.coverageRatio.toFixed(3)}
       data-texture-count={diagnostics.textureCount}
+      data-upload-failures={diagnostics.uploadFailures}
       data-context-lost={diagnostics.contextLost ? 'true' : 'false'}
       style={{
         position: 'relative',

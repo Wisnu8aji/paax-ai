@@ -28,6 +28,12 @@ import {
   PdfPageLayer,
   resetGlobalPdfTilePool,
   resetGlobalTileCache,
+  resetGlobalDetailTileCache,
+  resetDetectedPageSurfaceBufferLimit,
+  detectPageSurfaceBufferLimit,
+  MAX_PAGE_SURFACE_BUFFER,
+  FALLBACK_PAGE_SURFACE_BUFFER,
+  DETAIL_PASS_MS,
   OVERSCAN_MARGIN_PCT,
 } from './pdf-page-layer';
 import { TileLru, PdfTilePyramid, toLogicalViewport } from './pdf-tile-pyramid';
@@ -41,6 +47,8 @@ let getContextSpy: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
   resetGlobalPdfTilePool();
   resetGlobalTileCache();
+  resetGlobalDetailTileCache();
+  resetDetectedPageSurfaceBufferLimit();
   vi.clearAllMocks();
   vi.restoreAllMocks();
   getContextSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation((contextId: string) => {
@@ -164,7 +172,11 @@ async function flushFrame() {
 
 function makeFakeCompositor(overrides: Partial<PdfTileCompositor> = {}) {
   const upload = vi.fn();
-  const commit = vi.fn();
+  const state = { committedGeneration: null as number | null, committedTileCount: 0 };
+  const commit = vi.fn((frame: { generation: number; tiles: readonly unknown[] }) => {
+    state.committedGeneration = frame.generation;
+    state.committedTileCount = frame.tiles.length;
+  });
   const release = vi.fn();
   const compositor = {
     kind: 'canvas2d',
@@ -172,13 +184,16 @@ function makeFakeCompositor(overrides: Partial<PdfTileCompositor> = {}) {
     commit,
     render: vi.fn(),
     release,
-    diagnostics: vi.fn().mockReturnValue({
+    diagnostics: vi.fn(() => ({
       renderer: 'canvas2d',
-      committedGeneration: null,
+      committedGeneration: state.committedGeneration,
+      committedTileCount: state.committedTileCount,
+      materializedTileCount: state.committedTileCount,
       textureCount: 0,
       estimatedTextureBytes: 0,
       contextLost: false,
-    }),
+      uploadFailures: 0,
+    })),
     dispose: vi.fn(),
     ...overrides,
   } as unknown as PdfTileCompositor;
@@ -186,9 +201,18 @@ function makeFakeCompositor(overrides: Partial<PdfTileCompositor> = {}) {
 }
 
 function makeContextFakeCompositor() {
-  const state = { renderer: 'webgl2' as 'webgl2' | 'canvas2d', contextLost: false, textureCount: 2 };
+  const state = {
+    renderer: 'webgl2' as 'webgl2' | 'canvas2d',
+    contextLost: false,
+    textureCount: 2,
+    committedGeneration: null as number | null,
+    committedTileCount: 0,
+  };
   const upload = vi.fn();
-  const commit = vi.fn();
+  const commit = vi.fn((frame: { generation: number; tiles: readonly unknown[] }) => {
+    state.committedGeneration = frame.generation;
+    state.committedTileCount = frame.tiles.length;
+  });
   const release = vi.fn();
   const compositor = {
     get kind() {
@@ -200,10 +224,13 @@ function makeContextFakeCompositor() {
     release,
     diagnostics: vi.fn(() => ({
       renderer: state.renderer,
-      committedGeneration: null,
+      committedGeneration: state.committedGeneration,
+      committedTileCount: state.committedTileCount,
+      materializedTileCount: state.contextLost ? 0 : state.committedTileCount,
       textureCount: state.contextLost ? 0 : state.textureCount,
       estimatedTextureBytes: 0,
       contextLost: state.contextLost,
+      uploadFailures: 0,
     })),
     dispose: vi.fn(),
   } as unknown as PdfTileCompositor;
@@ -1176,7 +1203,9 @@ describe('Atomic generations: committed/candidate state and coverage transitions
 
     expect(layer()).toHaveAttribute('data-coverage-ready', 'true');
     expect(layer()).toHaveAttribute('data-committed-generation', '2');
-    expect(onCoverageChange).toHaveBeenLastCalledWith(expect.objectContaining({ ready: true, generation: 2 }));
+    expect(onCoverageChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ ready: true, generation: 2, coverage: 1 }),
+    );
   });
 
   it('a delivery for a key that left the viewport cannot claim or commit', async () => {
@@ -1524,6 +1553,57 @@ describe('Fix round 1: revision hygiene, context-loss observation, incremental u
     spy.mockRestore();
   });
 
+  it('never hides the underlay via ready:true while the context is lost, even when a new generation commits', async () => {
+    const { compositor, state } = makeContextFakeCompositor();
+    const spy = vi.spyOn(compositorModule, 'createPdfTileCompositor').mockReturnValue(compositor);
+    const onCoverageChange = vi.fn();
+    const { pool, resolvers } = controlledPool();
+    const { container, rerender } = renderNormalizedFitLayer(pool, 'run-loss-commit', FIT, { onCoverageChange });
+    await flush();
+
+    for (const key of ['run-loss-commit:0:1:0:0', 'run-loss-commit:0:1:0:1', 'run-loss-commit:0:1:1:0', 'run-loss-commit:0:1:1:1']) {
+      deliver(resolvers, key);
+    }
+    await flush();
+    expect(layer()).toHaveAttribute('data-committed-generation', '1');
+    expect(onCoverageChange).toHaveBeenCalledWith(expect.objectContaining({ ready: true, generation: 1 }));
+
+    const canvas = container.querySelector('canvas');
+    state.contextLost = true;
+    await act(async () => {
+      canvas!.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+      await Promise.resolve();
+    });
+    expect(layer()).toHaveAttribute('data-context-lost', 'true');
+
+    rerender(
+      <PdfPageLayer
+        runId="run-loss-commit"
+        pageIndex={0}
+        viewport={{ x: 0.25, y: 0.25, width: 0.5, height: 0.5, zoom: 2, dpr: 1 }}
+        viewportSpace="normalized"
+        fallbackWidth={1000}
+        fallbackHeight={800}
+        tilePool={pool as any}
+        onCoverageChange={onCoverageChange}
+      />
+    );
+    await flush();
+
+    const zoomKeys: string[] = [];
+    for (let tx = 0; tx <= 2; tx += 1) {
+      for (let ty = 0; ty <= 2; ty += 1) zoomKeys.push(`run-loss-commit:0:2:${tx}:${ty}`);
+    }
+    for (const key of zoomKeys) deliver(resolvers, key);
+    await flush();
+
+    expect(layer()).toHaveAttribute('data-committed-generation', '2');
+    expect(layer()).toHaveAttribute('data-coverage-ready', 'false');
+    expect(onCoverageChange.mock.calls.filter((c: any) => c[0].ready === true)).toHaveLength(1);
+
+    spy.mockRestore();
+  });
+
   it('context restore updates diagnostics and re-emits ready:true for the committed generation after the frame boundary', async () => {
     const { compositor, state } = makeContextFakeCompositor();
     const spy = vi.spyOn(compositorModule, 'createPdfTileCompositor').mockReturnValue(compositor);
@@ -1556,7 +1636,7 @@ describe('Fix round 1: revision hygiene, context-loss observation, incremental u
     expect(layer()).toHaveAttribute('data-renderer-kind', 'webgl2');
     expect(layer()).toHaveAttribute('data-coverage-ready', 'true');
     expect(onCoverageChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ ready: true, generation: 1, renderer: 'webgl2' }),
+      expect.objectContaining({ ready: true, generation: 1, coverage: 1, renderer: 'webgl2' }),
     );
 
     spy.mockRestore();
@@ -1712,6 +1792,167 @@ describe('Fix round 1: revision hygiene, context-loss observation, incremental u
       expect(releaseMock).not.toHaveBeenCalled();
 
       spy.mockRestore();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('Page surface buffer sizing (B1)', () => {
+  it('returns 8192 on a capable device with WebGL2 max texture >= 8192', () => {
+    getContextSpy.mockImplementation((contextId: string) => {
+      if (contextId === 'webgl2') {
+        return {
+          MAX_TEXTURE_SIZE: 0x0d33,
+          getParameter: vi.fn(() => 16384),
+          getExtension: vi.fn(() => ({ loseContext: vi.fn() })),
+        } as unknown as WebGL2RenderingContext;
+      }
+      return null;
+    });
+    expect(detectPageSurfaceBufferLimit()).toBe(MAX_PAGE_SURFACE_BUFFER);
+  });
+
+  it('returns 4096 when deviceMemory is below 4GB', () => {
+    Object.defineProperty(navigator, 'deviceMemory', { configurable: true, value: 2 });
+    try {
+      expect(detectPageSurfaceBufferLimit()).toBe(FALLBACK_PAGE_SURFACE_BUFFER);
+    } finally {
+      delete (navigator as unknown as { deviceMemory?: number }).deviceMemory;
+    }
+  });
+
+  it('returns 4096 when WebGL2 max texture size is below 8192', () => {
+    getContextSpy.mockImplementation((contextId: string) => {
+      if (contextId === 'webgl2') {
+        return {
+          MAX_TEXTURE_SIZE: 0x0d33,
+          getParameter: vi.fn(() => 4096),
+          getExtension: vi.fn(() => ({ loseContext: vi.fn() })),
+        } as unknown as WebGL2RenderingContext;
+      }
+      return null;
+    });
+    expect(detectPageSurfaceBufferLimit()).toBe(FALLBACK_PAGE_SURFACE_BUFFER);
+  });
+
+  it('returns 4096 when the 8192px allocation probe fails', () => {
+    getContextSpy.mockImplementation(() => null);
+    expect(detectPageSurfaceBufferLimit()).toBe(FALLBACK_PAGE_SURFACE_BUFFER);
+  });
+
+  it('sizes the compositor canvas to the detected limit (8192 capable device)', async () => {
+    const { compositor: fakeCompositor } = makeFakeCompositor();
+    const spy = vi.spyOn(compositorModule, 'createPdfTileCompositor').mockReturnValue(fakeCompositor);
+    getContextSpy.mockImplementation((contextId: string) => {
+      if (contextId === 'webgl2') {
+        return {
+          MAX_TEXTURE_SIZE: 0x0d33,
+          getParameter: vi.fn(() => 16384),
+          getExtension: vi.fn(() => ({ loseContext: vi.fn() })),
+        } as unknown as WebGL2RenderingContext;
+      }
+      return null;
+    });
+    try {
+      const { pool } = controlledPool();
+      const { container } = renderNormalizedFitLayer(
+        pool,
+        'run-buffer-capable',
+        { ...FIT, dpr: 1 },
+        { fallbackWidth: 10000, fallbackHeight: 10000 },
+      );
+      await flush();
+      const canvas = container.querySelector('canvas');
+      expect(canvas).not.toBeNull();
+      expect(canvas!.width).toBe(MAX_PAGE_SURFACE_BUFFER);
+      expect(canvas!.height).toBe(MAX_PAGE_SURFACE_BUFFER);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('sizes the compositor canvas to the detected limit (4096 weak device)', async () => {
+    const { compositor: fakeCompositor } = makeFakeCompositor();
+    const spy = vi.spyOn(compositorModule, 'createPdfTileCompositor').mockReturnValue(fakeCompositor);
+    Object.defineProperty(navigator, 'deviceMemory', { configurable: true, value: 2 });
+    try {
+      const { pool } = controlledPool();
+      const { container } = renderNormalizedFitLayer(
+        pool,
+        'run-buffer-weak',
+        { ...FIT, dpr: 1 },
+        { fallbackWidth: 10000, fallbackHeight: 10000 },
+      );
+      await flush();
+      const canvas = container.querySelector('canvas');
+      expect(canvas).not.toBeNull();
+      expect(canvas!.width).toBe(FALLBACK_PAGE_SURFACE_BUFFER);
+      expect(canvas!.height).toBe(FALLBACK_PAGE_SURFACE_BUFFER);
+    } finally {
+      delete (navigator as unknown as { deviceMemory?: number }).deviceMemory;
+      spy.mockRestore();
+    }
+  });
+});
+
+describe('B3 detail pass', () => {
+  it('uses an 80ms settle window', () => {
+    expect(DETAIL_PASS_MS).toBe(80);
+  });
+
+  it('caches detail tiles in the separate detail LRU, never the interactive cache', async () => {
+    vi.useFakeTimers();
+    try {
+      const { pool, resolvers } = controlledPool();
+      const shared = new TileLru();
+      const detail = new TileLru();
+      const { rerender } = renderNormalizedFitLayer(pool, 'run-detail-cache', FIT, {
+        tileCache: shared as any,
+        detailTileCache: detail as any,
+      });
+      await flush();
+
+      rerender(
+        <PdfPageLayer
+          runId="run-detail-cache"
+          pageIndex={0}
+          viewport={{ x: 0.25, y: 0.25, width: 0.5, height: 0.5, zoom: 3, dpr: 1 }}
+          viewportSpace="normalized"
+          fallbackWidth={1000}
+          fallbackHeight={800}
+          tilePool={pool as any}
+          tileCache={shared as any}
+          detailTileCache={detail as any}
+        />,
+      );
+      await flush();
+      await act(async () => {
+        vi.advanceTimersByTime(200);
+        await Promise.resolve();
+      });
+
+      const requestedKeys = (pool.request as ReturnType<typeof vi.fn>).mock.calls.map((c: any) => c[0].tile.key as string);
+      // Key format is `<pageKey>:<density>:<tx>:<ty>` — match the density segment
+      // exactly so `:4:3:3` (density 4, tx/ty 3) is never misread as density 3.
+      const densityOf = (key: string): string => key.split(':')[2] ?? '';
+      const detailKeys = requestedKeys.filter((key) => densityOf(key) === '3');
+      const baseKeys = requestedKeys.filter((key) => densityOf(key) === '4');
+      expect(detailKeys.length).toBeGreaterThan(0);
+      expect(baseKeys.length).toBeGreaterThan(0);
+
+      for (const key of baseKeys) deliver(resolvers, key);
+      for (const key of detailKeys) deliver(resolvers, key);
+      await flush();
+
+      for (const key of detailKeys) {
+        expect(detail.has(key)).toBe(true);
+        expect(shared.has(key)).toBe(false);
+      }
+      for (const key of baseKeys) {
+        expect(shared.has(key)).toBe(true);
+        expect(detail.has(key)).toBe(false);
+      }
     } finally {
       vi.useRealTimers();
     }

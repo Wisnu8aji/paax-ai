@@ -34,7 +34,22 @@ describe('PdfTilePyramid', () => {
   it('bounds density selected from zoom and device pixel ratio', () => {
     expect(chooseTileDensity({ zoom: 0.1, dpr: 1 })).toBe(0.25);
     expect(chooseTileDensity({ zoom: 1.5, dpr: 2 })).toBe(4);
-    expect(chooseTileDensity({ zoom: 8, dpr: 3 })).toBe(4);
+    expect(chooseTileDensity({ zoom: 8, dpr: 3 })).toBe(8);
+  });
+
+  it('B2: interactive density caps at 8 while preserving 0.25/0.5 first-paint levels', () => {
+    expect(chooseTileDensity({ zoom: 0.1, dpr: 1 })).toBe(0.25);
+    expect(chooseTileDensity({ zoom: 0.4, dpr: 1 })).toBe(0.5);
+    expect(chooseTileDensity({ zoom: 4, dpr: 2 })).toBe(8);
+    expect(chooseTileDensity({ zoom: 20, dpr: 3 })).toBe(8);
+    expect(chooseTileDensity({ zoom: 2, dpr: 2 })).toBe(4);
+  });
+
+  it('B2: settled detail density never drops below 1x', () => {
+    expect(chooseDetailTileDensity({ zoom: 0.1, dpr: 1 })).toBe(1);
+    expect(chooseDetailTileDensity({ zoom: 0.5, dpr: 1 })).toBe(1);
+    expect(chooseDetailTileDensity({ zoom: 1, dpr: 1 })).toBe(1);
+    expect(chooseDetailTileDensity({ zoom: 3, dpr: 2 })).toBe(6);
   });
 
   it('reuses a quantized pyramid level across adjacent zooms while preserving exact settled detail density', () => {

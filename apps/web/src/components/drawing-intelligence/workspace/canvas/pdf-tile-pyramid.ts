@@ -6,9 +6,14 @@
 export const PDF_TILE_SIZE = 512;
 export const DEFAULT_TILE_CACHE_BYTES = 96 * 1024 * 1024;
 const MIN_TILE_DENSITY = 0.25;
-const MAX_TILE_DENSITY = 4;
+/** Interactive pyramid cap. 8 device px per logical px covers the A1 page at
+ * DPR 2 and deep zoom without browser upscaling (B2). */
+const MAX_TILE_DENSITY = 8;
+/** Settled detail pass never falls below 1x so overview/fit views sharpen
+ * instead of parking at the 0.25/0.5 first-paint levels (B2 settle minimum). */
+const MIN_SETTLE_TILE_DENSITY = 1;
 const MAX_DETAIL_TILE_DENSITY = 32;
-const PYRAMID_DENSITIES = [0.25, 0.5, 1, 2, 4] as const;
+const PYRAMID_DENSITIES = [0.25, 0.5, 1, 2, 4, 8] as const;
 
 export interface PdfPageDimensions {
   pageKey: string;
@@ -77,7 +82,7 @@ export function chooseTileDensity({ zoom, dpr }: Pick<TileViewport, 'zoom' | 'dp
  */
 export function chooseDetailTileDensity({ zoom, dpr }: Pick<TileViewport, 'zoom' | 'dpr'>): number {
   const requested = (Number.isFinite(zoom) ? zoom : 1) * (Number.isFinite(dpr) ? dpr : 1);
-  return Math.min(MAX_DETAIL_TILE_DENSITY, Math.max(MIN_TILE_DENSITY, requested));
+  return Math.min(MAX_DETAIL_TILE_DENSITY, Math.max(MIN_SETTLE_TILE_DENSITY, requested));
 }
 
 /**
