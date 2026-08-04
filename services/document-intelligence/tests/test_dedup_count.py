@@ -158,3 +158,102 @@ def test_deduplicate_and_count_metrics():
     assert result.metrics["duplicates_merged"] == 1
     assert result.metrics["work_items_after_dedup"] == 1
     assert result.metrics["items_with_observed_count"] == 1
+
+
+# ─── R4: auto-confirm count from strong plan-page label evidence ─────────────
+
+def _dem_page_with_labels_and_type(labels: list[dict], page_index: int = 0) -> dict:
+    return {
+        "source": {"page_index": page_index, "width_px": 2482, "height_px": 1755},
+        "sheet_identity": {"title": {"value": "DENAH FOOTPLAT"}},
+        "observations": {"element_labels": labels},
+    }
+
+
+def test_count_auto_confirms_strongly_signaled_item():
+    """PC1 with 3 distinct evidence-backed labels on its count-source page
+    (foundation plan) becomes engine_confirmed — no invented number."""
+    page = _dem_page_with_labels_and_type([
+        {"raw": "PC1", "normalized": "PC1", "bbox": [100.0, 100.0, 120.0, 120.0], "evidence_refs": ["ev-pc1-1"]},
+        {"raw": "PC1", "normalized": "PC1", "bbox": [200.0, 100.0, 220.0, 120.0], "evidence_refs": ["ev-pc1-2"]},
+        {"raw": "PC1", "normalized": "PC1", "bbox": [300.0, 100.0, 320.0, 120.0], "evidence_refs": ["ev-pc1-3"]},
+    ])
+    item = _candidate("w-PC1", "foundation", "PC1", "foundation")
+    item.count_source_page_indices = [0]
+    result = count_occurrences([item], {0: page})
+    updated = result[0]
+    assert updated.verified_physical_count == 3
+    assert updated.count_authority == "engine_confirmed"
+    count_facts = [f for f in updated.measurement_facts if f.field == "count"]
+    assert len(count_facts) == 1
+    assert count_facts[0].verification_status == "engine_verified"
+    assert count_facts[0].evidence_refs == ["ev-pc1-1", "ev-pc1-2", "ev-pc1-3"]
+    assert "physical_count_verification" not in updated.missing_information
+
+
+def test_count_does_not_auto_confirm_single_label():
+    """A single label could be a legend entry — never auto-confirmed."""
+    page = _dem_page_with_labels_and_type([
+        {"raw": "PC1", "normalized": "PC1", "bbox": [100.0, 100.0, 120.0, 120.0], "evidence_refs": ["ev-pc1-1"]},
+    ])
+    item = _candidate("w-PC1", "foundation", "PC1", "foundation")
+    item.count_source_page_indices = [0]
+    result = count_occurrences([item], {0: page})
+    assert result[0].verified_physical_count is None
+    assert result[0].count_authority == "candidate"
+
+
+def test_count_does_not_auto_confirm_without_evidence_refs():
+    """Evidence-less labels are not a strong signal — never auto-confirmed."""
+    page = _dem_page_with_labels_and_type([
+        {"raw": "PC1", "normalized": "PC1", "bbox": [100.0, 100.0, 120.0, 120.0]},
+        {"raw": "PC1", "normalized": "PC1", "bbox": [200.0, 100.0, 220.0, 120.0]},
+        {"raw": "PC1", "normalized": "PC1", "bbox": [300.0, 100.0, 320.0, 120.0]},
+    ])
+    item = _candidate("w-PC1", "foundation", "PC1", "foundation")
+    item.count_source_page_indices = [0]
+    result = count_occurrences([item], {0: page})
+    assert result[0].verified_physical_count is None
+    assert result[0].count_authority == "candidate"
+
+
+def test_count_does_not_auto_confirm_off_count_source_page():
+    """Labels on a non-count-source page (e.g. a section/detail) are not plan
+    instances — no auto-confirm."""
+    page = _dem_page_with_labels_and_type([
+        {"raw": "RB1", "normalized": "RB1", "bbox": [100.0, 100.0, 120.0, 120.0], "evidence_refs": ["ev-rb1-1"]},
+        {"raw": "RB1", "normalized": "RB1", "bbox": [200.0, 100.0, 220.0, 120.0], "evidence_refs": ["ev-rb1-2"]},
+    ])
+    item = _candidate("w-RB1", "beam", "RB1", "roof")
+    item.count_source_page_indices = [1]  # count source is another page
+    result = count_occurrences([item], {0: page})
+    assert result[0].verified_physical_count is None
+    assert result[0].count_authority == "candidate"
+
+
+def test_count_auto_confirm_respects_existing_approved_count():
+    """An already-approved count fact wins; auto-confirm must not override it."""
+    page = _dem_page_with_labels_and_type([
+        {"raw": "K1", "normalized": "K1", "bbox": [100.0, 100.0, 120.0, 120.0], "evidence_refs": ["ev-1"]},
+        {"raw": "K1", "normalized": "K1", "bbox": [200.0, 100.0, 220.0, 120.0], "evidence_refs": ["ev-2"]},
+    ])
+    item = _candidate(
+        "w-K1", "column", "K1", "L1",
+        facts=[_fact("count", 4.0, verification="human_verified", method="verified_instances")],
+    )
+    item.count_source_page_indices = [0]
+    result = count_occurrences([item], {0: page})
+    assert result[0].verified_physical_count == 4  # human-approved, not 2
+    assert result[0].count_authority == "human_confirmed"
+
+
+def test_deduplicate_and_count_reports_auto_confirmed_metric():
+    page = _dem_page_with_labels_and_type([
+        {"raw": "PC1", "normalized": "PC1", "bbox": [100.0, 100.0, 120.0, 120.0], "evidence_refs": ["ev-1"]},
+        {"raw": "PC1", "normalized": "PC1", "bbox": [200.0, 100.0, 220.0, 120.0], "evidence_refs": ["ev-2"]},
+    ])
+    item = _candidate("w-PC1", "foundation", "PC1", "foundation")
+    item.count_source_page_indices = [0]
+    result = deduplicate_and_count([item], {0: page})
+    assert result.metrics["items_with_auto_confirmed_count"] == 1
+    assert result.metrics["items_with_verified_count"] == 1

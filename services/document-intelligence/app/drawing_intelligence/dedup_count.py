@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 """K4 — Work item deduplication and occurrence counting.
 
 Master Plan §4.3 K4: one ``(category, canonical_key, level)`` is one item;
@@ -12,6 +13,15 @@ This module is a deterministic safety net on top of ``build_work_items``:
 - ``count_occurrences`` counts DEM element-label observations per code as the
   observed-occurrence basis, then derives the verified count from an approved
   count fact (never invents a number).
+
+Revision cycle-001 (R4): auto-confirm the verified count for strongly-signaled
+items.  When an item is classified, coded, conflict-free, and its code has
+multiple distinct DEM element-label observations — each carrying
+``evidence_refs`` — on the item's count-source pages (the plan sheet types
+``physical_instances`` already selected), the observed count is promoted to
+``verified_physical_count`` with ``count_authority="engine_confirmed"`` and an
+engine-verified count fact.  The number is never invented: it is the count of
+real label observations in JSON-1 on the plan page.
 
 The module never fabricates counts and never drops evidence.
 """
@@ -36,6 +46,11 @@ _COUNT_AUTHORITY_RANK = {
     "human_confirmed": 2,
     "conflicting": -1,
 }
+
+# R4: a verified count requires at least this many distinct label observations
+# on count-source pages.  A single label could be a legend/table entry, not a
+# plan instance; two or more distinct plan labels are a strong signal.
+_MIN_AUTO_CONFIRM_OBSERVATIONS = 2
 
 
 @dataclass(frozen=True)
@@ -153,19 +168,32 @@ def deduplicate_work_items(work_items: list[WorkItemCandidate]) -> list[WorkItem
 def count_occurrences(
     work_items: list[WorkItemCandidate],
     dem_pages: dict[int, dict[str, Any]],
+    _stats: dict[str, Any] | None = None,
 ) -> list[WorkItemCandidate]:
     """Set the observed-occurrence basis from DEM element labels and the
-    verified count from an approved count fact.
+    verified count from an approved count fact or a strong auto-confirm signal.
 
     ``occurrence_count_observed`` is the number of distinct DEM element-label
     observations matching the item code (deduplicated by bbox); the existing
     pipeline value is kept when it is larger.  ``verified_physical_count`` is
     taken only from a ``count`` fact whose verification is engine/human
-    verified — never invented.
+    verified, or — R4 — from multiple distinct, evidence-backed label
+    observations on the item's count-source pages.  Never invented.
+
+    ``_stats`` (optional) receives ``{"auto_confirmed_count": n}`` for
+    observability without changing the public return contract.
     """
-    # Index DEM element labels by canonical key -> set of bbox tuples.
+    # Index DEM element labels by canonical key: per-page distinct bbox sets,
+    # the pages on which each bbox was observed, and whether every observation
+    # carries evidence_refs.
     observed_by_code: dict[str, set[tuple[float, float, float, float]]] = defaultdict(set)
     observed_pages_by_code: dict[str, set[int]] = defaultdict(set)
+    # code -> page -> set of bbox tuples (distinct plan instances per page)
+    observed_by_code_page: dict[str, dict[int, set[tuple[float, float, float, float]]]] = defaultdict(lambda: defaultdict(set))
+    # code -> page -> bbox -> evidence refs
+    refs_by_code_page_box: dict[str, dict[int, dict[tuple[float, float, float, float], list[str]]]] = defaultdict(
+        lambda: defaultdict(dict)
+    )
     for page_index, page in dem_pages.items():
         source = page.get("source", {})
         for category, _, row in iter_observations(page):
@@ -178,12 +206,18 @@ def count_occurrences(
             box = normalize_dem_bbox(row.get("bbox"), source)
             if box is None:
                 continue
+            refs = [str(ref) for ref in row.get("evidence_refs", []) or []]
             observed_by_code[key.upper()].add(box.values)
             observed_pages_by_code[key.upper()].add(page_index)
+            observed_by_code_page[key.upper()][page_index].add(box.values)
+            # Union refs per (page, bbox); the same instance may appear once.
+            existing_refs = refs_by_code_page_box[key.upper()][page_index].get(box.values, [])
+            refs_by_code_page_box[key.upper()][page_index][box.values] = sorted({*existing_refs, *refs})
 
     updated: list[WorkItemCandidate] = []
     counted = 0
     verified = 0
+    auto_confirmed = 0
     for item in work_items:
         code = _canonical_key_of(item)
         observed = len(observed_by_code.get(code, set()))
@@ -210,12 +244,64 @@ def count_occurrences(
                 count_authority = "engine_confirmed"
             verified += 1
 
+        # ── R4: auto-confirm strong count signal from plan-page labels ───────
+        # A classified, coded, conflict-free item whose code has at least
+        # `_MIN_AUTO_CONFIRM_OBSERVATIONS` distinct, evidence-backed DEM label
+        # observations on its count-source pages receives an engine-confirmed
+        # verified count.  The number is the observed instance count — never
+        # an invention.
+        if (
+            verified_value is None
+            and count_authority == "candidate"
+            and item.category != "unknown"
+            and item.code
+            and not item.conflict_ids
+            and item.count_source_page_indices
+        ):
+            instances: set[tuple[int, tuple[float, float, float, float]]] = set()
+            all_evidence = True
+            evidence_refs: set[str] = set()
+            for page_index in sorted(item.count_source_page_indices):
+                for box in observed_by_code_page.get(code, {}).get(page_index, set()):
+                    instances.add((page_index, box))
+                    refs = refs_by_code_page_box.get(code, {}).get(page_index, {}).get(box, [])
+                    if not refs:
+                        all_evidence = False
+                    evidence_refs.update(refs)
+            if len(instances) >= _MIN_AUTO_CONFIRM_OBSERVATIONS and all_evidence:
+                verified_value = len(instances)
+                count_authority = "engine_confirmed"
+                evidence_refs_sorted = sorted(evidence_refs)
+                # The promoted count is a verified-instances fact with the
+                # exact evidence of the observed plan labels.
+                facts = list(item.measurement_facts)
+                facts.append(ElementMeasurementFact(
+                    measurement_id=f"mf-{item.work_item_id}-count",
+                    work_item_id=item.work_item_id,
+                    field="count",
+                    value=float(verified_value),
+                    unit="unit",
+                    source_method="verified_instances",
+                    verification_status="engine_verified",
+                    evidence_refs=evidence_refs_sorted,
+                    source_page_indices=sorted({page for page, _ in instances}),
+                    formula_input="count",
+                ))
+                missing = [value for value in item.missing_information if value not in {
+                    "physical_count_verification", "human verification of physical-instance count",
+                }]
+                item = item.model_copy(update={"measurement_facts": facts, "missing_information": missing}, deep=True)
+                verified += 1
+                auto_confirmed += 1
+
         updated.append(item.model_copy(update={
             "occurrence_count_observed": occurrence,
             "verified_physical_count": verified_value,
             "count_authority": count_authority,
             "count_source_page_indices": sorted({*item.count_source_page_indices, *observed_pages}),
         }, deep=True))
+    if _stats is not None:
+        _stats["auto_confirmed_count"] = auto_confirmed
     return updated
 
 
@@ -227,7 +313,8 @@ def deduplicate_and_count(
     count occurrences and verified counts."""
     before = len(work_items)
     deduped = deduplicate_work_items(work_items)
-    counted = count_occurrences(deduped, dem_pages)
+    stats: dict[str, Any] = {}
+    counted = count_occurrences(deduped, dem_pages, _stats=stats)
     return DedupCountResult(
         work_items=counted,
         metrics={
@@ -236,5 +323,6 @@ def deduplicate_and_count(
             "duplicates_merged": before - len(counted),
             "items_with_observed_count": sum(1 for item in counted if item.occurrence_count_observed > 0),
             "items_with_verified_count": sum(1 for item in counted if item.verified_physical_count is not None),
+            "items_with_auto_confirmed_count": stats.get("auto_confirmed_count", 0),
         },
     )

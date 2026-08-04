@@ -157,3 +157,95 @@ def test_join_preserves_existing_facts():
     updated = result.work_items[0]
     widths = [f for f in updated.measurement_facts if f.field == "width"]
     assert widths[0].value == 399.0  # existing fact preserved, joiner did not overwrite
+
+
+# ─── R2: slab/wall thickness joins ───────────────────────────────────────────
+
+def test_join_slab_thickness_from_dimension_observation():
+    page = _load_page("page-0043")  # DENAH BALOK LANTAI 2 has T=130mm near S1
+    item = _candidate("w-S1", "slab", "S1", 43)
+    result = join_written_dimensions(work_items=[item], dem_pages={43: page})
+    updated = result.work_items[0]
+    thickness = [f for f in updated.measurement_facts if f.field == "thickness"]
+    assert len(thickness) == 1
+    assert thickness[0].value == 130.0
+    assert thickness[0].unit == "mm"
+    assert thickness[0].verification_status == "engine_verified"
+    assert thickness[0].evidence_refs
+    assert result.metrics["slab_wall_thickness_joins"] >= 1
+
+
+def test_join_slab_thickness_from_table_pelat_page_0052():
+    page = _load_page("page-0052")  # TABEL PELAT has t=130 / t=120
+    s1 = _candidate("w-S1", "slab", "S1", 52)
+    s2 = _candidate("w-S2", "slab", "S2", 52)
+    result = join_written_dimensions(work_items=[s1, s2], dem_pages={52: page})
+    by_id = {item.work_item_id: item for item in result.work_items}
+    s1_thick = [f for f in by_id["w-S1"].measurement_facts if f.field == "thickness"]
+    s2_thick = [f for f in by_id["w-S2"].measurement_facts if f.field == "thickness"]
+    assert s1_thick and s2_thick
+    assert s1_thick[0].value == 130.0
+    assert s2_thick[0].value == 120.0
+
+
+def test_join_thickness_reflected_in_attributes_dimensions():
+    page = _load_page("page-0043")
+    item = _candidate("w-S1", "slab", "S1", 43)
+    result = join_written_dimensions(work_items=[item], dem_pages={43: page})
+    dims = result.work_items[0].attributes.get("dimensions")
+    assert isinstance(dims, dict)
+    assert dims.get("thickness") == 130.0
+
+
+# ─── R2: inline label dimension joins ────────────────────────────────────────
+
+def test_join_inline_steel_profile_from_label():
+    page = _load_page("page-0055")  # 'WF 200X100X5.5X8 (KD.1)' and 'WF1 150X75X5X7'
+    kd1 = _candidate("w-KD1", "steel_profile", "KD1", 55)
+    result = join_written_dimensions(work_items=[kd1], dem_pages={55: page})
+    updated = result.work_items[0]
+    width = [f for f in updated.measurement_facts if f.field == "width"]
+    depth = [f for f in updated.measurement_facts if f.field == "depth"]
+    # Parenthesized code (KD.1) maps the label to item KD1; profile numbers are
+    # width = flange (h=100), depth = nominal height (b=200).
+    assert width and depth
+    assert width[0].value == 100.0
+    assert depth[0].value == 200.0
+    assert result.metrics["inline_label_dimension_joins"] >= 1
+
+
+def test_join_inline_steel_profile_wf1_from_label():
+    page = _load_page("page-0055")  # 'WF1 150X75X5X7'
+    wf1 = _candidate("w-WF1", "steel_profile", "WF1", 55)
+    result = join_written_dimensions(work_items=[wf1], dem_pages={55: page})
+    updated = result.work_items[0]
+    width = [f for f in updated.measurement_facts if f.field == "width"]
+    depth = [f for f in updated.measurement_facts if f.field == "depth"]
+    assert width and depth
+    assert width[0].value == 75.0
+    assert depth[0].value == 150.0
+
+
+def test_join_inline_lintel_from_label():
+    # "Lintel 15X10" -> inline_cm 150×100 mm (Master Plan §4.3 K2 convention).
+    page = _load_page("page-0046")
+    lintel = _candidate("w-LINTEL", "beam", "LINTEL", 46)
+    result = join_written_dimensions(work_items=[lintel], dem_pages={46: page})
+    updated = result.work_items[0]
+    width = [f for f in updated.measurement_facts if f.field == "width"]
+    depth = [f for f in updated.measurement_facts if f.field == "depth"]
+    assert width and depth
+    assert width[0].value == 150.0
+    assert depth[0].value == 100.0
+    dims = updated.attributes.get("dimensions")
+    assert isinstance(dims, dict)
+    assert dims.get("width") == 150.0 and dims.get("depth") == 100.0
+
+
+def test_join_inline_does_not_fabricate_for_bare_labels():
+    # "CG2A" has no inline dimension and no nearby pair -> no width/depth facts.
+    page = _load_page("page-0043")
+    item = _candidate("w-CG2A", "beam", "CG2A", 43)
+    result = join_written_dimensions(work_items=[item], dem_pages={43: page})
+    updated = result.work_items[0]
+    assert not [f for f in updated.measurement_facts if f.field in {"width", "depth"}]

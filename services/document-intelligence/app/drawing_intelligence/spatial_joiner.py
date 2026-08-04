@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 """K3 — Spatial joiner and inline table parser.
 
 Joins element labels, written dimensions, and page location via bounding-box
@@ -8,12 +9,21 @@ proximity and row-wise inline table parsing, producing typed
 
 Design constraints (Master Plan §4.2, §4.3):
 - Facts are only created when a written dimension observation (or an explicit
-  table cell) exists — the engine never fabricates numbers.
+  table cell, or an inline dimension inside the element label itself) exists —
+  the engine never fabricates numbers.
 - A fact becomes ``engine_verified`` only when it has evidence references and
   a unique, close spatial association (bbox) or an explicit table row.
 - Beams: a span length is attached only when a table explicitly provides a
   span/bentang/panjang column; otherwise the item is flagged
   ``missing_information: ["span_length"]`` (fallback, not blocked).
+
+Revision cycle-001 (R2): the joiner additionally connects
+- slab/wall thickness observations ("T=130mm", "t=120") near a label,
+- inline dimensions embedded in the element label itself
+  ("WF1 150X75X5X7", "H150X150X7X10", "Lintel 15X10", "K1 - 400 x 400 mm"),
+and reflects joined width/depth facts into ``attributes["dimensions"]`` so
+downstream confirmation logic (M8) sees the linked dimension.  Every fact
+still traces to a written observation in JSON-1; nothing is invented.
 """
 
 import re
@@ -23,6 +33,7 @@ from typing import Any
 
 from .dem_adapter import iter_observations, normalize_dem_bbox
 from .models import BBox, ElementMeasurementFact, WorkItemCandidate
+from .taxonomy import parse_inline_dimensions
 from .text_index import normalize_text
 from .vocabulary import canonical_key
 
@@ -37,6 +48,20 @@ _CODE_TOKEN_RE = re.compile(
 )
 _SPAN_COLUMN_RE = re.compile(r"^(?:BENTANG|PANJANG|SPAN|LENGTH|L)\s*$", re.I)
 _LEVEL_TITLE_RE = re.compile(r"\b(?:LT\.?|LANTAI|LEVEL)\s*(\d{1,2})\b", re.I)
+# R2: slab/wall thickness observations ("T=130mm", "t=120", "T=25MM").
+_THICKNESS_RE = re.compile(r"\bT\s*=\s*(\d+(?:\.\d+)?)\s*(MM|CM|M)?\b", re.I)
+# R2: an explicit parenthesized code inside a label, e.g. "WF 200X100X5.5X8
+# (KD.1)" -> the label belongs to item code KD1.  A dot inside the code is
+# tolerated ("KD.1") and normalized away.
+_PAREN_CODE_RE = re.compile(r"\(([A-Z]{1,5}[.-]?\d{1,3}[A-Z]?)\)", re.I)
+
+
+def _parenthesized_code(raw: str) -> str | None:
+    """Extract an explicit parenthesized element code, e.g. '(KD.1)' -> 'KD1'."""
+    match = _PAREN_CODE_RE.search(raw or "")
+    if not match:
+        return None
+    return re.sub(r"[.\s]+", "", match.group(1)).upper()
 
 
 @dataclass(frozen=True)
@@ -82,6 +107,26 @@ def _parse_dimension_pair(raw: str) -> dict[str, Any] | None:
         # on a lintel label is centimetres -> 150×100 mm.
         first, second = first * 10, second * 10
     return {"width": first, "depth": second, "unit": unit}
+
+
+def _parse_thickness(raw: str) -> dict[str, Any] | None:
+    """Parse a slab/wall thickness observation ('T=130mm', 't=120') to mm.
+
+    R2: slab (and wall) dimensions are expressed as thickness, not as a
+    width×depth pair.  Returns None when no thickness marker is present.
+    """
+    if not raw:
+        return None
+    match = _THICKNESS_RE.search(raw)
+    if not match:
+        return None
+    value = float(match.group(1))
+    unit = (match.group(2) or "mm").lower()
+    if unit == "cm":
+        value *= 10
+    elif unit == "m":
+        value *= 1000
+    return {"thickness": value, "unit": "mm"}
 
 
 def parse_inline_table_rows(raw: str) -> list[dict[str, Any]]:
@@ -182,12 +227,31 @@ def _index_page(dem_page: dict[str, Any]) -> dict[str, Any]:
         if category == "element_labels":
             key = canonical_key(raw)
             if key:
-                labels[key.upper()].append({"bbox": box, "refs": refs, "raw": raw})
+                labels[key.upper()].append({
+                    "bbox": box,
+                    "refs": refs,
+                    "raw": raw,
+                    # R2: the label may itself carry the dimension
+                    # ("WF1 150X75X5X7", "Lintel 15X10", "K1 - 400 x 400 mm").
+                    "inline": parse_inline_dimensions(raw),
+                })
+            # R2: index the label under an explicit parenthesized code too, so
+            # "WF 200X100X5.5X8 (KD.1)" is reachable from item code KD1.
+            parenthetical = _parenthesized_code(raw)
+            if parenthetical and parenthetical.upper() != (key or "").upper():
+                labels[parenthetical.upper()].append({
+                    "bbox": box,
+                    "refs": refs,
+                    "raw": raw,
+                    "inline": parse_inline_dimensions(raw),
+                })
         elif category == "dimensions":
             dims.append({
                 "bbox": box,
                 "refs": refs,
                 "pair": _parse_dimension_pair(raw),
+                # R2: slab/wall thickness ("T=130mm", "t=120").
+                "thickness": _parse_thickness(raw),
                 "raw": raw,
                 "numeric_value": row.get("numeric_value"),
                 "unit": str(row.get("unit") or "").lower(),
@@ -218,6 +282,83 @@ def _find_near_dimension(
     return best
 
 
+def _find_near_thickness(
+    label_box: BBox, dims: list[dict[str, Any]], *, max_distance: float = 0.05
+) -> dict[str, Any] | None:
+    """R2: nearest dimension observation carrying an explicit thickness."""
+    candidates = [
+        d for d in dims
+        if d.get("thickness") and _distance(label_box, d["bbox"]) <= max_distance
+    ]
+    if not candidates:
+        return None
+    candidates.sort(key=lambda d: (_distance(label_box, d["bbox"]), -len(d["refs"])))
+    return candidates[0]
+
+
+def _attach_width_depth_facts(
+    *,
+    item: WorkItemCandidate,
+    facts: list[ElementMeasurementFact],
+    existing_fields: set[str],
+    page_index: int,
+    width: float,
+    depth: float,
+    unit: str,
+    refs: list[str],
+    attributes: dict[str, Any],
+) -> int:
+    """Attach engine-verified width/depth facts and mirror into attributes.
+
+    R2: joined written dimensions are reflected in ``attributes["dimensions"]``
+    (same dict shape the vocabulary path uses) so the confirmation-area logic
+    (M8) sees the linked dimension.  Existing stronger evidence is preserved.
+    """
+    if "width" in existing_fields and "depth" in existing_fields:
+        return 0
+    added = 0
+    if "width" not in existing_fields:
+        facts.append(ElementMeasurementFact(
+            measurement_id=f"mf-{item.work_item_id}-width",
+            work_item_id=item.work_item_id,
+            field="width",
+            value=float(width),
+            unit=unit,
+            source_method="written_dimension",
+            verification_status="engine_verified",
+            evidence_refs=refs,
+            source_page_indices=[page_index],
+            formula_input="width",
+        ))
+        existing_fields.add("width")
+        added += 1
+    if "depth" not in existing_fields:
+        facts.append(ElementMeasurementFact(
+            measurement_id=f"mf-{item.work_item_id}-depth",
+            work_item_id=item.work_item_id,
+            field="depth",
+            value=float(depth),
+            unit=unit,
+            source_method="written_dimension",
+            verification_status="engine_verified",
+            evidence_refs=refs,
+            source_page_indices=[page_index],
+            formula_input="depth",
+        ))
+        existing_fields.add("depth")
+        added += 1
+    # Mirror into attributes["dimensions"] only when width+depth both present.
+    if "width" in existing_fields and "depth" in existing_fields:
+        current = attributes.get("dimensions")
+        if not isinstance(current, dict):
+            current = {}
+        current.setdefault("width", float(width))
+        current.setdefault("depth", float(depth))
+        current.setdefault("unit", unit)
+        attributes["dimensions"] = current
+    return added
+
+
 def join_written_dimensions(
     *,
     work_items: list[WorkItemCandidate],
@@ -237,6 +378,8 @@ def join_written_dimensions(
     facts_added = 0
     table_rows_parsed = 0
     bbox_joins = 0
+    inline_label_joins = 0
+    thickness_joins = 0
     span_fallbacks = 0
     locations_mapped = 0
 
@@ -284,6 +427,13 @@ def join_written_dimensions(
                             ),
                         ])
                         existing_fields.update({"width", "depth"})
+                        current = attributes.get("dimensions")
+                        if not isinstance(current, dict):
+                            current = {}
+                        current.setdefault("width", float(dimension["width"]))
+                        current.setdefault("depth", float(dimension["depth"]))
+                        current.setdefault("unit", str(dimension["unit"]))
+                        attributes["dimensions"] = current
                         facts_added += 2
                     if item.category in {"beam", "balok"} and "span_length" not in existing_fields:
                         span_value = record.get("span_length") or (
@@ -307,6 +457,41 @@ def join_written_dimensions(
                             existing_fields.add("span_length")
                             facts_added += 1
 
+            # ── Inline label dimensions (R2) ────────────────────────────────
+            # A label that itself contains the section/profile dimension
+            # ("WF1 150X75X5X7", "H150X150X7X10", "Lintel 15X10",
+            #  "K1 - 400 x 400 mm") is written evidence for that item.
+            for label in index["labels"].get(code, []):
+                inline = label.get("inline")
+                if not inline:
+                    continue
+                width = inline.get("width")
+                depth = inline.get("depth")
+                if width is None or depth is None and inline.get("profile"):
+                    # Steel profile: "WF 200X100X5.5X8" — the first number is
+                    # the nominal depth (b), the second is the flange width (h).
+                    profile = inline
+                    width = profile.get("h")
+                    depth = profile.get("b")
+                if width is None or depth is None:
+                    continue
+                if "width" in existing_fields and "depth" in existing_fields:
+                    continue
+                added = _attach_width_depth_facts(
+                    item=item,
+                    facts=facts,
+                    existing_fields=existing_fields,
+                    page_index=page_index,
+                    width=float(width),
+                    depth=float(depth),
+                    unit=str(inline.get("unit") or "mm"),
+                    refs=label["refs"] or [],
+                    attributes=attributes,
+                )
+                facts_added += added
+                if added:
+                    inline_label_joins += 1
+
             # ── Bbox proximity join: label ↔ dimension ──────────────────────
             for label in index["labels"].get(code, []):
                 near = _find_near_dimension(label["bbox"], index["dims"])
@@ -315,34 +500,48 @@ def join_written_dimensions(
                 bbox_joins += 1
                 pair = near["pair"]
                 if "width" not in existing_fields and "depth" not in existing_fields:
-                    facts.extend([
-                        ElementMeasurementFact(
-                            measurement_id=f"mf-{item.work_item_id}-width",
-                            work_item_id=item.work_item_id,
-                            field="width",
-                            value=float(pair["width"]),
-                            unit=str(pair["unit"]),
-                            source_method="written_dimension",
-                            verification_status="engine_verified",
-                            evidence_refs=sorted({*near["refs"], *label["refs"]}),
-                            source_page_indices=[page_index],
-                            formula_input="width",
-                        ),
-                        ElementMeasurementFact(
-                            measurement_id=f"mf-{item.work_item_id}-depth",
-                            work_item_id=item.work_item_id,
-                            field="depth",
-                            value=float(pair["depth"]),
-                            unit=str(pair["unit"]),
-                            source_method="written_dimension",
-                            verification_status="engine_verified",
-                            evidence_refs=sorted({*near["refs"], *label["refs"]}),
-                            source_page_indices=[page_index],
-                            formula_input="depth",
-                        ),
-                    ])
-                    existing_fields.update({"width", "depth"})
-                    facts_added += 2
+                    added = _attach_width_depth_facts(
+                        item=item,
+                        facts=facts,
+                        existing_fields=existing_fields,
+                        page_index=page_index,
+                        width=float(pair["width"]),
+                        depth=float(pair["depth"]),
+                        unit=str(pair["unit"]),
+                        refs=sorted({*near["refs"], *label["refs"]}),
+                        attributes=attributes,
+                    )
+                    facts_added += added
+
+            # ── Slab/wall thickness join (R2) ───────────────────────────────
+            if item.category in {"slab", "wall"} and "thickness" not in existing_fields:
+                for label in index["labels"].get(code, []):
+                    near = _find_near_thickness(label["bbox"], index["dims"])
+                    if near is None:
+                        continue
+                    thickness = near["thickness"]
+                    facts.append(ElementMeasurementFact(
+                        measurement_id=f"mf-{item.work_item_id}-thickness",
+                        work_item_id=item.work_item_id,
+                        field="thickness",
+                        value=float(thickness["thickness"]),
+                        unit=str(thickness["unit"]),
+                        source_method="written_dimension",
+                        verification_status="engine_verified",
+                        evidence_refs=sorted({*near["refs"], *label["refs"]}),
+                        source_page_indices=[page_index],
+                        formula_input="thickness",
+                    ))
+                    existing_fields.add("thickness")
+                    current = attributes.get("dimensions")
+                    if not isinstance(current, dict):
+                        current = {}
+                    current.setdefault("thickness", float(thickness["thickness"]))
+                    current.setdefault("unit", str(thickness["unit"]))
+                    attributes["dimensions"] = current
+                    facts_added += 1
+                    thickness_joins += 1
+                    break
 
         # ── Level/location mapping ───────────────────────────────────────────
         if not attributes.get("level") or attributes.get("level") == "unknown":
@@ -383,6 +582,8 @@ def join_written_dimensions(
             "written_dimension_facts_added": facts_added,
             "table_rows_parsed": table_rows_parsed,
             "bbox_dimension_joins": bbox_joins,
+            "inline_label_dimension_joins": inline_label_joins,
+            "slab_wall_thickness_joins": thickness_joins,
             "beam_span_length_fallbacks": span_fallbacks,
             "locations_mapped": locations_mapped,
         },
