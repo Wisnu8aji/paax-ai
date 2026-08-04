@@ -100,6 +100,7 @@ def test_name_formatter_formattable_for_every_registry_category():
         "steel_profile": {"code": "WF1"},
         "trekstang": {"code": "TS"},
         "wall": {},
+        "water_tank": {"code": "BAK KONTROL"},
         "window": {"code": "J1"},
     }
     for category in _REGISTRY:
@@ -127,6 +128,7 @@ def test_name_formatter_formattable_for_every_registry_category():
         "steel_profile": "Profil Baja",
         "trekstang": "Trekstang",
         "wall": "Dinding",
+        "water_tank": "Bak Kontrol",
         "window": "Jendela",
     }
     for category in _REGISTRY:

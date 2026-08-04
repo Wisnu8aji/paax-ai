@@ -16,6 +16,7 @@ from typing import Any
 
 from .dem_adapter import iter_observations, normalize_dem_bbox
 from .models import DrawingConflict, PageIntelligence, SourceValue, VocabularyEntry, WorkItemCandidate
+from .spatial_joiner import parse_inline_table_rows
 from .taxonomy import (
     category_from_code,
     label_looks_like_document_noise,
@@ -152,7 +153,7 @@ def promote_golden_definition_items(
         level = semantic.level if semantic else None
         source = dem_page.get("source", {})
         for category_name, row_index, row in iter_observations(dem_page):
-            if category_name not in {"element_labels", "symbols"}:
+            if category_name not in {"element_labels", "symbols", "tables"}:
                 continue
             raw = str(row.get("raw") or row.get("normalized") or "")
             key = canonical_key(raw)
@@ -186,6 +187,28 @@ def promote_golden_definition_items(
                 "definition_page_index": page_index,
             }
             dimensions = _dimension_value(row)
+            # P5: BAK KONTROL lives in the DEM ``tables`` category (page-0086
+            # "BAK KONTROL\n60x60 | 60x60 | 60x60").  The row-wise table
+            # parser resolves the golden name as the code and reads the
+            # 600×600 mm cell evidence, which is the same shape the label path
+            # uses.
+            if category_name == "tables":
+                records = parse_inline_table_rows(raw)
+                record = next(
+                    (r for r in records if r["code"] == code.upper()),
+                    None,
+                )
+                if record and record.get("dimension"):
+                    dim = record["dimension"]
+                    dimensions = {
+                        "width": dim["width"],
+                        "depth": dim["depth"],
+                        "a": dim["width"],
+                        "b": dim["depth"],
+                        "unit": dim.get("unit") or "mm",
+                        "raw": raw,
+                        "source": "inline_table",
+                    }
             if dimensions:
                 attributes["dimensions"] = dimensions
             missing: list[str] = []

@@ -301,3 +301,89 @@ def test_count_plan_scoped_item_does_not_use_section_pages_for_count():
     # plan observations, never 5.
     assert updated.verified_physical_count == 2
     assert updated.count_authority == "engine_confirmed"
+
+
+# ─── P5: cross-source / cross-context dedup (cycle-p1p2) ─────────────────────
+
+def test_p5_unknown_fallback_merges_into_classified_item():
+    """K-01 on page-0086: the classified column item and the detection-less
+    unknown fallback of the same (code, level) become ONE item — the fallback
+    must not duplicate a classified item."""
+    column = _candidate("w-column-K-01", "column", "K-01", "L1", pages=[6])
+    fallback = _candidate("w-unknown-K-01", "unknown", "K-01", "L1", pages=[86])
+    result = deduplicate_work_items([column, fallback])
+    assert len(result) == 1
+    merged = result[0]
+    assert merged.category == "column"
+    assert merged.code == "K-01"
+    assert merged.page_indices == [6, 86]
+    assert merged.attributes["level"] == "L1"
+
+
+def test_p5_unknown_fallback_stays_separate_when_two_classified_categories():
+    """A genuinely ambiguous code (two classified categories claim the same
+    (code, level)) keeps the unknown fallback separate — never a guess."""
+    column = _candidate("w-col-K-01", "column", "K-01", "L1")
+    beam = _candidate("w-beam-K-01", "beam", "K-01", "L1")
+    fallback = _candidate("w-unknown-K-01", "unknown", "K-01", "L1")
+    result = deduplicate_work_items([column, beam, fallback])
+    assert len(result) == 3  # two classified + one unknown, no forced merge
+
+
+def test_p5_lt1_lintel_merge_canonical_code_and_count():
+    """LT1 (spurious sheet-title code) and LINTEL (golden code) are one lintel
+    family: dedup merges them under the golden code LINTEL and the observed
+    count comes from the real Lintel label observations."""
+    lt1 = _candidate("w-beam-LT1", "beam", "LT1", "L1", pages=[46])
+    lt1.occurrence_count_observed = 1
+    lintel = _candidate("w-beam-LINTEL", "beam", "LINTEL", "L1", pages=[46])
+    lintel.occurrence_count_observed = 22
+    result = deduplicate_work_items([lt1, lintel])
+    assert len(result) == 1
+    merged = result[0]
+    assert merged.code == "LINTEL"
+    assert merged.category == "beam"
+    assert merged.page_indices == [46]
+    # Count basis: max observed (22 real Lintel labels) — no invented sum.
+    assert merged.occurrence_count_observed == 22
+
+
+def test_p5_lt1_lintel_count_merged_from_real_observations():
+    """After the LT1→LINTEL merge, count_occurrences counts the real Lintel
+    DEM labels once (the merged item carries the golden code)."""
+    page = _dem_page_with_labels_and_type([
+        {"raw": "Lintel 15X10", "normalized": "Lintel 15X10", "bbox": [100.0, 100.0, 120.0, 120.0], "evidence_refs": ["ev-lt-1"]},
+        {"raw": "Lintel 15X10", "normalized": "Lintel 15X10", "bbox": [200.0, 100.0, 220.0, 120.0], "evidence_refs": ["ev-lt-2"]},
+        {"raw": "Lintel 15X10", "normalized": "Lintel 15X10", "bbox": [300.0, 100.0, 320.0, 120.0], "evidence_refs": ["ev-lt-3"]},
+    ])
+    lt1 = _candidate("w-beam-LT1", "beam", "LT1", "L1", pages=[46])
+    lintel = _candidate("w-beam-LINTEL", "beam", "LINTEL", "L1", pages=[46])
+    deduped = deduplicate_work_items([lt1, lintel])
+    counted = count_occurrences(deduped, {0: page})
+    assert len(counted) == 1
+    assert counted[0].code == "LINTEL"
+    assert counted[0].occurrence_count_observed == 3
+
+
+def test_p5_sl_beam_lighting_same_page_merges_to_lighting():
+    """beam-SL1 and lighting-SL1 on the SAME page describe the same sheet
+    occurrence; the sheet-context lighting interpretation wins."""
+    beam = _candidate("w-beam-SL1", "beam", "SL1", "L1", pages=[56])
+    lighting = _candidate("w-lighting-SL1", "lighting_fixture", "SL1", "L1", pages=[56])
+    result = deduplicate_work_items([beam, lighting])
+    assert len(result) == 1
+    merged = result[0]
+    assert merged.category == "lighting_fixture"
+    assert merged.code == "SL1"
+    assert merged.page_indices == [56]
+
+
+def test_p5_sl_disjoint_pages_stay_separate():
+    """beam-SL1 on a sloof plan (page 40) and lighting-SL1 on a lighting plan
+    (page 56) are different physical items — never merged."""
+    beam = _candidate("w-beam-SL1", "beam", "SL1", "foundation", pages=[40])
+    lighting = _candidate("w-lighting-SL1", "lighting_fixture", "SL1", "L1", pages=[56])
+    result = deduplicate_work_items([beam, lighting])
+    assert len(result) == 2
+    categories = {item.category for item in result}
+    assert categories == {"beam", "lighting_fixture"}

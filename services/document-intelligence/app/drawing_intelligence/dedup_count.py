@@ -23,9 +23,21 @@ multiple distinct DEM element-label observations — each carrying
 engine-verified count fact.  The number is never invented: it is the count of
 real label observations in JSON-1 on the plan page.
 
+Revision cycle-p1p2 (P5): dedup crosses sources and contexts —
+- an ``unknown`` fallback (e.g. K-01 on page-0086 produced by a
+  detection-less match) merges into the classified item of the same
+  (code, level) instead of duplicating it;
+- alias families merge into one canonical item: LT1 and LINTEL are the same
+  lintel family, one item with the golden code LINTEL and the count merged
+  from real observations;
+- the SL ambiguity (beam vs lighting_fixture) resolves toward the
+  sheet-context lighting interpretation when a beam and a lighting item
+  share (code, level) and co-occur on the same page(s).
+
 The module never fabricates counts and never drops evidence.
 """
 
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any
@@ -51,6 +63,26 @@ _COUNT_AUTHORITY_RANK = {
 # on count-source pages.  A single label could be a legend/table entry, not a
 # plan instance; two or more distinct plan labels are a strong signal.
 _MIN_AUTO_CONFIRM_OBSERVATIONS = 2
+
+# P5: golden-family canonical codes.  LT1 (a spurious code produced from the
+# "LT.1" sheet-title token) and LINTEL (the K0 golden code for the lintel
+# family) are one physical family; the golden code is canonical, so dedup
+# merges them into a single item and the merged count comes from the real
+# Lintel label observations.
+_CODE_FAMILY_CANONICAL = {
+    "LT1": "LINTEL",
+}
+
+# P5: the SL prefix is registered for BOTH beam and lighting_fixture; on a
+# lighting sheet the element label and the symbol description can each
+# produce an item.  When a beam and a lighting_fixture item share the same
+# (code, level) AND their pages overlap (they describe the same sheet
+# occurrence), the lighting interpretation wins — the beam one is the
+# regex-fallback duplicate.  Disjoint pages (a beam SL1 on a sloof plan and
+# a spot-light SL1 on a lighting plan) are different physical items.
+_SL_AMBIGUOUS_CODE_RE = re.compile(r"^SL\d*$", re.I)
+_SL_CONFLICT_CATEGORIES = {"beam", "lighting_fixture"}
+_SL_WINNER_CATEGORY = "lighting_fixture"
 
 
 @dataclass(frozen=True)
@@ -89,12 +121,76 @@ def _merge_facts(groups: list[list[ElementMeasurementFact]]) -> list[ElementMeas
     return sorted(best.values(), key=lambda fact: (fact.field, fact.source_method))
 
 
+def _family_canonical_of(item: WorkItemCandidate) -> str:
+    """Canonical dedup code: the K4 code, family-normalized (LT1→LINTEL)."""
+    code = (item.code or "").strip()
+    if not code:
+        return _canonical_key_of(item)
+    return _CODE_FAMILY_CANONICAL.get(code.upper(), code.upper())
+
+
+def _effective_category(
+    item: WorkItemCandidate,
+    classified_by_code_level: dict[tuple[str, str], set[str]],
+) -> str:
+    """P5: resolve an unknown fallback into the classified item of the same
+    (code, level) when exactly one classified category exists.
+
+    A detection-less match (e.g. K-01 on page-0086) produces an ``unknown``
+    fallback alongside the classified item; the fallback is the same physical
+    item, so it must merge under the classified category.  When two classified
+    categories claim the same code+level (genuinely ambiguous), the unknown
+    stays separate rather than guessing.
+    """
+    category = item.category.strip().lower()
+    if category != "unknown":
+        return category
+    candidates = classified_by_code_level.get((_canonical_key_of(item), _level_of(item)))
+    if candidates and len(candidates) == 1:
+        return next(iter(candidates))
+    return category
+
+
 def deduplicate_work_items(work_items: list[WorkItemCandidate]) -> list[WorkItemCandidate]:
-    """Merge items sharing (category, canonical_key, level) into one item."""
+    """Merge items sharing (category, canonical_key, level) into one item.
+
+    P5: the canonical key is family-normalized (LT1 and LINTEL merge), an
+    ``unknown`` fallback merges into the classified item of the same
+    (code, level), and co-located beam/lighting SL items resolve toward the
+    sheet-context lighting interpretation.
+    """
+    classified_by_code_level: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for item in work_items:
+        category = item.category.strip().lower()
+        if category != "unknown":
+            classified_by_code_level[(_canonical_key_of(item), _level_of(item))].add(category)
+
     groups: dict[tuple[str, str, str], list[WorkItemCandidate]] = defaultdict(list)
     for item in work_items:
-        key = (item.category.strip().lower(), _canonical_key_of(item), _level_of(item))
+        key = (
+            _effective_category(item, classified_by_code_level),
+            _family_canonical_of(item),
+            _level_of(item),
+        )
         groups[key].append(item)
+
+    # P5: sheet-context SL resolution — a beam item and a lighting_fixture
+    # item that share (code, level) AND co-occur on the same page(s) describe
+    # the same sheet occurrence; the lighting interpretation wins (the beam
+    # one is the SL regex fallback).  Disjoint pages stay separate.
+    for key in list(groups):
+        category, code, level = key
+        if category not in _SL_CONFLICT_CATEGORIES or not _SL_AMBIGUOUS_CODE_RE.match(code):
+            continue
+        if category == _SL_WINNER_CATEGORY:
+            continue
+        lighting_key = (_SL_WINNER_CATEGORY, code, level)
+        if lighting_key not in groups:
+            continue
+        loser_pages = {page for item in groups[key] for page in item.page_indices}
+        winner_pages = {page for item in groups[lighting_key] for page in item.page_indices}
+        if loser_pages & winner_pages:
+            groups[lighting_key].extend(groups.pop(key))
 
     merged: list[WorkItemCandidate] = []
     merged_duplicates = 0
@@ -143,7 +239,9 @@ def deduplicate_work_items(work_items: list[WorkItemCandidate]) -> list[WorkItem
 
         merged.append(primary.model_copy(update={
             "category": key[0],
-            "code": _canonical_key_of(primary) if primary.code else primary.code,
+            # P5: the merged code is the family-canonical key code — LT1+LINTEL
+            # resolve to the golden code LINTEL; ordinary codes are unchanged.
+            "code": key[1] if primary.code else primary.code,
             "page_indices": page_indices,
             "maturity": maturity,
             "occurrence_count_observed": occurrence,

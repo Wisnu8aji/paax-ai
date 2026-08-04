@@ -130,9 +130,13 @@ def test_plhut_human_delivery_filters_title_block_noise_and_keeps_key_columns():
     assert k2["count_is_final"] is True
     assert k2["count_authority"] == "engine_confirmed"
     assert payload["summary"]["suppressed_audit_candidates"] >= 4
-    assert {item.get("code") for item in payload["suppressed_candidates"]} >= {"LT1", "D-01", "E27", "K-01"}
+    assert {item.get("code") for item in payload["suppressed_candidates"]} >= {"D-01", "E27", "K-01"}
     visible_codes = {item.get("code") for item in [*payload["work_items"], *payload["needs_clarification"]]}
+    # P5: LT1 (spurious sheet-title code) merges into the canonical LINTEL
+    # family item — it no longer exists anywhere as a separate code.
     assert not {"LT1", "D-01", "E27"} & visible_codes
+    all_codes = {item.get("code") for item in [*payload["work_items"], *payload["needs_clarification"], *payload["suppressed_candidates"]]}
+    assert "LT1" not in all_codes
     # K-01 is valid as a structural column on the column plan, while the same
     # text on a drainage sheet is retained only as an audit-suppressed match.
     assert "K-01" in visible_codes

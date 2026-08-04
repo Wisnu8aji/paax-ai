@@ -41,7 +41,7 @@ from typing import Any
 
 from .dem_adapter import iter_observations, normalize_dem_bbox
 from .models import BBox, ElementMeasurementFact, WorkItemCandidate
-from .taxonomy import parse_inline_dimensions
+from .taxonomy import parse_inline_dimensions, resolve_golden_definition
 from .text_index import normalize_text
 from .vocabulary import canonical_key
 
@@ -198,6 +198,37 @@ def _parse_material_dimension(raw: str) -> dict[str, Any] | None:
     return {"code": code, "width": pair["width"], "depth": pair["depth"], "unit": pair["unit"]}
 
 
+def _parse_table_cell_dimension(line: str, code: str | None) -> dict[str, Any] | None:
+    """Parse a table cell line (possibly pipe-separated columns) into a pair.
+
+    P5: ``BAK KONTROL`` table cells on page-0086 are written as
+    ``60x60 | 60x60 | 60x60`` — three column cells separated by pipes, each
+    ``60x60`` in centimetres.  The DEM normalized the row to
+    ``600x600 mm``; the engine mirrors that evidence: for the water_tank
+    golden family a bare pair in the plausible centimetre range (≤ 200)
+    without an explicit unit is centimetres → millimetres (×10).  Explicit
+    units and larger values are left untouched — never invented.
+    """
+    if not line:
+        return None
+    golden = resolve_golden_definition(code) if code else None
+    is_water_tank = bool(golden and golden[1] == "water_tank")
+    for fragment in re.split(r"[|;]", line):
+        fragment = fragment.strip()
+        parsed = _parse_dimension_pair(fragment)
+        if not parsed or ("X" not in fragment.upper() and "×" not in fragment):
+            continue
+        if is_water_tank and not re.search(r"\b(MM|CM|M)\b", fragment, re.I):
+            if parsed["width"] <= 200 and parsed["depth"] <= 200:
+                parsed = {
+                    "width": parsed["width"] * 10,
+                    "depth": parsed["depth"] * 10,
+                    "unit": "mm",
+                }
+        return parsed
+    return None
+
+
 def parse_inline_table_rows(raw: str) -> list[dict[str, Any]]:
     """Parse a newline-separated DEM table cell blob into row-wise records.
 
@@ -211,16 +242,23 @@ def parse_inline_table_rows(raw: str) -> list[dict[str, Any]]:
 
     The header cell list is attached to the first record under ``header`` so
     callers can detect span/bentang columns.
+
+    P5: golden-definition element names (``BAK KONTROL``) are digitless codes
+    like BL/GORDING and also start a row; their dimension cells follow the
+    water_tank cm convention (see ``_parse_table_cell_dimension``).
     """
     lines = [line.strip() for line in raw.replace(";", "\n").splitlines() if line.strip()]
     records: list[dict[str, Any]] = []
     current: dict[str, Any] | None = None
     header: list[str] = []
     for line in lines:
-        if _CODE_TOKEN_RE.match(line):
+        golden = resolve_golden_definition(line)
+        is_golden_code = bool(golden and golden[0] != "FRACTIONAL_KD")
+        if _CODE_TOKEN_RE.match(line) or is_golden_code:
             if current is not None:
                 records.append(current)
-            current = {"code": line.upper(), "cells": [], "dimension": None, "span_length": None}
+            code = line.upper() if _CODE_TOKEN_RE.match(line) else golden[0]  # type: ignore[index]
+            current = {"code": code, "cells": [], "dimension": None, "span_length": None}
             if not records:
                 current["header"] = list(header)
             continue
@@ -229,8 +267,8 @@ def parse_inline_table_rows(raw: str) -> list[dict[str, Any]]:
             continue
         current["cells"].append(line)
         if current["dimension"] is None:
-            parsed = _parse_dimension_pair(line)
-            if parsed and ("X" in line.upper() or "×" in line):
+            parsed = _parse_table_cell_dimension(line, current["code"])
+            if parsed:
                 current["dimension"] = parsed
         if current["span_length"] is None:
             match = re.fullmatch(r"\s*(\d{2,5})\s*(MM|M)?\s*", line, re.I)

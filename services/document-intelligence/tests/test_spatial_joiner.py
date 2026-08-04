@@ -79,6 +79,29 @@ def test_inline_table_parses_beam_rows_with_dimensions():
     assert by_code["G1"]["span_length"] is None
 
 
+def test_inline_table_parses_bak_kontrol_water_tank_600x600():
+    """P5: page-0086 table 'BAK KONTROL\\n60x60 | 60x60 | 60x60' parses into a
+    water_tank row with the DEM-evidenced 600×600 mm dimension."""
+    rows = parse_inline_table_rows("BAK KONTROL\n60x60 | 60x60 | 60x60")
+    assert len(rows) == 1
+    assert rows[0]["code"] == "BAK KONTROL"
+    assert rows[0]["dimension"] == {"width": 600.0, "depth": 600.0, "unit": "mm"}
+
+
+def test_join_written_dimensions_bak_kontrol_table_attaches_600x600_facts():
+    """P5: join_written_dimensions attaches real 600×600 mm width/depth facts
+    to the promoted water_tank item from the page-0086 table."""
+    page = _load_page("page-0086")
+    item = _candidate("w-water_tank-BAK KONTROL", "water_tank", "BAK KONTROL", 86)
+    result = join_written_dimensions(work_items=[item], dem_pages={86: page})
+    updated = result.work_items[0]
+    facts = {(fact.field, fact.source_method): fact for fact in updated.measurement_facts}
+    assert facts[("width", "written_dimension")].value == 600.0
+    assert facts[("depth", "written_dimension")].value == 600.0
+    dims = updated.attributes["dimensions"]
+    assert dims["width"] == 600.0 and dims["depth"] == 600.0
+
+
 # ─── Spatial join on real DEM pages ──────────────────────────────────────────
 
 def test_join_written_dimensions_bbox_column_page_0049():

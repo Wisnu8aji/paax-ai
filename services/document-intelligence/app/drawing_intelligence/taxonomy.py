@@ -122,6 +122,13 @@ _REGISTRY: dict[str, WorkTaxonomy] = {
         "Perlengkapan sanitasi atau titik jaringan air.",
         "object", (), re.compile(r"^(?:WC|FD|CO|WST|UR|PL)-?\d{0,3}[A-Z]?$", re.I),
     ),
+    # P5: bak kontrol / water tank on drainage plans (page-0086 "DENAH
+    # SALURAN AIR HUJAN" table "BAK KONTROL / 60x60 | 60x60 | 60x60").
+    "water_tank": WorkTaxonomy(
+        "water_tank", "plumbing", "Bak Kontrol", "Bak kontrol / bak penampung air",
+        "Bak kontrol atau bak penampung pada jaringan saluran air hujan / drainase.",
+        "object", ("dimensions",), re.compile(r"^BAK\s*KONTROL(?:\s*\d{1,3})?$", re.I),
+    ),
 }
 
 _UNKNOWN = WorkTaxonomy(
@@ -432,6 +439,7 @@ _NAMING_DICTIONARY: dict[str, tuple[str, tuple[str, ...]]] = {
     "fire_safety_fixture": ("Perlengkapan Proteksi Kebakaran {code}", ("code",)),
     "hvac_fixture": ("Peralatan Tata Udara {code}", ("code",)),
     "plumbing_fixture": ("Perlengkapan Plumbing {code}", ("code",)),
+    "water_tank": ("Bak Kontrol {code}", ("code",)),
 }
 
 # Deterministic scan order for code → category.  Ambiguous single-letter
@@ -472,6 +480,7 @@ _DIGITLESS_CODE_CATEGORY: dict[str, str] = {
     "WF": "steel_profile",
     "RAFTER": "steel_profile",
     "PEDESTAL": "foundation",
+    "BAK KONTROL": "water_tank",
 }
 
 # ─── R1: golden definition resolution (K0 golden set) ─────────────────────────
@@ -501,6 +510,11 @@ _GOLDEN_DEFINITION_PATTERNS: tuple[tuple[re.Pattern[str], str, str], ...] = (
     # ambiguous to promote without evidence of a steel section.
     (re.compile(r"^H\s*\d", re.I), "H", "steel_profile"),
     (re.compile(r"^BL$", re.I), "BL", "beam"),
+    # P5: BAK KONTROL (page-0086 "DENAH SALURAN AIR HUJAN" table
+    # "BAK KONTROL\n60x60 | 60x60 | 60x60" → 600×600 mm).  The label is a
+    # digitless element name like BL/GORDING; the golden code is the full
+    # name and the category is water_tank.
+    (re.compile(r"^BAK\s*KONTROL\b", re.I), "BAK KONTROL", "water_tank"),
 )
 
 
@@ -805,6 +819,7 @@ def name_formatter(
         "gording", "kuda_kuda", "pipe", "trekstang",
         "door_window_assembly", "lighting_fixture", "electrical_fixture",
         "fire_safety_fixture", "hvac_fixture", "plumbing_fixture",
+        "water_tank",
     }:
         if not code:
             return None

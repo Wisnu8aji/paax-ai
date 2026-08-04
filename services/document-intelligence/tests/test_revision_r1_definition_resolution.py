@@ -49,6 +49,10 @@ def test_resolve_golden_definition_recognizes_golden_labels():
         "H 150X150X7X10": ("H", "steel_profile"),
         "H150X150X7X10": ("H", "steel_profile"),
         "BL": ("BL", "beam"),
+        # P5: BAK KONTROL — drainage manhole/water tank (page-0086).
+        "BAK KONTROL": ("BAK KONTROL", "water_tank"),
+        "Bak Kontrol": ("BAK KONTROL", "water_tank"),
+        "BAK KONTROL\n60x60 | 60x60 | 60x60": ("BAK KONTROL", "water_tank"),
     }
     for label, expected in cases.items():
         assert resolve_golden_definition(label) == expected, label
@@ -241,6 +245,56 @@ def test_promote_golden_definition_items_requires_evidence():
     }
     result = promote_golden_definition_items(work_items=[], dem_pages=dem_pages, semantics={})
     assert result == []
+
+
+def test_promote_bak_kontrol_from_table_page_0086():
+    """P5: the page-0086 table 'BAK KONTROL\\n60x60 | 60x60 | 60x60' promotes a
+    water_tank work item with real 600×600 mm dimensions (DEM evidence)."""
+    dem_pages = {
+        86: {
+            "source": {"page_index": 86, "width_px": 2482, "height_px": 1755},
+            "sheet_identity": {"title": {"value": "DENAH SALURAN AIR HUJAN"}},
+            "observations": {
+                "element_labels": [],
+                "symbols": [],
+                "dimensions": [],
+                "tables": [
+                    {
+                        "raw": "BAK KONTROL\n60x60 | 60x60 | 60x60",
+                        "normalized": "Bak Kontrol dengan ukuran 600x600 mm",
+                        "numeric_value": None,
+                        "unit": None,
+                        "bbox": [100.0, 250.0, 400.0, 350.0],
+                        "confidence": 0.97,
+                        "status": "extracted",
+                        "evidence_refs": ["ev-table-bak-kontrol"],
+                    }
+                ],
+            },
+        }
+    }
+    semantics = {}
+    result = promote_golden_definition_items(work_items=[], dem_pages=dem_pages, semantics=semantics)
+    assert len(result) == 1
+    item = result[0]
+    assert item.category == "water_tank"
+    assert item.code == "BAK KONTROL"
+    assert item.page_indices == [86]
+    assert item.evidence_refs == ["ev-table-bak-kontrol"]
+    assert item.attributes["definition_resolution"] == "golden"
+    dims = item.attributes["dimensions"]
+    assert dims["width"] == 600.0
+    assert dims["depth"] == 600.0
+    assert dims["unit"] == "mm"
+    assert dims["source"] == "inline_table"
+
+
+def test_promote_bak_kontrol_water_tank_naming_and_registry():
+    """P5: water_tank is in the taxonomy registry and names canonically."""
+    from app.drawing_intelligence.taxonomy import name_formatter, taxonomy_for
+
+    assert taxonomy_for("water_tank").code_pattern.fullmatch("BAK KONTROL")
+    assert name_formatter(category="water_tank", code="BAK KONTROL") == "Bak Kontrol BAK KONTROL"
 
 
 # ── R1: M8 status of definition-resolved items ────────────────────────────────
