@@ -321,16 +321,43 @@ def humanize_missing_information(values: list[str]) -> list[str]:
     return result
 
 
+def _format_number(value: Any) -> str:
+    """Render a dimension number without float noise ('250.0' → '250')."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    return str(int(number)) if number.is_integer() else str(number)
+
+
 def dimensions_text(attributes: dict[str, Any]) -> str | None:
     value = attributes.get("dimensions")
     if not isinstance(value, dict):
         return None
+    # P3: steel profile form — a 4-part profile dict renders as the full
+    # written profile "WF 200×100×5.5×8 mm", exactly the K0 golden display
+    # convention on page-0055 (width=b first, depth=h second).
+    profile = value.get("profile")
+    if profile and value.get("tw") is not None and value.get("tf") is not None:
+        b = value.get("b", value.get("width"))
+        h = value.get("h", value.get("depth"))
+        if b is not None and h is not None:
+            unit = value.get("unit") or "mm"
+            return (
+                f"{str(profile).upper()} {_format_number(b)}×{_format_number(h)}"
+                f"×{_format_number(value['tw'])}×{_format_number(value['tf'])} {unit}"
+            )
+    # P3: pipe/MEP diameter form — "Ø203 mm".
+    diameter = value.get("diameter")
+    if diameter is not None:
+        unit = value.get("unit") or "mm"
+        return f"Ø{_format_number(diameter)} {unit}"
     width = value.get("width", value.get("a"))
     depth = value.get("depth", value.get("b"))
     unit = value.get("unit") or "mm"
     if width is None or depth is None:
         return None
-    return f"{width} × {depth} {unit}"
+    return f"{_format_number(width)} × {_format_number(depth)} {unit}"
 
 
 # ─── K2: code grammar, canonical naming, inline dimension parsing ────────────
@@ -360,6 +387,21 @@ _K2_SECTION_RE = re.compile(
 
 # Thickness: "t=120", "T=8MM".
 _K2_THICKNESS_RE = re.compile(r"\bt\s*=\s*(\d+(?:\.\d+)?)\s*(mm|cm|m)?\b", re.IGNORECASE)
+
+# P3 (MEP/pipe diameter): "Ø25mm", "Ø8 INCHI", "PVC O 4\"", "3\"",
+# "Trexstang Ø12mm".  The marker (Ø / DIA / DIAMETER / OD / O), the inch
+# units (INCHI/INCH/IN/"…), and the pipe-family words are the only triggers:
+# a bare metric number in an unrelated note ("LOKASI 25MM") or a rebar
+# spacing ("SENG.Ø10-100", "BAUT 4Ø12") is never a pipe diameter.
+_K2_DIAMETER_RE = re.compile(
+    r"(?P<mark>Ø|DIA\b|DIAMETER\b|OD\b|O\b)?\s*(?P<num>\d{1,4}(?:\.\d+)?)\s*"
+    r"(?P<unit>INCHI|INCH|IN|\"|”|’|MM|CM|M)(?![A-Za-z0-9])",
+    re.I,
+)
+_PIPE_FAMILY_WORDS = re.compile(
+    r"\b(?:PIPA|PVC|PIPE|TRESTANG|TREKSTANG|TRACKSTANG|SALURAN|SEPTIC|BAK\s*KONTROL)\b",
+    re.I,
+)
 
 # Master Plan §4.2 canonical naming dictionary (engine-owned).
 # Each entry: (template, required_attributes) — name_formatter() enforces the
@@ -582,6 +624,36 @@ def parse_inline_dimensions(text: str | None) -> dict[str, Any] | None:
             "unit": "mm",
             "source": "inline_steel_profile",
         }
+    # P3: pipe/MEP diameter — "Ø25mm", "Ø8 INCHI", "PVC O 4\"", "3\"",
+    # "Trexstang Ø12mm".  All values are converted to millimetres; inches are
+    # the universal pipe convention (1 in = 25.4 mm).
+    diameter = _K2_DIAMETER_RE.search(normalized)
+    if diameter:
+        mark = (diameter.group("mark") or "").strip().upper()
+        unit = (diameter.group("unit") or "").upper()
+        inch = unit in {"INCHI", "INCH", "IN", "\"", "”", "’"}
+        if mark or inch or _PIPE_FAMILY_WORDS.search(normalized):
+            value = float(diameter.group("num"))
+            source = "inline_diameter"
+            if inch:
+                value *= 25.4
+                unit = "mm"
+                source = "inline_diameter_inch"
+            elif unit == "CM":
+                value *= 10
+                unit = "mm"
+            elif unit == "M":
+                value *= 1000
+                unit = "mm"
+            else:
+                unit = "mm"
+            value = int(value) if value.is_integer() else round(value, 1)
+            return {
+                "diameter": value,
+                "unit": unit,
+                "source": source,
+                "raw": diameter.group(0),
+            }
     # 2-part section: "15X10", "400 x 400 mm", "300X600 mm", "250/600"
     section = _K2_SECTION_RE.search(normalized)
     if section:

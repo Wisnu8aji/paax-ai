@@ -243,6 +243,50 @@ def test_parse_inline_dimensions_thickness_and_none():
     assert parse_inline_dimensions(None) is None
 
 
+# ─── P3: pipe/MEP diameter parsing ───────────────────────────────────────────
+
+
+def test_parse_inline_dimensions_diameter_mm():
+    parsed = parse_inline_dimensions("Ø25mm")
+    assert parsed is not None
+    assert parsed["diameter"] == 25
+    assert parsed["unit"] == "mm"
+    assert parsed["source"] == "inline_diameter"
+    assert parse_inline_dimensions("Trexstang Ø12mm")["diameter"] == 12
+
+
+def test_parse_inline_dimensions_diameter_inch():
+    # 1 in = 25.4 mm — "Ø8 INCHI" → 203.2 mm, "PVC O 4\"" → 101.6 mm,
+    # bare "3\"" → 76.2 mm.
+    assert parse_inline_dimensions("PIPA Ø8 INCHI")["diameter"] == 203.2
+    assert parse_inline_dimensions("PVC O 4\"")["diameter"] == 101.6
+    assert parse_inline_dimensions("3\"")["diameter"] == 76.2
+    assert parse_inline_dimensions("PIPA 2 INCH")["diameter"] == 50.8
+
+
+def test_parse_inline_dimensions_diameter_requires_pipe_context():
+    # A bare metric number in an unrelated note is never a pipe diameter.
+    assert parse_inline_dimensions("LOKASI 25MM") is None
+    # Rebar spacing / bolt callouts are not pipe sizes.
+    assert parse_inline_dimensions("SENG.Ø10-100") is None
+    assert parse_inline_dimensions("BAUT 4Ø12") is None
+    # A section pair stays a section — the diameter parser must not hijack it.
+    section = parse_inline_dimensions("400 x 400 mm")
+    assert section is not None and "diameter" not in section
+    assert section["width"] == 400 and section["depth"] == 400
+
+
+def test_dimensions_text_renders_steel_profile_and_diameter():
+    profile = {"profile": "WF", "b": 200.0, "h": 100.0, "tw": 5.5, "tf": 8.0, "unit": "mm"}
+    assert dimensions_text({"dimensions": profile}) == "WF 200×100×5.5×8 mm"
+    gording = {"profile": "GORDING", "b": 150.0, "h": 50.0, "tw": 20.0, "tf": 2.3, "unit": "mm"}
+    assert dimensions_text({"dimensions": gording}) == "GORDING 150×50×20×2.3 mm"
+    diameter = {"diameter": 203.2, "unit": "mm"}
+    assert dimensions_text({"dimensions": diameter}) == "Ø203.2 mm"
+    diameter_int = {"diameter": 12, "unit": "mm"}
+    assert dimensions_text({"dimensions": diameter_int}) == "Ø12 mm"
+
+
 # ── K2: canonical naming dictionary (Master Plan §4.2) ───────────────────────
 
 

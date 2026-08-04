@@ -206,11 +206,12 @@ def test_join_inline_steel_profile_from_label():
     updated = result.work_items[0]
     width = [f for f in updated.measurement_facts if f.field == "width"]
     depth = [f for f in updated.measurement_facts if f.field == "depth"]
-    # Parenthesized code (KD.1) maps the label to item KD1; profile numbers are
-    # width = flange (h=100), depth = nominal height (b=200).
+    # Parenthesized code (KD.1) maps the label to item KD1; the K0 golden
+    # convention (page-0055) maps the first profile number (b) to width and
+    # the second (h) to depth: WF 200X100X5.5X8 → width=200, depth=100.
     assert width and depth
-    assert width[0].value == 100.0
-    assert depth[0].value == 200.0
+    assert width[0].value == 200.0
+    assert depth[0].value == 100.0
     assert result.metrics["inline_label_dimension_joins"] >= 1
 
 
@@ -221,9 +222,27 @@ def test_join_inline_steel_profile_wf1_from_label():
     updated = result.work_items[0]
     width = [f for f in updated.measurement_facts if f.field == "width"]
     depth = [f for f in updated.measurement_facts if f.field == "depth"]
+    # Golden K0 convention: b (150) → width, h (75) → depth.
     assert width and depth
-    assert width[0].value == 75.0
-    assert depth[0].value == 150.0
+    assert width[0].value == 150.0
+    assert depth[0].value == 75.0
+
+
+def test_join_inline_gording_profile_matches_golden_order():
+    # P3: the engine must emit the same order as the K0 golden set —
+    # "Gording 150x50x20x2.3" → width=150, depth=50 (golden 150×50),
+    # never the reversed 50×150.
+    page = _load_page("page-0055")
+    gording = _candidate("w-GORDING", "gording", "GORDING", 55)
+    result = join_written_dimensions(work_items=[gording], dem_pages={55: page})
+    updated = result.work_items[0]
+    width = [f for f in updated.measurement_facts if f.field == "width"]
+    depth = [f for f in updated.measurement_facts if f.field == "depth"]
+    assert width and depth
+    assert width[0].value == 150.0
+    assert depth[0].value == 50.0
+    dims = updated.attributes.get("dimensions")
+    assert dims.get("width") == 150.0 and dims.get("depth") == 50.0
 
 
 def test_join_inline_lintel_from_label():
@@ -276,10 +295,52 @@ def test_join_rafter_steel_profile_from_label():
     updated = result.work_items[0]
     widths = [f for f in updated.measurement_facts if f.field == "width"]
     depths = [f for f in updated.measurement_facts if f.field == "depth"]
-    # Steel convention: width = flange h (75), depth = nominal b (150).
+    # Golden K0 convention: b (150) → width, h (75) → depth.
     assert widths and depths
-    assert widths[0].value == 75.0
-    assert depths[0].value == 150.0
+    assert widths[0].value == 150.0
+    assert depths[0].value == 75.0
+
+
+# ─── P3: pipe/MEP diameter joins ─────────────────────────────────────────────
+
+def test_join_pipe_diameter_from_inline_label():
+    # "PIPA Ø8 INCHI" on page-0055 is a written 8-inch pipe → Ø203 mm.
+    page = _load_page("page-0055")
+    pipa = _candidate("w-PIPA", "pipe", "PIPA", 55)
+    result = join_written_dimensions(work_items=[pipa], dem_pages={55: page})
+    updated = result.work_items[0]
+    diameters = [f for f in updated.measurement_facts if f.field == "diameter"]
+    assert diameters
+    assert diameters[0].value == 203.2
+    assert diameters[0].unit == "mm"
+    assert diameters[0].verification_status == "engine_verified"
+    assert diameters[0].evidence_refs
+    dims = updated.attributes.get("dimensions")
+    assert isinstance(dims, dict)
+    assert dims.get("diameter") == 203.2
+    assert result.metrics["pipe_diameter_joins"] >= 1
+
+
+def test_join_trekstang_diameter_from_inline_label():
+    # "Trexstang Ø12mm" on page-0055 → Ø12 mm.
+    page = _load_page("page-0055")
+    ts = _candidate("w-TS", "trekstang", "TS", 55)
+    result = join_written_dimensions(work_items=[ts], dem_pages={55: page})
+    updated = result.work_items[0]
+    diameters = [f for f in updated.measurement_facts if f.field == "diameter"]
+    assert diameters
+    assert diameters[0].value == 12.0
+    assert diameters[0].unit == "mm"
+    assert result.metrics["pipe_diameter_joins"] >= 1
+
+
+def test_join_does_not_attach_diameter_to_structural_items():
+    # A steel profile label must never receive a diameter fact.
+    page = _load_page("page-0055")
+    wf1 = _candidate("w-WF1", "steel_profile", "WF1", 55)
+    result = join_written_dimensions(work_items=[wf1], dem_pages={55: page})
+    updated = result.work_items[0]
+    assert not [f for f in updated.measurement_facts if f.field == "diameter"]
 
 
 def test_join_foundation_material_dimension_from_legend():

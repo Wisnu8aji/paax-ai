@@ -139,6 +139,12 @@ def _dimension_value(row: dict[str, Any]) -> dict[str, Any] | None:
             "tw": parsed["tw"], "tf": parsed["tf"], "unit": unit,
             "raw": raw, "source": parsed.get("source", "inline_steel_profile"),
         }
+    # P3: pipe/MEP diameter — "PIPA Ø8 INCHI" → Ø203 mm, "Trexstang Ø12mm".
+    if parsed.get("diameter") is not None:
+        return {
+            "diameter": parsed["diameter"], "unit": parsed.get("unit") or "mm",
+            "raw": raw, "source": parsed.get("source", "inline_diameter"),
+        }
     return None
 
 

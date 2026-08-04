@@ -24,6 +24,14 @@ Revision cycle-001 (R2): the joiner additionally connects
 and reflects joined width/depth facts into ``attributes["dimensions"]`` so
 downstream confirmation logic (M8) sees the linked dimension.  Every fact
 still traces to a written observation in JSON-1; nothing is invented.
+
+Revision cycle-p1p2 (P3): the joiner additionally connects
+- pipe/MEP diameters written on labels or dimension rows
+  ("PIPA Ø8 INCHI" → Ø203 mm, "Trexstang Ø12mm" → Ø12 mm, "PVC O 4\""
+  → Ø102 mm) as ``diameter`` facts for MEP families, and
+- steel profile sections using the K0 golden order convention: the first
+  profile number (b) is width and the second (h) is depth, so
+  "Gording 150x50x20x2.3" renders 150 × 50 mm exactly like the golden set.
 """
 
 import re
@@ -70,6 +78,10 @@ _CODE_ALIASES: dict[str, set[str]] = {
 # Only concrete-structural families are eligible so MEP/architectural codes
 # (L2 = CERAMIC TILE, D1 = WALL PAINT, ...) are never mistaken for sections.
 _MATERIAL_DIM_CATEGORIES = {"column", "beam", "foundation", "slab", "sloof"}
+
+# P3: MEP/pipe families that receive a written diameter ("Ø25mm", "Ø8 INCHI",
+# "3\"", "Trexstang Ø12mm") from their own label or a nearby dimension row.
+_DIAMETER_CATEGORIES = {"pipe", "trekstang", "plumbing_fixture", "hvac_fixture", "water_tank"}
 
 
 def _parenthesized_code(raw: str) -> str | None:
@@ -143,6 +155,24 @@ def _parse_thickness(raw: str) -> dict[str, Any] | None:
     elif unit == "m":
         value *= 1000
     return {"thickness": value, "unit": "mm"}
+
+
+def _parse_diameter(raw: str) -> dict[str, Any] | None:
+    """P3: parse a pipe/MEP diameter observation to mm.
+
+    Written pipe sizes appear in element labels and dimension rows
+    ("Ø25mm", "Ø8 INCHI", "PVC O 4\"", "3\"", "Trexstang Ø12mm").  The
+    taxonomy parser only returns a diameter when a Ø/DIA/OD marker, an inch
+    unit, or a pipe-family word is present — never for a bare metric number.
+    """
+    parsed = parse_inline_dimensions(raw or "")
+    if parsed and parsed.get("diameter") is not None:
+        return {
+            "diameter": parsed["diameter"],
+            "unit": str(parsed.get("unit") or "mm"),
+            "source": parsed.get("source"),
+        }
+    return None
 
 
 def _parse_material_dimension(raw: str) -> dict[str, Any] | None:
@@ -292,6 +322,8 @@ def _index_page(dem_page: dict[str, Any]) -> dict[str, Any]:
                 "pair": _parse_dimension_pair(raw),
                 # R2: slab/wall thickness ("T=130mm", "t=120").
                 "thickness": _parse_thickness(raw),
+                # P3: pipe/MEP diameter ("Ø25mm", "Ø8 INCHI", "3\"").
+                "diameter": _parse_diameter(raw),
                 "raw": raw,
                 "numeric_value": row.get("numeric_value"),
                 "unit": str(row.get("unit") or "").lower(),
@@ -333,6 +365,20 @@ def _find_near_thickness(
     candidates = [
         d for d in dims
         if d.get("thickness") and _distance(label_box, d["bbox"]) <= max_distance
+    ]
+    if not candidates:
+        return None
+    candidates.sort(key=lambda d: (_distance(label_box, d["bbox"]), -len(d["refs"])))
+    return candidates[0]
+
+
+def _find_near_diameter(
+    label_box: BBox, dims: list[dict[str, Any]], *, max_distance: float = 0.05
+) -> dict[str, Any] | None:
+    """P3: nearest dimension observation carrying a pipe diameter."""
+    candidates = [
+        d for d in dims
+        if d.get("diameter") and _distance(label_box, d["bbox"]) <= max_distance
     ]
     if not candidates:
         return None
@@ -460,6 +506,43 @@ def _attach_width_depth_facts(
     return added
 
 
+def _attach_diameter_fact(
+    *,
+    item: WorkItemCandidate,
+    facts: list[ElementMeasurementFact],
+    existing_fields: set[str],
+    page_index: int,
+    diameter: float,
+    unit: str,
+    refs: list[str],
+    attributes: dict[str, Any],
+) -> int:
+    """P3: attach an engine-verified pipe/MEP diameter fact and mirror it
+    into ``attributes[\"dimensions\"]`` so ``dimensions_text`` renders it."""
+    if "diameter" in existing_fields:
+        return 0
+    facts.append(ElementMeasurementFact(
+        measurement_id=f"mf-{item.work_item_id}-diameter",
+        work_item_id=item.work_item_id,
+        field="diameter",
+        value=float(diameter),
+        unit=unit,
+        source_method="written_dimension",
+        verification_status="engine_verified",
+        evidence_refs=refs,
+        source_page_indices=[page_index],
+        formula_input="diameter",
+    ))
+    existing_fields.add("diameter")
+    current = attributes.get("dimensions")
+    if not isinstance(current, dict):
+        current = {}
+    current.setdefault("diameter", float(diameter))
+    current.setdefault("unit", unit)
+    attributes["dimensions"] = current
+    return 1
+
+
 def join_written_dimensions(
     *,
     work_items: list[WorkItemCandidate],
@@ -481,6 +564,7 @@ def join_written_dimensions(
     bbox_joins = 0
     inline_label_joins = 0
     thickness_joins = 0
+    pipe_diameter_joins = 0
     materials_joins = 0
     span_joins = 0
     span_fallbacks = 0
@@ -575,11 +659,13 @@ def join_written_dimensions(
                     width = inline.get("width")
                     depth = inline.get("depth")
                     if width is None or depth is None and inline.get("profile"):
-                        # Steel profile: "WF 200X100X5.5X8" — the first number is
-                        # the nominal depth (b), the second is the flange width (h).
+                        # Steel profile: "WF 200X100X5.5X8" — the K0 golden
+                        # convention (page-0055) maps the first number (b) to
+                        # width and the second (h) to depth: width=200,
+                        # depth=100 (golden width_mm=200, depth_mm=100).
                         profile = inline
-                        width = profile.get("h")
-                        depth = profile.get("b")
+                        width = profile.get("b")
+                        depth = profile.get("h")
                     if width is None or depth is None:
                         continue
                     if "width" in existing_fields and "depth" in existing_fields:
@@ -650,6 +736,48 @@ def join_written_dimensions(
                         attributes["dimensions"] = current
                         facts_added += 1
                         thickness_joins += 1
+                        break
+
+            # ── Pipe/MEP diameter join (P3) ─────────────────────────────────
+            # Pipe sizes are written on the label itself ("PIPA Ø8 INCHI",
+            # "Trexstang Ø12mm") or as a nearby dimension row ("Ø25mm").
+            # A diameter is attached only for MEP/pipe families and only from
+            # a real written observation — never invented.
+            if item.category in _DIAMETER_CATEGORIES and "diameter" not in existing_fields:
+                for lookup_code in lookup_codes:
+                    for label in index["labels"].get(lookup_code, []):
+                        inline = label.get("inline")
+                        if inline and inline.get("diameter") is not None:
+                            added = _attach_diameter_fact(
+                                item=item,
+                                facts=facts,
+                                existing_fields=existing_fields,
+                                page_index=page_index,
+                                diameter=float(inline["diameter"]),
+                                unit=str(inline.get("unit") or "mm"),
+                                refs=label["refs"] or [],
+                                attributes=attributes,
+                            )
+                            facts_added += added
+                            if added:
+                                pipe_diameter_joins += 1
+                            break
+                        near = _find_near_diameter(label["bbox"], index["dims"])
+                        if near is None or near.get("diameter") is None:
+                            continue
+                        added = _attach_diameter_fact(
+                            item=item,
+                            facts=facts,
+                            existing_fields=existing_fields,
+                            page_index=page_index,
+                            diameter=float(near["diameter"]["diameter"]),
+                            unit=str(near["diameter"].get("unit") or "mm"),
+                            refs=sorted({*near["refs"], *label["refs"]}),
+                            attributes=attributes,
+                        )
+                        facts_added += added
+                        if added:
+                            pipe_diameter_joins += 1
                         break
 
             # ── Materials-legend section join (C2-2) ────────────────────────
@@ -751,6 +879,7 @@ def join_written_dimensions(
             "bbox_dimension_joins": bbox_joins,
             "inline_label_dimension_joins": inline_label_joins,
             "slab_wall_thickness_joins": thickness_joins,
+            "pipe_diameter_joins": pipe_diameter_joins,
             "materials_section_joins": materials_joins,
             "beam_span_length_joins": span_joins,
             "beam_span_length_fallbacks": span_fallbacks,
