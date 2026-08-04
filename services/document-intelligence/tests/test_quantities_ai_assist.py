@@ -13,7 +13,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from app.drawing_intelligence.models import WorkItemCandidate
+from app.drawing_intelligence.models import ElementMeasurementFact, WorkItemCandidate
 from app.drawing_intelligence.quantities_ai_assist import (
     DEFAULT_API_URL,
     PAAX_API_KEY_ENV,
@@ -89,6 +89,36 @@ def make_dimensioned_item() -> WorkItemCandidate:
         attributes={"level": "L1", "dimensions": {"width": 250, "depth": 500, "unit": "mm"}},
         evidence_refs=["ev-label-b2-1"],
     )
+
+
+def make_fact_dimensioned_item(
+    *, verification_status: str = "engine_verified", field: str = "width"
+) -> WorkItemCandidate:
+    """C2-4: item whose connected dimensions come ONLY from measurement facts
+    (engine/human verified), not from attributes — exercises the
+    ``_item_has_connected_dimensions`` measurement-fact path."""
+    item = make_item(
+        item_id="work-beam-B3-L1",
+        category="beam",
+        code="B3",
+        label="B3",
+        attributes={"level": "L1"},  # no ``dimensions`` display at all
+        evidence_refs=["ev-label-b3-1"],
+    )
+    facts = [
+        ElementMeasurementFact(
+            measurement_id=f"mf-b3-{field}",
+            work_item_id=item.work_item_id,
+            field=field,  # type: ignore[arg-type]
+            value=250.0 if field != "span_length" else 4000.0,
+            unit="mm",
+            source_method="written_dimension",
+            verification_status=verification_status,  # type: ignore[arg-type]
+            evidence_refs=["ev-label-b3-1"],
+            source_page_indices=[50],
+        )
+    ]
+    return item.model_copy(update={"measurement_facts": facts}, deep=True)
 
 
 # ── Trigger (engine gap only) ────────────────────────────────────────────────
@@ -533,6 +563,30 @@ def test_uncoded_unknown_item_is_confirmation_with_reason():
 
 def test_coded_but_not_dimensioned_is_confirmation():
     item = make_item(category="column", code="K1", label="K1", attributes={"level": "L1"})
+    assert is_perlu_konfirmasi(item) is True
+    assert any("dimensi tidak tersedia" in reason for reason in confirmation_reasons_for(item))
+
+
+def test_engine_verified_fact_dimensions_are_connected_not_confirmation():
+    # C2-4: dimensions from engine-verified measurement facts (no attributes
+    # dimensions display) count as connected — the item leaves the
+    # confirmation area and becomes "belum dihitung"/"belum didukung".
+    item = make_fact_dimensioned_item(verification_status="engine_verified")
+    assert is_perlu_konfirmasi(item) is False
+    assert confirmation_status_for(item) in {"belum_didukung", "belum_dihitung"}
+    assert not any("dimensi tidak tersedia" in reason for reason in confirmation_reasons_for(item))
+
+
+def test_human_verified_fact_dimensions_are_connected_not_confirmation():
+    item = make_fact_dimensioned_item(verification_status="human_verified", field="span_length")
+    assert is_perlu_konfirmasi(item) is False
+    assert not any("dimensi tidak tersedia" in reason for reason in confirmation_reasons_for(item))
+
+
+def test_unverified_fact_dimensions_are_still_confirmation():
+    # Defensive: candidate facts (not yet verified) do NOT count as connected —
+    # otherwise the confirmation area would silently trust unverified numbers.
+    item = make_fact_dimensioned_item(verification_status="candidate")
     assert is_perlu_konfirmasi(item) is True
     assert any("dimensi tidak tersedia" in reason for reason in confirmation_reasons_for(item))
 

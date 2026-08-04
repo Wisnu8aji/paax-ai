@@ -92,6 +92,14 @@ MAX_FEW_SHOT_PER_CATEGORY = 5
 # Item-code grammar (Master Plan §4.2 L4).
 _CODE_GRAMMAR = re.compile(r"^[A-Z]{1,5}-?\d{1,3}[A-Z]?$")
 
+# Cycle-002 C2-4: dimensions that count as "connected" for an item — the same
+# set the M4 dimension-linking metric uses.  An item whose engine/human
+# verified facts carry one of these fields has connected dimensions, so it is
+# NOT "dimensi tidak tersedia" material for the confirmation area.
+_DIMENSION_FIELDS = frozenset(
+    {"width", "depth", "height", "span_length", "length", "thickness"}
+)
+
 # Canonical vocabulary for AI proposals — the engine's taxonomy registry keys.
 _ALLOWED_CATEGORY_VOCABULARY = frozenset(
     {
@@ -810,6 +818,23 @@ def _estimate_cost(
 # ── "Perlu konfirmasi" safety-net area (Master Plan §4.5) ────────────────────
 
 
+def _item_has_connected_dimensions(item: WorkItemCandidate) -> bool:
+    """C2-4: an item has connected dimensions when its attributes carry a
+    width×depth display OR an engine/human-verified measurement fact covers a
+    dimension field (width, depth, height, span_length, length, thickness).
+
+    Mirrors the M4 dimension-linking metric so the confirmation area and the
+    dimension metric never disagree about what counts as a connected size.
+    """
+    if dimensions_text(item.attributes or {}):
+        return True
+    return any(
+        fact.field in _DIMENSION_FIELDS
+        and fact.verification_status in {"engine_verified", "human_verified"}
+        for fact in item.measurement_facts
+    )
+
+
 def confirmation_status_for(item: WorkItemCandidate) -> str:
     """Explicit status for every non-final item — never conflate categories.
 
@@ -824,7 +849,7 @@ def confirmation_status_for(item: WorkItemCandidate) -> str:
     if is_perlu_konfirmasi(item):
         return "perlu_konfirmasi"
     missing = set(item.missing_information or [])
-    if item.category != "unknown" and item.code and dimensions_text(item.attributes):
+    if item.category != "unknown" and item.code and _item_has_connected_dimensions(item):
         if any(marker in missing for marker in ("physical_count_verification", "human verification of physical-instance count")):
             return "belum_dihitung"
         return "belum_didukung"
@@ -845,7 +870,7 @@ def confirmation_reasons_for(item: WorkItemCandidate) -> list[str]:
             )
         else:
             reasons.append("tidak ada kode elemen terdeteksi pada label.")
-    if not dimensions_text(item.attributes):
+    if not _item_has_connected_dimensions(item):
         reasons.append("dimensi tidak tersedia atau tidak dapat di-join dari sumber.")
     if item.conflict_ids:
         reasons.append(
