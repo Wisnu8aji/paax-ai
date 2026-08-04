@@ -257,3 +257,47 @@ def test_deduplicate_and_count_reports_auto_confirmed_metric():
     result = deduplicate_and_count([item], {0: page})
     assert result.metrics["items_with_auto_confirmed_count"] == 1
     assert result.metrics["items_with_verified_count"] == 1
+
+
+# ─── Cycle-002 C2-3: fallback observability for categories without plan type ─
+
+def test_count_auto_confirms_ceiling_from_all_observed_pages_when_no_count_source():
+    """C2-3: a ceiling code (no plan-type in physical_instances) has an empty
+    count-source list; two evidence-backed labels across its pages are a real
+    strong signal and become engine_confirmed."""
+    page = _dem_page_with_labels_and_type([
+        {"raw": "C1", "normalized": "C1", "bbox": [100.0, 100.0, 120.0, 120.0], "evidence_refs": ["ev-c1-1"]},
+        {"raw": "C1", "normalized": "C1", "bbox": [200.0, 100.0, 220.0, 120.0], "evidence_refs": ["ev-c1-2"]},
+    ])
+    item = _candidate("w-C1", "ceiling_type", "C1", "L1")
+    item.count_source_page_indices = []  # ceiling has no plan type
+    result = count_occurrences([item], {0: page})
+    updated = result[0]
+    assert updated.verified_physical_count == 2
+    assert updated.count_authority == "engine_confirmed"
+    count_facts = [f for f in updated.measurement_facts if f.field == "count"]
+    assert len(count_facts) == 1
+    assert count_facts[0].verification_status == "engine_verified"
+    assert count_facts[0].evidence_refs == ["ev-c1-1", "ev-c1-2"]
+
+
+def test_count_plan_scoped_item_does_not_use_section_pages_for_count():
+    """C2-3: an item WITH count-source pages keeps the plan-scoped pool; labels
+    on a section page must NOT inflate the verified count (cross-level safety)."""
+    plan = _dem_page_with_labels_and_type([
+        {"raw": "RB3", "normalized": "RB3", "bbox": [100.0, 100.0, 120.0, 120.0], "evidence_refs": ["ev-rb3-plan"]},
+        {"raw": "RB3", "normalized": "RB3", "bbox": [200.0, 100.0, 220.0, 120.0], "evidence_refs": ["ev-rb3-plan2"]},
+    ])
+    section = _dem_page_with_labels_and_type([
+        {"raw": "RB3", "normalized": "RB3", "bbox": [50.0, 50.0, 70.0, 70.0], "evidence_refs": ["ev-rb3-sec"]},
+        {"raw": "RB3", "normalized": "RB3", "bbox": [300.0, 50.0, 320.0, 70.0], "evidence_refs": ["ev-rb3-sec2"]},
+        {"raw": "RB3", "normalized": "RB3", "bbox": [500.0, 50.0, 520.0, 70.0], "evidence_refs": ["ev-rb3-sec3"]},
+    ])
+    item = _candidate("w-RB3", "beam", "RB3", "L2")
+    item.count_source_page_indices = [0]  # plan page only
+    result = count_occurrences([item], {0: plan, 1: section})
+    updated = result[0]
+    # Section labels are not plan instances: verified count stays at the two
+    # plan observations, never 5.
+    assert updated.verified_physical_count == 2
+    assert updated.count_authority == "engine_confirmed"

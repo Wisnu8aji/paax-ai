@@ -244,24 +244,36 @@ def count_occurrences(
                 count_authority = "engine_confirmed"
             verified += 1
 
-        # ── R4: auto-confirm strong count signal from plan-page labels ───────
+        # ── R4 + C2-3: auto-confirm strong count signal from plan labels ─────
         # A classified, coded, conflict-free item whose code has at least
         # `_MIN_AUTO_CONFIRM_OBSERVATIONS` distinct, evidence-backed DEM label
-        # observations on its count-source pages receives an engine-confirmed
-        # verified count.  The number is the observed instance count — never
-        # an invention.
+        # observations receives an engine-confirmed verified count.  The
+        # number is the observed instance count — never an invention.
+        #
+        # Cycle-002 C2-3: when the item has plan-scoped count-source pages
+        # (physical_instances selected them), only those pages are used —
+        # expanding to every page would double-count section/detail labels for
+        # cross-level items (e.g. RB3 on L2 vs roof).  When the category has no
+        # plan-type (ceiling, pipe, trekstang, kuda_kuda, ...), count-source is
+        # empty and the observation pool falls back to every DEM page where the
+        # code's label was observed — a real, evidence-backed strong signal.
+        # All R4 guards remain: evidence_refs on every instance, bbox-distinct
+        # instances, approved count wins, no conflicts, no unknown category.
         if (
             verified_value is None
             and count_authority == "candidate"
             and item.category != "unknown"
             and item.code
             and not item.conflict_ids
-            and item.count_source_page_indices
         ):
+            if item.count_source_page_indices:
+                observation_pages = sorted(item.count_source_page_indices)
+            else:
+                observation_pages = sorted(observed_by_code_page.get(code, {}).keys())
             instances: set[tuple[int, tuple[float, float, float, float]]] = set()
             all_evidence = True
             evidence_refs: set[str] = set()
-            for page_index in sorted(item.count_source_page_indices):
+            for page_index in observation_pages:
                 for box in observed_by_code_page.get(code, {}).get(page_index, set()):
                     instances.add((page_index, box))
                     refs = refs_by_code_page_box.get(code, {}).get(page_index, {}).get(box, [])
