@@ -1151,6 +1151,8 @@ export function mapQuantityReadinessToItems(items: any[]): QuantityItem[] {
       ahspCandidate: null,
       reviewerNote: (item.reason_codes || []).join(', ') || null,
       sourceAuthority: 'none',
+      needsConfirmation: undefined,
+      confirmationReason: null,
     };
   });
 }
@@ -1197,6 +1199,8 @@ export function mapCivilWorkItemsToQuantityItems(items: any[]): QuantityItem[] {
       ahspCandidate: null,
       reviewerNote: Array.isArray(item.notes) ? item.notes.join(' ') : null,
       sourceAuthority: item.source_authority === 'core_engine' ? 'core_engine' : 'none',
+      needsConfirmation: item.needs_confirmation ?? undefined,
+      confirmationReason: item.confirmation_reason ?? (Array.isArray(item.blockers) && item.blockers.length ? item.blockers.join('; ') : null),
     };
   });
 }

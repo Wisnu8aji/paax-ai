@@ -27,7 +27,7 @@ import { useWorkspace } from '../workspace-store';
 import type { DockTab } from '../workspace-store';
 import type { QuantityItem, QuantityRowStatus, VerificationStatus } from '../di-types';
 import { useDockToast, DockToastHost } from './dock-toast';
-import { canDisplayFinalQuantity, honestStateMessage } from '../quantity-authority';
+import { canDisplayFinalQuantity, confirmationReasonFor, honestStateMessage, isNeedsConfirmation } from '../quantity-authority';
 
 const TABS: { id: DockTab; label: string }[] = [
   { id: 'detected', label: 'Detected Items' },
@@ -56,7 +56,7 @@ const VERIFICATION_PILL: Record<VerificationStatus, { label: string; tone?: stri
   'missing-source': { label: 'Missing source', tone: 'err' },
 };
 
-type StatusFilter = 'all' | 'verified' | 'needs-review' | 'ai-detected';
+type StatusFilter = 'all' | 'verified' | 'needs-review' | 'ai-detected' | 'needs-confirmation';
 type SortKey = 'itemCode' | 'floorId' | 'qty' | null;
 type SortDir = 'asc' | 'desc';
 
@@ -122,7 +122,11 @@ export function QuantityDock() {
 
   const filteredQuantities = useMemo(() => {
     let rows = state.quantities;
-    if (statusFilter !== 'all') rows = rows.filter((q) => q.status === statusFilter);
+    if (statusFilter === 'needs-confirmation') {
+      rows = rows.filter((q) => isNeedsConfirmation({ status: q.status, sourceAuthority: q.sourceAuthority ?? 'none', technicalCode: q.technicalCode, dimensionsDisplay: q.dimensionsDisplay, needsConfirmation: q.needsConfirmation, confirmationReason: q.confirmationReason }));
+    } else if (statusFilter !== 'all') {
+      rows = rows.filter((q) => q.status === statusFilter);
+    }
     if (sortKey) {
       rows = [...rows].sort((a, b) => {
         let av: string | number = '';
@@ -328,7 +332,7 @@ export function QuantityDock() {
                   className="di-panel di-rise"
                   style={{ position: 'absolute', top: 34, left: 0, zIndex: 20, borderRadius: 8, minWidth: 160, padding: 4 }}
                 >
-                  {(['all', 'verified', 'needs-review', 'ai-detected'] as StatusFilter[]).map((f) => (
+                  {(['all', 'verified', 'needs-review', 'ai-detected', 'needs-confirmation'] as StatusFilter[]).map((f) => (
                     <button
                       key={f}
                       onClick={() => {
@@ -348,7 +352,7 @@ export function QuantityDock() {
                         cursor: 'pointer',
                       }}
                     >
-                      {f === 'all' ? 'All' : f === 'verified' ? 'Verified' : f === 'needs-review' ? 'Needs review' : 'AI detected'}
+                      {f === 'all' ? 'All' : f === 'verified' ? 'Verified' : f === 'needs-review' ? 'Needs review' : f === 'ai-detected' ? 'AI detected' : 'Perlu konfirmasi'}
                     </button>
                   ))}
                 </div>
@@ -542,6 +546,14 @@ export function QuantityDock() {
                             >
                               {pill.label}
                             </span>
+                            {isNeedsConfirmation({ status: q.status, sourceAuthority: q.sourceAuthority ?? 'none', technicalCode: q.technicalCode, dimensionsDisplay: q.dimensionsDisplay, needsConfirmation: q.needsConfirmation, confirmationReason: q.confirmationReason }) && (
+                              <div style={{ marginTop: 3, display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 220 }}>
+                                <span className="di-pill" data-tone="warn">Perlu konfirmasi</span>
+                                <span style={{ fontSize: 10, lineHeight: 1.4, color: 'var(--di-text2)' }} title={confirmationReasonFor({ status: q.status, sourceAuthority: q.sourceAuthority ?? 'none', technicalCode: q.technicalCode, dimensionsDisplay: q.dimensionsDisplay, needsConfirmation: q.needsConfirmation, confirmationReason: q.confirmationReason }) ?? undefined}>
+                                  {confirmationReasonFor({ status: q.status, sourceAuthority: q.sourceAuthority ?? 'none', technicalCode: q.technicalCode, dimensionsDisplay: q.dimensionsDisplay, needsConfirmation: q.needsConfirmation, confirmationReason: q.confirmationReason })}
+                                </span>
+                              </div>
+                            )}
                           </td>
                           {visibleCols.confidence && <td className="di-mono">{q.confidence ?? '—'}%</td>}
                           {visibleCols.source && <td className="di-mono">{q.source}</td>}
@@ -582,6 +594,11 @@ export function QuantityDock() {
                                   Authority: <span className="di-mono">{q.sourceAuthority ?? 'none'}</span>
                                 </div>
                                 {q.reviewerNote && <div style={{ fontSize: 12, color: 'var(--di-warn)' }}>{q.reviewerNote}</div>}
+                                {isNeedsConfirmation({ status: q.status, sourceAuthority: q.sourceAuthority ?? 'none', technicalCode: q.technicalCode, dimensionsDisplay: q.dimensionsDisplay, needsConfirmation: q.needsConfirmation, confirmationReason: q.confirmationReason }) && (
+                                  <div style={{ fontSize: 12, color: 'var(--di-warn)' }}>
+                                    Perlu konfirmasi: {confirmationReasonFor({ status: q.status, sourceAuthority: q.sourceAuthority ?? 'none', technicalCode: q.technicalCode, dimensionsDisplay: q.dimensionsDisplay, needsConfirmation: q.needsConfirmation, confirmationReason: q.confirmationReason })}
+                                  </div>
+                                )}
                               </div>
                             </td>
                           </tr>

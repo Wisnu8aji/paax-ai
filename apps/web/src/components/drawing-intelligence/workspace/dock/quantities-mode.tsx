@@ -12,7 +12,7 @@ import {
 import { civilWorkItemsExportUrl } from '../../drawing-intelligence-api';
 import type { QuantityItem, QuantityRowStatus } from '../di-types';
 import { useWorkspace } from '../workspace-store';
-import { canDisplayFinalQuantity } from '../quantity-authority';
+import { canDisplayFinalQuantity, confirmationReasonFor, isNeedsConfirmation } from '../quantity-authority';
 
 const STATUS_PILL: Record<QuantityRowStatus, { label: string; tone?: string }> = {
   verified: { label: 'Terverifikasi', tone: 'ok' },
@@ -25,10 +25,11 @@ const STATUS_PILL: Record<QuantityRowStatus, { label: string; tone?: string }> =
 };
 
 type GroupMode = 'location-wbs' | 'wbs-only' | 'flat';
-type ScopeFilter = 'all' | 'substructure' | 'l1' | 'l2' | 'roof' | 'structure' | 'architecture' | 'mep' | 'column' | 'beam';
+type ScopeFilter = 'all' | 'needs-confirmation' | 'substructure' | 'l1' | 'l2' | 'roof' | 'structure' | 'architecture' | 'mep' | 'column' | 'beam';
 
 const FILTERS: Array<{ id: ScopeFilter; label: string }> = [
   { id: 'all', label: 'Semua item' },
+  { id: 'needs-confirmation', label: 'Perlu konfirmasi' },
   { id: 'substructure', label: 'Substruktur' },
   { id: 'l1', label: 'Lantai 1' },
   { id: 'l2', label: 'Lantai 2' },
@@ -41,6 +42,9 @@ const FILTERS: Array<{ id: ScopeFilter; label: string }> = [
 ];
 
 function matchesFilter(item: QuantityItem, filter: ScopeFilter): boolean {
+  if (filter === 'needs-confirmation') {
+    return isNeedsConfirmation({ status: item.status, sourceAuthority: item.sourceAuthority ?? 'none', technicalCode: item.technicalCode, dimensionsDisplay: item.dimensionsDisplay, needsConfirmation: item.needsConfirmation, confirmationReason: item.confirmationReason });
+  }
   const floor = item.floorLabel.toLowerCase();
   const wbs = `${item.wbsSection} ${item.wbsGroup}`.toLowerCase();
   if (filter === 'all') return true;
@@ -81,6 +85,7 @@ export function QuantitiesMode() {
   const total = quantities.length;
   const nVerified = quantities.filter((q) => q.status === 'verified' && canDisplayFinalQuantity({ sourceAuthority: q.sourceAuthority ?? 'none' })).length;
   const nReview = quantities.filter((q) => ['needs-review', 'conflict'].includes(q.status)).length;
+  const nConfirmation = quantities.filter((q) => isNeedsConfirmation({ status: q.status, sourceAuthority: q.sourceAuthority ?? 'none', technicalCode: q.technicalCode, dimensionsDisplay: q.dimensionsDisplay, needsConfirmation: q.needsConfirmation, confirmationReason: q.confirmationReason })).length;
   const nFloors = new Set(quantities.map((q) => q.floorLabel)).size;
   const activeFilterLabel = FILTERS.find((entry) => entry.id === scopeFilter)?.label ?? 'Semua item';
 
@@ -126,6 +131,7 @@ export function QuantitiesMode() {
           <StatCard icon={<FileStack size={18} color="var(--di-accent)" />} value={total} label="item pekerjaan" border="var(--di-accent)" />
           <StatCard icon={<CheckCircle2 size={18} color="var(--di-ok)" />} value={nVerified} label="terverifikasi" />
           <StatCard icon={<AlertTriangle size={18} color="var(--di-warn)" />} value={nReview} label="perlu keputusan" />
+          <StatCard icon={<AlertTriangle size={18} color="var(--di-accent)" />} value={nConfirmation} label="perlu konfirmasi" border="var(--di-accent)" />
           <StatCard icon={<Layers size={18} color="var(--di-info)" />} value={nFloors} label="lokasi/tingkat" />
         </div>
 
@@ -188,6 +194,8 @@ export function QuantitiesMode() {
                   </tr>}
                   {!collapsed && group.rows.map((item) => {
                     const pill = STATUS_PILL[item.status];
+                    const confirmation = isNeedsConfirmation({ status: item.status, sourceAuthority: item.sourceAuthority ?? 'none', technicalCode: item.technicalCode, dimensionsDisplay: item.dimensionsDisplay, needsConfirmation: item.needsConfirmation, confirmationReason: item.confirmationReason });
+                    const confirmationReason = confirmationReasonFor({ status: item.status, sourceAuthority: item.sourceAuthority ?? 'none', technicalCode: item.technicalCode, dimensionsDisplay: item.dimensionsDisplay, needsConfirmation: item.needsConfirmation, confirmationReason: item.confirmationReason });
                     return <tr key={item.id} data-selected={state.selectedQuantityId === item.id}
                       onMouseEnter={() => setHoveredRowId(item.id)} onMouseLeave={() => setHoveredRowId(null)}
                       onClick={() => dispatch({ type: 'select-quantity', quantityId: item.id })}>
@@ -197,7 +205,16 @@ export function QuantitiesMode() {
                       <td className="di-mono">{item.unit}</td><td className="di-mono">{item.dimensionsDisplay ?? '-'}</td>
                       <td className="di-mono" style={{ textAlign: 'right' }}>{item.countDisplay ?? '-'}</td>
                       <td className="di-mono" style={{ textAlign: 'right', fontWeight: 700 }}>{canDisplayFinalQuantity({ sourceAuthority: item.sourceAuthority ?? 'none' }) ? (item.resultDisplay ?? item.qty) : '—'}</td>
-                      <td><span className="di-pill" data-tone={pill.tone}>{pill.label}</span></td>
+                      <td><span className="di-pill" data-tone={pill.tone}>{pill.label}</span>
+                        {confirmation && (
+                          <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 240 }}>
+                            <span className="di-pill" data-tone="warn">Perlu konfirmasi</span>
+                            <span style={{ fontSize: 10, lineHeight: 1.4, color: 'var(--di-text2)' }} title={confirmationReason ?? undefined}>
+                              {confirmationReason}
+                            </span>
+                          </div>
+                        )}
+                      </td>
                       <td style={{ maxWidth: 250, fontSize: 11, color: 'var(--di-text2)' }}>{item.source}</td>
                       <td onClick={(event) => event.stopPropagation()}>{hoveredRowId === item.id && <button className="di-icon-btn" title="Buka sumber/review" onClick={() => openFirstSource(item)}><ExternalLink size={13} /></button>}</td>
                     </tr>;

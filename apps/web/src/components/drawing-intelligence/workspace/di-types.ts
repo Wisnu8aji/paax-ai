@@ -298,6 +298,10 @@ export interface QuantityItem {
   reviewerNote: string | null;
   /** Final numbers may only be displayed from these explicit sources. */
   sourceAuthority?: 'none' | 'measurement_fact' | 'core_engine';
+  /** Area "perlu konfirmasi" (Master Plan §4.5): sinyal eksplisit backend. */
+  needsConfirmation?: boolean;
+  /** Alasan eksplisit terdokumentasi saat item berada di area perlu konfirmasi. */
+  confirmationReason?: string | null;
 }
 
 // ── Analysis (blueprint §12–13) ─────────────────────────────────────────────
