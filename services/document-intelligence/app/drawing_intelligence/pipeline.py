@@ -13,6 +13,8 @@ from .definition_resolution import resolve_definition_conflicts
 from .physical_instances import reconstruct_physical_instances
 from .measurement_resolution import compile_definition_measurements
 from .spatial_resolution import resolve_element_heights
+from .spatial_joiner import join_written_dimensions
+from .dedup_count import deduplicate_and_count
 from .construction_graph_v3 import build_construction_graph
 from .evidence_repair import bridge_dem_refs_to_native_tokens, repair_dem_evidence_refs
 from .dem_adapter import (
@@ -203,6 +205,14 @@ def analyze_drawing_package(
     )
     work_items = spatial.work_items
     conflicts = spatial.conflicts
+    # K3 — spatial joiner + inline table parser (written_dimension facts).
+    spatial_join = join_written_dimensions(
+        work_items=work_items, dem_pages=relevant_dem_pages,
+    )
+    work_items = spatial_join.work_items
+    # K4 — dedup (category, canonical_key, level) + occurrence/verified count.
+    dedup_count = deduplicate_and_count(work_items=work_items, dem_pages=relevant_dem_pages)
+    work_items = dedup_count.work_items
     active_work_review_ids = {task_id for item in work_items for task_id in item.review_task_ids}
     review_queue = [
         task for task in review_queue
@@ -275,6 +285,8 @@ def analyze_drawing_package(
         "drawing_conflicts": len(conflicts),
         **reconstruction.metrics,
         **spatial.metrics,
+        **spatial_join.metrics,
+        **dedup_count.metrics,
         "work_items_ready_for_calculation": sum(item.calculation_readiness == "ready" for item in work_items),
         "physical_counts_auto_accepted": reconstruction.metrics.get("work_items_count_engine_confirmed", 0),
         "final_quantities_calculated": 0,

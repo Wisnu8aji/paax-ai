@@ -61,13 +61,20 @@ def resolve_takeoff_capability(
                 category=category,
             )
 
-        # ─── Explicitly blocked: beam — no deterministic Core Engine contract ──
+        # ─── Explicitly supported: concrete beam (C2 contract) ────────────────
+        # Span length comes from written table/bentang evidence via K3 joiner;
+        # when absent the item carries missing_information=["span_length"] and
+        # the dispatch layer reports needs_input instead of a fabricated volume.
         if category in {"beam", "balok"}:
-            return _BLOCKED.model_copy(update={
-                "key": category,
-                "reason": "beam volume contract is not yet available at the typed measurement boundary",
-                "category": category,
-            })
+            return TakeoffCapability(
+                key="concrete_beam_total_volume",
+                endpoint="/calculations",
+                required_fields=["count", "width", "depth", "span_length"],
+                source_authority="core_engine",
+                status="supported",
+                calculation_type="concrete_beam_total_volume",
+                category=category,
+            )
 
         # ─── Explicitly blocked: wall without explicit engine_contract ─────────
         if category in {"wall"}:
@@ -175,8 +182,6 @@ def resolve_takeoff_capability(
             )
 
         category_reason: dict[str, str] = {
-            "beam": "beam volume contract is not yet available at the typed measurement boundary",
-            "balok": "beam volume contract is not yet available at the typed measurement boundary",
             "foundation": "foundation subtype and an existing engine contract are required",
             "pondasi": "foundation subtype and an existing engine contract are required",
             "wall": "verified area/length basis or takeoff.dinding contract is required",
@@ -190,14 +195,13 @@ def resolve_takeoff_capability(
         })
 
     # ─── String-based registry (for coverage queries and reporting) ────────────
-    # Phase 09C Correction: beam/wall/foundation/MEP are explicitly blocked.
+    # Phase 09C Correction: wall/foundation/MEP are explicitly blocked; beam is
+    # supported via the C2 concrete_beam_total_volume contract.
     # No aliasing of structurally distinct domains to shared concrete endpoints.
     category_str = item_or_category.strip().lower().replace("-", "_").replace(" ", "_")
 
     # Explicitly blocked domains — returned immediately without aliasing
     _EXPLICITLY_BLOCKED: dict[str, str] = {
-        "beam": "beam volume contract is not yet available at the typed measurement boundary",
-        "balok": "beam volume contract is not yet available at the typed measurement boundary",
         "wall": "wall requires a verified area/length basis and explicit takeoff.dinding contract",
         "foundation": "foundation subtype and an existing engine contract are required",
         "pondasi": "foundation subtype and an existing engine contract are required",
@@ -219,6 +223,18 @@ def resolve_takeoff_capability(
             source_authority="core_engine",
             status="supported",
             calculation_type="concrete_column_total_volume",
+            category=category_str,
+        )
+
+    # Concrete beam: supported in string-based registry (C2)
+    if category_str in {"beam", "balok"}:
+        return TakeoffCapability(
+            key="concrete_beam_total_volume",
+            endpoint="/calculations",
+            required_fields=["count", "width", "depth", "span_length"],
+            source_authority="core_engine",
+            status="supported",
+            calculation_type="concrete_beam_total_volume",
             category=category_str,
         )
 

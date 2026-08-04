@@ -26,11 +26,18 @@ def test_column_uses_existing_typed_core_engine_contract():
     assert cap.source_authority == "core_engine"
 
 
-def test_beam_is_explicitly_blocked_without_existing_formula_contract():
-    coverage = capability_coverage(item("beam", ("count", "width", "depth", "height")))
-    assert coverage["ready"] is False
-    assert coverage["capability"]["status"] == "blocked"
-    assert "beam volume" in coverage["capability"]["reason"]
+def test_beam_uses_typed_span_length_core_engine_contract():
+    """C2 — beam/balok resolves to concrete_beam_total_volume (span_length contract)."""
+    coverage = capability_coverage(item("beam", ("count", "width", "depth", "span_length")))
+    assert coverage["capability"]["status"] == "supported"
+    assert coverage["capability"]["endpoint"] == "/calculations"
+    assert coverage["capability"]["calculation_type"] == "concrete_beam_total_volume"
+    assert coverage["ready"] is True
+    # Missing span evidence is a readiness gap, not a blocked category.
+    missing = capability_coverage(item("beam", ("count", "width", "depth")))
+    assert missing["capability"]["status"] == "supported"
+    assert missing["ready"] is False
+    assert "span_length" in missing["missing_fields"]
 
 
 def test_wall_blocked_without_explicit_dinding_contract():

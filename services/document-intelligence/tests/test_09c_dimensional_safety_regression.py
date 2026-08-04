@@ -7,7 +7,7 @@ PASS after the corrections are applied.  They cover:
      against an allowlisted endpoint-specific schema.
   C. Response/correlation safety – source_authority=core_engine requires
      endpoint-specific validation and request/project/candidate correlation.
-  D. Domain coverage matrix – column (supported), beam (blocked), wall
+  D. Domain coverage matrix – column (supported), beam (supported via C2), wall
      (requires explicit contract, blocked without one), foundation (blocked),
      MEP (blocked without explicit contract).
 """
@@ -341,22 +341,27 @@ class TestDomainCoverageMatrix:
         assert "depth" in cap.required_fields
         assert "height" in cap.required_fields
 
-    # --- beam: explicitly blocked ---
-    def test_beam_is_blocked_and_never_auto_dispatched(self):
-        """beam (balok) has no deterministic Core Engine endpoint -> blocked."""
+    # --- beam: supported via C2 span_length contract ---
+    def test_beam_is_supported_and_dispatches_with_span_length(self):
+        """beam (balok) dispatches to /calculations with concrete_beam_total_volume (C2)."""
         for cat in ("beam", "balok"):
-            item = _candidate(cat, [_fact("count", 2), _fact("width", 0.3), _fact("depth", 0.5), _fact("height", 4.0)])
+            item = _candidate(cat, [_fact("count", 2), _fact("width", 0.3), _fact("depth", 0.5), _fact("span_length", 4.0)])
+            dispatch = build_engine_dispatch(item, project_id="P", snapshot_id="S", requested_by="U")
+            assert dispatch.endpoint == "/calculations"
+            assert dispatch.payload.get("calculation_type") == "concrete_beam_total_volume"
+            # Beam without span evidence is a readiness gap naming span_length,
+            # never a silent blocked category and never a fabricated number.
+            missing_item = _candidate(cat, [_fact("count", 2), _fact("width", 0.3), _fact("depth", 0.5)])
             with pytest.raises(CalculationNotReady) as exc_info:
-                build_engine_dispatch(item, project_id="P", snapshot_id="S", requested_by="U")
-            assert "not" in str(exc_info.value).lower() or "block" in str(exc_info.value).lower() or "no compatible" in str(exc_info.value).lower(), (
-                f"beam must be explicitly blocked; got: {exc_info.value}"
-            )
+                build_engine_dispatch(missing_item, project_id="P", snapshot_id="S", requested_by="U")
+            assert "span_length" in str(exc_info.value)
 
-    def test_beam_capability_is_blocked_in_registry(self):
-        """beam category returns blocked capability from string-based registry."""
+    def test_beam_capability_is_supported_in_registry(self):
+        """beam category returns supported capability from string-based registry."""
         cap = resolve_takeoff_capability("beam")
-        assert cap.status == "blocked", f"beam must be blocked; got status={cap.status}"
-        assert cap.endpoint is None, f"beam must have no endpoint; got {cap.endpoint}"
+        assert cap.status == "supported", f"beam must be supported; got status={cap.status}"
+        assert cap.endpoint == "/calculations"
+        assert "span_length" in cap.required_fields
 
     # --- wall: blocked without explicit contract ---
     def test_wall_without_contract_is_blocked(self):

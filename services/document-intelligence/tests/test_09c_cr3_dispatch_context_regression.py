@@ -432,14 +432,15 @@ class TestDomainCoverageMatrix:
         assert calc.source_authority == "core_engine"
         assert calc.result == 6.0
 
-    # --- beam: blocked ---
-    def test_beam_blocked_returns_blocked_status(self):
-        """beam has no supported endpoint — always blocked."""
+    # --- beam: supported via C2 span_length contract ---
+    def test_beam_supported_returns_supported_status(self):
+        """beam/balok resolve to concrete_beam_total_volume (C2)."""
         for cat in ("beam", "balok"):
-            item = _candidate(cat, [_fact("count", 2), _fact("width", 0.3), _fact("depth", 0.5), _fact("height", 4.0)])
+            item = _candidate(cat, [_fact("count", 2), _fact("width", 0.3), _fact("depth", 0.5), _fact("span_length", 4.0)])
             cap = resolve_takeoff_capability(item)
-            assert cap.status == "blocked", f"{cat} must be blocked"
-            assert cap.endpoint is None
+            assert cap.status == "supported", f"{cat} must be supported"
+            assert cap.endpoint == "/calculations"
+            assert cap.calculation_type == "concrete_beam_total_volume"
 
     # --- wall: blocked without contract ---
     def test_wall_blocked_without_contract(self):
@@ -472,8 +473,8 @@ class TestDomainCoverageMatrix:
             # (category, facts, attributes, expected_status, expected_endpoint)
             ("column", [_fact("count", 4), _fact("width", 0.5), _fact("depth", 0.5), _fact("height", 4.0)],
              {}, "supported", "/calculations"),
-            ("beam", [_fact("count", 2), _fact("width", 0.3), _fact("depth", 0.5), _fact("height", 4.0)],
-             {}, "blocked", None),
+            ("beam", [_fact("count", 2), _fact("width", 0.3), _fact("depth", 0.5), _fact("span_length", 4.0)],
+             {}, "supported", "/calculations"),
             ("wall", [_fact("area", 10.0, "m2")], {}, "blocked", None),
             ("foundation", [_fact("length", 2.0), _fact("width", 2.0), _fact("depth", 1.5)],
              {}, "blocked", None),

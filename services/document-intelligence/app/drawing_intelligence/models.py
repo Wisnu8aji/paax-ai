@@ -369,7 +369,7 @@ class PhysicalInstance(BaseModel):
 class ElementMeasurementFact(BaseModel):
     measurement_id: str
     work_item_id: str
-    field: Literal["count", "width", "depth", "height", "elevation", "area", "length", "volume"]
+    field: Literal["count", "width", "depth", "height", "elevation", "area", "length", "volume", "span_length"]
     value: float
     unit: str
     source_method: Literal["verified_instances", "written_dimension", "geometry_engine", "human_input", "core_engine"]

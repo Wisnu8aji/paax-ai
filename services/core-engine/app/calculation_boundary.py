@@ -12,7 +12,7 @@ class CalculationRequest(BaseModel):
     project_id: str
     snapshot_id: str
     measurement_fact_ids: list[str] = Field(min_length=1)
-    calculation_type: Literal["concrete_column_volume", "concrete_column_total_volume", "length", "area", "count"]
+    calculation_type: Literal["concrete_column_volume", "concrete_column_total_volume", "concrete_beam_total_volume", "length", "area", "count"]
     inputs: list[MeasurementFact] = Field(min_length=1)
     requested_by: str
 
@@ -73,6 +73,40 @@ def _concrete_column_total_volume(request: CalculationRequest, digest: str, sour
     )
 
 
+def _concrete_beam_total_volume(request: CalculationRequest, digest: str, sources: list[dict[str, str]]) -> CalculationResponse:
+    """C2 — beam volume from written span evidence (Master Plan §4.3).
+
+    Volume = width × depth × span_length × verified_count (m3).
+
+    When the span length is not available the engine never fabricates a
+    number: it returns ``needs_input`` naming the missing span_length so the
+    drawing-intelligence layer can surface ``missing_information:
+    ["span_length"]`` (fallback, not blocked).
+    """
+    facts = {fact.formula_inputs[0]: fact for fact in request.inputs if len(fact.formula_inputs) == 1}
+    required = {"width", "depth", "span_length", "count"}
+    if set(facts) != required:
+        missing = sorted(required - set(facts))
+        return CalculationResponse(
+            calculation_id=digest, status="needs_input", input_sources=sources,
+            warnings=[f"width, depth, span_length, and verified count are required; missing: {', '.join(missing)}"],
+        )
+    if facts["count"].measurement_type.value != "count":
+        return CalculationResponse(
+            calculation_id=digest, status="blocked", input_sources=sources,
+            warnings=["count input must use measurement_type='count' and unit='unit'"],
+        )
+    lengths = [convert(facts[key].typed_quantity, "m").value for key in ("width", "depth", "span_length")]
+    count = facts["count"].typed_quantity.value
+    result = lengths[0] * lengths[1] * lengths[2] * count
+    return CalculationResponse(
+        calculation_id=digest, status="complete",
+        formula="width × depth × span_length × verified_count",
+        substituted_formula=f"{lengths[0]} × {lengths[1]} × {lengths[2]} × {count}",
+        result=float(result), unit="m3", input_sources=sources,
+    )
+
+
 def _summed_typed_operation(
     request: CalculationRequest,
     digest: str,
@@ -115,6 +149,8 @@ def calculate(request: CalculationRequest) -> CalculationResponse:
         return _concrete_column_volume(request, digest, sources)
     if request.calculation_type == "concrete_column_total_volume":
         return _concrete_column_total_volume(request, digest, sources)
+    if request.calculation_type == "concrete_beam_total_volume":
+        return _concrete_beam_total_volume(request, digest, sources)
     if request.calculation_type == "length":
         return _summed_typed_operation(request, digest, sources, expected_measurement_type="length", formula_input_key="length", target_unit="m")
     if request.calculation_type == "area":

@@ -114,6 +114,7 @@ FIELD_ALIAS_MAP: dict[str, set[str]] = {
     "lebar_m": {"width", "lebar_m"},
     "tinggi_m": {"height", "tinggi_m"},
     "dalam_m": {"depth", "dalam_m", "height"},
+    "bentang_m": {"span_length", "bentang_m", "panjang_m"},
     "luas_m2": {"area", "luas_m2"},
     "volume_m3": {"volume", "volume_m3"},
     "jumlah_unit": {"count", "jumlah_unit"},

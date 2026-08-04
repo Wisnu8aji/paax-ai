@@ -133,3 +133,43 @@ def test_total_column_volume_multiplies_only_verified_count():
     assert body["result"] == 2.34
     assert body["unit"] == "m3"
     assert body["formula"] == "width × depth × height × verified_count"
+
+
+def test_total_beam_volume_multiplies_only_verified_count():
+    # Manual anchor: 250mm x 600mm x 3900mm span x 4 = 0.25 x 0.6 x 3.9 x 4 = 2.34 m3
+    payload = {
+        "project_id": "P-1", "snapshot_id": "S-1",
+        "measurement_fact_ids": ["W", "D", "SP", "C"],
+        "calculation_type": "concrete_beam_total_volume",
+        "inputs": [
+            _typed_fact("W", "length", 250, "mm", "width"),
+            _typed_fact("D", "length", 600, "mm", "depth"),
+            _typed_fact("SP", "length", 3900, "mm", "span_length"),
+            _typed_fact("C", "count", 4, "unit", "count"),
+        ],
+        "requested_by": "OWNER",
+    }
+    body = client.post("/calculations", json=payload).json()
+    assert body["status"] == "complete"
+    assert body["result"] == 2.34
+    assert body["unit"] == "m3"
+    assert body["formula"] == "width × depth × span_length × verified_count"
+
+
+def test_beam_volume_needs_input_when_span_length_missing():
+    """C2 fallback: no span evidence -> needs_input naming span_length (never fabricates)."""
+    payload = {
+        "project_id": "P-1", "snapshot_id": "S-1",
+        "measurement_fact_ids": ["W", "D", "C"],
+        "calculation_type": "concrete_beam_total_volume",
+        "inputs": [
+            _typed_fact("W", "length", 250, "mm", "width"),
+            _typed_fact("D", "length", 600, "mm", "depth"),
+            _typed_fact("C", "count", 4, "unit", "count"),
+        ],
+        "requested_by": "OWNER",
+    }
+    body = client.post("/calculations", json=payload).json()
+    assert body["status"] == "needs_input"
+    assert body["result"] is None
+    assert any("span_length" in w for w in body["warnings"])

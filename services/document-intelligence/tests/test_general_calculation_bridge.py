@@ -48,10 +48,61 @@ def test_wall_without_contract_is_blocked_and_column_dispatches_normally():
 
 def test_unsupported_or_conflicting_item_never_dispatches():
     with pytest.raises(CalculationNotReady):
+        # beam without span evidence is not ready (missing span_length fact)
         build_engine_dispatch(item("beam", ["count", "width", "depth", "height"]), project_id="P", snapshot_id="S", requested_by="U")
     with pytest.raises(CalculationNotReady):
         # conflict_ids block dispatch regardless of capability
         build_engine_dispatch(item("column", ["count", "width", "depth", "height"], conflicts=["C"]), project_id="P", snapshot_id="S", requested_by="U")
+
+
+def test_beam_dispatch_uses_span_length_contract():
+    """C2 — beam dispatches to /calculations with concrete_beam_total_volume."""
+    dispatch = build_engine_dispatch(
+        item("beam", ["count", "width", "depth", "span_length"]),
+        project_id="P", snapshot_id="S", requested_by="U",
+    )
+    assert dispatch.endpoint == "/calculations"
+    assert dispatch.payload["calculation_type"] == "concrete_beam_total_volume"
+    assert {row["formula_inputs"][0] for row in dispatch.payload["inputs"]} == {"count", "width", "depth", "span_length"}
+    assert dispatch.capability.source_authority == "core_engine"
+    assert "span_length" in dispatch.capability.required_fields
+
+
+def test_beam_missing_span_is_not_ready_and_names_span_length():
+    """C2 fallback — no span_length fact -> CalculationNotReady naming span_length."""
+    with pytest.raises(CalculationNotReady) as exc_info:
+        build_engine_dispatch(
+            item("beam", ["count", "width", "depth"]),
+            project_id="P", snapshot_id="S", requested_by="U",
+        )
+    assert "span_length" in str(exc_info.value)
+
+
+def test_beam_receipt_authority_requires_complete_result():
+    """source_authority=core_engine only after complete+non-null result with DispatchReceipt."""
+    import asyncio
+
+    work = item("beam", ["count", "width", "depth", "span_length"])
+    dispatch = build_engine_dispatch(work, project_id="P", snapshot_id="S", requested_by="U")
+
+    comp_resp = {"status": "complete", "result": 1.8, "unit": "m3", "project_id": "P"}
+
+    async def _run():
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200, json=comp_resp)), base_url="http://core") as http:
+            client = CoreEngineCalculationClient("http://core", internal_key="x", client=http)
+            r_json, receipt = await client.execute_dispatch(dispatch)
+            return calculation_from_response(work, r_json, receipt=receipt)
+
+    complete = asyncio.run(_run())
+
+    blocked_resp = {"status": "needs_input", "result": None}
+    blocked_receipt = DispatchReceipt(context=dispatch.context, response=blocked_resp)
+    blocked = calculation_from_response(work, blocked_resp, receipt=blocked_receipt)
+
+    assert complete.source_authority == "core_engine"
+    assert complete.result == 1.8
+    assert complete.unit == "m3"
+    assert blocked.source_authority == "none"
 
 
 @pytest.mark.asyncio
