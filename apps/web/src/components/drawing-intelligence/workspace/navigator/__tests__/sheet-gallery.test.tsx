@@ -48,9 +48,9 @@ describe('SheetGallery real thumbnail rendering', () => {
 
     const images = screen.getAllByRole('img', { name: /Floor Plan|A-01|A-02/i }) as HTMLImageElement[];
     expect(images.length).toBe(2);
-    expect(images[0].getAttribute('src')).toBe('/api/document-intelligence/drawings/dem/run-1/pages/0/thumbnail?width=320');
+    expect(images[0].getAttribute('src')).toBe('/api/document-intelligence/drawings/dem/run-1/pages/0/thumbnail?width=800');
     expect(images[0].getAttribute('loading')).toBe('lazy');
-    expect(images[1].getAttribute('src')).toBe('/api/document-intelligence/drawings/dem/run-1/pages/1/thumbnail?width=320');
+    expect(images[1].getAttribute('src')).toBe('/api/document-intelligence/drawings/dem/run-1/pages/1/thumbnail?width=800');
   });
 
   it('shows explicit error state and retry button when thumbnail loading fails', () => {

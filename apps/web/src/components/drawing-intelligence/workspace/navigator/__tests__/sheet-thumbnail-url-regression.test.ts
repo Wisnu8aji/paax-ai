@@ -16,7 +16,7 @@ describe('Phase A Regression — Thumbnail URL Normalization', () => {
 
     // FAILURE EXPECTED ON UNFIXED CODE: sheet.imageUrl will be raw '/drawings/dem/...'
     expect(sheet.imageUrl).toBe(
-      '/api/document-intelligence/drawings/dem/514fb7f2-26fd-5816-9f22-a4a2412688bf/pages/0/thumbnail?width=320'
+      '/api/document-intelligence/drawings/dem/514fb7f2-26fd-5816-9f22-a4a2412688bf/pages/0/thumbnail?width=800'
     );
   });
 

@@ -6,7 +6,14 @@ describe('sheet-thumbnail-resolver', () => {
     const result = resolveCanonicalThumbnailUrl({
       rawUrl: '/drawings/dem/run-123/pages/0/thumbnail?width=320',
     });
-    expect(result).toBe('/api/document-intelligence/drawings/dem/run-123/pages/0/thumbnail?width=320');
+    expect(result).toBe('/api/document-intelligence/drawings/dem/run-123/pages/0/thumbnail?width=800');
+  });
+
+  it('normalizes persisted legacy thumbnail width to 800px', () => {
+    const result = resolveCanonicalThumbnailUrl({
+      rawUrl: '/api/document-intelligence/drawings/dem/run-123/pages/0/thumbnail?width=320',
+    });
+    expect(result).toBe('/api/document-intelligence/drawings/dem/run-123/pages/0/thumbnail?width=800');
   });
 
   it('normalizes raw /projects/... URL to /api/drawing-intelligence/projects/...', () => {
@@ -16,11 +23,11 @@ describe('sheet-thumbnail-resolver', () => {
     expect(result).toBe('/api/drawing-intelligence/projects/proj-456/pages/0/thumbnail');
   });
 
-  it('preserves already proxy-prefixed URLs', () => {
+  it('preserves already proxy-prefixed URLs (width normalized to 800)', () => {
     const result = resolveCanonicalThumbnailUrl({
       rawUrl: '/api/document-intelligence/drawings/dem/run-123/pages/0/thumbnail?width=320',
     });
-    expect(result).toBe('/api/document-intelligence/drawings/dem/run-123/pages/0/thumbnail?width=320');
+    expect(result).toBe('/api/document-intelligence/drawings/dem/run-123/pages/0/thumbnail?width=800');
   });
 
   it('generates canonical proxy URL from runId and pageIndex when rawUrl is missing', () => {

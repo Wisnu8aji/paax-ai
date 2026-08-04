@@ -24,12 +24,24 @@ export function resolveCanonicalThumbnailUrl(input: ThumbnailResolutionInput): s
   const width = input.width ?? 800;
   const raw = optionalString(input.rawUrl);
 
+  // Normalize thumbnail width to the sharp default (800px) even when the
+  // persisted raw URL carries a legacy width (e.g. ?width=320 from the
+  // 30-Jul analysis). The backend cap is le=800, so 800 is always served.
+  const sharpenWidth = (url: string): string => {
+    if (!url.includes('thumbnail')) return url;
+    const parsed = new URL(url, 'http://127.0.0.1');
+    if (parsed.searchParams.has('width')) {
+      parsed.searchParams.set('width', String(width));
+    }
+    return `${parsed.pathname}${parsed.search}`;
+  };
+
   if (raw) {
     if (raw.startsWith('/drawings/')) {
-      return `/api/document-intelligence${raw}`;
+      return sharpenWidth(`/api/document-intelligence${raw}`);
     }
     if (raw.startsWith('/projects/')) {
-      return `/api/drawing-intelligence${raw}`;
+      return sharpenWidth(`/api/drawing-intelligence${raw}`);
     }
     if (
       raw.startsWith('/api/document-intelligence') ||
@@ -38,7 +50,7 @@ export function resolveCanonicalThumbnailUrl(input: ThumbnailResolutionInput): s
       raw.startsWith('https://') ||
       raw.startsWith('/')
     ) {
-      return raw;
+      return sharpenWidth(raw);
     }
   }
 
