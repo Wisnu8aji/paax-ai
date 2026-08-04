@@ -32,6 +32,14 @@ describe('sheet-thumbnail-resolver', () => {
     expect(result).toBe('/api/document-intelligence/drawings/dem/run-789/pages/5/thumbnail?width=320');
   });
 
+  it('defaults to 800px width (sharp thumbnails) when width is omitted', () => {
+    const result = resolveCanonicalThumbnailUrl({
+      runId: 'run-789',
+      pageIndex: 5,
+    });
+    expect(result).toBe('/api/document-intelligence/drawings/dem/run-789/pages/5/thumbnail?width=800');
+  });
+
   it('returns null when neither rawUrl nor (runId + pageIndex) are provided', () => {
     const result = resolveCanonicalThumbnailUrl({});
     expect(result).toBeNull();

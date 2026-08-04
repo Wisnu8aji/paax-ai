@@ -21,7 +21,7 @@ function optionalString(value: unknown): string | null {
  * Raw backend paths starting with `/projects/` are ALWAYS mapped to `/api/drawing-intelligence/projects/...`.
  */
 export function resolveCanonicalThumbnailUrl(input: ThumbnailResolutionInput): string | null {
-  const width = input.width ?? 320;
+  const width = input.width ?? 800;
   const raw = optionalString(input.rawUrl);
 
   if (raw) {

@@ -20,7 +20,7 @@ export function CanonicalSheetThumbnail({
   pageIndex,
   rawUrl,
   alt,
-  width = 320,
+  width = 800,
   height = 92,
   style,
   className,
