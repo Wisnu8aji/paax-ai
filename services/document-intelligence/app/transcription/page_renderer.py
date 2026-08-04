@@ -17,11 +17,11 @@ class RenderedPage:
     page_transform: PageTransform
 
 
-def render_page_to_png(pdf_bytes: bytes, page_index: int, dpi: int = 200) -> bytes:
+def render_page_to_png(pdf_bytes: bytes, page_index: int, dpi: int = 300) -> bytes:
     return render_page(pdf_bytes, page_index, dpi=dpi).png_bytes
 
 
-def render_page(pdf_bytes: bytes, page_index: int, dpi: int = 200) -> RenderedPage:
+def render_page(pdf_bytes: bytes, page_index: int, dpi: int = 300) -> RenderedPage:
     """Same rendering as render_page_to_png but also returns the pixel
     dimensions PyMuPDF already computed -- page_loop.py needs width_px/
     height_px for DemSource and re-deriving them from the PNG bytes

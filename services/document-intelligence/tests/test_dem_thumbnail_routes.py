@@ -8,6 +8,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 os.environ.setdefault("INTERNAL_SERVICE_KEY", "test-internal-key")
+os.environ.setdefault("TESTING", "1")
 
 from app.api import dem_routes
 from app.artifact_storage import LocalArtifactStore
@@ -76,12 +77,25 @@ async def test_thumbnail_supports_etag_not_modified(thumbnail_fixture):
 
 
 @pytest.mark.asyncio
+async def test_thumbnail_accepts_width_up_to_new_contract(thumbnail_fixture):
+    store, run, _ = thumbnail_fixture
+    with patch.object(dem_routes, "ARTIFACT_STORE", store), patch(
+        "app.api.dem_routes.DemDbClient.get_run", new=AsyncMock(return_value=run)
+    ), patch("app.api.dem_routes.DemDbClient.authorize_actor_for_project", new=AsyncMock(return_value=None)), patch(
+        "app.api.dem_routes.DemDbClient.authorize_artifact", new=AsyncMock(return_value=None)
+    ):
+        response = await request_thumbnail("width=800")
+    assert response.status_code == 200
+    assert response.content.startswith(b"\x89PNG")
+
+
+@pytest.mark.asyncio
 async def test_thumbnail_rejects_width_above_contract(thumbnail_fixture):
     store, run, _ = thumbnail_fixture
     with patch.object(dem_routes, "ARTIFACT_STORE", store), patch(
         "app.api.dem_routes.DemDbClient.get_run", new=AsyncMock(return_value=run)
     ):
-        response = await request_thumbnail("width=321")
+        response = await request_thumbnail("width=801")
     assert response.status_code == 422
 
 

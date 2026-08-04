@@ -331,7 +331,7 @@ async def get_page_thumbnail(
     run_id: str,
     page_index: int,
     request: Request,
-    width: int = Query(default=320, ge=64, le=320),
+    width: int = Query(default=320, ge=64, le=800),
     user: User = Depends(get_current_user),
 ):
     """Serve an authorised, lightweight page derivative for sheet navigation.
