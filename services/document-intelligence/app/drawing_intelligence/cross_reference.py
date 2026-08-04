@@ -43,7 +43,10 @@ def _bbox_iou(a, b) -> float:
     return intersection / union if union else 0.0
 
 
-_STRUCTURAL_CATEGORIES = {"column", "beam", "slab", "foundation", "steel_profile"}
+_STRUCTURAL_CATEGORIES = {
+    "column", "beam", "slab", "foundation", "steel_profile",
+    "gording", "kuda_kuda", "trekstang",
+}
 _ARCHITECTURAL_CATEGORIES = {"wall", "door", "window", "door_window_assembly", "ceiling_type"}
 
 
@@ -73,7 +76,9 @@ def _category_is_compatible(category: str, semantic: SheetSemanticProfile) -> bo
         return semantic.drawing_type == "fire_safety_plan"
     if category == "hvac_fixture":
         return semantic.discipline == "mechanical" or semantic.drawing_type == "hvac_plan"
-    if category == "plumbing_fixture":
+    if category in {"plumbing_fixture", "pipe"}:
+        # R1: PIPA labels on plumbing/drainage plans are pipe work items, not
+        # unclassifiable background (M3 golden check for PIPA → pipe).
         return semantic.discipline == "plumbing" or semantic.drawing_type in {"plumbing_plan", "drainage_plan"}
     return False
 

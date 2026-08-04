@@ -1,12 +1,27 @@
 from __future__ import annotations
 
-"""Cross-sheet definition resolution and explicit conflict construction."""
+"""Cross-sheet definition resolution, golden definition promotion, and
+explicit conflict construction.
+
+R1 (revision directive §3.3): ``promote_golden_definition_items`` promotes
+K0 golden element labels (LINTEL, CG1, CB1, BL, GORDING, PIPA, TS, WF, H,
+RAFTER, PEDESTAL, 1/2KD) to work items when evidence exists in JSON-1, even
+when the sheet drawing type is a schedule/detail page that the occurrence
+linker skips.
+"""
 
 from collections import defaultdict
 import hashlib
 from typing import Any
 
+from .dem_adapter import iter_observations, normalize_dem_bbox
 from .models import DrawingConflict, PageIntelligence, SourceValue, VocabularyEntry, WorkItemCandidate
+from .taxonomy import (
+    category_from_code,
+    label_looks_like_document_noise,
+    resolve_golden_definition,
+)
+from .vocabulary import _dimension_value, canonical_key
 
 
 def _dimension_tuple(attributes: dict[str, Any]) -> tuple[float, float, str] | None:
@@ -91,3 +106,116 @@ def resolve_definition_conflicts(
             affected_page_indices=sorted({value.page_index for value in source_values}),
         ))
     return conflicts, definition_pages
+
+
+# ─── R1: golden definition promotion (K1–K4 pipeline) ─────────────────────────
+
+_COUNT_VERIFICATION_CATEGORIES = {
+    "column", "beam", "door", "window", "lighting_fixture", "electrical_fixture",
+}
+
+
+def promote_golden_definition_items(
+    *,
+    work_items: list[WorkItemCandidate],
+    dem_pages: dict[int, dict[str, Any]],
+    semantics: dict[int, Any],
+) -> list[WorkItemCandidate]:
+    """Promote K0 golden element labels to work items when JSON-1 evidence exists.
+
+    The occurrence linker (K1/K2) only processes sheets whose drawing type is a
+    plan (floor_plan, beam_plan, …).  Golden definitions that live on schedule
+    or detail sheets (page-0050 TABEL BALOK, page-0055 GORDING & PD) never reach
+    ``build_work_items``, which is why M2 kelengkapan measured 50% at baseline.
+
+    This stage (R1) scans ALL DEM pages for element labels, resolves the label
+    through the deterministic golden definition vocabulary (or the §4.2 code
+    grammar), and promotes it to a work item when:
+
+      - the label is not document noise (title-block filter);
+      - the row carries a bounding box and evidence_refs (JSON-1 evidence);
+      - the label resolves to a known category (never ``unknown``);
+      - no work item with the same (category, code) exists yet at any level.
+
+    Promoted items are marked ``attributes["definition_resolution"] = "golden"``
+    so downstream status logic (M8) treats them as coded/classified items
+    ("belum dihitung"), never as unclassifiable confirmation material.
+    The K4 dedup stage that follows merges any residual level-key duplicates.
+    """
+    existing: set[tuple[str, str]] = {
+        (item.category, (item.code or "").upper()) for item in work_items
+    }
+    promoted: list[WorkItemCandidate] = []
+    for page_index, dem_page in sorted(dem_pages.items()):
+        semantic = semantics.get(page_index)
+        title = semantic.title if semantic else ""
+        level = semantic.level if semantic else None
+        source = dem_page.get("source", {})
+        for category_name, row_index, row in iter_observations(dem_page):
+            if category_name not in {"element_labels", "symbols"}:
+                continue
+            raw = str(row.get("raw") or row.get("normalized") or "")
+            key = canonical_key(raw)
+            if not key:
+                continue
+            if label_looks_like_document_noise(raw, key):
+                continue
+            box = normalize_dem_bbox(row.get("bbox"), source)
+            if box is None:
+                continue
+            refs = [str(ref) for ref in row.get("evidence_refs", []) or []]
+            if not refs:
+                continue
+            golden = resolve_golden_definition(raw)
+            if golden:
+                code, category = golden
+            else:
+                category = category_from_code(key, title=title, raw=raw)
+                code = key
+                if category == "unknown":
+                    continue
+            if (category, code.upper()) in existing:
+                continue
+            existing.add((category, code.upper()))
+
+            attributes: dict[str, Any] = {
+                "level": level or "unknown",
+                "raw": raw,
+                "sheet_title": title,
+                "definition_resolution": "golden",
+                "definition_page_index": page_index,
+            }
+            dimensions = _dimension_value(row)
+            if dimensions:
+                attributes["dimensions"] = dimensions
+            missing: list[str] = []
+            if not level or level == "unknown":
+                missing.append("level")
+            if not dimensions:
+                missing.append("type_dimensions")
+            if category in _COUNT_VERIFICATION_CATEGORIES:
+                missing.extend(
+                    ["physical_count_verification", "human verification of physical-instance count"]
+                )
+            promoted.append(
+                WorkItemCandidate(
+                    work_item_id=f"work-{category}-{code}-{level or 'unknown'}",
+                    category=category,
+                    code=code,
+                    label=raw,
+                    page_indices=[page_index],
+                    maturity="classified",  # type: ignore[arg-type]
+                    occurrence_count_observed=1,
+                    accepted_detection_count=0,
+                    geometry_kind="count",
+                    evidence_refs=refs,
+                    source_candidate_ids=[
+                        f"golden-{category_name}-p{page_index}-{row_index}-{key}"
+                    ],
+                    attributes=attributes,
+                    missing_information=missing,
+                    review_task_ids=[],
+                    user_accepted=False,
+                )
+            )
+    return [*work_items, *promoted]

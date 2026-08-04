@@ -92,6 +92,11 @@ _REGISTRY: dict[str, WorkTaxonomy] = {
         "Profil baja yang digunakan sebagai bagian struktur atau rangka.",
         "line", ("dimensions",), re.compile(r"^(?:WF|KD)-?\d{1,3}[A-Z]?$", re.I),
     ),
+    "trekstang": WorkTaxonomy(
+        "trekstang", "structure", "Trekstang", "Trekstang atap",
+        "Batang tarik baja pada rangka atap yang menahan gaya tarik antar kuda-kuda.",
+        "line", ("diameter",), re.compile(r"^(?:TS)-?\d{0,3}[A-Z]?$", re.I),
+    ),
     "lighting_fixture": WorkTaxonomy(
         "lighting_fixture", "electrical", "Armatur Lampu", "Titik lampu",
         "Perlengkapan penerangan yang ditunjukkan pada gambar elektrikal.",
@@ -125,10 +130,20 @@ _UNKNOWN = WorkTaxonomy(
     "unknown",
 )
 
+# Project title-block phrases (R1 K2 noise filter).  A label that starts with
+# or contains these phrases is title-block metadata, never an element label —
+# even when it happens to embed a code such as "JENDELA (J2)".
+_TITLE_BLOCK_PHRASES = (
+    "JUDUL PROYEK", "JUDUL GAMBAR", "NAMA PROYEK", "PROYEK :", "PROYEK:",
+    "NAMA PEKERJAAN", "PEKERJAAN :", "PEKERJAAN:", "DOKUMEN INI",
+    "NAMA TANDA TANGAN", "TANDA TANGAN", "DIREKTUR", "DIGAMBAR", "DIPERIKSA",
+)
+
 _NOISE_PHRASES = (
     "JALAN ", "JL. ", "NO.", "NO ", "TAHUN ANGGARAN", "PEKERJAAN ",
     "DINAS ", "PEMERINTAH ", "KETERANGAN UMUM", "CATATAN UMUM", "NOTASI ",
     "PENULANGAN ", "DETAIL SENGKANG", "GRANITE TILE", "ALAMAT ",
+    *_TITLE_BLOCK_PHRASES,
 )
 
 
@@ -169,8 +184,14 @@ def taxonomy_for(category: str) -> WorkTaxonomy:
 def label_looks_like_document_noise(label: str, code: str | None = None) -> bool:
     normalized = " ".join(label.upper().split())
     compact_code = (code or "").upper()
+    # R1 K2 noise filter: a title-block phrase (e.g. "JUDUL PROYEK : …") marks
+    # the whole label as project metadata.  Such labels are never element
+    # definitions even when they embed an explicit element reference such as
+    # "JENDELA (J2)" inside the long project title.
+    title_block = any(phrase in normalized for phrase in _TITLE_BLOCK_PHRASES)
     explicit_element_reference = bool(
         compact_code
+        and not title_block
         and re.search(
             rf"(?:PINTU|JENDELA|KOLOM|BALOK|SLOOF|PELAT)\s*\(?\s*{re.escape(compact_code)}\s*\)?",
             normalized,
@@ -364,6 +385,7 @@ _REGISTRY_SCAN_ORDER: tuple[str, ...] = (
     "foundation",             # PC / FT / PILE / F / P
     "slab",                   # PL / SLAB / S
     "steel_profile",          # WF / KD
+    "trekstang",              # TS (tension rod atap)
     "column",                 # K / C
     "beam",                   # B / G / RB / CG / CB / BL / SL
     "wall",                   # WALL / DW / DND
@@ -385,7 +407,65 @@ _DIGITLESS_CODE_CATEGORY: dict[str, str] = {
     "PIPA": "pipe",
     "LINTEL": "beam",
     "LATEI": "beam",
+    "TS": "trekstang",
+    "TREKSTANG": "trekstang",
+    "TREXSTANG": "trekstang",
+    "WF": "steel_profile",
+    "RAFTER": "steel_profile",
+    "PEDESTAL": "foundation",
 }
+
+# ─── R1: golden definition resolution (K0 golden set) ─────────────────────────
+#
+# The K0 golden set (Master Plan §4.3 K0, page-0046/0050/0055) contains element
+# labels whose code is NOT expressible by the §4.2 grammar alone: digitless
+# element names with dimension suffixes ("Lintel 15X10"), steel profiles
+# ("WF 200X100X5.5X8", "H 150X150X7X10"), fractional truss codes ("1/2KD"),
+# and descriptive labels ("Kolom Rafter", "Kolom Pedestal").  These labels are
+# definition-resolvable: the label itself carries the definition.  Resolution
+# is deterministic and engine-only; the pattern table is bounded to the golden
+# definition vocabulary (R1 directive §3.3).
+_GOLDEN_DEFINITION_PATTERNS: tuple[tuple[re.Pattern[str], str, str], ...] = (
+    # Fractional truss code: "1/2KD" (setengah kuda-kuda).
+    (re.compile(r"^(?:\d+)\s*/\s*(?:\d*)\s*(?:KD)\b", re.I), "FRACTIONAL_KD", "kuda_kuda"),
+    (re.compile(r"^LINTEL\b", re.I), "LINTEL", "beam"),
+    (re.compile(r"^LATEI\b", re.I), "LATEI", "beam"),
+    (re.compile(r"^GORDING\b", re.I), "GORDING", "gording"),
+    (re.compile(r"^PIPA\b", re.I), "PIPA", "pipe"),
+    (re.compile(r"^(?:TREKSTANG|TREXSTANG)\b", re.I), "TS", "trekstang"),
+    (re.compile(r"^(?:KOLOM\s+)?RAFTER\b", re.I), "RAFTER", "steel_profile"),
+    (re.compile(r"^(?:KOLOM\s+)?PEDESTAL\b", re.I), "PEDESTAL", "foundation"),
+    # WF / WF1 — the §4.2 grammar already captures "WF1 150X75X5X7"; this
+    # pattern captures the bare "WF 200X100X5.5X8" family.
+    (re.compile(r"^WF1?\b", re.I), "WF", "steel_profile"),
+    # H-beam only when followed by profile dimensions — a bare "H" is too
+    # ambiguous to promote without evidence of a steel section.
+    (re.compile(r"^H\s*\d", re.I), "H", "steel_profile"),
+    (re.compile(r"^BL$", re.I), "BL", "beam"),
+)
+
+
+def resolve_golden_definition(text: str | None) -> tuple[str, str] | None:
+    """Resolve a golden element label to a deterministic (code, category).
+
+    R1 definition resolution: the K0 golden set treats these labels as work
+    items when evidence exists in JSON-1 (bbox + evidence_refs).  Returns None
+    for anything not in the bounded golden vocabulary — free text and ordinary
+    codes continue through the regular §4.2 grammar.
+    """
+    if not text:
+        return None
+    normalized = " ".join(str(text).upper().split())
+    for pattern, code, category in _GOLDEN_DEFINITION_PATTERNS:
+        match = pattern.match(normalized)
+        if not match:
+            continue
+        if code == "FRACTIONAL_KD":
+            return (match.group(0), category)
+        if code == "WF" and match.group(0).startswith("WF1"):
+            return ("WF1", category)
+        return (code, category)
+    return None
 
 
 def extract_item_code(text: str | None) -> str | None:

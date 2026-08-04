@@ -9,7 +9,7 @@ from typing import Any
 import fitz
 
 from .cross_reference import link_cross_references
-from .definition_resolution import resolve_definition_conflicts
+from .definition_resolution import promote_golden_definition_items, resolve_definition_conflicts
 from .physical_instances import reconstruct_physical_instances
 from .measurement_resolution import compile_definition_measurements
 from .spatial_resolution import resolve_element_heights
@@ -179,6 +179,15 @@ def analyze_drawing_package(
         matches=cross_references,
         detections=detections,
         vocabulary=vocabulary,
+        semantics=semantics_by_page,
+    )
+    # R1 — definition resolution: promote golden-coded labels (LINTEL, CG1,
+    # CB1, BL, GORDING, PIPA, TS, WF, H, RAFTER, PEDESTAL, 1/2KD) that have
+    # JSON-1 evidence but live on schedule/detail sheets the occurrence linker
+    # skips (Master Plan M2/M8; revision directive R1).
+    work_items = promote_golden_definition_items(
+        work_items=work_items,
+        dem_pages=relevant_dem_pages,
         semantics=semantics_by_page,
     )
     all_vocabulary_candidates = [*native_vocabulary, *dem_vocabulary]

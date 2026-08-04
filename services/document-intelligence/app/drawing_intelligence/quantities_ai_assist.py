@@ -865,6 +865,22 @@ def confirmation_reasons_for(item: WorkItemCandidate) -> list[str]:
     return list(dict.fromkeys(reasons))
 
 
+def _is_golden_definition_item(item: WorkItemCandidate) -> bool:
+    """R1 definition-resolved item: golden code promoted with JSON-1 evidence.
+
+    Such items are classified and coded by construction (the golden definition
+    vocabulary resolved them), so Master Plan §4.5 classifies them as
+    "belum dihitung" (coded but not yet counted), never as unclassifiable
+    confirmation material — even when their dimensions are not yet joined.
+    """
+    return (
+        (item.attributes or {}).get("definition_resolution") == "golden"
+        and item.category != "unknown"
+        and bool(item.code)
+        and bool(item.evidence_refs)
+    )
+
+
 def is_perlu_konfirmasi(item: WorkItemCandidate) -> bool:
     """Item enters the confirmation area ONLY under §4.5 criteria.
 
@@ -876,6 +892,10 @@ def is_perlu_konfirmasi(item: WorkItemCandidate) -> bool:
     if item.conflict_ids or item.count_authority == "conflicting":
         # §4.5(c): konflik antar sumber (tabel ≠ denah) -> confirmation area.
         return True
+    if _is_golden_definition_item(item):
+        # R1: definition-resolved golden item is coded + classified + evidenced
+        # by construction → "belum dihitung", never confirmation material.
+        return False
     if item.category != "unknown" and item.code and dimensions_text(item.attributes):
         # Fully classified + dimensioned: NOT confirmation material, even when
         # it is not yet counted or bridged.

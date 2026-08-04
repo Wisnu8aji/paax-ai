@@ -7,7 +7,12 @@ from typing import Any
 
 from .dem_adapter import iter_observations, normalize_dem_bbox
 from .models import PageIntelligence, SheetSemanticProfile, VocabularyEntry
-from .taxonomy import category_from_code, parse_inline_dimensions
+from .taxonomy import (
+    category_from_code,
+    label_looks_like_document_noise,
+    parse_inline_dimensions,
+    resolve_golden_definition,
+)
 from .text_index import normalize_text
 
 _CODE_RE = re.compile(r"\b([A-Z]{1,5}(?:[.-]?[A-Z0-9]{0,5})?\d[A-Z0-9.-]*|[A-Z]{1,4}\d{1,3}[A-Z]?)\b", re.I)
@@ -18,16 +23,32 @@ def canonical_key(value: str | None) -> str | None:
     if not value:
         return None
     upper = normalize_text(value)
+    # R1 definition resolution: golden element labels whose code is not
+    # expressible by the §4.2 grammar ("Lintel 15X10" → LINTEL,
+    # "WF 200X100X5.5X8" → WF, "1/2KD" → 1/2KD, "H 150X150X7X10" → H,
+    # "Kolom Rafter" → RAFTER) resolve through the golden vocabulary FIRST so a
+    # suffix such as "(KD.1)" on a WF profile never hijacks the key.
+    golden = resolve_golden_definition(value)
+    if golden:
+        return golden[0]
     match = _CODE_RE.search(upper)
-    if not match:
-        return None
-    return re.sub(r"[.\s]+", "", match.group(1).upper())
+    if match:
+        return re.sub(r"[.\s]+", "", match.group(1).upper())
+    return None
 
 
 def infer_category(key: str, *, title: str = "", raw: str = "") -> str:
     title_context = normalize_text(title)
     raw_context = normalize_text(raw)
     context = normalize_text(f"{title} {raw}")
+
+    # R1 definition resolution takes precedence over keyword heuristics: a
+    # golden definition label such as "Kolom Rafter" must resolve to
+    # steel_profile (RAFTER), never to column via the incidental "KOLOM" word,
+    # and "1/2KD.1" must resolve to kuda_kuda, not unknown.
+    golden = resolve_golden_definition(raw or key)
+    if golden and golden[0].upper() == str(key).upper():
+        return golden[1]
 
     # Explicit construction words in the actual label/definition outrank code
     # grammar.  The title is used only to disambiguate a plausible domain code;
@@ -159,6 +180,10 @@ def build_project_vocabulary(
             key = canonical_key(str(row.get("normalized") or raw))
             if not key:
                 continue
+            # R1 K2 noise filter: project title-block labels (e.g.
+            # "JUDUL PROYEK : … JENDELA (J2) …") must never become definitions.
+            if label_looks_like_document_noise(raw, key):
+                continue
             if re.fullmatch(r"LT-?\d+", key) and any(
                 marker in normalize_text(raw) for marker in ("TABEL", "DETAIL", "LANTAI", "LT.")
             ):
@@ -244,6 +269,10 @@ def build_native_vocabulary(pages: list[PageIntelligence]) -> list[VocabularyEnt
             raw = " ".join(token.text for token in tokens).strip()
             key = canonical_key(raw)
             if not key:
+                continue
+            # R1 K2 noise filter: title-block text (e.g. "JUDUL PROYEK : …")
+            # must never become a native vocabulary definition.
+            if label_looks_like_document_noise(raw, key):
                 continue
             category = infer_category(key, title=semantic.title if semantic else "", raw=raw)
             dimensions = _dimension_value({"raw": raw})
