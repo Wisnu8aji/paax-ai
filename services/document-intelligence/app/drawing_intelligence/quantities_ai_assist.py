@@ -473,19 +473,24 @@ def build_few_shot_section(
 def should_trigger_ai_assist(item: WorkItemCandidate) -> tuple[AssistTriggerKind | None, str]:
     """Return (trigger, deterministic_reason) — AI is called ONLY on engine gaps.
 
+    Cycle-p1p2 P4: the trigger is now IDENTICAL to the confirmation-area
+    criteria (Master Plan §4.5). Every item that ENTERS the "perlu konfirmasi"
+    area is automatically offered AI-assist — even when the engine recorded no
+    `missing_information` marker (batch-07/09 root cause: 6/7 confirmation
+    items were never triggered because `missing_information` was empty, even
+    though they sat in the confirmation area).
+
     - "abstain": engine cannot classify (unknown category / missing definition,
-      dimension, or level).
-    - "ambiguous": engine found conflicting sources.
-    - None: engine is confident — AI must NOT be called (metric 8).
+      dimension, or level) OR the item meets confirmation-area criteria.
+    - "ambiguous": engine found conflicting sources (always confirmation
+      material under §4.5(c)).
+    - None: engine is confident — AI must NOT be called (metric 8). This is
+      exactly the complement of the confirmation area: fully classified +
+      coded + dimensioned items (and golden-definition items) are never
+      confirmation material, so they are never offered AI.
     """
     if item.category == "unknown":
         return "abstain", "engine category is unknown (no deterministic classification)"
-    missing = set(item.missing_information or [])
-    if any(marker in missing for marker in _ABSTAIN_MISSING_MARKERS):
-        return "abstain", (
-            "engine abstains: missing_information = "
-            + json.dumps(sorted(missing), ensure_ascii=False)
-        )
     if item.conflict_ids:
         return "ambiguous", (
             "engine ambiguous: conflict_ids = "
@@ -493,6 +498,21 @@ def should_trigger_ai_assist(item: WorkItemCandidate) -> tuple[AssistTriggerKind
         )
     if item.count_authority == "conflicting":
         return "ambiguous", "engine ambiguous: count_authority is conflicting"
+    # P4: trigger == confirmation-area criteria.  An item that enters the
+    # "perlu konfirmasi" area is a measured engine gap by construction and MUST
+    # be offered AI, regardless of whether missing_information was recorded.
+    if is_perlu_konfirmasi(item):
+        reasons = confirmation_reasons_for(item)
+        return "abstain", (
+            "engine gap: confirmation-area criteria apply: "
+            + "; ".join(reasons)
+        )
+    missing = set(item.missing_information or [])
+    if any(marker in missing for marker in _ABSTAIN_MISSING_MARKERS):
+        return "abstain", (
+            "engine abstains: missing_information = "
+            + json.dumps(sorted(missing), ensure_ascii=False)
+        )
     return None, "engine is confident; AI must not be invoked"
 
 
@@ -522,7 +542,15 @@ def build_assist_context(
     """Assemble the bounded AI input: page context + engine results + evidence.
 
     `page_contexts` maps page_index -> {"title", "discipline", "drawing_type",
-    "level", "texts": [{"text", "bbox"}]} sourced from JSON-1.
+    "level", "texts": [{"text", "bbox"}], "symbols": [{"text"/"raw", "bbox"}]}
+    sourced from JSON-1.
+
+    Cycle-p1p2 P4: the context MUST include the sheet context (title /
+    discipline / drawing_type / level) AND the `symbols` observations — not
+    just `texts`.  Batch-02 showed the AI misclassified items when the symbol
+    legend (e.g. "TL1: LAMPU TL, LED 2x8W") was absent from the prompt; symbols
+    carry the same JSON-1 evidence weight as texts and are forwarded verbatim.
+
     Only deterministic facts are forwarded; numbers from the engine are never
     included as editable fields.
     """
@@ -539,6 +567,7 @@ def build_assist_context(
                 "drawing_type": context.get("drawing_type"),
                 "level": context.get("level"),
                 "texts": context.get("texts", [])[:40],
+                "symbols": context.get("symbols", [])[:40],
             }
         )
     level = item.attributes.get("level") or None

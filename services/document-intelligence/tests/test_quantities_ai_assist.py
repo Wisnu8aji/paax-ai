@@ -169,6 +169,78 @@ def test_no_evidence_means_no_ai_decision():
     assert decision is None  # safety-net area takes over, not AI
 
 
+# Cycle-p1p2 P4: trigger == confirmation-area criteria.  An item that ENTERS
+# the "perlu konfirmasi" area is offered AI even when missing_information is
+# empty (batch-07/09 root cause: 6/7 confirmation items were never triggered).
+
+
+def test_confirmation_area_item_triggers_even_with_empty_missing_information():
+    # Batch-07 reproduction: electrical/lighting fixtures with a code but no
+    # connected dimensions and NO missing_information markers.  They sit in the
+    # confirmation area ("dimensi tidak tersedia") but used to return None.
+    item = make_item(
+        item_id="work-electrical_fixture-STK-1-L1",
+        category="electrical_fixture",
+        code="STK-1",
+        label="STK-1",
+        attributes={"level": "L1"},
+        evidence_refs=["ev-elem-stk1"],
+        missing_information=[],
+    )
+    assert is_perlu_konfirmasi(item) is True
+    trigger, reason = should_trigger_ai_assist(item)
+    assert trigger == "abstain"
+    assert "dimensi tidak tersedia" in reason
+    decision = build_ai_assist_decision(item)
+    assert decision is not None
+    assert decision.trigger == "abstain"
+    assert decision.evidence_refs == ("ev-elem-stk1",)
+
+
+def test_confirmation_area_item_lighting_fixture_triggers():
+    # Batch-07 reproduction: SL1/TL1 lighting fixtures with symbol evidence.
+    item = make_item(
+        item_id="work-lighting_fixture-TL1-L1",
+        category="lighting_fixture",
+        code="TL1",
+        label="TL1",
+        attributes={"level": "L1"},
+        evidence_refs=["ev-sym-tl1-desc", "p56-w00070"],
+        missing_information=[],
+    )
+    assert is_perlu_konfirmasi(item) is True
+    trigger, _ = should_trigger_ai_assist(item)
+    assert trigger == "abstain"
+    assert build_ai_assist_decision(item) is not None
+
+
+def test_fully_classified_coded_dimensioned_never_triggers():
+    # Complement: a fully classified + coded + dimensioned item is NOT
+    # confirmation material, so it must NOT be offered AI (metric 8).
+    item = make_dimensioned_item()
+    assert is_perlu_konfirmasi(item) is False
+    trigger, reason = should_trigger_ai_assist(item)
+    assert trigger is None
+    assert "confident" in reason
+
+
+def test_golden_definition_item_never_triggers():
+    # R1 golden-definition item: classified + coded + evidenced by construction
+    # -> "belum dihitung", NOT confirmation material -> no AI offer.
+    item = make_item(
+        item_id="work-column-K1-L1",
+        category="column",
+        code="K1",
+        label="K1",
+        attributes={"level": "L1", "definition_resolution": "golden"},
+        evidence_refs=["ev-label-k1-1"],
+    )
+    assert is_perlu_konfirmasi(item) is False
+    trigger, reason = should_trigger_ai_assist(item)
+    assert trigger is None
+    assert "confident" in reason
+
+
 # ── Field restriction + evidence requirement (3-layer validation) ────────────
 
 
@@ -597,6 +669,46 @@ def test_build_assist_context_contains_bbox_evidence():
     assert context["evidence_refs"] == ["ev-label-pc1-1"]
     assert context["pages"][0]["title"] == "DENAH FOOTPLAT"
     assert context["pages"][0]["texts"][0]["bbox"]["x0"] == 0.1
+
+
+def test_build_assist_context_includes_symbols_and_sheet_context():
+    # Cycle-p1p2 P4: the AI context must carry the symbol observations (JSON-1
+    # `symbols`) plus the sheet context (title/discipline/level) — not just
+    # texts.  Batch-02 showed the AI misclassified when symbol legends were
+    # missing from the prompt.
+    item = make_item(category="unknown", code=None, label="XYZ", page_indices=[56], evidence_refs=["ev-sym-tl1-desc"])
+    context = build_assist_context(
+        item,
+        {
+            56: {
+                "title": "DENAH TITIK LAMPU LANTAI 1",
+                "discipline": "MEP-Electrical",
+                "drawing_type": "lighting_plan",
+                "level": "L1",
+                "texts": [{"text": "KETERANGAN", "bbox": [1020.0, 30.0, 1140.0, 60.0]}],
+                "symbols": [
+                    {"text": "TL1: LAMPU TL, LED 2x8W, KAP TIPE RM, 1 POLE, 250V/300V", "bbox": [195.0, 485.0, 425.0, 525.0]},
+                    {"text": "SL1: SPOT LIGHT, OUTDOOR, LED 10W", "bbox": [200.0, 500.0, 430.0, 540.0]},
+                ],
+            }
+        },
+    )
+    page = context["pages"][0]
+    assert page["title"] == "DENAH TITIK LAMPU LANTAI 1"
+    assert page["discipline"] == "MEP-Electrical"
+    assert page["level"] == "L1"
+    assert page["symbols"][0]["text"].startswith("TL1: LAMPU TL")
+    assert page["symbols"][0]["bbox"] == [195.0, 485.0, 425.0, 525.0]
+    assert page["symbols"][1]["text"].startswith("SL1: SPOT LIGHT")
+    # texts are still present alongside symbols
+    assert page["texts"][0]["text"] == "KETERANGAN"
+
+
+def test_build_assist_context_symbols_missing_defaults_empty():
+    # Backward compatibility: page contexts without a symbols key must not break.
+    item = make_item(category="unknown", code=None, label="XYZ", page_indices=[0], evidence_refs=["ev-1"])
+    context = build_assist_context(item, {0: {"title": "DENAH", "texts": []}})
+    assert context["pages"][0]["symbols"] == []
 
 
 def test_build_assist_prompt_contains_few_shot_and_forbidden_rules():
