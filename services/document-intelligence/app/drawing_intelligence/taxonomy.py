@@ -362,6 +362,11 @@ _K2_THICKNESS_RE = re.compile(r"\bt\s*=\s*(\d+(?:\.\d+)?)\s*(mm|cm|m)?\b", re.IG
 # Master Plan §4.2 canonical naming dictionary (engine-owned).
 # Each entry: (template, required_attributes) — name_formatter() enforces the
 # required attributes and never invents a value for a missing one.
+# R3 (revision directive §3.3) completes the dictionary for the roof-steel
+# family (gording/kuda_kuda/pipe/trekstang) and fixture/MEP categories
+# (door_window_assembly, lighting_fixture, electrical_fixture,
+# fire_safety_fixture, hvac_fixture, plumbing_fixture), plus the roof-slab
+# variant handled inside name_formatter().
 _NAMING_DICTIONARY: dict[str, tuple[str, tuple[str, ...]]] = {
     "column": ("Kolom Beton Bertulang {code}", ("code",)),
     "beam": ("Balok Beton Bertulang {code}", ("code",)),
@@ -373,6 +378,16 @@ _NAMING_DICTIONARY: dict[str, tuple[str, tuple[str, ...]]] = {
     "window": ("Jendela {jenis} {code}", ("code",)),
     "ceiling_type": ("Plafon {jenis}", ()),
     "steel_profile": ("Profil Baja {code}", ("code",)),
+    "gording": ("Gording {code}", ("code",)),
+    "kuda_kuda": ("Kuda-Kuda {code}", ("code",)),
+    "pipe": ("Pipa {code}", ("code",)),
+    "trekstang": ("Trekstang {code}", ("code",)),
+    "door_window_assembly": ("Kombinasi Pintu-Jendela {code}", ("code",)),
+    "lighting_fixture": ("Armatur Lampu {code}", ("code",)),
+    "electrical_fixture": ("Perlengkapan Elektrikal {code}", ("code",)),
+    "fire_safety_fixture": ("Perlengkapan Proteksi Kebakaran {code}", ("code",)),
+    "hvac_fixture": ("Peralatan Tata Udara {code}", ("code",)),
+    "plumbing_fixture": ("Perlengkapan Plumbing {code}", ("code",)),
 }
 
 # Deterministic scan order for code → category.  Ambiguous single-letter
@@ -649,13 +664,24 @@ def name_formatter(
 
         kolom    → "Kolom Beton Bertulang K1"
         balok    → "Balok Beton Bertulang B2" / "Balok Beton Bertulang BL"
-        pelat    → "Pelat Beton Bertulang Lt.1"
+        pelat    → "Pelat Beton Bertulang Lt.1" / "Pelat Beton Bertulang Atap"
         fondasi  → "Pondasi Footplat PC1" / "Pondasi Tiang P2"
         sloof    → "Sloof Beton Bertulang S1"
         dinding  → "Dinding Bata"
         kusen    → "Kusen Aluminium K1"
         pintu    → "Pintu Kayu P1"
         jendela  → "Jendela Aluminium J1"
+        gording  → "Gording GORDING"
+        kuda-kuda→ "Kuda-Kuda 1/2KD"
+        pipa     → "Pipa PIPA"
+        trekstang→ "Trekstang TS"
+        baja     → "Profil Baja WF1"
+        PJ       → "Kombinasi Pintu-Jendela PJ1"
+        lampu    → "Armatur Lampu DL1"
+        listrik  → "Perlengkapan Elektrikal STK-1"
+        APAR     → "Perlengkapan Proteksi Kebakaran APAR1"
+        AC       → "Peralatan Tata Udara AC1"
+        plumbing → "Perlengkapan Plumbing WC1"
 
     Returns None when the category is unknown or a required attribute is
     missing — callers must keep the previous raw label as a fallback.
@@ -670,6 +696,10 @@ def name_formatter(
             return None
         return template.format(**values)
     if category == "slab":
+        # R3 roof-slab variant: "Pelat Beton Bertulang Atap" for roof levels;
+        # numbered floors keep the §4.2 "Lt.{N}" format.
+        if level == "roof":
+            return template.format(lantai="Atap")
         lantai = _level_lantai(level) or _level_lantai(code) or (f"Lt.{code}" if code and code.isdigit() else None)
         if not lantai:
             return None
@@ -692,6 +722,16 @@ def name_formatter(
     if category == "ceiling_type":
         return template.format(jenis=jenis or "")
     if category == "steel_profile":
+        if not code:
+            return None
+        return template.format(code=code)
+    # R3 fixture/MEP + roof-steel family: {code}-only templates.  A missing
+    # code means the item cannot be named canonically (raw label fallback).
+    if category in {
+        "gording", "kuda_kuda", "pipe", "trekstang",
+        "door_window_assembly", "lighting_fixture", "electrical_fixture",
+        "fire_safety_fixture", "hvac_fixture", "plumbing_fixture",
+    }:
         if not code:
             return None
         return template.format(code=code)
