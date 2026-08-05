@@ -24,6 +24,16 @@ export interface PdfTileRenderRequest {
   documentKey: string;
   pageNumber: number;
   tile: PdfTileRequest;
+  /**
+   * Optional arbitrary render scale (device px per PDF point), uncapped by the
+   * pyramid. When present the worker renders at exactly this scale instead of
+   * `tile.density`; when absent the legacy density-based semantics apply.
+   * Protocol extension contract: pdf-tile-protocol (F1); local alias here until
+   * F4 reconciles the type.
+   */
+  scale?: number;
+  /** Optional dark-mode flag forwarded to the worker for post-render inversion. */
+  dark?: boolean;
 }
 
 export interface PdfTileDelivery {
@@ -107,6 +117,18 @@ function extractRunId(documentKey: string): string {
 
 function metricsCacheKey(documentKey: string, pageNumber: number): string {
   return `${documentKey}:${pageNumber}`;
+}
+
+/**
+ * Effective request-dedup key. Legacy requests (no scale/dark) coalesce exactly
+ * as before on `tile.key`; extended requests additionally encode `scale`/`dark`
+ * so two requests sharing a tile key but asking for different render parameters
+ * are never coalesced into one worker job.
+ */
+function renderRequestKey(requestTile: PdfTileRenderRequest): string {
+  const { tile, scale, dark } = requestTile;
+  if (scale === undefined && dark === undefined) return tile.key;
+  return `${tile.key}:s${scale ?? 'n'}:d${dark ? 1 : 0}`;
 }
 
 export function workerCountFor(hardwareConcurrency: number | undefined): number {
@@ -454,12 +476,13 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
     if (!getDocState(requestTile.documentKey)) {
       return { promise: Promise.reject(new Error('PDF document is not open')), cancel: () => undefined };
     }
-    let pending = pendingByKey.get(requestTile.tile.key);
+    const dedupKey = renderRequestKey(requestTile);
+    let pending = pendingByKey.get(dedupKey);
     if (!pending) {
       const worker = workers[nextWorker++ % workers.length];
       const created: PendingTile = {
         requestId: nextRequestId++,
-        key: requestTile.tile.key,
+        key: dedupKey,
         documentKey: requestTile.documentKey,
         worker,
         consumers: new Map(),
@@ -469,13 +492,18 @@ export function createPdfTilePool(options: PdfTilePoolOptions = {}) {
       pendingById.set(created.requestId, created);
       pendingByKey.set(created.key, created);
       created.timeoutHandle = setTimeout(() => timeoutTile(created), requestTimeoutMs);
-      worker.postMessage({
+      // Extended protocol: forward scale/dark only when defined so legacy
+      // wire messages stay byte-identical (backward compatible).
+      const message: Record<string, unknown> = {
         type: 'render-tile',
         requestId: created.requestId,
         documentKey: requestTile.documentKey,
         pageNumber: requestTile.pageNumber,
         tile: requestTile.tile,
-      });
+      };
+      if (requestTile.scale !== undefined) message.scale = requestTile.scale;
+      if (requestTile.dark !== undefined) message.dark = requestTile.dark;
+      worker.postMessage(message);
     }
     const consumerId = nextConsumerId++;
     let rejectConsumer!: (error: Error) => void;

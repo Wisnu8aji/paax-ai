@@ -1,6 +1,11 @@
 /**
  * Single queue and cancellation authority for a PDF tile worker run.
  *
+ * The queue is payload-agnostic: the extended render-tile message (optional
+ * `scale` / `dark` fields) flows through with unchanged FIFO, cancellation and
+ * removeDocument semantics. Only `requestId` and `documentKey` participate in
+ * queue bookkeeping.
+ *
  * Ownership rules:
  * - `enqueue` appends FIFO work; `take` pops the head and consumes (deletes)
  *   any cancelled head so cancelled request IDs never accumulate.
@@ -15,20 +20,26 @@
  */
 export class PdfTileWorkerQueue<T extends { requestId: number; documentKey: string }> {
   private items: T[] = [];
+  private queuedIds = new Set<number>();
   private cancelledIds = new Set<number>();
   private activeIds = new Set<number>();
 
   enqueue(message: T): void {
     this.items.push(message);
+    this.queuedIds.add(message.requestId);
   }
 
   cancel(requestId: number): void {
+    // A late cancel may arrive after the render completed and its bookkeeping
+    // was removed. Never retain such out-of-band IDs forever.
+    if (!this.queuedIds.has(requestId) && !this.activeIds.has(requestId)) return;
     this.cancelledIds.add(requestId);
   }
 
   take(): T | null {
     while (this.items.length > 0) {
       const message = this.items.shift()!;
+      this.queuedIds.delete(message.requestId);
       if (this.cancelledIds.delete(message.requestId)) {
         continue;
       }
@@ -50,12 +61,14 @@ export class PdfTileWorkerQueue<T extends { requestId: number; documentKey: stri
     }
     this.items = kept;
     for (const message of removed) {
+      this.queuedIds.delete(message.requestId);
       this.cancelledIds.delete(message.requestId);
     }
     return removed;
   }
 
   complete(requestId: number): void {
+    this.queuedIds.delete(requestId);
     this.activeIds.delete(requestId);
     this.cancelledIds.delete(requestId);
   }

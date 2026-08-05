@@ -56,11 +56,14 @@ describe('PdfTileWorkerQueue', () => {
     expect(queue.pendingCount).toBe(0);
   });
 
-  it('cancel and complete for unknown ids never leave bookkeeping behind', () => {
+  it('ignores unknown and post-completion cancels so late messages cannot accumulate markers', () => {
     const queue = new PdfTileWorkerQueue<TestMessage>();
     queue.cancel(99);
-    expect(queue.cancelledCount).toBe(1);
-    queue.complete(99);
+    expect(queue.cancelledCount).toBe(0);
+    queue.enqueue(msg(1));
+    expect(queue.take()).toEqual(msg(1));
+    queue.complete(1);
+    queue.cancel(1);
     expect(queue.cancelledCount).toBe(0);
     expect(queue.pendingCount).toBe(0);
   });
