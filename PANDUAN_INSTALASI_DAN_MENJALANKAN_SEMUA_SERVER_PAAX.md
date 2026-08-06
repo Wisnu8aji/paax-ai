@@ -506,3 +506,24 @@ powershell -ExecutionPolicy Bypass -File .\scripts\portable\Start-PLHUT-Local.ps
 ```
 
 Tetap verifikasi enam health endpoint setelah startup.
+
+
+## 19. Catatan tambahan (2026-08-06) — PDF Viewer Native + instalasi PLHUT
+
+### 19.1 Project tidak muncul di daftar (list projects kosong)
+- Penyebab: `GET /projects` (service db) memfilter `owner_id == user.uid`. Aktor web = `local-desktop-user`, tapi project lama ber-owner `paax-web` → daftar kosong meski DB ada.
+- Perbaikan: samakan `owner_id` project dengan aktor yang dipakai web:
+  `UPDATE projects SET owner_id='local-desktop-user' WHERE id='PLHUT-SURAKARTA';`
+  (bootstrap DB juga menambah `local-desktop-user` sebagai member owner — idempotent.)
+
+### 19.2 Endpoint package-analysis 401
+- Penyebab: identity `web-user-proxy` tidak punya scope `dem:read`; endpoint `package-analysis` memerlukan scope tersebut.
+- Perbaikan: `Start-PLHUT-Local.ps1` definisi `web` scopes sekarang menyertakan `dem:read` (commit 96bfd4df). Setelah mengubah, stop/start stack agar registry identitas dibuat ulang.
+
+### 19.3 DI multi-worker & cold-start lambat
+- `document-intelligence` dijalankan dengan 2 uvicorn workers (commit 21eb4a0a) untuk menghindari serialisasi semua route di satu event loop.
+- Konsekuensi: cold-start PDF 25MB bisa ~40 detik pada request pertama (parse dokumen); setelah cache hangat, index ≈2–4 detik, thumbnail ≈0,2 detik. Ini normal; jangan kill proses saat request pertama tampak lambat.
+
+### 19.4 PDF Viewer Native (commit e82be93f…cf3abe1d)
+- Renderer baru di `apps/web/src/components/drawing-intelligence/workspace/canvas/native/` (base-once + detail crop per settle + pinned pixels + coverage cache + memory budget + latest-wins scheduler).
+- Feature flag: viewer default `legacy`; toggle `legacy`/`native` tersedia di halaman viewer (`di-viewer-mode-toggle`). Native belum jadi default sampai gate F5 (E2E/benchmark) selesai.
