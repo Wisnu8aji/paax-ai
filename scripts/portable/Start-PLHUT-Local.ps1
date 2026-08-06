@@ -129,6 +129,18 @@ function Verify-PortOwnership([int]$Port, [string]$ServiceName) {
             if ($cmdLine -and -not $cmdLine.Contains($repoRoot)) {
                 throw "Port $Port ($ServiceName) sedang digunakan oleh proses dari repository lain (PID $owningPid): $cmdLine. Hentikan service lama sebelum menjalankan contextual integration."
             }
+            # A same-repo listener here is a stale orphan: this function only
+            # runs after the pid-file check above confirmed the recorded instance
+            # is dead (or no pid file exists). On Windows the venv python.exe is
+            # a redirector shim whose real interpreter is a CHILD process, and
+            # uvicorn --workers adds more children; a previous Stop that killed
+            # only the recorded PID leaves the child holding the socket. Kill it
+            # so the fresh instance can bind instead of silently colliding.
+            if ($cmdLine -and $cmdLine.Contains($repoRoot)) {
+                Write-Host "Stopping stale $ServiceName instance from previous run on port $Port (PID $owningPid)..."
+                Stop-Process -Id $owningPid -Force -ErrorAction SilentlyContinue
+                Start-Sleep -Milliseconds 500
+            }
         }
     }
 }
@@ -143,8 +155,20 @@ function Start-ServiceProcess([string]$Name,[string]$FilePath,[string[]]$Argumen
             if ($proc) {
                 $cmdLine = $proc.CommandLine
                 if ($cmdLine -and $cmdLine.Contains($repoRoot)) {
-                    Write-Host "$Name already running (PID $oldPid) from this repository"
-                    return
+                    # The pid file records the process Start-ServiceProcess launched.
+                    # On Windows the venv python.exe is a redirector shim whose real
+                    # interpreter runs as a child; uvicorn --workers adds more
+                    # children. A live recorded PID alone does not prove the server
+                    # is still listening -- if the port is free the recorded process
+                    # is a stale shim with a dead server child. Verify the port too;
+                    # only then is the service genuinely "already running".
+                    $liveListeners = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+                    if ($liveListeners) {
+                        Write-Host "$Name already running (PID $oldPid) from this repository"
+                        return
+                    }
+                    Write-Host "$Name PID file points to live PID $oldPid but port $Port is not listening; restarting $Name..."
+                    Stop-Process -Id $oldPid -Force -ErrorAction SilentlyContinue
                 } else {
                     throw "PID file $Name.pid menunjuk ke PID $oldPid dari repository lain ($cmdLine). Hentikan server lama terlebih dahulu."
                 }
@@ -238,7 +262,18 @@ Wait-Health "db-plhut" "http://127.0.0.1:8001/health"
 Start-ServiceProcess "core-engine" $venvPython @("-m","uvicorn","app.main:app","--host","127.0.0.1","--port","8081") (Join-Path $repoRoot "services\core-engine") 8081 $serviceEnvironment["core-engine"]
 Wait-Health "core-engine" "http://127.0.0.1:8081/health"
 
-Start-ServiceProcess "document-intelligence" $venvPython @("-m","uvicorn","app.main:app","--host","127.0.0.1","--port","8083") (Join-Path $repoRoot "services\document-intelligence") 8083 $serviceEnvironment["document-intelligence"]
+# document-intelligence: run 2 uvicorn workers. A single worker serializes every
+# route on one event loop (fitz thumbnail/page renders, index, intelligence,
+# artifact-url, artifact), which made a 25MB PDF artifact wait ~100s behind
+# renders (ORION-F5 blocker). Multi-worker is safe here:
+#   - ARTIFACT_STORE is LocalArtifactStore (filesystem .artifacts): reads are
+#     process-safe; thumbnail cache writes are idempotent (same bytes).
+#   - pdf-binary-cache lives in the BROWSER (apps/web pdf-binary-cache.ts Map),
+#     so backend worker count cannot break its single-flight semantics.
+#   - In-memory JOB_QUEUE is per-process and has no in-process consumer in the
+#     portable stack (durable_worker_main is a separate production entrypoint);
+#     dem.extract enqueues are write-only here, so per-worker queues are harmless.
+Start-ServiceProcess "document-intelligence" $venvPython @("-m","uvicorn","app.main:app","--workers","2","--host","127.0.0.1","--port","8083") (Join-Path $repoRoot "services\document-intelligence") 8083 $serviceEnvironment["document-intelligence"]
 Wait-Health "document-intelligence" "http://127.0.0.1:8083/health"
 
 if (-not $SkipOptionalServices) {
