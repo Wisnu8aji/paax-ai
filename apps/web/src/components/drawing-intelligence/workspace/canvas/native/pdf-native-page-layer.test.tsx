@@ -348,4 +348,102 @@ describe('PdfNativePageLayer (F2 mock adapter + F3 PdfCropCache)', () => {
     expect(root.dataset.cropCacheHit).toBe('1');
     expect(cropRequestCount(adapter)).toBe(0);
   });
+
+  it('flows dark mode into base + crop requests and separates cache keys', async () => {
+    const adapter = createPdfRenderMockAdapter({ metrics: PAGE });
+    const view = render(
+      <PdfNativePageLayer runId="run-a" pageIndex={0} viewport={vp(2)} dark renderClient={adapter} settleMs={150} />,
+    );
+    await flushAsync();
+    await flushAsync();
+    await runSettle();
+
+    // Every base request (base-first + base-upgrade) carries darkMode: true.
+    const baseRequests = adapter.requests.filter((request) => !('region' in request));
+    expect(baseRequests.length).toBeGreaterThanOrEqual(2);
+    for (const req of baseRequests) expect(req.darkMode).toBe(true);
+    // The foreground crop carries darkMode: true too.
+    const crop = adapter.requests.find((request) => 'region' in request);
+    expect(crop && 'darkMode' in crop ? crop.darkMode : null).toBe(true);
+    // The layer reports its raster mode for F5.
+    expect(view.getByTestId(NATIVE_LAYER_TESTID).dataset.nativeDark).toBe('true');
+
+    // F3 render key separates dark: same region+density, different dark.
+    const region: RenderRegion = { x: 0, y: 0, width: 2000, height: 3000 };
+    expect(computeRenderKey(0, region, 2, false)).not.toBe(computeRenderKey(0, region, 2, true));
+  });
+
+  it('surfaces the full F5 diagnostics contract (data-native-* attributes)', async () => {
+    const adapter = createPdfRenderMockAdapter({ metrics: PAGE });
+    const cache = new PdfCropCache(512 * 1024 * 1024);
+    const view = render(
+      <PdfNativePageLayer runId="run-a" pageIndex={0} viewport={vp(2)} renderClient={adapter} cropCache={cache} settleMs={150} />,
+    );
+    await flushAsync();
+    await flushAsync();
+    const root = view.getByTestId(NATIVE_LAYER_TESTID);
+
+    // After base renders: worker counters live, base timings present, base
+    // ready, crop not yet.
+    expect(Number(root.dataset.nativeWorkerRequests)).toBeGreaterThanOrEqual(2);
+    expect(Number(root.dataset.nativeWorkerCalls)).toBeGreaterThanOrEqual(2);
+    expect(Number(root.dataset.nativeActiveGeneration)).toBeGreaterThanOrEqual(1);
+    expect(Number(root.dataset.nativeCommittedGeneration)).toBeGreaterThanOrEqual(1);
+    // Durations are present (may be 0 under fake timers — performance.now
+    // does not advance without timer progress).
+    expect(root.dataset.nativeBaseFirstMs).not.toBe('');
+    expect(root.dataset.nativeBaseUpgradeMs).not.toBe('');
+    expect(root.dataset.nativeDocumentKey).toBe('run-a:0');
+    expect(root.dataset.nativePageIndex).toBe('0');
+    expect(root.dataset.nativeBaseReady).toBe('true');
+    expect(root.dataset.nativeCropReady).toBe('false');
+    expect(root.dataset.nativeForegroundPending).toBe('0');
+    expect(root.dataset.nativePixelsPinned).toBe('true');
+    expect(root.dataset.nativeStaleCommit).toBe('false');
+    expect(root.dataset.nativeRenderDuringGesture).toBe('0');
+    expect(root.dataset.nativeDark).toBe('false');
+
+    // Cold cache settle → exactly one crop miss, one foreground render.
+    await runSettle();
+    expect(root.dataset.nativeCacheMisses).toBe('1');
+    expect(root.dataset.nativeCacheExactHits).toBe('0');
+    expect(root.dataset.nativeCacheCoverageHits).toBe('0');
+    expect(Number(root.dataset.nativeCropRenderMs)).toBeGreaterThanOrEqual(0);
+    expect(root.dataset.nativeCropReady).toBe('true');
+    expect(root.dataset.nativeCropsPerSettle).toBe('1');
+    expect(Number(root.dataset.nativeCacheBytes)).toBeGreaterThan(0);
+
+    // Re-settle at a lower zoom whose cached-crop key differs (density 1.5
+    // vs cached 2.0 → exact miss) but is still covered by the cached full
+    // page within density tolerance → coverage hit, ZERO new worker
+    // requests, revisit = 0.
+    const requestsBefore = Number(root.dataset.nativeWorkerRequests);
+    const callsBefore = Number(root.dataset.nativeWorkerCalls);
+    act(() => {
+      view.rerender(
+        <PdfNativePageLayer runId="run-a" pageIndex={0} viewport={vp(1.5)} renderClient={adapter} cropCache={cache} settleMs={150} />,
+      );
+    });
+    await runSettle();
+    expect(root.dataset.nativeCacheCoverageHits).toBe('1');
+    expect(Number(root.dataset.nativeWorkerRequests)).toBe(requestsBefore);
+    expect(Number(root.dataset.nativeWorkerCalls)).toBe(callsBefore);
+    expect(root.dataset.nativeRevisitWorkerCalls).toBe('0');
+  });
+
+  it('reports foreground pending while a foreground crop is in flight', async () => {
+    const adapter = createPdfRenderMockAdapter({ metrics: PAGE, autoCommit: false });
+    const view = render(
+      <PdfNativePageLayer runId="run-a" pageIndex={0} viewport={vp(2)} renderClient={adapter} settleMs={150} />,
+    );
+    await flushAsync();
+    await flushAsync();
+    await runSettle();
+    expect(cropRequestCount(adapter)).toBe(1);
+    const root = view.getByTestId(NATIVE_LAYER_TESTID);
+    expect(root.dataset.nativeForegroundPending).toBe('1');
+
+    await flushPendingAdapter(adapter);
+    expect(root.dataset.nativeForegroundPending).toBe('0');
+  });
 });

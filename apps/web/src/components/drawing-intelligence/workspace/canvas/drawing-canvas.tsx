@@ -28,6 +28,7 @@ import { PdfPageLayer } from './pdf-page-layer';
 import type { PdfCoverageChangeEvent } from './pdf-page-layer';
 import { PdfNativePageLayer } from './native/pdf-native-page-layer';
 import { setPdfViewerMode, usePdfViewerMode } from './native/pdf-viewer-feature-flag';
+import { useTheme } from '../../../theme/theme-provider';
 import { clampZoomPAAX } from './pdf-scale-math';
 import {
   aspectForRender,
@@ -192,6 +193,16 @@ export function DrawingCanvas() {
    * Arbiter approves cutover (DoD 25) — the flag is the rollback switch.
    */
   const viewerMode = usePdfViewerMode();
+
+  /**
+   * Real dark-mode state (theme-provider). `dark` is the native viewer's
+   * raster-mode flag: it flows into every render-base / render-crop request
+   * and into the F3 crop-cache render key (dark-separated cache entries), so
+   * toggling the app theme re-rasterizes base + crops in the matching mode
+   * (Master Plan §4.1 base re-render trigger; R8 accepted trade-off).
+   */
+  const { theme } = useTheme();
+  const darkMode = theme === 'dark';
 
   /**
    * Provisional aspect from thumbnail dimensions or sheet geometry only —
@@ -684,7 +695,7 @@ export function DrawingCanvas() {
                 runId={mappedSheet.runId}
                 pageIndex={mappedSheet.pageIndex}
                 viewport={pdfViewport}
-                dark={false}
+                dark={darkMode}
                 onMetrics={metricsHandlerFor(activeDocumentKey ?? '')}
                 onBaseReady={handleNativeBaseReady}
               />

@@ -29,12 +29,14 @@
  *      No z-index is set so DOM order rules — later SVG paints above.
  *   6. Diagnostics: data-* attributes + onCropReport for ORION-F5.
  *
- * Wave-1 note: ORION-F2's final pool/worker and ORION-F3's crop cache are not
- * merged yet. This module consumes F2's OFFICIAL mock adapter
- * (pdf-render-mock-adapter.ts — same PdfRenderScheduler surface as the real
- * engine) and F3's REAL coverage cache (pdf-crop-cache.ts — findCovering /
- * set / estimatedBytes contract) so Wave 2 only swaps the mock scheduler for
- * the real pool, with zero component changes.
+ * Wave-2 note: this module now consumes F2's REAL engine by default —
+ * createPdfRenderScheduler({ pool: createPdfRenderPool() }) — which routes
+ * render-base / render-crop to the real pdf-render.worker.ts workers via the
+ * pool (round-robin, timeout/reset/retry, single-claim deliveries). The F2
+ * mock adapter (createPdfRenderMockAdapter — identical PdfRenderScheduler
+ * surface, fake pixels) remains available for component tests ONLY, injected
+ * through the renderClient prop. F3's REAL coverage cache (pdf-crop-cache.ts
+ * — findCovering / set / estimatedBytes) is unchanged.
  */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
@@ -47,7 +49,8 @@ import {
   type RenderCropRequest,
   type RenderRegion,
 } from './pdf-native-contract';
-import { createPdfRenderMockAdapter } from './pdf-render-mock-adapter';
+import { createPdfRenderScheduler } from './pdf-render-scheduler';
+import { createPdfRenderPool } from './pdf-render-pool';
 import { PdfCropCache, type CachedCrop, type CropLookupRequest } from './pdf-crop-cache';
 import {
   clampRegion,
@@ -218,6 +221,19 @@ export function nativeCropDensity(region: RenderRegion, requested: number): numb
   return Math.min(Math.max(0, requested), cap);
 }
 
+/**
+ * Nearest-rank 95th percentile of frame intervals (ms). Mirrors the F5
+ * diagnostics contract's percentile semantics (pdf-native-diagnostics.ts) so
+ * the value F5 reads from data-native-frame-interval-p95 matches its own
+ * evaluator. Empty input → null.
+ */
+export function frameIntervalP95(samples: number[]): number | null {
+  if (samples.length === 0) return null;
+  const sortedValues = [...samples].sort((a, b) => a - b);
+  const index = Math.min(sortedValues.length - 1, Math.max(0, Math.ceil(0.95 * sortedValues.length) - 1));
+  return sortedValues[index];
+}
+
 /* ------------------------------------------------------------------ *
  * Component                                                           *
  * ------------------------------------------------------------------ */
@@ -284,18 +300,82 @@ export function PdfNativePageLayer({
   if (!cacheRef.current) cacheRef.current = new PdfCropCache();
   const renderClientRef = useRef<NativeRenderClient | null>(renderClientProp ?? null);
   if (!renderClientRef.current) {
-    // Wave 1: F2's OFFICIAL mock adapter — same PdfRenderScheduler surface as
-    // the real engine (same priority ordering, generation guard, commit rule,
-    // cancellation). Wave 2 replaces this with the real pool-backed scheduler
-    // with zero component changes.
-    renderClientRef.current = createPdfRenderMockAdapter();
+    // Wave 2: the REAL F2 engine — createPdfRenderScheduler backed by the
+    // real pool (pdf-render-pool.ts → pdf-render.worker.ts): round-robin
+    // workers, timeout/reset/retry, single-claim deliveries, the frozen
+    // commit rule. Tests inject F2's mock adapter (createPdfRenderMockAdapter
+    // — identical scheduler surface, fake pixels) via the renderClient prop;
+    // the production default never touches the mock.
+    renderClientRef.current = createPdfRenderScheduler({ pool: createPdfRenderPool() });
   }
+
+  // ---- diagnostics state (F5 contract: pdf-native-diagnostics.ts) ----
+  // Counters are monotonic within a document lifecycle (reset on runId /
+  // pageIndex / dark change). Attribute names mirror the F5 contract so
+  // readNativeDiagnostics() reads this layer unchanged.
+  const diagRef = useRef({
+    activeGeneration: 0,
+    committedGeneration: 0,
+    workerRequests: 0,
+    workerCalls: 0,
+    cacheExactHits: 0,
+    cacheCoverageHits: 0,
+    cacheMisses: 0,
+    baseFirstMs: null as number | null,
+    baseUpgradeMs: null as number | null,
+    cropRenderMs: null as number | null,
+    frameIntervals: [] as number[],
+    renderDuringGesture: 0,
+    cropsPerSettle: 0,
+    revisitWorkerCalls: 0,
+    pixelsPinned: true,
+    staleCommit: false,
+  });
+  const gestureActiveRef = useRef(false);
+  const cropsInSettleRef = useRef(0);
+  const workerCallsAtEvaluateRef = useRef(0);
 
   // Latest props readable from any timer/callback (repo pattern).
   const propsRef = useRef({ dark, onMetrics, onBaseReady, onCropReport, settleMs });
   propsRef.current = { dark, onMetrics, onBaseReady, onCropReport, settleMs };
 
   /* ---------------- data-attribute diagnostics ---------------- */
+
+  /** Writes the full F5 diagnostics contract (data-native-* attributes) from
+   *  refs. Attribute names mirror pdf-native-diagnostics.ts so F5's
+   *  readNativeDiagnostics() reads this layer unchanged; the extra
+   *  data-native-dark attribute exposes the active raster mode (F3 cache keys
+   *  already separate dark). The legacy data-* attributes (data-base-paint-ms,
+   *  data-crop-cache-hit, ...) are written by setDiagnostics(). */
+  const syncDiagnostics = () => {
+    const root = rootRef.current;
+    if (!root) return;
+    const d = diagRef.current;
+    const p95ms = frameIntervalP95(d.frameIntervals);
+    root.dataset.nativeActiveGeneration = String(d.activeGeneration);
+    root.dataset.nativeCommittedGeneration = String(d.committedGeneration);
+    root.dataset.nativeForegroundPending = String(inFlightCropRef.current ? 1 : 0);
+    root.dataset.nativeWorkerRequests = String(d.workerRequests);
+    root.dataset.nativeWorkerCalls = String(d.workerCalls);
+    root.dataset.nativeCacheExactHits = String(d.cacheExactHits);
+    root.dataset.nativeCacheCoverageHits = String(d.cacheCoverageHits);
+    root.dataset.nativeCacheMisses = String(d.cacheMisses);
+    root.dataset.nativeCacheBytes = String(cacheRef.current?.bytes ?? 0);
+    root.dataset.nativeBaseFirstMs = d.baseFirstMs === null ? '' : String(d.baseFirstMs);
+    root.dataset.nativeBaseUpgradeMs = d.baseUpgradeMs === null ? '' : String(d.baseUpgradeMs);
+    root.dataset.nativeCropRenderMs = d.cropRenderMs === null ? '' : String(d.cropRenderMs);
+    root.dataset.nativeFrameIntervalP95 = p95ms === null ? '' : String(p95ms);
+    root.dataset.nativeRenderDuringGesture = String(d.renderDuringGesture);
+    root.dataset.nativeCropsPerSettle = String(d.cropsPerSettle);
+    root.dataset.nativeRevisitWorkerCalls = String(d.revisitWorkerCalls);
+    root.dataset.nativePixelsPinned = d.pixelsPinned ? 'true' : 'false';
+    root.dataset.nativeStaleCommit = d.staleCommit ? 'true' : 'false';
+    root.dataset.nativeDocumentKey = documentKey;
+    root.dataset.nativePageIndex = String(pageIndex);
+    root.dataset.nativeBaseReady = baseReadyFiredRef.current !== null ? 'true' : 'false';
+    root.dataset.nativeCropReady = lastCommittedCropRef.current !== null ? 'true' : 'false';
+    root.dataset.nativeDark = propsRef.current.dark ? 'true' : 'false';
+  };
 
   const setDiagnostics = (patch: Record<string, string | number | undefined>) => {
     const root = rootRef.current;
@@ -304,6 +384,22 @@ export function PdfNativePageLayer({
       if (value === undefined) continue;
       root.dataset[key] = String(value);
     }
+    syncDiagnostics();
+  };
+
+  /** A worker-bound render request was issued (submitBase / submitCrop). */
+  const noteWorkerRequest = (generation: number) => {
+    const d = diagRef.current;
+    d.workerRequests += 1;
+    d.workerCalls += 1;
+    d.activeGeneration = Math.max(d.activeGeneration, generation);
+    syncDiagnostics();
+  };
+
+  /** A worker-bound cancel message was issued (handle.cancel()). */
+  const noteWorkerCancel = () => {
+    diagRef.current.workerCalls += 1;
+    syncDiagnostics();
   };
 
   const report = (report: NativeCropReport) => {
@@ -350,6 +446,8 @@ export function PdfNativePageLayer({
     if (!canvas) return;
     paintBitmap(canvas, bitmap, widthPx, heightPx, startAt);
     const ms = performance.now() - startAt;
+    if (kind === 'base-first') diagRef.current.baseFirstMs = ms;
+    else diagRef.current.baseUpgradeMs = ms;
     setDiagnostics({ basePaintMs: ms.toFixed(1) });
     if (kind === 'base-first') {
       setDiagnostics({ firstPaintMs: ms.toFixed(1) });
@@ -374,6 +472,7 @@ export function PdfNativePageLayer({
     const handle = client.submitBase(request);
     registeredRef.current.add(request.requestId);
     inFlightBaseRef.current = { gen: request.generation, handle };
+    noteWorkerRequest(request.generation);
     setDiagnostics({ basePaintMs: 'pending' });
     try {
       const delivery = await handle.promise;
@@ -388,6 +487,7 @@ export function PdfNativePageLayer({
       registeredRef.current.delete(request.requestId);
       if (inFlightBaseRef.current?.handle === handle) inFlightBaseRef.current = null;
       if (!allowed) {
+        diagRef.current.staleCommit = true;
         try {
           bitmap.close();
         } catch {
@@ -395,6 +495,7 @@ export function PdfNativePageLayer({
         }
         return;
       }
+      diagRef.current.committedGeneration = request.generation;
       paintBase(bitmap, delivery.result.widthPx, delivery.result.heightPx, request.priority, startAt);
     } catch (error) {
       registeredRef.current.delete(request.requestId);
@@ -431,9 +532,31 @@ export function PdfNativePageLayer({
       cropCacheHit: undefined,
       swapMs: undefined,
     });
+    // Diagnostics are monotonic within a document lifecycle: reset on every
+    // runId/pageIndex/dark change (F5 contract).
+    diagRef.current.activeGeneration = 0;
+    diagRef.current.committedGeneration = 0;
+    diagRef.current.workerRequests = 0;
+    diagRef.current.workerCalls = 0;
+    diagRef.current.cacheExactHits = 0;
+    diagRef.current.cacheCoverageHits = 0;
+    diagRef.current.cacheMisses = 0;
+    diagRef.current.baseFirstMs = null;
+    diagRef.current.baseUpgradeMs = null;
+    diagRef.current.cropRenderMs = null;
+    diagRef.current.frameIntervals = [];
+    diagRef.current.renderDuringGesture = 0;
+    diagRef.current.cropsPerSettle = 0;
+    diagRef.current.revisitWorkerCalls = 0;
+    diagRef.current.pixelsPinned = true;
+    diagRef.current.staleCommit = false;
+    gestureActiveRef.current = false;
+    cropsInSettleRef.current = 0;
 
     const open = async () => {
       try {
+        // One worker-bound open message (open-document) per document open.
+        diagRef.current.workerCalls += 1;
         const metrics = await client.open(runId, pageIndex);
         if (cancelled || disposedRef.current) return;
         metricsRef.current = metrics;
@@ -500,8 +623,10 @@ export function PdfNativePageLayer({
       }
       report({ kind: 'dispose', documentKey, pageIndex });
     };
+    // dark is a base-layer trigger (Master Plan §4.1: base re-renders on
+    // dark-mode toggle); eslint-disable covers the intentional lane refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runId, pageIndex]);
+  }, [runId, pageIndex, dark]);
 
   /* ---------------- crop surfaces: canvas registry ---------------- */
 
@@ -535,6 +660,7 @@ export function PdfNativePageLayer({
     if (!inFlight) return;
     try {
       inFlight.handle.cancel();
+      noteWorkerCancel();
     } catch {
       // already settled
     }
@@ -558,6 +684,7 @@ export function PdfNativePageLayer({
       if (inFlightCropRef.current?.handle === handle) inFlightCropRef.current = null;
       clearStallTimer();
       if (!allowed) {
+        diagRef.current.staleCommit = true;
         try {
           bitmap.close();
         } catch {
@@ -599,6 +726,8 @@ export function PdfNativePageLayer({
         estimatedBytes: delivery.result.estimatedBytes,
       });
       const renderMs = performance.now() - startedAt;
+      diagRef.current.committedGeneration = request.generation;
+      diagRef.current.cropRenderMs = renderMs;
       setDiagnostics({ cropRenderMs: renderMs.toFixed(1), cropCacheHit: '0' });
       report({
         kind: 'crop-render',
@@ -649,6 +778,11 @@ export function PdfNativePageLayer({
     const darkNow = propsRef.current.dark;
     const client = renderClientRef.current;
     if (!client) return;
+    // Diagnostics: one settle window begins now. Any worker call issued
+    // during a cache-hit settle would violate the revisit invariant (MUST be
+    // 0), so record the baseline for the delta.
+    workerCallsAtEvaluateRef.current = diagRef.current.workerCalls;
+    cropsInSettleRef.current = 0;
     // Engagement gate: at low zoom the base raster is sufficient.
     if (!isNativeDetailEngaged(viewportNow.zoom, viewportNow.dpr)) {
       setDiagnostics({ cropCacheHit: '0' });
@@ -674,6 +808,8 @@ export function PdfNativePageLayer({
     //    supplementary overlapping crops (2–4 surfaces, F3 lookupCrops API).
     const exact = cacheRef.current?.getExact(key);
     if (exact) {
+      diagRef.current.cacheExactHits += 1;
+      diagRef.current.revisitWorkerCalls += Math.max(0, diagRef.current.workerCalls - workerCallsAtEvaluateRef.current);
       const crops = cacheRef.current?.lookupCrops(lookup) ?? [];
       mountCachedCrops([exact, ...crops.filter((crop) => crop.key !== exact.key)]);
       setDiagnostics({ cropCacheHit: '1' });
@@ -687,6 +823,8 @@ export function PdfNativePageLayer({
     //    crops mount alongside (2–4 overlapping surfaces).
     const covering = cacheRef.current?.findCovering(lookup);
     if (covering) {
+      diagRef.current.cacheCoverageHits += 1;
+      diagRef.current.revisitWorkerCalls += Math.max(0, diagRef.current.workerCalls - workerCallsAtEvaluateRef.current);
       const crops = cacheRef.current?.lookupCrops(lookup) ?? [];
       mountCachedCrops([covering, ...crops.filter((crop) => crop.key !== covering.key)]);
       setDiagnostics({ cropCacheHit: '1' });
@@ -696,6 +834,7 @@ export function PdfNativePageLayer({
 
     // 3) Miss → exactly ONE foreground crop render. Existing (pinned) crops
     //    stay mounted while this renders.
+    diagRef.current.cacheMisses += 1;
     setDiagnostics({ cropCacheHit: '0' });
     report({ kind: 'crop-cache-miss', documentKey, pageIndex, region, density, cacheHit: false });
     cropGenRef.current += 1;
@@ -714,7 +853,16 @@ export function PdfNativePageLayer({
     const handle = client.submitCrop(request);
     registeredRef.current.add(requestId);
     const startedAt = performance.now();
+    // Set the in-flight ref BEFORE the diagnostics sync (noteWorkerRequest)
+    // so data-native-foreground-pending reflects the pending crop.
     inFlightCropRef.current = { gen: generation, key, handle, startedAt };
+    noteWorkerRequest(generation);
+    // Diagnostics invariants: ≤ 1 foreground crop per settle; zero renders
+    // while a gesture window is armed (defensive — evaluateCrop only runs
+    // after the window expires, so this MUST stay 0).
+    cropsInSettleRef.current += 1;
+    diagRef.current.cropsPerSettle = Math.max(diagRef.current.cropsPerSettle, cropsInSettleRef.current);
+    if (gestureActiveRef.current) diagRef.current.renderDuringGesture += 1;
     // Stall backstop: a wedged render must not spin forever — cancel + keep old
     // pixels; primary recovery is the next settle / visibilitychange retry.
     stallTimerRef.current = window.setTimeout(() => {
@@ -733,14 +881,46 @@ export function PdfNativePageLayer({
   // old pixels stay pinned) and re-arm the settle window. No render request is
   // issued while the window is open (DoD 1).
   useEffect(() => {
+    gestureActiveRef.current = true;
     if (settleTimerRef.current !== null) window.clearTimeout(settleTimerRef.current);
     cancelInFlightCrop();
     settleTimerRef.current = window.setTimeout(() => {
       settleTimerRef.current = null;
+      gestureActiveRef.current = false;
       evaluateCrop();
     }, Math.max(120, Math.min(160, settleMs)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewport.x, viewport.y, viewport.width, viewport.height, viewport.zoom, viewport.dpr, pageIndex]);
+
+  // Frame-interval sampling for data-native-frame-interval-p95. Guards for
+  // environments without requestAnimationFrame (jsdom) and hostile timestamps
+  // (fake timers): only sane deltas (0 < Δ < 1000ms) are recorded.
+  useEffect(() => {
+    if (typeof requestAnimationFrame !== 'function') return;
+    let rafId = 0;
+    let last = performance.now();
+    let sinceSync = 0;
+    const sample = (timestamp: number) => {
+      const delta = timestamp - last;
+      last = timestamp;
+      if (delta > 0 && delta < 1000) {
+        const intervals = diagRef.current.frameIntervals;
+        intervals.push(delta);
+        if (intervals.length > 240) intervals.shift();
+        sinceSync += 1;
+        if (sinceSync >= 30) {
+          sinceSync = 0;
+          syncDiagnostics();
+        }
+      }
+      rafId = requestAnimationFrame(sample);
+    };
+    rafId = requestAnimationFrame(sample);
+    return () => {
+      if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(rafId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Visibility restore: re-evaluate after tab hidden → visible (stall recovery).
   useEffect(() => {

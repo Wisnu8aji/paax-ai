@@ -46,6 +46,14 @@ vi.mock('./pdf-page-layer', () => ({
   },
 }));
 
+// Real dark-mode state source for DrawingCanvas (Wave 2: the native layer's
+// `dark` prop must come from the theme, not a hardcoded false). Controllable
+// per test through themeHolder.theme.
+const themeHolder = vi.hoisted(() => ({ theme: 'light' as 'light' | 'dark' | 'grey' }));
+vi.mock('../../../theme/theme-provider', () => ({
+  useTheme: () => ({ theme: themeHolder.theme, setTheme: vi.fn(), themes: ['light', 'dark', 'grey'] }),
+}));
+
 vi.mock('./canvas-toolbar', () => ({ CanvasToolbar: () => null }));
 vi.mock('./zoom-bar', () => ({ ZoomBar: () => null }));
 vi.mock('./selection-context-bar', () => ({ SelectionContextBar: () => null }));
@@ -125,6 +133,7 @@ beforeEach(() => {
     }
   });
   layerProps.current = null;
+  themeHolder.theme = 'light';
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
@@ -516,8 +525,11 @@ describe('DrawingCanvas viewer engine feature flag (F4: legacy | native)', () =>
       window.dispatchEvent(new StorageEvent('storage', { key: 'paax.pdfViewerMode', newValue: 'native' }));
     });
     expect(view.surface.dataset.viewerMode).toBe('native');
-    // Native layer mounted (real component, F2 mock adapter default);
-    // legacy layer mock is NOT invoked in native mode.
+    // Native layer mounted (real component; production default is now the
+    // REAL F2 engine — createPdfRenderScheduler({pool: createPdfRenderPool()}).
+    // jsdom cannot construct a Worker, so open() fails softly and the layer
+    // stays mounted without raster — the assertions here are structural).
+    // The legacy layer mock is NOT invoked in native mode.
     expect(view.container.querySelector('[data-testid="pdf-native-page-layer"]')).toBeTruthy();
     expect(layerProps.current).toBeNull();
 
@@ -527,5 +539,26 @@ describe('DrawingCanvas viewer engine feature flag (F4: legacy | native)', () =>
     expect(view.surface.dataset.viewerMode).toBe('legacy');
     expect(view.container.querySelector('[data-testid="pdf-native-page-layer"]')).toBeNull();
     expect(layerProps.current).not.toBeNull();
+  });
+
+  it('passes the real dark-mode state (theme) to the native layer, not a hardcoded false', () => {
+    // Dark theme → native layer must receive dark=true (F3 cache keys and
+    // every render request separate on darkMode).
+    themeHolder.theme = 'dark';
+    const view = renderCanvas();
+    act(() => {
+      window.localStorage.setItem('paax.pdfViewerMode', 'native');
+      window.dispatchEvent(new StorageEvent('storage', { key: 'paax.pdfViewerMode', newValue: 'native' }));
+    });
+    const layer = view.container.querySelector('[data-testid="pdf-native-page-layer"]') as HTMLElement;
+    expect(layer).toBeTruthy();
+    expect(layer.dataset.nativeDark).toBe('true');
+
+    // Light theme → dark=false on the layer.
+    themeHolder.theme = 'light';
+    act(() => {
+      view.rerender(<DrawingCanvas />);
+    });
+    expect((view.container.querySelector('[data-testid="pdf-native-page-layer"]') as HTMLElement).dataset.nativeDark).toBe('false');
   });
 });
