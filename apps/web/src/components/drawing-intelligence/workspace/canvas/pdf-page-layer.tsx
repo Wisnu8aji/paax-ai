@@ -26,6 +26,14 @@ import {
   type PdfTileCompositor,
   type PdfTileRendererKind,
 } from './pdf-tile-compositor';
+import {
+  PdfDetailOverlay,
+  type DetailOverlayReport,
+  type DetailRenderHandle,
+  type DetailRenderPool,
+  type DetailViewport,
+} from './pdf-detail-overlay';
+import type { DetailRenderRequest } from './pdf-tile-protocol';
 
 export { getGlobalPdfTilePool, resetGlobalPdfTilePool };
 
@@ -164,6 +172,75 @@ export function shouldRefreshArtifactUrl(expiresAt: string | number, now: Date =
   }
 }
 
+/**
+ * Detail tile key for the pool dedup map. The pyramid key format is
+ * `${pageKey}:${density}:${tx}:${ty}`; the detail key deliberately uses a
+ * distinct `:detail:` segment so it can never collide with (or be misread as)
+ * a base pyramid key, and it is unique per region+density so two distinct
+ * crops never coalesce in the pool's pendingByKey map. The 0.1pt / 0.01-
+ * density rounding mirrors the overlay's own renderKey tolerance (F3).
+ */
+export function detailTileRequestKey(request: DetailRenderRequest): string {
+  const region = request.region;
+  const f = (n: number) => n.toFixed(1);
+  return [
+    request.documentKey,
+    'detail',
+    f(request.scale),
+    f(region.x),
+    f(region.y),
+    f(region.width),
+    f(region.height),
+    request.dark ? 1 : 0,
+  ].join(':');
+}
+
+/**
+ * Adapts the tile pool (F2 extended protocol — `PdfTileRenderRequest` with
+ * optional `scale`/`dark`) to the overlay's `DetailRenderPool` contract
+ * (`DetailRenderRequest` in logical PDF-point space). The worker renders at
+ * the arbitrary `scale` when present (`resolveRenderScale`, F2), so the
+ * pyramid `density` slot is only a fallback that never wins in the detail
+ * path.
+ *
+ * COORDINATE CONTRACT (F4 density fix, 2026-08-06): the worker (and the base
+ * pyramid) express tile x/y/width/height in DENSITY-SPACE DEVICE PX —
+ * `runSingleRender` creates `OffscreenCanvas(tile.width, tile.height)` and
+ * renders with `transform: [1,0,0,1,-tile.x,-tile.y]` at viewport scale
+ * `scale`. Passing the logical-point region here made the worker deliver a
+ * REGION-SIZED bitmap (e.g. 1191×842) that the overlay then upscaled to
+ * region×density (2201×1556) — the persistent "blur at deep zoom". The
+ * region must therefore be multiplied by `scale` so the delivered bitmap IS
+ * region × density device px and the overlay composits 1:1.
+ */
+export function createDetailRenderPoolAdapter(
+  pool: ReturnType<typeof createPdfTilePool>,
+): DetailRenderPool {
+  return {
+    request: (detail: DetailRenderRequest): DetailRenderHandle => {
+      const scale = detail.scale;
+      const tile = {
+        key: detailTileRequestKey(detail),
+        tx: 0,
+        ty: 0,
+        // Logical-point region → density-space device px (worker contract).
+        x: detail.region.x * scale,
+        y: detail.region.y * scale,
+        width: detail.region.width * scale,
+        height: detail.region.height * scale,
+        density: scale,
+      };
+      return pool.request({
+        documentKey: detail.documentKey,
+        pageNumber: detail.pageNumber,
+        tile,
+        scale: detail.scale,
+        dark: detail.dark,
+      });
+    },
+  };
+}
+
 export type ViewportSpace = 'normalized' | 'logical';
 
 export interface PdfCoverageChangeEvent {
@@ -249,6 +326,17 @@ interface LayerDiagnostics {
   textureCount: number;
   uploadFailures: number;
   contextLost: boolean;
+  /** Detail overlay engaged (F3 gate: effective zoom × dpr > 1.15). */
+  detailEngaged: boolean;
+  /** Detail overlay render density (device px per logical pt) when engaged, else 0. */
+  detailDensity: number;
+  /**
+   * Effective device px per logical pt: the detail overlay density when
+   * engaged, otherwise the base compositor canvas density
+   * (canvas bitmap px / page pt) — evidence for the anti-pixel-doubling
+   * gate (Master Plan §7.2).
+   */
+  effectiveDensity: number;
 }
 
 const INITIAL_DIAGNOSTICS: LayerDiagnostics = {
@@ -261,6 +349,9 @@ const INITIAL_DIAGNOSTICS: LayerDiagnostics = {
   textureCount: 0,
   uploadFailures: 0,
   contextLost: false,
+  detailEngaged: false,
+  detailDensity: 0,
+  effectiveDensity: 0,
 };
 
 export function PdfPageLayer({
@@ -345,6 +436,21 @@ export function PdfPageLayer({
     detailCacheRef.current = getGlobalDetailTileCache();
   }
 
+  /**
+   * Stable DetailRenderPool adapter over the CURRENT tile pool (F4). The
+   * overlay (F3) requests `DetailRenderRequest` in logical PDF-point space;
+   * the pool (F2) speaks `PdfTileRenderRequest` with optional scale/dark.
+   * Rebuilt only when the wrapped pool identity changes, so the overlay's
+   * effect never re-runs on unrelated re-renders.
+   */
+  const detailPoolRef = useRef<DetailRenderPool | null>(null);
+  const detailPoolWrappedRef = useRef<ReturnType<typeof createPdfTilePool> | null>(null);
+  const currentPool = poolRef.current;
+  if (currentPool && detailPoolWrappedRef.current !== currentPool) {
+    detailPoolWrappedRef.current = currentPool;
+    detailPoolRef.current = createDetailRenderPoolAdapter(currentPool);
+  }
+
   const [metrics, setMetrics] = useState<PdfPageMetrics | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
@@ -372,12 +478,35 @@ export function PdfPageLayer({
       merged.renderer === current.renderer &&
       merged.textureCount === current.textureCount &&
       merged.uploadFailures === current.uploadFailures &&
-      merged.contextLost === current.contextLost
+      merged.contextLost === current.contextLost &&
+      merged.detailEngaged === current.detailEngaged &&
+      merged.detailDensity === current.detailDensity &&
+      merged.effectiveDensity === current.effectiveDensity
     ) {
       return;
     }
     diagnosticsRef.current = merged;
     setDiagnostics(merged);
+  };
+
+  /** Latest detail-overlay paint/hide report (F3 onRendered). */
+  const detailReportRef = useRef<DetailOverlayReport | null>(null);
+
+  /**
+   * Detail overlay diagnostics sink (F4): records the overlay's engaged
+   * state and density, and the effective device px per logical pt — the
+   * overlay density when engaged, otherwise the base canvas density.
+   */
+  const handleDetailRendered = (report: DetailOverlayReport) => {
+    detailReportRef.current = report;
+    const canvas = canvasRef.current;
+    const canvasDensity =
+      metrics && canvas && metrics.width > 0 ? canvas.width / metrics.width : 0;
+    updateDiagnostics({
+      detailEngaged: report.engaged,
+      detailDensity: report.engaged ? report.density : 0,
+      effectiveDensity: report.engaged ? report.density : canvasDensity,
+    });
   };
 
   const ensureCompositor = (): PdfTileCompositor | null => {
@@ -625,7 +754,11 @@ export function PdfPageLayer({
       coverageRatio: 0,
       textureCount: 0,
       uploadFailures: 0,
+      detailEngaged: false,
+      detailDensity: 0,
+      effectiveDensity: 0,
     });
+    detailReportRef.current = null;
 
     const pool = poolRef.current ?? (tilePool || getGlobalPdfTilePool());
     const cache = cacheRef.current ?? (tileCache || getGlobalTileCache());
@@ -1084,6 +1217,9 @@ export function PdfPageLayer({
       data-texture-count={diagnostics.textureCount}
       data-upload-failures={diagnostics.uploadFailures}
       data-context-lost={diagnostics.contextLost ? 'true' : 'false'}
+      data-detail-engaged={diagnostics.detailEngaged ? 'true' : 'false'}
+      data-detail-density={diagnostics.detailDensity.toFixed(3)}
+      data-effective-density={diagnostics.effectiveDensity.toFixed(3)}
       style={{
         position: 'relative',
         width: '100%',
@@ -1103,6 +1239,16 @@ export function PdfPageLayer({
           display: 'block',
         }}
       />
+      {detailPoolRef.current ? (
+        <PdfDetailOverlay
+          documentKey={documentKey}
+          pageNumber={pageNumber}
+          metrics={metrics}
+          viewport={viewport as DetailViewport}
+          pool={detailPoolRef.current}
+          onRendered={handleDetailRendered}
+        />
+      ) : null}
     </div>
   );
 }

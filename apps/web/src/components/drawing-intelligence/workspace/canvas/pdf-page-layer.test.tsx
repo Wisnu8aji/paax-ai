@@ -31,6 +31,8 @@ import {
   resetGlobalDetailTileCache,
   resetDetectedPageSurfaceBufferLimit,
   detectPageSurfaceBufferLimit,
+  detailTileRequestKey,
+  createDetailRenderPoolAdapter,
   MAX_PAGE_SURFACE_BUFFER,
   FALLBACK_PAGE_SURFACE_BUFFER,
   DETAIL_PASS_MS,
@@ -39,6 +41,8 @@ import {
 import { TileLru, PdfTilePyramid, toLogicalViewport } from './pdf-tile-pyramid';
 import { createPdfTilePool } from './pdf-tile-pool';
 import { normalizeArtifactExpiry, fetchPdfArtifactUrl } from '../../drawing-intelligence-api';
+import { fetchPdfBinary } from './pdf-binary-cache';
+import type { DetailRenderRequest } from './pdf-tile-protocol';
 import * as compositorModule from './pdf-tile-compositor';
 import type { PdfTileCompositor } from './pdf-tile-compositor';
 
@@ -873,7 +877,9 @@ describe('Atomic generations: committed/candidate state and coverage transitions
     expect(layer()).toHaveAttribute('data-coverage-ready', 'true');
     expect(layer()).toHaveAttribute('data-committed-generation', '1');
     expect(layer()).toHaveAttribute('data-coverage-ratio', '1.000');
-    expect(container.querySelectorAll('canvas')).toHaveLength(1);
+    // Two canvases: the base compositor canvas + the F3 detail overlay canvas
+    // (mounted but display:none while the fit viewport is not engaged).
+    expect(container.querySelectorAll('canvas')).toHaveLength(2);
     expect(onCoverageChange).toHaveBeenCalledWith(
       expect.objectContaining({ documentKey: 'run-brief1:0', generation: 1, ready: false, coverage: 0 }),
     );
@@ -1956,5 +1962,174 @@ describe('B3 detail pass', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('F4 detail overlay integration', () => {
+  const ENGAGED = { x: 0.25, y: 0.25, width: 0.5, height: 0.5, zoom: 3, dpr: 1 };
+
+  const detailRequests = (pool: ReturnType<typeof controlledPool>['pool']) =>
+    (pool.request as ReturnType<typeof vi.fn>).mock.calls.filter((c: any) => c[0]?.scale !== undefined);
+
+  it('mounts the detail overlay canvas next to the base compositor canvas', async () => {
+    const { pool } = controlledPool();
+    const { container } = renderNormalizedFitLayer(pool, 'run-mount', FIT);
+    await flush();
+    expect(container.querySelectorAll('canvas')).toHaveLength(2);
+    expect(container.querySelector('[data-testid="pdf-detail-overlay"]')).not.toBeNull();
+    // Overlay starts hidden: display:none until a crop is painted.
+    const overlay = container.querySelector('[data-testid="pdf-detail-overlay"]') as HTMLElement;
+    expect(overlay.style.display).toBe('none');
+    expect(overlay.style.pointerEvents).toBe('none');
+  });
+
+  it('stays hidden and never issues a detail request while not engaged (zoom × dpr ≤ 1.15)', async () => {
+    const { pool } = controlledPool();
+    const { container } = renderNormalizedFitLayer(pool, 'run-fit', FIT);
+    await flush();
+    expect(detailRequests(pool)).toHaveLength(0);
+    const overlay = container.querySelector('[data-testid="pdf-detail-overlay"]') as HTMLElement;
+    expect(overlay.style.display).toBe('none');
+    expect(layer()).toHaveAttribute('data-detail-engaged', 'false');
+    expect(layer()).toHaveAttribute('data-detail-density', '0.000');
+    // Effective density = base compositor canvas px / page pt (canvas px/pt).
+    expect(layer()).toHaveAttribute('data-effective-density', '1.000');
+  });
+
+  it('engages strictly above 1.15 and issues ONE detail render at density zoom × dpr', async () => {
+    const { pool } = controlledPool();
+    renderNormalizedFitLayer(pool, 'run-engage', ENGAGED);
+    await flush();
+    const detail = detailRequests(pool);
+    expect(detail.length).toBe(1);
+    const request = detail[0][0];
+    expect(request.scale).toBe(3); // zoom 3 × dpr 1, no pyramid quantization
+    expect(request.documentKey).toBe('run-engage:0');
+    expect(request.pageNumber).toBe(1);
+    // Adapter key format is never a pyramid key (density segment = 'detail').
+    expect(request.tile.key.startsWith('run-engage:0:detail:')).toBe(true);
+    expect(request.tile.density).toBe(3);
+    expect(request.tile.x).toBeGreaterThan(0);
+    expect(request.tile.width).toBeGreaterThan(0);
+  });
+
+  it('does not engage at exactly 1.15 (strict boundary)', async () => {
+    const { pool } = controlledPool();
+    renderNormalizedFitLayer(pool, 'run-boundary', { ...FIT, zoom: 1.15 });
+    await flush();
+    expect(detailRequests(pool)).toHaveLength(0);
+    expect(layer()).toHaveAttribute('data-detail-engaged', 'false');
+  });
+
+  it('publishes overlay density as data-* diagnostics once the crop paints', async () => {
+    const { pool, resolvers } = controlledPool();
+    const { container } = renderNormalizedFitLayer(pool, 'run-diagnose', ENGAGED);
+    await flush();
+    const detail = detailRequests(pool);
+    expect(detail.length).toBe(1);
+    const key = detail[0][0].tile.key as string;
+    deliver(resolvers, key);
+    await flush();
+    const overlay = container.querySelector('[data-testid="pdf-detail-overlay"]') as HTMLElement;
+    expect(overlay.style.display).toBe('block');
+    expect(layer()).toHaveAttribute('data-detail-engaged', 'true');
+    expect(layer()).toHaveAttribute('data-detail-density', '3.000');
+    expect(layer()).toHaveAttribute('data-effective-density', '3.000');
+  });
+
+  it('retires the overlay when the document switches (metrics reset)', async () => {
+    const { pool } = controlledPool();
+    const view = renderNormalizedFitLayer(pool, 'run-doc-a', ENGAGED);
+    await flush();
+    expect(screen.getByTestId('pdf-detail-overlay')).not.toBeNull();
+    // Block the next document's binary fetch so the layer stays in the
+    // loading state and the previous overlay must be retired.
+    vi.mocked(fetchPdfBinary).mockImplementationOnce(() => new Promise(() => {}));
+    view.rerender(
+      <PdfPageLayer
+        runId="run-doc-b"
+        pageIndex={0}
+        viewport={ENGAGED}
+        viewportSpace="normalized"
+        fallbackWidth={1000}
+        fallbackHeight={800}
+        tilePool={pool as any}
+      />,
+    );
+    await flush();
+    expect(screen.queryByTestId('pdf-detail-overlay')).toBeNull();
+    expect(screen.getByRole('status')).not.toBeNull();
+  });
+
+  it('detailTileRequestKey is unique per region+density and never collides with pyramid keys', () => {
+    const base: DetailRenderRequest = {
+      documentKey: 'run:0',
+      pageNumber: 1,
+      region: { x: 10, y: 20, width: 30, height: 40 },
+      scale: 3,
+    };
+    const sameRegion = {
+      ...base,
+      region: { x: 10.04, y: 20, width: 30, height: 40 }, // within 0.1pt tolerance → same key
+    };
+    const moved = { ...base, region: { x: 11, y: 20, width: 30, height: 40 } };
+    const denser = { ...base, scale: 4 };
+    const dark = { ...base, dark: true };
+    expect(detailTileRequestKey(base)).toBe(detailTileRequestKey(sameRegion));
+    expect(detailTileRequestKey(base)).not.toBe(detailTileRequestKey(moved));
+    expect(detailTileRequestKey(base)).not.toBe(detailTileRequestKey(denser));
+    expect(detailTileRequestKey(base)).not.toBe(detailTileRequestKey(dark));
+    // The density segment is 'detail', so a pyramid key like `run:0:3:1:1`
+    // can never be misread as / collide with a detail key.
+    expect(detailTileRequestKey(base).split(':')[2]).toBe('detail');
+  });
+
+  it('createDetailRenderPoolAdapter converts DetailRenderRequest into the extended pool wire shape (density-space tile coords)', () => {
+    const pool = {
+      request: vi.fn().mockReturnValue({ promise: new Promise(() => {}), cancel: vi.fn() }),
+    } as unknown as ReturnType<typeof createPdfTilePool>;
+    const adapter = createDetailRenderPoolAdapter(pool);
+    const detail: DetailRenderRequest = {
+      documentKey: 'run:0',
+      pageNumber: 1,
+      region: { x: 1, y: 2, width: 3, height: 4 },
+      scale: 16,
+      dark: true,
+    };
+    const handle = adapter.request(detail);
+    expect(handle).toBeDefined();
+    // Worker contract: tile x/y/width/height are DENSITY-SPACE device px
+    // (OffscreenCanvas(tile.width, tile.height) at render scale `scale` with
+    // transform [-tile.x, -tile.y]). The logical-point region is multiplied
+    // by scale so the delivered bitmap is region × density, composited 1:1
+    // (F4 density fix — regression: logical-pt passthrough upscaled the
+    // region-sized bitmap → blur at deep zoom).
+    expect(pool.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        documentKey: 'run:0',
+        pageNumber: 1,
+        scale: 16,
+        dark: true,
+        tile: expect.objectContaining({ x: 16, y: 32, width: 48, height: 64, density: 16 }),
+      }),
+    );
+  });
+
+  it('createDetailRenderPoolAdapter keeps scale 1 crops density-space identical to the region', () => {
+    const pool = {
+      request: vi.fn().mockReturnValue({ promise: new Promise(() => {}), cancel: vi.fn() }),
+    } as unknown as ReturnType<typeof createPdfTilePool>;
+    const adapter = createDetailRenderPoolAdapter(pool);
+    adapter.request({
+      documentKey: 'run:0',
+      pageNumber: 1,
+      region: { x: 10.5, y: 20.25, width: 30, height: 40 },
+      scale: 1,
+    });
+    expect(pool.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tile: expect.objectContaining({ x: 10.5, y: 20.25, width: 30, height: 40 }),
+      }),
+    );
   });
 });
