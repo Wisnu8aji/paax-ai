@@ -38,6 +38,38 @@ export function documentKeyFor(runId: string, pageIndex: number): string {
 }
 
 /**
+ * Render-time aspect formula (Task 4 C1). The page surface height is computed
+ * during render, before any effect can reset `pdfMetrics`. Previous-document
+ * metrics must never control even one committed frame of the new document, so
+ * PDF metrics are used only when their recorded document key equals the active
+ * document key; otherwise the provisional sheet fallback applies.
+ */
+export function aspectForRender(
+  pdfMetrics: { width: number; height: number } | null,
+  metricsDocumentKey: string | null,
+  activeDocumentKey: string | null,
+  fallbackAspect: number,
+): number {
+  if (pdfMetrics && metricsDocumentKey !== null && metricsDocumentKey === activeDocumentKey) {
+    return pdfMetrics.height / pdfMetrics.width;
+  }
+  return fallbackAspect;
+}
+
+/**
+ * Render-time underlay formula (Task 4 C2). The thumbnail underlay must be
+ * visible in the same commit that activates a document: coverage belonging to
+ * any other document (or no document) can never hide it, even when that
+ * coverage is `ready:true`.
+ */
+export function underlayVisibility(coverage: CoverageState | null, activeDocumentKey: string | null): 'hidden' | 'visible' {
+  if (!coverage) return 'visible';
+  if (activeDocumentKey === null) return 'visible';
+  if (coverage.documentKey !== activeDocumentKey) return 'visible';
+  return coverage.ready ? 'hidden' : 'visible';
+}
+
+/**
  * True when a new fit decision is required for `next`, given the record of the
  * last fit actually applied (`previous`).
  *

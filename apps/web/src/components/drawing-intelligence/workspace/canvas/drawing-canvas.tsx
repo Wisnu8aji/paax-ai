@@ -26,11 +26,15 @@ import { SelectionContextBar } from './selection-context-bar';
 import { RealPageSvg } from './real-page-svg';
 import { PdfPageLayer } from './pdf-page-layer';
 import type { PdfCoverageChangeEvent } from './pdf-page-layer';
-import type { PdfPageMetrics } from './pdf-tile-pool';
+import { PdfNativePageLayer } from './native/pdf-native-page-layer';
+import { setPdfViewerMode, usePdfViewerMode } from './native/pdf-viewer-feature-flag';
+import { clampZoomPAAX } from './pdf-scale-math';
 import {
+  aspectForRender,
   documentKeyFor,
   nextCoverageState,
   shouldApplyFit,
+  underlayVisibility,
   type CoverageState,
   type FitRecord,
 } from './drawing-canvas-fit';
@@ -39,7 +43,16 @@ import type { InteractiveMeasurementCandidate } from '../../drawing-intelligence
 /** lebar dasar render SVG pada zoom=1 (px) — 100% ≈ lebar A1 landscape wajar */
 const BASE_WIDTH_PX = 1400;
 const MIN_ZOOM = 0.08;
-const MAX_ZOOM = 8;
+/**
+ * UI zoom ceiling raised 8 → 32 (Master Plan §4.E, EXI §2.4). Safe because
+ * deep zoom is now region-bounded by the detail overlay (F3) instead of
+ * upscaling the whole-page base raster through the 8192px resolution wall.
+ * `clampZoomPAAX` (MIN_SCALE_PAAX..MAX_SCALE_PAAX = 0.03..32) supplies the
+ * ceiling; the UI floor stays at MIN_ZOOM (0.08).
+ */
+const MAX_ZOOM = 32;
+/** UI zoom clamp: 0.08..32 (PAAX scale-math, F1). */
+const clampUiZoom = (zoom: number): number => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, clampZoomPAAX(zoom)));
 /**
  * Live-pan viewport sync cadence. The visual pan runs on a CSS transform every
  * rAF (imperative, no React render); the tile layer only needs to follow the
@@ -99,10 +112,12 @@ export function DrawingCanvas() {
    * One stable metrics handler per document key, created once per key.
    * Callback identity is a pure function of the document key, never of mutable
    * current state, so a re-render cannot retarget an in-flight old-document
-   * callback at the new document (Task 4 invariant 3).
+   * callback at the new document (Task 4 invariant 3). The parameter is the
+   * width/height slice both the legacy PdfPageLayer and the native
+   * PdfNativePageLayer deliver; the handler only reads those two fields.
    */
-  const metricsHandlerByKeyRef = useRef(new Map<string, (metrics: PdfPageMetrics) => void>());
-  const metricsHandlerFor = (key: string): ((metrics: PdfPageMetrics) => void) => {
+  const metricsHandlerByKeyRef = useRef(new Map<string, (metrics: { width: number; height: number }) => void>());
+  const metricsHandlerFor = (key: string): ((metrics: { width: number; height: number }) => void) => {
     let handler = metricsHandlerByKeyRef.current.get(key);
     if (!handler) {
       handler = (metrics) => {
@@ -124,8 +139,24 @@ export function DrawingCanvas() {
    * are ignored by `nextCoverageState`.
    */
   const [coverage, setCoverage] = useState<CoverageState | null>(null);
+  /**
+   * Coverage events are only accepted for the document that is active at
+   * dispatch time. `nextCoverageState` additionally ignores wrong-document and
+   * older-generation events, so a late event from a just-unmounted layer can
+   * never establish or extend coverage for a non-active document (M3).
+   */
   const handleCoverageChange = useCallback((event: PdfCoverageChangeEvent) => {
+    if (event.documentKey !== activeKeyRef.current) return;
     setCoverage((previous) => nextCoverageState(previous, event));
+  }, []);
+  /**
+   * Native viewer bridge: base-first paint IS the first useful paint, so the
+   * thumbnail underlay hides at the same moment the legacy coverage-ready
+   * path hides it (document-key gated, same CoverageState machinery).
+   */
+  const handleNativeBaseReady = useCallback((documentKey: string) => {
+    if (documentKey !== activeKeyRef.current) return;
+    setCoverage((previous) => nextCoverageState(previous, { documentKey, generation: 1, ready: true }));
   }, []);
   /**
    * Temporary `will-change: transform` promotion for the single page surface.
@@ -155,23 +186,12 @@ export function DrawingCanvas() {
   const userAdjustedRef = useRef(false);
 
   const { zoom, panX, panY, tool } = state.canvas;
-
-  const computeAspect = useCallback((): number => {
-    if (pdfMetrics) return pdfMetrics.height / pdfMetrics.width;
-    if (mappedSheet?.widthPx && mappedSheet.heightPx) return mappedSheet.heightPx / mappedSheet.widthPx;
-    if (sheet) {
-      return (sheet.geometry.heightMm + (PLAN_MARGIN + 1900) * 2) / (sheet.geometry.widthMm + (PLAN_MARGIN + 1900) * 2);
-    }
-    return 1;
-  }, [pdfMetrics, mappedSheet, sheet]);
-  const aspect = computeAspect();
-  const baseW = BASE_WIDTH_PX;
-  const baseH = BASE_WIDTH_PX * aspect;
-
-  const setCanvas = useCallback(
-    (patch: Partial<typeof state.canvas>) => dispatch({ type: 'canvas', patch }),
-    [dispatch, state.canvas],
-  );
+  /**
+   * Viewer engine feature flag (F4): `legacy` (default, tile pyramid) or
+   * `native` (progressive pinned viewer). `legacy` stays selectable until the
+   * Arbiter approves cutover (DoD 25) — the flag is the rollback switch.
+   */
+  const viewerMode = usePdfViewerMode();
 
   /**
    * Provisional aspect from thumbnail dimensions or sheet geometry only —
@@ -185,6 +205,34 @@ export function DrawingCanvas() {
     }
     return 1;
   }, [mappedSheet, sheet]);
+
+  /**
+   * Render-time aspect (Task 4 C1): previous-document `pdfMetrics` must never
+   * control even one committed frame of the newly active document. The
+   * document-key gate is evaluated during render, not repaired by a passive
+   * effect after paint.
+   */
+  const computeAspect = useCallback((): number => {
+    return aspectForRender(pdfMetrics, pdfMetricsKeyRef.current, activeDocumentKey, fallbackSheetAspect());
+  }, [pdfMetrics, activeDocumentKey, fallbackSheetAspect]);
+  const aspect = computeAspect();
+  // PAAX F4 (Master Plan §4.E): the page surface is sized in PDF-point space
+  // (1 CSS px = 1 pt at zoom 1) once exact metrics for the ACTIVE document are
+  // known. That mapping is what lets the detail overlay (F3) composite 1:1:
+  // its canvas is positioned in page-pt units, so the mounting container MUST
+  // map 1 px = 1 pt. Before metrics the fallback 1400px surface keeps the
+  // fit/pan math unchanged; the document-key gate (Task 4 invariant 1) means
+  // previous-document metrics never resize the new document's surface.
+  const pdfSurfaceActive = pdfMetrics !== null && pdfMetricsKeyRef.current === activeDocumentKey;
+  const baseW = pdfSurfaceActive && pdfMetrics ? pdfMetrics.width : BASE_WIDTH_PX;
+  const baseH = baseW * aspect;
+  /** Render-time underlay decision (Task 4 C2); never repaired after paint. */
+  const underlayHidden = underlayVisibility(coverage, activeDocumentKey) === 'hidden';
+
+  const setCanvas = useCallback(
+    (patch: Partial<typeof state.canvas>) => dispatch({ type: 'canvas', patch }),
+    [dispatch, state.canvas],
+  );
 
   /**
    * Record of the exact aspect/source last applied by `fitSheetForRecord`
@@ -202,8 +250,10 @@ export function DrawingCanvas() {
       const el = containerRef.current;
       if (!el) return;
       userAdjustedRef.current = false;
-      const fitW = BASE_WIDTH_PX;
-      const fitH = BASE_WIDTH_PX * record.aspect;
+      // Fit targets the CURRENT page-surface size: the PDF-point surface
+      // (1px=1pt) once exact metrics are known, the 1400px fallback before.
+      const fitW = baseW;
+      const fitH = baseH;
       const pad = 48;
       const zw = (el.clientWidth - pad * 2) / fitW;
       const zh = (el.clientHeight - pad * 2) / fitH;
@@ -215,7 +265,7 @@ export function DrawingCanvas() {
       });
       fitRecordRef.current = record;
     },
-    [setCanvas],
+    [setCanvas, baseW, baseH],
   );
 
   /**
@@ -230,7 +280,7 @@ export function DrawingCanvas() {
         : {
             documentKey: activeDocumentKey ?? '',
             aspect: computeAspect(),
-            source: pdfMetrics ? 'pdf-metrics' : 'sheet-dimensions',
+            source: pdfMetrics && pdfMetricsKeyRef.current === activeDocumentKey ? 'pdf-metrics' : 'sheet-dimensions',
           };
     fitSheetForRecord(record);
   }, [fitSheetForRecord, activeDocumentKey, computeAspect, pdfMetrics]);
@@ -240,7 +290,7 @@ export function DrawingCanvas() {
       const el = containerRef.current;
       if (!el) return;
       userAdjustedRef.current = true;
-      const z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextZoom));
+      const z = clampUiZoom(nextZoom);
       const rect = el.getBoundingClientRect();
       const px = cx ?? rect.width / 2;
       const py = cy ?? rect.height / 2;
@@ -286,8 +336,13 @@ export function DrawingCanvas() {
     if (shouldApplyFit(fitRecordRef.current, record)) {
       fitSheetForRecord(record);
     }
+    // The effect is intentionally keyed to the active document identity, not
+    // the sheet id: a mapped sheet remapped to a new run/page must reset
+    // metrics, coverage, and fit even though `activeSheetId` never changed
+    // (Task 4 I1). `fallbackSheetAspect`/`fitSheetForRecord` are stable
+    // callbacks whose identity changes only with the same sheet data.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.activeSheetId]);
+  }, [activeDocumentKey]);
 
   // Exact metrics untuk dokumen aktif boleh memicu paling banyak satu fit
   // korektif, dan hanya kalau user belum zoom/pan manual sejak dokumen ini
@@ -417,6 +472,9 @@ export function DrawingCanvas() {
 
       const isPan = e.button === 1 || spaceDown || tool === 'pan';
       if (!isPan) return;
+      // A manual pan is a user adjustment: late exact metrics must not erase
+      // it with a corrective fit (Task 4 I2).
+      userAdjustedRef.current = true;
       e.preventDefault();
       (e.target as Element).setPointerCapture?.(e.pointerId);
       dragRef.current = { startX: e.clientX, startY: e.clientY, panX, panY, button: e.button };
@@ -492,6 +550,19 @@ export function DrawingCanvas() {
     };
   }, [curPanX, curPanY, zoom, baseW, baseH]);
 
+  const devicePixelRatio = typeof window === 'undefined' ? 1 : window.devicePixelRatio;
+  const pdfViewport = useMemo(
+    () => ({
+      x: viewport?.x ?? 0,
+      y: viewport?.y ?? 0,
+      width: viewport?.w ?? 1,
+      height: viewport?.h ?? 1,
+      zoom,
+      dpr: devicePixelRatio,
+    }),
+    [viewport?.x, viewport?.y, viewport?.w, viewport?.h, zoom, devicePixelRatio],
+  );
+
   // Stable callbacks/arrays so memoized SVG children skip re-renders when the
   // live-pan viewport syncs (up to ~10x/s) (P2).
   const handleSelectElement = useCallback(
@@ -510,6 +581,9 @@ export function DrawingCanvas() {
     (fx: number, fy: number) => {
       const el = containerRef.current;
       if (!el) return;
+      // Minimap navigation is a user adjustment: late exact metrics must not
+      // erase it with a corrective fit (Task 4 I2).
+      userAdjustedRef.current = true;
       setCanvas({
         panX: el.clientWidth / 2 - fx * baseW * zoom,
         panY: el.clientHeight / 2 - fy * baseH * zoom,
@@ -564,6 +638,8 @@ export function DrawingCanvas() {
         <div
           ref={pageTransformRef}
           data-testid="di-canvas-page-surface"
+          data-document-key={activeDocumentKey ?? ''}
+          data-viewer-mode={viewerMode}
           style={{
             position: 'absolute',
             top: 0,
@@ -584,6 +660,7 @@ export function DrawingCanvas() {
                 src={mappedSheet.imageUrl}
                 alt=""
                 aria-hidden="true"
+                data-testid="di-canvas-underlay"
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -595,21 +672,34 @@ export function DrawingCanvas() {
                   pointerEvents: 'none',
                   // Thumbnail underlay selalu mounted di bawah compositor; hanya
                   // visibility/opacity yang berubah, geometri tidak (invariant 4).
-                  visibility: coverage ? (coverage.ready ? 'hidden' : 'visible') : 'visible',
-                  opacity: coverage ? (coverage.ready ? 0 : 1) : 1,
+                  // Render-time document gate (Task 4 C2): coverage belonging to
+                  // another document can never hide the new document's underlay.
+                  visibility: underlayHidden ? 'hidden' : 'visible',
+                  opacity: underlayHidden ? 0 : 1,
                 }}
               />
             )}
-            <PdfPageLayer
-              runId={mappedSheet.runId}
-              pageIndex={mappedSheet.pageIndex}
-              viewportSpace="normalized"
-              fallbackWidth={mappedSheet.widthPx ?? baseW}
-              fallbackHeight={mappedSheet.heightPx ?? baseH}
-              viewport={{ x: viewport?.x ?? 0, y: viewport?.y ?? 0, width: viewport?.w ?? 1, height: viewport?.h ?? 1, zoom, dpr: typeof window === 'undefined' ? 1 : window.devicePixelRatio }}
-              onMetrics={metricsHandlerFor(activeDocumentKey ?? '')}
-              onCoverageChange={handleCoverageChange}
-            />
+            {viewerMode === 'native' ? (
+              <PdfNativePageLayer
+                runId={mappedSheet.runId}
+                pageIndex={mappedSheet.pageIndex}
+                viewport={pdfViewport}
+                dark={false}
+                onMetrics={metricsHandlerFor(activeDocumentKey ?? '')}
+                onBaseReady={handleNativeBaseReady}
+              />
+            ) : (
+              <PdfPageLayer
+                runId={mappedSheet.runId}
+                pageIndex={mappedSheet.pageIndex}
+                viewportSpace="normalized"
+                fallbackWidth={mappedSheet.widthPx ?? baseW}
+                fallbackHeight={mappedSheet.heightPx ?? baseH}
+                viewport={pdfViewport}
+                onMetrics={metricsHandlerFor(activeDocumentKey ?? '')}
+                onCoverageChange={handleCoverageChange}
+              />
+            )}
             <div style={{ position: 'absolute', inset: 0 }}><MemoRealPageSvg
             imageUrl={null}
             elements={canvasElements}
@@ -624,6 +714,50 @@ export function DrawingCanvas() {
             onSelectElement={handleSelectElement}
             onHoverElement={handleHoverElement}
           /> : null}
+        </div>
+
+        {/* Viewer engine demo switch (F4 feature flag: legacy | native).
+            Compact, non-intrusive; the flag is the rollback switch until
+            the Arbiter approves cutover (Master Plan §8 DoD 25). */}
+        <div
+          data-testid="di-viewer-mode-toggle"
+          title="Viewer engine (feature flag): legacy tile viewer vs native progressive viewer"
+          style={{
+            position: 'absolute',
+            top: 10,
+            right: 10,
+            zIndex: 20,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '3px 7px',
+            borderRadius: 6,
+            background: 'rgba(15,18,26,0.72)',
+            color: 'var(--di-text2)',
+            fontSize: 10.5,
+            lineHeight: 1,
+            userSelect: 'none',
+          }}
+        >
+          <span className="di-mono" style={{ opacity: 0.75 }}>viewer</span>
+          <button
+            type="button"
+            aria-label="Toggle viewer engine"
+            data-viewer-mode={viewerMode}
+            onClick={() => setPdfViewerMode(viewerMode === 'native' ? 'legacy' : 'native')}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--di-action)',
+              fontSize: 10.5,
+              fontWeight: 650,
+              cursor: 'pointer',
+              padding: 0,
+              textTransform: 'capitalize',
+            }}
+          >
+            {viewerMode}
+          </button>
         </div>
 
         {(toolBusy || toolResult) && (
