@@ -6,7 +6,7 @@ Set-Location $RepoRoot
 
 $env:INTERNAL_SERVICE_KEY = 'live-test-key'
 $env:INTERNAL_SERVICE_SCOPES = 'dem:read,dem:write,dem:delete,project_graph:synthesize,dem:authorize-actor,agentic:calculate'
-$env:PAAX_PORTABLE_ACTOR_ID = 'paax-web'
+$env:PAAX_PORTABLE_ACTOR_ID = 'local-desktop-user'
 $env:PAAX_DESKTOP_MODE = '1'
 $env:NEXT_PUBLIC_USE_DB = 'true'
 

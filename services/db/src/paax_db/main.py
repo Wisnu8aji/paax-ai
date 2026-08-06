@@ -2,7 +2,9 @@ import os
 import datetime
 import hashlib
 import json
+import logging
 import re
+import sqlite3
 from io import BytesIO
 from pathlib import Path
 from typing import List, Dict, Any, Optional
@@ -13,6 +15,8 @@ from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+
+logger = logging.getLogger(__name__)
 
 from . import models, schemas
 from .database import get_db
@@ -773,8 +777,15 @@ async def get_project_package_analysis(id: str, run_id: Optional[str] = None, db
 
     try:
         manifest = build_package_index_from_db(db_path, id, run_id)
-    except (FileNotFoundError, ValueError) as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=503, detail="Canonical package index store is unavailable") from exc
+    except ValueError as exc:
+        # Run does not exist, is not part of this project, or has not been
+        # materialized yet -- the run-without-data case, never a server fault.
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except sqlite3.Error as exc:
+        logger.exception("canonical package index store is malformed for project=%s run=%s", id, run_id)
+        raise HTTPException(status_code=503, detail="Canonical package index store is unavailable") from exc
     return manifest
 
 

@@ -27,6 +27,7 @@ import type { ReviewQueueItem, Sheet, DrawingFile } from './di-types';
 import { mapProjectDemSheet } from './sheet-mapping';
 import { mapRawDemSheetToSheet } from './sheet-view-mapping';
 import { validateAndMergeIndex } from './navigator/index-state';
+import { INDEX_RETRY_DELAYS_MS, indexErrorStatus, indexFetchErrorMessage, shouldRetryIndexFetch } from './index-sync';
 
 const CATEGORY_LABELS: Record<string, string> = {
   conflict: 'Dimension conflict',
@@ -72,29 +73,50 @@ export function useBackendSync(projectId: string | null) {
     dispatch({ type: 'clear-project-data' });
 
     let timer: any;
+    // Monotonic cycle token: each sync() run starts exactly one index fetch
+    // chain. A newer cycle invalidates the previous chain so retries never
+    // double-fire per cycle (DoD 22 / acceptance "retry tidak dobel per siklus").
+    let cycleId = 0;
+
+    const syncIndexWithRetry = (runId: string, cycle: number, attempt: number) => {
+      if (cancelled || cycle !== cycleId) return;
+      fetchDrawingPackageIndex(runId)
+        .then((rawIndex) => {
+          if (cancelled || cycle !== cycleId) return;
+          const currentState = stateRef.current;
+          const mergeResult = validateAndMergeIndex({
+            activeRunId: runId,
+            prev: currentState.drawingPackageIndex,
+            incoming: rawIndex,
+          });
+          if (mergeResult.error) {
+            console.error('[INDEX SYNC ERROR] mergeResult:', mergeResult.error);
+            dispatch({ type: 'set-drawing-package-index-error', error: mergeResult.error });
+          } else if (mergeResult.index) {
+            dispatch({ type: 'set-drawing-package-index', index: mergeResult.index, error: null });
+          }
+        })
+        .catch((indexErr) => {
+          if (cancelled || cycle !== cycleId) return;
+          const status = indexErrorStatus(indexErr);
+          const outcome = indexFetchErrorMessage(status, indexErr);
+          console.error('[INDEX SYNC ERROR] fetch status:', status ?? 'network');
+          if (shouldRetryIndexFetch(status) && attempt < INDEX_RETRY_DELAYS_MS.length) {
+            // Exponential backoff 3s → 6s → 12s for transient failures only.
+            timer = setTimeout(
+              () => syncIndexWithRetry(runId, cycle, attempt + 1),
+              INDEX_RETRY_DELAYS_MS[attempt]
+            );
+          } else {
+            dispatch({ type: 'set-drawing-package-index-error', error: outcome.message });
+          }
+        });
+    };
+
     const sync = async () => {
       try {
-        // Trigger package index load immediately in parallel without waiting for heavy endpoints
-        fetchProjectDemRuns(projectId)
-          .then((runs) => {
-            const intelRun = runs.find((r: any) => r.status === 'synthesis_complete' || r.status === 'completed');
-            if (intelRun?.id) {
-              fetchDrawingPackageIndex(intelRun.id)
-                .then((rawIndex) => {
-                  const mergeResult = validateAndMergeIndex({
-                    activeRunId: intelRun.id,
-                    prev: stateRef.current.drawingPackageIndex,
-                    incoming: rawIndex,
-                  });
-                  if (mergeResult.index) {
-                    dispatch({ type: 'set-drawing-package-index', index: mergeResult.index, error: null });
-                  }
-                })
-                .catch(() => {});
-            }
-          })
-          .catch(() => {});
-
+        cycleId += 1;
+        const cycle = cycleId;
         const [queue, readiness, civilWorkItems, sheetsData, runsData, summaryViewsData, session, head] = await Promise.all([
           fetchReviewQueue(projectId).catch(() => ({ items: [], snapshot_id: null })),
           fetchQuantityReadiness(projectId).catch(() => ({ items: [], snapshot_id: null, summary: { total: 0, ready: 0, needs_review: 0 } })),
@@ -203,29 +225,10 @@ export function useBackendSync(projectId: string | null) {
           run.status === 'synthesis_complete' || run.status === 'completed'
         );
         if (intelligenceRun?.id) {
-          // Fetch package index immediately without waiting for package intelligence
-          fetchDrawingPackageIndex(intelligenceRun.id)
-            .then((rawIndex) => {
-              if (cancelled) return;
-              const currentState = stateRef.current;
-              const mergeResult = validateAndMergeIndex({
-                activeRunId: intelligenceRun.id,
-                prev: currentState.drawingPackageIndex,
-                incoming: rawIndex,
-              });
-              if (mergeResult.error) {
-                console.error('[INDEX SYNC ERROR] mergeResult:', mergeResult.error);
-                dispatch({ type: 'set-drawing-package-index-error', error: mergeResult.error });
-              } else if (mergeResult.index) {
-                dispatch({ type: 'set-drawing-package-index', index: mergeResult.index, error: null });
-              }
-            })
-            .catch((indexErr) => {
-              if (cancelled) return;
-              const msg = indexErr instanceof Error ? indexErr.message : String(indexErr);
-              console.error('[INDEX SYNC ERROR] fetch:', msg);
-              dispatch({ type: 'set-drawing-package-index-error', error: `fetch failed: ${msg}` });
-            });
+          // Fetch package index immediately without waiting for package intelligence.
+          // One single-flight chain per sync cycle; transient failures retry
+          // with exponential backoff (3s → 6s → 12s) inside the same chain.
+          syncIndexWithRetry(intelligenceRun.id, cycle, 0);
 
           // Fetch package intelligence asynchronously
           fetchPackageIntelligence(intelligenceRun.id)

@@ -24,7 +24,7 @@ elif action == 'start':
     env = os.environ.copy()
     env['INTERNAL_SERVICE_KEY'] = 'live-test-key'
     env['INTERNAL_SERVICE_SCOPES'] = 'dem:read,dem:write,dem:delete,project_graph:synthesize,dem:authorize-actor,agentic:calculate'
-    env['PAAX_PORTABLE_ACTOR_ID'] = 'paax-web'
+    env['PAAX_PORTABLE_ACTOR_ID'] = 'local-desktop-user'
     env['PAAX_DESKTOP_MODE'] = '1'
     env['ALLOW_DEV_SIGNING'] = '1'
     env['ARTIFACT_SIGNING_SECRET'] = 'development-only-artifact-secret'

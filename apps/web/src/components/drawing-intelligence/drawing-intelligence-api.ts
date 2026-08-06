@@ -800,7 +800,12 @@ export async function fetchDrawingPackageIndex(
     cache: 'no-store',
   });
   if (!res.ok) {
-    throw new Error(`Gagal memuat drawing package index (status ${res.status})`);
+    // Attach the HTTP status so callers can distinguish definitive errors
+    // (401/403/404) from transient ones (503/network) and decide whether a
+    // retry is worthwhile. The message stays UI-safe: no upstream internals.
+    const err = new Error(`Gagal memuat drawing package index (status ${res.status})`) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
   }
   return res.json();
 }

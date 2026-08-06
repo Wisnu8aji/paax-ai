@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import time
 import uuid
@@ -38,6 +39,8 @@ from app.drawing_intelligence.prototype_store import (
     PrototypeRegistry, PrototypeSample, add_prototype_version, empty_registry,
 )
 from app.drawing_intelligence.vector_geometry import descriptor_for_bbox
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/drawings/dem", tags=["DEM"])
 PROMPT_VERSION = "dem-extraction-v1.0.0"
@@ -80,14 +83,90 @@ def _validate_normalized_points(points: list[tuple[float, float]]) -> None:
         raise HTTPException(status_code=422, detail="points must be normalized to 0..1")
 
 
-async def _authorized_run_pdf(run_id: str, user: User) -> tuple[dict, bytes]:
+async def _get_run_translated(run_id: str, *, not_found_detail: str = "DEM run not found") -> dict:
+    """Load a DEM run from services/db with consistent error translation.
+
+    - 404 — the run does not exist (or the DB reports it as such)
+    - 401/403 — the run itself is not accessible to the caller
+    - 503 — services/db is unreachable, timed out, or returned an upstream error
+    """
     db_client = DemDbClient()
     try:
-        run = await db_client.get_run(run_id)
+        return await db_client.get_run(run_id)
     except httpx.HTTPStatusError as exc:
-        if exc.response.status_code == 404:
-            raise HTTPException(status_code=404, detail="run source artifact is unavailable")
-        raise
+        status_code = exc.response.status_code
+        if status_code == 404:
+            raise HTTPException(status_code=404, detail=not_found_detail) from exc
+        if status_code in (401, 403):
+            raise HTTPException(status_code=status_code, detail="run access denied") from exc
+        logger.warning("get_run upstream error for run=%s: status=%s", run_id, status_code)
+        raise HTTPException(status_code=503, detail="run service is unavailable") from exc
+    except (httpx.ConnectError, httpx.TimeoutException) as exc:
+        logger.warning("get_run upstream unreachable for run=%s: %s", run_id, type(exc).__name__)
+        raise HTTPException(status_code=503, detail="run service is unavailable") from exc
+    except Exception as exc:
+        logger.exception("get_run unexpected error for run=%s", run_id)
+        raise HTTPException(status_code=503, detail="run service is unavailable") from exc
+
+
+async def _authorize_run_scope(run: dict, user: User, *, required_role: str | None = None) -> str:
+    """Resolve a run's project scope and authorize the actor for it.
+
+    - 404 — the run carries no project scope
+    - 401/403 — the actor is not a member/owner of the project
+    - 503 — the authorization service (services/db) is unreachable or failed
+    """
+    project_id = run.get("project_id")
+    if not project_id:
+        raise HTTPException(status_code=404, detail="run has no project scope")
+    db_client = DemDbClient()
+    try:
+        await db_client.authorize_actor_for_project(user.uid, project_id, required_role=required_role)
+    except httpx.HTTPStatusError as exc:
+        status_code = exc.response.status_code
+        if status_code in (401, 403):
+            detail = "not a member of this project" if status_code == 403 else "authentication required"
+            raise HTTPException(status_code=status_code, detail=detail) from exc
+        logger.warning("authorize upstream error project=%s actor=%s: status=%s", project_id, user.uid, status_code)
+        raise HTTPException(status_code=503, detail="authorization service is unavailable") from exc
+    except (httpx.ConnectError, httpx.TimeoutException) as exc:
+        logger.warning("authorize upstream unreachable project=%s actor=%s: %s", project_id, user.uid, type(exc).__name__)
+        raise HTTPException(status_code=503, detail="authorization service is unavailable") from exc
+    except Exception:
+        logger.exception("authorize unexpected error project=%s actor=%s", project_id, user.uid)
+        raise HTTPException(status_code=503, detail="authorization service is unavailable")
+    return project_id
+
+
+async def _canonical_package_index(project_id: str, run_id: str) -> dict:
+    """Read the DB-owned canonical drawing package index with consistent translation.
+
+    - 404 — no canonical index exists for this run yet (run without data)
+    - 401/403 — the index is not accessible to the caller
+    - 503 — the index service (services/db) is unreachable or the store is unhealthy
+    """
+    db_client = DemDbClient()
+    try:
+        return await db_client.get_canonical_package_index(project_id, run_id)
+    except httpx.HTTPStatusError as exc:
+        status_code = exc.response.status_code
+        if status_code == 404:
+            raise HTTPException(status_code=404, detail="package index is not available for this run") from exc
+        if status_code in (401, 403):
+            raise HTTPException(status_code=status_code, detail="package index access denied") from exc
+        logger.warning("canonical index upstream error project=%s run=%s: status=%s", project_id, run_id, status_code)
+        raise HTTPException(status_code=503, detail="package index service is unavailable") from exc
+    except (httpx.ConnectError, httpx.TimeoutException) as exc:
+        logger.warning("canonical index upstream unreachable project=%s run=%s: %s", project_id, run_id, type(exc).__name__)
+        raise HTTPException(status_code=503, detail="package index service is unavailable") from exc
+    except Exception:
+        logger.exception("canonical index unexpected error project=%s run=%s", project_id, run_id)
+        raise HTTPException(status_code=503, detail="package index service is unavailable")
+
+
+async def _authorized_run_pdf(run_id: str, user: User) -> tuple[dict, bytes]:
+    db_client = DemDbClient()
+    run = await _get_run_translated(run_id, not_found_detail="run source artifact is unavailable")
     project_id = run.get("project_id")
     artifact_key = run.get("artifact_key")
     if not project_id or not artifact_key:
@@ -101,9 +180,13 @@ async def _authorized_run_pdf(run_id: str, user: User) -> tuple[dict, bytes]:
             detail = "not a member of this project" if status_code == 403 else "artifact access denied"
             raise HTTPException(status_code=status_code, detail=detail)
         raise
+    except (httpx.ConnectError, httpx.TimeoutException) as exc:
+        logger.warning("artifact authorize upstream unreachable project=%s actor=%s: %s", project_id, user.uid, type(exc).__name__)
+        raise HTTPException(status_code=503, detail="authorization service is unavailable") from exc
     except HTTPException:
         raise
     except Exception:
+        logger.exception("artifact authorize unexpected error project=%s actor=%s", project_id, user.uid)
         raise HTTPException(status_code=403, detail="artifact access denied")
     try:
         return run, ARTIFACT_STORE.get(artifact_key)
@@ -207,6 +290,8 @@ async def start_dem_run(
         if exc.response.status_code == 403:
             raise HTTPException(status_code=403, detail="not a member of this project")
         raise
+    except (httpx.ConnectError, httpx.TimeoutException):
+        raise HTTPException(status_code=503, detail="authorization service is unavailable")
 
     # ── Security: read with size guard ───────────────────────────────────────
     pdf_bytes = await file.read()
@@ -273,14 +358,7 @@ async def get_page_image(run_id: str, page_index: int, user: User = Depends(get_
     safer of the two.
     """
     db_client = DemDbClient()
-    try:
-        run = await db_client.get_run(run_id)
-    except httpx.HTTPStatusError as exc:
-        if exc.response.status_code == 404:
-            raise HTTPException(status_code=404, detail="DEM run not found")
-        raise
-    except Exception:
-        raise HTTPException(status_code=404, detail="DEM run not found")
+    run = await _get_run_translated(run_id, not_found_detail="DEM run not found")
 
     artifact_key = run.get("artifact_key")
     if not artifact_key:
@@ -294,6 +372,8 @@ async def get_page_image(run_id: str, page_index: int, user: User = Depends(get_
     _rate_limit(user.uid, project_id, "read")
     try:
         await db_client.authorize_artifact(project_id, artifact_key, actor_id=user.uid)
+    except (httpx.ConnectError, httpx.TimeoutException):
+        raise HTTPException(status_code=503, detail="authorization service is unavailable")
     except Exception:
         raise HTTPException(status_code=403, detail="artifact access denied")
 
@@ -372,14 +452,7 @@ async def get_page_thumbnail(
 @router.post("/{run_id}/artifact-url")
 async def issue_artifact_url(run_id: str, user: User = Depends(get_current_user)):
     db_client = DemDbClient()
-    try:
-        run = await db_client.get_run(run_id)
-    except httpx.HTTPStatusError as exc:
-        if exc.response.status_code == 404:
-            raise HTTPException(status_code=404, detail="artifact not found")
-        raise
-    except Exception:
-        raise HTTPException(status_code=404, detail="artifact not found")
+    run = await _get_run_translated(run_id, not_found_detail="artifact not found")
 
     project_id, key = run.get("project_id"), run.get("artifact_key")
     if not project_id or not key:
@@ -392,6 +465,8 @@ async def issue_artifact_url(run_id: str, user: User = Depends(get_current_user)
         if exc.response.status_code == 403:
             raise HTTPException(status_code=403, detail="not a member of this project")
         raise
+    except (httpx.ConnectError, httpx.TimeoutException):
+        raise HTTPException(status_code=503, detail="authorization service is unavailable")
 
     if (await db_client.get_artifact_retention(run_id)).get("deleted_at"):
         raise HTTPException(status_code=410, detail="artifact has been deleted")
@@ -443,10 +518,7 @@ def _if_none_match_matches(header: str | None, etag: str) -> bool:
 async def consume_artifact_url(run_id: str, token: str, request: Request):
     """Consume a short-lived signed link; token binds project, key, and expiry."""
     db_client = DemDbClient()
-    try:
-        run = await db_client.get_run(run_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="artifact not found")
+    run = await _get_run_translated(run_id, not_found_detail="artifact not found")
     project_id, key = run.get("project_id"), run.get("artifact_key")
     if not project_id or not key:
         raise HTTPException(status_code=404, detail="artifact not found")
@@ -489,14 +561,7 @@ async def consume_artifact_url(run_id: str, token: str, request: Request):
 @router.delete("/{run_id}/artifact")
 async def delete_artifact(run_id: str, user: User = Depends(get_current_user)):
     db_client = DemDbClient()
-    try:
-        run = await db_client.get_run(run_id)
-    except httpx.HTTPStatusError as exc:
-        if exc.response.status_code == 404:
-            raise HTTPException(status_code=404, detail="artifact not found")
-        raise
-    except Exception:
-        raise HTTPException(status_code=404, detail="artifact not found")
+    run = await _get_run_translated(run_id, not_found_detail="artifact not found")
 
     project_id, key = run.get("project_id"), run.get("artifact_key")
     if not project_id or not key:
@@ -509,6 +574,8 @@ async def delete_artifact(run_id: str, user: User = Depends(get_current_user)):
         if exc.response.status_code == 403:
             raise HTTPException(status_code=403, detail="only project owner can delete artifact")
         raise
+    except (httpx.ConnectError, httpx.TimeoutException):
+        raise HTTPException(status_code=503, detail="authorization service is unavailable")
 
     _rate_limit(user.uid, project_id, "delete")
     await db_client.mark_artifact_deleted(run_id, actor_id=user.uid)
@@ -541,6 +608,8 @@ async def trigger_synthesis(
         if exc.response.status_code == 403:
             raise HTTPException(status_code=403, detail="not a member of this project")
         raise
+    except (httpx.ConnectError, httpx.TimeoutException):
+        raise HTTPException(status_code=503, detail="authorization service is unavailable")
 
     current_status = run_status.get("status")
     if current_status in ("synthesis_in_progress", "synthesis_complete"):
@@ -597,16 +666,8 @@ async def get_package_intelligence(
     if view not in {"summary", "human", "full"}:
         raise HTTPException(status_code=422, detail="view must be summary, human, or full")
     db_client = DemDbClient()
-    run = await db_client.get_run(run_id)
-    project_id = run.get("project_id")
-    if not project_id:
-        raise HTTPException(status_code=404, detail="run has no project scope")
-    try:
-        await db_client.authorize_actor_for_project(user.uid, project_id)
-    except httpx.HTTPStatusError as exc:
-        if exc.response.status_code == 403:
-            raise HTTPException(status_code=403, detail="not a member of this project")
-        raise
+    run = await _get_run_translated(run_id)
+    project_id = await _authorize_run_scope(run, user)
     key = f"drawing-intelligence/runs/{run_id}/package-analysis.json"
     try:
         raw = ARTIFACT_STORE.get(key)
@@ -663,16 +724,8 @@ async def submit_package_intelligence_review(
     run_id: str, request: ReviewDecisionRequest, user: User = Depends(get_current_user)
 ):
     db_client = DemDbClient()
-    run = await db_client.get_run(run_id)
-    project_id = run.get("project_id")
-    if not project_id:
-        raise HTTPException(status_code=404, detail="run has no project scope")
-    try:
-        await db_client.authorize_actor_for_project(user.uid, project_id)
-    except httpx.HTTPStatusError as exc:
-        if exc.response.status_code == 403:
-            raise HTTPException(status_code=403, detail="not a member of this project")
-        raise
+    run = await _get_run_translated(run_id)
+    project_id = await _authorize_run_scope(run, user)
     analysis_key = f"drawing-intelligence/runs/{run_id}/package-analysis.json"
     ledger_object_key = f"runs/{run_id}/review-ledger.json"
     ledger_key = f"drawing-intelligence/{ledger_object_key}"
@@ -715,16 +768,8 @@ async def calculate_package_work_item(
     run_id: str, work_item_id: str, user: User = Depends(get_current_user)
 ):
     db_client = DemDbClient()
-    run = await db_client.get_run(run_id)
-    project_id = run.get("project_id")
-    if not project_id:
-        raise HTTPException(status_code=404, detail="run has no project scope")
-    try:
-        await db_client.authorize_actor_for_project(user.uid, project_id)
-    except httpx.HTTPStatusError as exc:
-        if exc.response.status_code == 403:
-            raise HTTPException(status_code=403, detail="not a member of this project")
-        raise
+    run = await _get_run_translated(run_id)
+    project_id = await _authorize_run_scope(run, user)
     analysis_key = f"drawing-intelligence/runs/{run_id}/package-analysis.json"
     try:
         analysis = DrawingPackageAnalysis.model_validate_json(ARTIFACT_STORE.get(analysis_key))
@@ -764,16 +809,8 @@ async def get_active_sheet_context(
     if page_index < 0:
         raise HTTPException(status_code=422, detail="page_index must be non-negative")
     db_client = DemDbClient()
-    run = await db_client.get_run(run_id)
-    project_id = run.get("project_id")
-    if not project_id:
-        raise HTTPException(status_code=404, detail="run has no project scope")
-    try:
-        await db_client.authorize_actor_for_project(user.uid, project_id)
-    except httpx.HTTPStatusError as exc:
-        if exc.response.status_code == 403:
-            raise HTTPException(status_code=403, detail="not a member of this project")
-        raise
+    run = await _get_run_translated(run_id)
+    project_id = await _authorize_run_scope(run, user)
     key = f"drawing-intelligence/runs/{run_id}/package-analysis.json"
     try:
         analysis = DrawingPackageAnalysis.model_validate_json(ARTIFACT_STORE.get(key))
@@ -819,50 +856,41 @@ async def get_drawing_package_index(
     user: User = Depends(get_current_user),
 ):
     """Expose project-authorized multi-axis drawing package index with independent axis filtering."""
-    from app.drawing_intelligence.sheet_views import build_drawing_package_index, DrawingPackageIndex, MultiAxisSheetEntry, LevelAxis, ViewAxis, ClassificationAxis, RevisionAxis, ZoneAxis, AxisStatus
+    from app.drawing_intelligence.sheet_views import (
+        DrawingPackageIndex, MultiAxisSheetEntry, LevelAxis, ViewAxis,
+        ClassificationAxis, RevisionAxis, ZoneAxis, AxisStatus,
+    )
 
-    db_client = DemDbClient()
-    run = await db_client.get_run(run_id)
-    project_id = run.get("project_id")
-    if not project_id:
-        raise HTTPException(status_code=404, detail="run has no project scope")
-    try:
-        await db_client.authorize_actor_for_project(user.uid, project_id)
-    except httpx.HTTPStatusError as exc:
-        if exc.response.status_code == 403:
-            raise HTTPException(status_code=403, detail="not a member of this project")
-        raise
+    run = await _get_run_translated(run_id)
+    project_id = await _authorize_run_scope(run, user)
 
-    try:
-        canonical = await db_client.get_canonical_package_index(project_id, run_id)
-        entries = [
-            MultiAxisSheetEntry(
-                page_index=page["page_index"],
-                page_number=page["page_number"],
-                sheet_code=page.get("sheet_code", "unknown"),
-                sheet_title=page.get("title", "unknown"),
-                level=LevelAxis(value=page.get("level", "unknown"), status=AxisStatus.UNKNOWN if page.get("level") == "UNASSIGNED" else AxisStatus.CONFIRMED),
-                view=ViewAxis(value=page.get("classification", "unknown"), status=AxisStatus.UNKNOWN if page.get("classification_status") == "needs_review" else AxisStatus.CONFIRMED),
-                classification=ClassificationAxis(value=page.get("classification", "unknown"), status=AxisStatus.UNKNOWN if page.get("classification_status") == "needs_review" else AxisStatus.CONFIRMED),
-                revision=RevisionAxis(value="unknown", status=AxisStatus.UNKNOWN),
-                zone=ZoneAxis(value="unknown", status=AxisStatus.UNKNOWN),
-                needs_review=page.get("classification_status") == "needs_review",
-                review_reasons=["canonical_package_index_needs_review"] if page.get("classification_status") == "needs_review" else [],
-            )
-            for page in canonical["pages"]
-        ]
-        index = DrawingPackageIndex(
-            package_id=f"run-{run_id}",
-            run_id=run_id,
-            document_name=run.get("file_name", "unknown.pdf"),
-            document_sha256=run.get("document_hash", ""),
-            total_pages=len(entries),
-            entries=entries,
-            unknown_axis_count=sum(3 for entry in entries if entry.needs_review),
-            needs_review_count=sum(1 for entry in entries if entry.needs_review),
+    canonical = await _canonical_package_index(project_id, run_id)
+    entries = [
+        MultiAxisSheetEntry(
+            page_index=page["page_index"],
+            page_number=page["page_number"],
+            sheet_code=page.get("sheet_code", "unknown"),
+            sheet_title=page.get("title", "unknown"),
+            level=LevelAxis(value=page.get("level", "unknown"), status=AxisStatus.UNKNOWN if page.get("level") == "UNASSIGNED" else AxisStatus.CONFIRMED),
+            view=ViewAxis(value=page.get("classification", "unknown"), status=AxisStatus.UNKNOWN if page.get("classification_status") == "needs_review" else AxisStatus.CONFIRMED),
+            classification=ClassificationAxis(value=page.get("classification", "unknown"), status=AxisStatus.UNKNOWN if page.get("classification_status") == "needs_review" else AxisStatus.CONFIRMED),
+            revision=RevisionAxis(value="unknown", status=AxisStatus.UNKNOWN),
+            zone=ZoneAxis(value="unknown", status=AxisStatus.UNKNOWN),
+            needs_review=page.get("classification_status") == "needs_review",
+            review_reasons=["canonical_package_index_needs_review"] if page.get("classification_status") == "needs_review" else [],
         )
-    except httpx.HTTPStatusError as exc:
-        raise HTTPException(status_code=exc.response.status_code, detail="canonical package index is unavailable") from exc
+        for page in canonical["pages"]
+    ]
+    index = DrawingPackageIndex(
+        package_id=f"run-{run_id}",
+        run_id=run_id,
+        document_name=run.get("file_name", "unknown.pdf"),
+        document_sha256=run.get("document_hash", ""),
+        total_pages=len(entries),
+        entries=entries,
+        unknown_axis_count=sum(3 for entry in entries if entry.needs_review),
+        needs_review_count=sum(1 for entry in entries if entry.needs_review),
+    )
 
     filtered_entries = index.entries
     if level:
@@ -1057,6 +1085,8 @@ async def get_dem_status(run_id: str, user: User = Depends(get_current_user)):
             if exc.response.status_code == 403:
                 raise HTTPException(status_code=403, detail="not a member of this project")
             raise
+        except (httpx.ConnectError, httpx.TimeoutException):
+            raise HTTPException(status_code=503, detail="authorization service is unavailable")
     status = data.get("status")
     if status in ("synthesis_in_progress", "synthesis_complete", "synthesis_failed"):
         data["synthesis_status"] = status

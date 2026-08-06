@@ -83,7 +83,7 @@ describe("document-intelligence proxy — security regression", () => {
     expect(capturedKey).not.toBe("live-test-key");
   });
 
-  it("SECURITY: X-User-Id never defaults to 'paax-test' — must default to 'paax-web'", async () => {
+  it("SECURITY: X-User-Id never defaults to 'paax-test' — must default to 'local-desktop-user'", async () => {
     let capturedUserId: string | null = null;
     vi.stubGlobal("fetch", vi.fn(async (_url: string, init?: RequestInit) => {
       capturedUserId = new Headers(init?.headers).get("x-user-id");
@@ -93,11 +93,32 @@ describe("document-intelligence proxy — security regression", () => {
     delete process.env.PAAX_PORTABLE_ACTOR_ID;
     try {
       await GET(new Request("http://paax.test/api/document-intelligence/drawings/dem/run/idx"), context);
-      // Default must be 'paax-web', never 'paax-test'
-      expect(capturedUserId).toBe("paax-web");
+      // Default is the portable desktop actor, never a test actor.
+      expect(capturedUserId).toBe("local-desktop-user");
       expect(capturedUserId).not.toBe("paax-test");
     } finally {
       if (origActorId !== undefined) process.env.PAAX_PORTABLE_ACTOR_ID = origActorId;
+    }
+  });
+
+  it("returns 503 (never 500) when the document-intelligence hop is unreachable", async () => {
+    // Network-level failure (connection refused / DNS / TLS) must surface as a
+    // clean 503 JSON body — not a 500 and not a raw fetch exception leaking
+    // internal routing details (target URL, credentials) to the UI.
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      throw new TypeError("fetch failed");
+    }));
+    try {
+      const response = await GET(new Request("http://paax.test/api/document-intelligence/drawings/dem/run/idx"), context);
+      expect(response.status).toBe(503);
+      const body = await response.json();
+      expect(body.detail).toContain("unavailable");
+      // No internal routing details in the UI-facing body.
+      expect(JSON.stringify(body)).not.toContain("document-intelligence");
+      expect(JSON.stringify(body)).not.toContain("localhost");
+    } finally {
+      consoleSpy.mockRestore();
     }
   });
 });

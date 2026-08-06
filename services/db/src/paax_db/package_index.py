@@ -269,41 +269,41 @@ def build_package_index_from_db(
         raise FileNotFoundError(f"Database missing at {db_path}")
 
     conn = sqlite3.connect(str(db_path))
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    resolved_run_id = run_id
-    if resolved_run_id is None:
-        row = cur.execute(
-            "SELECT id FROM dem_runs WHERE project_id = ? ORDER BY created_at DESC LIMIT 1", (project_id,)
+        resolved_run_id = run_id
+        if resolved_run_id is None:
+            row = cur.execute(
+                "SELECT id FROM dem_runs WHERE project_id = ? ORDER BY created_at DESC LIMIT 1", (project_id,)
+            ).fetchone()
+            resolved_run_id = row[0] if row else None
+        if not resolved_run_id:
+            raise ValueError(f"No DEM run found for project {project_id}")
+        run_exists = cur.execute(
+            "SELECT 1 FROM dem_runs WHERE id = ? AND project_id = ?", (resolved_run_id, project_id)
         ).fetchone()
-        resolved_run_id = row[0] if row else None
-    if not resolved_run_id:
-        conn.close()
-        raise ValueError(f"No DEM run found for project {project_id}")
-    run_exists = cur.execute(
-        "SELECT 1 FROM dem_runs WHERE id = ? AND project_id = ?", (resolved_run_id, project_id)
-    ).fetchone()
-    if run_exists is None:
-        conn.close()
-        raise ValueError(f"DEM run {resolved_run_id} is not part of project {project_id}")
+        if run_exists is None:
+            raise ValueError(f"DEM run {resolved_run_id} is not part of project {project_id}")
 
-    # Check if classifications already persisted
-    cur.execute("""
-        SELECT COUNT(*) FROM dem_pages
-        WHERE paax_classification IS NOT NULL
-        AND run_id = ?
-    """, (resolved_run_id,))
-    classified_count = cur.fetchone()[0]
+        # Check if classifications already persisted
+        cur.execute("""
+            SELECT COUNT(*) FROM dem_pages
+            WHERE paax_classification IS NOT NULL
+            AND run_id = ?
+        """, (resolved_run_id,))
+        classified_count = cur.fetchone()[0]
 
-    cur.execute("""
-        SELECT page_index, status, result, paax_classification, paax_discipline,
-               paax_level, paax_non_level_category, paax_classification_status
-        FROM dem_pages
-        WHERE run_id = ?
-        ORDER BY page_index ASC
-    """, (resolved_run_id,))
-    db_rows = cur.fetchall()
-    conn.close()
+        cur.execute("""
+            SELECT page_index, status, result, paax_classification, paax_discipline,
+                   paax_level, paax_non_level_category, paax_classification_status
+            FROM dem_pages
+            WHERE run_id = ?
+            ORDER BY page_index ASC
+        """, (resolved_run_id,))
+        db_rows = cur.fetchall()
+    finally:
+        conn.close()
 
     if not db_rows:
         raise ValueError(f"No dem_pages found for project {project_id}")

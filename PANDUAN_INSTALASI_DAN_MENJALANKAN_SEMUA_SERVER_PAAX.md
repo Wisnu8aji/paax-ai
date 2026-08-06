@@ -2,7 +2,7 @@
 
 Panduan ini adalah satu-satunya alur portable yang boleh digunakan untuk menjalankan PAAX PLHUT pada komputer ini. Panduan berlaku bagi pengguna maupun AI executor.
 
-**Revisi panduan:** integrasi PDF binary worker, canonical artifact PLHUT, thumbnail nyata Review/Analyze/Sheets, acceptance manual compositor GPU viewer Gambar Kerja, **perbaikan blur resolusi (Tier 1: surface buffer 8192 + tile density 8 + detail pass proaktif 80 ms + thumbnail 800 px + DPI 300 + normalisasi width 800 di frontend)**, **engine klasifikasi quantities (K0–K4 + bridge balok/kolom + P1–P5: sinkronisasi AI-validator, sheet-context override, joiner MEP/profil, trigger AI = konfirmasi, dedup lintas konteks)**, dan **AI-assist live melalui endpoint opencode-go** (bukan api.deepseek.com).
+**Revisi panduan:** integrasi PDF binary worker, canonical artifact PLHUT, thumbnail nyata Review/Analyze/Sheets, acceptance manual compositor GPU viewer Gambar Kerja, **perbaikan blur resolusi (Tier 1: surface buffer 8192 + tile density 8 + detail pass proaktif 80 ms + thumbnail 800 px + DPI 300 + normalisasi width 800 di frontend)**, **engine klasifikasi quantities (K0–K4 + bridge balok/kolom + P1–P5: sinkronisasi AI-validator, sheet-context override, joiner MEP/profil, trigger AI = konfirmasi, dedup lintas konteks)**, **AI-assist live melalui endpoint opencode-go** (bukan api.deepseek.com), dan **stabilisasi drawing index (Fase 0: terjemahan error 404/403/503, aktor `local-desktop-user`, single-flight retry index, tidak ada lagi HTTP 500)**.
 
 > **Versi terpasang saat ini (2026-08-04):** commit `642898ff` (puncak P1–P5) — verifikasi: 6/6 health, DB PLHUT 88 halaman revision `0039_calculation_receipts`, PDF canonical 25,8 MB, thumbnail 800px, Quantities engine baru (106 work items; M1/M5 PASS; M4 78,7%; M8 50,9% — target bertahap §9.2). Untuk menampilkan hasil engine terbaru pada tab Quantities, jalankan **Analyze** ulang pada proyek PLHUT (data persisted di DB berasal dari analisis 30-Jul sebelum engine P1–P5; kode engine sudah terpasang dan siap dipakai).
 
@@ -21,6 +21,8 @@ Data persisten:
 ```text
 G:\PAAX-Data
 ```
+
+Data root kanonik ditandai oleh `G:\PAAX-Data\data-root.json` (schema `1.0`, berisi layout `db`, `objects`, `uploads`, `jobs`, `cache`, `models`, `runtime`, `backups`, `migration`, `bootstrap`). Semua script portable (`Resolve-PaaxDataRoot`) memakai penanda ini untuk memastikan `-DataRoot` menunjuk ke root yang sama; jangan membuat `data-root.json` kedua di lokasi lain.
 
 Jangan menjalankan produk dari `G:\paax-ai-main` atau `G:\paax-ai-feedback1-remediation`. `G:\paax-ai-main` hanya menyimpan instruksi/koordinasi; menjalankan server dari sana akan membuka versi lama.
 
@@ -213,6 +215,7 @@ Buka aplikasi hanya melalui `http://127.0.0.1:3000`.
 - **Host resmi = `http://127.0.0.1:3000`.** Server PAAX hanya bind `127.0.0.1`, dan browser memperlakukan `localhost` sebagai origin terpisah dengan cache/service-worker sendiri.
 - **PENTING — `NEXT_PUBLIC_USE_DB=true` WAJIB ada di `apps/web/.env.local`.** Tanpa variabel ini frontend memakai backend `localStorage` (data browser lokal kosong/lama) sehingga proyek PLHUT hilang atau tampil versi lama tanpa update. Dengan `true`, frontend memakai DB API (`/api/db-projects`) yang berisi PLHUT + klasifikasi terbaru. Setelah mengubah env ini, wajib `pnpm --dir apps/web build` ulang lalu restart stack.
 - **`DOCUMENT_INTELLIGENCE_URL=http://127.0.0.1:8083`** (bukan 8002) di `apps/web/.env.local` — port 8002 sudah tidak dipakai; jika salah, modul Review/Quantities tidak mendapat data.
+- **Identitas aktor web = `local-desktop-user`.** Proxy Next.js (`apps/web/src/app/api/document-intelligence/[...path]/route.ts`) mengirim header `X-User-Id` dari `PAAX_PORTABLE_ACTOR_ID` (default `local-desktop-user`) dan `X-Internal-Key` dari `INTERNAL_SERVICE_KEY`. `Start-PLHUT-Local.ps1` menetapkan `PAAX_PORTABLE_ACTOR_ID=local-desktop-user` untuk service web, dan bootstrap DB menjadikan `local-desktop-user` anggota project PLHUT. Jangan mengganti aktor ini di klien; aktor lain yang bukan anggota project akan ditolak 403 → aplikasi menampilkan pesan akses, bukan 500.
 - Bila sebelumnya membuka `localhost:3000` dan melihat versi lama: lakukan hard refresh (Ctrl+Shift+R) atau buka `127.0.0.1:3000` setelah restart. Cache browser per-origin dapat menyajikan bundle lama.
 
 ## 11. Verifikasi identitas — wajib
@@ -413,6 +416,42 @@ Ulangi verifikasi enam health endpoint.
 - periksa `db-plhut.err.log` dan `document-intelligence.err.log`;
 - pastikan artifact PDF canonical lolos header `%PDF-`, checksum, dan 88 halaman;
 - jangan menghapus database, menambah thumbnail dummy, atau menjalankan script live-test sebagai pengganti startup resmi.
+
+### Drawing index HTTP 500 atau status tidak jelas (diagnostik curl chain web → DI → DB)
+
+Drawing index (`GET /api/document-intelligence/drawings/dem/{run_id}/index` di web, diteruskan ke Document Intelligence `:8083`) **tidak boleh pernah mengembalikan 500**. Status yang sah:
+
+| Kondisi run | Status | Detail JSON |
+|---|---|---|
+| Run tidak ada (UUID tidak dikenal) | `404` | `{"detail":"DEM run not found"}` |
+| Run ada + punya data (mis. `514fb7f2-26fd-5816-9f22-a4a2412688bf`, 88 halaman) | `200` | package index lengkap |
+| Run ada + tanpa data (mis. `cce23809-5eee-45b2-ad1c-de7235ab03ba`, 0 halaman) | `404` | `{"detail":"package index is not available for this run"}` |
+| Aktor bukan anggota project | `403` | `{"detail":"not a member of this project"}` |
+| DB API tidak terjangkau / error upstream | `503` | `{"detail":"... service is unavailable"}` |
+
+Curl chain diagnostik (jalankan dari `G:\paax-ai-contextual-integration`):
+
+```bash
+# 1) Web proxy → Document Intelligence → DB (jalur lengkap yang dipakai browser)
+curl -s -o /dev/null -w "web health:      HTTP %{http_code}\n" http://127.0.0.1:3000/api/health
+curl -s -w "run tidak ada:   HTTP %{http_code}\n" http://127.0.0.1:3000/api/document-intelligence/drawings/dem/00000000-0000-0000-0000-000000000000/index
+curl -s -w "run dengan data: HTTP %{http_code}\n" http://127.0.0.1:3000/api/document-intelligence/drawings/dem/514fb7f2-26fd-5816-9f22-a4a2412688bf/index
+curl -s -w "run tanpa data:  HTTP %{http_code}\n" http://127.0.0.1:3000/api/document-intelligence/drawings/dem/cce23809-5eee-45b2-ad1c-de7235ab03ba/index
+
+# 2) Hop langsung ke Document Intelligence dan Database API
+curl -s -w "DI health: HTTP %{http_code}\n" http://127.0.0.1:8083/health
+curl -s -w "DB health: HTTP %{http_code}\n" http://127.0.0.1:8001/health
+
+# 3) Cek sqlite langsung (data canonical)
+.\.venv\Scripts\python.exe -c "import sqlite3; c=sqlite3.connect(r'G:\PAAX-Data\db\portable.sqlite'); print('runs:', c.execute('SELECT COUNT(*) FROM dem_runs').fetchone()[0]); print('pages:', c.execute('SELECT COUNT(*) FROM dem_pages').fetchone()[0]); print('revision:', c.execute('SELECT version_num FROM alembic_version').fetchone()[0])"
+```
+
+Bila salah satu hop mengembalikan 500:
+
+- periksa `G:\PAAX-Data\runtime\document-intelligence.err.log` dan `db-plhut.err.log` untuk traceback;
+- pastikan service web berjalan dengan `PAAX_PORTABLE_ACTOR_ID=local-desktop-user` (lihat §10.1) dan bootstrap DB menyertakan `local-desktop-user` sebagai anggota project;
+- pastikan `INTERNAL_SERVICE_KEY` service web sama dengan key yang diterima `:8083` (proxy menolak 503 bila key tidak cocok);
+- jangan mengganti error 500 menjadi data dummy — 404/403/503 dengan detail jelas adalah perilaku yang benar.
 
 ### Viewer Gambar Kerja berkedip atau sisi kanan terpotong
 

@@ -29,16 +29,34 @@ async function proxyDocumentIntelligence(request: Request, context: RouteContext
   if (INTERNAL_SERVICE_KEY) {
     headers.set("X-Internal-Key", INTERNAL_SERVICE_KEY);
   }
-  headers.set("X-User-Id", process.env.PAAX_PORTABLE_ACTOR_ID?.trim() || "paax-web");
+  headers.set("X-User-Id", process.env.PAAX_PORTABLE_ACTOR_ID?.trim() || "local-desktop-user");
 
   const method = request.method.toUpperCase();
   const body = method === "GET" || method === "HEAD" ? undefined : await request.arrayBuffer();
-  const upstream = await fetch(target, {
-    method,
-    headers,
-    body,
-    cache: "no-store",
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(target, {
+      method,
+      headers,
+      body,
+      cache: "no-store",
+    });
+  } catch (err) {
+    // The hop to document-intelligence failed before a status existed
+    // (connection refused, DNS, TLS, socket timeout). Log the hop without
+    // leaking internal routing details (target URL, credentials) to the UI.
+    const reason = err instanceof Error ? err.name : typeof err;
+    console.error(
+      `[document-intelligence proxy] upstream unreachable: path=/${path} reason=${reason}`
+    );
+    return new Response(
+      JSON.stringify({ detail: "document intelligence service is unavailable" }),
+      {
+        status: 503,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  }
 
   const responseHeaders = new Headers();
   for (const name of ["content-type", "content-length", "content-range", "accept-ranges", "etag", "cache-control"]) {
