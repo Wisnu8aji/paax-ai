@@ -527,3 +527,63 @@ Tetap verifikasi enam health endpoint setelah startup.
 ### 19.4 PDF Viewer Native (commit e82be93f…cf3abe1d)
 - Renderer baru di `apps/web/src/components/drawing-intelligence/workspace/canvas/native/` (base-once + detail crop per settle + pinned pixels + coverage cache + memory budget + latest-wins scheduler).
 - Feature flag: viewer default `legacy`; toggle `legacy`/`native` tersedia di halaman viewer (`di-viewer-mode-toggle`). Native belum jadi default sampai gate F5 (E2E/benchmark) selesai.
+
+
+## 20. Quick Start — Instalasi / Pemulihan Project PLHUT (2026-08-06)
+
+Langkah cepat agar PLHUT tampil dan semua modul bisa di-testing setelah instalasi bersih atau setelah stack di-restart:
+
+### 20.1 Start stack (wajib DataRoot)
+```powershell
+Set-Location -LiteralPath "G:\paax-ai-contextual-integration"
+# 1) STOP semua (bila ada sisa):
+powershell -ExecutionPolicy Bypass -File .\scripts\portable\Stop-PLHUT-Local.ps1 -DataRoot "G:\PAAX-Data"
+# 2) START:
+powershell -ExecutionPolicy Bypass -File .\scripts\portable\Start-PLHUT-Local.ps1 -DataRoot "G:\PAAX-Data"
+```
+JANGAN start tanpa `-DataRoot "G:\PAAX-Data"` — tanpa itu service membaca `%LOCALAPPDATA%\PAAX-AI\data` (kosong) → project hilang / index 500.
+Wajib juga `PYTHONPATH=` dan `PYTHONHOME=` kosong saat menjalankan (polusi venv Hermes).
+
+### 20.2 Verifikasi 6/6 health
+```powershell
+curl http://127.0.0.1:3000/api/health      # web
+curl http://127.0.0.1:8001/health          # db-plhut
+curl http://127.0.0.1:8081/health          # core-engine
+curl http://127.0.0.1:8082/health          # ai-orchestrator
+curl http://127.0.0.1:8083/health          # document-intelligence
+curl http://127.0.0.1:8085/health          # site-agent
+```
+Semua harus `status: ok` + `commit` yang sama.
+
+### 20.3 Pastikan project PLHUT terdaftar (owner_id)
+Gejala: halaman proyek kosong / daftar project kosong padahal DB ada isinya.
+Penyebab & perbaikan (lihat §19.1): aktor web = `local-desktop-user`, project lama ber-owner `paax-web`.
+```powershell
+# cek:
+sqlite3 "G:\PAAX-Data\db\portable.sqlite" "SELECT id, owner_id, status FROM projects;"
+# perbaiki (sekali saja):
+sqlite3 "G:\PAAX-Data\db\portable.sqlite" "UPDATE projects SET owner_id='local-desktop-user' WHERE id='PLHUT-SURAKARTA';"
+# cek anggota (local-desktop-user harus ada sebagai owner):
+sqlite3 "G:\PAAX-Data\db\portable.sqlite" "SELECT * FROM project_members WHERE project_id='PLHUT-SURAKARTA';"
+```
+
+### 20.4 Verifikasi API PLHUT (curl chain)
+```powershell
+# daftar project → harus memuat PLHUT-SURAKARTA
+curl http://127.0.0.1:3000/api/db-projects/projects
+# package-analysis (indeks drawing) → HTTP 200 (bukan 401/404)
+curl "http://127.0.0.1:3000/api/db-projects/projects/PLHUT-SURAKARTA/drawing-intelligence/package-analysis?run_id=514fb7f2-26fd-5816-9f22-a4a2412688bf"
+# intelligence summary → HTTP 200
+curl "http://127.0.0.1:3000/api/document-intelligence/drawings/dem/514fb7f2-26fd-5816-9f22-a4a2412688bf/intelligence?view=summary"
+# thumbnail → HTTP 200
+curl -o thumb.jpg "http://127.0.0.1:3000/api/db-projects/projects/PLHUT-SURAKARTA/pages/10/thumbnail?width=400"
+```
+Catatan: request pertama setelah start bisa lambat (±40 dtk) karena DI memparse PDF 25 MB (cold start); request berikutnya cepat (2–4 dtk).
+
+### 20.5 Auth & scope (jika 401 muncul)
+- `package-analysis` butuh scope `dem:read` pada identity `web-user-proxy` — sudah ditambahkan di `Start-PLHUT-Local.ps1` (commit 96bfd4df). Jika 401 muncul, restart stack (registry identitas dibuat ulang saat start).
+- Jangan ubah `INTERNAL_SERVICE_KEY` di `.env.local` web — service membaca credential dari registry `G:\PAAX-Datauntime\service-credentials\web.key`.
+
+### 20.6 Viewer PDF (legacy vs native)
+- Toggle viewer tersedia di halaman sheet (`legacy`/`native`); native = render base-once + crop-settle + pinned pixels (tanpa blur/loading saat zoom).
+- Setelah mengganti kode viewer: build ulang `pnpm --dir apps/web build` lalu **stop → start ulang** (jangan start ulang tanpa build baru — bisa memicu client-side exception karena chunk mismatch).
