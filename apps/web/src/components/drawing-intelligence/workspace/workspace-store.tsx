@@ -85,6 +85,8 @@ export interface WorkspaceState {
   mode: WorkspaceMode;
   projectId: string | null;
   activeSnapshotId: string | null;
+  /** run DEM aktif (MP3-P2): dipakai bind gateway event live (runtime-bridge). */
+  activeRunId: string | null;
   /** true bila belum ada file (empty state — gambar referensi 2) */
   hasData: boolean;
 
@@ -239,6 +241,7 @@ export function initialWorkspaceState(withData: boolean): WorkspaceState {
     mode: 'files',
     projectId: null,
     activeSnapshotId: null,
+    activeRunId: null,
     hasData: false,
     files: [],
     sheets: [],
@@ -344,6 +347,7 @@ export type WorkspaceAction =
   | { type: 'replace-sheets'; sheets: Sheet[] }
   | { type: 'replace-files'; files: DrawingFile[] }
   | { type: 'set-active-snapshot-id'; snapshotId: string | null }
+  | { type: 'set-active-run'; runId: string | null }
   | { type: 'set-project-id'; projectId: string | null }
   | { type: 'set-honest-state'; state: HonestWorkspaceState }
   /** Phase 06: DrawingPackageIndex state. Index is set once per active run. */
@@ -584,6 +588,8 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
       return { ...state, files: action.files };
     case 'set-active-snapshot-id':
       return { ...state, activeSnapshotId: action.snapshotId };
+    case 'set-active-run':
+      return { ...state, activeRunId: action.runId };
     case 'set-project-id':
       return { ...state, projectId: action.projectId };
     // Phase 06 — DrawingPackageIndex state management

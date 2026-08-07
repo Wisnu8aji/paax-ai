@@ -80,8 +80,22 @@ export interface ApprovalItem {
   impact: string
   status: 'pending' | 'approved' | 'rejected' | 'excluded'
   refs: string[]
+  /** konteks tambahan dari payload (APPROVAL_UI_CONTRACT §2.1). */
+  context?: string
   requestedAt?: string
   resolvedAt?: string
+  /** decision final (dari approval.resolved). */
+  decision?: string
+  /** rationale user/agent dari approval.resolved. */
+  rationale?: string
+  /** resolved_by dari approval.resolved (mis. user:estimator). */
+  resolvedBy?: string
+  /**
+   * Lineage override/recalc: referensi entity/quantity yang di-override atau
+   * di-recalc oleh keputusan ini (payload_summary: override_of, recalc_of,
+   * lineage, supersedes). Ditampilkan di card resolved.
+   */
+  overrideLineage?: string[]
 }
 
 export interface PaaxRuntimeState {
@@ -125,6 +139,23 @@ function str(v: unknown): string | null {
 }
 function num(v: unknown): number | undefined {
   return typeof v === 'number' && Number.isFinite(v) ? v : undefined
+}
+
+/** Kumpulkan lineage override/recalc dari payload approval.resolved. */
+function collectLineage(summary: Record<string, unknown>): string[] {
+  const out: string[] = []
+  for (const key of ['override_of', 'recalc_of', 'lineage', 'supersedes'] as const) {
+    const value = summary[key]
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (typeof item === 'string' && item.length > 0) out.push(item)
+      }
+    } else if (typeof value === 'string' && value.length > 0) {
+      // lineage bisa berupa string CSV dari gateway.
+      out.push(...value.split(',').map(s => s.trim()).filter(Boolean))
+    }
+  }
+  return out
 }
 
 function upsertTask(tasks: TaskUiState[], id: string, patch: Partial<TaskUiState>): TaskUiState[] {
@@ -401,6 +432,7 @@ export function reduceEvent(state: PaaxRuntimeState, event: PaaxEventEnvelope): 
             impact: str(summary.impact) ?? 'medium',
             status: 'pending',
             refs,
+            context: str(summary.context) ?? undefined,
             requestedAt: p.timestamp,
           },
         ],
@@ -417,11 +449,23 @@ export function reduceEvent(state: PaaxRuntimeState, event: PaaxEventEnvelope): 
       const decision = str(summary.decision) ?? str(summary.decision_state)
       const status: ApprovalItem['status'] =
         decision === 'approved' ? 'approved' : decision === 'rejected' ? 'rejected' : decision === 'excluded' ? 'excluded' : 'pending'
+      // Lineage override/recalc (APPROVAL_UI_CONTRACT §2.2 + task spec MP3-P2):
+      // payload_summary boleh membawa override_of / recalc_of / lineage /
+      // supersedes — daftar referensi entity/quantity terdampak keputusan.
+      const lineage = collectLineage(summary)
       next = {
         ...next,
         approvals: next.approvals.map(a =>
           a.approvalId === approvalId
-            ? { ...a, status, resolvedAt: p.timestamp }
+            ? {
+                ...a,
+                status,
+                decision: decision ?? undefined,
+                rationale: str(summary.rationale) ?? str(summary.reason) ?? undefined,
+                resolvedBy: str(summary.resolved_by) ?? undefined,
+                resolvedAt: str(summary.resolved_at) ?? p.timestamp,
+                overrideLineage: lineage.length > 0 ? lineage : a.overrideLineage,
+              }
             : a,
         ),
         statusStack: updateStackState(next.statusStack, approvalId, status === 'approved' ? 'completed' : 'failed', p.timestamp),

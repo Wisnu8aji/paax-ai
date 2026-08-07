@@ -14,9 +14,17 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSyncExternalStore } from 'react';
-import { Activity, Wifi, WifiOff, Database, FlaskConical, RefreshCw, ShieldAlert } from 'lucide-react';
+import { Activity, Wifi, WifiOff, Database, FlaskConical, RefreshCw, ShieldAlert, Pause, Play, Square } from 'lucide-react';
 import { PaaxRuntimeStore, type PaaxRuntimeState, type TaskUiState, type StatusStackItem, type ApprovalItem } from './event-store';
 import { PaaxEventClient, type TransportStatus } from './ws-client';
+import {
+  getRuntimeStore,
+  startRuntimeBridge,
+  stopRuntimeBridge,
+  useRuntimeTransport,
+  respondRuntimeApproval,
+  sendRuntimeCommand,
+} from './runtime-bridge';
 import { TaskRail } from '../task-rail/task-rail';
 import { ReasoningBlock } from '../trace/reasoning-block';
 import { ToolTraceRow } from '../trace/tool-trace-row';
@@ -73,18 +81,24 @@ export function AgentExecutionConsole({
   variant = 'panel',
   onClose,
 }: AgentExecutionConsoleProps): React.ReactElement {
-  const storeRef = useRef<PaaxRuntimeStore | null>(null);
-  if (!storeRef.current) {
-    storeRef.current = new PaaxRuntimeStore();
+  // Demo path (story/test eksplisit): store + client LOKAL, tidak menyentuh
+  // bridge. Live path (tanpa demoEvents): store + client SHARED via
+  // runtime-bridge — konsol dan Quantities mode melihat event yang sama.
+  const isDemo = Boolean(demoEvents && demoEvents.length > 0);
+  const localStoreRef = useRef<PaaxRuntimeStore | null>(null);
+  if (!localStoreRef.current) {
+    localStoreRef.current = new PaaxRuntimeStore();
   }
-  const store = storeRef.current;
+  const store = isDemo ? localStoreRef.current : getRuntimeStore();
 
   const state = useSyncExternalStore(
     (cb) => store.subscribe(cb),
     () => store.getState(),
   );
 
-  const [transport, setTransport] = useState<TransportStatus>({ kind: 'none', connected: false, detail: 'idle' });
+  const [localTransport, setLocalTransport] = useState<TransportStatus>({ kind: 'none', connected: false, detail: 'idle' });
+  const bridgeTransport = useRuntimeTransport();
+  const transport = isDemo ? localTransport : bridgeTransport;
   const [toolView, setToolView] = useState<ToolViewState>(() => createToolViewState());
   const [activeTaskId, setActiveTaskId] = useState<string | null>(initialActiveTaskId ?? null);
   const [selectedEvidenceRef, setSelectedEvidenceRef] = useState<string | null>(null);
@@ -100,9 +114,18 @@ export function AgentExecutionConsole({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demoEvents, refreshKey]);
 
-  // Transport live.
+  // Live path: bind ke gateway via runtime-bridge (shared store). Bridge
+  // lifecycle dimiliki workspace — konsol tidak menghentikannya di unmount
+  // (Quantities mode tetap menerima event live).
   useEffect(() => {
-    if (!runId) return;
+    if (isDemo || !runId) return;
+    startRuntimeBridge({ runId, wsUrl, sseUrl, httpUrl });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runId, refreshKey, isDemo]);
+
+  // Demo path: transport live LOKAL (hanya untuk fixture berlabel).
+  useEffect(() => {
+    if (!isDemo || !runId) return;
     const client = new PaaxEventClient({
       runId,
       wsUrl,
@@ -111,7 +134,7 @@ export function AgentExecutionConsole({
       demoEvents,
       onEvent: (ev) => store.ingest(ev),
       onStatus: (s) => {
-        setTransport(s);
+        setLocalTransport(s);
         if (s.kind === 'demo') {
           store.setConnection('connected');
         } else if (s.connected) {
@@ -133,7 +156,7 @@ export function AgentExecutionConsole({
       clientRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runId, refreshKey]);
+  }, [runId, refreshKey, isDemo]);
 
   const workers = useMemo(() => buildWorkerTreeV2(state.rawEvents), [state.rawEvents]);
   const counts = useMemo(() => subagentCounts(workers), [workers]);
@@ -164,19 +187,42 @@ export function AgentExecutionConsole({
   const canApprove = userRole === 'estimator' || userRole === 'pm' || userRole === 'admin' || userRole === 'owner';
 
   const handleApproval = (decision: { approvalId: string; decision: 'approved' | 'rejected'; rationale: string }) => {
-    // Wire ke gateway bila WS tersedia; bila tidak, status jujur via store.
-    const sent = clientRef.current?.sendCommand({
-      command: 'approve',
-      runId: runId ?? '',
-      payload: { approval_id: decision.approvalId, decision: decision.decision, rationale: decision.rationale },
-    });
+    // Live path: kirim via bridge/gateway (F03 §7). Demo path: client lokal
+    // (WS tidak ada → false). Gagal kirim → status jujur disconnected.
+    const sent = isDemo
+      ? clientRef.current?.sendCommand({
+          command: 'approve',
+          runId: runId ?? '',
+          payload: { approval_id: decision.approvalId, decision: decision.decision, rationale: decision.rationale },
+        })
+      : respondRuntimeApproval({ approvalId: decision.approvalId, decision: decision.decision, rationale: decision.rationale });
     if (!sent && runId) {
       store.setConnection('disconnected');
     }
   };
 
+  // F03 §6 — pause/resume/stop runtime via gateway.
+  const handlePause = () => {
+    const sent = isDemo ? clientRef.current?.pause() : sendRuntimeCommand('pause');
+    if (!sent) store.setConnection('disconnected');
+  };
+  const handleResume = () => {
+    const sent = isDemo ? clientRef.current?.resume() : sendRuntimeCommand('resume');
+    if (!sent) store.setConnection('disconnected');
+  };
+  const handleStop = () => {
+    const sent = isDemo ? clientRef.current?.stopRun() : sendRuntimeCommand('stop', { reason: 'user stop from web console' });
+    if (!sent) store.setConnection('disconnected');
+  };
+
   const handleRetry = () => {
-    setRefreshKey(k => k + 1);
+    if (isDemo) {
+      setRefreshKey(k => k + 1);
+    } else if (runId) {
+      // Force reconnect: stop bridge lalu bind ulang (replay after_sequence).
+      stopRuntimeBridge();
+      startRuntimeBridge({ runId, wsUrl, sseUrl, httpUrl });
+    }
   };
 
   const containerStyle: React.CSSProperties =
@@ -229,6 +275,19 @@ export function AgentExecutionConsole({
             {state.connection} · seq {state.lastSequence}
             {state.replayed && ' · replayed'}
           </span>
+          {transport.kind === 'websocket' && transport.connected && (
+            <span style={{ display: 'inline-flex', gap: 4 }} data-testid="run-controls">
+              <button type="button" data-testid="run-pause" onClick={handlePause} title="pause runtime" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '3px 8px', borderRadius: 5, cursor: 'pointer' }}>
+                <Pause size={11} /> pause
+              </button>
+              <button type="button" data-testid="run-resume" onClick={handleResume} title="resume runtime" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '3px 8px', borderRadius: 5, cursor: 'pointer' }}>
+                <Play size={11} /> resume
+              </button>
+              <button type="button" data-testid="run-stop" onClick={handleStop} title="stop run (graceful)" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '3px 8px', borderRadius: 5, cursor: 'pointer', color: 'var(--di-danger, #ef4444)' }}>
+                <Square size={11} /> stop
+              </button>
+            </span>
+          )}
           <button type="button" onClick={handleRetry} title="reconnect/replay" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '3px 8px', borderRadius: 5, cursor: 'pointer' }}>
             <RefreshCw size={11} /> replay
           </button>
@@ -304,7 +363,13 @@ export function AgentExecutionConsole({
                 <div style={{ fontSize: 10, color: 'var(--di-text3)', marginBottom: 4, fontWeight: 700 }}>APPROVAL</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {state.approvals.filter(a => a.status === 'pending').map(a => (
-                    <ApprovalCard key={a.approvalId} card={a} onRespond={handleApproval} canApprove={canApprove} />
+                    <ApprovalCard
+                      key={a.approvalId}
+                      card={a}
+                      onRespond={handleApproval}
+                      canApprove={canApprove}
+                      gatewayConnected={transport.connected}
+                    />
                   ))}
                 </div>
               </div>

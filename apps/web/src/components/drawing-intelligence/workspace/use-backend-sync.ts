@@ -214,6 +214,13 @@ export function useBackendSync(projectId: string | null) {
           dispatch({ type: 'replace-files', files: mappedFiles });
         }
 
+        // MP3-P2: pilih run aktif untuk bind gateway event live — preferensi
+        // run yang masih berjalan, lalu run synthesis selesai terbaru.
+        const activeRun = runsData.find((r: any) => ['created', 'processing', 'uploading', 'pages_queued', 'pages_extracting'].includes(r.status))
+          ?? runsData.find((r: any) => r.status === 'synthesis_complete' || r.status === 'completed')
+          ?? null;
+        dispatch({ type: 'set-active-run', runId: activeRun?.id ?? null });
+
         if (hasPendingRuns && !cancelled) {
           timer = setTimeout(sync, 5000);
         }

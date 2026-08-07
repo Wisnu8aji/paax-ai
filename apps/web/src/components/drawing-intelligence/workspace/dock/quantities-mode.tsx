@@ -5,6 +5,7 @@
  * this component never performs engineering calculations.
  */
 import { Fragment, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { useSyncExternalStore } from 'react';
 import {
   AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Download, ExternalLink,
   FileStack, Layers, X,
@@ -13,6 +14,9 @@ import { civilWorkItemsExportUrl } from '../../drawing-intelligence-api';
 import type { QuantityItem, QuantityRowStatus } from '../di-types';
 import { useWorkspace } from '../workspace-store';
 import { canDisplayFinalQuantity, confirmationReasonFor, isNeedsConfirmation } from '../quantity-authority';
+import { getRuntimeStore, useRuntimeTransport } from '../agentic/agent-execution-console/runtime-bridge';
+import { selectQuantaFromEvents, type QuantaRow } from './quanta-view';
+import { QuantaLivePanel } from './quanta-live-panel';
 
 const STATUS_PILL: Record<QuantityRowStatus, { label: string; tone?: string }> = {
   verified: { label: 'Terverifikasi', tone: 'ok' },
@@ -82,6 +86,18 @@ export function QuantitiesMode() {
     [state.quantities, scopeFilter],
   );
   const groups = useMemo(() => groupItems(quantities, groupMode), [quantities, groupMode]);
+
+  // QUANTA live — data HANYA dari event gateway nyata (anti-fake di
+  // selectQuantaFromEvents). Store shared dengan AgentExecutionConsole.
+  const runtimeState = useSyncExternalStore(
+    (cb) => getRuntimeStore().subscribe(cb),
+    () => getRuntimeStore().getState(),
+  );
+  const transport = useRuntimeTransport();
+  const quantaSelection = useMemo(
+    () => selectQuantaFromEvents(runtimeState.rawEvents),
+    [runtimeState.rawEvents],
+  );
   const total = quantities.length;
   const nVerified = quantities.filter((q) => q.status === 'verified' && canDisplayFinalQuantity({ sourceAuthority: q.sourceAuthority ?? 'none' })).length;
   const nReview = quantities.filter((q) => ['needs-review', 'conflict'].includes(q.status)).length;
@@ -124,9 +140,35 @@ export function QuantitiesMode() {
     }
   }
 
+  /** Navigasi bukti QUANTA: row → halaman sumber di viewer (review mode). */
+  function openQuantaEvidence(row: QuantaRow) {
+    const page = row.sourcePages[0];
+    if (!page) {
+      dispatch({ type: 'set-status', message: `QUANTA row ${row.rowId} tidak memiliki referensi halaman.` });
+      return;
+    }
+    const target = state.sheets.find((sheet) => sheet.pageNumber === page);
+    if (target) {
+      dispatch({ type: 'set-active-sheet', sheetId: target.id });
+      dispatch({ type: 'set-mode', mode: 'review' });
+      const refs = row.evidenceRefs.slice(0, 3).join(', ');
+      dispatch({ type: 'set-status', message: `QUANTA bukti ${row.rowId} → Halaman ${page} (${refs})` });
+    } else {
+      dispatch({ type: 'set-status', message: `QUANTA bukti Halaman ${page} untuk ${row.rowId} belum terhubung ke viewer.` });
+    }
+  }
+
   return (
     <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex' }}>
       <section style={{ flex: 1, minWidth: 0, overflow: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* QUANTA live dari event gateway (anti-fake: hanya event nyata) */}
+        <QuantaLivePanel
+          selection={quantaSelection}
+          transportKind={transport.kind}
+          transportConnected={transport.connected}
+          onOpenEvidence={openQuantaEvidence}
+        />
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(150px, 1fr))', gap: 12 }}>
           <StatCard icon={<FileStack size={18} color="var(--di-accent)" />} value={total} label="item pekerjaan" border="var(--di-accent)" />
           <StatCard icon={<CheckCircle2 size={18} color="var(--di-ok)" />} value={nVerified} label="terverifikasi" />

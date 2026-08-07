@@ -33,6 +33,21 @@ export interface EventTransportOptions {
   sseUrl?: string
   /** endpoint HTTP replay; default `/api/paax/events` */
   httpUrl?: string
+  /**
+   * Token session/auth dari konteks aplikasi (F03_WEBSOCKET_CONTRACT §2.3).
+   * Browser tidak bisa set header Authorization pada WebSocket upgrade,
+   * jadi token dikirim via subprotocol `paax-auth.<token>` (standar WS) dan
+   * query param `access_token` untuk SSE; HTTP replay memakai header
+   * `Authorization: Bearer <token>`. Tanpa token & gateway butuh auth →
+   * server menutup WS 4001 — status jujur (fail-closed, bukan fallback fake).
+   */
+  authToken?: string
+  /**
+   * Task scoping opsional (F03_WEBSOCKET_CONTRACT §5.2). Bila diisi, client
+   * hanya meneruskan event untuk task tersebut dan command replay membawa
+   * task_id.
+   */
+  taskId?: string | null
   onEvent: (event: PaaxEventEnvelope) => void
   onStatus: (status: TransportStatus) => void
   /** Setelah reconnect, kirim command replay after_sequence (gateway relay). */
@@ -41,6 +56,15 @@ export interface EventTransportOptions {
   demoEvents?: PaaxEventEnvelope[]
   /** interval reconnect (ms). */
   reconnectMs?: number
+}
+
+export type CommandName = 'stop' | 'pause' | 'resume' | 'approve' | 'replay' | 'clarify.respond'
+
+export interface PaaxCommand {
+  command: CommandName
+  runId: string
+  taskId?: string | null
+  payload?: Record<string, unknown>
 }
 
 function normalizeUrl(base: string, path: string): string {
@@ -86,12 +110,24 @@ export class PaaxEventClient {
     if (wsUrl && typeof WebSocket !== 'undefined') {
       try {
         const url = normalizeUrl(base, wsUrl)
-        const ws = new WebSocket(url)
+        // Auth via subprotocol WS (F03 §2.3) — browser tidak mengizinkan
+        // header Authorization pada upgrade; `paax-auth.<token>` adalah
+        // pola standar WebSocket.
+        const protocols = this.options.authToken ? [`paax-auth.${this.options.authToken}`] : undefined
+        const ws = protocols ? new WebSocket(url, protocols) : new WebSocket(url)
         this.ws = ws
-        this.setStatus({ kind: 'websocket', connected: false, detail: `connecting ${url}` })
+        this.setStatus({ kind: 'websocket', connected: false, detail: `connecting ${url}${this.options.authToken ? ' (auth)' : ''}` })
         ws.onopen = () => {
           if (this.stopped) return
-          this.setStatus({ kind: 'websocket', connected: true, detail: `live ${url}` })
+          this.setStatus({ kind: 'websocket', connected: true, detail: `live ${url}${this.options.authToken ? ' (auth)' : ''}` })
+          // F03 §4.1 — setelah handshake, client meminta replay
+          // after_sequence via paax.command replay (bukan hanya callback).
+          this.sendCommand({
+            command: 'replay',
+            runId: this.options.runId,
+            taskId: this.options.taskId ?? null,
+            payload: { after_sequence: this.lastSequence },
+          })
           this.options.onReplayRequest?.(this.lastSequence)
         }
         ws.onmessage = (msg) => {
@@ -105,9 +141,16 @@ export class PaaxEventClient {
             this.setStatus({ kind: 'websocket', connected: this.ws?.readyState === WebSocket.OPEN, detail: 'parse error', lastError: 'invalid frame' })
           }
         }
-        ws.onclose = () => {
+        ws.onclose = (ev) => {
           if (this.stopped) return
-          this.setStatus({ kind: 'websocket', connected: false, detail: 'disconnected — replay after_sequence', lastError: 'ws closed' })
+          // Kode 4001 = auth ditolak gateway (F03 §2.3) — fail-closed jujur.
+          const authDenied = ev.code === 4001
+          this.setStatus({
+            kind: 'websocket',
+            connected: false,
+            detail: authDenied ? 'auth ditolak gateway (4001) — token invalid/absent' : 'disconnected — replay after_sequence',
+            lastError: authDenied ? 'ws auth denied 4001' : 'ws closed',
+          })
           this.scheduleReconnect()
         }
         ws.onerror = () => {
@@ -122,7 +165,9 @@ export class PaaxEventClient {
     // 2) SSE bila tersedia.
     if (sseUrl && typeof EventSource !== 'undefined') {
       try {
-        const url = normalizeUrl(base, `${sseUrl}?run_id=${encodeURIComponent(runId)}`)
+        const authQuery = this.options.authToken ? `&access_token=${encodeURIComponent(this.options.authToken)}` : ''
+        const taskQuery = this.options.taskId ? `&task_id=${encodeURIComponent(this.options.taskId)}` : ''
+        const url = normalizeUrl(base, `${sseUrl}?run_id=${encodeURIComponent(runId)}${authQuery}${taskQuery}`)
         const es = new EventSource(url)
         this.es = es
         this.setStatus({ kind: 'sse', connected: false, detail: `connecting ${url}` })
@@ -173,10 +218,25 @@ export class PaaxEventClient {
     const base = typeof window !== 'undefined' ? window.location.origin : ''
     const { runId, httpUrl } = this.options
     if (!httpUrl) return
-    const url = normalizeUrl(base, `${httpUrl}?run_id=${encodeURIComponent(runId)}&after_sequence=${this.lastSequence}`)
+    const taskQuery = this.options.taskId ? `&task_id=${encodeURIComponent(this.options.taskId)}` : ''
+    const url = normalizeUrl(base, `${httpUrl}?run_id=${encodeURIComponent(runId)}&after_sequence=${this.lastSequence}${taskQuery}`)
     try {
-      const res = await fetch(url, { cache: 'no-store' })
+      const headers: Record<string, string> = { 'cache-control': 'no-store' }
+      if (this.options.authToken) {
+        headers['authorization'] = `Bearer ${this.options.authToken}`
+      }
+      const res = await fetch(url, { cache: 'no-store', headers })
       if (!res.ok) {
+        // 401/403 = auth ditolak gateway — fail-closed jujur, bukan fallback fake.
+        if (res.status === 401 || res.status === 403) {
+          this.setStatus({
+            kind: 'http-replay',
+            connected: false,
+            detail: 'http replay auth ditolak gateway',
+            lastError: `HTTP ${res.status}`,
+          })
+          return
+        }
         throw new Error(`HTTP ${res.status}`)
       }
       const raw = (await res.json()) as unknown
@@ -223,6 +283,12 @@ export class PaaxEventClient {
         return
       }
     }
+    // Task scoping (F03 §5.2): bila client di-bind ke task tertentu, event
+    // task lain tidak diteruskan (tetap dihitung sequence agar replay
+    // after_sequence konsisten).
+    if (this.options.taskId && event.params.task_id !== this.options.taskId) {
+      return
+    }
     if (event.params.sequence > this.lastSequence) {
       this.lastSequence = event.params.sequence
     }
@@ -241,7 +307,7 @@ export class PaaxEventClient {
   }
 
   /** Kirim command (paax.command) via WS bila terhubung. */
-  sendCommand(command: { command: 'stop' | 'pause' | 'resume' | 'approve' | 'replay' | 'clarify.respond'; runId: string; payload?: Record<string, unknown> }): boolean {
+  sendCommand(command: PaaxCommand): boolean {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({
         jsonrpc: '2.0',
@@ -249,13 +315,52 @@ export class PaaxEventClient {
         params: {
           command: command.command,
           run_id: command.runId,
-          task_id: null,
+          task_id: command.taskId ?? null,
           payload: command.payload,
         },
       }))
       return true
     }
     return false
+  }
+
+  /** F03 §6 — pause runtime task engine. */
+  pause(): boolean {
+    return this.sendCommand({ command: 'pause', runId: this.options.runId, taskId: this.options.taskId ?? null })
+  }
+
+  /** F03 §6 — resume runtime task engine. */
+  resume(): boolean {
+    return this.sendCommand({ command: 'resume', runId: this.options.runId, taskId: this.options.taskId ?? null })
+  }
+
+  /** F03 §6 — graceful shutdown run. */
+  stopRun(reason = 'user stop from web console'): boolean {
+    return this.sendCommand({
+      command: 'stop',
+      runId: this.options.runId,
+      taskId: this.options.taskId ?? null,
+      payload: { reason },
+    })
+  }
+
+  /** F03 §7 — kirim approval decision (approval_id, decision, rationale). */
+  respondApproval(input: {
+    approvalId: string
+    decision: 'approved' | 'rejected'
+    rationale: string
+    taskId?: string | null
+  }): boolean {
+    return this.sendCommand({
+      command: 'approve',
+      runId: this.options.runId,
+      taskId: input.taskId ?? this.options.taskId ?? null,
+      payload: {
+        approval_id: input.approvalId,
+        decision: input.decision,
+        rationale: input.rationale,
+      },
+    })
   }
 
   stop(): void {
