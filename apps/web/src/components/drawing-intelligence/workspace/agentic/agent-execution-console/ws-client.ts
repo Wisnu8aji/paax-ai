@@ -14,6 +14,7 @@
 
 import type { PaaxEventEnvelope } from './event-contract'
 import { validatePaaxEvent } from './event-contract'
+import { scanRealEvents } from './scan'
 
 export type TransportKind = 'websocket' | 'sse' | 'http-replay' | 'demo' | 'none'
 
@@ -204,6 +205,24 @@ export class PaaxEventClient {
   }
 
   private deliver(event: PaaxEventEnvelope): void {
+    // R1: scanRealEvents di jalur deliver produksi (anti-fake gate).
+    // scan.ts hanya diimpor di test sebelumnya; sekarang di-wire ke
+    // production path. Demo events berlabel synthetic:true lolos lewat
+    // scan(jalur demo); produksi menolak synthetic — G2.3.
+    if (this.status.kind !== 'demo') {
+      const scanResult = scanRealEvents([event])
+      if (!scanResult.ok) {
+        const detail = scanResult.findings.map(f => `${f.code}:${f.detail ?? f.eventId}`).join('; ')
+        console.warn(`[ws-client] scanRealEvents production gate REJECTED event ${event.params.event_id}: ${detail}`)
+        this.setStatus({
+          kind: this.status.kind,
+          connected: this.status.connected,
+          detail: `scanRealEvents rejected frame: ${detail}`,
+          lastError: `SCAN_REJECT:${event.params.event_id}`,
+        })
+        return
+      }
+    }
     if (event.params.sequence > this.lastSequence) {
       this.lastSequence = event.params.sequence
     }
