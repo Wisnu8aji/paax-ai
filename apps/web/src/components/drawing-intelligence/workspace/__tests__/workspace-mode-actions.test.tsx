@@ -20,6 +20,23 @@ vi.mock('../../drawing-intelligence-api', () => ({
   fetchPackageIntelligence: vi.fn().mockResolvedValue(null),
 }));
 
+// Isolasi dari session runtime-bridge singleton (MP3-P2): MissionControl
+// me-render AgentExecutionConsole, yang men-start bridge gateway (HTTP replay
+// via fetch) begitu ada runId aktif. Suite ini meng-assert jumlah panggilan
+// global.fetch milik MissionControl sendiri — panggilan transport gateway
+// tidak boleh ikut terhitung. Bridge-start di-noop; store/status tetap nyata
+// sehingga konsol tetap render normal.
+vi.mock('../agentic/agent-execution-console/runtime-bridge', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../agentic/agent-execution-console/runtime-bridge')>();
+  return {
+    ...actual,
+    startRuntimeBridge: vi.fn(),
+    stopRuntimeBridge: vi.fn(),
+    sendRuntimeCommand: vi.fn(() => false),
+    respondRuntimeApproval: vi.fn(() => false),
+  };
+});
+
 const mockCalculate = vi.mocked(api.calculateDrawingIntelligenceWorkItem);
 const mockFetchCivil = vi.mocked(api.fetchCivilWorkItems);
 const mockFetchReadiness = vi.mocked(api.fetchQuantityReadiness);

@@ -70,7 +70,11 @@ export function getRuntimeState(): PaaxRuntimeState {
 }
 
 export function getRuntimeTransport(): TransportStatus {
-  return { ...bridgeState.transport }
+  // NB: return the STABLE reference — useSyncExternalStore getSnapshot must
+  // keep identity until setTransport() assigns a new object before notify().
+  // A spread here ({...bridgeState.transport}) changes identity every render
+  // → infinite re-render loop ("Maximum update depth exceeded").
+  return bridgeState.transport
 }
 
 export function subscribeRuntimeStatus(listener: () => void): () => void {
