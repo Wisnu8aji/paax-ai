@@ -7,6 +7,32 @@ import { WorkspaceProvider, useWorkspace } from '../workspace-store';
 import { canDisplayFinalQuantity } from '../quantity-authority';
 import { useBackendSync } from '../use-backend-sync';
 
+// ── EXTEND R2 (ORION-F2, MP §10.2) — anti-fake gate G2.3 ────────────────────
+// Modul Agent Execution Console (event v2): scan anti-fake, event store,
+// replay, task rail, mode view. Semua state dari event nyata — tidak ada
+// timer/hardcoded progress.
+import { scanRealEvents, assertDemoEvents, assertProductionEvents } from '../agentic/agent-execution-console/scan';
+import { buildDemoEvents } from '../agentic/agent-execution-console/demo-events';
+import { buildStateFromEvents, PaaxRuntimeStore } from '../agentic/agent-execution-console/event-store';
+import { computeAfterSequence, ReplayCoordinator } from '../agentic/agent-execution-console/replay';
+import { makeEventEnvelope } from '../agentic/agent-execution-console/event-contract';
+import { completedTaskCount } from '../agentic/task-rail/task-rail';
+import { buildWorkerTreeV2, subagentCounts } from '../agentic/trace/worker-tree';
+import { applyModeToGate, createToolViewState, setToolViewMode } from '../agentic/agent-execution-console/mode-view';
+
+const F2_RUN_ID = 'paax:run:test-20260807';
+
+function f2Ev(seq: number, type: string, patch: Record<string, unknown> = {}): ReturnType<typeof makeEventEnvelope> {
+  return makeEventEnvelope({
+    event_id: `paax:evt:test-20260807:${seq}:${seq.toString(16).padStart(8, '0')}`,
+    run_id: F2_RUN_ID,
+    sequence: seq,
+    timestamp: new Date(Date.UTC(2026, 7, 7, 17, 0, 0, seq * 1000)).toISOString(),
+    type,
+    ...(patch as any),
+  });
+}
+
 // Mock API layer to model real HTTP backend states
 vi.mock('../../drawing-intelligence-api', () => ({
   fetchReviewQueue: vi.fn(),
@@ -156,5 +182,146 @@ describe('Phase 09D Truthful Runtime State Tests', () => {
     expect(canDisplayFinalQuantity({ sourceAuthority: 'proposal' })).toBe(false);
     expect(canDisplayFinalQuantity({ sourceAuthority: 'review' })).toBe(false);
     expect(canDisplayFinalQuantity({ sourceAuthority: 'measurement_fact' })).toBe(false);
+  });
+});
+
+// ── EXTEND R2 (ORION-F2) — anti-fake gate event v2 (G2.3, DoD 10) ───────────
+
+describe('truthful-runtime-state: scan anti-fake event v2 (G2.3)', () => {
+  it('menolak marker simulasi di jalur produksi', () => {
+    const bad = f2Ev(1, 'task.started', { payload_summary: { simulated: true } });
+    const result = scanRealEvents([bad]);
+    expect(result.ok).toBe(false);
+    expect(result.findings.some(f => f.code === 'SIMULATION_MARKER')).toBe(true);
+  });
+
+  it('menolak synthetic:true tanpa label notProduction di jalur produksi', () => {
+    const bad = f2Ev(2, 'task.progress', { payload_summary: { synthetic: true, progress: 0.5 } });
+    const result = scanRealEvents([bad]);
+    expect(result.ok).toBe(false);
+  });
+
+  it('menolak synthetic:true meski berlabel notProduction di jalur produksi', () => {
+    const bad = f2Ev(3, 'task.progress', { payload_summary: { synthetic: true, notProduction: true, progress: 0.5 } });
+    const result = scanRealEvents([bad]);
+    expect(result.ok).toBe(false);
+    expect(result.findings.some(f => f.code === 'SYNTHETIC_IN_PRODUCTION')).toBe(true);
+  });
+
+  it('fixture demo berlabel synthetic+notProduction lolos jalur demo', () => {
+    const events = buildDemoEvents();
+    expect(() => assertDemoEvents(events)).not.toThrow();
+    for (const e of events) {
+      expect(e.params.payload_summary?.['synthetic']).toBe(true);
+      expect(e.params.payload_summary?.['notProduction']).toBe(true);
+    }
+  });
+
+  it('fixture demo DITOLAK jalur produksi', () => {
+    expect(() => assertProductionEvents(buildDemoEvents())).toThrow(/SYNTHETIC_IN_PRODUCTION/);
+  });
+
+  it('event produksi valid lolos scan tanpa marker', () => {
+    const okEvents = [
+      f2Ev(1, 'run.started', { payload_summary: { run_id: F2_RUN_ID } }),
+      f2Ev(2, 'task.started', { task_id: 'T01' }),
+      f2Ev(3, 'task.progress', { task_id: 'T01', payload_summary: { progress: 0.4 } }),
+      f2Ev(4, 'task.completed', { task_id: 'T01', payload_summary: { progress: 1 } }),
+    ];
+    const result = scanRealEvents(okEvents);
+    expect(result.ok).toBe(true);
+    expect(result.total).toBe(4);
+  });
+});
+
+describe('truthful-runtime-state: state dibangun dari event (no timer/hardcoded)', () => {
+  it('task rail menghitung completed hanya dari event task.completed', () => {
+    const state = buildStateFromEvents(buildDemoEvents());
+    expect(state.tasks.filter(t => t.state === 'completed').map(t => t.id)).toContain('T01');
+    expect(completedTaskCount(state.tasks)).toBe(3); // T01, T02, T03
+    expect(state.tasks.find(t => t.id === 'T11')?.state).toBe('waiting_approval');
+    expect(state.tasks.find(t => t.id === 'T12')?.state).toBe('pending');
+    expect(state.tasks.find(t => t.id === 'T12')?.progress).toBe(0);
+  });
+
+  it('progress task hanya dari task.progress event', () => {
+    const state = buildStateFromEvents(buildDemoEvents());
+    expect(state.tasks.find(t => t.id === 'T03')?.progress).toBe(1);
+    const onlyStarted = buildStateFromEvents([
+      f2Ev(1, 'run.started', {}),
+      f2Ev(2, 'task.started', { task_id: 'T05' }),
+    ]);
+    expect(onlyStarted.tasks.find(t => t.id === 'T05')?.progress).toBe(0);
+    expect(onlyStarted.tasks.find(t => t.id === 'T05')?.state).toBe('running');
+  });
+
+  it('reasoning block hanya dari reasoning.delta/reasoning.available nyata', () => {
+    const state = buildStateFromEvents(buildDemoEvents());
+    expect(state.reasoningByTask['T03'] ?? '').toContain('RENCANA KOLOM LANTAI 1');
+    expect(state.reasoningByTask['T01'] ?? '').toBe('');
+  });
+
+  it('store menahan trace + subagent tree + approval dari event', () => {
+    const state = buildStateFromEvents(buildDemoEvents());
+    expect(state.trace.filter(t => t.type.startsWith('tool')).length).toBeGreaterThanOrEqual(4);
+    const tree = buildWorkerTreeV2(buildDemoEvents() as any);
+    expect(subagentCounts(tree).total).toBeGreaterThanOrEqual(1);
+    expect(state.approvals.some(a => a.status === 'pending' && a.impact === 'high')).toBe(true);
+  });
+});
+
+describe('truthful-runtime-state: replay after_sequence (reconnect)', () => {
+  it('computeAfterSequence dari event yang diterima', () => {
+    expect(computeAfterSequence(buildDemoEvents().slice(0, 5))).toBe(5);
+    expect(computeAfterSequence([], 'T01')).toBe(-1);
+  });
+
+  it('ReplayCoordinator: disconnect → replay → live dengan dedup', () => {
+    const seed = buildDemoEvents().slice(0, 10);
+    const coord = new ReplayCoordinator(seed);
+    coord.markLive();
+    coord.onDisconnect('ws closed');
+    expect(coord.getState().disconnected).toBe(true);
+
+    coord.startReplay({ runId: F2_RUN_ID, received: seed });
+    expect(coord.getState().phase).toBe('replaying');
+    expect(coord.getState().afterSequence).toBe(10);
+
+    coord.applyBatch([...seed.slice(0, 3), ...buildDemoEvents().slice(10, 14)] as any);
+    expect(coord.getState().received).toBe(4);
+
+    coord.applyBatch([]);
+    expect(coord.getState().phase).toBe('live');
+    expect(coord.getState().disconnected).toBe(false);
+  });
+});
+
+describe('truthful-runtime-state: mode Product/Technical/Evidence (mode-view)', () => {
+  it('technical mode ditolak tanpa role owner/auditor', () => {
+    const next = setToolViewMode(createToolViewState(), 'technical');
+    expect(next.mode).toBe('product');
+    expect(next.gate.lastDeniedAt).toBeDefined();
+  });
+
+  it('technical mode diizinkan untuk owner', () => {
+    const state = { ...createToolViewState(), gate: { ...createToolViewState().gate, currentRole: 'owner' } };
+    expect(setToolViewMode(state, 'technical').mode).toBe('technical');
+  });
+
+  it('evidence mode bebas tanpa gate', () => {
+    const state = createToolViewState();
+    expect(setToolViewMode(state, 'evidence').mode).toBe('evidence');
+    expect(applyModeToGate(state.gate, 'evidence').mode).toBe('evidence');
+  });
+});
+
+describe('truthful-runtime-state: PaaxRuntimeStore dedup + ingest', () => {
+  it('ingest event yang sama dua kali tidak menggandakan trace', () => {
+    const store = new PaaxRuntimeStore();
+    const toolEvt = f2Ev(2, 'tool.started', { task_id: 'T01', payload_summary: { tool: 'x' } });
+    store.ingest(toolEvt);
+    store.ingest(toolEvt);
+    expect(store.getState().trace.length).toBe(1);
+    expect(store.getState().rawEvents.length).toBe(1);
   });
 });

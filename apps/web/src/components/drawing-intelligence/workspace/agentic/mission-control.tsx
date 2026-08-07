@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { Activity, AlertTriangle, CheckCircle2, Clock3, PauseCircle, PlayCircle, RefreshCw, Wrench, ShieldAlert, RotateCcw } from 'lucide-react';
 import { useWorkspace } from '../workspace-store';
 import { normalizeStatusMessage } from '../status-bar';
+import { AgentExecutionConsole } from './agent-execution-console';
 
 export type AgentRun = {
   runId: string;
@@ -598,6 +599,19 @@ export function MissionControl({ userRole = 'estimator' }: MissionControlProps) 
           </div>
         </div>
       )}
+
+      {/* R2 EXTEND: Agent Execution Console terintegrasi di Mission mode
+          (MP §10.2 agentic/mission-control.tsx — EXTEND; K14). Menampilkan
+          task state + trace nyata dari event v2. runId diambil dari run
+          mission aktif pertama bila tersedia; bila tidak, konsol menunggu run. */}
+      <div style={{ marginTop: 14 }}>
+        <AgentExecutionConsole
+          variant="panel"
+          runId={runs.find((r) => !['completed', 'failed', 'cancelled'].includes(safeString(r.status).toLowerCase()))?.runId ?? null}
+          projectId={projectId}
+          userRole={userRole === 'viewer' ? 'viewer' : userRole}
+        />
+      </div>
     </section>
   );
 }

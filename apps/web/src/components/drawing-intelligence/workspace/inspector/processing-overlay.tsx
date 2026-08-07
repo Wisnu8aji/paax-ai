@@ -1,19 +1,31 @@
 'use client';
 
-/** AI Analysis in Progress overlay + stepper + log (blueprint §13, gambar referensi 7). */
+/** AI Analysis in Progress overlay + stepper + log (blueprint §13, gambar referensi 7).
+ *
+ * STATUS R2: NONAKTIF (RETIRE-AFTER-PARITY, MP §12.1). Digantikan oleh
+ * AgentExecutionConsole (agentic/agent-execution-console) setelah console
+ * parity (MP §11 G2.1-G2.4, K14). Komponen dipertahankan — TIDAK dihapus
+ * sebelum pengganti lulus parity + integration (Owner §21, no-delete-sebelum-
+ * parity). Rendering dinonaktifkan via prop `disabled` (default true).
+ *
+ * Alasan nonaktif: overlay ini memakai polling 2s + stepper + teks hardcoded
+ * (temuan Stage A §2.1 #8) — melanggar Owner §0.14-15 (trace nyata, tanpa
+ * fake progress).
+ */
 
 import { useEffect, useState } from 'react';
 import { Check, CheckCircle2 } from 'lucide-react';
 import { useWorkspace } from '../workspace-store';
 import { fetchDemRunStatus } from '../../drawing-intelligence-api';
 
-export function ProcessingOverlay() {
+export function ProcessingOverlay({ disabled = true }: { disabled?: boolean }) {
   const { state, dispatch } = useWorkspace();
   const [realStatus, setRealStatus] = useState<any>(null);
 
   const runId = state.upload.entries.find((e) => e.runId)?.runId;
 
   useEffect(() => {
+    if (disabled) return;
     if (!state.analysis.running || !runId) return;
     const interval = setInterval(async () => {
       try {
@@ -25,6 +37,7 @@ export function ProcessingOverlay() {
     return () => clearInterval(interval);
   }, [state.analysis.running, runId]);
 
+  if (disabled) return null;
   if (!state.analysis.running) return null;
   const { stages, progress, currentMessage } = state.analysis;
   

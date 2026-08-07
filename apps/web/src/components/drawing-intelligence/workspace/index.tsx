@@ -26,6 +26,7 @@ import { QuantitiesMode } from './dock/quantities-mode';
 import { HandoffMode } from './dock/handoff-mode';
 import { TakeoffInspector } from './takeoff/takeoff-inspector';
 import { MissionControl } from './agentic/mission-control';
+import { AgentExecutionConsole } from './agentic/agent-execution-console';
 
 export interface DrawingIntelligenceWorkspaceV2Props {
   projectName: string;
@@ -36,7 +37,7 @@ export interface DrawingIntelligenceWorkspaceV2Props {
 }
 
 function WorkspaceBody({ projectId }: { projectId: string | null }) {
-  const { state } = useWorkspace();
+  const { state, dispatch } = useWorkspace();
   const mode = state.mode;
   useBackendSync(projectId);
 
@@ -68,8 +69,18 @@ function WorkspaceBody({ projectId }: { projectId: string | null }) {
         {(mode === 'files' || mode === 'sheets') && <IntelligenceInspector />}
       </div>
 
-      {/* Overlay global */}
-      <ProcessingOverlay />
+      {/* Overlay global — R2: ProcessingOverlay NONAKTIF (disabled), digantikan
+          AgentExecutionConsole setelah console parity (MP §12.1, K14). */}
+      <ProcessingOverlay disabled />
+      {state.analysis.running && (
+        <AgentExecutionConsole
+          variant="overlay"
+          runId={state.upload.entries.find((e) => e.runId)?.runId ?? null}
+          projectId={state.projectId}
+          userRole="estimator"
+          onClose={() => dispatch({ type: 'analysis', patch: { running: false, setupOpen: true } })}
+        />
+      )}
       <UploadDrawingModal />
       <AskPaaxPanel />
     </div>
