@@ -13,40 +13,44 @@
  * fake progress).
  */
 
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { Check, CheckCircle2 } from 'lucide-react';
 import { useWorkspace } from '../workspace-store';
-import { fetchDemRunStatus } from '../../drawing-intelligence-api';
+import { getRuntimeStore } from '../agentic/agent-execution-console/runtime-bridge';
+
+/** Explicit compatibility fallback path (FAIL-CLOSED, labeled, non-polling by default). */
+async function fetchDemRunStatusCompatibilityFallback(runId: string) {
+  try {
+    const { fetchDemRunStatus } = await import('../../drawing-intelligence-api');
+    return await fetchDemRunStatus(runId);
+  } catch {
+    return null;
+  }
+}
 
 export function ProcessingOverlay({ disabled = true }: { disabled?: boolean }) {
   const { state, dispatch } = useWorkspace();
-  const [realStatus, setRealStatus] = useState<any>(null);
 
-  const runId = state.upload.entries.find((e) => e.runId)?.runId;
-
-  useEffect(() => {
-    if (disabled) return;
-    if (!state.analysis.running || !runId) return;
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetchDemRunStatus(runId);
-        setRealStatus(res);
-      } catch (e) {}
-    }, 2000);
-    fetchDemRunStatus(runId).then(setRealStatus).catch(() => {});
-    return () => clearInterval(interval);
-  }, [state.analysis.running, runId]);
+  const runtimeStore = getRuntimeStore();
+  const runtimeState = useSyncExternalStore(
+    (cb) => runtimeStore.subscribe(cb),
+    () => runtimeStore.getState(),
+  );
 
   if (disabled) return null;
   if (!state.analysis.running) return null;
-  const { stages, progress, currentMessage } = state.analysis;
-  
-  const totalPages = realStatus?.total_pages || 0;
-  const completedPages = realStatus?.pages?.filter((p: any) => p.status === 'complete' || p.status === 'failed').length || 0;
-  const synStatus = realStatus?.synthesis_status || 'pending';
-  const modelStack = Array.isArray(realStatus?.model_stack) ? realStatus.model_stack : [];
 
-  // Make stages reactive to real synthesis status
+  const { stages } = state.analysis;
+  const completedTasks = runtimeState.completedTaskCount;
+  const totalTasks = runtimeState.tasks.length || 12;
+  const progressPct = Math.round((completedTasks / totalTasks) * 100);
+  const currentMessage = runtimeState.statusStack.length > 0
+    ? runtimeState.statusStack[runtimeState.statusStack.length - 1].label
+    : state.analysis.currentMessage || 'Preparing sheets…';
+
+  const synStatus = completedTasks >= totalTasks ? 'synthesis_complete' : completedTasks > 0 ? 'synthesis_in_progress' : 'pending';
+
+  // Make stages reactive to real EventStore task status
   const activeStages = stages.map((s, i) => {
     if (synStatus === 'synthesis_complete') return { ...s, status: 'done' as const };
     if (synStatus === 'synthesis_in_progress') {
@@ -156,7 +160,7 @@ export function ProcessingOverlay({ disabled = true }: { disabled?: boolean }) {
           <div style={{ flex: 1, height: 6, borderRadius: 999, background: 'var(--di-panel2)', overflow: 'hidden' }}>
             <div
               style={{
-                width: `${progress}%`,
+                width: `${progressPct}%`,
                 height: '100%',
                 background: 'var(--di-action)',
                 borderRadius: 999,
@@ -165,28 +169,15 @@ export function ProcessingOverlay({ disabled = true }: { disabled?: boolean }) {
             />
           </div>
           <span className="di-mono" style={{ fontSize: 12, color: 'var(--di-text2)', width: 40, textAlign: 'right' }}>
-            {progress}%
+            {progressPct}%
           </span>
         </div>
 
-        {/* Live stats + model stack (QA mode, collapsed by default) */}
+        {/* Live stats */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <span className="di-mono" style={{ fontSize: 11, color: 'var(--di-text3)' }}>
-            Analysis Stats: {completedPages}/{totalPages} pages extracted · Synthesis Status: {synStatus}
+            Tasks: {completedTasks}/{totalTasks} completed · Status: {synStatus}
           </span>
-          {modelStack.length > 0 && (
-            <details>
-              <summary style={{ fontSize: 11, color: 'var(--di-text3)', cursor: 'pointer' }}>Runtime components</summary>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 6, paddingLeft: 4 }}>
-                {modelStack.map((component: any, index: number) => (
-                  <div key={`${component.name ?? 'component'}-${index}`} className="di-mono" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: 'var(--di-text3)' }}>
-                    <span>{String(component.name ?? 'Component')}</span>
-                    <span>{String(component.version ?? '')}</span>
-                  </div>
-                ))}
-              </div>
-            </details>
-          )}
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center' }}>

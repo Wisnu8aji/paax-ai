@@ -37,10 +37,10 @@ import type {
 import {
   retrieveProjectGraph,
   startDemUpload,
-  fetchDemRunStatus,
   fetchProjectDemSheets,
   fetchProjectDemRuns,
 } from '../drawing-intelligence-api';
+import { getRuntimeStore, startRuntimeBridge } from './agentic/agent-execution-console/runtime-bridge';
 import type { PackageIntelligenceSummary } from '../drawing-intelligence-api';
 import type { ProjectGraphSummaryView, QuantityReadinessItem, DrawingPackageIndex } from '@paax/schemas';
 import type { MappedProjectSheet } from './sheet-mapping';
@@ -924,141 +924,149 @@ export function WorkspaceProvider({
 
       try {
         const {
-          triggerSynthesis, fetchDemRunStatus, fetchReviewQueue, fetchQuantityReadiness,
+          triggerSynthesis, fetchReviewQueue, fetchQuantityReadiness,
           fetchProjectDemSheets, fetchProjectDemRuns, fetchPackageIntelligence,
         } = await import('../drawing-intelligence-api');
+        
+        startRuntimeBridge({ runId });
         await triggerSynthesis(runId, state.analysis.config.mode);
         dispatch({ type: 'set-status', message: 'Synthesis triggered' });
 
-        const poll = setInterval(async () => {
-          try {
-            const statusData = await fetchDemRunStatus(runId);
-            const synStatus = statusData.synthesis_status || 'pending';
+        const store = getRuntimeStore();
+        let finished = false;
 
-            if (synStatus === 'synthesis_in_progress') {
-              dispatch({
-                type: 'analysis',
-                patch: {
-                  progress: 50,
-                  currentMessage: 'PCKM synthesis in progress...',
-                },
-              });
-              dispatch({ type: 'set-status', message: 'PCKM synthesis in progress...' });
-            } else if (synStatus === 'synthesis_complete') {
-              clearInterval(poll);
-              dispatch({
-                type: 'analysis',
-                patch: {
-                  running: false,
-                  complete: true,
-                  progress: 100,
-                  currentMessage: 'Synthesis completed successfully',
-                  stages: ANALYSIS_STAGES.map((s) => ({ ...s, status: 'done' })),
-                },
-              });
-              dispatch({ type: 'set-mode', mode: 'review' });
-              dispatch({
-                type: 'push-activity',
-                entry: { time: 'Now', message: 'Analysis completed — review workspace ready', kind: 'analysis' },
-              });
-              dispatch({ type: 'set-status', message: 'PCKM synthesis completed successfully' });
+        const checkEventStoreStatus = async () => {
+          if (finished) return;
+          const runtimeState = store.getState();
+          const completedCount = runtimeState.completedTaskCount;
+          const totalTasks = runtimeState.tasks.length || 12;
+          const isComplete = completedCount >= totalTasks || runtimeState.rawEvents.some(e => e.params.type === 'run.completed' || e.params.type === 'nexus.build_completed');
+          const isFailed = runtimeState.rawEvents.some(e => e.params.type === 'run.failed' || e.params.type === 'task.failed');
 
-              const packageIntelligence = await fetchPackageIntelligence(runId).catch(() => null);
-              dispatch({ type: 'analysis', patch: { packageIntelligence } });
-
-              if (projectId) {
-                const [queue, readiness, sheetsData, runsData] = await Promise.all([
-                  fetchReviewQueue(projectId),
-                  fetchQuantityReadiness(projectId),
-                  fetchProjectDemSheets(projectId),
-                  fetchProjectDemRuns(projectId),
-                ]);
-                dispatch({ type: 'backend-connected', connected: true });
-
-                const snapshotId = queue.snapshot_id || readiness.snapshot_id || null;
-                if (snapshotId) {
-                  dispatch({ type: 'set-active-snapshot-id', snapshotId });
-                }
-
-                const mappedFiles = runsData.map(mapDemRunToDrawingFile);
-                const realMappedSheets = sheetsData.map(mapProjectDemSheet);
-                dispatch({ type: 'replace-mapped-sheets', sheets: realMappedSheets });
-                if (mappedFiles.length > 0) dispatch({ type: 'replace-files', files: mappedFiles });
-
-                if (queue.items.length > 0) {
-                  const CATEGORY_LABELS: Record<string, string> = {
-                    conflict: 'Dimension conflict',
-                    missing_dimension: 'Missing dimension',
-                    ambiguous_level: 'Ambiguous level binding',
-                    possibly_same: 'Possible duplicate element',
-                    needs_review: 'Needs review',
-                  };
-                  const findSheetIdForEvidence = (evidenceId: string | null): string | null => {
-                    if (!evidenceId) return null;
-                    const match = evidenceId.match(/page[-_]index[-_](\d+)|EV[-_](\d+)|page[-_](\d+)/i);
-                    if (match) {
-                      const pageIndexStr = match[1] || match[2] || match[3];
-                      const pageIndex = parseInt(pageIndexStr, 10);
-                      const found = realMappedSheets.find((s) => s.id.endsWith(`-page-${pageIndex}`));
-                      if (found) return found.id;
-                    }
-                    return null;
-                  };
-                  const mappedQueue: ReviewQueueItem[] = queue.items.map((item) => {
-                    let sheetId: string | null = null;
-                    // target_type can only be 'node' | 'edge' per schema;
-                    // always attempt evidence_refs lookup for sheet resolution
-                    if (item.evidence_refs && item.evidence_refs.length > 0) {
-                      for (const ref of item.evidence_refs) {
-                        const sid = findSheetIdForEvidence(ref);
-                        if (sid) {
-                          sheetId = sid;
-                          break;
-                        }
-                      }
-                    }
-                    return {
-                      id: item.id,
-                      title: `${CATEGORY_LABELS[item.category] ?? item.category} — ${item.target_id}`,
-                      reason:
-                        item.reasons.map((r: any) => r.message).join('; ') ||
-                        item.reason_codes.join(', ') ||
-                        'Flagged by project graph integrity checks.',
-                      severity: item.category === 'conflict' ? 'issue' : 'review',
-                      sheetId,
-                      elementId: item.target_type === 'node' ? item.target_id : null,
-                      resolved: false,
-                    };
-                  });
-                  dispatch({ type: 'replace-review-queue', items: mappedQueue });
-                }
-
-                if (readiness.items.length > 0) {
-                  dispatch({ type: 'replace-quantities', quantities: mapQuantityReadinessToItems(readiness.items) });
-                }
-              }
-            } else if (synStatus === 'synthesis_failed') {
-              clearInterval(poll);
-              dispatch({
-                type: 'analysis',
-                patch: {
-                  running: false,
-                  complete: false,
-                  progress: 100,
-                  currentMessage: 'PCKM synthesis failed',
-                },
-              });
-              dispatch({ type: 'set-status', message: 'PCKM synthesis failed' });
-            }
-          } catch (err) {
-            clearInterval(poll);
+          if (isComplete) {
+            finished = true;
+            unsubscribe();
             dispatch({
               type: 'analysis',
-              patch: { running: false, currentMessage: 'Failed to poll synthesis status' },
+              patch: {
+                running: false,
+                complete: true,
+                progress: 100,
+                currentMessage: 'Synthesis completed successfully',
+                stages: ANALYSIS_STAGES.map((s) => ({ ...s, status: 'done' })),
+              },
             });
+            dispatch({ type: 'set-mode', mode: 'review' });
+            dispatch({
+              type: 'push-activity',
+              entry: { time: 'Now', message: 'Analysis completed — review workspace ready', kind: 'analysis' },
+            });
+            dispatch({ type: 'set-status', message: 'PCKM synthesis completed successfully' });
+
+            const packageIntelligence = await fetchPackageIntelligence(runId).catch(() => null);
+            dispatch({ type: 'analysis', patch: { packageIntelligence } });
+
+            if (projectId) {
+              const [queue, readiness, sheetsData, runsData] = await Promise.all([
+                fetchReviewQueue(projectId),
+                fetchQuantityReadiness(projectId),
+                fetchProjectDemSheets(projectId),
+                fetchProjectDemRuns(projectId),
+              ]);
+              dispatch({ type: 'backend-connected', connected: true });
+
+              const snapshotId = queue.snapshot_id || readiness.snapshot_id || null;
+              if (snapshotId) {
+                dispatch({ type: 'set-active-snapshot-id', snapshotId });
+              }
+
+              const mappedFiles = runsData.map(mapDemRunToDrawingFile);
+              const realMappedSheets = sheetsData.map(mapProjectDemSheet);
+              dispatch({ type: 'replace-mapped-sheets', sheets: realMappedSheets });
+              if (mappedFiles.length > 0) dispatch({ type: 'replace-files', files: mappedFiles });
+
+              if (queue.items.length > 0) {
+                const CATEGORY_LABELS: Record<string, string> = {
+                  conflict: 'Dimension conflict',
+                  missing_dimension: 'Missing dimension',
+                  ambiguous_level: 'Ambiguous level binding',
+                  possibly_same: 'Possible duplicate element',
+                  needs_review: 'Needs review',
+                };
+                const findSheetIdForEvidence = (evidenceId: string | null): string | null => {
+                  if (!evidenceId) return null;
+                  const match = evidenceId.match(/page[-_]index[-_](\d+)|EV[-_](\d+)|page[-_](\d+)/i);
+                  if (match) {
+                    const pageIndexStr = match[1] || match[2] || match[3];
+                    const pageIndex = parseInt(pageIndexStr, 10);
+                    const found = realMappedSheets.find((s) => s.id.endsWith(`-page-${pageIndex}`));
+                    if (found) return found.id;
+                  }
+                  return null;
+                };
+                const mappedQueue: ReviewQueueItem[] = queue.items.map((item) => {
+                  let sheetId: string | null = null;
+                  if (item.evidence_refs && item.evidence_refs.length > 0) {
+                    for (const ref of item.evidence_refs) {
+                      const sid = findSheetIdForEvidence(ref);
+                      if (sid) {
+                        sheetId = sid;
+                        break;
+                      }
+                    }
+                  }
+                  return {
+                    id: item.id,
+                    title: `${CATEGORY_LABELS[item.category] ?? item.category} — ${item.target_id}`,
+                    reason:
+                      item.reasons.map((r: any) => r.message).join('; ') ||
+                      item.reason_codes.join(', ') ||
+                      'Flagged by project graph integrity checks.',
+                    severity: item.category === 'conflict' ? 'issue' : 'review',
+                    sheetId,
+                    elementId: item.target_type === 'node' ? item.target_id : null,
+                    resolved: false,
+                  };
+                });
+                dispatch({ type: 'replace-review-queue', items: mappedQueue });
+              }
+
+              if (readiness.items.length > 0) {
+                dispatch({ type: 'replace-quantities', quantities: mapQuantityReadinessToItems(readiness.items) });
+              }
+            }
+          } else if (isFailed) {
+            finished = true;
+            unsubscribe();
+            dispatch({
+              type: 'analysis',
+              patch: {
+                running: false,
+                complete: false,
+                progress: 100,
+                currentMessage: 'PCKM synthesis failed',
+              },
+            });
+            dispatch({ type: 'set-status', message: 'PCKM synthesis failed' });
+          } else if (completedCount > 0) {
+            const pct = Math.round((completedCount / totalTasks) * 100);
+            dispatch({
+              type: 'analysis',
+              patch: {
+                progress: pct,
+                currentMessage: `PCKM synthesis in progress (${completedCount}/${totalTasks} tasks)...`,
+              },
+            });
+            dispatch({ type: 'set-status', message: `PCKM synthesis in progress (${completedCount}/${totalTasks} tasks)...` });
           }
-        }, 2000);
-        timers.current.push(poll);
+        };
+
+        const unsubscribe = store.subscribe(() => {
+          void checkEventStoreStatus();
+        });
+
+        // Trigger initial check
+        void checkEventStoreStatus();
       } catch (err: any) {
         console.error('Gagal memicu sintesis:', err);
         dispatch({

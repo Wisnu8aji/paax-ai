@@ -254,6 +254,12 @@ export async function startDemUpload(projectId: string, file: File): Promise<any
   return res.json();
 }
 
+/**
+ * @deprecated [COMPATIBILITY_FALLBACK_FAIL_CLOSED]
+ * Status DEM via REST polling. Production source of truth adalah EventStore
+ * (PaaxRuntimeStore / /api/paax/events). Endpoint ini hanya digunakan sebagai
+ * explicit compatibility path yang fail-closed, bukan polling default.
+ */
 export async function fetchDemRunStatus(runId: string): Promise<DemRunStatusResponse> {
   // Menggunakan proxy document-intelligence
   const res = await fetch(`/api/document-intelligence/drawings/dem/${encodeURIComponent(runId)}/status`, {
