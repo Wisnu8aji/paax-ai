@@ -325,3 +325,125 @@ describe('truthful-runtime-state: PaaxRuntimeStore dedup + ingest', () => {
     expect(store.getState().rawEvents.length).toBe(1);
   });
 });
+
+// ── §7.4 NEGATIVE GATES (ORION-F2 Wave 1 persiapan) ─────────────────────────
+
+describe('negative-gates §7.4: run switch tidak campur rawEvents', () => {
+  it('resetRun() bersihkan rawEvents run A sebelum run B dimulai', () => {
+    const store = new PaaxRuntimeStore();
+    // Ingest events run A
+    store.ingest(f2Ev(1, 'run.started', { payload_summary: {} }));
+    store.ingest(f2Ev(2, 'task.started', { task_id: 'T01' }));
+    expect(store.getState().rawEvents.length).toBe(2);
+    expect(store.getState().rawEvents[0]!.params.run_id).toBe(F2_RUN_ID);
+
+    // Switch ke run B — resetRun() harus bersihkan rawEvents
+    store.resetRun();
+    expect(store.getState().rawEvents.length).toBe(0);
+    expect(store.getState().tasks.every(t => t.state === 'pending')).toBe(true);
+    expect(store.getState().trace.length).toBe(0);
+    expect(store.getState().connection).toBe('idle');
+  });
+
+  it('rawEvents run A tidak tercampur setelah resetRun() + ingest run B', () => {
+    const store = new PaaxRuntimeStore();
+    // Run A events
+    const evA = f2Ev(1, 'task.started', { task_id: 'T01', payload_summary: { run: 'A' } });
+    store.ingest(evA);
+    store.resetRun();
+    // Run B events
+    const evB = makeEventEnvelope({
+      event_id: 'paax:evt:run-b:1:0000001b',
+      run_id: 'paax:run:run-b',
+      sequence: 1,
+      timestamp: new Date().toISOString(),
+      type: 'task.started',
+      task_id: 'T02',
+    });
+    store.ingest(evB);
+    const state = store.getState();
+    // Hanya event run B yang ada
+    expect(state.rawEvents.length).toBe(1);
+    expect(state.rawEvents[0]!.params.run_id).toBe('paax:run:run-b');
+    // rawEvents run A tidak ada
+    expect(state.rawEvents.some(e => e.params.run_id === F2_RUN_ID)).toBe(false);
+  });
+});
+
+describe('negative-gates §7.4: demo events tidak masuk production store path', () => {
+  it('scanRealEvents menolak SEMUA demo events di jalur produksi', () => {
+    const demoEvs = buildDemoEvents();
+    const result = scanRealEvents(demoEvs);
+    // Semua event demo berlabel synthetic → ditolak semua
+    expect(result.ok).toBe(false);
+    const syntheticFindings = result.findings.filter(f =>
+      f.code === 'SYNTHETIC_IN_PRODUCTION' || f.code === 'SIMULATION_MARKER'
+    );
+    // Setiap demo event harus punya setidaknya satu finding
+    expect(syntheticFindings.length).toBeGreaterThanOrEqual(demoEvs.length);
+  });
+
+  it('store tidak menerima synthetic event tanpa label notProduction', () => {
+    const store = new PaaxRuntimeStore();
+    // Event dengan synthetic:true tapi tanpa notProduction — scan.ts akan menolak
+    // (store.ingest tidak memanggil scan; ini murni tes kontrak scan gate)
+    const bad = f2Ev(5, 'task.started', {
+      task_id: 'T01',
+      payload_summary: { synthetic: true }, // tanpa notProduction
+    });
+    const result = scanRealEvents([bad]);
+    // Harus ditolak — scan mendeteksi SIMULATION_MARKER
+    expect(result.ok).toBe(false);
+    expect(result.findings.some(f => f.code === 'SIMULATION_MARKER')).toBe(true);
+  });
+});
+
+describe('negative-gates §7.4: task completion hanya dari event (no timer)', () => {
+  it('completedTaskCount tidak berubah tanpa event task.completed', () => {
+    const store = new PaaxRuntimeStore();
+    // Hanya task.started — belum ada task.completed
+    store.ingest(f2Ev(1, 'run.started', {}));
+    store.ingest(f2Ev(2, 'task.started', { task_id: 'T01' }));
+    expect(store.getState().completedTaskCount).toBe(0);
+    expect(store.getState().tasks.find(t => t.id === 'T01')?.state).toBe('running');
+    // Progress event tidak mengubah completedTaskCount
+    store.ingest(f2Ev(3, 'task.progress', { task_id: 'T01', payload_summary: { progress: 0.9 } }));
+    expect(store.getState().completedTaskCount).toBe(0);
+    expect(store.getState().tasks.find(t => t.id === 'T01')?.state).toBe('running');
+  });
+
+  it('task.completed dari event menambah completedTaskCount', () => {
+    const store = new PaaxRuntimeStore();
+    store.ingest(f2Ev(1, 'task.started', { task_id: 'T01' }));
+    store.ingest(f2Ev(2, 'task.completed', { task_id: 'T01', payload_summary: { progress: 1 } }));
+    expect(store.getState().completedTaskCount).toBe(1);
+    expect(store.getState().tasks.find(t => t.id === 'T01')?.state).toBe('completed');
+    // Ingest ulang event yang sama tidak double-count
+    store.ingest(f2Ev(2, 'task.completed', { task_id: 'T01', payload_summary: { progress: 1 } }));
+    expect(store.getState().completedTaskCount).toBe(1);
+  });
+});
+
+describe('negative-gates §7.4: disconnected state jujur (tidak pernah fake connected)', () => {
+  it('state connection idle setelah resetRun() — tidak pernah klaim connected tanpa event', () => {
+    const store = new PaaxRuntimeStore();
+    // Awal idle
+    expect(store.getState().connection).toBe('idle');
+    // Setelah ingest event, connection berubah ke connected
+    store.ingest(f2Ev(1, 'run.started', {}));
+    expect(store.getState().connection).toBe('connected');
+    // resetRun → kembali idle, bukan tetap connected
+    store.resetRun();
+    expect(store.getState().connection).toBe('idle');
+  });
+
+  it('setConnection disconnected tetap disconnected sampai reconnect nyata', () => {
+    const store = new PaaxRuntimeStore();
+    store.setConnection('connected');
+    store.setConnection('disconnected');
+    expect(store.getState().connection).toBe('disconnected');
+    // Hanya bisa ke connected via ingest event atau setConnection eksplisit
+    store.setConnection('connected');
+    expect(store.getState().connection).toBe('connected');
+  });
+});

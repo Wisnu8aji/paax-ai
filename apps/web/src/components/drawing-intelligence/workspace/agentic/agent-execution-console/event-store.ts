@@ -555,6 +555,16 @@ export class PaaxRuntimeStore {
     this.notify()
   }
 
+  /**
+   * Isolasi run switch (§7.4): reset state ke EMPTY untuk runId baru.
+   * Dipanggil oleh runtime-bridge sebelum mulai client baru agar rawEvents
+   * run sebelumnya tidak tercampur dengan run berikutnya.
+   */
+  resetRun(): void {
+    this.state = { ...EMPTY_RUNTIME_STATE }
+    this.notify()
+  }
+
   subscribe(listener: () => void): () => void {
     this.listeners.add(listener)
     return () => this.listeners.delete(listener)

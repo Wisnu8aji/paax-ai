@@ -105,6 +105,10 @@ export function startRuntimeBridge(options: RuntimeBridgeOptions): void {
     return
   }
 
+  // Isolasi run switch (§7.4): bersihkan store agar rawEvents run
+  // sebelumnya tidak tercampur dengan run baru.
+  store.resetRun()
+
   const client = new PaaxEventClient({
     runId,
     wsUrl: options.wsUrl ?? '/api/paax/events/ws',
