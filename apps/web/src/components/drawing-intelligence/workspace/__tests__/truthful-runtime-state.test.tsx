@@ -19,6 +19,7 @@ import { makeEventEnvelope } from '../agentic/agent-execution-console/event-cont
 import { completedTaskCount } from '../agentic/task-rail/task-rail';
 import { buildWorkerTreeV2, subagentCounts } from '../agentic/trace/worker-tree';
 import { applyModeToGate, createToolViewState, setToolViewMode } from '../agentic/agent-execution-console/mode-view';
+import { PaaxEventClient } from '../agentic/agent-execution-console/ws-client';
 
 const F2_RUN_ID = 'paax:run:test-20260807';
 
@@ -325,3 +326,61 @@ describe('truthful-runtime-state: PaaxRuntimeStore dedup + ingest', () => {
     expect(store.getState().rawEvents.length).toBe(1);
   });
 });
+
+describe('truthful-runtime-state: web_trace live status gate (Acceptance Gate 2)', () => {
+  it('web_trace false saat transport none, idle, atau demo', () => {
+    const clientNone = new PaaxEventClient({
+      runId: 'paax:run:test-webtrace',
+      onEvent: () => {},
+      onStatus: () => {},
+    });
+    expect(clientNone.getStatus().web_trace).toBe(false);
+
+    const clientDemo = new PaaxEventClient({
+      runId: 'paax:run:demo-webtrace',
+      demoEvents: buildDemoEvents(),
+      onEvent: () => {},
+      onStatus: () => {},
+    });
+    clientDemo.start();
+    expect(clientDemo.getStatus().kind).toBe('demo');
+    expect(clientDemo.getStatus().web_trace).toBe(false);
+  });
+
+  it('web_trace true saat event live diterima dan divalidasi', () => {
+    let statusCaptured: any = null;
+    const client = new PaaxEventClient({
+      runId: 'paax:run:test-live',
+      onEvent: () => {},
+      onStatus: (s) => { statusCaptured = s; },
+      httpUrl: '/api/paax/events',
+    });
+    const deliver = (client as any).deliver.bind(client);
+    const validLiveEv = f2Ev(1, 'task.started', { task_id: 'T01', payload_summary: { status: 'running' } });
+
+    deliver(validLiveEv);
+
+    expect(statusCaptured).not.toBeNull();
+    expect(statusCaptured.web_trace).toBe(true);
+    expect(client.getStatus().web_trace).toBe(true);
+  });
+
+  it('web_trace false saat frame ditolak scanRealEvents (SCAN_REJECT)', () => {
+    let statusCaptured: any = null;
+    const client = new PaaxEventClient({
+      runId: 'paax:run:test-live-reject',
+      onEvent: () => {},
+      onStatus: (s) => { statusCaptured = s; },
+      httpUrl: '/api/paax/events',
+    });
+    const deliver = (client as any).deliver.bind(client);
+    const syntheticFrame = f2Ev(1, 'task.started', { task_id: 'T01', payload_summary: { synthetic: true, notProduction: true } });
+
+    deliver(syntheticFrame);
+
+    expect(statusCaptured.web_trace).toBe(false);
+    expect(statusCaptured.lastError).toMatch(/^SCAN_REJECT:/);
+    expect(client.getStatus().web_trace).toBe(false);
+  });
+});
+

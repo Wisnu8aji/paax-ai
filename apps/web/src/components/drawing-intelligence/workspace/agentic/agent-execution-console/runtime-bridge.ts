@@ -41,7 +41,7 @@ const store = new PaaxRuntimeStore()
 
 const bridgeState: BridgeState = {
   runId: null,
-  transport: { kind: 'none', connected: false, detail: 'idle' },
+  transport: { kind: 'none', connected: false, detail: 'idle', web_trace: false },
   client: null,
   startedAt: null,
 }
@@ -101,7 +101,7 @@ export function startRuntimeBridge(options: RuntimeBridgeOptions): void {
   stopRuntimeBridge()
 
   if (!runId) {
-    setTransport({ kind: 'none', connected: false, detail: 'idle — menunggu run id' })
+    setTransport({ kind: 'none', connected: false, detail: 'idle — menunggu run id', web_trace: false })
     return
   }
 
@@ -132,7 +132,7 @@ export function stopRuntimeBridge(): void {
   }
   bridgeState.runId = null
   bridgeState.startedAt = null
-  setTransport({ kind: 'none', connected: false, detail: 'idle — bridge stopped' })
+  setTransport({ kind: 'none', connected: false, detail: 'idle — bridge stopped', web_trace: false })
 }
 
 /** Command ke gateway via client aktif. False → tidak ada koneksi (jujur). */

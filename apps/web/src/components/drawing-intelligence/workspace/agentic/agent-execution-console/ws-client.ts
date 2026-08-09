@@ -23,6 +23,7 @@ export interface TransportStatus {
   connected: boolean
   detail: string
   lastError?: string
+  web_trace: boolean
 }
 
 export interface EventTransportOptions {
@@ -80,7 +81,8 @@ export class PaaxEventClient {
   private timer: ReturnType<typeof setTimeout> | null = null
   private stopped = false
   private lastSequence = -1
-  private status: TransportStatus = { kind: 'none', connected: false, detail: 'idle' }
+  private validLiveEventReceived = false
+  private status: TransportStatus = { kind: 'none', connected: false, detail: 'idle', web_trace: false }
 
   constructor(options: EventTransportOptions) {
     this.options = options
@@ -277,11 +279,19 @@ export class PaaxEventClient {
         this.setStatus({
           kind: this.status.kind,
           connected: this.status.connected,
+          web_trace: false,
           detail: `scanRealEvents rejected frame: ${detail}`,
           lastError: `SCAN_REJECT:${event.params.event_id}`,
         })
         return
       }
+      this.validLiveEventReceived = true
+      this.setStatus({
+        kind: this.status.kind,
+        connected: true,
+        web_trace: true,
+        detail: this.status.detail,
+      })
     }
     // Task scoping (F03 §5.2): bila client di-bind ke task tertentu, event
     // task lain tidak diteruskan (tetap dihitung sequence agar replay
@@ -379,8 +389,9 @@ export class PaaxEventClient {
     }
   }
 
-  private setStatus(status: TransportStatus): void {
-    this.status = status
-    this.options.onStatus(status)
+  private setStatus(status: Omit<TransportStatus, 'web_trace'> & { web_trace?: boolean }): void {
+    const web_trace = status.web_trace ?? (status.kind !== 'demo' && status.kind !== 'none' && status.connected && this.validLiveEventReceived)
+    this.status = { ...status, web_trace }
+    this.options.onStatus(this.status)
   }
 }

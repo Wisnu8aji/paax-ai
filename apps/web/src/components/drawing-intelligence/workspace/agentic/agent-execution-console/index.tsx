@@ -96,7 +96,7 @@ export function AgentExecutionConsole({
     () => store.getState(),
   );
 
-  const [localTransport, setLocalTransport] = useState<TransportStatus>({ kind: 'none', connected: false, detail: 'idle' });
+  const [localTransport, setLocalTransport] = useState<TransportStatus>({ kind: 'none', connected: false, detail: 'idle', web_trace: false });
   const bridgeTransport = useRuntimeTransport();
   const transport = isDemo ? localTransport : bridgeTransport;
   const [toolView, setToolView] = useState<ToolViewState>(() => createToolViewState());
@@ -267,6 +267,22 @@ export function AgentExecutionConsole({
           <span data-testid="transport-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '2px 7px', borderRadius: 5, color: transportColor(transport), background: 'var(--di-panel2)', fontWeight: 600 }}>
             {transportIcon(transport)} {transport.kind}
             {transport.kind === 'demo' && ' (synthetic)'}
+          </span>
+          <span
+            data-testid="web-trace-badge"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: 10,
+              padding: '2px 7px',
+              borderRadius: 5,
+              color: transport.web_trace ? 'var(--di-ok, #22c55e)' : 'var(--di-danger, #ef4444)',
+              background: 'var(--di-panel2)',
+              fontWeight: 600,
+            }}
+          >
+            web_trace: {transport.web_trace ? 'true' : 'false'}
           </span>
           <span style={{ fontSize: 10, color: 'var(--di-text3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>
             {runId ?? 'menunggu run'}

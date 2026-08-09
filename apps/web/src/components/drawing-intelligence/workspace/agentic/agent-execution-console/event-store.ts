@@ -10,7 +10,7 @@
 //
 // Semua reducer murni/deterministik — di-unit-test.
 
-import type { PaaxEventEnvelope } from './event-contract'
+import type { PaaxEventEnvelope, RedactionState } from './event-contract'
 import { TASK_PLAN } from './event-contract'
 
 export type TaskState =
@@ -48,6 +48,7 @@ export interface TraceItem {
   summary: Record<string, unknown> | null
   payloadRef: string | null
   stage: string | null
+  redactionState?: RedactionState
   /** konten reasoning (dari reasoning.delta — akumulasi). */
   reasoning?: string
 }
@@ -382,6 +383,7 @@ export function reduceEvent(state: PaaxRuntimeState, event: PaaxEventEnvelope): 
           summary,
           payloadRef: p.payload_ref,
           stage: p.stage,
+          redactionState: p.redaction_state,
         }],
       }
       if (type === 'retry.scheduled') {
@@ -491,6 +493,7 @@ export function reduceEvent(state: PaaxRuntimeState, event: PaaxEventEnvelope): 
           summary,
           payloadRef: p.payload_ref,
           stage: p.stage,
+          redactionState: p.redaction_state,
         }],
       }
       break
