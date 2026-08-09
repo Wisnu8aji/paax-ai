@@ -116,6 +116,8 @@ export interface PaaxRuntimeState {
   lastEventAt?: string
   /** true bila ada frame _replay dari gateway. */
   replayed: boolean
+  /** true bila trace nyata diterima dari gateway/relay. */
+  webTrace: boolean
 }
 
 export const EMPTY_RUNTIME_STATE: PaaxRuntimeState = {
@@ -132,6 +134,7 @@ export const EMPTY_RUNTIME_STATE: PaaxRuntimeState = {
   connection: 'idle',
   lastSequence: -1,
   replayed: false,
+  webTrace: false,
 }
 
 function str(v: unknown): string | null {
@@ -207,6 +210,8 @@ export function reduceEvent(state: PaaxRuntimeState, event: PaaxEventEnvelope): 
   const type = p.type
   const summary = p.payload_summary ?? {}
 
+  const isSynthetic = summary.synthetic === true || summary.synthetic === 'true'
+
   let next: PaaxRuntimeState = {
     ...state,
     runId: state.runId ?? p.run_id,
@@ -214,6 +219,7 @@ export function reduceEvent(state: PaaxRuntimeState, event: PaaxEventEnvelope): 
     lastEventAt: p.timestamp,
     connection: state.connection === 'failed' ? state.connection : 'connected',
     replayed: state.replayed || event._replay === true,
+    webTrace: state.webTrace || !isSynthetic,
     rawEvents: [...state.rawEvents, event],
   }
 

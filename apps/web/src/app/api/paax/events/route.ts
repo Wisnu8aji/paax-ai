@@ -2,19 +2,13 @@
 //
 // HTTP endpoint yang di-reference oleh ws-client.ts dan runtime-bridge.ts:
 //   GET  /api/paax/events?run_id=<id>&after_sequence=<seq>[&task_id=<id>]
-//        → HTTP replay dari gateway F1 event_store (EventLog.replay_after_sequence).
-//
-// Kontrak Event Protocol v2 (§7.7):
-//   Envelope: { jsonrpc: '2.0', method: 'paax.event', params: PaaxEventParams, _replay: true }
-//   Enforces monotonic sequence (> after_sequence, sorted asc) + replay marker (_replay: true).
-//
-// WAITING_DEPENDENCY F1 W1-D: bila gateway belum live, route ini melaporkan
-// status jujur (503) dengan detail WAITING_DEPENDENCY. ws-client.ts fallback
-// ke status disconnected jujur tanpa fake progress.
+//        → HTTP replay dari gateway EventRelay/EventStore v2.
+//   POST /api/paax/events
+//        → Ingest event JSON / array ke gateway event relay store.
 
 import { type NextRequest, NextResponse } from 'next/server'
-import type { PaaxEventEnvelope, PaaxEventParams } from '@/components/drawing-intelligence/workspace/agentic/agent-execution-console/event-contract'
-import { validatePaaxEvent } from '@/components/drawing-intelligence/workspace/agentic/agent-execution-console/event-contract'
+import type { PaaxEventEnvelope } from '@/components/drawing-intelligence/workspace/agentic/agent-execution-console/event-contract'
+import { getRelayStore } from '@/lib/paax/event-relay-store'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -61,7 +55,7 @@ function normalizeToV2Envelope(item: unknown, runId: string): PaaxEventEnvelope 
         timestamp: String(params.timestamp || new Date().toISOString()),
         type: String(params.type || 'run.started'),
         stage: params.stage ?? null,
-        payload_summary: params.payload_summary ?? null,
+        payload_summary: params.payload_summary ?? params.payload ?? null,
         payload_ref: params.payload_ref ?? null,
         redaction_state: (params.redaction_state as any) || 'clean',
         persistence_status: (params.persistence_status as any) || 'durable',
@@ -113,54 +107,68 @@ export async function GET(request: NextRequest) {
   }
 
   const gatewayUrl = getGatewayUrl()
+  const relayStore = getRelayStore()
 
-  // WAITING_DEPENDENCY F1 W1-D: gateway belum live.
-  if (!gatewayUrl) {
-    return NextResponse.json(
-      {
-        error: 'gateway event relay belum tersedia',
-        detail: 'WAITING_DEPENDENCY: F1 gateway relay contract W1-D',
-        run_id: runId,
-        after_sequence: afterSeq,
-        events: [],
-      },
-      { status: 503 },
-    )
-  }
+  // 1. Bila PAAX_GATEWAY_URL / PAAX_RUNTIME_URL di-configure, proxy ke upstream
+  if (gatewayUrl) {
+    const params = new URLSearchParams({ run_id: runId, after_sequence: String(afterSeq) })
+    if (taskId) params.set('task_id', taskId)
+    const target = `${gatewayUrl.replace(/\/+$/, '')}/events?${params.toString()}`
 
-  // Forward ke gateway bila PAAX_GATEWAY_URL / PAAX_RUNTIME_URL tersedia.
-  const params = new URLSearchParams({ run_id: runId, after_sequence: String(afterSeq) })
-  if (taskId) params.set('task_id', taskId)
-  const target = `${gatewayUrl.replace(/\/+$/, '')}/events?${params.toString()}`
+    try {
+      const upstream = await fetch(target, {
+        headers: gatewayHeaders(),
+        cache: 'no-store',
+      })
 
-  try {
-    const upstream = await fetch(target, {
-      headers: gatewayHeaders(),
-      cache: 'no-store',
-    })
+      if (!upstream.ok) {
+        return NextResponse.json(
+          { error: 'gateway response error', status: upstream.status, run_id: runId, events: [] },
+          { status: upstream.status },
+        )
+      }
 
-    if (!upstream.ok) {
+      const rawData = (await upstream.json()) as unknown
+      const rawList = Array.isArray(rawData) ? rawData : (rawData as { events?: unknown[] })?.events ?? []
+
+      const normalizedEvents: PaaxEventEnvelope[] = rawList
+        .map(item => normalizeToV2Envelope(item, runId))
+        .filter((env): env is PaaxEventEnvelope => env !== null)
+        .filter(env => env.params.sequence > afterSeq)
+        .sort((a, b) => a.params.sequence - b.params.sequence)
+
       return NextResponse.json(
-        { error: 'gateway response error', status: upstream.status, run_id: runId, events: [] },
-        { status: upstream.status },
+        {
+          run_id: runId,
+          after_sequence: afterSeq,
+          events: normalizedEvents,
+          web_trace: true,
+        },
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+          },
+        },
+      )
+    } catch (e) {
+      return NextResponse.json(
+        { error: 'gateway event relay tidak dapat dihubungi', detail: String(e), events: [] },
+        { status: 503 },
       )
     }
+  }
 
-    const rawData = (await upstream.json()) as unknown
-    const rawList = Array.isArray(rawData) ? rawData : (rawData as { events?: unknown[] })?.events ?? []
-
-    // Enforce monotonic sequence + v2 envelope contract + _replay marker
-    const normalizedEvents: PaaxEventEnvelope[] = rawList
-      .map(item => normalizeToV2Envelope(item, runId))
-      .filter((env): env is PaaxEventEnvelope => env !== null)
-      .filter(env => env.params.sequence > afterSeq)
-      .sort((a, b) => a.params.sequence - b.params.sequence)
-
+  // 2. Bila lokal relay store memiliki data run ini, respons 200 dengan events nyata!
+  if (relayStore.hasRun(runId)) {
+    const events = relayStore.getEvents(runId, afterSeq, taskId)
     return NextResponse.json(
       {
         run_id: runId,
         after_sequence: afterSeq,
-        events: normalizedEvents,
+        events,
+        web_trace: true,
       },
       {
         status: 200,
@@ -170,11 +178,44 @@ export async function GET(request: NextRequest) {
         },
       },
     )
-  } catch (e) {
-    return NextResponse.json(
-      { error: 'gateway event relay tidak dapat dihubungi', detail: String(e), events: [] },
-      { status: 503 },
-    )
   }
+
+  // 3. WAITING_DEPENDENCY F1 W1-D: gateway belum live dan belum ada run di relay.
+  return NextResponse.json(
+    {
+      error: 'gateway event relay belum tersedia',
+      detail: 'WAITING_DEPENDENCY: F1 gateway relay contract W1-D',
+      run_id: runId,
+      after_sequence: afterSeq,
+      events: [],
+      web_trace: false,
+    },
+    { status: 503 },
+  )
 }
 
+/** POST /api/paax/events — Ingest events ke gateway event relay store. */
+export async function POST(request: NextRequest) {
+  try {
+    const body = (await request.json()) as Record<string, any>
+    const runId = body.run_id || request.nextUrl.searchParams.get('run_id') || ''
+
+    if (!runId) {
+      return NextResponse.json({ error: 'run_id required' }, { status: 400 })
+    }
+
+    const relayStore = getRelayStore()
+    const rawEvents = Array.isArray(body.events) ? body.events : [body]
+    const ingested = relayStore.ingestBatch(runId, rawEvents)
+
+    return NextResponse.json({
+      ok: true,
+      run_id: runId,
+      count: ingested.length,
+      events: ingested,
+      web_trace: true,
+    })
+  } catch (e) {
+    return NextResponse.json({ error: 'failed to ingest events', detail: String(e) }, { status: 400 })
+  }
+}
