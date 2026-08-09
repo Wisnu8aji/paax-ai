@@ -224,6 +224,7 @@ export function Minimap({
       {!minimized && (
         <div
           ref={containerRef}
+          data-testid="di-minimap-preview"
           onPointerDown={handlePreviewPointerDown}
           style={{
             position: 'relative',

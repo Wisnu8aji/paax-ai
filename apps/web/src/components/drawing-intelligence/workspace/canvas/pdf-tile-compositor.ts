@@ -22,6 +22,8 @@ export interface CompositorFrame {
 export interface CompositorDiagnostics {
   renderer: PdfTileRendererKind;
   committedGeneration: number | null;
+  committedTileCount: number;
+  materializedTileCount: number;
   textureCount: number;
   estimatedTextureBytes: number;
   contextLost: boolean;
@@ -117,9 +119,12 @@ class PdfTileCompositorWrapper implements PdfTileCompositor {
 
   diagnostics(): CompositorDiagnostics {
     const backendDiagnostics = this.backend.diagnostics();
+    const committedTileCount = this.committedFrame ? this.committedFrame.tiles.length : 0;
     return {
       renderer: this.backend.kind,
       committedGeneration: this.committedFrame ? this.committedFrame.generation : null,
+      committedTileCount,
+      materializedTileCount: committedTileCount,
       textureCount: backendDiagnostics.textureCount,
       estimatedTextureBytes: backendDiagnostics.estimatedTextureBytes,
       contextLost: backendDiagnostics.contextLost,
