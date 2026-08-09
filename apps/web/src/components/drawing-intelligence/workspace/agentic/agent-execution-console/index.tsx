@@ -111,7 +111,6 @@ export function AgentExecutionConsole({
     if (demoEvents && demoEvents.length > 0) {
       store.rebuild(demoEvents);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demoEvents, refreshKey]);
 
   // Live path: bind ke gateway via runtime-bridge (shared store). Bridge
@@ -120,7 +119,6 @@ export function AgentExecutionConsole({
   useEffect(() => {
     if (isDemo || !runId) return;
     startRuntimeBridge({ runId, wsUrl, sseUrl, httpUrl });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runId, refreshKey, isDemo]);
 
   // Demo path: transport live LOKAL (hanya untuk fixture berlabel).
@@ -155,7 +153,6 @@ export function AgentExecutionConsole({
       client.stop();
       clientRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runId, refreshKey, isDemo]);
 
   const workers = useMemo(() => buildWorkerTreeV2(state.rawEvents), [state.rawEvents]);

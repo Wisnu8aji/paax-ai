@@ -251,7 +251,6 @@ export default function CommandRoomPage() {
 
   useEffect(() => {
     refresh(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const safeMessages = Array.isArray(messages) ? messages : [];
@@ -721,7 +720,6 @@ export default function CommandRoomPage() {
     if (active.messages.length === 0) return;
     if (summaryCache[active.id]) return;
     void fetchConversationSummary(active);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sidePanelTab, active?.id, active?.messages.length]);
 
   const sidePanel = (

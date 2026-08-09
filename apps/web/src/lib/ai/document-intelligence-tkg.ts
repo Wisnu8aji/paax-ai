@@ -307,7 +307,6 @@ export async function analyzeDrawingFileInBackground(
   }
   const { job_id: jobId } = (await startRes.json()) as { job_id: string };
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     await new Promise((resolve) => setTimeout(resolve, JOB_POLL_INTERVAL_MS));
 

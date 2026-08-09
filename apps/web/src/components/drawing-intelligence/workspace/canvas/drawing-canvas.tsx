@@ -352,7 +352,6 @@ export function DrawingCanvas() {
     // metrics, coverage, and fit even though `activeSheetId` never changed
     // (Task 4 I1). `fallbackSheetAspect`/`fitSheetForRecord` are stable
     // callbacks whose identity changes only with the same sheet data.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDocumentKey]);
 
   // Exact metrics untuk dokumen aktif boleh memicu paling banyak satu fit

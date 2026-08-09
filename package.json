@@ -12,6 +12,8 @@
     "test:doc-intel": "cd services/document-intelligence && python -m pytest -q",
     "test:schemas": "pnpm --filter @paax/schemas test",
     "clean": "turbo clean",
+    "typecheck": "pnpm --dir apps/web exec tsc --noEmit",
+    "lint:web": "pnpm --dir apps/web exec eslint src/",
     "dev:web": "cd apps/web && pnpm dev",
     "dev:db": "cd services/db && python -m uvicorn paax_db.main:app --app-dir src --host 127.0.0.1 --port 8001",
     "dev:core": "cd services/core-engine && uvicorn app.main:app --reload --port 8081",
@@ -25,7 +27,8 @@
     "@types/qs": "^6.15.1",
     "@types/range-parser": "^1.2.7",
     "@types/send": "^1.2.1",
-    "turbo": "^2.5.0"
+    "turbo": "^2.5.0",
+    "typescript": "^5.7.0"
   },
   "packageManager": "pnpm@9.15.0"
 }

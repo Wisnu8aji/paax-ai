@@ -625,7 +625,6 @@ export function PdfNativePageLayer({
     };
     // dark is a base-layer trigger (Master Plan §4.1: base re-renders on
     // dark-mode toggle); eslint-disable covers the intentional lane refs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runId, pageIndex, dark]);
 
   /* ---------------- crop surfaces: canvas registry ---------------- */
@@ -889,7 +888,6 @@ export function PdfNativePageLayer({
       gestureActiveRef.current = false;
       evaluateCrop();
     }, Math.max(120, Math.min(160, settleMs)));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewport.x, viewport.y, viewport.width, viewport.height, viewport.zoom, viewport.dpr, pageIndex]);
 
   // Frame-interval sampling for data-native-frame-interval-p95. Guards for
@@ -919,7 +917,6 @@ export function PdfNativePageLayer({
     return () => {
       if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(rafId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Visibility restore: re-evaluate after tab hidden → visible (stall recovery).
@@ -934,7 +931,6 @@ export function PdfNativePageLayer({
     };
     document.addEventListener('visibilitychange', onVisibility);
     return () => document.removeEventListener('visibilitychange', onVisibility);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Paint any pending crop bitmaps once their canvas element exists.
@@ -967,7 +963,6 @@ export function PdfNativePageLayer({
         // ignore
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ---------------- render ---------------- */

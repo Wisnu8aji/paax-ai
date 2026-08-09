@@ -508,7 +508,6 @@ export function PdfDetailOverlay({
       return;
     }
     runRenderPassRef.current();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentKey, pageNumber, metrics, viewport, pool, dark, disabled]);
 
   // Gesture sensing: wheel + pointer drag on the document (capture) re-arm
@@ -546,7 +545,6 @@ export function PdfDetailOverlay({
     };
     document.addEventListener('visibilitychange', onVisibility);
     return () => document.removeEventListener('visibilitychange', onVisibility);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Unmount: invalidate any in-flight resolution, cancel it, drop timers.
@@ -559,7 +557,6 @@ export function PdfDetailOverlay({
         quietTimerRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

@@ -22,13 +22,13 @@ function makeEntry(pageIndex: number) {
     page_number: pageIndex + 1,
     sheet_code: `S-${pageIndex + 1}`,
     sheet_title: `Sheet ${pageIndex + 1}`,
-    level: { value: 'ground', status: 'confirmed' as const },
-    view: { value: 'plan', status: 'confirmed' as const },
-    classification: { value: 'plan', status: 'confirmed' as const },
-    revision: { value: 'unknown', status: 'unknown' as const },
-    zone: { value: 'unknown', status: 'unknown' as const },
+    level: { value: 'ground', status: 'confirmed' as const, evidence_refs: [] as string[], confidence: 0 },
+    view: { value: 'plan', status: 'confirmed' as const, evidence_refs: [] as string[], confidence: 0 },
+    classification: { value: 'plan', status: 'confirmed' as const, evidence_refs: [] as string[], confidence: 0 },
+    revision: { value: 'unknown', status: 'unknown' as const, evidence_refs: [] as string[], confidence: 0 },
+    zone: { value: 'unknown', status: 'unknown' as const, evidence_refs: [] as string[], confidence: 0 },
     needs_review: false,
-    review_reasons: [],
+    review_reasons: [] as string[],
   };
 }
 
