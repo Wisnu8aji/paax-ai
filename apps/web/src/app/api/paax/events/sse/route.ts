@@ -1,61 +1,71 @@
-import { NextRequest } from 'next/server';
-import { getGatewayEvents } from '../event-gateway-store';
+// paax/web — /api/paax/events/sse route (F1-rev1 gateway live SSE endpoint).
+//
+// SSE endpoint yang di-reference oleh ws-client.ts dan runtime-bridge.ts:
+//   GET /api/paax/events/sse?run_id=<id>&access_token=<token>[&task_id=<id>]
+//       → Live Server-Sent Events stream dari gateway relay store.
 
-export const runtime = 'nodejs';
+import { type NextRequest } from 'next/server'
+import { getRelayStore } from '@/lib/paax/event-relay-store'
+import type { PaaxEventEnvelope } from '@/components/drawing-intelligence/workspace/agentic/agent-execution-console/event-contract'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
-  const runId = request.nextUrl.searchParams.get('run_id');
-  const taskId = request.nextUrl.searchParams.get('task_id');
-  const authToken = request.nextUrl.searchParams.get('access_token');
+  const runId = request.nextUrl.searchParams.get('run_id') || ''
+  const taskId = request.nextUrl.searchParams.get('task_id') || ''
+  const afterSeqNum = Number(request.nextUrl.searchParams.get('after_sequence') ?? '-1')
+  const afterSeq = Number.isNaN(afterSeqNum) ? -1 : afterSeqNum
 
   if (!runId) {
-    return new Response(JSON.stringify({ error: 'Missing run_id parameter' }), {
+    return new Response(JSON.stringify({ error: 'run_id required' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
-    });
+    })
   }
 
-  if (authToken === 'invalid-token') {
-    return new Response(JSON.stringify({ error: 'Unauthorized token' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  let isClosed = false;
+  const relayStore = getRelayStore()
+  const encoder = new TextEncoder()
 
   const stream = new ReadableStream({
     start(controller) {
-      const encoder = new TextEncoder();
-      let lastSeq = -1;
+      // 1. Send existing events from relay store
+      const existing = relayStore.getEvents(runId, afterSeq, taskId)
+      for (const ev of existing) {
+        const frame = `data: ${JSON.stringify(ev)}\n\n`
+        controller.enqueue(encoder.encode(frame))
+      }
 
-      const sendNext = () => {
-        if (isClosed) return;
-        const events = getGatewayEvents(runId, lastSeq, taskId);
-        for (const ev of events) {
-          if (ev.params.sequence > lastSeq) {
-            lastSeq = ev.params.sequence;
-          }
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(ev)}\n\n`));
+      // 2. Subscribe to new live events
+      const unsubscribe = relayStore.subscribe(runId, (ev: PaaxEventEnvelope) => {
+        if (taskId && ev.params.task_id !== taskId) return
+        try {
+          const frame = `data: ${JSON.stringify(ev)}\n\n`
+          controller.enqueue(encoder.encode(frame))
+        } catch {
+          // Stream closed
         }
-      };
+      })
 
-      sendNext();
-      const interval = setInterval(sendNext, 300);
-
+      // Handle signal abort/cancel
       request.signal.addEventListener('abort', () => {
-        isClosed = true;
-        clearInterval(interval);
-        try { controller.close(); } catch {}
-      });
+        unsubscribe()
+        try {
+          controller.close()
+        } catch {
+          // Stream already closed
+        }
+      })
     },
-  });
+  })
 
   return new Response(stream, {
+    status: 200,
     headers: {
       'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache, no-transform',
-      'Connection': 'keep-alive',
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
     },
-  });
+  })
 }
