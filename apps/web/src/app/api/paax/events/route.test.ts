@@ -121,5 +121,31 @@ describe('/api/paax/events route handler', () => {
     const ids = body.events.map((e: { params: { event_id: string } }) => e.params.event_id);
     expect(new Set(ids).size).toBe(2);
   });
+
+  it('POST /api/paax/events menolak event synthetic di jalur produksi dengan 400 dan web_trace=false', async () => {
+    const runId = 'paax:run:test-synth';
+    const postReq = new NextRequest('http://localhost:3000/api/paax/events', {
+      method: 'POST',
+      body: JSON.stringify({
+        run_id: runId,
+        events: [
+          {
+            event_id: 'paax:evt:test-synth:1:00000001',
+            run_id: runId,
+            sequence: 1,
+            type: 'task.started',
+            task_id: 'T01',
+            timestamp: new Date().toISOString(),
+            payload_summary: { synthetic: true, notProduction: true },
+          },
+        ],
+      }),
+    });
+    const postRes = await POST(postReq);
+    expect(postRes.status).toBe(400);
+    const body = await postRes.json();
+    expect(body.web_trace).toBe(false);
+    expect(body.error).toContain('synthetic/invalid events rejected');
+  });
 });
 

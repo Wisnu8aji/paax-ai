@@ -136,12 +136,12 @@ const isNonEmptyString = (v: unknown): v is string => typeof v === 'string' && v
 
 function isValidEventId(id: string): boolean {
   // v2: paax:evt:<runid>:<seq>:<uuid8>
-  return /^paax:evt:[^:]+:\d+:[0-9a-f]{8}$/.test(id)
+  return /^paax:evt:.+:\d+:[0-9a-fA-F]{8}$/.test(id)
 }
 
 function isValidRunId(id: string): boolean {
   // v2: paax:run:<runid>
-  return /^paax:run:[^:]+$/.test(id)
+  return /^paax:run:.+$/.test(id)
 }
 
 export function validatePaaxEvent(raw: unknown): EventValidationResult {

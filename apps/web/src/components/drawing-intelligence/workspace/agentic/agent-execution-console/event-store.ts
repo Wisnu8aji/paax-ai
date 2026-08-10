@@ -159,10 +159,45 @@ function collectLineage(summary: Record<string, unknown>): string[] {
   return out
 }
 
+const TASK_ID_ALIASES: Record<string, string> = {
+  'task:paax_source_register': 'T01',
+  'paax_source_register': 'T01',
+  'task:paax_render_pages': 'T02',
+  'paax_render_pages': 'T02',
+  'task:paax_vision_batch': 'T03',
+  'paax_vision_batch': 'T03',
+  'task:paax_adex_read': 'T04',
+  'paax_adex_read': 'T04',
+  'task:paax_repair': 'T05',
+  'paax_repair': 'T05',
+  'task:paax_cortex_resolve': 'T06',
+  'paax_cortex_resolve': 'T06',
+  'task:paax_geometry': 'T07',
+  'paax_geometry': 'T07',
+  'task:paax_construction': 'T08',
+  'paax_construction': 'T08',
+  'task:paax_measurement_plan': 'T09',
+  'paax_measurement_plan': 'T09',
+  'task:paax_formula_execute': 'T10',
+  'paax_formula_execute': 'T10',
+  'task:paax_quanta_write': 'T10',
+  'paax_quanta_write': 'T10',
+  'task:paax_approval_request': 'T11',
+  'paax_approval_request': 'T11',
+  'task:paax_nexus_build': 'T12',
+  'paax_nexus_build': 'T12',
+}
+
+export function resolveCanonicalTaskId(id: string): string {
+  return TASK_ID_ALIASES[id] ?? id
+}
+
 function upsertTask(tasks: TaskUiState[], id: string, patch: Partial<TaskUiState>): TaskUiState[] {
-  const idx = tasks.findIndex(t => t.id === id)
+  const canonicalId = resolveCanonicalTaskId(id)
+  const idx = tasks.findIndex(t => t.id === canonicalId || t.id === id)
   if (idx === -1) {
-    return tasks
+    if (id === 'task:root' || id === '__root__') return tasks
+    return [...tasks, { id, title: patch.title || id, state: patch.state || 'pending', progress: patch.progress || 0, ...patch }]
   }
   const next = [...tasks]
   next[idx] = { ...next[idx]!, ...patch, updatedAt: patch.updatedAt ?? next[idx]!.updatedAt }

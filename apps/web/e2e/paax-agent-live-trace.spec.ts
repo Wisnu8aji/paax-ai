@@ -4,170 +4,42 @@ import * as path from 'path';
 import { scanRealEvents } from '../src/components/drawing-intelligence/workspace/agentic/agent-execution-console/scan';
 import type { PaaxEventEnvelope } from '../src/components/drawing-intelligence/workspace/agentic/agent-execution-console/event-contract';
 
-test.describe('PAAX Agent Live Trace E2E Browser Test (Gate F2 & D-2)', () => {
-  const runIdA = 'paax:run:live-trace-real-01';
-  const runIdB = 'paax:run:live-trace-real-02';
-
-  const realEventsRunA = [
-    {
-      event_id: 'paax:evt:live-trace-real-01:1:00000001',
-      run_id: runIdA,
-      task_id: null,
-      parent_task_id: null,
-      agent_id: 'agent-orion-f1',
-      session_id: 'sess-live-01',
-      worker_id: 'worker-f1-runtime',
-      provider: 'google',
-      model: 'gemini-3.6-flash-high',
-      sequence: 1,
-      timestamp: new Date(Date.now() - 5000).toISOString(),
-      type: 'run.started',
-      stage: 'init',
-      payload_summary: { mode: 'production', runtime: 'hermes-v2' },
-      payload_ref: null,
-      redaction_state: 'clean',
-      persistence_status: 'durable',
-    },
-    {
-      event_id: 'paax:evt:live-trace-real-01:2:00000002',
-      run_id: runIdA,
-      task_id: 'T01',
-      parent_task_id: null,
-      agent_id: 'agent-orion-f1',
-      session_id: 'sess-live-01',
-      worker_id: 'worker-f1-runtime',
-      provider: 'google',
-      model: 'gemini-3.6-flash-high',
-      sequence: 2,
-      timestamp: new Date(Date.now() - 4000).toISOString(),
-      type: 'agent.started',
-      stage: 'intake',
-      payload_summary: { role: 'lead_engineer', soul: 'lead_drawing_engineer' },
-      payload_ref: null,
-      redaction_state: 'clean',
-      persistence_status: 'durable',
-    },
-    {
-      event_id: 'paax:evt:live-trace-real-01:3:00000003',
-      run_id: runIdA,
-      task_id: 'T01',
-      parent_task_id: null,
-      agent_id: 'agent-orion-f1',
-      session_id: 'sess-live-01',
-      worker_id: 'worker-f1-runtime',
-      provider: 'google',
-      model: 'gemini-3.6-flash-high',
-      sequence: 3,
-      timestamp: new Date(Date.now() - 3000).toISOString(),
-      type: 'task.started',
-      stage: 'intake',
-      payload_summary: { task_name: 'Source Intake & Lock', status: 'running' },
-      payload_ref: null,
-      redaction_state: 'clean',
-      persistence_status: 'durable',
-    },
-    {
-      event_id: 'paax:evt:live-trace-real-01:4:00000004',
-      run_id: runIdA,
-      task_id: 'T01',
-      parent_task_id: null,
-      agent_id: 'agent-orion-f1',
-      session_id: 'sess-live-01',
-      worker_id: 'worker-f1-runtime',
-      provider: 'google',
-      model: 'gemini-3.6-flash-high',
-      sequence: 4,
-      timestamp: new Date(Date.now() - 2000).toISOString(),
-      type: 'tool.started',
-      stage: 'intake',
-      payload_summary: { tool_name: 'hash_source', arguments: { path: 'drawing_plhut.pdf' } },
-      payload_ref: null,
-      redaction_state: 'clean',
-      persistence_status: 'durable',
-    },
-    {
-      event_id: 'paax:evt:live-trace-real-01:5:00000005',
-      run_id: runIdA,
-      task_id: 'T01',
-      parent_task_id: null,
-      agent_id: 'agent-orion-f1',
-      session_id: 'sess-live-01',
-      worker_id: 'worker-f1-runtime',
-      provider: 'google',
-      model: 'gemini-3.6-flash-high',
-      sequence: 5,
-      timestamp: new Date(Date.now() - 1000).toISOString(),
-      type: 'tool.completed',
-      stage: 'intake',
-      payload_summary: { tool_name: 'hash_source', sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' },
-      payload_ref: null,
-      redaction_state: 'clean',
-      persistence_status: 'durable',
-    },
-    {
-      event_id: 'paax:evt:live-trace-real-01:6:00000006',
-      run_id: runIdA,
-      task_id: null,
-      parent_task_id: null,
-      agent_id: 'agent-orion-f1',
-      session_id: 'sess-live-01',
-      worker_id: 'worker-f1-runtime',
-      provider: 'google',
-      model: 'gemini-3.6-flash-high',
-      sequence: 6,
-      timestamp: new Date().toISOString(),
-      type: 'run.completed',
-      stage: 'final',
-      payload_summary: { status: 'success', summary: 'Intake and extraction complete' },
-      payload_ref: null,
-      redaction_state: 'clean',
-      persistence_status: 'durable',
-    },
+function loadRealEventsJsonl(filename: string): PaaxEventEnvelope[] {
+  const candidatePaths = [
+    path.resolve(__dirname, 'fixtures', filename),
+    path.resolve(process.cwd(), 'apps', 'web', 'e2e', 'fixtures', filename),
+    path.resolve(process.cwd(), 'e2e', 'fixtures', filename),
+    path.resolve('G:/PAAX-Orchestration/00_projects/2026-08-07-drawing-intelligence-r2/09_workspace/r2/live_test_3pages', filename),
+    path.resolve('G:/PAAX-Orchestration/00_projects/2026-08-07-drawing-intelligence-r2/09_workspace/worktree-f5/live_test_3pages', filename),
   ];
 
-  const realEventsRunB = [
-    {
-      event_id: 'paax:evt:live-trace-real-02:1:00000001',
-      run_id: runIdB,
-      task_id: null,
-      parent_task_id: null,
-      agent_id: 'agent-orion-f1',
-      session_id: 'sess-live-02',
-      worker_id: 'worker-f1-runtime',
-      provider: 'google',
-      model: 'gemini-3.6-flash-high',
-      sequence: 1,
-      timestamp: new Date().toISOString(),
-      type: 'run.started',
-      stage: 'init',
-      payload_summary: { mode: 'production', run_target: 'isolated-b' },
-      payload_ref: null,
-      redaction_state: 'clean',
-      persistence_status: 'durable',
-    },
-    {
-      event_id: 'paax:evt:live-trace-real-02:2:00000002',
-      run_id: runIdB,
-      task_id: 'T02',
-      parent_task_id: null,
-      agent_id: 'agent-orion-f1',
-      session_id: 'sess-live-02',
-      worker_id: 'worker-f1-runtime',
-      provider: 'google',
-      model: 'gemini-3.6-flash-high',
-      sequence: 2,
-      timestamp: new Date().toISOString(),
-      type: 'task.started',
-      stage: 'vision',
-      payload_summary: { task_name: 'Sheet Classification' },
-      payload_ref: null,
-      redaction_state: 'clean',
-      persistence_status: 'durable',
-    },
-  ];
+  for (const p of candidatePaths) {
+    if (fs.existsSync(p)) {
+      const content = fs.readFileSync(p, 'utf-8');
+      const lines = content
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean);
+      return lines.map((l) => JSON.parse(l) as PaaxEventEnvelope);
+    }
+  }
 
-  test('1. Ingests real events to local gateway, verifies web_trace=true and replay', async ({ request }) => {
-    // Ingest Run A events to real local route /api/paax/events
+  throw new Error(`Real events JSONL fixture "${filename}" not found in candidate paths: ${candidatePaths.join(', ')}`);
+}
+
+test.describe('PAAX Agent Live Trace E2E Browser Test (Gate F2 & D-2 Real Runtime)', () => {
+  // Load actual live events produced by real F5 run gate runtime
+  const realEventsRunA = loadRealEventsJsonl('events_3p.jsonl');
+  const realEventsRunB = loadRealEventsJsonl('events_3p_run_b.jsonl');
+
+  const runIdA = realEventsRunA[0]?.params?.run_id || 'paax:run:live:20260810080245';
+  const runIdB = realEventsRunB[0]?.params?.run_id || 'paax:run:live:20260810085615';
+
+  test('1. Ingests real runtime events to local gateway, verifies web_trace=true, domain types, and replay', async ({ request }) => {
+    expect(realEventsRunA.length).toBeGreaterThan(0);
+    expect(runIdA).toBe('paax:run:live:20260810080245');
+
+    // Ingest actual live Run A events to real local route /api/paax/events
     const postRes = await request.post('/api/paax/events', {
       data: {
         run_id: runIdA,
@@ -178,7 +50,7 @@ test.describe('PAAX Agent Live Trace E2E Browser Test (Gate F2 & D-2)', () => {
     expect(postRes.status()).toBe(200);
     const postJson = await postRes.json();
     expect(postJson.ok).toBe(true);
-    expect(postJson.count).toBe(6);
+    expect(postJson.count).toBe(realEventsRunA.length);
     expect(postJson.web_trace).toBe(true);
 
     // Query replay from real local gateway
@@ -187,24 +59,32 @@ test.describe('PAAX Agent Live Trace E2E Browser Test (Gate F2 & D-2)', () => {
     const getJson = await getRes.json();
     expect(getJson.run_id).toBe(runIdA);
     expect(getJson.web_trace).toBe(true);
-    expect(getJson.events.length).toBe(6);
+    expect(getJson.events.length).toBe(realEventsRunA.length);
 
-    // Verify all 6 required events are present in sequence
-    const types = getJson.events.map((e: PaaxEventEnvelope) => e.params.type);
-    expect(types).toEqual([
-      'run.started',
-      'agent.started',
-      'task.started',
-      'tool.started',
-      'tool.completed',
-      'run.completed',
-    ]);
-
-    // Verify all events have _replay: true
+    // Verify all returned events have _replay: true
     expect(getJson.events.every((e: PaaxEventEnvelope) => e._replay === true)).toBe(true);
 
+    // Verify all events originate from actual runtime run_id
+    expect(getJson.events.every((e: PaaxEventEnvelope) => e.params.run_id === runIdA)).toBe(true);
+
+    // Verify no dummy fixture event IDs are present
+    expect(getJson.events.some((e: PaaxEventEnvelope) => e.params.event_id.includes('live-trace-real-01'))).toBe(false);
+
+    // Verify actual runtime domain event types are present
+    const eventTypes = new Set(getJson.events.map((e: PaaxEventEnvelope) => e.params.type));
+    expect(eventTypes.has('task.started')).toBe(true);
+    expect(eventTypes.has('spectra.classified')).toBe(true);
+    expect(eventTypes.has('adex.created')).toBe(true);
+    expect(eventTypes.has('cortex.entity_created')).toBe(true);
+    expect(eventTypes.has('measurement.requested')).toBe(true);
+    expect(eventTypes.has('formula.completed')).toBe(true);
+    expect(eventTypes.has('quanta.row_created')).toBe(true);
+    expect(eventTypes.has('approval.requested')).toBe(true);
+    expect(eventTypes.has('nexus.build_completed')).toBe(true);
+    expect(eventTypes.has('task.completed')).toBe(true);
+
     // Verify all events pass scanRealEvents anti-fake gate in production mode (no allowSynthetic)
-    const scanResult = scanRealEvents(getJson.events);
+    const scanResult = scanRealEvents(getJson.events, { allowSynthetic: false });
     expect(scanResult.ok).toBe(true);
     expect(scanResult.findings).toEqual([]);
   });
@@ -215,15 +95,13 @@ test.describe('PAAX Agent Live Trace E2E Browser Test (Gate F2 & D-2)', () => {
     expect(replayRes.status()).toBe(200);
     const replayJson = await replayRes.json();
     expect(replayJson.web_trace).toBe(true);
-    expect(replayJson.events.length).toBe(3);
+    expect(replayJson.events.length).toBeGreaterThan(0);
 
-    const sequences = replayJson.events.map((e: PaaxEventEnvelope) => e.params.sequence);
-    expect(sequences).toEqual([4, 5, 6]);
     expect(replayJson.events.every((e: PaaxEventEnvelope) => e.params.sequence > 3)).toBe(true);
     expect(replayJson.events.every((e: PaaxEventEnvelope) => e._replay === true)).toBe(true);
   });
 
-  test('3. Validates run isolation (Run A vs Run B)', async ({ request }) => {
+  test('3. Validates run isolation between independent real runtime runs', async ({ request }) => {
     // Ingest Run B events
     const postResB = await request.post('/api/paax/events', {
       data: {
@@ -246,7 +124,7 @@ test.describe('PAAX Agent Live Trace E2E Browser Test (Gate F2 & D-2)', () => {
     expect(jsonB.events.some((e: PaaxEventEnvelope) => e.params.run_id === runIdA)).toBe(false);
   });
 
-  test('4. Browser UI validates web_trace=true, task state, and captures network trace', async ({ page, request }) => {
+  test('4. Browser UI validates web_trace=true, real task state, and captures network trace', async ({ page, request }) => {
     // Ensure Run A events are ingested in local gateway
     await request.post('/api/paax/events', {
       data: {
@@ -293,7 +171,7 @@ test.describe('PAAX Agent Live Trace E2E Browser Test (Gate F2 & D-2)', () => {
     const consoleLocator = page.locator('[data-testid="agent-execution-console"]');
     await expect(consoleLocator).toBeVisible({ timeout: 10000 });
 
-    // Validate web_trace: true badge in the browser UI (Acceptance Gate F2)
+    // Validate web_trace: true badge in the browser UI (Acceptance Gate F2 & D-2)
     const webTraceBadge = page.locator('[data-testid="web-trace-badge"]');
     await expect(webTraceBadge).toBeVisible({ timeout: 10000 });
     await expect(webTraceBadge).toContainText('web_trace: true');
@@ -337,7 +215,7 @@ test.describe('PAAX Agent Live Trace E2E Browser Test (Gate F2 & D-2)', () => {
     };
     const targetFile = path.resolve(__dirname, 'results', 'paax-agent-live-trace-net-capture.json');
     const fallbackFile = path.resolve(process.cwd(), 'e2e', 'results', 'paax-agent-live-trace-net-capture.json');
-    
+
     if (!fs.existsSync(path.dirname(targetFile))) {
       fs.mkdirSync(path.dirname(targetFile), { recursive: true });
     }
@@ -354,6 +232,11 @@ test.describe('PAAX Agent Live Trace E2E Browser Test (Gate F2 & D-2)', () => {
     const netScan = scanRealEvents(capturedNetworkEvents, { allowSynthetic: false });
     expect(netScan.ok).toBe(true);
     expect(netScan.findings).toEqual([]);
+
+    // Verify no dummy fixture event IDs in network capture
+    const capturedEnvelopes = capturedNetworkEvents as PaaxEventEnvelope[];
+    expect(capturedEnvelopes.some((e) => e.params?.event_id?.includes('live-trace-real-01'))).toBe(false);
+    expect(capturedEnvelopes.every((e) => e.params?.run_id === runIdA)).toBe(true);
   });
 
   test('5. Validates truthful disconnected / empty state for non-existent run', async ({ request }) => {
@@ -363,5 +246,32 @@ test.describe('PAAX Agent Live Trace E2E Browser Test (Gate F2 & D-2)', () => {
     expect(emptyJson.run_id).toBe('paax:run:nonexistent-999');
     expect(emptyJson.events).toEqual([]);
     expect(emptyJson.web_trace).toBe(false);
+  });
+
+  test('6. Validates rejection of synthetic events on production live route (anti-fake gate)', async ({ request }) => {
+    const syntheticRes = await request.post('/api/paax/events', {
+      data: {
+        run_id: 'paax:run:synthetic-test',
+        events: [
+          {
+            event_id: 'paax:evt:synthetic-test:1:00000001',
+            run_id: 'paax:run:synthetic-test',
+            sequence: 1,
+            timestamp: new Date().toISOString(),
+            type: 'task.started',
+            task_id: 'T01',
+            payload_summary: {
+              synthetic: true,
+              notProduction: true,
+            },
+          },
+        ],
+      },
+    });
+
+    expect(syntheticRes.status()).toBe(400);
+    const syntheticJson = await syntheticRes.json();
+    expect(syntheticJson.web_trace).toBe(false);
+    expect(syntheticJson.error).toContain('synthetic/invalid events rejected');
   });
 });

@@ -8,6 +8,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server'
 import type { PaaxEventEnvelope } from '@/components/drawing-intelligence/workspace/agentic/agent-execution-console/event-contract'
+import { scanRealEvents } from '@/components/drawing-intelligence/workspace/agentic/agent-execution-console/scan'
 import { getRelayStore } from '@/lib/paax/event-relay-store'
 
 export const runtime = 'nodejs'
@@ -162,13 +163,16 @@ export async function GET(request: NextRequest) {
 
   // 2. Bila lokal relay store memiliki data run ini, respons 200 dengan events nyata
   if (relayStore.hasRun(runId)) {
+    const allRunEvents = relayStore.getEvents(runId, -1)
+    const scanResult = scanRealEvents(allRunEvents, { allowSynthetic: false })
+    const isLiveValid = scanResult.ok && allRunEvents.length > 0
     const events = relayStore.getEvents(runId, afterSeq, taskId)
     return NextResponse.json(
       {
         run_id: runId,
         after_sequence: afterSeq,
         events,
-        web_trace: true,
+        web_trace: isLiveValid,
       },
       {
         status: 200,
@@ -210,7 +214,32 @@ export async function POST(request: NextRequest) {
 
     const relayStore = getRelayStore()
     const rawEvents = Array.isArray(body.events) ? body.events : [body]
+    if (rawEvents.length === 0) {
+      return NextResponse.json({
+        ok: true,
+        run_id: runId,
+        count: 0,
+        events: [],
+        web_trace: false,
+      })
+    }
+
     const ingested = relayStore.ingestBatch(runId, rawEvents)
+
+    // Anti-fake gate: scan ingested events in production mode (reject synthetic in live route)
+    const scanResult = scanRealEvents(ingested, { allowSynthetic: false })
+    if (!scanResult.ok) {
+      const detail = scanResult.findings.map(f => `${f.code}:${f.eventId}`).join('; ')
+      return NextResponse.json(
+        {
+          error: 'synthetic/invalid events rejected on live route',
+          detail,
+          run_id: runId,
+          web_trace: false,
+        },
+        { status: 400 },
+      )
+    }
 
     return NextResponse.json({
       ok: true,

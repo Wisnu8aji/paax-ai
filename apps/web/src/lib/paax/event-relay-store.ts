@@ -6,30 +6,33 @@ export class PaaxEventRelayStore {
 
   /** Ingest event and convert to full v2 envelope. Dedup by event_id (plan §3.6). */
   ingest(runId: string, rawEvent: Record<string, any>): PaaxEventEnvelope {
+    const src = (rawEvent && typeof rawEvent === 'object' && rawEvent.params && typeof rawEvent.params === 'object')
+      ? (rawEvent.params as Record<string, any>)
+      : (rawEvent || {});
     const existing = this.runs.get(runId) || [];
-    const seq = Number(rawEvent.sequence ?? existing.length + 1);
+    const seq = Number(src.sequence ?? existing.length + 1);
 
     const envelope: PaaxEventEnvelope = {
       jsonrpc: '2.0',
       method: 'paax.event',
       params: {
-        event_id: String(rawEvent.event_id || `paax:evt:${runId}:${seq}:00000000`),
-        run_id: String(rawEvent.run_id || runId),
-        task_id: rawEvent.task_id ?? null,
-        parent_task_id: rawEvent.parent_task_id ?? null,
-        agent_id: rawEvent.agent_id ?? null,
-        session_id: rawEvent.session_id ?? null,
-        worker_id: rawEvent.worker_id ?? null,
-        provider: rawEvent.provider ?? null,
-        model: rawEvent.model ?? null,
+        event_id: String(src.event_id || `paax:evt:${runId}:${seq}:00000000`),
+        run_id: String(src.run_id || runId),
+        task_id: src.task_id ?? null,
+        parent_task_id: src.parent_task_id ?? null,
+        agent_id: src.agent_id ?? null,
+        session_id: src.session_id ?? null,
+        worker_id: src.worker_id ?? null,
+        provider: src.provider ?? null,
+        model: src.model ?? null,
         sequence: seq,
-        timestamp: String(rawEvent.timestamp || new Date().toISOString()),
-        type: String(rawEvent.type || 'task.progress'),
-        stage: rawEvent.stage ?? null,
-        payload_summary: rawEvent.payload_summary ?? rawEvent.payload ?? null,
-        payload_ref: rawEvent.payload_ref ?? null,
-        redaction_state: rawEvent.redaction_state || 'clean',
-        persistence_status: rawEvent.persistence_status || 'durable',
+        timestamp: String(src.timestamp || new Date().toISOString()),
+        type: String(src.type || 'task.progress'),
+        stage: src.stage ?? null,
+        payload_summary: src.payload_summary ?? src.payload ?? null,
+        payload_ref: src.payload_ref ?? null,
+        redaction_state: src.redaction_state || 'clean',
+        persistence_status: src.persistence_status || 'durable',
       },
       _replay: true,
     };
