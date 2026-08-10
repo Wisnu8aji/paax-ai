@@ -1,1 +1,173 @@
-{"test":1}
+{
+  "timestamp": "2026-08-10T07:07:57.689Z",
+  "runId": "paax:run:live-trace-real-01",
+  "web_trace": true,
+  "totalCapturedEvents": 6,
+  "events": [
+    {
+      "jsonrpc": "2.0",
+      "method": "paax.event",
+      "params": {
+        "event_id": "paax:evt:live-trace-real-01:1:00000001",
+        "run_id": "paax:run:live-trace-real-01",
+        "task_id": null,
+        "parent_task_id": null,
+        "agent_id": "agent-orion-f1",
+        "session_id": "sess-live-01",
+        "worker_id": "worker-f1-runtime",
+        "provider": "google",
+        "model": "gemini-3.6-flash-high",
+        "sequence": 1,
+        "timestamp": "2026-08-10T07:07:50.137Z",
+        "type": "run.started",
+        "stage": "init",
+        "payload_summary": {
+          "mode": "production",
+          "runtime": "hermes-v2"
+        },
+        "payload_ref": null,
+        "redaction_state": "clean",
+        "persistence_status": "durable"
+      },
+      "_replay": true
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "paax.event",
+      "params": {
+        "event_id": "paax:evt:live-trace-real-01:2:00000002",
+        "run_id": "paax:run:live-trace-real-01",
+        "task_id": "T01",
+        "parent_task_id": null,
+        "agent_id": "agent-orion-f1",
+        "session_id": "sess-live-01",
+        "worker_id": "worker-f1-runtime",
+        "provider": "google",
+        "model": "gemini-3.6-flash-high",
+        "sequence": 2,
+        "timestamp": "2026-08-10T07:07:51.137Z",
+        "type": "agent.started",
+        "stage": "intake",
+        "payload_summary": {
+          "role": "lead_engineer",
+          "soul": "lead_drawing_engineer"
+        },
+        "payload_ref": null,
+        "redaction_state": "clean",
+        "persistence_status": "durable"
+      },
+      "_replay": true
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "paax.event",
+      "params": {
+        "event_id": "paax:evt:live-trace-real-01:3:00000003",
+        "run_id": "paax:run:live-trace-real-01",
+        "task_id": "T01",
+        "parent_task_id": null,
+        "agent_id": "agent-orion-f1",
+        "session_id": "sess-live-01",
+        "worker_id": "worker-f1-runtime",
+        "provider": "google",
+        "model": "gemini-3.6-flash-high",
+        "sequence": 3,
+        "timestamp": "2026-08-10T07:07:52.137Z",
+        "type": "task.started",
+        "stage": "intake",
+        "payload_summary": {
+          "task_name": "Source Intake & Lock",
+          "status": "running"
+        },
+        "payload_ref": null,
+        "redaction_state": "clean",
+        "persistence_status": "durable"
+      },
+      "_replay": true
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "paax.event",
+      "params": {
+        "event_id": "paax:evt:live-trace-real-01:4:00000004",
+        "run_id": "paax:run:live-trace-real-01",
+        "task_id": "T01",
+        "parent_task_id": null,
+        "agent_id": "agent-orion-f1",
+        "session_id": "sess-live-01",
+        "worker_id": "worker-f1-runtime",
+        "provider": "google",
+        "model": "gemini-3.6-flash-high",
+        "sequence": 4,
+        "timestamp": "2026-08-10T07:07:53.137Z",
+        "type": "tool.started",
+        "stage": "intake",
+        "payload_summary": {
+          "tool_name": "hash_source",
+          "arguments": {
+            "path": "drawing_plhut.pdf"
+          }
+        },
+        "payload_ref": null,
+        "redaction_state": "clean",
+        "persistence_status": "durable"
+      },
+      "_replay": true
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "paax.event",
+      "params": {
+        "event_id": "paax:evt:live-trace-real-01:5:00000005",
+        "run_id": "paax:run:live-trace-real-01",
+        "task_id": "T01",
+        "parent_task_id": null,
+        "agent_id": "agent-orion-f1",
+        "session_id": "sess-live-01",
+        "worker_id": "worker-f1-runtime",
+        "provider": "google",
+        "model": "gemini-3.6-flash-high",
+        "sequence": 5,
+        "timestamp": "2026-08-10T07:07:54.137Z",
+        "type": "tool.completed",
+        "stage": "intake",
+        "payload_summary": {
+          "tool_name": "hash_source",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "payload_ref": null,
+        "redaction_state": "clean",
+        "persistence_status": "durable"
+      },
+      "_replay": true
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "paax.event",
+      "params": {
+        "event_id": "paax:evt:live-trace-real-01:6:00000006",
+        "run_id": "paax:run:live-trace-real-01",
+        "task_id": null,
+        "parent_task_id": null,
+        "agent_id": "agent-orion-f1",
+        "session_id": "sess-live-01",
+        "worker_id": "worker-f1-runtime",
+        "provider": "google",
+        "model": "gemini-3.6-flash-high",
+        "sequence": 6,
+        "timestamp": "2026-08-10T07:07:55.137Z",
+        "type": "run.completed",
+        "stage": "final",
+        "payload_summary": {
+          "status": "success",
+          "summary": "Intake and extraction complete"
+        },
+        "payload_ref": null,
+        "redaction_state": "clean",
+        "persistence_status": "durable"
+      },
+      "_replay": true
+    }
+  ],
+  "networkLog": []
+}

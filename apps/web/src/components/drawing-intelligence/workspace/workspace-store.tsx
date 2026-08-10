@@ -47,6 +47,8 @@ import type { MappedProjectSheet } from './sheet-mapping';
 import { mapProjectDemSheet } from './sheet-mapping';
 import type { HonestWorkspaceState } from './quantity-authority';
 
+import { startRuntimeBridge } from './agentic/agent-execution-console/runtime-bridge';
+
 // ── Tipe state ───────────────────────────────────────────────────────────────
 
 export type CanvasTool =
@@ -235,13 +237,16 @@ const DEFAULT_CONFIG: AnalysisConfig = {
   confidenceThreshold: 80,
 };
 
-export function initialWorkspaceState(withData: boolean): WorkspaceState {
+export function initialWorkspaceState(
+  withData: boolean,
+  initialValues?: { initialRunId?: string | null; initialMode?: WorkspaceMode | null },
+): WorkspaceState {
   void withData; // retained for API compatibility; production state never injects fixtures.
   return {
-    mode: 'files',
+    mode: initialValues?.initialMode ?? 'files',
     projectId: null,
     activeSnapshotId: null,
-    activeRunId: null,
+    activeRunId: initialValues?.initialRunId ?? null,
     hasData: false,
     files: [],
     sheets: [],
@@ -525,7 +530,7 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
         statusMessage: action.error === 'not-ready'
           ? 'Project graph is empty. Please upload drawing files.'
           : 'Failed to connect to backend services.',
-        mode: 'files',
+        mode: state.mode,
       };
     case 'clear-project-data':
       return {
@@ -546,7 +551,7 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
         backendSyncFailed: false,
         backendSyncError: null,
         honestState: 'extraction-pending',
-        mode: 'files',
+        mode: state.mode,
       };
     case 'replace-quantities':
       return {
@@ -659,13 +664,21 @@ export function WorkspaceProvider({
   children,
   withMockData = false,
   projectId = null,
+  initialRunId = null,
+  initialMode = null,
 }: {
   children: ReactNode;
   withMockData?: boolean;
   /** id proyek nyata — dipakai oleh askPaax untuk memanggil backend retrieve */
   projectId?: string | null;
+  initialRunId?: string | null;
+  initialMode?: WorkspaceMode | null;
 }) {
-  const [state, dispatch] = useReducer(reducer, withMockData, initialWorkspaceState);
+  const [state, dispatch] = useReducer(
+    reducer,
+    withMockData,
+    (withData) => initialWorkspaceState(withData, { initialRunId, initialMode }),
+  );
   const timers = useRef<ReturnType<typeof setInterval>[]>([]);
 
   useEffect(() => {
@@ -676,6 +689,12 @@ export function WorkspaceProvider({
   useEffect(() => {
     dispatch({ type: 'set-project-id', projectId });
   }, [projectId]);
+
+  useEffect(() => {
+    if (state.activeRunId) {
+      startRuntimeBridge({ runId: state.activeRunId });
+    }
+  }, [state.activeRunId]);
 
   const startUploadSimulation = useCallback(
     (files: { file?: File; name: string; sizeBytes: number; kind: UploadEntry['kind'] }[]) => {

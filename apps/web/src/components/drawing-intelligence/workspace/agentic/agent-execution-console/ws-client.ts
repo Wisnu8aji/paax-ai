@@ -107,23 +107,24 @@ export class PaaxEventClient {
       return
     }
 
-    // 1) WebSocket bila tersedia.
+    this.tryWebSocket()
+  }
+
+  private tryWebSocket(): void {
+    const { wsUrl } = this.options
     const base = typeof window !== 'undefined' ? window.location.origin : ''
     if (wsUrl && typeof WebSocket !== 'undefined') {
       try {
         const url = normalizeUrl(base, wsUrl)
-        // Auth via subprotocol WS (F03 §2.3) — browser tidak mengizinkan
-        // header Authorization pada upgrade; `paax-auth.<token>` adalah
-        // pola standar WebSocket.
         const protocols = this.options.authToken ? [`paax-auth.${this.options.authToken}`] : undefined
         const ws = protocols ? new WebSocket(url, protocols) : new WebSocket(url)
         this.ws = ws
+        let opened = false
         this.setStatus({ kind: 'websocket', connected: false, detail: `connecting ${url}${this.options.authToken ? ' (auth)' : ''}` })
         ws.onopen = () => {
           if (this.stopped) return
+          opened = true
           this.setStatus({ kind: 'websocket', connected: true, detail: `live ${url}${this.options.authToken ? ' (auth)' : ''}` })
-          // F03 §4.1 — setelah handshake, client meminta replay
-          // after_sequence via paax.command replay (bukan hanya callback).
           this.sendCommand({
             command: 'replay',
             runId: this.options.runId,
@@ -145,26 +146,47 @@ export class PaaxEventClient {
         }
         ws.onclose = (ev) => {
           if (this.stopped) return
-          // Kode 4001 = auth ditolak gateway (F03 §2.3) — fail-closed jujur.
           const authDenied = ev.code === 4001
+          if (authDenied) {
+            this.setStatus({
+              kind: 'websocket',
+              connected: false,
+              detail: 'auth ditolak gateway (4001) — token invalid/absent',
+              lastError: 'ws auth denied 4001',
+            })
+            return
+          }
+          if (!opened) {
+            this.ws = null
+            this.trySse()
+            return
+          }
           this.setStatus({
             kind: 'websocket',
             connected: false,
-            detail: authDenied ? 'auth ditolak gateway (4001) — token invalid/absent' : 'disconnected — replay after_sequence',
-            lastError: authDenied ? 'ws auth denied 4001' : 'ws closed',
+            detail: 'disconnected — replay after_sequence',
+            lastError: 'ws closed',
           })
           this.scheduleReconnect()
         }
         ws.onerror = () => {
-          this.setStatus({ kind: 'websocket', connected: false, detail: 'ws error', lastError: 'ws error' })
+          if (!opened) {
+            // will trigger onclose and fallback
+          } else {
+            this.setStatus({ kind: 'websocket', connected: false, detail: 'ws error', lastError: 'ws error' })
+          }
         }
         return
       } catch {
-        // lanjut SSE/HTTP
+        // lanjut SSE
       }
     }
+    this.trySse()
+  }
 
-    // 2) SSE bila tersedia.
+  private trySse(): void {
+    const { runId, sseUrl } = this.options
+    const base = typeof window !== 'undefined' ? window.location.origin : ''
     if (sseUrl && typeof EventSource !== 'undefined') {
       try {
         const authQuery = this.options.authToken ? `&access_token=${encodeURIComponent(this.options.authToken)}` : ''
@@ -172,9 +194,11 @@ export class PaaxEventClient {
         const url = normalizeUrl(base, `${sseUrl}?run_id=${encodeURIComponent(runId)}${authQuery}${taskQuery}`)
         const es = new EventSource(url)
         this.es = es
+        let opened = false
         this.setStatus({ kind: 'sse', connected: false, detail: `connecting ${url}` })
         es.onopen = () => {
           if (this.stopped) return
+          opened = true
           this.setStatus({ kind: 'sse', connected: true, detail: `live ${url}` })
           this.options.onReplayRequest?.(this.lastSequence)
         }
@@ -191,6 +215,12 @@ export class PaaxEventClient {
         }
         es.onerror = () => {
           if (this.stopped) return
+          if (!opened) {
+            try { es.close() } catch { /* noop */ }
+            this.es = null
+            this.tryHttp()
+            return
+          }
           this.setStatus({ kind: 'sse', connected: false, detail: 'sse error — replay', lastError: 'sse error' })
           this.scheduleReconnect()
         }
@@ -199,15 +229,17 @@ export class PaaxEventClient {
         // lanjut HTTP
       }
     }
+    this.tryHttp()
+  }
 
-    // 3) HTTP replay (gateway EventLog).
+  private tryHttp(): void {
+    const { httpUrl } = this.options
     if (httpUrl) {
       this.setStatus({ kind: 'http-replay', connected: false, detail: 'http replay (gateway event store)' })
       void this.pollHttp()
       return
     }
 
-    // 4) Tidak ada transport — status jujur.
     this.setStatus({
       kind: 'none',
       connected: false,
@@ -256,6 +288,12 @@ export class PaaxEventClient {
         connected: true,
         detail: delivered > 0 ? `http replay +${delivered} events` : 'http replay (up to date)',
       })
+      if (!this.stopped && !this.timer) {
+        this.timer = setTimeout(() => {
+          this.timer = null
+          void this.pollHttp()
+        }, this.options.reconnectMs ?? 2000)
+      }
     } catch (e) {
       this.setStatus({
         kind: 'http-replay',
@@ -263,6 +301,7 @@ export class PaaxEventClient {
         detail: 'http replay unavailable',
         lastError: e instanceof Error ? e.message : String(e),
       })
+      this.scheduleReconnect()
     }
   }
 
