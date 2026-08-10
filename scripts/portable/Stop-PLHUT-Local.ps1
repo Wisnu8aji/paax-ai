@@ -13,8 +13,18 @@ function Stop-PaaxPid([int]$pidValue) {
     if ($proc) {
         $cmd = $proc.CommandLine
         if ($proc.Name -match "python|node|cmd|powershell" -or $cmd -match "paax|uvicorn|next|tsx") {
-            Write-Host "Stopping PAAX process PID $pidValue ($($proc.Name))..."
-            Stop-Process -Id $pidValue -Force -ErrorAction SilentlyContinue
+            Write-Host "Stopping PAAX process tree PID $pidValue ($($proc.Name))..."
+            # taskkill /T kills the whole tree. The portable launcher starts
+            # python.exe from the venv, which on Windows is a redirector shim
+            # whose real interpreter runs as a CHILD process (and uvicorn
+            # --workers spawns further children). Killing only the recorded PID
+            # would orphan those children and leave a live listener on the port,
+            # which later Start runs misread as a duplicate instance.
+            $taskkill = & taskkill /PID $pidValue /T /F 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "taskkill /T failed ($LASTEXITCODE); falling back to Stop-Process: $taskkill"
+                Stop-Process -Id $pidValue -Force -ErrorAction SilentlyContinue
+            }
         }
     }
 }

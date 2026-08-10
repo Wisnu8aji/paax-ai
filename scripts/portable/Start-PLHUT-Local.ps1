@@ -92,6 +92,13 @@ Set-UserOnlyFileAcl -Path $artifactSigningKeyPath
 $artifactSigningSecret = (Get-Content -LiteralPath $artifactSigningKeyPath -Raw).Trim()
 if ($artifactSigningSecret.Length -lt 32) { throw "Runtime artifact signing secret tidak valid; startup dihentikan." }
 $serviceEnvironment["document-intelligence"]["ARTIFACT_SIGNING_SECRET"] = $artifactSigningSecret
+# P0 FIX: point document-intelligence (API + worker) at the DB-backed durable
+# queue so that dem.extract enqueues land in services/db (durable_jobs table)
+# instead of the per-process in-memory store that has no consumer in the
+# portable stack.  DB_API_URL must point to the local db service (port 8001),
+# not the production default (localhost:8084) which is unreachable here.
+$serviceEnvironment["document-intelligence"]["JOB_QUEUE_BACKEND"] = "durable-db"
+$serviceEnvironment["document-intelligence"]["DB_API_URL"] = "http://127.0.0.1:8001"
 
 $serviceIdentityRegistry = Join-Path $runtimeDir "service-identities.json"
 $registry = [ordered]@{ version = 1; identities = $registryIdentities }
@@ -235,6 +242,83 @@ function Start-ServiceProcess([string]$Name,[string]$FilePath,[string[]]$Argumen
     Write-Host "Started $Name (PID $($process.Id))"
 }
 
+function Start-WorkerProcess([string]$Name,[string]$FilePath,[string[]]$Arguments,[string]$WorkingDirectory,[hashtable]$ServiceEnvironment) {
+    # Identical to Start-ServiceProcess but for background workers that do not
+    # listen on a TCP port (no port ownership check, no port-based liveness
+    # guard -- the pid file alone tracks the process).
+    $pidFile=Join-Path $runtimeDir "$Name.pid"
+    if (Test-Path $pidFile) {
+        $oldPidStr = Get-Content $pidFile -Raw -ErrorAction SilentlyContinue
+        if ($oldPidStr) {
+            $oldPid = [int]$oldPidStr.Trim()
+            $proc = Get-CimInstance Win32_Process -Filter "ProcessId = $oldPid" -ErrorAction SilentlyContinue
+            if ($proc) {
+                $cmdLine = $proc.CommandLine
+                if ($cmdLine -and $cmdLine.Contains($repoRoot)) {
+                    Write-Host "$Name already running (PID $oldPid) from this repository"
+                    return
+                }
+                if ($cmdLine -and -not $cmdLine.Contains($repoRoot)) {
+                    throw "PID file $Name.pid menunjuk ke PID $oldPid dari repository lain ($cmdLine). Hentikan worker lama terlebih dahulu."
+                }
+            }
+        }
+        Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
+    }
+
+    $outLog = Join-Path $runtimeDir "$Name.out.log"
+    $errLog = Join-Path $runtimeDir "$Name.err.log"
+
+    Remove-Item (Join-Path $runtimeDir "$Name.launch.bat") -Force -ErrorAction SilentlyContinue
+
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $psi.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
+    $psi.WorkingDirectory = $WorkingDirectory
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.FileName = $FilePath
+    $psi.Arguments = ($Arguments | ForEach-Object {
+        if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\\"') + '"' } else { $_ }
+    }) -join ' '
+
+    $runtimeEnvironment = @(
+        'PYTHONUTF8','PAAX_REPO_ROOT','PAAX_COMMIT','PAAX_BRANCH','PAAX_DIRTY',
+        'PAAX_DATA_ROOT','PAAX_PORTABLE_DATA_DIR','PAAX_SERVICE_IDENTITY_REGISTRY','DB_API_URL',
+        'NEXT_PUBLIC_DB_API_URL','NEXT_PUBLIC_USE_DB','CORE_ENGINE_URL',
+        'NEXT_PUBLIC_CORE_ENGINE_URL','DOCUMENT_INTELLIGENCE_URL',
+        'NEXT_PUBLIC_DOCUMENT_INTELLIGENCE_URL','AI_ORCHESTRATOR_URL',
+        'PAAX_AGENT_RUN_STORE','PAAX_AGENT_EVENT_JOURNAL','PAAX_AGENT_DEAD_LETTER',
+        'PAAX_TAKEOFF_STORE','PAAX_ENTITY_LINK_STORE'
+    )
+    foreach ($name in $runtimeEnvironment) {
+        $value = [Environment]::GetEnvironmentVariable($name, 'Process')
+        if ([string]::IsNullOrWhiteSpace($value)) { throw "Runtime environment '$name' kosong; startup dihentikan." }
+        $psi.EnvironmentVariables[$name] = $value
+    }
+    foreach ($name in $ServiceEnvironment.Keys) {
+        $value = [string]$ServiceEnvironment[$name]
+        if ([string]::IsNullOrWhiteSpace($value)) { throw "Service environment '$name' kosong; startup dihentikan." }
+        $psi.EnvironmentVariables[$name] = $value
+    }
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $psi
+    if (-not $process.Start()) { throw "Gagal menjalankan worker $Name melalui ProcessStartInfo." }
+    $process.BeginOutputReadLine()
+    $process.BeginErrorReadLine()
+    Register-ObjectEvent -InputObject $process -EventName OutputDataReceived -MessageData $outLog -Action {
+        if ($Event.SourceEventArgs.Data) { Add-Content -LiteralPath $Event.MessageData -Value $Event.SourceEventArgs.Data }
+    } | Out-Null
+    Register-ObjectEvent -InputObject $process -EventName ErrorDataReceived -MessageData $errLog -Action {
+        if ($Event.SourceEventArgs.Data) { Add-Content -LiteralPath $Event.MessageData -Value $Event.SourceEventArgs.Data }
+    } | Out-Null
+
+    Set-Content -LiteralPath $pidFile -Value $process.Id
+    Write-Host "Started $Name (PID $($process.Id))"
+}
+
 function Wait-Health([string]$Name,[string]$Url,[int]$Seconds=90) {
     $deadline=(Get-Date).AddSeconds($Seconds)
     while ((Get-Date) -lt $deadline) {
@@ -256,6 +340,14 @@ function Wait-Health([string]$Name,[string]$Url,[int]$Seconds=90) {
     throw "$Name tidak sehat setelah $Seconds detik. Periksa $($runtimeDir)\$Name.err.log"
 }
 
+function Get-PidSafe([string]$Path) {
+    if (Test-Path $Path) {
+        $val = Get-Content $Path -Raw -ErrorAction SilentlyContinue
+        if ($val) { return $val.Trim() }
+    }
+    return ""
+}
+
 Start-ServiceProcess "db-plhut" $venvPython @("scripts/live_test/serve_db_with_fixture.py") $repoRoot 8001 $serviceEnvironment["db-plhut"]
 Wait-Health "db-plhut" "http://127.0.0.1:8001/health"
 
@@ -270,11 +362,35 @@ Wait-Health "core-engine" "http://127.0.0.1:8081/health"
 #     process-safe; thumbnail cache writes are idempotent (same bytes).
 #   - pdf-binary-cache lives in the BROWSER (apps/web pdf-binary-cache.ts Map),
 #     so backend worker count cannot break its single-flight semantics.
-#   - In-memory JOB_QUEUE is per-process and has no in-process consumer in the
-#     portable stack (durable_worker_main is a separate production entrypoint);
-#     dem.extract enqueues are write-only here, so per-worker queues are harmless.
+#   - JOB_QUEUE_BACKEND=durable-db: enqueues go to services/db (durable_jobs
+#     table), not the per-process in-memory store.  The extraction worker
+#     (document-intelligence-worker below) leases and processes those jobs.
 Start-ServiceProcess "document-intelligence" $venvPython @("-m","uvicorn","app.main:app","--workers","2","--host","127.0.0.1","--port","8083") (Join-Path $repoRoot "services\document-intelligence") 8083 $serviceEnvironment["document-intelligence"]
 Wait-Health "document-intelligence" "http://127.0.0.1:8083/health"
+
+# document-intelligence-worker: durable extraction worker (P0 FIX).
+# Runs python -m app.durable_worker_main from services/document-intelligence.
+# Leases dem.extract / dem.synthesize jobs from services/db (durable_jobs table)
+# and calls process_document.  This is the ONLY path that produces pages,
+# sheets, and quantities -- dem_routes.py enqueues the job; this process
+# actually executes it.  Worker does not listen on a TCP port.
+Start-WorkerProcess "document-intelligence-worker" $venvPython @("-m","app.durable_worker_main") (Join-Path $repoRoot "services\document-intelligence") $serviceEnvironment["document-intelligence"]
+# Give the worker a moment to start and emit its "durable worker ... starting"
+# log line; if it crashes immediately the pid file will exist but the process
+# will be gone -- callers can detect that via the pid file / out.log check.
+Start-Sleep -Milliseconds 2000
+$workerPid = Get-PidSafe (Join-Path $runtimeDir "document-intelligence-worker.pid")
+if ($workerPid) {
+    $workerProc = Get-CimInstance Win32_Process -Filter "ProcessId = $workerPid" -ErrorAction SilentlyContinue
+    if (-not $workerProc) {
+        $workerErrLog = Join-Path $runtimeDir "document-intelligence-worker.err.log"
+        $errTail = if (Test-Path $workerErrLog) { (Get-Content $workerErrLog -Tail 20) -join "`n" } else { "(no log)" }
+        throw "document-intelligence-worker crashed at startup. Periksa log: $workerErrLog`n$errTail"
+    }
+    Write-Host "READY document-intelligence-worker (PID $workerPid)"
+} else {
+    throw "document-intelligence-worker PID file tidak ditemukan setelah start."
+}
 
 if (-not $SkipOptionalServices) {
     Start-ServiceProcess "ai-orchestrator" "pnpm.cmd" @("--dir","services/ai-orchestrator","dev") $repoRoot 8082 $serviceEnvironment["ai-orchestrator"]
@@ -295,6 +411,10 @@ Start-ServiceProcess "web" "pnpm.cmd" @("--dir","apps/web","start","--hostname",
 Wait-Health "web" "http://127.0.0.1:3000/api/health" 180
 
 function Get-PidSafe([string]$Path) {
+    # NOTE: This function is also defined before service startups above
+    # (after Wait-Health) so that it is available before the web service starts.
+    # This duplicate definition is intentional as a safety net; PowerShell uses
+    # the last definition encountered during parse, so this is always consistent.
     if (Test-Path $Path) {
         $val = Get-Content $Path -Raw -ErrorAction SilentlyContinue
         if ($val) { return $val.Trim() }
@@ -314,6 +434,7 @@ $manifestData = [ordered]@{
         "db-plhut" = @{ port = 8001; pid = (Get-PidSafe (Join-Path $runtimeDir "db-plhut.pid")) }
         "core-engine" = @{ port = 8081; pid = (Get-PidSafe (Join-Path $runtimeDir "core-engine.pid")) }
         "document-intelligence" = @{ port = 8083; pid = (Get-PidSafe (Join-Path $runtimeDir "document-intelligence.pid")) }
+        "document-intelligence-worker" = @{ port = 0; pid = (Get-PidSafe (Join-Path $runtimeDir "document-intelligence-worker.pid")) }
         "ai-orchestrator" = if (-not $SkipOptionalServices) { @{ port = 8082; pid = (Get-PidSafe (Join-Path $runtimeDir "ai-orchestrator.pid")) } } else { $null }
         "site-agent" = if (-not $SkipOptionalServices) { @{ port = 8085; pid = (Get-PidSafe (Join-Path $runtimeDir "site-agent.pid")) } } else { $null }
         "web" = @{ port = 3000; pid = (Get-PidSafe (Join-Path $runtimeDir "web.pid")) }
