@@ -93,4 +93,33 @@ describe('/api/paax/events route handler', () => {
     expect(body.events.length).toBe(2);
     expect(body.events.every((e: { params: { sequence: number } }) => e.params.sequence > 1)).toBe(true);
   });
+
+  // ── Plan compliance rev2: dedup event_id (plan §3.6) ────────────────────────
+  it('POST /api/paax/events dedup event_id — event yang sama tidak diduplikasi (plan §3.6)', async () => {
+    const runId = 'paax:run:test-dedup';
+    const ts = new Date().toISOString();
+    const eventPayload = {
+      run_id: runId,
+      events: [
+        { event_id: 'paax:evt:dedup:1:00000001', run_id: runId, sequence: 1, type: 'task.started', task_id: 'T01', timestamp: ts },
+        // event_id sama — harus didedup
+        { event_id: 'paax:evt:dedup:1:00000001', run_id: runId, sequence: 1, type: 'task.started', task_id: 'T01', timestamp: ts },
+        { event_id: 'paax:evt:dedup:2:00000002', run_id: runId, sequence: 2, type: 'task.completed', task_id: 'T01', timestamp: ts },
+      ],
+    };
+    const postReq = new NextRequest('http://localhost:3000/api/paax/events', {
+      method: 'POST',
+      body: JSON.stringify(eventPayload),
+    });
+    await POST(postReq);
+
+    const getReq = new NextRequest(`http://localhost:3000/api/paax/events?run_id=${runId}`);
+    const getRes = await GET(getReq);
+    const body = await getRes.json();
+    // Hanya 2 event unik (event_id duplikat tidak disimpan)
+    expect(body.events.length).toBe(2);
+    const ids = body.events.map((e: { params: { event_id: string } }) => e.params.event_id);
+    expect(new Set(ids).size).toBe(2);
+  });
 });
+

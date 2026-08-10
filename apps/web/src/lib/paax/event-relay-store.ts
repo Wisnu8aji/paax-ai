@@ -4,7 +4,7 @@ export class PaaxEventRelayStore {
   private runs = new Map<string, PaaxEventEnvelope[]>();
   private listeners = new Map<string, Set<(event: PaaxEventEnvelope) => void>>();
 
-  /** Ingest event and convert to full v2 envelope. */
+  /** Ingest event and convert to full v2 envelope. Dedup by event_id (plan §3.6). */
   ingest(runId: string, rawEvent: Record<string, any>): PaaxEventEnvelope {
     const existing = this.runs.get(runId) || [];
     const seq = Number(rawEvent.sequence ?? existing.length + 1);
@@ -34,7 +34,14 @@ export class PaaxEventRelayStore {
       _replay: true,
     };
 
+    // Dedup event_id sesuai kontrak plan §3.6 (EventStore append-only, dedup event_id).
+    if (existing.some((e) => e.params.event_id === envelope.params.event_id)) {
+      return envelope; // idempotent — sudah ada, tidak diduplikasi
+    }
+
     existing.push(envelope);
+    // Sort by sequence untuk menjaga urutan deterministik setelah push.
+    existing.sort((a, b) => a.params.sequence - b.params.sequence);
     this.runs.set(runId, existing);
 
     const runListeners = this.listeners.get(runId);

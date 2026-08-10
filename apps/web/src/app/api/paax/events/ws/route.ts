@@ -45,14 +45,21 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  // Run belum memiliki events — status jujur: 200 + events kosong + web_trace false.
+  // 503 hanya untuk gateway unavailable, bukan state kosong (kontrak plan F2 §3.1).
   return NextResponse.json(
     {
-      error: 'gateway event relay WS belum aktif untuk run_id ini',
-      detail: 'WAITING_DEPENDENCY: F1 gateway WS contract W1-D',
       run_id: runId,
       events: [],
       web_trace: false,
+      detail: 'run belum memiliki events di relay store — menunggu gateway F1',
     },
-    { status: 503 },
+    {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+      },
+    },
   )
 }
