@@ -1,9 +1,30 @@
 // @vitest-environment node
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { NextRequest } from 'next/server';
 import { GET, POST } from './route';
 import { getRelayStore } from '../../../../lib/paax/event-relay-store';
+
+const ENV_KEY = 'PAAX_AGENT_EVENT_JOURNAL';
+const GATEWAY_KEY = 'PAAX_GATEWAY_URL';
+
+function journalLine(run: string, seq: number, type: string): string {
+  return JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'paax.event',
+    params: {
+      event_id: `paax:evt:${run}:${seq}:00000001`,
+      run_id: `paax:run:${run}`,
+      sequence: seq,
+      timestamp: new Date().toISOString(),
+      type,
+      payload_summary: {},
+    },
+  });
+}
 
 describe('/api/paax/events route handler', () => {
   beforeEach(() => {
@@ -69,6 +90,60 @@ describe('/api/paax/events route handler', () => {
     const body = await getRes.json();
     expect(body.events).toEqual([]);
     expect(body.web_trace).toBe(false);
+  });
+
+  it('GET /api/paax/events mereplay event durable saat relay memory kosong', async () => {
+    const previousJournal = process.env.PAAX_AGENT_EVENT_JOURNAL;
+    const directory = mkdtempSync(join(tmpdir(), 'paax-events-'));
+    const journal = join(directory, 'agent-events.jsonl');
+    const runId = 'journal-replay-01';
+    writeFileSync(journal, JSON.stringify({
+      jsonrpc: '2.0', method: 'paax.event',
+      params: {
+        event_id: 'paax:evt:journal-replay-01:0:00000001',
+        run_id: `paax:run:${runId}`, sequence: 0, type: 'run.started',
+        timestamp: new Date().toISOString(), payload_summary: { source: 'worker' },
+      },
+    }) + '\n');
+    process.env.PAAX_AGENT_EVENT_JOURNAL = journal;
+    try {
+      const response = await GET(new NextRequest(`http://localhost:3000/api/paax/events?run_id=${runId}`));
+      const body = await response.json();
+      expect(response.status).toBe(200);
+      expect(body.web_trace).toBe(true);
+      expect(body.events).toHaveLength(1);
+      expect(body.events[0].params.run_id).toBe(`paax:run:${runId}`);
+    } finally {
+      if (previousJournal === undefined) delete process.env.PAAX_AGENT_EVENT_JOURNAL;
+      else process.env.PAAX_AGENT_EVENT_JOURNAL = previousJournal;
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it('GET /api/paax/events fallback ke journal saat gateway relay gagal (bukan 503)', async () => {
+    const previousJournal = process.env[ENV_KEY];
+    const previousGateway = process.env[GATEWAY_KEY];
+    const directory = mkdtempSync(join(tmpdir(), 'paax-gw-fallback-'));
+    const journal = join(directory, 'agent-events.jsonl');
+    const runId = 'gw-fallback-run';
+    writeFileSync(journal, journalLine(runId, 0, 'run.started') + '\n');
+    process.env[ENV_KEY] = journal;
+    process.env[GATEWAY_KEY] = 'http://127.0.0.1:1';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('relay down'));
+    try {
+      const response = await GET(new NextRequest(`http://localhost:3000/api/paax/events?run_id=paax:run:${runId}`));
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body.events).toHaveLength(1);
+      expect(body.web_trace).toBe(true);
+    } finally {
+      fetchSpy.mockRestore();
+      if (previousJournal === undefined) delete process.env[ENV_KEY];
+      else process.env[ENV_KEY] = previousJournal;
+      if (previousGateway === undefined) delete process.env[GATEWAY_KEY];
+      else process.env[GATEWAY_KEY] = previousGateway;
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 
   it('GET /api/paax/events filter after_sequence berfungsi', async () => {
@@ -148,4 +223,3 @@ describe('/api/paax/events route handler', () => {
     expect(body.error).toContain('synthetic/invalid events rejected');
   });
 });
-

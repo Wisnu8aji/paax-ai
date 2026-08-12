@@ -91,3 +91,30 @@ async def test_synthesis_mode_is_validated_and_persisted_in_durable_job():
     job = next(iter(queue.jobs.values()))
     assert job.job_type == "dem.synthesize"
     assert job.payload["analysis_mode"] == "deep"
+
+
+@pytest.mark.asyncio
+async def test_failed_synthesis_retry_does_not_reuse_completed_idempotency_key():
+    queue = InMemoryDurableJobStore()
+    original_key = "dem.synthesize:R1"
+    previous = queue.enqueue(
+        "dem.synthesize",
+        {"run_id": "R1", "project_id": "PROJECT-A", "analysis_mode": "fast"},
+        idempotency_key=original_key,
+    )
+    previous.status = "completed"
+    run_status = {
+        "id": "R1", "project_id": "PROJECT-A", "status": "synthesis_failed",
+        "pages": [{"status": "complete"}],
+    }
+    with patch.object(dem_routes, "JOB_QUEUE", queue), \
+         patch("app.api.dem_routes.DemDbClient.get_run_status", new=AsyncMock(return_value=run_status)), \
+         patch("app.api.dem_routes.DemDbClient.authorize_actor_for_project", new=AsyncMock()), \
+         patch("app.api.dem_routes.DemDbClient.update_run_status", new=AsyncMock()):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post("/drawings/dem/R1/synthesize", headers=HEADERS)
+
+    assert response.status_code == 200
+    assert len(queue.jobs) == 2
+    retry = next(job for job in queue.jobs.values() if job.id != previous.id)
+    assert retry.idempotency_key.startswith(f"{original_key}:retry:")

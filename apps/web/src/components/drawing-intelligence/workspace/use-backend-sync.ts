@@ -55,6 +55,27 @@ function mapDemRunToDrawingFile(run: any): DrawingFile {
   };
 }
 
+export function selectBackendActiveRunId(
+  currentRunId: string | null,
+  runsData: Array<{ id?: unknown; status?: unknown }>,
+): string | null {
+  if (currentRunId) return currentRunId;
+  const activeRun = runsData.find((run) =>
+    ['created', 'processing', 'uploading', 'pages_queued', 'pages_extracting'].includes(String(run.status)),
+  );
+  const completedRun = runsData.find((run) => ['synthesis_complete', 'completed'].includes(String(run.status)));
+  const selected = activeRun ?? completedRun;
+  return typeof selected?.id === 'string' ? selected.id : null;
+}
+
+export function scopeRunRecords<T extends { id?: unknown; run_id?: unknown }>(
+  records: T[],
+  runId: string | null,
+): T[] {
+  if (!runId) return records;
+  return records.filter((record) => String(record.run_id ?? record.id ?? '') === runId);
+}
+
 export function useBackendSync(projectId: string | null) {
   const { state, dispatch } = useWorkspace();
   const hasInitializedModeRef = useRef(false);
@@ -128,7 +149,14 @@ export function useBackendSync(projectId: string | null) {
           projectRepository.getWorkspaceHead().catch(() => null),
         ]);
 
-        const hasRealData = queue.items.length > 0 || readiness.items.length > 0 || (civilWorkItems?.items.length ?? 0) > 0 || sheetsData.length > 0 || runsData.length > 0 || summaryViewsData.length > 0;
+        const canonicalRunId = stateRef.current.activeRunId ?? selectBackendActiveRunId(null, runsData);
+        // When a URL/upload/retry selects a run, all document navigation must
+        // stay inside that run. Project-wide graph quantities remain separate;
+        // mixing old runs here made a five-page test appear as 40 files/268
+        // sheets and hid which run the agent actually analyzed.
+        const visibleRuns = scopeRunRecords(runsData, canonicalRunId);
+        const visibleSheetsData = scopeRunRecords(sheetsData, canonicalRunId);
+        const hasRealData = queue.items.length > 0 || readiness.items.length > 0 || (civilWorkItems?.items.length ?? 0) > 0 || visibleSheetsData.length > 0 || visibleRuns.length > 0 || summaryViewsData.length > 0;
         const isUploadingOrMapped = stateRef.current.upload.running || stateRef.current.mappedSheets.length > 0;
         if (!hasRealData) {
           if (!isUploadingOrMapped) {
@@ -160,7 +188,7 @@ export function useBackendSync(projectId: string | null) {
 
         const hasPendingRuns = runsData.some((r: any) => ['created', 'processing', 'uploading', 'pages_queued', 'pages_extracting'].includes(r.status));
 
-        const combinedSheetsData = [...sheetsData];
+        const combinedSheetsData = [...visibleSheetsData];
 
         const mappedSheets: Sheet[] = combinedSheetsData.map(mapRawDemSheetToSheet);
         if (mappedSheets.length > 0) {
@@ -170,7 +198,7 @@ export function useBackendSync(projectId: string | null) {
         }
 
         const placeholders: any[] = [];
-        for (const run of runsData) {
+        for (const run of visibleRuns) {
           const runId = run.id;
           const hasSheets = sheetsData.some((s: any) => s.run_id === runId);
           if (!hasSheets && run.total_pages > 0) {
@@ -208,7 +236,7 @@ export function useBackendSync(projectId: string | null) {
         if (initialSheetId) {
           dispatch({ type: 'set-active-sheet', sheetId: initialSheetId });
         }
-        const mappedFiles = runsData.map(mapDemRunToDrawingFile);
+        const mappedFiles = visibleRuns.map(mapDemRunToDrawingFile);
 
         if (mappedFiles.length > 0) {
           dispatch({ type: 'replace-files', files: mappedFiles });
@@ -216,10 +244,10 @@ export function useBackendSync(projectId: string | null) {
 
         // MP3-P2: pilih run aktif untuk bind gateway event live — preferensi
         // run yang masih berjalan, lalu run synthesis selesai terbaru.
-        const activeRun = runsData.find((r: any) => ['created', 'processing', 'uploading', 'pages_queued', 'pages_extracting'].includes(r.status))
-          ?? runsData.find((r: any) => r.status === 'synthesis_complete' || r.status === 'completed')
-          ?? null;
-        dispatch({ type: 'set-active-run', runId: activeRun?.id ?? null });
+        // Preserve the canonical run selected by the workspace (URL, upload,
+        // or retry). Only choose a backend run when no canonical run exists;
+        // otherwise an older non-terminal run can hijack the live console.
+        dispatch({ type: 'set-active-run', runId: selectBackendActiveRunId(stateRef.current.activeRunId, runsData) });
 
         if (hasPendingRuns && !cancelled) {
           timer = setTimeout(sync, 5000);
@@ -228,7 +256,7 @@ export function useBackendSync(projectId: string | null) {
         // Load the persisted package-level intelligence for the newest run
         // that has passed synthesis. Failure/absence is an honest null state,
         // never a reason to fabricate package metrics in the frontend.
-        const intelligenceRun = runsData.find((run: any) =>
+        const intelligenceRun = visibleRuns.find((run: any) =>
           run.status === 'synthesis_complete' || run.status === 'completed'
         );
         if (intelligenceRun?.id) {
@@ -367,9 +395,14 @@ export function useBackendSync(projectId: string | null) {
         }
 
         const authoritativeSummary = civilWorkItems?.summary ?? readiness.summary;
+        // DI-005 fix: jangan pernah render "undefined" — backend bisa
+        // mengembalikan summary parsial saat sibuk; tampilkan 0 sebagai
+        // placeholder yang jujur.
+        const readyCount = typeof authoritativeSummary?.ready === 'number' ? authoritativeSummary.ready : 0;
+        const needsReviewCount = typeof authoritativeSummary?.needs_review === 'number' ? authoritativeSummary.needs_review : 0;
         dispatch({
           type: 'set-status',
-          message: `Terhubung ke proyek ${projectId} — ${authoritativeSummary.ready} item siap, ${authoritativeSummary.needs_review} perlu review`,
+          message: `Terhubung ke proyek ${projectId} — ${readyCount} item siap, ${needsReviewCount} perlu review`,
         });
       } catch (err) {
         if (cancelled) return;

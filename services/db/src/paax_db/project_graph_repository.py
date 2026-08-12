@@ -490,6 +490,13 @@ async def build_and_activate_snapshot(
             active_snapshot.status = "superseded"
 
             active_snapshot.superseded_at = now
+        # SQLite enforces the one-active-snapshot partial index during each
+        # statement, and SQLAlchemy may otherwise emit the new snapshot's
+        # activation before the old row's supersede update. Flush the handoff
+        # explicitly so the durable synthesis path cannot fail at commit with
+        # UNIQUE constraint failed: project_graph_snapshots.project_id.
+        if active_snapshots:
+            await session.flush()
         snapshot.status = "active"
         snapshot.activated_at = now
     if telemetry is not None:

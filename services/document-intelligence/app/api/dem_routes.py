@@ -620,9 +620,17 @@ async def trigger_synthesis(
             raise HTTPException(status_code=400, detail="Cannot synthesize: Extraction is not complete")
 
     await db_client.update_run_status(run_id, "synthesis_in_progress")
+    # A failed synthesis is retryable. The original idempotency key belongs
+    # to the completed/failed queue delivery, so reusing it would return that
+    # old job and leave the run stuck in synthesis_in_progress forever. Keep
+    # the first delivery exactly-once, but give every explicit retry a fresh
+    # durable delivery key.
+    synthesis_idempotency_key = f"dem.synthesize:{run_id}"
+    if current_status == "synthesis_failed":
+        synthesis_idempotency_key = f"{synthesis_idempotency_key}:retry:{uuid.uuid4().hex}"
     await _enqueue_job(
         "dem.synthesize", {"run_id": run_id, "project_id": project_id, "analysis_mode": analysis_mode},
-        idempotency_key=f"dem.synthesize:{run_id}",
+        idempotency_key=synthesis_idempotency_key,
     )
     
     return {"run_id": run_id, "status": "synthesis_started", "analysis_mode": analysis_mode}

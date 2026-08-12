@@ -367,7 +367,7 @@ class CoreEngineCalculationClient:
         *,
         internal_key: str,
         client: httpx.AsyncClient | None = None,
-        timeout_seconds: float = 15.0,
+        timeout_seconds: float = 60.0,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.internal_key = internal_key
@@ -400,7 +400,7 @@ class CoreEngineCalculationClient:
         if self._client is not None:
             response = await self._client.post(f"{self.base_url}{dispatch.endpoint}", json=dispatch.payload, headers=headers)
         else:
-            async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(self.timeout_seconds, connect=30.0)) as client:
                 response = await client.post(f"{self.base_url}{dispatch.endpoint}", json=dispatch.payload, headers=headers)
         response.raise_for_status()
         resp_json = response.json()

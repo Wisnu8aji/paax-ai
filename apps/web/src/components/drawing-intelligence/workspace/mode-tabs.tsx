@@ -10,7 +10,6 @@ import {
   LayoutGrid,
   ScanSearch,
   SendHorizonal,
-  Sparkles,
   Table2,
   Ruler,
   BrainCircuit,
@@ -21,7 +20,6 @@ import type { WorkspaceMode } from './di-types';
 const MODES: { id: WorkspaceMode; label: string; icon: typeof FolderOpen }[] = [
   { id: 'files', label: 'Files', icon: FolderOpen },
   { id: 'sheets', label: 'Sheets', icon: LayoutGrid },
-  { id: 'analyze', label: 'Analyze', icon: Sparkles },
   { id: 'review', label: 'Review', icon: ScanSearch },
   { id: 'takeoff', label: 'Takeoff', icon: Ruler },
   { id: 'quantities', label: 'Quantities', icon: Table2 },

@@ -408,6 +408,50 @@ async def test_build_and_activate_snapshot_writes_graph_before_it_becomes_curren
 
 
 @pytest.mark.asyncio
+async def test_build_and_activate_snapshot_commits_second_activation_on_sqlite():
+    """A durable synthesis retry must replace the active snapshot atomically.
+
+    SQLite checks its partial unique index statement-by-statement. The old
+    implementation could flush the new ``active`` row before the old row was
+    marked ``superseded``, turning a valid retry into an opaque HTTP 500.
+    """
+    from .conftest import TestSession
+
+    async with TestSession() as session:
+        session.add(models.Project(id="PROJECT-RETRY", owner_id="OWNER-RETRY", name="Retry"))
+        await session.commit()
+
+        common = {
+            "schema_version": "paax.pckm.graph.v1",
+            "source_manifest_hash": "manifest-retry",
+            "generation_metadata": {"run_id": "RUN-RETRY"},
+            "nodes": [], "edges": [], "evidence": [], "node_evidence": [],
+            "edge_evidence": [], "aliases": [], "communities": [],
+        }
+        await build_and_activate_snapshot(
+            session, project_id="PROJECT-RETRY", snapshot_id="SNAPSHOT-RETRY-1", **common
+        )
+        await build_and_activate_snapshot(
+            session, project_id="PROJECT-RETRY", snapshot_id="SNAPSHOT-RETRY-2", **common
+        )
+
+        active = await get_active_snapshot(session, "PROJECT-RETRY")
+        snapshots = (
+            await session.execute(
+                select(models.ProjectGraphSnapshot)
+                .where(models.ProjectGraphSnapshot.project_id == "PROJECT-RETRY")
+                .order_by(models.ProjectGraphSnapshot.snapshot_id)
+            )
+        ).scalars().all()
+
+    assert active is not None and active.snapshot_id == "SNAPSHOT-RETRY-2"
+    assert [(item.snapshot_id, item.status) for item in snapshots] == [
+        ("SNAPSHOT-RETRY-1", "superseded"),
+        ("SNAPSHOT-RETRY-2", "active"),
+    ]
+
+
+@pytest.mark.asyncio
 async def test_snapshot_telemetry_is_bounded_and_cannot_break_activation():
     from .conftest import TestSession
 

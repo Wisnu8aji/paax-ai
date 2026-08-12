@@ -90,6 +90,11 @@ class ProjectBase(BaseModel):
 
 class ProjectCreate(ProjectBase):
     id: str
+    # owner_id TIDAK boleh diambil dari body: main.py create_project selalu
+    # memaksa owner_id = user.uid dari auth (X-User-Id). Frontend tidak pernah
+    # mengirim owner_id (proxy server-side). Optional agar pydantic tidak
+    # menolak body tanpa owner_id (422) — nilai akhir tetap dari user.uid.
+    owner_id: Optional[str] = None
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
@@ -453,6 +458,13 @@ class ProjectGraphSnapshotResponse(BaseModel):
     status: str
     source_manifest_hash: str
     effective_sheet_revision_ids: List[str] = Field(default_factory=list)
+
+    # The persistence endpoint returns the SQLAlchemy snapshot entity directly.
+    # Without attribute loading FastAPI turns a successful graph activation into
+    # an opaque 500 during response validation, after the transaction has done
+    # its work.  This is especially damaging to the durable DEM worker because
+    # it marks an otherwise valid synthesis as failed and retries it.
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProjectGraphRetrievalRequest(BaseModel):

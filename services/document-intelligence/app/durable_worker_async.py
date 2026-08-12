@@ -16,8 +16,11 @@ because nothing in a job's payload is process-local.
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from typing import Any, Awaitable, Callable
+
+import httpx
 
 from app.artifact_storage import ArtifactStore, ArtifactUnavailable
 from app.durable_jobs import AsyncDurableJobQueue
@@ -60,22 +63,58 @@ class AsyncDurableWorker:
         self.max_attempts = max_attempts
 
     async def _heartbeat_loop(self, job_id: str) -> None:
+        logger = logging.getLogger("app.durable_worker_async")
         try:
             while True:
                 await asyncio.sleep(self.heartbeat_interval_seconds)
-                await self.queue.heartbeat(job_id, self.worker_id, lease_seconds=self.lease_seconds)
+                try:
+                    await self.queue.heartbeat(job_id, self.worker_id, lease_seconds=self.lease_seconds)
+                except httpx.TransportError as exc:
+                    # A single connect/read timeout must not surface through
+                    # run_once's cleanup path and kill the worker process. The
+                    # DB lease remains valid until its expiry; the next
+                    # heartbeat gets another chance to renew it.
+                    logger.warning(
+                        "Transient heartbeat failure for job %s; will retry: %s",
+                        job_id,
+                        exc,
+                    )
         except asyncio.CancelledError:
             pass
 
     async def run_once(self) -> bool:
         """Lease and process at most one job. Returns False if the queue was
         empty (nothing to do this poll)."""
-        leased = await self.queue.lease(self.worker_id, lease_seconds=self.lease_seconds)
+        logger = logging.getLogger("app.durable_worker_async")
+        try:
+            leased = await self.queue.lease(self.worker_id, lease_seconds=self.lease_seconds)
+        except httpx.TransportError as exc:
+            # A single connect/read timeout on the control-plane lease must
+            # not surface through run_forever and kill the worker process.
+            # Nothing was claimed, so the normal poll-and-sleep loop is the
+            # recovery.
+            logger.warning("Transient lease failure; will retry next poll: %s", exc)
+            return False
         if leased is None:
             return False
 
         job_id, job_type, payload = leased["id"], leased["job_type"], leased["payload"]
-        await self.queue.transition_running(job_id, self.worker_id)
+        try:
+            await self.queue.transition_running(job_id, self.worker_id)
+        except httpx.TransportError as exc:
+            # The lease is already claimed server-side, but the transition to
+            # "running" never landed. Neither complete nor retry is legal for
+            # a "leased" job (the server rejects both), so reporting either
+            # outcome would fabricate the job's fate. Abandon the lease
+            # instead and let server-side lease expiry re-expose the job to
+            # the next lease poll -- durable at-least-once semantics without
+            # killing the worker process.
+            logger.warning(
+                "Transient transition failure for job %s; abandoning lease (expiry will re-lease it): %s",
+                job_id,
+                exc,
+            )
+            return False
 
         heartbeat_task = asyncio.ensure_future(self._heartbeat_loop(job_id))
         try:
@@ -118,7 +157,20 @@ class AsyncDurableWorker:
         return True
 
     async def run_forever(self, *, poll_interval_seconds: float = 2.0, stop_event: asyncio.Event | None = None) -> None:
+        logger = logging.getLogger("app.durable_worker_async")
         while stop_event is None or not stop_event.is_set():
-            processed = await self.run_once()
+            try:
+                processed = await self.run_once()
+            except httpx.TransportError as exc:
+                # run_once already absorbs lease/transition transport
+                # failures; anything that escapes (e.g. the reporting
+                # complete/retry call failing while a handler error is being
+                # reported) must also never kill the worker process. A lost
+                # request is never interpreted as job success -- the durable
+                # lease/retry protocol re-exposes the job once the queue is
+                # reachable again.
+                logger.warning("Transient queue transport failure; worker will retry: %s", exc)
+                await asyncio.sleep(poll_interval_seconds)
+                continue
             if not processed:
                 await asyncio.sleep(poll_interval_seconds)

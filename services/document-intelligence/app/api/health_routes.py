@@ -14,6 +14,14 @@ router = APIRouter(prefix="/health", tags=["Health"])
 
 @router.get("")
 def health_check():
+    # The portable runtime uses one OpenCode Go credential for both the MiMo
+    # vision stage and the DeepSeek agent stage. Keep this separate from the
+    # legacy NVIDIA reporting so health reflects the provider that the actual
+    # DEM worker will call.
+    opencode_go_key = (
+        os.getenv("DRAWING_INTELLIGENCE_API_KEY", "").strip()
+        or os.getenv("OPENCODE_GO_API_KEY", "").strip()
+    )
     provider_keys = {
         "nvidia": _nvidia_key_env(
             "NVIDIA_DRAWING_FAST_API_KEY",
@@ -23,6 +31,7 @@ def health_check():
             "NVIDIA_SOLACE_API_KEY",
             "NVIDIA_LUCENT_API_KEY",
         ),
+        "opencode-go": opencode_go_key,
     }
     configured_providers = [name for name, key in provider_keys.items() if key]
     ai_provider_configured = bool(configured_providers)
@@ -63,5 +72,9 @@ def health_check():
             "ocr_backup": _model_env("NVIDIA_DRAWING_OCR_MODEL", NVIDIA_DRAWING_OCR_MODEL),
             "deep_review": _model_env("NVIDIA_DRAWING_REVIEW_MODEL", NVIDIA_DRAWING_REVIEW_MODEL),
             "civil_reasoning": _model_env("NVIDIA_SOLACE_MODEL", NVIDIA_DEEPSEEK_MODEL),
+        },
+        "opencode_go_models": {
+            "vision": os.getenv("DRAWING_INTELLIGENCE_QWEN_MODEL", "mimo-v2.5").strip() or "mimo-v2.5",
+            "agent": os.getenv("DRAWING_INTELLIGENCE_DEEPSEEK_MODEL", "deepseek-v4-flash").strip() or "deepseek-v4-flash",
         },
     }

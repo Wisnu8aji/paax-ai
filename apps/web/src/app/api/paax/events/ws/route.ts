@@ -22,6 +22,10 @@ export async function GET(request: NextRequest) {
 
   const relayStore = getRelayStore()
 
+  // Journal replay/hydration: worker→web relay outage tidak boleh membuat run
+  // yang sudah punya event durable di PAAX_AGENT_EVENT_JOURNAL tampak kosong.
+  relayStore.hydrateFromJournal(runId)
+
   if (relayStore.hasRun(runId)) {
     const events = relayStore.getEvents(runId, afterSeq, taskId)
     return NextResponse.json(

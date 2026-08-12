@@ -3,12 +3,12 @@
 // apps/web/src/app/api/document-intelligence/[...path]/route.ts — hanya
 // meneruskan request, tidak pernah menghitung/mengubah data (Aturan Emas).
 
+import { getPortableServiceKey } from "@/lib/portable-service-auth";
+
 const DB_API_UPSTREAM_URL =
   process.env.DB_API_URL ||
   process.env.NEXT_PUBLIC_DB_API_URL ||
   "http://127.0.0.1:8001";
-
-const INTERNAL_SERVICE_KEY = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "test" ? "test-internal-key" : "");
 
 type RouteContext = {
   params: Promise<{ path?: string[] }>;
@@ -27,8 +27,9 @@ async function proxyDbApi(request: Request, context: RouteContext): Promise<Resp
   const headers = new Headers();
   const contentType = request.headers.get("content-type");
   if (contentType) headers.set("content-type", contentType);
-  if (INTERNAL_SERVICE_KEY) {
-    headers.set("X-Internal-Key", INTERNAL_SERVICE_KEY);
+  const internalServiceKey = getPortableServiceKey();
+  if (internalServiceKey) {
+    headers.set("X-Internal-Key", internalServiceKey);
   }
   headers.set("X-User-Id", process.env.PAAX_PORTABLE_ACTOR_ID?.trim() || "paax-web");
 
@@ -39,6 +40,7 @@ async function proxyDbApi(request: Request, context: RouteContext): Promise<Resp
     headers,
     body,
     cache: "no-store",
+    signal: AbortSignal.timeout(45_000),
   });
 
   const responseHeaders = new Headers();

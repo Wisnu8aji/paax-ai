@@ -265,6 +265,100 @@ export async function fetchDemRunStatus(runId: string): Promise<DemRunStatusResp
   return res.json();
 }
 
+// ── Runtime event bridge (F1 gateway relay v2, G2.3) ──────────────────────
+// Publikasikan status run backend yang NYATA (bukan synthetic) ke relay store
+// via POST /api/paax/events. Konsol SSE /api/paax/events/sse menerima event
+// dan menampilkan progress live. Event dibangun dari respons
+// fetchDemRunStatus yang diverifikasi — lolos scanRealEvents (anti-fake).
+
+const RUNTIME_EVENT_SEQ = new Map<string, number>();
+
+function runtimeEventSeq(runId: string): number {
+  const next = (RUNTIME_EVENT_SEQ.get(runId) ?? -1) + 1;
+  RUNTIME_EVENT_SEQ.set(runId, next);
+  return next;
+}
+
+function runtimeEventId(runId: string, seq: number): string {
+  const suffix = Math.random().toString(16).slice(2, 10).padEnd(8, '0');
+  return `paax:evt:${runId}:${seq}:${suffix}`;
+}
+
+export interface PublishRunStatusInput {
+  runId: string;
+  status: string;
+  synthesisStatus?: string | null;
+  totalPages?: number;
+  message?: string;
+}
+
+/** Publish satu event status v2 dari backend (idempotent-ish via event_id unik). */
+export async function publishRunStatusEvent(input: PublishRunStatusInput): Promise<boolean> {
+  const { runId, status, synthesisStatus = null, totalPages = 0, message = '' } = input;
+  const seq = runtimeEventSeq(runId);
+
+  // Peta status backend → type event v2 (hanya type yang ada di kontrak).
+  let type = 'task.progress';
+  let stage = status;
+  if (status === 'created') {
+    type = 'run.started';
+    stage = 'extraction';
+  } else if (status === 'dem_complete') {
+    type = 'task.completed';
+    stage = 'extraction';
+  } else if (synthesisStatus === 'synthesis_in_progress') {
+    type = 'task.progress';
+    stage = 'synthesis';
+  } else if (synthesisStatus === 'synthesis_complete') {
+    type = 'task.completed';
+    stage = 'synthesis';
+  } else if (status === 'failed' || synthesisStatus === 'synthesis_failed') {
+    type = 'task.failed';
+    stage = 'synthesis';
+  }
+
+  const envelope = {
+    jsonrpc: '2.0',
+    method: 'paax.event',
+    params: {
+      event_id: runtimeEventId(runId, seq),
+      run_id: runId,
+      task_id: null,
+      parent_task_id: null,
+      agent_id: 'dem-runtime',
+      session_id: null,
+      worker_id: null,
+      provider: 'local-engine',
+      model: null,
+      sequence: seq,
+      timestamp: new Date().toISOString(),
+      type,
+      stage,
+      payload_summary: {
+        status,
+        synthesis_status: synthesisStatus,
+        total_pages: totalPages,
+        message,
+      },
+      payload_ref: null,
+      redaction_state: 'clean',
+      persistence_status: 'durable',
+    },
+  };
+
+  try {
+    const res = await fetch('/api/paax/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ run_id: runId, events: [envelope] }),
+      cache: 'no-store',
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export const PDF_ARTIFACT_REFRESH_SKEW_MS = 60_000;
 
 export interface PdfArtifactUrlResponse {

@@ -101,6 +101,27 @@ describe("document-intelligence proxy — security regression", () => {
     }
   });
 
+  it("prefers the portable web identity over a stale generic dotenv key", async () => {
+    let capturedKey: string | null = null;
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init?: RequestInit) => {
+      capturedKey = new Headers(init?.headers).get("x-internal-key");
+      return new Response(null, { status: 200 });
+    }));
+    const previousPortable = process.env.PAAX_WEB_INTERNAL_SERVICE_KEY;
+    const previousGeneric = process.env.INTERNAL_SERVICE_KEY;
+    process.env.PAAX_WEB_INTERNAL_SERVICE_KEY = "portable-web-identity";
+    process.env.INTERNAL_SERVICE_KEY = "stale-dotenv-key";
+    try {
+      await GET(new Request("http://paax.test/api/document-intelligence/drawings/dem/run/idx"), context);
+      expect(capturedKey).toBe("portable-web-identity");
+    } finally {
+      if (previousPortable === undefined) delete process.env.PAAX_WEB_INTERNAL_SERVICE_KEY;
+      else process.env.PAAX_WEB_INTERNAL_SERVICE_KEY = previousPortable;
+      if (previousGeneric === undefined) delete process.env.INTERNAL_SERVICE_KEY;
+      else process.env.INTERNAL_SERVICE_KEY = previousGeneric;
+    }
+  });
+
   it("returns 503 (never 500) when the document-intelligence hop is unreachable", async () => {
     // Network-level failure (connection refused / DNS / TLS) must surface as a
     // clean 503 JSON body — not a 500 and not a raw fetch exception leaking

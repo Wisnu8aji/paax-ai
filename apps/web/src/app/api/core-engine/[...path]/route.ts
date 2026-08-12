@@ -5,12 +5,12 @@
 // SECURITY: INTERNAL_SERVICE_KEY wajib tersedia dari environment. Tidak ada fallback
 // hardcoded. Jika key tidak ada, proxy mengembalikan 503 fail-closed.
 
+import { getPortableServiceKey } from "@/lib/portable-service-auth";
+
 const CORE_ENGINE_UPSTREAM_URL =
   process.env.CORE_ENGINE_URL ||
   process.env.NEXT_PUBLIC_CORE_ENGINE_URL ||
   "http://127.0.0.1:8081";
-
-const INTERNAL_SERVICE_KEY = process.env.INTERNAL_SERVICE_KEY;
 
 type RouteContext = {
   params: Promise<{ path?: string[] }>;
@@ -22,7 +22,8 @@ async function getPath(context: RouteContext): Promise<string> {
 }
 
 async function proxyCoreEngine(request: Request, context: RouteContext): Promise<Response> {
-  if (!INTERNAL_SERVICE_KEY) {
+  const internalServiceKey = getPortableServiceKey();
+  if (!internalServiceKey) {
     return new Response(
       JSON.stringify({ error: "Service unavailable: internal auth not configured" }),
       { status: 503, headers: { "content-type": "application/json" } }
@@ -36,7 +37,7 @@ async function proxyCoreEngine(request: Request, context: RouteContext): Promise
   const headers = new Headers();
   const contentType = request.headers.get("content-type");
   if (contentType) headers.set("content-type", contentType);
-  headers.set("X-Internal-Key", INTERNAL_SERVICE_KEY);
+  headers.set("X-Internal-Key", internalServiceKey);
   headers.set("X-User-Id", process.env.PAAX_PORTABLE_ACTOR_ID?.trim() || "paax-web");
 
   const method = request.method.toUpperCase();

@@ -1,9 +1,9 @@
+import { getPortableServiceKey } from "@/lib/portable-service-auth";
+
 const DOCUMENT_INTELLIGENCE_URL =
   process.env.DOCUMENT_INTELLIGENCE_URL ||
   process.env.NEXT_PUBLIC_DOCUMENT_INTELLIGENCE_URL ||
   "http://127.0.0.1:8083";
-
-const INTERNAL_SERVICE_KEY = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "test" ? "test-internal-key" : "");
 
 type RouteContext = {
   params: Promise<{ path?: string[] }>;
@@ -26,8 +26,9 @@ async function proxyDocumentIntelligence(request: Request, context: RouteContext
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
   }
-  if (INTERNAL_SERVICE_KEY) {
-    headers.set("X-Internal-Key", INTERNAL_SERVICE_KEY);
+  const internalServiceKey = getPortableServiceKey();
+  if (internalServiceKey) {
+    headers.set("X-Internal-Key", internalServiceKey);
   }
   headers.set("X-User-Id", process.env.PAAX_PORTABLE_ACTOR_ID?.trim() || "local-desktop-user");
 

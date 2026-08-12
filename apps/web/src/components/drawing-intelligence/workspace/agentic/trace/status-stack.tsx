@@ -14,6 +14,7 @@ export interface StatusStackProps {
 const KIND_LABEL: Record<StatusStackItem['kind'], string> = {
   agent: 'agent',
   subagent: 'subagent',
+  task: 'task',
   retry: 'retry',
   error: 'error',
   approval: 'approval',

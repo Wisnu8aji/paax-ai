@@ -67,7 +67,7 @@ export interface SubagentNode {
 
 export interface StatusStackItem {
   id: string
-  kind: 'agent' | 'subagent' | 'retry' | 'error' | 'approval'
+  kind: 'agent' | 'subagent' | 'task' | 'retry' | 'error' | 'approval'
   label: string
   state: 'running' | 'completed' | 'failed' | 'waiting'
   taskId: string | null
@@ -192,6 +192,29 @@ export function resolveCanonicalTaskId(id: string): string {
   return TASK_ID_ALIASES[id] ?? id
 }
 
+/**
+ * Upsert item status stack untuk satu task (dari task.started/task.progress
+ * dan lifecycle task.*). Task aktif tetap terlihat di status stack konsol
+ * meskipun belum ada event agent/subagent — semua dari event nyata.
+ */
+function upsertStackTask(
+  stack: StatusStackItem[],
+  taskId: string,
+  state: StatusStackItem['state'],
+  at: string,
+  label?: string | null,
+): StatusStackItem[] {
+  const id = resolveCanonicalTaskId(taskId)
+  const idx = stack.findIndex(i => i.kind === 'task' && i.id === id)
+  if (idx === -1) {
+    const title = label ?? TASK_PLAN.find(t => t.id === id)?.title ?? id
+    return [...stack, { id, kind: 'task', label: title, state, taskId: id, updatedAt: at }]
+  }
+  const next = [...stack]
+  next[idx] = { ...next[idx]!, state, updatedAt: at }
+  return next
+}
+
 function upsertTask(tasks: TaskUiState[], id: string, patch: Partial<TaskUiState>): TaskUiState[] {
   const canonicalId = resolveCanonicalTaskId(id)
   const idx = tasks.findIndex(t => t.id === canonicalId || t.id === id)
@@ -269,7 +292,10 @@ export function reduceEvent(state: PaaxRuntimeState, event: PaaxEventEnvelope): 
     case 'task.started':
       next = {
         ...next,
-        tasks: taskId ? upsertTask(next.tasks, taskId, { state: 'running', startedAt: p.timestamp, ...baseTaskPatch }) : next.tasks,
+        // A retry starts a new lifecycle. Do not carry the previous failed
+        // attempt's error into the live task rail.
+        tasks: taskId ? upsertTask(next.tasks, taskId, { state: 'running', startedAt: p.timestamp, error: undefined, ...baseTaskPatch }) : next.tasks,
+        statusStack: taskId ? upsertStackTask(next.statusStack, taskId, 'running', p.timestamp, str(summary.label)) : next.statusStack,
       }
       break
 
@@ -280,24 +306,38 @@ export function reduceEvent(state: PaaxRuntimeState, event: PaaxEventEnvelope): 
         tasks: taskId && progress !== undefined
           ? upsertTask(next.tasks, taskId, { state: 'running', progress: Math.min(1, Math.max(0, progress)), ...baseTaskPatch })
           : next.tasks,
+        statusStack: taskId ? upsertStackTask(next.statusStack, taskId, 'running', p.timestamp, str(summary.label)) : next.statusStack,
       }
       break
     }
 
     case 'task.waiting_tool':
-      next = { ...next, tasks: taskId ? upsertTask(next.tasks, taskId, { state: 'waiting_tool', ...baseTaskPatch }) : next.tasks }
+      next = {
+        ...next,
+        tasks: taskId ? upsertTask(next.tasks, taskId, { state: 'waiting_tool', ...baseTaskPatch }) : next.tasks,
+        statusStack: taskId ? upsertStackTask(next.statusStack, taskId, 'waiting', p.timestamp, str(summary.label)) : next.statusStack,
+      }
       break
     case 'task.waiting_subagent':
-      next = { ...next, tasks: taskId ? upsertTask(next.tasks, taskId, { state: 'waiting_subagent', ...baseTaskPatch }) : next.tasks }
+      next = {
+        ...next,
+        tasks: taskId ? upsertTask(next.tasks, taskId, { state: 'waiting_subagent', ...baseTaskPatch }) : next.tasks,
+        statusStack: taskId ? upsertStackTask(next.statusStack, taskId, 'waiting', p.timestamp, str(summary.label)) : next.statusStack,
+      }
       break
     case 'task.waiting_approval':
-      next = { ...next, tasks: taskId ? upsertTask(next.tasks, taskId, { state: 'waiting_approval', ...baseTaskPatch }) : next.tasks }
+      next = {
+        ...next,
+        tasks: taskId ? upsertTask(next.tasks, taskId, { state: 'waiting_approval', ...baseTaskPatch }) : next.tasks,
+        statusStack: taskId ? upsertStackTask(next.statusStack, taskId, 'waiting', p.timestamp, str(summary.label)) : next.statusStack,
+      }
       break
 
     case 'task.completed':
       next = {
         ...next,
-        tasks: taskId ? upsertTask(next.tasks, taskId, { state: 'completed', progress: 1, ...baseTaskPatch }) : next.tasks,
+        tasks: taskId ? upsertTask(next.tasks, taskId, { state: 'completed', progress: 1, error: undefined, ...baseTaskPatch }) : next.tasks,
+        statusStack: taskId ? upsertStackTask(next.statusStack, taskId, 'completed', p.timestamp, str(summary.label)) : next.statusStack,
         completedTaskCount: taskId && next.tasks.find(t => t.id === taskId)?.state !== 'completed'
           ? next.completedTaskCount + 1
           : next.completedTaskCount,
@@ -310,6 +350,7 @@ export function reduceEvent(state: PaaxRuntimeState, event: PaaxEventEnvelope): 
         tasks: taskId
           ? upsertTask(next.tasks, taskId, { state: 'failed', error: str(summary.error) ?? undefined, ...baseTaskPatch })
           : next.tasks,
+        statusStack: taskId ? upsertStackTask(next.statusStack, taskId, 'failed', p.timestamp, str(summary.label)) : next.statusStack,
       }
       break
 

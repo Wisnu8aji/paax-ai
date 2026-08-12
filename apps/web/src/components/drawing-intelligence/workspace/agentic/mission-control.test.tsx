@@ -2,7 +2,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
-import { MissionControl } from './mission-control';
+import { MissionControl, selectConsoleRunId } from './mission-control';
 import { WorkspaceProvider } from '../workspace-store';
 
 const sampleRuns = [
@@ -89,6 +89,11 @@ describe('MissionControl UI Component', () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+  });
+
+  it('keeps an explicitly selected completed run ahead of an older active run', () => {
+    expect(selectConsoleRunId(sampleRuns as any, 'run-002')).toBe('run-002');
+    expect(selectConsoleRunId(sampleRuns as any, null)).toBe('run-001');
   });
 
   it('renders mission control header and project binding notice when no project selected', () => {

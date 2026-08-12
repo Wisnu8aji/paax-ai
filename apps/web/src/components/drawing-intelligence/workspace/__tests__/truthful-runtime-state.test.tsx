@@ -269,6 +269,45 @@ describe('truthful-runtime-state: state dibangun dari event (no timer/hardcoded)
     expect(subagentCounts(tree).total).toBeGreaterThanOrEqual(1);
     expect(state.approvals.some(a => a.status === 'pending' && a.impact === 'high')).toBe(true);
   });
+
+  it('status stack menampilkan task aktif dari event task.started/task.progress nyata', () => {
+    const state = buildStateFromEvents([
+      f2Ev(1, 'run.started', {}),
+      f2Ev(2, 'task.started', { task_id: 'T05' }),
+      f2Ev(3, 'task.progress', { task_id: 'T05', payload_summary: { progress: 0.4 } }),
+    ]);
+    // task.started + task.progress TANPA agent/subagent tetap harus tampil
+    // di status stack konsol (kind 'task').
+    const taskItem = state.statusStack.find(i => i.kind === 'task' && i.taskId === 'T05');
+    expect(taskItem).toBeDefined();
+    expect(taskItem?.state).toBe('running');
+    expect(taskItem?.id).toBe('T05');
+  });
+
+  it('item status stack task mengikuti lifecycle sampai completed', () => {
+    const state = buildStateFromEvents([
+      f2Ev(1, 'run.started', {}),
+      f2Ev(2, 'task.started', { task_id: 'T05' }),
+      f2Ev(3, 'task.progress', { task_id: 'T05', payload_summary: { progress: 0.4 } }),
+      f2Ev(4, 'task.completed', { task_id: 'T05', payload_summary: { progress: 1 } }),
+    ]);
+    const taskItem = state.statusStack.find(i => i.kind === 'task' && i.taskId === 'T05');
+    expect(taskItem?.state).toBe('completed');
+    // Satu item task saja (upsert, bukan duplikat).
+    expect(state.statusStack.filter(i => i.kind === 'task').length).toBe(1);
+  });
+
+  it('retry lalu completed menghapus error dari percobaan task sebelumnya', () => {
+    const state = buildStateFromEvents([
+      f2Ev(1, 'run.started', {}),
+      f2Ev(2, 'task.started', { task_id: 'T10' }),
+      f2Ev(3, 'task.failed', { task_id: 'T10', payload_summary: { error: 'synthesis_failed' } }),
+      f2Ev(4, 'task.started', { task_id: 'T10' }),
+      f2Ev(5, 'task.completed', { task_id: 'T10', payload_summary: { progress: 1 } }),
+    ]);
+    expect(state.tasks.find(t => t.id === 'T10')).toMatchObject({ state: 'completed', progress: 1 });
+    expect(state.tasks.find(t => t.id === 'T10')?.error).toBeUndefined();
+  });
 });
 
 describe('truthful-runtime-state: replay after_sequence (reconnect)', () => {
@@ -383,4 +422,3 @@ describe('truthful-runtime-state: web_trace live status gate (Acceptance Gate 2)
     expect(client.getStatus().web_trace).toBe(false);
   });
 });
-

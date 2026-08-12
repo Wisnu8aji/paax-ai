@@ -32,10 +32,20 @@ import signal
 import sys
 import uuid
 
+from app.env import load_repo_env_local
+
+# Load repo .env.local BEFORE any env-dependent imports or build_worker/main()
+# calls -- identical to the pattern in app/main.py (FastAPI API service).
+# Without this, the worker launched by Start-PLHUT-Local.ps1 never sees
+# DRAWING_INTELLIGENCE_API_KEY and immediately poisons every job with
+# "DRAWING_INTELLIGENCE_API_KEY is not configured".
+load_repo_env_local()
+
 from app.artifact_storage import ArtifactStore, LocalArtifactStore, S3ArtifactStore
 from app.dem_job_handlers import DemJobHandlers
 from app.durable_jobs import DbDurableJobStore
 from app.durable_worker_async import AsyncDurableWorker
+
 
 logger = logging.getLogger("app.durable_worker_main")
 
@@ -96,7 +106,23 @@ def build_worker(worker_id: str | None = None) -> AsyncDurableWorker:
 
 
 async def _run() -> None:
+    # Configure logging.  basicConfig sets the root handler (stderr / null device
+    # when launched with RedirectStandardOutput=false by Start-WorkerProcess).
     logging.basicConfig(level=logging.INFO)
+    # If Start-WorkerProcess passed a log-file path via PAAX_WORKER_LOG_FILE,
+    # attach a FileHandler so all worker log output is captured in the .err.log
+    # file that the startup script and operators inspect -- independent of whether
+    # stdout/stderr are connected to a pipe or the null device.
+    _log_file = os.environ.get("PAAX_WORKER_LOG_FILE")
+    if _log_file:
+        try:
+            _fh = logging.FileHandler(_log_file, encoding="utf-8")
+            _fh.setLevel(logging.DEBUG)
+            _fh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+            logging.getLogger().addHandler(_fh)
+        except OSError:
+            pass  # Non-fatal: log path inaccessible, fall back to basicConfig handler
+
     worker = build_worker()
     stop_event = asyncio.Event()
     loop = asyncio.get_running_loop()

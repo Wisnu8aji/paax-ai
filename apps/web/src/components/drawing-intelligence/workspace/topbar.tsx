@@ -185,7 +185,7 @@ function ShareButton() {
 }
 
 export function WorkspaceTopbar({ projectName }: { projectName: string }) {
-  const { state, dispatch } = useWorkspace();
+  const { state, dispatch, startAnalysis } = useWorkspace();
 
   return (
     <header
@@ -302,8 +302,8 @@ export function WorkspaceTopbar({ projectName }: { projectName: string }) {
         <button
           type="button"
           className="di-btn di-btn-accent"
-          title="Analyze the selected sheets"
-          onClick={() => dispatch({ type: 'set-mode', mode: 'analyze' })}
+          title="Analyze all uploaded drawings"
+          onClick={startAnalysis}
         >
           <Sparkles size={14} />
           Analyze Selected

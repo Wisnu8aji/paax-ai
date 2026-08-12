@@ -733,6 +733,9 @@ export function WorkspaceProvider({
             const runId = uploadRes.run_id;
             const totalPages = uploadRes.total_pages || 1;
             updateEntryStatus(100, 'completed', 'Upload complete. Extraction started.', runId);
+            // Ikat run aktif segera → runtime bridge subscribe SSE → Mission
+            // Control menampilkan event live tanpa menunggu tombol analisa.
+            dispatch({ type: 'set-active-run', runId });
 
             // Populate mappedSheets placeholders immediately so PDF canvas mounts without delay
             const placeholders: any[] = [];
@@ -759,7 +762,6 @@ export function WorkspaceProvider({
             completedUploads += 1;
             if (completedUploads === files.length) {
               dispatch({ type: 'upload', patch: { running: false } });
-              dispatch({ type: 'set-mode', mode: 'analyze' });
               dispatch({
                 type: 'push-activity',
                 entry: { time: 'Now', message: `${files.length} file(s) uploaded.`, kind: 'upload' },
@@ -937,7 +939,7 @@ export function WorkspaceProvider({
           running: true,
           complete: false,
           progress: 0,
-          currentMessage: 'Starting PCKM synthesis...',
+          currentMessage: 'Menyiapkan analisis gambar kerja...',
         },
       });
 
@@ -945,13 +947,61 @@ export function WorkspaceProvider({
         const {
           triggerSynthesis, fetchDemRunStatus, fetchReviewQueue, fetchQuantityReadiness,
           fetchProjectDemSheets, fetchProjectDemRuns, fetchPackageIntelligence,
+          publishRunStatusEvent,
         } = await import('../drawing-intelligence-api');
-        await triggerSynthesis(runId, state.analysis.config.mode);
-        dispatch({ type: 'set-status', message: 'Synthesis triggered' });
+
+        // Publish event status ke relay store hanya saat status berubah
+        // (hemat request, tetap anti-fake: event berasal dari backend nyata).
+        let lastPublishedKey = '';
+        const publishStatus = async (statusData: { status: string; synthesis_status?: string; total_pages?: number }) => {
+          const key = `${statusData.status}|${statusData.synthesis_status ?? ''}`;
+          if (key === lastPublishedKey) return;
+          lastPublishedKey = key;
+          await publishRunStatusEvent({
+            runId,
+            status: statusData.status || 'created',
+            synthesisStatus: statusData.synthesis_status ?? null,
+            totalPages: statusData.total_pages ?? 0,
+            message: statusData.status || '',
+          }).catch(() => false);
+        };
+
+        // 1) Tunggu extraction selesai sebelum synthesize — backend menolak
+        //    synthesize selama extraction belum selesai (400 "Extraction is
+        //    not complete") yang membuat console mati diam-diam.
+        const EXTRACTION_DONE = new Set(['dem_complete', 'partially_failed', 'synthesis_failed', 'failed']);
+        let statusData = await fetchDemRunStatus(runId);
+        await publishStatus(statusData);
+        let runStatus = statusData.status || 'pending';
+        let guard = 0;
+        while (!EXTRACTION_DONE.has(runStatus) && !statusData.synthesis_status && guard < 60) {
+          guard += 1;
+          dispatch({
+            type: 'analysis',
+            patch: {
+              progress: Math.min(30, guard * 2),
+              currentMessage: 'Mengekstrak halaman gambar...',
+            },
+          });
+          dispatch({ type: 'set-status', message: 'Mengekstrak halaman gambar...' });
+          await new Promise((r) => setTimeout(r, 2000));
+          statusData = await fetchDemRunStatus(runId);
+          await publishStatus(statusData);
+          runStatus = statusData.status || 'pending';
+        }
+
+        if (runStatus === 'failed' && !statusData.synthesis_status) {
+          throw new Error('Ekstraksi gambar gagal');
+        }
+        if (!statusData.synthesis_status) {
+          await triggerSynthesis(runId, state.analysis.config.mode);
+          dispatch({ type: 'set-status', message: 'Analisis gambar dimulai' });
+        }
 
         const poll = setInterval(async () => {
           try {
             const statusData = await fetchDemRunStatus(runId);
+            await publishStatus(statusData);
             const synStatus = statusData.synthesis_status || 'pending';
 
             if (synStatus === 'synthesis_in_progress') {
@@ -959,10 +1009,10 @@ export function WorkspaceProvider({
                 type: 'analysis',
                 patch: {
                   progress: 50,
-                  currentMessage: 'PCKM synthesis in progress...',
+                  currentMessage: 'Menganalisis gambar kerja...',
                 },
               });
-              dispatch({ type: 'set-status', message: 'PCKM synthesis in progress...' });
+              dispatch({ type: 'set-status', message: 'Menganalisis gambar kerja...' });
             } else if (synStatus === 'synthesis_complete') {
               clearInterval(poll);
               dispatch({
@@ -971,7 +1021,7 @@ export function WorkspaceProvider({
                   running: false,
                   complete: true,
                   progress: 100,
-                  currentMessage: 'Synthesis completed successfully',
+                  currentMessage: 'Analisis selesai',
                   stages: ANALYSIS_STAGES.map((s) => ({ ...s, status: 'done' })),
                 },
               });
@@ -980,7 +1030,7 @@ export function WorkspaceProvider({
                 type: 'push-activity',
                 entry: { time: 'Now', message: 'Analysis completed — review workspace ready', kind: 'analysis' },
               });
-              dispatch({ type: 'set-status', message: 'PCKM synthesis completed successfully' });
+              dispatch({ type: 'set-status', message: 'Analisis gambar selesai' });
 
               const packageIntelligence = await fetchPackageIntelligence(runId).catch(() => null);
               dispatch({ type: 'analysis', patch: { packageIntelligence } });
@@ -1064,39 +1114,61 @@ export function WorkspaceProvider({
                   running: false,
                   complete: false,
                   progress: 100,
-                  currentMessage: 'PCKM synthesis failed',
+                  currentMessage: 'Analisis gagal — lihat status run untuk detail',
                 },
               });
-              dispatch({ type: 'set-status', message: 'PCKM synthesis failed' });
+              dispatch({ type: 'set-status', message: 'Analisis gambar gagal' });
             }
           } catch (err) {
-            clearInterval(poll);
+            // Error polling sementara: jangan matikan console diam-diam.
+            console.error('Polling status gagal:', err);
             dispatch({
               type: 'analysis',
-              patch: { running: false, currentMessage: 'Failed to poll synthesis status' },
+              patch: { currentMessage: 'Memeriksa ulang status analisis...' },
             });
           }
         }, 2000);
         timers.current.push(poll);
       } catch (err: any) {
-        console.error('Gagal memicu sintesis:', err);
+        console.error('Gagal memicu analisis:', err);
         dispatch({
           type: 'analysis',
-          patch: { running: false, currentMessage: err?.message || 'Synthesis trigger failed' },
+          patch: { running: false, currentMessage: err?.message || 'Gagal memulai analisis' },
         });
+        dispatch({ type: 'set-status', message: err?.message || 'Gagal memulai analisis' });
       }
     },
-    [projectId, dispatch]
+    [projectId, dispatch, state.analysis.config.mode]
   );
-  const startAnalysis = useCallback(() => {
-    const runId = state.upload.entries.find(e => e.runId)?.runId;
+  const startAnalysis = useCallback(async () => {
+    // Preserve the URL/upload/retry-selected canonical run. A stale upload
+    // entry must never redirect analysis to an older DEM run.
+    let runId = state.activeRunId ?? state.upload.entries.find(e => e.runId)?.runId;
+    // Fallback: jangan langsung menyerah saat state belum terisi (mis. fetch
+    // projects/runs sempat timeout). Cari run yang masih berjalan / belum
+    // disintesis di backend, lalu resume run itu. Error hanya saat sungguh
+    // tidak ada run sama sekali.
+    if (!runId && projectId) {
+      try {
+        const runs = await fetchProjectDemRuns(projectId);
+        const pending = runs.find((r: any) => ['created', 'pages_queued', 'pages_extracting', 'processing', 'uploading', 'dem_complete'].includes(r.status))
+          ?? runs.find((r: any) => r.status === 'synthesis_complete' || r.status === 'completed')
+          ?? null;
+        if (pending) runId = pending.id;
+      } catch (e) {
+        console.error('Gagal memuat runs untuk resume:', e);
+      }
+    }
     if (!runId) {
       dispatch({ type: 'set-status', message: 'No run ID available for synthesis' });
       return;
     }
+    // Ikat run aktif → startRuntimeBridge (workspace-store) men-subscribe SSE,
+    // Mission Control dan konsol menerima event live dari relay store.
+    dispatch({ type: 'set-active-run', runId });
     dispatch({ type: 'analysis', patch: { setupOpen: false } });
     triggerProjectSynthesis(runId);
-  }, [state.upload.entries, dispatch, triggerProjectSynthesis]);
+  }, [projectId, state.upload.entries, state.activeRunId, dispatch, triggerProjectSynthesis]);
 
 
   const value = useMemo(

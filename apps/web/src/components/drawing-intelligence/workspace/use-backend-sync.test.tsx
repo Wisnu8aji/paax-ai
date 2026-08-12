@@ -2,7 +2,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor, cleanup } from '@testing-library/react';
-import { useBackendSync } from './use-backend-sync';
+import { scopeRunRecords, selectBackendActiveRunId, useBackendSync } from './use-backend-sync';
 import { WorkspaceProvider } from './workspace-store';
 
 describe('useBackendSync & Active Sheet Context', () => {
@@ -49,6 +49,25 @@ describe('useBackendSync & Active Sheet Context', () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+  });
+
+  it('preserves the canonical selected run over an older backend active run', () => {
+    expect(selectBackendActiveRunId('run-selected', [
+      { id: 'run-old-active', status: 'processing' },
+      { id: 'run-selected', status: 'synthesis_complete' },
+    ])).toBe('run-selected');
+    expect(selectBackendActiveRunId(null, [
+      { id: 'run-old-active', status: 'processing' },
+    ])).toBe('run-old-active');
+  });
+
+  it('scopes document records to the canonical run instead of mixing old runs', () => {
+    const records = [
+      { id: 'sheet-old', run_id: 'run-old' },
+      { id: 'sheet-selected', run_id: 'run-selected' },
+    ];
+    expect(scopeRunRecords(records, 'run-selected')).toEqual([records[1]]);
+    expect(scopeRunRecords(records, null)).toEqual(records);
   });
 
   it('makes zero full-graph requests on workspace open', async () => {

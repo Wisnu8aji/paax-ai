@@ -18,7 +18,6 @@ import { FilesMode } from './navigator/files-mode';
 import { UploadDrawingModal } from './navigator/upload-modal';
 import { DrawingCanvas } from './canvas/drawing-canvas';
 import { IntelligenceInspector } from './inspector/intelligence-inspector';
-import { AnalysisSetupPanel } from './inspector/analysis-setup-panel';
 import { ProcessingOverlay } from './inspector/processing-overlay';
 import { AskPaaxPanel } from './inspector/ask-paax';
 import { QuantityDock } from './dock/quantity-dock';
@@ -28,12 +27,16 @@ import { TakeoffInspector } from './takeoff/takeoff-inspector';
 import { MissionControl } from './agentic/mission-control';
 import { AgentExecutionConsole } from './agentic/agent-execution-console';
 
+import type { WorkspaceMode } from './di-types';
+
 export interface DrawingIntelligenceWorkspaceV2Props {
   projectName: string;
   /** id proyek nyata — bila ada, review queue disinkronkan dari backend */
   projectId?: string | null;
   /** data demo hanya untuk story/test eksplisit; runtime proyek selalu mulai dari data backend */
   withMockData?: boolean;
+  initialRunId?: string | null;
+  initialMode?: WorkspaceMode | null;
 }
 
 function WorkspaceBody({ projectId }: { projectId: string | null }) {
@@ -53,7 +56,7 @@ function WorkspaceBody({ projectId }: { projectId: string | null }) {
           <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
             <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
               <DrawingCanvas />
-              {mode === 'analyze' ? <AnalysisSetupPanel /> : mode === 'takeoff' ? <TakeoffInspector /> : <IntelligenceInspector />}
+              {mode === 'takeoff' ? <TakeoffInspector /> : <IntelligenceInspector />}
             </div>
             <QuantityDock />
           </div>
@@ -75,7 +78,7 @@ function WorkspaceBody({ projectId }: { projectId: string | null }) {
       {state.analysis.running && (
         <AgentExecutionConsole
           variant="overlay"
-          runId={state.upload.entries.find((e) => e.runId)?.runId ?? null}
+          runId={state.activeRunId}
           projectId={state.projectId}
           userRole="estimator"
           onClose={() => dispatch({ type: 'analysis', patch: { running: false, setupOpen: true } })}
@@ -91,9 +94,16 @@ export function DrawingIntelligenceWorkspaceV2({
   projectName,
   projectId = null,
   withMockData = false,
+  initialRunId = null,
+  initialMode = null,
 }: DrawingIntelligenceWorkspaceV2Props) {
   return (
-    <WorkspaceProvider withMockData={withMockData} projectId={projectId}>
+    <WorkspaceProvider
+      withMockData={withMockData}
+      projectId={projectId}
+      initialRunId={initialRunId}
+      initialMode={initialMode}
+    >
       <div
         className="di-workspace"
         style={{

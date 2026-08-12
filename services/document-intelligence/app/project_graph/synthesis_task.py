@@ -2,6 +2,7 @@ import os
 import traceback
 import hashlib
 import uuid
+import logging
 from pydantic import ValidationError
 
 from app.perception.bbox_canonicalize import BboxQuarantined, canonicalize_bbox
@@ -9,6 +10,8 @@ from app.transcription.db_client import DemDbClient
 from app.transcription.models import DrawingEvidenceSheet
 from app.transcription.typed_observations import TypedValidationMode, adapt_dem_observations
 from app.project_graph.synthesis import synthesize_project_graph
+
+logger = logging.getLogger(__name__)
 
 # Target 5 (final remediation wave): explicit mode boundary for the typed-DEM
 # v2 evidence-by-status contract. Defaults to "legacy_compatibility" so
@@ -409,6 +412,16 @@ async def synthesize_and_post_snapshot_task(
                 json=payload,
                 headers=headers,
             )
+            if r.is_error:
+                # Preserve the upstream validation/constraint detail. A bare
+                # synthesis_failed state is not actionable when the DB rejects
+                # an otherwise authorized snapshot payload.
+                logger.error(
+                    "Project graph snapshot rejected for run %s: HTTP %s %s",
+                    run_id,
+                    r.status_code,
+                    r.text[:4000],
+                )
             r.raise_for_status()
             
         await db_client.update_run_status(run_id, "synthesis_complete")

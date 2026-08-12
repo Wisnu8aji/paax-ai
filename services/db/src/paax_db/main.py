@@ -1217,25 +1217,32 @@ async def build_project_graph_snapshot(
     project = (await db.execute(select(models.Project).where(models.Project.id == id))).scalars().first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    snapshot = await build_and_activate_snapshot(
-        db,
-        project_id=id,
-        snapshot_id=request.snapshot_id,
-        schema_version=request.schema_version,
-        source_manifest_hash=request.source_manifest_hash,
-        generation_metadata=request.generation_metadata,
-        effective_sheet_revision_ids=request.effective_sheet_revision_ids,
-        nodes=request.nodes,
-        edges=request.edges,
-        evidence=request.evidence,
-        node_evidence=request.node_evidence,
-        edge_evidence=request.edge_evidence,
-        aliases=request.aliases,
-        communities=request.communities,
-        summary_views=request.summary_views,
-        telemetry=usage_logger_from_env(),
-        correlation_id=http_request.state.correlation_id,
-    )
+    try:
+        snapshot = await build_and_activate_snapshot(
+            db,
+            project_id=id,
+            snapshot_id=request.snapshot_id,
+            schema_version=request.schema_version,
+            source_manifest_hash=request.source_manifest_hash,
+            generation_metadata=request.generation_metadata,
+            effective_sheet_revision_ids=request.effective_sheet_revision_ids,
+            nodes=request.nodes,
+            edges=request.edges,
+            evidence=request.evidence,
+            node_evidence=request.node_evidence,
+            edge_evidence=request.edge_evidence,
+            aliases=request.aliases,
+            communities=request.communities,
+            summary_views=request.summary_views,
+            telemetry=usage_logger_from_env(),
+            correlation_id=http_request.state.correlation_id,
+        )
+    except Exception:
+        # Keep the API response fail-closed, but retain the actual integrity or
+        # database constraint traceback. A generic 500 alone leaves the worker
+        # unable to distinguish bad graph data from an infrastructure failure.
+        logger.exception("Project graph snapshot build failed for project %s", id)
+        raise
     await db.commit()
     return snapshot
 

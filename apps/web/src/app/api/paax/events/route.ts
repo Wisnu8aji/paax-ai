@@ -154,6 +154,12 @@ export async function GET(request: NextRequest) {
         },
       )
     } catch (e) {
+      // Worker→web relay gagal — jangan tinggalkan browser di seq 0: fallback
+      // ke journal durable (PAAX_AGENT_EVENT_JOURNAL) bila punya data run ini.
+      relayStore.hydrateFromJournal(runId)
+      if (relayStore.hasRun(runId)) {
+        return serveFromRelayStore(relayStore, runId, afterSeq, taskId)
+      }
       return NextResponse.json(
         { error: 'gateway event relay tidak dapat dihubungi', detail: String(e), events: [] },
         { status: 503 },
@@ -161,36 +167,50 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // 2. Bila lokal relay store memiliki data run ini, respons 200 dengan events nyata
+  // 2. Journal replay/hydration: recovery dari worker→web relay outage sebelum
+  //    melayani dari relay store (tidak ada gateway ter-configure).
+  relayStore.hydrateFromJournal(runId)
+
+  // 3. Bila lokal relay store memiliki data run ini, respons 200 dengan events nyata
   if (relayStore.hasRun(runId)) {
-    const allRunEvents = relayStore.getEvents(runId, -1)
-    const scanResult = scanRealEvents(allRunEvents, { allowSynthetic: false })
-    const isLiveValid = scanResult.ok && allRunEvents.length > 0
-    const events = relayStore.getEvents(runId, afterSeq, taskId)
-    return NextResponse.json(
-      {
-        run_id: runId,
-        after_sequence: afterSeq,
-        events,
-        web_trace: isLiveValid,
-      },
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store',
-        },
-      },
-    )
+    return serveFromRelayStore(relayStore, runId, afterSeq, taskId)
   }
 
-  // 3. Relay store kosong — beri response dengan empty events (web_trace: false)
+  // 4. Relay store kosong — beri response dengan empty events (web_trace: false)
   return NextResponse.json(
     {
       run_id: runId,
       after_sequence: afterSeq,
       events: [],
       web_trace: false,
+    },
+    {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+      },
+    },
+  )
+}
+
+/** Serve a run from the local relay store (in-memory + journal-hydrated). */
+function serveFromRelayStore(
+  relayStore: ReturnType<typeof getRelayStore>,
+  runId: string,
+  afterSeq: number,
+  taskId: string,
+) {
+  const allRunEvents = relayStore.getEvents(runId, -1)
+  const scanResult = scanRealEvents(allRunEvents, { allowSynthetic: false })
+  const isLiveValid = scanResult.ok && allRunEvents.length > 0
+  const events = relayStore.getEvents(runId, afterSeq, taskId)
+  return NextResponse.json(
+    {
+      run_id: runId,
+      after_sequence: afterSeq,
+      events,
+      web_trace: isLiveValid,
     },
     {
       status: 200,

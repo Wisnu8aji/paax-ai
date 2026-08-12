@@ -221,7 +221,7 @@ function ListRow({ sheet }: { sheet: Sheet }) {
 }
 
 export function SheetGallery() {
-  const { state, dispatch, askPaax } = useWorkspace();
+  const { state, dispatch, askPaax, startAnalysis } = useWorkspace();
   const [disciplineFilter, setDisciplineFilter] = useState<Discipline | null>(null);
   const [scaleFilter, setScaleFilter] = useState<string | null>(null);
   const [disciplineMenuOpen, setDisciplineMenuOpen] = useState(false);
@@ -436,7 +436,7 @@ export function SheetGallery() {
               {selected.length} of {state.sheets.length} selected
             </span>
             <div style={{ flex: 1 }} />
-            <button className="di-btn di-btn-accent" onClick={() => dispatch({ type: 'set-mode', mode: 'analyze' })}>
+            <button className="di-btn di-btn-accent" onClick={startAnalysis}>
               Analyze selected
             </button>
             <button className="di-btn" onClick={() => showToast(`Applied to ${selected.length} sheets`)}>

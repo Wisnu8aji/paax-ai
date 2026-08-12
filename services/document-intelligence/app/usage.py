@@ -26,7 +26,7 @@ async def check_quota(tenant_id: str) -> QuotaCheckResult:
     if os.environ.get("METERING_ENABLED") == "0":
         return QuotaCheckResult(quota_exceeded=False, remaining=999999)
         
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=30.0)) as client:
         try:
             res = await client.get(
                 f"{DB_API_URL}/usage/quota/check",
@@ -60,7 +60,7 @@ async def log_usage(
     if os.environ.get("METERING_ENABLED") == "0":
         return
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=30.0)) as client:
         try:
             await client.post(
                 f"{DB_API_URL}/usage/log",

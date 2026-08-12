@@ -82,6 +82,15 @@ describe('AgentExecutionConsole (demo events berlabel synthetic)', () => {
     });
     expect(screen.getByTestId('subagent-summary').textContent).toContain('completed 1');
   });
+
+  it('status stack menampilkan task aktif dari event task.started/task.progress (tanpa agent event)', async () => {
+    render(<AgentExecutionConsole runId="paax:run:demo-20260807" demoEvents={buildDemoEvents()} />);
+    await waitFor(() => {
+      // T01 hanya punya task.started + task.progress (tanpa agent/subagent) —
+      // tetap harus tampil sebagai status item kind 'task'.
+      expect(screen.getAllByTestId('status-stack-item').some(el => el.getAttribute('data-kind') === 'task')).toBe(true);
+    });
+  });
 });
 
 describe('TaskRail pure component', () => {

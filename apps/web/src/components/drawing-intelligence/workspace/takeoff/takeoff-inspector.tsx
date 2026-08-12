@@ -36,7 +36,10 @@ export function TakeoffInspector() {
   const [resultSummary, setResultSummary] = useState<string | null>(null);
   const [manualNote, setManualNote] = useState('');
 
-  const activeRunId = state.upload.entries.find((entry) => entry.runId)?.runId ?? state.files[0]?.id ?? null;
+  // The workspace's canonical run must win over stale upload/file entries.
+  // Retrying or opening a URL-selected run can otherwise dispatch the
+  // calculation against an older DEM run and return "work item unavailable".
+  const activeRunId = state.activeRunId ?? state.upload.entries.find((entry) => entry.runId)?.runId ?? state.files[0]?.id ?? null;
   const selectedWorkItemId = state.selectedQuantityId ?? state.quantities[0]?.id ?? state.analysis.packageIntelligence?.work_items[0]?.work_item_id ?? null;
   const projectId = state.projectId;
 

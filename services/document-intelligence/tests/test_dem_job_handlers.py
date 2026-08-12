@@ -59,6 +59,16 @@ class _FakeArtifactStore:
         return self.objects[key]
 
 
+class _FakeRuntimePublisher:
+    def __init__(self) -> None:
+        self.events: list[dict] = []
+
+    async def emit(self, event_type: str, **kwargs) -> dict:
+        event = {"type": event_type, **kwargs}
+        self.events.append(event)
+        return event
+
+
 def _pdf_bytes(n: int) -> bytes:
     import fitz
     doc = fitz.open()
@@ -90,6 +100,33 @@ async def test_dem_extract_handler_produces_real_page_completion_state():
     assert len(transport.pages) == 2
     assert all(page["status"] == "complete" for page in transport.pages.values())
     assert all(page["result"]["sheet_identity"]["title"]["value"] == "Denah" for page in transport.pages.values())
+
+
+@pytest.mark.asyncio
+async def test_dem_extract_publishes_real_model_lifecycle_events():
+    transport = _ExtractTransport()
+    db_client = DemDbClient(base_url="http://test-db", internal_key="test-key", transport=transport)
+    publisher = _FakeRuntimePublisher()
+    artifact_store = _FakeArtifactStore({"runs/DOC-1/source.pdf": _pdf_bytes(1)})
+
+    handlers = DemJobHandlers(
+        artifact_store=artifact_store,
+        db_client=db_client,
+        vision_provider=MockDemAdapter(response=_sheet()),
+        event_publisher_factory=lambda run_id: publisher,
+    )
+    await handlers.handle_dem_extract({
+        "run_id": "run-1", "document_id": "DOC-1", "document_hash": "sha256:x",
+        "total_pages": 1, "artifact_key": "runs/DOC-1/source.pdf",
+        "project_id": "PRJ-001", "file_name": "t.pdf", "prompt_version": "dem-extraction-v1.0.0",
+    })
+
+    event_types = [event["type"] for event in publisher.events]
+    assert event_types[0] == "run.started"
+    assert "agent.started" in event_types
+    assert "subagent.started" in event_types
+    assert "task.completed" in event_types
+    assert event_types[-1] == "agent.completed"
 
 
 @pytest.mark.asyncio

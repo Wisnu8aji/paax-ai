@@ -1,4 +1,10 @@
 import type { PaaxEventEnvelope } from '@/components/drawing-intelligence/workspace/agentic/agent-execution-console/event-contract';
+import { getAgentEventJournalPath, readJournalEvents } from './agent-event-journal';
+
+/** Strip the `paax:run:` prefix so raw and canonical run ids share one store key. */
+function canonicalRunId(runId: string): string {
+  return String(runId).trim().replace(/^paax:run:/, '');
+}
 
 export class PaaxEventRelayStore {
   private runs = new Map<string, PaaxEventEnvelope[]>();
@@ -6,10 +12,11 @@ export class PaaxEventRelayStore {
 
   /** Ingest event and convert to full v2 envelope. Dedup by event_id (plan §3.6). */
   ingest(runId: string, rawEvent: Record<string, any>): PaaxEventEnvelope {
+    const key = canonicalRunId(runId);
     const src = (rawEvent && typeof rawEvent === 'object' && rawEvent.params && typeof rawEvent.params === 'object')
       ? (rawEvent.params as Record<string, any>)
       : (rawEvent || {});
-    const existing = this.runs.get(runId) || [];
+    const existing = this.runs.get(key) || [];
     const seq = Number(src.sequence ?? existing.length + 1);
 
     const envelope: PaaxEventEnvelope = {
@@ -45,9 +52,9 @@ export class PaaxEventRelayStore {
     existing.push(envelope);
     // Sort by sequence untuk menjaga urutan deterministik setelah push.
     existing.sort((a, b) => a.params.sequence - b.params.sequence);
-    this.runs.set(runId, existing);
+    this.runs.set(key, existing);
 
-    const runListeners = this.listeners.get(runId);
+    const runListeners = this.listeners.get(key);
     if (runListeners) {
       for (const listener of runListeners) {
         listener(envelope);
@@ -62,9 +69,63 @@ export class PaaxEventRelayStore {
     return events.map((ev) => this.ingest(runId, ev));
   }
 
+  /**
+   * Replay events for a run from the durable worker journal
+   * (PAAX_AGENT_EVENT_JOURNAL). Recovery path for worker→web relay outages:
+   * events the worker persisted locally but could not relay are hydrated here
+   * so the browser never stays at sequence 0.
+   *
+   * Keyed by raw or `paax:run:<id>` run ids (canonical store key), dedup by
+   * event_id AND sequence. Replay is SILENT (no listener notification) —
+   * callers that need live push (e.g. SSE) use `refreshFromJournal` or send
+   * the returned envelopes themselves, so hydrated events are never
+   * double-delivered. Returns the newly added envelopes, [] if nothing new or
+   * the journal is missing/empty/unconfigured.
+   */
+  hydrateFromJournal(runId: string, journalPath?: string): PaaxEventEnvelope[] {
+    const path = journalPath ?? getAgentEventJournalPath();
+    if (!path) return [];
+
+    const journalEvents = readJournalEvents(path, runId);
+    if (journalEvents.length === 0) return [];
+
+    const key = canonicalRunId(runId);
+    const existing = this.runs.get(key) || [];
+    const seenIds = new Set(existing.map((e) => e.params.event_id));
+    const seenSeqs = new Set(existing.map((e) => e.params.sequence));
+    const added: PaaxEventEnvelope[] = [];
+    for (const ev of journalEvents) {
+      if (seenIds.has(ev.params.event_id) || seenSeqs.has(ev.params.sequence)) continue;
+      seenIds.add(ev.params.event_id);
+      seenSeqs.add(ev.params.sequence);
+      added.push(ev);
+    }
+    if (added.length === 0) return [];
+
+    this.runs.set(key, [...existing, ...added].sort((a, b) => a.params.sequence - b.params.sequence));
+    return added;
+  }
+
+  /** Hydrate new journal events and notify live subscribers (SSE refresh path). */
+  refreshFromJournal(runId: string, journalPath?: string): PaaxEventEnvelope[] {
+    const added = this.hydrateFromJournal(runId, journalPath);
+    if (added.length === 0) return [];
+
+    const key = canonicalRunId(runId);
+    const runListeners = this.listeners.get(key);
+    if (runListeners) {
+      for (const listener of runListeners) {
+        for (const ev of added) {
+          listener(ev);
+        }
+      }
+    }
+    return added;
+  }
+
   /** Query events for a run after a sequence number, optionally filtered by task. */
   getEvents(runId: string, afterSequence = -1, taskId?: string | null): PaaxEventEnvelope[] {
-    const list = this.runs.get(runId) || [];
+    const list = this.runs.get(canonicalRunId(runId)) || [];
     return list
       .filter((ev) => ev.params.sequence > afterSequence)
       .filter((ev) => !taskId || ev.params.task_id === taskId)
@@ -73,17 +134,18 @@ export class PaaxEventRelayStore {
 
   /** Check if a run exists in the store. */
   hasRun(runId: string): boolean {
-    return this.runs.has(runId) && (this.runs.get(runId)?.length ?? 0) > 0;
+    return this.runs.has(canonicalRunId(runId)) && (this.runs.get(canonicalRunId(runId))?.length ?? 0) > 0;
   }
 
   /** Subscribe to live events pushed for a run. */
   subscribe(runId: string, listener: (event: PaaxEventEnvelope) => void): () => void {
-    if (!this.listeners.has(runId)) {
-      this.listeners.set(runId, new Set());
+    const key = canonicalRunId(runId);
+    if (!this.listeners.has(key)) {
+      this.listeners.set(key, new Set());
     }
-    this.listeners.get(runId)!.add(listener);
+    this.listeners.get(key)!.add(listener);
     return () => {
-      this.listeners.get(runId)?.delete(listener);
+      this.listeners.get(key)?.delete(listener);
     };
   }
 

@@ -179,7 +179,16 @@ class DbDurableJobStore:
         return {"X-Internal-Key": self.internal_key, "X-User-Id": "dem-job-orchestrator"}
 
     def _client(self) -> httpx.AsyncClient:
-        return httpx.AsyncClient(base_url=self.base_url, transport=self._transport, headers=self._headers())
+        # Explicit timeout prevents ConnectTimeout crashes during DB lock contention:
+        # the default httpx timeout is 5 s, but SQLite WAL + busy_timeout=30000 ms
+        # can hold lease/heartbeat calls longer than that when the web process is
+        # doing concurrent PUT pages. 60 s read + 30 s connect gives enough headroom.
+        return httpx.AsyncClient(
+            base_url=self.base_url,
+            transport=self._transport,
+            headers=self._headers(),
+            timeout=httpx.Timeout(60.0, connect=30.0),
+        )
 
     async def enqueue(self, job_type: str, payload: dict[str, Any], *, idempotency_key: str) -> dict:
         async with self._client() as client:

@@ -30,7 +30,27 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const rows = await projectRepository.list();
+      // DI-002 fix: saat db-plhut sibuk (extraction menulis besar), fetch
+      // projects bisa timeout dan mengembalikan list kosong → breadcrumb
+      // jatuh ke fallback "Proyek aktif". Retry singkat dengan backoff
+      // (max 3×, 1.2s) supaya begitu db longgar, list nyata terisi.
+      let rows: Project[] = [];
+      let lastErr: unknown = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          rows = await projectRepository.list();
+          if (rows.length > 0) break;
+        } catch (err) {
+          lastErr = err;
+          rows = [];
+        }
+        if (attempt < 3) {
+          await new Promise((resolve) => setTimeout(resolve, 1200 * attempt));
+        }
+      }
+      if (rows.length === 0 && lastErr) {
+        throw lastErr;
+      }
       setProjects(rows);
       
       // Load workspace head if using postgres

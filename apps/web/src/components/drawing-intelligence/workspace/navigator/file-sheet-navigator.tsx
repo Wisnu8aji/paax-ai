@@ -287,6 +287,8 @@ export function FileSheetNavigator() {
                 return (
                   <article
                     key={`idx-${entry.page_index}`}
+                    data-sheet-id={sheetId ?? ''}
+                    data-page-number={entry.page_number}
                     className="di-panel"
                     style={{ overflow: 'hidden', borderColor: active ? 'var(--di-accent)' : undefined, cursor: sheetId ? 'pointer' : 'default', opacity: rowSheet ? 1 : 0.6 }}
                     onClick={() => sheetId && dispatch({ type: 'set-active-sheet', sheetId })}
@@ -362,6 +364,8 @@ export function FileSheetNavigator() {
                     return (
                       <article
                         key={`${view.page_index}-${sheet.id}`}
+                        data-sheet-id={sheet.id}
+                        data-page-number={view.page_number}
                         className="di-panel"
                         style={{ overflow: 'hidden', borderColor: active ? 'var(--di-accent)' : undefined, cursor: 'pointer' }}
                         onClick={() => dispatch({ type: 'set-active-sheet', sheetId: sheet.id })}

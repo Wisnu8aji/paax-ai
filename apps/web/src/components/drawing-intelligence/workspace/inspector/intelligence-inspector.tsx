@@ -164,7 +164,9 @@ export function IntelligenceInspector() {
   const [conflictDrafts, setConflictDrafts] = useState<Record<string, { source?: string; manual?: string }>>({});
   const [calculatingWorkItemId, setCalculatingWorkItemId] = useState<string | null>(null);
   const packageIntelligence = state.analysis.packageIntelligence;
-  const activeRunId = state.upload.entries.find((entry) => entry.runId)?.runId ?? null;
+  // Use the canonical workspace run first; upload entries can belong to a
+  // previous attempt after retry/re-analysis.
+  const activeRunId = state.activeRunId ?? state.upload.entries.find((entry) => entry.runId)?.runId ?? null;
 
   const recordPackageReview = async (
     item: PackageIntelligenceWorkItem,

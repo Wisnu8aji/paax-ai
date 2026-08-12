@@ -126,6 +126,17 @@ function normalizeRun(raw: any): AgentRun {
   };
 }
 
+/** Keep the console bound to the run selected by the workspace URL/state.
+ * The first non-terminal run is only a fallback for a workspace with no
+ * explicit run selection; otherwise an older orphaned run can hijack the
+ * live console and mix its events with the selected drawing analysis.
+ */
+export function selectConsoleRunId(runs: AgentRun[], activeRunId: string | null): string | null {
+  return activeRunId
+    ?? runs.find((r) => !['completed', 'failed', 'cancelled'].includes(safeString(r.status).toLowerCase()))?.runId
+    ?? null;
+}
+
 function statusIcon(status: string) {
   const s = safeString(status).toLowerCase();
   if (s === 'completed') return <CheckCircle2 size={15} />;
@@ -607,7 +618,7 @@ export function MissionControl({ userRole = 'estimator' }: MissionControlProps) 
       <div style={{ marginTop: 14 }}>
         <AgentExecutionConsole
           variant="panel"
-          runId={runs.find((r) => !['completed', 'failed', 'cancelled'].includes(safeString(r.status).toLowerCase()))?.runId ?? null}
+          runId={selectConsoleRunId(runs, state.activeRunId)}
           projectId={projectId}
           userRole={userRole === 'viewer' ? 'viewer' : userRole}
         />

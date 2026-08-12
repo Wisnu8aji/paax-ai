@@ -131,7 +131,7 @@ class DemDbClient:
             return response.json()
 
     async def mark_artifact_deleted(self, run_id: str, *, actor_id: str) -> dict:
-        async with httpx.AsyncClient(base_url=self.base_url, transport=self._transport, headers={"X-Internal-Key": self.internal_key, "X-User-Id": actor_id}) as client:
+        async with await self._client() as client:
             response = await client.post(f"/internal/dem/runs/{run_id}/artifact-deleted")
             response.raise_for_status()
             return response.json()

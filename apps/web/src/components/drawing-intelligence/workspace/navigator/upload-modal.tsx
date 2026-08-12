@@ -53,7 +53,7 @@ function FileIcon({ kind }: { kind: UploadEntry['kind'] }) {
 }
 
 export function UploadDrawingModal() {
-  const { state, dispatch, startUploadSimulation, triggerProjectSynthesis } = useWorkspace();
+  const { state, dispatch, startUploadSimulation, startAnalysis } = useWorkspace();
   const [pending, setPending] = useState<{ file?: File; name: string; sizeBytes: number; kind: UploadEntry['kind'] }[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -341,10 +341,10 @@ export function UploadDrawingModal() {
                   className="di-btn di-btn-primary"
                   onClick={() => {
                     close();
-                    dispatch({ type: 'set-mode', mode: 'analyze' });
+                    startAnalysis();
                   }}
                 >
-                  Configure Analysis
+                  Mulai Analisis Menyeluruh
                 </button>
               </div>
             )}

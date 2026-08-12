@@ -11,13 +11,14 @@ not new business logic.
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, Callable
 
 from app.artifact_storage import ArtifactStore, ArtifactUnavailable
 from app.durable_worker_async import PoisonedJobError
 from app.transcription.db_client import DemDbClient
 from app.transcription.document_loop import process_document
 from app.transcription.providers.base import DemVisionProvider
+from app.runtime_events import RuntimeEventPublisher
 
 
 def _select_vision_provider() -> DemVisionProvider:
@@ -52,10 +53,24 @@ class DemJobHandlers:
         artifact_store: ArtifactStore,
         db_client: DemDbClient | None = None,
         vision_provider: DemVisionProvider | None = None,
+        event_publisher_factory: Callable[[str], Any] | None = None,
     ) -> None:
         self.artifact_store = artifact_store
         self.db_client = db_client or DemDbClient()
         self._vision_provider = vision_provider
+        self._event_publisher_factory = event_publisher_factory
+        self._event_publishers: dict[str, Any] = {}
+
+    def _runtime_events(self, run_id: str) -> Any:
+        publisher = self._event_publishers.get(run_id)
+        if publisher is None:
+            publisher = (
+                self._event_publisher_factory(run_id)
+                if self._event_publisher_factory is not None
+                else RuntimeEventPublisher(run_id=run_id)
+            )
+            self._event_publishers[run_id] = publisher
+        return publisher
 
     def _vision_provider_or_select(self) -> DemVisionProvider:
         if self._vision_provider is not None:
@@ -75,6 +90,43 @@ class DemJobHandlers:
             raise PoisonedJobError(f"artifact permanently unavailable: {exc}") from exc
 
         provider = self._vision_provider_or_select()
+        events = self._runtime_events(str(payload["run_id"]))
+        vision_model = str(getattr(provider, "model", "mimo-v2.5") or "mimo-v2.5")
+        deepseek_model = str(getattr(provider, "deepseek_model", "deepseek-v4-flash") or "deepseek-v4-flash")
+        await events.emit(
+            "run.started",
+            agent_id="paax-agent",
+            provider="opencode-go",
+            model=deepseek_model,
+            payload_summary={"label": "Drawing Intelligence runtime"},
+        )
+        await events.emit(
+            "agent.started",
+            agent_id="paax-agent",
+            provider="opencode-go",
+            model=deepseek_model,
+            stage="orchestration",
+            payload_summary={"label": "DeepSeek agent"},
+        )
+        await events.emit(
+            "task.started",
+            task_id="T02",
+            stage="T02",
+            agent_id="paax-agent",
+            provider="opencode-go",
+            model=deepseek_model,
+            payload_summary={"label": "Render Pages & Build Sheet Inventory"},
+        )
+        await events.emit(
+            "subagent.started",
+            task_id="T03",
+            stage="T03",
+            agent_id="vision-worker",
+            worker_id="vision-worker-01",
+            provider="opencode-go",
+            model=vision_model,
+            payload_summary={"label": "MiMo vision extraction", "parent_agent_id": "paax-agent"},
+        )
         await process_document(
             pdf_bytes=pdf_bytes,
             run_id=payload["run_id"],
@@ -88,6 +140,34 @@ class DemJobHandlers:
             project_id=payload.get("project_id"),
             file_name=payload.get("file_name", "unknown.pdf"),
         )
+        status = await self.db_client.get_run_status(str(payload["run_id"]))
+        complete_pages = sum(1 for page in status.get("pages", []) if page.get("status") == "complete")
+        await events.emit(
+            "subagent.completed",
+            task_id="T03",
+            stage="T03",
+            agent_id="vision-worker",
+            worker_id="vision-worker-01",
+            provider="opencode-go",
+            model=vision_model,
+            payload_summary={"label": "MiMo vision extraction", "completed_pages": complete_pages},
+        )
+        await events.emit(
+            "task.completed",
+            task_id="T02",
+            stage="T02",
+            agent_id="paax-agent",
+            provider="opencode-go",
+            model=deepseek_model,
+            payload_summary={"completed_pages": complete_pages, "progress": 1},
+        )
+        await events.emit(
+            "agent.completed",
+            agent_id="paax-agent",
+            provider="opencode-go",
+            model=deepseek_model,
+            payload_summary={"completed_pages": complete_pages},
+        )
 
     async def handle_dem_synthesize(self, payload: dict[str, Any]) -> None:
         from app.drawing_intelligence.pipeline import analyze_drawing_package
@@ -95,6 +175,16 @@ class DemJobHandlers:
 
         run_id = payload["run_id"]
         project_id = payload["project_id"]
+        events = self._runtime_events(str(run_id))
+        await events.emit(
+            "task.started",
+            task_id="T10",
+            stage="T10",
+            agent_id="paax-agent",
+            provider="opencode-go",
+            model="deepseek-v4-flash",
+            payload_summary={"label": "Calculate & Compose QUANTA"},
+        )
         run_status = await self.db_client.get_run_status(run_id)
         drawing_analysis = None
         drawing_analysis_artifact_key = None
@@ -127,7 +217,48 @@ class DemJobHandlers:
         except Exception as exc:
             # Package intelligence is additive. Existing DEM→PCKM synthesis is
             # preserved, while the failure is persisted in snapshot metadata.
-            drawing_analysis_error = f"{type(exc).__name__}: {exc}"
+                drawing_analysis_error = f"{type(exc).__name__}: {exc}"
+
+        if drawing_analysis is not None:
+            for item in drawing_analysis.work_items:
+                calculation = item.calculation
+                quantity = calculation.result if calculation is not None else None
+                unit = calculation.unit if calculation is not None and calculation.unit else str(item.attributes.get("unit") or "-")
+                formula_id = calculation.calculation_id if calculation is not None else None
+                evidence_refs = list(item.evidence_refs)
+                await events.emit(
+                    "quanta.row_created",
+                    task_id="T10",
+                    stage="T10",
+                    agent_id="paax-agent",
+                    provider="opencode-go",
+                    model="deepseek-v4-flash",
+                    payload_summary={
+                        "row_id": f"quanta:{item.work_item_id}",
+                        "work_item": item.label,
+                        "location": str(item.attributes.get("level") or "-"),
+                        "unit": unit,
+                        "qty": quantity,
+                        "formula_ref": formula_id,
+                        "status": "draft" if quantity is None else "needs-review",
+                        "evidence_refs": evidence_refs,
+                    },
+                )
+                if calculation is not None and quantity is not None:
+                    await events.emit(
+                        "formula.completed",
+                        task_id="T10",
+                        stage="T10",
+                        agent_id="paax-agent",
+                        provider="opencode-go",
+                        model="deepseek-v4-flash",
+                        payload_summary={
+                            "formula_id": calculation.calculation_id,
+                            "formula": calculation.formula,
+                            "result": quantity,
+                            "status": calculation.status,
+                        },
+                    )
 
         await synthesize_and_post_snapshot_task(
             run_id, project_id, run_status, self.db_client,
@@ -135,6 +266,37 @@ class DemJobHandlers:
             drawing_analysis_artifact_key=drawing_analysis_artifact_key,
             drawing_analysis_error=drawing_analysis_error,
         )
+        try:
+            final_status = await self.db_client.get_run_status(str(run_id))
+        except Exception:
+            final_status = {}
+        if final_status.get("status") == "synthesis_complete":
+            await events.emit(
+                "task.completed",
+                task_id="T10",
+                stage="T10",
+                agent_id="paax-agent",
+                provider="opencode-go",
+                model="deepseek-v4-flash",
+                payload_summary={"progress": 1},
+            )
+            await events.emit(
+                "run.completed",
+                agent_id="paax-agent",
+                provider="opencode-go",
+                model="deepseek-v4-flash",
+                payload_summary={"status": "synthesis_complete"},
+            )
+        elif final_status.get("status") == "synthesis_failed":
+            await events.emit(
+                "task.failed",
+                task_id="T10",
+                stage="T10",
+                agent_id="paax-agent",
+                provider="opencode-go",
+                model="deepseek-v4-flash",
+                payload_summary={"error": "synthesis_failed"},
+            )
 
     def as_handler_map(self) -> dict[str, Any]:
         return {

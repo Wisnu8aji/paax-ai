@@ -274,12 +274,12 @@ export function AgentExecutionConsole({
               fontSize: 10,
               padding: '2px 7px',
               borderRadius: 5,
-              color: transport.web_trace ? 'var(--di-ok, #22c55e)' : 'var(--di-danger, #ef4444)',
+              color: transport.web_trace ? 'var(--di-ok, #22c55e)' : 'var(--di-text3, #94a3b8)',
               background: 'var(--di-panel2)',
               fontWeight: 600,
             }}
           >
-            web_trace: {transport.web_trace ? 'true' : 'false'}
+            {transport.web_trace ? 'web_trace: true (live)' : 'web_trace: menunggu runtime live'}
           </span>
           <span style={{ fontSize: 10, color: 'var(--di-text3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>
             {runId ?? 'menunggu run'}
@@ -449,8 +449,8 @@ export function AgentExecutionConsole({
             </span>
           )}
           {transport.kind === 'none' && (
-            <span data-testid="transport-none-label" style={{ color: '#eab308' }}>
-              Menunggu gateway relay event v2 F1 (WS/SSE). Status integrasi jujur: belum live.
+            <span data-testid="transport-none-label" style={{ color: '#94a3b8' }}>
+              Analisis berjalan — event runtime akan tampil di sini saat gateway live terhubung.
             </span>
           )}
           {projectId && <span style={{ marginLeft: 'auto' }}>project: {projectId}</span>}

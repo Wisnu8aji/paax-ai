@@ -71,11 +71,14 @@ function FileMenu({ onAction }: { onAction: (label: string) => void }) {
 
 /** Ilustrasi wireframe sederhana: file bertumpuk + denah kotak (blueprint gambar 2). */
 function IntakeIllustration() {
+  // DI-002 fix: nama file dibuat GENERIK (bukan nama file demo nyata) supaya
+  // tidak disangka data proyek. Ilustrasi ini hanya tampil pada empty state
+  // (state.hasData = false); daftar file nyata selalu berasal dari backend.
   const stackFiles = [
-    { name: 'Architectural-Plan.pdf', color: 'var(--di-err)' },
-    { name: 'Structural-Plan.dwg', color: 'var(--di-info)' },
-    { name: 'Electrical-Plan.pdf', color: 'var(--di-ok)' },
-    { name: 'Mechanical-Plan.pdf', color: 'var(--di-accent)' },
+    { name: 'Drawing file 01', color: 'var(--di-err)' },
+    { name: 'Drawing file 02', color: 'var(--di-info)' },
+    { name: 'Drawing file 03', color: 'var(--di-ok)' },
+    { name: 'Drawing file 04', color: 'var(--di-accent)' },
   ];
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 26, marginBottom: 8 }}>

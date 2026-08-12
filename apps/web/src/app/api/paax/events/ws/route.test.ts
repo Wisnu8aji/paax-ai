@@ -6,9 +6,29 @@
 // web_trace: false.
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { NextRequest } from 'next/server';
 import { GET } from './route';
 import { getRelayStore } from '../../../../../lib/paax/event-relay-store';
+
+const ENV_KEY = 'PAAX_AGENT_EVENT_JOURNAL';
+
+function journalLine(run: string, seq: number, type: string): string {
+  return JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'paax.event',
+    params: {
+      event_id: `paax:evt:${run}:${seq}:00000001`,
+      run_id: `paax:run:${run}`,
+      sequence: seq,
+      timestamp: new Date().toISOString(),
+      type,
+      payload_summary: {},
+    },
+  });
+}
 
 describe('/api/paax/events/ws route handler — plan compliance (rev2)', () => {
   beforeEach(() => {
@@ -73,5 +93,28 @@ describe('/api/paax/events/ws route handler — plan compliance (rev2)', () => {
     const body = await res.json();
     expect(body.params.events.length).toBe(2);
     expect(body.params.events.every((e: { params: { sequence: number } }) => e.params.sequence > 1)).toBe(true);
+  });
+
+  it('GET ws/route mereplay event journal saat relay memory kosong (worker relay outage)', async () => {
+    const previousJournal = process.env[ENV_KEY];
+    const directory = mkdtempSync(join(tmpdir(), 'paax-ws-journal-'));
+    const journal = join(directory, 'agent-events.jsonl');
+    const runId = 'ws-journal-run';
+    writeFileSync(journal, journalLine(runId, 0, 'run.started') + '\n' + journalLine(runId, 1, 'task.started') + '\n');
+    process.env[ENV_KEY] = journal;
+    try {
+      const req = new NextRequest(`http://localhost:3000/api/paax/events/ws?run_id=paax:run:${runId}`);
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.web_trace).toBe(true);
+      expect(body.method).toBe('paax.event_batch');
+      expect(body.params.events).toHaveLength(2);
+      expect(body.params.events.map((e: { params: { sequence: number } }) => e.params.sequence)).toEqual([0, 1]);
+    } finally {
+      if (previousJournal === undefined) delete process.env[ENV_KEY];
+      else process.env[ENV_KEY] = previousJournal;
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });

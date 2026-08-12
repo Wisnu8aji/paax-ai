@@ -103,6 +103,25 @@ def test_portable_launcher_uses_per_service_key_files_and_hash_only_registry():
     assert "internal-service.key" not in source
 
 
+def test_portable_launcher_document_intelligence_identity_grants_project_graph_synthesize_scope():
+    """Regression: the durable document-intelligence worker processes dem.synthesize
+    jobs and then calls GET /projects/{id}/sheet-revisions/active and
+    POST /projects/{id}/project-graph/snapshots, both gated by
+    service_scope="project_graph:synthesize" in services/db. The portable
+    launcher's document-intelligence identity must declare that scope or the
+    worker is denied 403 for the active-sheet-revision read."""
+    source = (REPO_ROOT / "scripts/portable/Start-PLHUT-Local.ps1").read_text(encoding="utf-8")
+
+    identity_lines = [
+        line
+        for line in source.splitlines()
+        if '"document-intelligence"' in line and 'identity = "document-intelligence"' in line
+    ]
+    assert identity_lines, "document-intelligence identity missing from portable launcher"
+    assert len(identity_lines) == 1
+    assert "project_graph:synthesize" in identity_lines[0]
+
+
 @pytest.mark.asyncio
 async def test_registry_allows_web_human_approval_but_denies_agent_resolve(tmp_path, monkeypatch):
     registry = tmp_path / "service-identities.json"
@@ -168,3 +187,51 @@ async def test_registry_document_intelligence_has_only_its_declared_authorize_ac
 
     assert response.status_code == 200
     assert response.json()["authorized"] is True
+
+
+@pytest.mark.asyncio
+async def test_registry_project_graph_synthesis_authorized_only_with_document_intelligence_scope(tmp_path, monkeypatch):
+    """Regression: Start-PLHUT-Local.ps1 grants the document-intelligence identity
+    project_graph:synthesize. With that registry-granted scope the dem.synthesize
+    worker's two DB calls succeed; an identity that lacks the scope (the launcher
+    before the fix) is denied 403 exactly like the reported PLHUT local failure."""
+    from .conftest import TestSession
+
+    registry = tmp_path / "service-identities.json"
+    registry.write_text(json.dumps({"version": 1, "identities": [
+        {
+            "identity": "document-intelligence",
+            "credential_sha256": hashlib.sha256(b"di-secret").hexdigest(),
+            "scopes": ["dem:read", "dem:write", "dem:delete", "dem:authorize-actor", "project_graph:synthesize", "di:access", "core:access"],
+        },
+        {
+            "identity": "di-without-synthesize",
+            "credential_sha256": hashlib.sha256(b"di-narrow-secret").hexdigest(),
+            "scopes": ["dem:read", "dem:write", "dem:delete", "dem:authorize-actor", "di:access", "core:access"],
+        },
+    ]}), encoding="utf-8")
+    monkeypatch.setenv("PAAX_SERVICE_IDENTITY_REGISTRY", str(registry))
+    monkeypatch.delenv("PAAX_ENABLE_LEGACY_SINGLE_KEY_COMPAT", raising=False)
+
+    async with TestSession() as session:
+        session.add(models.Project(id="PLHUT-SURAKARTA", owner_id="owner-plhut", name="PLHUT Surakarta"))
+        await session.commit()
+
+    headers = {"X-Internal-Key": "di-secret"}
+    narrow_headers = {"X-Internal-Key": "di-narrow-secret"}
+    snapshot = {
+        "snapshot_id": "SNAP-PLHUT-1", "schema_version": "paax.pckm.graph.v1", "source_manifest_hash": "manifest",
+        "generation_metadata": {"run_id": "RUN-1"}, "nodes": [], "edges": [], "evidence": [],
+        "node_evidence": [], "edge_evidence": [], "aliases": [], "communities": [],
+    }
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        active = await client.get("/projects/PLHUT-SURAKARTA/sheet-revisions/active", headers=headers)
+        posted = await client.post("/projects/PLHUT-SURAKARTA/project-graph/snapshots", json=snapshot, headers=headers)
+        narrow_active = await client.get("/projects/PLHUT-SURAKARTA/sheet-revisions/active", headers=narrow_headers)
+        narrow_posted = await client.post("/projects/PLHUT-SURAKARTA/project-graph/snapshots", json={**snapshot, "snapshot_id": "SNAP-PLHUT-2"}, headers=narrow_headers)
+
+    assert active.status_code == 200
+    assert active.json() == []
+    assert posted.status_code == 200
+    assert narrow_active.status_code == 403
+    assert narrow_posted.status_code == 403
