@@ -10,7 +10,10 @@ export interface CompositorBackend {
   release(keys: Iterable<string>): void;
   onContextLost(): void;
   rebuild(descriptors: readonly CompositorTile[]): boolean;
-  diagnostics(): Pick<CompositorDiagnostics, 'textureCount' | 'estimatedTextureBytes' | 'contextLost'>;
+  diagnostics(): Pick<
+    CompositorDiagnostics,
+    'materializedTileCount' | 'textureCount' | 'estimatedTextureBytes' | 'contextLost' | 'uploadFailures'
+  >;
   dispose(): void;
 }
 
@@ -91,6 +94,7 @@ export class WebGlTileCompositorBackend implements CompositorBackend {
   private rafHandle: number | null = null;
   private lostState = false;
   private readyState = false;
+  private failedUploads = 0;
 
   constructor(canvas: HTMLCanvasElement, gl: WebGL2RenderingContext) {
     this.canvas = canvas;
@@ -118,12 +122,23 @@ export class WebGlTileCompositorBackend implements CompositorBackend {
         if (texture) {
           existing.texture = texture;
           existing.bytes = tile.bitmap.width * tile.bitmap.height * 4;
+        } else {
+          // Failed same-revision (re-)upload: keep the old texture/bytes and
+          // record the failure so the caller can diagnose it (Task 2 minor).
+          this.failedUploads += 1;
         }
+      } else {
+        // A re-upload of the same revision failed: stale texture stays, but the
+        // failure must not be silent.
+        this.failedUploads += 1;
       }
       return;
     }
     const texture = this.createTexture(tile);
-    if (!texture) return;
+    if (!texture) {
+      this.failedUploads += 1;
+      return;
+    }
     this.textures.set(id, {
       key: tile.key,
       revision: tile.revision,
@@ -145,7 +160,12 @@ export class WebGlTileCompositorBackend implements CompositorBackend {
         if (!entry || !entry.texture) this.upload(tile);
       }
       this.rebuildGeometry();
-      this.scheduleRender();
+      // Commit is the atomic visibility boundary. Draw synchronously after the
+      // manifest swap so a real drawing-buffer resize cannot expose a cleared
+      // canvas for one browser frame before a deferred rAF. Texture uploads are
+      // already incremental; this path issues only the bounded GPU draw calls.
+      this.cancelScheduledRender();
+      this.render();
     }
     this.sweepRetired();
   }
@@ -222,7 +242,10 @@ export class WebGlTileCompositorBackend implements CompositorBackend {
     return true;
   }
 
-  diagnostics(): Pick<CompositorDiagnostics, 'textureCount' | 'estimatedTextureBytes' | 'contextLost'> {
+  diagnostics(): Pick<
+    CompositorDiagnostics,
+    'materializedTileCount' | 'textureCount' | 'estimatedTextureBytes' | 'contextLost' | 'uploadFailures'
+  > {
     let textureCount = 0;
     let estimatedTextureBytes = 0;
     for (const entry of this.textures.values()) {
@@ -230,7 +253,17 @@ export class WebGlTileCompositorBackend implements CompositorBackend {
       textureCount += 1;
       estimatedTextureBytes += entry.bytes;
     }
-    return { textureCount, estimatedTextureBytes, contextLost: this.lost };
+    let materializedTileCount = 0;
+    for (const tile of this.committedTiles ?? []) {
+      if (this.textures.get(textureId(tile.key, tile.revision))?.texture) materializedTileCount += 1;
+    }
+    return {
+      materializedTileCount,
+      textureCount,
+      estimatedTextureBytes,
+      contextLost: this.lost,
+      uploadFailures: this.failedUploads,
+    };
   }
 
   dispose(): void {
@@ -294,13 +327,26 @@ export class WebGlTileCompositorBackend implements CompositorBackend {
       gl.deleteProgram(program);
       return false;
     }
+    const aPosLocation = gl.getAttribLocation(program, 'aPos');
+    const aUvLocation = gl.getAttribLocation(program, 'aUv');
+    const uPageSizeLocation = gl.getUniformLocation(program, 'uPageSize');
+    const uTexLocation = gl.getUniformLocation(program, 'uTex');
+    // Fail closed: a missing attribute/uniform location would draw garbage or
+    // nothing, so any missing location selects the Canvas2D fallback instead
+    // (Task 2 deferred minor).
+    if (aPosLocation < 0 || aUvLocation < 0 || !uPageSizeLocation || !uTexLocation) {
+      gl.deleteProgram(program);
+      gl.deleteBuffer(posBuffer);
+      gl.deleteBuffer(uvBuffer);
+      return false;
+    }
     this.program = program;
     this.posBuffer = posBuffer;
     this.uvBuffer = uvBuffer;
-    this.aPosLocation = gl.getAttribLocation(program, 'aPos');
-    this.aUvLocation = gl.getAttribLocation(program, 'aUv');
-    this.uPageSizeLocation = gl.getUniformLocation(program, 'uPageSize');
-    this.uTexLocation = gl.getUniformLocation(program, 'uTex');
+    this.aPosLocation = aPosLocation;
+    this.aUvLocation = aUvLocation;
+    this.uPageSizeLocation = uPageSizeLocation;
+    this.uTexLocation = uTexLocation;
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.blendEquation(gl.FUNC_ADD);
@@ -325,13 +371,19 @@ export class WebGlTileCompositorBackend implements CompositorBackend {
   private uploadBitmap(texture: WebGLTexture, tile: CompositorTile): boolean {
     const gl = this.gl;
     try {
+      // WebGL reports many upload failures through the error flag instead of
+      // throwing. Drain a bounded number of stale flags owned by this context
+      // before the upload, then require the upload itself to finish cleanly.
+      for (let attempt = 0; attempt < 4 && gl.getError() !== gl.NO_ERROR; attempt += 1) {
+        // Bounded drain only; a lost context will still fail the post-check.
+      }
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, tile.bitmap);
-      return true;
+      return gl.getError() === gl.NO_ERROR;
     } catch {
       return false;
     }

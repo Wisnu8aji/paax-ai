@@ -12,6 +12,8 @@ export class Canvas2dTileCompositorBackend implements CompositorBackend {
   private readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D | null;
   private committedFrame: CompositorFrame | null = null;
+  private materializedTileCount = 0;
+  private drawFailures = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -36,6 +38,7 @@ export class Canvas2dTileCompositorBackend implements CompositorBackend {
   }
 
   render(): void {
+    this.materializedTileCount = 0;
     const ctx = this.ctx;
     const frame = this.committedFrame;
     if (!ctx || !frame) return;
@@ -55,8 +58,10 @@ export class Canvas2dTileCompositorBackend implements CompositorBackend {
           tile.rect.width * scaleX,
           tile.rect.height * scaleY,
         );
+        this.materializedTileCount += 1;
       } catch {
         // A bitmap closed by TileLru is no longer drawable; skip it.
+        this.drawFailures += 1;
       }
     }
   }
@@ -73,11 +78,21 @@ export class Canvas2dTileCompositorBackend implements CompositorBackend {
     return true;
   }
 
-  diagnostics(): Pick<CompositorDiagnostics, 'textureCount' | 'estimatedTextureBytes' | 'contextLost'> {
-    return { textureCount: 0, estimatedTextureBytes: 0, contextLost: false };
+  diagnostics(): Pick<
+    CompositorDiagnostics,
+    'materializedTileCount' | 'textureCount' | 'estimatedTextureBytes' | 'contextLost' | 'uploadFailures'
+  > {
+    return {
+      materializedTileCount: this.materializedTileCount,
+      textureCount: 0,
+      estimatedTextureBytes: 0,
+      contextLost: false,
+      uploadFailures: this.drawFailures,
+    };
   }
 
   dispose(): void {
     this.committedFrame = null;
+    this.materializedTileCount = 0;
   }
 }

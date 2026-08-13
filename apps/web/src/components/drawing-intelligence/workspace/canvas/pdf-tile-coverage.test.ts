@@ -72,6 +72,21 @@ describe('tileLogicalRect', () => {
     expect(tileLogicalRect(tile('k', 0, 0, 512, 512, 512, 512, Number.NaN))).toEqual({ x: 0, y: 0, width: 0, height: 0 });
     expect(tileLogicalRect(tile('k', 0, 0, 512, 512, 512, Number.NaN, 1))).toEqual({ x: 0, y: 0, width: 0, height: 0 });
   });
+
+  it('fails closed locally for zero or negative raster tile extents instead of leaking geometry downstream', () => {
+    expect(tileLogicalRect(tile('k', 0, 0, 512, 512, 0, 512, 1))).toEqual({ x: 0, y: 0, width: 0, height: 0 });
+    expect(tileLogicalRect(tile('k', 0, 0, 512, 512, 512, -4, 1))).toEqual({ x: 0, y: 0, width: 0, height: 0 });
+    expect(tileLogicalRect(tile('k', 0, 0, 512, 512, 512, 512, Number.POSITIVE_INFINITY))).toEqual({
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+    });
+  });
+
+  it('still converts a negative origin tile to a valid rect (intersection clips it downstream)', () => {
+    expect(tileLogicalRect(tile('k', 0, 0, -100, 512, 512, 512, 1))).toEqual({ x: -100, y: 512, width: 512, height: 512 });
+  });
 });
 
 describe('clippedUnionCoverage', () => {

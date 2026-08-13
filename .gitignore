@@ -82,3 +82,25 @@ data/portable/
 phase11d_cr2_service_logs/
 phase11d_cr4_service_logs/
 runtime_internal_key.txt
+
+# Agent runtime & orchestration artifacts (local only, never pushed)
+.hermes/
+.opencode/
+.playwright-mcp/
+apps/web/e2e/results/
+store_data/
+docs/classified gambar kerja/
+docs/audits/
+MASTER_PLAN.md
+MASTER_PLAN_SUPPLEMENT.md
+00_WORKER_REPORT.md
+IDEA.md
+docs/MASTER_PLAN_V3_AI_AGENT_OVERHAUL.md
+docs/MASTER_PLAN_V4_AI_AGENT_OVERHAUL.md
+verify_two_stage_live.py
+services/document-intelligence/scripts/live_proof_page2.py
+apps/web/e2e/real-ui-5pages.spec.ts
+apps/web/e2e/real-ui-watch.spec.ts
+apps/web/e2e/real-upload-1-20.spec.ts
+services/document-intelligence/data/portable/agent-events.jsonl
+docs/plans/2026-08-02-manual-acceptance-gambar-kerja-viewer-flicker-right-crop.md

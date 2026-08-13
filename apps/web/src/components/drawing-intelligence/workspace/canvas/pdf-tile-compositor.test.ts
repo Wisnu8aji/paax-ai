@@ -103,6 +103,7 @@ class FakeWebGl2 {
   readonly RGBA8 = 0x8058;
   readonly UNSIGNED_BYTE = 0x1401;
   readonly COLOR_BUFFER_BIT = 0x4000;
+  readonly NO_ERROR = 0;
   readonly BLEND = 0x0be2;
   readonly DEPTH_TEST = 0x0b71;
   readonly CULL_FACE = 0x0b44;
@@ -119,9 +120,12 @@ class FakeWebGl2 {
   private boundTexture: { __paaxTileKey?: string } | null = null;
   private drawnInGroup: string[] = [];
 
-  constructor(options: { failCompile?: boolean } = {}) {
+  constructor(options: { failCompile?: boolean; failLocations?: boolean } = {}) {
     this.failCompile = options.failCompile ?? false;
+    this.failLocations = options.failLocations ?? false;
   }
+
+  readonly failLocations: boolean;
 
   lastDrawnKeys(): string[] {
     if (this.drawnInGroup.length > 0) return [...this.drawnInGroup];
@@ -168,10 +172,10 @@ class FakeWebGl2 {
   deleteProgram(_program: Record<string, unknown>): void {}
   useProgram(_program: Record<string, unknown>): void {}
   getAttribLocation(_program: Record<string, unknown>, _name: string): number {
-    return 0;
+    return this.failLocations ? -1 : 0;
   }
-  getUniformLocation(_program: Record<string, unknown>, name: string): { name: string } {
-    return { name };
+  getUniformLocation(_program: Record<string, unknown>, name: string): { name: string } | null {
+    return this.failLocations ? null : { name };
   }
 
   createBuffer(): Record<string, unknown> {
@@ -208,6 +212,9 @@ class FakeWebGl2 {
   ): void {
     if ((source as unknown as { closed?: boolean }).closed) throw new Error('fake closed bitmap');
   }
+  getError(): number {
+    return this.NO_ERROR;
+  }
   activeTexture(_texture: number): void {}
   uniform1i(_location: { name: string } | null, _value: number): void {}
   uniform2f(_location: { name: string } | null, _x: number, _y: number): void {}
@@ -233,7 +240,7 @@ class FakeWebGl2 {
 let activeFakeGl: FakeWebGl2 | null = null;
 let activeCanvas: FakeCanvas | null = null;
 
-function createWithFakeWebGl(options: { failCompile?: boolean } = {}): PdfTileCompositor {
+function createWithFakeWebGl(options: { failCompile?: boolean; failLocations?: boolean } = {}): PdfTileCompositor {
   activeFakeGl = new FakeWebGl2(options);
   activeCanvas = new FakeCanvas(activeFakeGl, new Fake2dContext());
   return createPdfTileCompositor(activeCanvas as unknown as HTMLCanvasElement);
@@ -268,7 +275,13 @@ describe('pdf tile compositor', () => {
     compositor.upload(tile('a'));
     compositor.upload(tile('b'));
     compositor.commit(frame(1, ['a', 'b']));
-    expect(compositor.diagnostics()).toMatchObject({ renderer: 'webgl2', committedGeneration: 1, textureCount: 2 });
+    expect(compositor.diagnostics()).toMatchObject({
+      renderer: 'webgl2',
+      committedGeneration: 1,
+      committedTileCount: 2,
+      materializedTileCount: 2,
+      textureCount: 2,
+    });
   });
 
   it('does not expose a partially uploaded candidate before commit', async () => {
@@ -286,6 +299,30 @@ describe('pdf tile compositor', () => {
 
   it('falls back to Canvas2D when shader compilation fails', () => {
     expect(createWithFakeWebGl({ failCompile: true }).kind).toBe('canvas2d');
+  });
+
+  it('falls back to Canvas2D when shader attribute or uniform locations are missing', () => {
+    expect(createWithFakeWebGl({ failLocations: true }).kind).toBe('canvas2d');
+  });
+
+  it('records failed texture uploads in diagnostics instead of failing silently', () => {
+    const compositor = createWithFakeWebGl();
+    expect(compositor.diagnostics().uploadFailures).toBe(0);
+    const closedBitmap = { width: 256, height: 256, closed: true } as unknown as ImageBitmap;
+    compositor.upload({ key: 'bad', revision: 1, bitmap: closedBitmap, rect: DEFAULT_RECT });
+    compositor.upload({ key: 'bad', revision: 1, bitmap: closedBitmap, rect: DEFAULT_RECT });
+    expect(compositor.diagnostics().uploadFailures).toBeGreaterThanOrEqual(2);
+  });
+
+  it('does not report a failed committed texture as materialized', () => {
+    const compositor = createWithFakeWebGl();
+    const closed = { width: 256, height: 256, closed: true } as unknown as ImageBitmap;
+    compositor.commit(frame(1, [{ key: 'bad', revision: 1, bitmap: closed, rect: DEFAULT_RECT }]));
+    expect(compositor.diagnostics()).toMatchObject({
+      committedTileCount: 1,
+      materializedTileCount: 0,
+      textureCount: 0,
+    });
   });
 
   it('releases retired textures and resets byte accounting on dispose', () => {

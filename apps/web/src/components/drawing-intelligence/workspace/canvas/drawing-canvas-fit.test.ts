@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  aspectForRender,
   documentKeyFor,
   nextCoverageState,
   shouldApplyFit,
+  underlayVisibility,
   type CoverageEvent,
   type FitRecord,
 } from './drawing-canvas-fit';
@@ -90,8 +92,38 @@ describe('nextCoverageState', () => {
     expect(nextCoverageState(current, event('run-a:0', 2, true))).toEqual({ documentKey: 'run-a:0', generation: 2, ready: true });
   });
 
-  it('keeps the last accepted document key when an unrelated event arrives first', () => {
+  it('accepts the first event for a document and never switches to a later unrelated document', () => {
     const first = nextCoverageState(null, event('run-a:0', 1, false));
     expect(nextCoverageState(first, event('run-b:1', 1, true))).toBe(first);
+  });
+});
+
+describe('aspectForRender (render-time document gate)', () => {
+  it('uses PDF metrics only when their document key equals the active document key', () => {
+    expect(aspectForRender({ width: 1000, height: 700 }, 'run-a:0', 'run-a:0', 1.4)).toBeCloseTo(0.7, 9);
+    expect(aspectForRender({ width: 1000, height: 700 }, 'run-a:0', 'run-a:1', 1.4)).toBe(1.4);
+    expect(aspectForRender({ width: 1000, height: 700 }, 'run-a:0', null, 1.4)).toBe(1.4);
+  });
+
+  it('never lets previous-document metrics control a frame while no document is active', () => {
+    expect(aspectForRender({ width: 1000, height: 700 }, 'run-a:0', null, 1.4)).toBe(1.4);
+    expect(aspectForRender({ width: 1000, height: 700 }, null, 'run-b:1', 1.4)).toBe(1.4);
+  });
+
+  it('falls back when metrics are absent even if the keys match', () => {
+    expect(aspectForRender(null, 'run-a:0', 'run-a:0', 1.4)).toBe(1.4);
+  });
+});
+
+describe('underlayVisibility (render-time document gate)', () => {
+  it('hides only when the active document itself is coverage-ready', () => {
+    expect(underlayVisibility(null, 'run-a:0')).toBe('visible');
+    expect(underlayVisibility({ documentKey: 'run-a:0', generation: 1, ready: true }, 'run-a:0')).toBe('hidden');
+    expect(underlayVisibility({ documentKey: 'run-a:0', generation: 1, ready: false }, 'run-a:0')).toBe('visible');
+  });
+
+  it('reveals immediately when the previous coverage belongs to another document', () => {
+    expect(underlayVisibility({ documentKey: 'run-a:0', generation: 7, ready: true }, 'run-b:1')).toBe('visible');
+    expect(underlayVisibility({ documentKey: 'run-a:0', generation: 7, ready: true }, null)).toBe('visible');
   });
 });

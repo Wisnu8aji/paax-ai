@@ -22,9 +22,14 @@ export interface CompositorFrame {
 export interface CompositorDiagnostics {
   renderer: PdfTileRendererKind;
   committedGeneration: number | null;
+  committedTileCount: number;
+  /** Tiles in the committed manifest that the active backend can draw. */
+  materializedTileCount: number;
   textureCount: number;
   estimatedTextureBytes: number;
   contextLost: boolean;
+  /** Texture uploads that failed since creation (e.g. closed bitmaps). */
+  uploadFailures: number;
 }
 
 export interface PdfTileCompositor {
@@ -120,9 +125,12 @@ class PdfTileCompositorWrapper implements PdfTileCompositor {
     return {
       renderer: this.backend.kind,
       committedGeneration: this.committedFrame ? this.committedFrame.generation : null,
+      committedTileCount: this.committedFrame?.tiles.length ?? 0,
+      materializedTileCount: backendDiagnostics.materializedTileCount,
       textureCount: backendDiagnostics.textureCount,
       estimatedTextureBytes: backendDiagnostics.estimatedTextureBytes,
       contextLost: backendDiagnostics.contextLost,
+      uploadFailures: backendDiagnostics.uploadFailures,
     };
   }
 

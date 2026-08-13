@@ -36,12 +36,27 @@ function intersection(a: LogicalRect, b: LogicalRect): LogicalRect | null {
   const y = Math.max(a.y, b.y);
   const x2 = Math.min(a.x + a.width, b.x + b.width);
   const y2 = Math.min(a.y + a.height, b.y + b.height);
+  // Defense-in-depth: `Math.min`/`Math.max` never clamp NaN, so an endpoint
+  // that is not finite must fail closed here instead of leaking NaN area.
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(x2) || !Number.isFinite(y2)) return null;
   if (x2 <= x || y2 <= y) return null;
   return { x, y, width: x2 - x, height: y2 - y };
 }
 
 export function tileLogicalRect(tile: PdfTileRequest): LogicalRect {
   if (!Number.isFinite(tile.density) || tile.density <= 0) return emptyRect();
+  if (
+    !Number.isFinite(tile.x) ||
+    !Number.isFinite(tile.y) ||
+    !Number.isFinite(tile.width) ||
+    !Number.isFinite(tile.height)
+  ) {
+    return emptyRect();
+  }
+  // Fail closed locally: the pyramid clips to the page, but a caller-supplied
+  // or future non-positive extent must never become negative geometry that
+  // relies on downstream filtering (Task 1 deferred minor).
+  if (tile.width <= 0 || tile.height <= 0) return emptyRect();
   const x = tile.x / tile.density;
   const y = tile.y / tile.density;
   const width = tile.width / tile.density;
