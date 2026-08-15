@@ -4,6 +4,10 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $venvPython = Join-Path $repoRoot ".venv\Scripts\python.exe"
 if (-not (Test-Path $venvPython)) { throw "Jalankan Setup-PLHUT-Local.ps1 terlebih dahulu." }
+$packageManager = ((Get-Content -LiteralPath (Join-Path $repoRoot "package.json") -Raw | ConvertFrom-Json).packageManager)
+if ([string]::IsNullOrWhiteSpace($packageManager) -or $packageManager -notmatch '^pnpm@\d+\.\d+\.\d+$') {
+    throw "packageManager pnpm yang dipatok tidak ditemukan di package.json; startup dihentikan."
+}
 
 . (Join-Path $repoRoot "scripts\portable\Resolve-PAAX-DataRoot.ps1")
 $resolvedRoot = Resolve-PaaxDataRoot -DataRoot $DataRoot -InstallRoot $repoRoot
@@ -57,7 +61,7 @@ New-Item -ItemType Directory -Force -Path $credentialDir | Out-Null
 $serviceIdentities = [ordered]@{
     "db-plhut" = @{ identity = "db-plhut"; scopes = @() }
     "core-engine" = @{ identity = "core-engine"; scopes = @() }
-    "document-intelligence" = @{ identity = "document-intelligence"; scopes = @("dem:read", "dem:write", "dem:delete", "dem:authorize-actor", "di:access", "core:access") }
+    "document-intelligence" = @{ identity = "document-intelligence"; scopes = @("dem:read", "dem:write", "dem:delete", "dem:authorize-actor", "project_graph:synthesize", "di:access", "core:access") }
     "ai-orchestrator" = @{ identity = "ai-orchestrator"; scopes = @("agent:propose", "agent:calculate", "agent:read", "core:access", "di:access") }
     "site-agent" = @{ identity = "site-agent"; scopes = @("site:access", "core:access") }
     "web" = @{ identity = "web-user-proxy"; actor_id = "local-desktop-user"; scopes = @("human:approve", "core:access", "di:access", "agent:access", "site:access", "dem:read") }
@@ -126,6 +130,22 @@ $env:PAAX_ENTITY_LINK_STORE=(Join-Path $layout.jobs "entity-links.json")
 
 & $venvPython (Join-Path $repoRoot "scripts\portable\preflight.py") --allow-running
 
+function Test-TrustedHealthIdentity([int]$Port, [string]$ServiceName) {
+    # Windows can expose a uvicorn worker's socket PID while hiding the parent
+    # process from the current PowerShell session. If command-line ownership
+    # is unavailable, trust only a live health response that proves both the
+    # exact repository root and the expected service name.
+    try {
+        $health = Invoke-RestMethod -Uri "http://127.0.0.1:$Port/health" -Method Get -TimeoutSec 5 -ErrorAction Stop
+        return $health.status -eq "ok" -and
+            $health.service -eq $ServiceName -and
+            $health.runtime_identity.repo_root -and
+            (Resolve-Path $health.runtime_identity.repo_root).Path -eq (Resolve-Path $repoRoot).Path
+    } catch {
+        return $false
+    }
+}
+
 function Verify-PortOwnership([int]$Port, [string]$ServiceName) {
     $conns = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
     if ($conns) {
@@ -133,6 +153,12 @@ function Verify-PortOwnership([int]$Port, [string]$ServiceName) {
             $owningPid = $conn.OwningProcess
             $proc = Get-CimInstance Win32_Process -Filter "ProcessId = $owningPid" -ErrorAction SilentlyContinue
             $cmdLine = if ($proc) { $proc.CommandLine } else { "" }
+            if (-not $cmdLine) {
+                if (Test-TrustedHealthIdentity -Port $Port -ServiceName $ServiceName) {
+                    continue
+                }
+                throw "Port $Port ($ServiceName) ownership tidak dapat diverifikasi; health identity tidak cocok."
+            }
             if ($cmdLine -and -not $cmdLine.Contains($repoRoot)) {
                 throw "Port $Port ($ServiceName) sedang digunakan oleh proses dari repository lain (PID $owningPid): $cmdLine. Hentikan service lama sebelum menjalankan contextual integration."
             }
@@ -152,6 +178,54 @@ function Verify-PortOwnership([int]$Port, [string]$ServiceName) {
     }
 }
 
+function Test-ListenerOwnership([int]$Port, [string]$ServiceName) {
+    # A .cmd/Corepack launcher remains the PID written to the runtime file,
+    # while its Node child owns the TCP listener. For a live service, inspect
+    # the listener process itself rather than rejecting the command wrapper.
+    $listeners = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+    if (-not $listeners) { return $false }
+    foreach ($listener in $listeners) {
+        $listenerPid = $listener.OwningProcess
+        $listenerProcess = Get-CimInstance Win32_Process -Filter "ProcessId = $listenerPid" -ErrorAction SilentlyContinue
+        $listenerCmdLine = if ($listenerProcess) { $listenerProcess.CommandLine } else { "" }
+        if (-not $listenerCmdLine) {
+            if (Test-TrustedHealthIdentity -Port $Port -ServiceName $ServiceName) {
+                continue
+            }
+            throw "Port $Port ($ServiceName) ownership tidak dapat diverifikasi; health identity tidak cocok."
+        }
+        if (-not ($listenerCmdLine -and $listenerCmdLine.Contains($repoRoot))) {
+            throw "Port $Port ($ServiceName) sedang digunakan oleh proses dari repository lain (PID $listenerPid): $listenerCmdLine. Hentikan service lama sebelum menjalankan contextual integration."
+        }
+    }
+    return $true
+}
+
+function Set-ProcessLaunchCommand([System.Diagnostics.ProcessStartInfo]$Psi,[string]$FilePath,[string[]]$Arguments) {
+    # ProcessStartInfo with UseShellExecute=false cannot invoke a .cmd/.bat
+    # shim directly on Windows. Route those shims through cmd.exe using the
+    # .Arguments API that is available on every supported PowerShell host.
+    $extension = [IO.Path]::GetExtension($FilePath)
+    $isCommandShim = $extension -and (
+        $extension.Equals(".cmd", [System.StringComparison]::OrdinalIgnoreCase) -or
+        $extension.Equals(".bat", [System.StringComparison]::OrdinalIgnoreCase)
+    )
+    $serializedArguments = ($Arguments | ForEach-Object {
+        if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\\"') + '"' } else { $_ }
+    }) -join ' '
+    if ($isCommandShim) {
+        if ([string]::IsNullOrWhiteSpace($env:ComSpec) -or -not (Test-Path -LiteralPath $env:ComSpec)) {
+            throw "cmd.exe tidak tersedia untuk menjalankan shim $FilePath."
+        }
+        $commandPath = (Get-Command $FilePath -ErrorAction Stop).Source
+        $Psi.FileName = $env:ComSpec
+        $Psi.Arguments = ('/d /s /c ""{0}" {1}"' -f $commandPath, $serializedArguments)
+    } else {
+        $Psi.FileName = $FilePath
+        $Psi.Arguments = $serializedArguments
+    }
+}
+
 function Start-ServiceProcess([string]$Name,[string]$FilePath,[string[]]$Arguments,[string]$WorkingDirectory,[int]$Port,[hashtable]$ServiceEnvironment) {
     $pidFile=Join-Path $runtimeDir "$Name.pid"
     if (Test-Path $pidFile) {
@@ -160,6 +234,10 @@ function Start-ServiceProcess([string]$Name,[string]$FilePath,[string[]]$Argumen
             $oldPid = [int]$oldPidStr.Trim()
             $proc = Get-CimInstance Win32_Process -Filter "ProcessId = $oldPid" -ErrorAction SilentlyContinue
             if ($proc) {
+                if (Test-ListenerOwnership -Port $Port -ServiceName $Name) {
+                    Write-Host "$Name already running (PID $oldPid) from this repository"
+                    return
+                }
                 $cmdLine = $proc.CommandLine
                 if ($cmdLine -and $cmdLine.Contains($repoRoot)) {
                     # The pid file records the process Start-ServiceProcess launched.
@@ -169,11 +247,6 @@ function Start-ServiceProcess([string]$Name,[string]$FilePath,[string[]]$Argumen
                     # is still listening -- if the port is free the recorded process
                     # is a stale shim with a dead server child. Verify the port too;
                     # only then is the service genuinely "already running".
-                    $liveListeners = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
-                    if ($liveListeners) {
-                        Write-Host "$Name already running (PID $oldPid) from this repository"
-                        return
-                    }
                     Write-Host "$Name PID file points to live PID $oldPid but port $Port is not listening; restarting $Name..."
                     Stop-Process -Id $oldPid -Force -ErrorAction SilentlyContinue
                 } else {
@@ -202,9 +275,7 @@ function Start-ServiceProcess([string]$Name,[string]$FilePath,[string[]]$Argumen
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
     $psi.FileName = $FilePath
-    $psi.Arguments = ($Arguments | ForEach-Object {
-        if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\\"') + '"' } else { $_ }
-    }) -join ' '
+    Set-ProcessLaunchCommand -Psi $psi -FilePath $FilePath -Arguments $Arguments
 
     $runtimeEnvironment = @(
         'PYTHONUTF8','PAAX_REPO_ROOT','PAAX_COMMIT','PAAX_BRANCH','PAAX_DIRTY',
@@ -215,15 +286,15 @@ function Start-ServiceProcess([string]$Name,[string]$FilePath,[string[]]$Argumen
         'PAAX_AGENT_RUN_STORE','PAAX_AGENT_EVENT_JOURNAL','PAAX_AGENT_DEAD_LETTER',
         'PAAX_TAKEOFF_STORE','PAAX_ENTITY_LINK_STORE'
     )
-    foreach ($name in $runtimeEnvironment) {
-        $value = [Environment]::GetEnvironmentVariable($name, 'Process')
-        if ([string]::IsNullOrWhiteSpace($value)) { throw "Runtime environment '$name' kosong; startup dihentikan." }
-        $psi.EnvironmentVariables[$name] = $value
+    foreach ($environmentName in $runtimeEnvironment) {
+        $value = [Environment]::GetEnvironmentVariable($environmentName, 'Process')
+        if ([string]::IsNullOrWhiteSpace($value)) { throw "Runtime environment '$environmentName' kosong; startup dihentikan." }
+        $psi.EnvironmentVariables[$environmentName] = $value
     }
-    foreach ($name in $ServiceEnvironment.Keys) {
-        $value = [string]$ServiceEnvironment[$name]
-        if ([string]::IsNullOrWhiteSpace($value)) { throw "Service environment '$name' kosong; startup dihentikan." }
-        $psi.EnvironmentVariables[$name] = $value
+    foreach ($environmentName in $ServiceEnvironment.Keys) {
+        $value = [string]$ServiceEnvironment[$environmentName]
+        if ([string]::IsNullOrWhiteSpace($value)) { throw "Service environment '$environmentName' kosong; startup dihentikan." }
+        $psi.EnvironmentVariables[$environmentName] = $value
     }
 
     $process = New-Object System.Diagnostics.Process
@@ -278,10 +349,7 @@ function Start-WorkerProcess([string]$Name,[string]$FilePath,[string[]]$Argument
     $psi.WorkingDirectory = $WorkingDirectory
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
-    $psi.FileName = $FilePath
-    $psi.Arguments = ($Arguments | ForEach-Object {
-        if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\\"') + '"' } else { $_ }
-    }) -join ' '
+    Set-ProcessLaunchCommand -Psi $psi -FilePath $FilePath -Arguments $Arguments
 
     $runtimeEnvironment = @(
         'PYTHONUTF8','PAAX_REPO_ROOT','PAAX_COMMIT','PAAX_BRANCH','PAAX_DIRTY',
@@ -292,15 +360,15 @@ function Start-WorkerProcess([string]$Name,[string]$FilePath,[string[]]$Argument
         'PAAX_AGENT_RUN_STORE','PAAX_AGENT_EVENT_JOURNAL','PAAX_AGENT_DEAD_LETTER',
         'PAAX_TAKEOFF_STORE','PAAX_ENTITY_LINK_STORE'
     )
-    foreach ($name in $runtimeEnvironment) {
-        $value = [Environment]::GetEnvironmentVariable($name, 'Process')
-        if ([string]::IsNullOrWhiteSpace($value)) { throw "Runtime environment '$name' kosong; startup dihentikan." }
-        $psi.EnvironmentVariables[$name] = $value
+    foreach ($environmentName in $runtimeEnvironment) {
+        $value = [Environment]::GetEnvironmentVariable($environmentName, 'Process')
+        if ([string]::IsNullOrWhiteSpace($value)) { throw "Runtime environment '$environmentName' kosong; startup dihentikan." }
+        $psi.EnvironmentVariables[$environmentName] = $value
     }
-    foreach ($name in $ServiceEnvironment.Keys) {
-        $value = [string]$ServiceEnvironment[$name]
-        if ([string]::IsNullOrWhiteSpace($value)) { throw "Service environment '$name' kosong; startup dihentikan." }
-        $psi.EnvironmentVariables[$name] = $value
+    foreach ($environmentName in $ServiceEnvironment.Keys) {
+        $value = [string]$ServiceEnvironment[$environmentName]
+        if ([string]::IsNullOrWhiteSpace($value)) { throw "Service environment '$environmentName' kosong; startup dihentikan." }
+        $psi.EnvironmentVariables[$environmentName] = $value
     }
 
     $process = New-Object System.Diagnostics.Process
@@ -393,7 +461,7 @@ if ($workerPid) {
 }
 
 if (-not $SkipOptionalServices) {
-    Start-ServiceProcess "ai-orchestrator" "pnpm.cmd" @("--dir","services/ai-orchestrator","dev") $repoRoot 8082 $serviceEnvironment["ai-orchestrator"]
+    Start-ServiceProcess "ai-orchestrator" "corepack.cmd" @($packageManager,"--dir","services/ai-orchestrator","dev") $repoRoot 8082 $serviceEnvironment["ai-orchestrator"]
     Wait-Health "ai-orchestrator" "http://127.0.0.1:8082/health" 120
 
     Start-ServiceProcess "site-agent" $venvPython @("-m","uvicorn","app.main:app","--host","127.0.0.1","--port","8085") (Join-Path $repoRoot "services\site-agent") 8085 $serviceEnvironment["site-agent"]
@@ -407,7 +475,7 @@ if (-not $SkipOptionalServices) {
 $webBuildId = Join-Path $repoRoot "apps\web\.next\BUILD_ID"
 if (-not (Test-Path $webBuildId)) { throw "Web production bundle tidak ditemukan. Jalankan 'pnpm --dir apps/web build' sebelum startup portable." }
 $serviceEnvironment["web"]["PAAX_PORTABLE_ACTOR_ID"] = "local-desktop-user"
-Start-ServiceProcess "web" "pnpm.cmd" @("--dir","apps/web","start","--hostname","127.0.0.1") $repoRoot 3000 $serviceEnvironment["web"]
+Start-ServiceProcess "web" "corepack.cmd" @($packageManager,"--dir","apps/web","start","--hostname","127.0.0.1") $repoRoot 3000 $serviceEnvironment["web"]
 Wait-Health "web" "http://127.0.0.1:3000/api/health" 180
 
 function Get-PidSafe([string]$Path) {

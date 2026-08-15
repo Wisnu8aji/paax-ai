@@ -20,15 +20,23 @@ Assert-Version "Node.js" (& node --version) ([version]"20.0")
 $pythonVersion = (& python -c "import sys; print('.'.join(map(str, sys.version_info[:3])))").Trim()
 Assert-Version "Python" $pythonVersion ([version]"3.11") ([version]"3.13.99")
 
-if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
-    Write-Host "pnpm belum tersedia; mengaktifkan Corepack..."
-    corepack enable
-    corepack prepare pnpm@9.15.0 --activate
+if (-not (Get-Command corepack -ErrorAction SilentlyContinue)) {
+    throw "Corepack diperlukan untuk memakai package manager yang dipin repository."
 }
-Assert-Version "pnpm" (& pnpm --version) ([version]"9.0")
+$packageManager = ((Get-Content -Raw (Join-Path $repoRoot "package.json")) | ConvertFrom-Json).packageManager
+if ([string]::IsNullOrWhiteSpace($packageManager) -or $packageManager -notmatch '^pnpm@\d+\.\d+\.\d+$') {
+    throw "package.json harus mendeklarasikan packageManager pnpm yang dipin; ditemukan '$packageManager'."
+}
+$pnpmVersion = (& corepack $packageManager --version).Trim()
+Assert-Version "pnpm ($packageManager)" $pnpmVersion ([version]"9.0")
 
 Write-Host "Memasang dependency Node secara reproducible..."
-pnpm install --frozen-lockfile
+& corepack $packageManager install --frozen-lockfile
+if ($LASTEXITCODE -ne 0) { throw "Instalasi dependency Node gagal." }
+
+Write-Host "Membangun artifact schema workspace..."
+& corepack $packageManager --filter "@paax/schemas" build
+if ($LASTEXITCODE -ne 0) { throw "Build @paax/schemas gagal; Web tidak dapat me-resolve package workspace." }
 
 $venvPython = Join-Path $repoRoot ".venv\Scripts\python.exe"
 if (-not (Test-Path $venvPython)) { python -m venv .venv }
