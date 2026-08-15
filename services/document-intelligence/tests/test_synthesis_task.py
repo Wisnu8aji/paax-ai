@@ -156,8 +156,8 @@ async def test_synthesize_and_post_snapshot_task_success():
     mock_db_client.update_run_status.assert_called_once_with(run_id, "synthesis_complete")
     
     # Inspect payload sent to POST
-    mock_client_in_context.post.assert_called_once()
-    call_args = mock_client_in_context.post.call_args
+    assert mock_client_in_context.post.call_count == 2
+    call_args = mock_client_in_context.post.call_args_list[0]
     post_url = call_args[0][0]
     post_json = call_args[1]["json"]
     
@@ -225,6 +225,46 @@ async def test_synthesize_and_post_snapshot_task_success():
 
 
 @pytest.mark.asyncio
+async def test_synthesis_materializes_canonical_index_before_reporting_complete():
+    """A completed run must have the navigator's DB-owned index ready to read."""
+    run_id = "RUN-INDEX-READY"
+    project_id = "PROJECT-INDEX-READY"
+    sheet = _create_synthetic_sheet(0, "COL-INDEX", level="L1")
+    run_status = {
+        "project_id": project_id,
+        "status": "dem_complete",
+        "pages": [{"page_index": 0, "status": "complete", "id": "PAGE-ID-0", "result": sheet.model_dump()}],
+    }
+
+    db_client = MagicMock(spec=DemDbClient)
+    db_client.update_run_status = AsyncMock()
+    db_client.get_active_sheet_revisions = AsyncMock(return_value=[])
+    response = MagicMock()
+    response.status_code = 200
+    client_in_context = AsyncMock()
+    client_in_context.post = AsyncMock(return_value=response)
+    client = MagicMock()
+    client.__aenter__ = AsyncMock(return_value=client_in_context)
+    client.__aexit__ = AsyncMock(return_value=None)
+
+    async def async_client_context():
+        return client
+
+    db_client._client = async_client_context
+    db_client._headers.return_value = {"Authorization": "Bearer token"}
+
+    await synthesize_and_post_snapshot_task(run_id, project_id, run_status, db_client)
+
+    posted_urls = [call.args[0] for call in client_in_context.post.call_args_list]
+    assert posted_urls == [
+        f"/projects/{project_id}/project-graph/snapshots",
+        f"/projects/{project_id}/drawing-intelligence/package-analysis/materialize",
+    ]
+    assert client_in_context.post.call_args_list[1].kwargs["json"] == {"run_id": run_id}
+    db_client.update_run_status.assert_called_once_with(run_id, "synthesis_complete")
+
+
+@pytest.mark.asyncio
 async def test_synthesize_tags_evidence_with_active_sheet_revision_and_declares_effective_scope():
     run_id = "RUN-TEST"
     project_id = "PROJECT-TEST"
@@ -262,7 +302,7 @@ async def test_synthesize_tags_evidence_with_active_sheet_revision_and_declares_
 
     await synthesize_and_post_snapshot_task(run_id, project_id, run_status, mock_db_client)
 
-    post_json = mock_client_in_context.post.call_args[1]["json"]
+    post_json = mock_client_in_context.post.call_args_list[0][1]["json"]
     assert post_json["effective_sheet_revision_ids"] == ["REV-S01-B"]
     for ev in post_json["evidence"]:
         assert ev["revision_id"] == "REV-S01-B"
@@ -324,7 +364,7 @@ async def test_synthesize_quarantines_dangling_evidence_reference_instead_of_fab
     with patch.object(synthesis_task_module, "synthesize_project_graph", side_effect=_synthesize_with_dangling_reference):
         await synthesize_and_post_snapshot_task(run_id, project_id, run_status, mock_db_client)
 
-    post_json = mock_client_in_context.post.call_args[1]["json"]
+    post_json = mock_client_in_context.post.call_args_list[0][1]["json"]
     evidence_ids = {ev["evidence_id"] for ev in post_json["evidence"]}
     assert "EV-DOES-NOT-EXIST" not in evidence_ids
     assert all(ne["evidence_id"] != "EV-DOES-NOT-EXIST" for ne in post_json["node_evidence"])
@@ -420,7 +460,7 @@ async def test_synthesize_records_typed_observation_audit_signal_without_blockin
     # Not blocked: synthesis still completed successfully.
     mock_db_client.update_run_status.assert_called_once_with(run_id, "synthesis_complete")
 
-    post_json = mock_client_in_context.post.call_args[1]["json"]
+    post_json = mock_client_in_context.post.call_args_list[0][1]["json"]
     audit = post_json["generation_metadata"]["typed_observation_audit"]
     assert audit["mode"] == "legacy_compatibility"
     assert audit["sheets_passed"] == 1
@@ -477,7 +517,7 @@ async def test_strict_typed_dem_mode_quarantines_nodes_from_a_failing_sheet(monk
 
     mock_db_client.update_run_status.assert_called_once_with(run_id, "synthesis_complete")
 
-    post_json = mock_client_in_context.post.call_args[1]["json"]
+    post_json = mock_client_in_context.post.call_args_list[0][1]["json"]
     audit = post_json["generation_metadata"]["typed_observation_audit"]
     assert audit["mode"] == "strict"
     assert audit["sheets_failed"] == 1

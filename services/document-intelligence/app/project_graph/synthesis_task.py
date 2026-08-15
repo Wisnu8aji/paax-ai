@@ -423,6 +423,23 @@ async def synthesize_and_post_snapshot_task(
                     r.text[:4000],
                 )
             r.raise_for_status()
+
+            # The workspace navigator reads the DB-owned canonical package
+            # index, not the project-graph snapshot.  A run is only complete
+            # when that index has been written for the same project/run scope.
+            materialize = await client.post(
+                f"/projects/{project_id}/drawing-intelligence/package-analysis/materialize",
+                json={"run_id": run_id},
+                headers=headers,
+            )
+            if materialize.is_error:
+                logger.error(
+                    "Canonical package index materialization rejected for run %s: HTTP %s %s",
+                    run_id,
+                    materialize.status_code,
+                    materialize.text[:4000],
+                )
+            materialize.raise_for_status()
             
         await db_client.update_run_status(run_id, "synthesis_complete")
     except Exception as e:
