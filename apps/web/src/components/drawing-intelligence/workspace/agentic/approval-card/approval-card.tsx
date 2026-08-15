@@ -15,6 +15,7 @@
 
 import { useState } from 'react'
 import type { ApprovalItem } from '../agent-execution-console/event-store'
+import { redactUiText } from '../trace/ui-redaction'
 
 export interface ApprovalCardProps {
   card: ApprovalItem
@@ -108,8 +109,8 @@ export function ApprovalCard({ card, onRespond, canApprove = true, gatewayConnec
       </div>
 
       {/* Reason + context */}
-      <div style={{ fontSize: 11.5, color: 'var(--di-text)' }}>{card.reason}</div>
-      {card.context && <div style={{ fontSize: 10, color: 'var(--di-text2)', lineHeight: 1.45 }}>{card.context}</div>}
+      <div style={{ fontSize: 11.5, color: 'var(--di-text)' }}>{redactUiText(card.reason)}</div>
+      {card.context && <div style={{ fontSize: 10, color: 'var(--di-text2)', lineHeight: 1.45 }}>{redactUiText(card.context)}</div>}
 
       {/* Refs sebagai chip referensi */}
       {card.refs.length > 0 && (
@@ -121,7 +122,7 @@ export function ApprovalCard({ card, onRespond, canApprove = true, gatewayConnec
               className="di-mono"
               style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'var(--di-panel2)', border: '1px solid var(--di-border)', color: 'var(--di-text2)' }}
             >
-              {ref}
+              {redactUiText(ref)}
             </span>
           ))}
         </div>
@@ -129,7 +130,7 @@ export function ApprovalCard({ card, onRespond, canApprove = true, gatewayConnec
 
       {resolved && (
         <div data-testid="approval-resolved" style={{ fontSize: 10, color: 'var(--di-text2)', display: 'flex', flexDirection: 'column', gap: 3, borderTop: '1px dashed var(--di-border)', paddingTop: 5 }}>
-          {card.rationale && <div style={{ lineHeight: 1.45 }}>Rationale: {card.rationale}</div>}
+          {card.rationale && <div style={{ lineHeight: 1.45 }}>Rationale: {redactUiText(card.rationale)}</div>}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {card.resolvedBy && <span>Resolved by: <strong>{card.resolvedBy}</strong></span>}
             {card.resolvedAt && <span className="di-mono">{new Date(card.resolvedAt).toISOString().replace('T', ' ').slice(0, 19)} UTC</span>}

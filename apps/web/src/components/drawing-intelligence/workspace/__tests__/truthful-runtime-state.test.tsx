@@ -395,7 +395,7 @@ describe('truthful-runtime-state: web_trace live status gate (Acceptance Gate 2)
       httpUrl: '/api/paax/events',
     });
     const deliver = (client as any).deliver.bind(client);
-    const validLiveEv = f2Ev(1, 'task.started', { task_id: 'T01', payload_summary: { status: 'running' } });
+    const validLiveEv = f2Ev(1, 'task.started', { run_id: 'paax:run:test-live', task_id: 'T01', payload_summary: { status: 'running' } });
 
     deliver(validLiveEv);
 
@@ -413,7 +413,7 @@ describe('truthful-runtime-state: web_trace live status gate (Acceptance Gate 2)
       httpUrl: '/api/paax/events',
     });
     const deliver = (client as any).deliver.bind(client);
-    const syntheticFrame = f2Ev(1, 'task.started', { task_id: 'T01', payload_summary: { synthetic: true, notProduction: true } });
+    const syntheticFrame = f2Ev(1, 'task.started', { run_id: 'paax:run:test-live-reject', task_id: 'T01', payload_summary: { synthetic: true, notProduction: true } });
 
     deliver(syntheticFrame);
 
