@@ -1,6 +1,7 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowUp,
   AudioLines,
@@ -86,6 +87,7 @@ import {
   getDefaultCommandModelSettings,
 } from '@/components/command-room/command-room-ui';
 import { buildRabContextPack } from '@/lib/ai/project-context';
+import { CommandRoomWorkSurface } from '@/components/command-room/command-room-work';
 import type { CommandRoomConnector } from '@/app/api/command-room/chat/connector-permissions';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -174,10 +176,21 @@ function OrangeSpinner() {
 }
 
 export default function CommandRoomPage() {
+  return (
+    <Suspense fallback={null}>
+      <CommandRoomContent />
+    </Suspense>
+  );
+}
+
+function CommandRoomContent() {
   const { openSettings } = useShell();
   const { projects, loading: projectsLoading, error: projectsError, backend, createProject } = useProjects();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [tab, setTab] = useState<SideTab>('home');
+  const [roomMode, setRoomMode] = useState<'chat' | 'work'>('chat');
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [filterMode, setFilterMode] = useState<FilterMode>('recent');
@@ -561,6 +574,9 @@ export default function CommandRoomPage() {
     return inside.length > 0 ? inside.map((c) => c.updatedAt).sort().reverse()[0] : project.updatedAt;
   };
   const openProject = openProjectId ? projects.find((project) => project.id === openProjectId) ?? null : null;
+  const workProjectId = searchParams.get('projectId') ?? openProjectId;
+  const workRunId = searchParams.get('runId');
+  const workProjectName = projectName(workProjectId) ?? 'Active project';
 
   const convRow = (c: ChatConversation) => (
     <div
@@ -1330,8 +1346,42 @@ export default function CommandRoomPage() {
 
       {/* ══ AREA UTAMA ══ */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        <div
+          role="tablist"
+          aria-label="Command Room mode"
+          style={{ alignSelf: 'center', display: 'flex', gap: 2, padding: 3, margin: '8px 0 0', borderRadius: 999, background: 'var(--cr-panel2)', zIndex: 25 }}
+        >
+          {(['chat', 'work'] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              role="tab"
+              data-testid={`command-room-mode-${mode}`}
+              aria-selected={roomMode === mode}
+              onClick={() => setRoomMode(mode)}
+              style={{ minWidth: 92, height: 30, padding: '0 18px', border: 'none', borderRadius: 999, background: roomMode === mode ? 'var(--cr-elev)' : 'transparent', color: roomMode === mode ? 'var(--cr-text)' : 'var(--cr-text3)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', transition: 'background .18s var(--cr-ease), color .18s var(--cr-ease)' }}
+            >
+              {mode === 'chat' ? 'Chat' : 'Work'}
+            </button>
+          ))}
+        </div>
+
+        {roomMode === 'work' ? (
+          <CommandRoomWorkSurface
+            projectId={workProjectId}
+            projectName={workProjectName}
+            initialRunId={workRunId}
+            onOpenDrawing={() => {
+              const params = new URLSearchParams();
+              if (workProjectId) params.set('projectId', workProjectId);
+              if (workRunId) params.set('runId', workRunId);
+              router.push(`/drawing-intelligence${params.toString() ? `?${params.toString()}` : ''}`);
+            }}
+          />
+        ) : (
+          <>
         {note && (
-          <div className="pax-fade" style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', zIndex: 50, background: 'var(--cr-panel2)', border: 'none', borderRadius: 11, padding: '8px 16px', fontSize: 12, color: 'var(--cr-text)', boxShadow: '0 14px 34px rgba(0,0,0,0.4)' }}>
+          <div className="pax-fade" style={{ position: 'absolute', top: 54, left: '50%', transform: 'translateX(-50%)', zIndex: 50, background: 'var(--cr-panel2)', border: 'none', borderRadius: 11, padding: '8px 16px', fontSize: 12, color: 'var(--cr-text)', boxShadow: '0 14px 34px rgba(0,0,0,0.4)' }}>
             {note}
           </div>
         )}
@@ -1692,6 +1742,8 @@ export default function CommandRoomPage() {
               {composer}
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
 
