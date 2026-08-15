@@ -5,7 +5,9 @@ synthesize_and_post_snapshot_task) end to end, producing real page/snapshot
 state -- not just marking a job "completed" without doing anything."""
 from __future__ import annotations
 
+import asyncio
 import json
+import time
 from unittest.mock import AsyncMock, MagicMock
 
 import httpx
@@ -57,6 +59,11 @@ class _FakeArtifactStore:
 
     def get(self, key: str) -> bytes:
         return self.objects[key]
+
+    def put(self, namespace: str, content: bytes, **kwargs) -> str:
+        key = f"{namespace}/stored.json"
+        self.objects[key] = content
+        return key
 
 
 class _FakeRuntimePublisher:
@@ -125,6 +132,9 @@ async def test_dem_extract_publishes_real_model_lifecycle_events():
     assert event_types[0] == "run.started"
     assert "agent.started" in event_types
     assert "subagent.started" in event_types
+    assert "task.progress" in event_types
+    assert "tool.started" in event_types
+    assert "tool.completed" in event_types
     assert "task.completed" in event_types
     assert event_types[-1] == "agent.completed"
 
@@ -157,7 +167,51 @@ async def test_dem_synthesize_handler_produces_real_snapshot_post():
     handlers = DemJobHandlers(artifact_store=_FakeArtifactStore({}), db_client=mock_db_client)
     await handlers.handle_dem_synthesize({"run_id": "run-1", "project_id": "PRJ-001"})
 
-    mock_client_in_context.post.assert_called_once()
-    posted_url = mock_client_in_context.post.call_args[0][0]
+    assert mock_client_in_context.post.call_count == 2
+    posted_url = mock_client_in_context.post.call_args_list[0][0][0]
     assert posted_url == "/projects/PRJ-001/project-graph/snapshots"
     mock_db_client.update_run_status.assert_called_once_with("run-1", "synthesis_complete")
+
+
+@pytest.mark.asyncio
+async def test_dem_synthesize_keeps_event_loop_available_during_package_analysis(monkeypatch):
+    """Large synchronous package analysis must not starve the durable heartbeat."""
+    heartbeat_tick = asyncio.Event()
+
+    class BlockingAnalysis:
+        work_items = []
+
+        def model_dump_json(self, **kwargs) -> str:
+            return "{}"
+
+    analysis_observed_heartbeat = {"value": False}
+
+    def blocking_analyze(*args, **kwargs):
+        time.sleep(0.08)
+        analysis_observed_heartbeat["value"] = heartbeat_tick.is_set()
+        return BlockingAnalysis()
+
+    async def no_op_synthesis(*args, **kwargs):
+        return None
+
+    async def tick_heartbeat():
+        await asyncio.sleep(0.01)
+        heartbeat_tick.set()
+
+    monkeypatch.setattr("app.drawing_intelligence.pipeline.analyze_drawing_package", blocking_analyze)
+    monkeypatch.setattr("app.project_graph.synthesis_task.synthesize_and_post_snapshot_task", no_op_synthesis)
+
+    db_client = MagicMock(spec=DemDbClient)
+    db_client.get_run_status = AsyncMock(side_effect=[
+        {"pages": [{"page_index": 0, "status": "complete", "result": _sheet()}]},
+        {"status": "synthesis_complete"},
+    ])
+    db_client.get_run = AsyncMock(return_value={"file_name": "drawing.pdf", "artifact_key": "runs/DOC-1/source.pdf"})
+    artifact_store = _FakeArtifactStore({"runs/DOC-1/source.pdf": _pdf_bytes(1)})
+    handlers = DemJobHandlers(artifact_store=artifact_store, db_client=db_client)
+
+    heartbeat = asyncio.create_task(tick_heartbeat())
+    await handlers.handle_dem_synthesize({"run_id": "run-1", "project_id": "PRJ-001"})
+    await heartbeat
+
+    assert analysis_observed_heartbeat["value"] is True

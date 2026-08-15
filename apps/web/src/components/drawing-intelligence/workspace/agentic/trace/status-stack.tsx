@@ -5,19 +5,11 @@
 // Semua item berasal dari event nyata (store.statusStack).
 
 import type { StatusStackItem } from '../agent-execution-console/event-store'
+import { redactUiText, runtimeRoleLabel } from './ui-redaction'
 
 export interface StatusStackProps {
   items: StatusStackItem[]
   limit?: number
-}
-
-const KIND_LABEL: Record<StatusStackItem['kind'], string> = {
-  agent: 'agent',
-  subagent: 'subagent',
-  task: 'task',
-  retry: 'retry',
-  error: 'error',
-  approval: 'approval',
 }
 
 function stateColor(state: StatusStackItem['state']): string {
@@ -46,8 +38,10 @@ export function StatusStack({ items, limit = 12 }: StatusStackProps): React.Reac
           style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10.5, padding: '3px 6px', borderRadius: 5, background: 'var(--di-panel)', border: '1px solid var(--di-border)' }}
         >
           <span aria-hidden style={{ width: 7, height: 7, borderRadius: '50%', background: stateColor(item.state), flexShrink: 0 }} />
-          <span style={{ color: 'var(--di-text3)', flexShrink: 0, minWidth: 62 }}>{KIND_LABEL[item.kind]}</span>
-          <span style={{ color: 'var(--di-text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{item.label}</span>
+          <span style={{ color: 'var(--di-text3)', flexShrink: 0, minWidth: 82 }}>{runtimeRoleLabel(item.kind)}</span>
+          <span style={{ color: 'var(--di-text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+            {redactUiText(item.kind === 'agent' ? 'orchestration runtime' : item.kind === 'subagent' ? 'perception worker' : item.label)}
+          </span>
           {item.taskId && <span style={{ color: 'var(--di-text3)', fontSize: 9.5 }}>{item.taskId}</span>}
         </div>
       ))}

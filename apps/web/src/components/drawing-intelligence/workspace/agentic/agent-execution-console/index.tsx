@@ -15,7 +15,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSyncExternalStore } from 'react';
 import { Activity, Wifi, WifiOff, Database, FlaskConical, RefreshCw, ShieldAlert, Pause, Play, Square } from 'lucide-react';
-import { PaaxRuntimeStore, type PaaxRuntimeState, type TaskUiState, type StatusStackItem, type ApprovalItem } from './event-store';
+import { PaaxRuntimeStore, getLiveTaskId, isRunTerminal, resolveCanonicalTaskId, type PaaxRuntimeState, type TaskUiState, type StatusStackItem, type ApprovalItem } from './event-store';
 import { PaaxEventClient, type TransportStatus } from './ws-client';
 import {
   getRuntimeStore,
@@ -29,6 +29,7 @@ import { TaskRail } from '../task-rail/task-rail';
 import { ReasoningBlock } from '../trace/reasoning-block';
 import { ToolTraceRow } from '../trace/tool-trace-row';
 import { TraceTimeline } from '../trace/trace-timeline';
+import { RawEventLedger } from '../trace/raw-event-ledger';
 import { PaaxArtifactCard } from '../trace/artifact-card';
 import { StatusStack } from '../trace/status-stack';
 import { buildWorkerTreeV2, subagentCounts, type WorkerNodeLite } from '../trace/worker-tree';
@@ -53,6 +54,10 @@ export interface AgentExecutionConsoleProps {
   /** render sebagai overlay abs (pengganti ProcessingOverlay) atau panel. */
   variant?: 'panel' | 'overlay';
   onClose?: () => void;
+  /** Workspace startup state is shown without waiting for a run id. */
+  startupMessage?: string | null;
+  startupError?: string | null;
+  onRetryStart?: () => void;
 }
 
 function transportIcon(status: TransportStatus) {
@@ -80,6 +85,9 @@ export function AgentExecutionConsole({
   userRole = 'estimator',
   variant = 'panel',
   onClose,
+  startupMessage,
+  startupError,
+  onRetryStart,
 }: AgentExecutionConsoleProps): React.ReactElement {
   // Demo path (story/test eksplisit): store + client LOKAL, tidak menyentuh
   // bridge. Live path (tanpa demoEvents): store + client SHARED via
@@ -120,6 +128,17 @@ export function AgentExecutionConsole({
     if (isDemo || !runId) return;
     startRuntimeBridge({ runId, wsUrl, sseUrl, httpUrl });
   }, [runId, refreshKey, isDemo]);
+
+  const liveTaskId = useMemo(() => getLiveTaskId(state), [state.rawEvents, state.tasks]);
+  const runTerminal = isRunTerminal(state);
+  const focusedTaskId = runTerminal ? activeTaskId : (liveTaskId ?? activeTaskId);
+
+  // The console follows the latest live activity automatically. A running task is
+  // the only task that can receive focus; history remains readable in the
+  // transcript but cannot be selected while the run is active.
+  useEffect(() => {
+    if (!runTerminal && liveTaskId) setActiveTaskId(liveTaskId);
+  }, [liveTaskId, runTerminal]);
 
   // Demo path: transport live LOKAL (hanya untuk fixture berlabel).
   useEffect(() => {
@@ -166,10 +185,14 @@ export function AgentExecutionConsole({
     return refs;
   }, [state.trace]);
 
-  const activeReasoning = activeTaskId ? state.reasoningByTask[activeTaskId] : undefined;
-  const activeReasoningGlobal = !activeTaskId ? Object.values(state.reasoningByTask).filter(Boolean).join('\n') : undefined;
+  const activeReasoning = focusedTaskId ? state.reasoningByTask[focusedTaskId] : undefined;
+  const activeReasoningGlobal = !focusedTaskId ? Object.values(state.reasoningByTask).filter(Boolean).join('\n') : undefined;
+  const scopedRawEvents = focusedTaskId && !runTerminal
+    ? state.rawEvents.filter(event => resolveCanonicalTaskId(event.params.task_id ?? '') === focusedTaskId)
+    : state.rawEvents;
 
   const handleSelectTask = (taskId: string) => {
+    if (!runTerminal && liveTaskId !== taskId) return;
     setActiveTaskId(taskId);
     setToolDisclosure(toolView, `task:${taskId}`, true);
   };
@@ -255,6 +278,7 @@ export function AgentExecutionConsole({
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
+          position: 'relative',
         }}
       >
         {/* Header */}
@@ -340,9 +364,40 @@ export function AgentExecutionConsole({
 
         {/* Body */}
         <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'auto' }}>
+          {(!runId || startupError) && (
+            <div
+              data-testid="runtime-startup-state"
+              style={{
+                position: 'absolute',
+                zIndex: 2,
+                top: 92,
+                left: 14,
+                right: 14,
+                padding: '9px 11px',
+                borderRadius: 8,
+                border: `1px solid ${startupError ? 'rgba(239,68,68,0.4)' : 'var(--di-border)'}`,
+                background: 'rgba(15, 23, 42, 0.96)',
+                color: 'var(--di-text2)',
+                fontSize: 11,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <span style={{ color: startupError ? 'var(--di-danger, #ef4444)' : 'var(--di-action, #3b82f6)' }}>
+                {startupError ? 'RUNTIME ERROR' : 'CONNECTING'}
+              </span>
+              <span style={{ flex: 1 }}>{startupError ?? startupMessage ?? 'Menunggu run analisis dari runtime...'}</span>
+              {startupError && onRetryStart && (
+                <button type="button" onClick={onRetryStart} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 5, cursor: 'pointer' }}>
+                  coba lagi
+                </button>
+              )}
+            </div>
+          )}
           {/* Task rail */}
           <div style={{ padding: 12, borderRight: '1px solid var(--di-border)', overflow: 'auto', flexShrink: 0 }}>
-            <TaskRail tasks={state.tasks} activeTaskId={activeTaskId} onSelectTask={handleSelectTask} />
+            <TaskRail tasks={state.tasks} activeTaskId={focusedTaskId} liveTaskId={runTerminal ? null : liveTaskId} onSelectTask={handleSelectTask} />
           </div>
 
           {/* Main trace column */}
@@ -361,11 +416,9 @@ export function AgentExecutionConsole({
             {/* Reasoning block (HANYA reasoning nyata) */}
             {(activeReasoning ?? activeReasoningGlobal) && (
               <div>
-                <div style={{ fontSize: 10, color: 'var(--di-text3)', marginBottom: 4, fontWeight: 700 }}>REASONING {activeTaskId ? `· ${activeTaskId}` : ''}</div>
+                <div style={{ fontSize: 10, color: 'var(--di-text3)', marginBottom: 4, fontWeight: 700 }}>REASONING {focusedTaskId ? `· ${focusedTaskId}` : ''}</div>
                 <ReasoningBlock
                   content={activeReasoning ?? activeReasoningGlobal}
-                  model={state.trace.find(t => t.taskId === activeTaskId)?.model}
-                  provider={state.trace.find(t => t.taskId === activeTaskId)?.provider}
                 />
               </div>
             )}
@@ -424,6 +477,15 @@ export function AgentExecutionConsole({
             <div>
               <div style={{ fontSize: 10, color: 'var(--di-text3)', marginBottom: 4, fontWeight: 700 }}>TIMELINE</div>
               <TraceTimeline items={state.trace} limit={technical ? 300 : 100} />
+            </div>
+
+            {/* Raw event/payload transcript — the operator can inspect the
+                exact persisted event without exposing provider/model fields. */}
+            <div>
+              <div style={{ fontSize: 10, color: 'var(--di-text3)', marginBottom: 4, fontWeight: 700 }}>
+                RAW EVENT LEDGER{focusedTaskId && !runTerminal ? ` · ${focusedTaskId}` : ''}
+              </div>
+              <RawEventLedger events={scopedRawEvents} limit={technical ? 300 : 160} />
             </div>
           </div>
 

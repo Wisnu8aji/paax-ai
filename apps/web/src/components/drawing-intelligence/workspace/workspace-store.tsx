@@ -134,6 +134,8 @@ export interface WorkspaceState {
     log: AnalysisLogEntry[];
     progress: number; // 0..100 progres UI simulasi
     currentMessage: string;
+    /** Startup/runtime failure stays visible in the execution console. */
+    error: string | null;
     config: AnalysisConfig;
     packageIntelligence: PackageIntelligenceSummary | null;
   };
@@ -287,6 +289,7 @@ export function initialWorkspaceState(
       log: [],
       progress: 0,
       currentMessage: '',
+      error: null,
       config: { ...DEFAULT_CONFIG },
       packageIntelligence: null,
     },
@@ -680,6 +683,7 @@ export function WorkspaceProvider({
     (withData) => initialWorkspaceState(withData, { initialRunId, initialMode }),
   );
   const timers = useRef<ReturnType<typeof setInterval>[]>([]);
+  const analysisStartInFlight = useRef(false);
 
   useEffect(() => {
     const list = timers.current;
@@ -940,6 +944,7 @@ export function WorkspaceProvider({
           complete: false,
           progress: 0,
           currentMessage: 'Menyiapkan analisis gambar kerja...',
+          error: null,
         },
       });
 
@@ -947,31 +952,13 @@ export function WorkspaceProvider({
         const {
           triggerSynthesis, fetchDemRunStatus, fetchReviewQueue, fetchQuantityReadiness,
           fetchProjectDemSheets, fetchProjectDemRuns, fetchPackageIntelligence,
-          publishRunStatusEvent,
         } = await import('../drawing-intelligence-api');
-
-        // Publish event status ke relay store hanya saat status berubah
-        // (hemat request, tetap anti-fake: event berasal dari backend nyata).
-        let lastPublishedKey = '';
-        const publishStatus = async (statusData: { status: string; synthesis_status?: string; total_pages?: number }) => {
-          const key = `${statusData.status}|${statusData.synthesis_status ?? ''}`;
-          if (key === lastPublishedKey) return;
-          lastPublishedKey = key;
-          await publishRunStatusEvent({
-            runId,
-            status: statusData.status || 'created',
-            synthesisStatus: statusData.synthesis_status ?? null,
-            totalPages: statusData.total_pages ?? 0,
-            message: statusData.status || '',
-          }).catch(() => false);
-        };
 
         // 1) Tunggu extraction selesai sebelum synthesize — backend menolak
         //    synthesize selama extraction belum selesai (400 "Extraction is
         //    not complete") yang membuat console mati diam-diam.
         const EXTRACTION_DONE = new Set(['dem_complete', 'partially_failed', 'synthesis_failed', 'failed']);
         let statusData = await fetchDemRunStatus(runId);
-        await publishStatus(statusData);
         let runStatus = statusData.status || 'pending';
         let guard = 0;
         while (!EXTRACTION_DONE.has(runStatus) && !statusData.synthesis_status && guard < 60) {
@@ -986,7 +973,6 @@ export function WorkspaceProvider({
           dispatch({ type: 'set-status', message: 'Mengekstrak halaman gambar...' });
           await new Promise((r) => setTimeout(r, 2000));
           statusData = await fetchDemRunStatus(runId);
-          await publishStatus(statusData);
           runStatus = statusData.status || 'pending';
         }
 
@@ -1001,7 +987,6 @@ export function WorkspaceProvider({
         const poll = setInterval(async () => {
           try {
             const statusData = await fetchDemRunStatus(runId);
-            await publishStatus(statusData);
             const synStatus = statusData.synthesis_status || 'pending';
 
             if (synStatus === 'synthesis_in_progress') {
@@ -1111,10 +1096,11 @@ export function WorkspaceProvider({
               dispatch({
                 type: 'analysis',
                 patch: {
-                  running: false,
+                  running: true,
                   complete: false,
                   progress: 100,
                   currentMessage: 'Analisis gagal — lihat status run untuk detail',
+                  error: 'Runtime menandai analisis sebagai gagal. Periksa event dan payload pada konsol.',
                 },
               });
               dispatch({ type: 'set-status', message: 'Analisis gambar gagal' });
@@ -1133,42 +1119,78 @@ export function WorkspaceProvider({
         console.error('Gagal memicu analisis:', err);
         dispatch({
           type: 'analysis',
-          patch: { running: false, currentMessage: err?.message || 'Gagal memulai analisis' },
+          patch: {
+            // Keep the console mounted so the operator can inspect the
+            // transport and raw event ledger instead of losing the failure.
+            running: true,
+            error: err?.message || 'Gagal memulai analisis',
+            currentMessage: err?.message || 'Gagal memulai analisis',
+          },
         });
         dispatch({ type: 'set-status', message: err?.message || 'Gagal memulai analisis' });
       }
     },
     [projectId, dispatch, state.analysis.config.mode]
   );
-  const startAnalysis = useCallback(async () => {
-    // Preserve the URL/upload/retry-selected canonical run. A stale upload
-    // entry must never redirect analysis to an older DEM run.
-    let runId = state.activeRunId ?? state.upload.entries.find(e => e.runId)?.runId;
-    // Fallback: jangan langsung menyerah saat state belum terisi (mis. fetch
-    // projects/runs sempat timeout). Cari run yang masih berjalan / belum
-    // disintesis di backend, lalu resume run itu. Error hanya saat sungguh
-    // tidak ada run sama sekali.
-    if (!runId && projectId) {
+  const startAnalysis = useCallback(() => {
+    // Mount the console first. Run discovery and synthesis are asynchronous;
+    // neither is allowed to hide the only surface where the failure can be
+    // diagnosed.
+    if (analysisStartInFlight.current) return;
+    if (state.analysis.running && !state.analysis.error) return;
+    analysisStartInFlight.current = true;
+    dispatch({
+      type: 'analysis',
+      patch: {
+        running: true,
+        setupOpen: false,
+        complete: false,
+        error: null,
+        progress: 0,
+        currentMessage: 'Menghubungkan ke runtime analisis gambar...',
+      },
+    });
+    dispatch({ type: 'set-status', message: 'Membuka konsol eksekusi analisis...' });
+
+    void (async () => {
       try {
-        const runs = await fetchProjectDemRuns(projectId);
-        const pending = runs.find((r: any) => ['created', 'pages_queued', 'pages_extracting', 'processing', 'uploading', 'dem_complete'].includes(r.status))
-          ?? runs.find((r: any) => r.status === 'synthesis_complete' || r.status === 'completed')
-          ?? null;
-        if (pending) runId = pending.id;
-      } catch (e) {
-        console.error('Gagal memuat runs untuk resume:', e);
+        // Preserve the URL/upload/retry-selected canonical run. A stale upload
+        // entry must never redirect analysis to an older DEM run.
+        let runId = state.activeRunId ?? state.upload.entries.find(e => e.runId)?.runId;
+        // Fallback discovery is deliberately after the synchronous console
+        // mount. A slow project lookup is now visible as a startup state.
+        if (!runId && projectId) {
+          try {
+            const runs = await fetchProjectDemRuns(projectId);
+            const pending = runs.find((r: any) => ['created', 'pages_queued', 'pages_extracting', 'processing', 'uploading', 'dem_complete'].includes(r.status))
+              ?? runs.find((r: any) => r.status === 'synthesis_complete' || r.status === 'completed')
+              ?? null;
+            if (pending) runId = pending.id;
+          } catch (e) {
+            console.error('Gagal memuat runs untuk resume:', e);
+          }
+        }
+        if (!runId) {
+          const message = 'Run analisis belum tersedia. Upload gambar terlebih dahulu atau pilih run aktif.';
+          dispatch({ type: 'analysis', patch: { running: true, error: message, currentMessage: message } });
+          dispatch({ type: 'set-status', message });
+          return;
+        }
+        // Ikat run aktif → startRuntimeBridge (workspace-store) men-subscribe
+        // SSE, Mission Control dan konsol menerima event live dari relay store.
+        dispatch({ type: 'set-active-run', runId });
+        dispatch({ type: 'analysis', patch: { setupOpen: false, error: null, currentMessage: 'Run terhubung; menunggu event runtime...' } });
+        await triggerProjectSynthesis(runId);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Gagal memulai analisis';
+        console.error('Gagal memulai analisis:', err);
+        dispatch({ type: 'analysis', patch: { running: true, error: message, currentMessage: message } });
+        dispatch({ type: 'set-status', message });
+      } finally {
+        analysisStartInFlight.current = false;
       }
-    }
-    if (!runId) {
-      dispatch({ type: 'set-status', message: 'No run ID available for synthesis' });
-      return;
-    }
-    // Ikat run aktif → startRuntimeBridge (workspace-store) men-subscribe SSE,
-    // Mission Control dan konsol menerima event live dari relay store.
-    dispatch({ type: 'set-active-run', runId });
-    dispatch({ type: 'analysis', patch: { setupOpen: false } });
-    triggerProjectSynthesis(runId);
-  }, [projectId, state.upload.entries, state.activeRunId, dispatch, triggerProjectSynthesis]);
+    })();
+  }, [projectId, state.upload.entries, state.activeRunId, state.analysis.running, state.analysis.error, dispatch, triggerProjectSynthesis]);
 
 
   const value = useMemo(

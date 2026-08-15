@@ -4,6 +4,8 @@
 // nyata (payload_summary.delta|text|content|reasoning dari runtime F1).
 // DILARANG menampilkan reasoning sintetis (Owner §0.15, EI §8.3).
 
+import { redactUiText } from './ui-redaction'
+
 export interface ReasoningBlockProps {
   /** Konten reasoning akumulasi per task (dari store.reasoningByTask). */
   content?: string
@@ -16,9 +18,12 @@ export function ReasoningBlock({ content, model, provider, label }: ReasoningBlo
   if (!content || content.trim().length === 0) {
     return null
   }
+  void model
+  void provider
   return (
-    <div
+    <details
       data-testid="reasoning-block"
+      open
       style={{
         margin: '4px 0',
         padding: '8px 10px',
@@ -30,16 +35,10 @@ export function ReasoningBlock({ content, model, provider, label }: ReasoningBlo
         color: 'var(--di-text2)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, fontSize: 10, color: 'var(--di-text3)' }}>
-        <span style={{ fontWeight: 700, color: '#eab308' }}>reasoning</span>
-        {label && <span>{label}</span>}
-        {provider && model && (
-          <span style={{ marginLeft: 'auto', fontFamily: 'var(--di-mono, monospace)' }}>
-            {provider} · {model}
-          </span>
-        )}
-      </div>
-      <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{content}</div>
-    </div>
+      <summary style={{ cursor: 'pointer', color: 'var(--di-text3)', fontSize: 10, fontWeight: 700 }}>
+        THINKING PROCESS{label ? ` · ${redactUiText(label)}` : ''}
+      </summary>
+      <div style={{ marginTop: 6, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{redactUiText(content)}</div>
+    </details>
   )
 }

@@ -146,6 +146,36 @@ describe('/api/paax/events route handler', () => {
     }
   });
 
+  it('GET /api/paax/events menggabungkan journal saat gateway reachable tetapi tertinggal', async () => {
+    const previousJournal = process.env[ENV_KEY];
+    const previousGateway = process.env[GATEWAY_KEY];
+    const directory = mkdtempSync(join(tmpdir(), 'paax-gw-partial-'));
+    const journal = join(directory, 'agent-events.jsonl');
+    const runId = 'gw-partial-run';
+    writeFileSync(journal, journalLine(runId, 0, 'run.started') + '\n' + journalLine(runId, 1, 'tool.started') + '\n');
+    process.env[ENV_KEY] = journal;
+    process.env[GATEWAY_KEY] = 'http://gateway.test';
+    const upstreamOnlyFirst = JSON.parse(journalLine(runId, 0, 'run.started'));
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ events: [upstreamOnlyFirst] }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    try {
+      const response = await GET(new NextRequest(`http://localhost:3000/api/paax/events?run_id=${runId}`));
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body.web_trace).toBe(true);
+      expect(body.events.map((event: { params: { sequence: number } }) => event.params.sequence)).toEqual([0, 1]);
+    } finally {
+      fetchSpy.mockRestore();
+      if (previousJournal === undefined) delete process.env[ENV_KEY];
+      else process.env[ENV_KEY] = previousJournal;
+      if (previousGateway === undefined) delete process.env[GATEWAY_KEY];
+      else process.env[GATEWAY_KEY] = previousGateway;
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it('GET /api/paax/events filter after_sequence berfungsi', async () => {
     const runId = 'paax:run:test-seq';
 

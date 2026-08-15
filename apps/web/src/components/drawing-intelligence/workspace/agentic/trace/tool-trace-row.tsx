@@ -5,6 +5,7 @@
 // di mode technical: payload raw.
 
 import type { TraceItem } from '../agent-execution-console/event-store'
+import { redactUiText, safeUiJson } from './ui-redaction'
 
 export interface ToolTraceRowProps {
   item: TraceItem
@@ -56,14 +57,14 @@ export function ToolTraceRow({ item, technical }: ToolTraceRowProps): React.Reac
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
         <span style={{ color: statusColor(item.type), fontWeight: 700 }}>{typeLabel(item.type)}</span>
-        {tool && <span style={{ color: 'var(--di-text)' }}>{tool}</span>}
-        {status && <span style={{ color: 'var(--di-text3)' }}>{status}</span>}
+        {tool && <span style={{ color: 'var(--di-text)' }}>{redactUiText(tool)}</span>}
+        {status && <span style={{ color: 'var(--di-text3)' }}>{redactUiText(status)}</span>}
         {duration !== undefined && <span style={{ color: 'var(--di-text3)', marginLeft: 'auto' }}>{duration.toFixed(2)}s</span>}
       </div>
 
       {Object.keys(summary).length > 0 && (
         <div style={{ color: 'var(--di-text3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {JSON.stringify(summary)}
+          {safeUiJson(summary)}
         </div>
       )}
 
@@ -71,11 +72,11 @@ export function ToolTraceRow({ item, technical }: ToolTraceRowProps): React.Reac
         <details data-testid="tool-payload-disclosure">
           <summary style={{ cursor: 'pointer', color: 'var(--di-text3)' }}>payload</summary>
           <pre style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 10, color: 'var(--di-text2)' }}>
-            {JSON.stringify(summary, null, 2)}
+            {safeUiJson(summary)}
           </pre>
           {item.payloadRef && (
             <div style={{ marginTop: 3, fontSize: 9.5, color: 'var(--di-text3)' }}>
-              payload_ref: {item.payloadRef}
+              payload_ref: {redactUiText(item.payloadRef)}
             </div>
           )}
         </details>

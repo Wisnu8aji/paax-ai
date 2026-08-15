@@ -15,6 +15,7 @@
 import type { PaaxEventEnvelope } from './event-contract'
 import { validatePaaxEvent } from './event-contract'
 import { scanRealEvents } from './scan'
+import { resolveRunId } from './event-store'
 
 export type TransportKind = 'websocket' | 'sse' | 'http-replay' | 'demo' | 'none'
 
@@ -306,6 +307,12 @@ export class PaaxEventClient {
   }
 
   private deliver(event: PaaxEventEnvelope): void {
+    // The gateway historically emitted both `paax:run:<id>` and raw `<id>`
+    // forms. They are equivalent; a different run is never allowed into this
+    // client, even when it arrives on a shared SSE connection.
+    if (resolveRunId(event.params.run_id) !== resolveRunId(this.options.runId)) {
+      return
+    }
     // R1: scanRealEvents di jalur deliver produksi (anti-fake gate).
     // scan.ts hanya diimpor di test sebelumnya; sekarang di-wire ke
     // production path. Demo events berlabel synthetic:true lolos lewat

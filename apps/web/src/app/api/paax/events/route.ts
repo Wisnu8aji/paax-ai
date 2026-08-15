@@ -110,6 +110,13 @@ export async function GET(request: NextRequest) {
   const gatewayUrl = getGatewayUrl()
   const relayStore = getRelayStore()
 
+  // Hydrate before consulting an optional upstream gateway. A gateway can be
+  // reachable yet still lag behind the worker journal (for example it may
+  // have received only the lifecycle envelope while page-level events are
+  // already durable). The durable journal is the source of truth for replay;
+  // never let a successful-but-partial upstream response hide it.
+  relayStore.hydrateFromJournal(runId)
+
   // 1. Bila PAAX_GATEWAY_URL / PAAX_RUNTIME_URL di-configure, proxy ke upstream
   if (gatewayUrl) {
     const params = new URLSearchParams({ run_id: runId, after_sequence: String(afterSeq) })
@@ -138,6 +145,15 @@ export async function GET(request: NextRequest) {
         .filter(env => env.params.sequence > afterSeq)
         .sort((a, b) => a.params.sequence - b.params.sequence)
 
+      // Merge upstream replay into the same in-memory store as journal
+      // events. This makes the response complete when the gateway is
+      // reachable but behind the worker, and also gives the SSE route a
+      // single deduplicated source on the next connection.
+      relayStore.ingestBatch(runId, normalizedEvents)
+      if (relayStore.hasRun(runId)) {
+        return serveFromRelayStore(relayStore, runId, afterSeq, taskId)
+      }
+
       return NextResponse.json(
         {
           run_id: runId,
@@ -156,7 +172,6 @@ export async function GET(request: NextRequest) {
     } catch (e) {
       // Worker→web relay gagal — jangan tinggalkan browser di seq 0: fallback
       // ke journal durable (PAAX_AGENT_EVENT_JOURNAL) bila punya data run ini.
-      relayStore.hydrateFromJournal(runId)
       if (relayStore.hasRun(runId)) {
         return serveFromRelayStore(relayStore, runId, afterSeq, taskId)
       }
@@ -169,8 +184,6 @@ export async function GET(request: NextRequest) {
 
   // 2. Journal replay/hydration: recovery dari worker→web relay outage sebelum
   //    melayani dari relay store (tidak ada gateway ter-configure).
-  relayStore.hydrateFromJournal(runId)
-
   // 3. Bila lokal relay store memiliki data run ini, respons 200 dengan events nyata
   if (relayStore.hasRun(runId)) {
     return serveFromRelayStore(relayStore, runId, afterSeq, taskId)

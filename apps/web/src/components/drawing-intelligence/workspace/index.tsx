@@ -40,7 +40,7 @@ export interface DrawingIntelligenceWorkspaceV2Props {
 }
 
 function WorkspaceBody({ projectId }: { projectId: string | null }) {
-  const { state, dispatch } = useWorkspace();
+  const { state, dispatch, startAnalysis } = useWorkspace();
   const mode = state.mode;
   useBackendSync(projectId);
 
@@ -81,6 +81,9 @@ function WorkspaceBody({ projectId }: { projectId: string | null }) {
           runId={state.activeRunId}
           projectId={state.projectId}
           userRole="estimator"
+          startupMessage={state.analysis.currentMessage}
+          startupError={state.analysis.error}
+          onRetryStart={startAnalysis}
           onClose={() => dispatch({ type: 'analysis', patch: { running: false, setupOpen: true } })}
         />
       )}

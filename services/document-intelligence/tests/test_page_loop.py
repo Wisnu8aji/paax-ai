@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
+import time
 
 import httpx
 import pytest
@@ -58,6 +60,24 @@ async def test_process_page_success_persists_result():
 
 
 @pytest.mark.asyncio
+async def test_process_page_persists_the_configured_vision_model_alias():
+    """Persisted evidence must identify the model that actually read the page."""
+    transport = _RecordingTransport()
+    db_client = DemDbClient(base_url="http://test-db", internal_key="test-key", transport=transport)
+    page_row = await db_client.create_page("run-1", 0)
+    provider = MockDemAdapter(response=_valid_sheet_dict())
+    provider.model = "mimo-v2.5"
+
+    await process_page(
+        _minimal_pdf_bytes(), 0, page_row["id"],
+        {"id": "run-1", "document_id": "DOC-1", "document_hash": "sha256:x"},
+        provider, db_client, "dem-extraction-v1.0.0",
+    )
+
+    assert transport.pages[page_row["id"]]["result"]["generation"]["model_alias"] == "mimo-v2.5"
+
+
+@pytest.mark.asyncio
 async def test_process_page_permanent_failure_does_not_retry():
     transport = _RecordingTransport()
     db_client = DemDbClient(base_url="http://test-db", internal_key="test-key", transport=transport)
@@ -77,3 +97,80 @@ async def test_process_page_skips_when_already_complete_with_matching_hash():
     transport.pages[page_row["id"]].update({"status": "complete", "input_hash": hashlib.sha256(page_bytes).hexdigest()})
     await process_page(page_bytes, 0, page_row["id"], {"id": "run-1", "document_id": "DOC-1", "document_hash": "sha256:x"}, MockDemAdapter(error=DemProviderError("should not be called", kind="permanent")), db_client, "dem-extraction-v1.0.0", existing_page=transport.pages[page_row["id"]])
     assert transport.pages[page_row["id"]]["status"] == "complete"
+
+
+@pytest.mark.asyncio
+async def test_process_page_keeps_event_loop_available_during_blocking_provider_call():
+    """A slow synchronous provider must not starve the durable-worker heartbeat."""
+    transport = _RecordingTransport()
+    db_client = DemDbClient(base_url="http://test-db", internal_key="test-key", transport=transport)
+    page_row = await db_client.create_page("run-1", 0)
+    heartbeat_tick = asyncio.Event()
+
+    class BlockingProvider(MockDemAdapter):
+        def __init__(self):
+            super().__init__(response=_valid_sheet_dict())
+            self.heartbeat_observed = False
+
+        def extract_page(self, image_bytes, context, prompt_version):
+            time.sleep(0.08)
+            self.heartbeat_observed = heartbeat_tick.is_set()
+            return super().extract_page(image_bytes, context, prompt_version)
+
+    async def tick_heartbeat():
+        await asyncio.sleep(0.01)
+        heartbeat_tick.set()
+
+    provider = BlockingProvider()
+    heartbeat = asyncio.create_task(tick_heartbeat())
+    await process_page(
+        _minimal_pdf_bytes(), 0, page_row["id"],
+        {"id": "run-1", "document_id": "DOC-1", "document_hash": "sha256:x"},
+        provider, db_client, "dem-extraction-v1.0.0",
+    )
+    await heartbeat
+
+    assert provider.heartbeat_observed is True
+
+
+@pytest.mark.asyncio
+async def test_process_page_honors_a_separate_render_semaphore(monkeypatch):
+    """Rendering stays bounded while the vision fan-out can remain at 20."""
+    from app.transcription import page_loop
+
+    transport = _RecordingTransport()
+    db_client = DemDbClient(base_url="http://test-db", internal_key="test-key", transport=transport)
+    page_rows = [await db_client.create_page("run-1", index) for index in range(2)]
+    original_render = page_loop.render_page
+    active = 0
+    peak = 0
+
+    def tracked_render(*args, **kwargs):
+        nonlocal active, peak
+        active += 1
+        peak = max(peak, active)
+        try:
+            time.sleep(0.03)
+            return original_render(*args, **kwargs)
+        finally:
+            active -= 1
+
+    monkeypatch.setattr(page_loop, "render_page", tracked_render)
+    render_semaphore = asyncio.Semaphore(1)
+    import fitz
+    document = fitz.open()
+    document.new_page(width=200, height=100)
+    document.new_page(width=200, height=100)
+    pdf_bytes = document.tobytes()
+    document.close()
+    run = {"id": "run-1", "document_id": "DOC-1", "document_hash": "sha256:x"}
+    await asyncio.gather(*(
+        process_page(
+            pdf_bytes, index, page_rows[index]["id"], run,
+            MockDemAdapter(response=_valid_sheet_dict()), db_client,
+            "dem-extraction-v1.0.0", render_semaphore=render_semaphore,
+        )
+        for index in range(2)
+    ))
+
+    assert peak == 1

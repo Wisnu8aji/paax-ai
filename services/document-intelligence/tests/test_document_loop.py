@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import json
 
 import httpx
 import pytest
 
 from app.transcription.db_client import DemDbClient
-from app.transcription.document_loop import process_document
+from app.transcription.document_loop import MAX_VISION_CONCURRENCY, clamp_vision_concurrency, process_document
 from app.transcription.providers.mock import MockDemAdapter
 
 
@@ -32,6 +33,38 @@ def _pdf(n):
     d=fitz.open()
     for _ in range(n): d.new_page(width=200,height=100)
     return d.tobytes()
+
+
+def test_vision_concurrency_is_hard_capped_at_twenty():
+    assert clamp_vision_concurrency(MAX_VISION_CONCURRENCY) == 20
+    assert clamp_vision_concurrency(64) == 20
+    assert clamp_vision_concurrency(0) == 1
+
+
+@pytest.mark.asyncio
+async def test_process_document_runs_at_most_twenty_page_workers(monkeypatch):
+    transport = _Transport()
+    client = DemDbClient(base_url="http://test", internal_key="x", transport=transport)
+    active = 0
+    peak = 0
+
+    async def fake_process_page(*, page_id, db_client, **kwargs):
+        nonlocal active, peak
+        active += 1
+        peak = max(peak, active)
+        await asyncio.sleep(0.02)
+        await db_client.update_page(page_id, status="complete")
+        active -= 1
+
+    monkeypatch.setattr("app.transcription.document_loop.process_page", fake_process_page)
+    await process_document(
+        _pdf(20), "run-1", "DOC-1", "sha256:x", 20,
+        MockDemAdapter(response=_sheet()), client, "dem-extraction-v1.0.0",
+        concurrency=64,
+    )
+
+    assert peak == MAX_VISION_CONCURRENCY
+    assert transport.run["status"] == "dem_complete"
 
 
 @pytest.mark.asyncio

@@ -11,6 +11,8 @@ import type { TaskUiState } from '../agent-execution-console/event-store'
 export interface TaskRailProps {
   tasks: TaskUiState[]
   activeTaskId?: string | null
+  /** Only the task currently owned by the runtime may be opened live. */
+  liveTaskId?: string | null
   onSelectTask?: (taskId: string) => void
 }
 
@@ -52,7 +54,7 @@ export function completedTaskCount(tasks: TaskUiState[]): number {
   return tasks.filter(t => t.state === 'completed').length
 }
 
-export function TaskRail({ tasks, activeTaskId, onSelectTask }: TaskRailProps): React.ReactElement {
+export function TaskRail({ tasks, activeTaskId, liveTaskId, onSelectTask }: TaskRailProps): React.ReactElement {
   const completed = completedTaskCount(tasks)
   const total = tasks.length
   const failed = tasks.filter(t => t.state === 'failed').length
@@ -77,6 +79,7 @@ export function TaskRail({ tasks, activeTaskId, onSelectTask }: TaskRailProps): 
 
       {tasks.map(t => {
         const active = activeTaskId === t.id
+        const selectable = liveTaskId === t.id
         const pct = progressPercent(t)
         return (
           <button
@@ -84,7 +87,10 @@ export function TaskRail({ tasks, activeTaskId, onSelectTask }: TaskRailProps): 
             type="button"
             data-testid={`task-${t.id}`}
             data-state={t.state}
-            onClick={() => onSelectTask?.(t.id)}
+            data-live={selectable ? 'true' : 'false'}
+            aria-disabled={!selectable}
+            disabled={!selectable}
+            onClick={() => selectable && onSelectTask?.(t.id)}
             style={{
               display: 'flex',
               flexDirection: 'column',
@@ -94,7 +100,8 @@ export function TaskRail({ tasks, activeTaskId, onSelectTask }: TaskRailProps): 
               borderRadius: 8,
               border: `1px solid ${active ? 'var(--di-action, #3b82f6)' : 'var(--di-border)'}`,
               background: active ? 'rgba(59, 130, 246, 0.08)' : 'var(--di-panel)',
-              cursor: 'pointer',
+              cursor: selectable ? 'pointer' : 'not-allowed',
+              opacity: selectable || active ? 1 : 0.72,
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>

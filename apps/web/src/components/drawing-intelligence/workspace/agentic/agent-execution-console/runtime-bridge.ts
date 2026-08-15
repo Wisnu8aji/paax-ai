@@ -15,7 +15,7 @@
 // (demoEvents) tetap eksplisit milik konsol — TIDAK lewat bridge ini.
 
 import { useSyncExternalStore } from 'react'
-import { PaaxRuntimeStore, type PaaxRuntimeState } from './event-store'
+import { PaaxRuntimeStore, resolveRunId, type PaaxRuntimeState } from './event-store'
 import { PaaxEventClient, type CommandName, type TransportStatus } from './ws-client'
 
 export interface RuntimeBridgeOptions {
@@ -95,14 +95,21 @@ export function useRuntimeTransport(): TransportStatus {
  */
 export function startRuntimeBridge(options: RuntimeBridgeOptions): void {
   const runId = options.runId || null
-  if (bridgeState.runId === runId && bridgeState.client) {
+  if (bridgeState.runId && runId && resolveRunId(bridgeState.runId) === resolveRunId(runId) && bridgeState.client) {
     return // sudah ter-bind ke run yang sama
   }
+  const previousRunId = bridgeState.runId ?? store.getState().runId
   stopRuntimeBridge()
 
   if (!runId) {
+    store.resetForRun(null)
     setTransport({ kind: 'none', connected: false, detail: 'idle — menunggu run id', web_trace: false })
     return
+  }
+
+  if (!previousRunId || resolveRunId(previousRunId) !== resolveRunId(runId)) {
+    // Never let a new task/run inherit the previous transcript or task rail.
+    store.resetForRun(runId)
   }
 
   const client = new PaaxEventClient({
@@ -124,7 +131,7 @@ export function startRuntimeBridge(options: RuntimeBridgeOptions): void {
   client.start()
 }
 
-/** Hentikan client gateway (store dipertahankan — replay state tetap ada). */
+/** Hentikan client gateway; the next run binds a fresh session transcript. */
 export function stopRuntimeBridge(): void {
   if (bridgeState.client) {
     bridgeState.client.stop()

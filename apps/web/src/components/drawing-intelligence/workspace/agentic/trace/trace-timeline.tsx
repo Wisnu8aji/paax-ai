@@ -4,6 +4,7 @@
 // Tidak ada item buatan; setiap baris = persisted event (event_id).
 
 import type { TraceItem } from '../agent-execution-console/event-store'
+import { redactUiText, safeUiJson } from './ui-redaction'
 
 export interface TraceTimelineProps {
   items: TraceItem[]
@@ -34,10 +35,10 @@ export function TraceTimeline({ items, limit = 200 }: TraceTimelineProps): React
       {visible.map(item => (
         <div key={item.eventId} style={{ display: 'flex', gap: 6, alignItems: 'baseline', padding: '2px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
           <span style={{ color: 'var(--di-text3)', flexShrink: 0 }}>{shortTime(item.timestamp)}</span>
-          <span style={{ color: eventColor(item.type), flexShrink: 0, minWidth: 90 }}>{item.type}</span>
+          <span style={{ color: eventColor(item.type), flexShrink: 0, minWidth: 90 }}>{redactUiText(item.type)}</span>
           <span style={{ color: 'var(--di-text3)', flexShrink: 0 }}>{item.taskId ?? ''}</span>
           <span style={{ color: 'var(--di-text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-            {item.summary ? JSON.stringify(item.summary) : ''}
+            {item.summary ? safeUiJson(item.summary).replace(/\s+/g, ' ') : ''}
           </span>
         </div>
       ))}

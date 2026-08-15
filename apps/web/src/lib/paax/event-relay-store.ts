@@ -44,8 +44,10 @@ export class PaaxEventRelayStore {
       _replay: true,
     };
 
-    // Dedup event_id sesuai kontrak plan §3.6 (EventStore append-only, dedup event_id).
-    if (existing.some((e) => e.params.event_id === envelope.params.event_id)) {
+    // A v2 sequence is unique within a run. Accepting a second event with the
+    // same sequence would interleave a frontend status frame with the durable
+    // worker frame and make replay nondeterministic.
+    if (existing.some((e) => e.params.event_id === envelope.params.event_id || e.params.sequence === envelope.params.sequence)) {
       return envelope; // idempotent — sudah ada, tidak diduplikasi
     }
 

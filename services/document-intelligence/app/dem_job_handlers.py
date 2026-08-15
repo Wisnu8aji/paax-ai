@@ -10,13 +10,14 @@ not new business logic.
 """
 from __future__ import annotations
 
+import asyncio
 import os
 from typing import Any, Callable
 
 from app.artifact_storage import ArtifactStore, ArtifactUnavailable
 from app.durable_worker_async import PoisonedJobError
 from app.transcription.db_client import DemDbClient
-from app.transcription.document_loop import process_document
+from app.transcription.document_loop import MAX_VISION_CONCURRENCY, process_document
 from app.transcription.providers.base import DemVisionProvider
 from app.runtime_events import RuntimeEventPublisher
 
@@ -118,6 +119,24 @@ class DemJobHandlers:
             payload_summary={"label": "Render Pages & Build Sheet Inventory"},
         )
         await events.emit(
+            "task.progress",
+            task_id="T02",
+            stage="T02",
+            agent_id="paax-agent",
+            provider="opencode-go",
+            model=deepseek_model,
+            payload_summary={"progress": 0, "phase": "page pipeline ready"},
+        )
+        await events.emit(
+            "task.started",
+            task_id="T03",
+            stage="T03",
+            agent_id="paax-agent",
+            provider="opencode-go",
+            model=deepseek_model,
+            payload_summary={"label": "Classify Sheets & Build SPECTRA"},
+        )
+        await events.emit(
             "subagent.started",
             task_id="T03",
             stage="T03",
@@ -127,6 +146,24 @@ class DemJobHandlers:
             model=vision_model,
             payload_summary={"label": "MiMo vision extraction", "parent_agent_id": "paax-agent"},
         )
+
+        async def on_page_event(event_type: str, page_index: int, task_id: str, payload_summary: dict) -> None:
+            # Events describe completed/started operations at the actual page
+            # boundary. The UI projection redacts provider/model names; the
+            # durable audit event keeps them for provenance.
+            is_vision = task_id == "T03"
+            worker_slot = ((page_index % MAX_VISION_CONCURRENCY) + 1) if is_vision else None
+            await events.emit(
+                event_type,
+                task_id=task_id,
+                stage=task_id,
+                agent_id="paax-agent" if not is_vision else "vision-worker",
+                worker_id=f"vision-worker-{worker_slot:02d}" if worker_slot is not None else None,
+                provider="opencode-go",
+                model=vision_model if is_vision else deepseek_model,
+                payload_summary={"page_index": page_index, **payload_summary},
+            )
+
         await process_document(
             pdf_bytes=pdf_bytes,
             run_id=payload["run_id"],
@@ -139,6 +176,10 @@ class DemJobHandlers:
             resume=True,
             project_id=payload.get("project_id"),
             file_name=payload.get("file_name", "unknown.pdf"),
+            # Drawing pages are independent perception units. Keep at most
+            # twenty in flight even if a caller supplies a larger value.
+            concurrency=MAX_VISION_CONCURRENCY,
+            on_page_event=on_page_event,
         )
         status = await self.db_client.get_run_status(str(payload["run_id"]))
         complete_pages = sum(1 for page in status.get("pages", []) if page.get("status") == "complete")
@@ -151,6 +192,15 @@ class DemJobHandlers:
             provider="opencode-go",
             model=vision_model,
             payload_summary={"label": "MiMo vision extraction", "completed_pages": complete_pages},
+        )
+        await events.emit(
+            "task.completed",
+            task_id="T03",
+            stage="T03",
+            agent_id="paax-agent",
+            provider="opencode-go",
+            model=deepseek_model,
+            payload_summary={"completed_pages": complete_pages, "progress": 1},
         )
         await events.emit(
             "task.completed",
@@ -189,6 +239,24 @@ class DemJobHandlers:
         drawing_analysis = None
         drawing_analysis_artifact_key = None
         drawing_analysis_error = None
+        await events.emit(
+            "tool.started",
+            task_id="T10",
+            stage="T10",
+            agent_id="paax-agent",
+            provider="opencode-go",
+            model="deepseek-v4-flash",
+            payload_summary={"tool": "drawing package analysis"},
+        )
+        await events.emit(
+            "task.progress",
+            task_id="T10",
+            stage="T10",
+            agent_id="paax-agent",
+            provider="opencode-go",
+            model="deepseek-v4-flash",
+            payload_summary={"progress": 0.1, "phase": "package evidence analysis"},
+        )
         try:
             run = await self.db_client.get_run(run_id)
             if not isinstance(run, dict):
@@ -201,7 +269,8 @@ class DemJobHandlers:
                     for index, page in enumerate(run_status.get("pages", []))
                     if page.get("status") == "complete" and page.get("result")
                 }
-                drawing_analysis = analyze_drawing_package(
+                drawing_analysis = await asyncio.to_thread(
+                    analyze_drawing_package,
                     pdf_bytes,
                     document_name=run.get("file_name") or payload.get("file_name") or "drawing.pdf",
                     dem_pages_data=dem_pages,
@@ -214,10 +283,32 @@ class DemJobHandlers:
                     content_type="application/json",
                     object_key=f"runs/{run_id}/package-analysis.json",
                 )
+            await events.emit(
+                "tool.completed",
+                task_id="T10",
+                stage="T10",
+                agent_id="paax-agent",
+                provider="opencode-go",
+                model="deepseek-v4-flash",
+                payload_summary={
+                    "tool": "drawing package analysis",
+                    "status": "ok" if drawing_analysis is not None else "skipped",
+                    "work_item_count": len(drawing_analysis.work_items) if drawing_analysis is not None else 0,
+                },
+            )
         except Exception as exc:
             # Package intelligence is additive. Existing DEM→PCKM synthesis is
             # preserved, while the failure is persisted in snapshot metadata.
-                drawing_analysis_error = f"{type(exc).__name__}: {exc}"
+            drawing_analysis_error = f"{type(exc).__name__}: {exc}"
+            await events.emit(
+                "tool.failed",
+                task_id="T10",
+                stage="T10",
+                agent_id="paax-agent",
+                provider="opencode-go",
+                model="deepseek-v4-flash",
+                payload_summary={"tool": "drawing package analysis", "error": type(exc).__name__},
+            )
 
         if drawing_analysis is not None:
             for item in drawing_analysis.work_items:
@@ -260,11 +351,41 @@ class DemJobHandlers:
                         },
                     )
 
-        await synthesize_and_post_snapshot_task(
-            run_id, project_id, run_status, self.db_client,
-            drawing_analysis=drawing_analysis,
-            drawing_analysis_artifact_key=drawing_analysis_artifact_key,
-            drawing_analysis_error=drawing_analysis_error,
+        await events.emit(
+            "tool.started",
+            task_id="T10",
+            stage="T10",
+            agent_id="paax-agent",
+            provider="opencode-go",
+            model="deepseek-v4-flash",
+            payload_summary={"tool": "snapshot synthesis and graph publish"},
+        )
+        try:
+            await synthesize_and_post_snapshot_task(
+                run_id, project_id, run_status, self.db_client,
+                drawing_analysis=drawing_analysis,
+                drawing_analysis_artifact_key=drawing_analysis_artifact_key,
+                drawing_analysis_error=drawing_analysis_error,
+            )
+        except Exception as exc:
+            await events.emit(
+                "tool.failed",
+                task_id="T10",
+                stage="T10",
+                agent_id="paax-agent",
+                provider="opencode-go",
+                model="deepseek-v4-flash",
+                payload_summary={"tool": "snapshot synthesis and graph publish", "error": type(exc).__name__},
+            )
+            raise
+        await events.emit(
+            "tool.completed",
+            task_id="T10",
+            stage="T10",
+            agent_id="paax-agent",
+            provider="opencode-go",
+            model="deepseek-v4-flash",
+            payload_summary={"tool": "snapshot synthesis and graph publish", "status": "ok"},
         )
         try:
             final_status = await self.db_client.get_run_status(str(run_id))

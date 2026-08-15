@@ -521,3 +521,138 @@ def test_stage2_attempt2_uses_larger_budget(monkeypatch):
     assert len(captured_payloads) == 2
     assert captured_payloads[0]["max_tokens"] == 16384, "Attempt 1 must use max_tokens=16384"
     assert captured_payloads[1]["max_tokens"] == 32768, "Attempt 2 must use max_tokens=32768"
+
+
+def test_stage1_retries_truncated_json_with_larger_budget(monkeypatch):
+    """A truncated MiMo response must be retried before the page is failed.
+
+    This guards the live failure where the first vision response ended in an
+    unterminated JSON string.  The external HTTP boundary is faked, while the
+    real adapter must retry Stage 1 at the larger budget and still complete
+    the Stage-2 formatting pass.
+    """
+    stage1_raw = _make_stage1_raw()
+    stage2_result = _make_valid_dem_output()
+    stage1_payloads: list[dict] = []
+
+    def _fake_urlopen(req, timeout=None):
+        payload = json.loads(req.data.decode("utf-8"))
+        has_image = any(
+            isinstance(content, dict) and content.get("type") == "image_url"
+            for message in payload.get("messages", [])
+            for content in (message.get("content") if isinstance(message.get("content"), list) else [])
+        )
+
+        if has_image:
+            stage1_payloads.append(payload)
+            response = (
+                {"choices": [{"message": {"content": '{"sheet_number":"A-01'}, "finish_reason": "length"}]}
+                if len(stage1_payloads) == 1
+                else {"choices": [{"message": {"content": json.dumps(stage1_raw)}, "finish_reason": "stop"}]}
+            )
+        else:
+            response = {"choices": [{"message": {"content": json.dumps(stage2_result)}, "finish_reason": "stop"}]}
+
+        class _Resp:
+            def read(self_inner):
+                return json.dumps(response).encode("utf-8")
+            def __enter__(self_inner): return self_inner
+            def __exit__(self_inner, *args): return False
+
+        return _Resp()
+
+    monkeypatch.setattr("app.transcription.providers.qwen.urllib_request.urlopen", _fake_urlopen)
+    adapter = QwenDemAdapter(
+        api_key="test-key", base_url="https://opencode.ai/zen/go/v1",
+        model="mimo-v2.5", deepseek_model="deepseek-v4-flash",
+    )
+
+    result = adapter.extract_page(b"img", PageContext("D", 3, 4), "v1")
+
+    assert result["completion"]["is_complete"] is True
+    assert [payload["max_tokens"] for payload in stage1_payloads] == [4096, 8192]
+
+
+def test_stage1_retries_invalid_json_even_when_finish_reason_is_stop(monkeypatch):
+    """MiMo can return malformed JSON without declaring `length`; retry it too."""
+    stage1_raw = _make_stage1_raw()
+    stage2_result = _make_valid_dem_output()
+    stage1_payloads: list[dict] = []
+
+    def _fake_urlopen(req, timeout=None):
+        payload = json.loads(req.data.decode("utf-8"))
+        has_image = any(
+            isinstance(content, dict) and content.get("type") == "image_url"
+            for message in payload.get("messages", [])
+            for content in (message.get("content") if isinstance(message.get("content"), list) else [])
+        )
+        if has_image:
+            stage1_payloads.append(payload)
+            response = (
+                {"choices": [{"message": {"content": '{"dimensions": ['}, "finish_reason": "stop"}]}
+                if len(stage1_payloads) == 1
+                else {"choices": [{"message": {"content": json.dumps(stage1_raw)}, "finish_reason": "stop"}]}
+            )
+        else:
+            response = {"choices": [{"message": {"content": json.dumps(stage2_result)}, "finish_reason": "stop"}]}
+
+        class _Resp:
+            def read(self_inner):
+                return json.dumps(response).encode("utf-8")
+            def __enter__(self_inner): return self_inner
+            def __exit__(self_inner, *args): return False
+
+        return _Resp()
+
+    monkeypatch.setattr("app.transcription.providers.qwen.urllib_request.urlopen", _fake_urlopen)
+    adapter = QwenDemAdapter(
+        api_key="test-key", base_url="https://opencode.ai/zen/go/v1",
+        model="mimo-v2.5", deepseek_model="deepseek-v4-flash",
+    )
+
+    result = adapter.extract_page(b"img", PageContext("D", 3, 4), "v1")
+
+    assert result["completion"]["is_complete"] is True
+    assert [payload["max_tokens"] for payload in stage1_payloads] == [4096, 8192]
+
+
+def test_stage1_retries_after_extended_truncation_before_failing(monkeypatch):
+    """Dense sheets get a final larger vision budget before invalidating the page."""
+    stage1_raw = _make_stage1_raw()
+    stage2_result = _make_valid_dem_output()
+    stage1_payloads: list[dict] = []
+
+    def _fake_urlopen(req, timeout=None):
+        payload = json.loads(req.data.decode("utf-8"))
+        has_image = any(
+            isinstance(content, dict) and content.get("type") == "image_url"
+            for message in payload.get("messages", [])
+            for content in (message.get("content") if isinstance(message.get("content"), list) else [])
+        )
+        if has_image:
+            stage1_payloads.append(payload)
+            if len(stage1_payloads) < 3:
+                response = {"choices": [{"message": {"content": '{"truncated":'}, "finish_reason": "length"}]}
+            else:
+                response = {"choices": [{"message": {"content": json.dumps(stage1_raw)}, "finish_reason": "stop"}]}
+        else:
+            response = {"choices": [{"message": {"content": json.dumps(stage2_result)}, "finish_reason": "stop"}]}
+
+        class _Resp:
+            def read(self_inner):
+                return json.dumps(response).encode("utf-8")
+            def __enter__(self_inner): return self_inner
+            def __exit__(self_inner, *args): return False
+
+        return _Resp()
+
+    monkeypatch.setattr("app.transcription.providers.qwen.urllib_request.urlopen", _fake_urlopen)
+    adapter = QwenDemAdapter(
+        api_key="test-key", base_url="https://opencode.ai/zen/go/v1",
+        model="mimo-v2.5", deepseek_model="deepseek-v4-flash",
+    )
+
+    result = adapter.extract_page(b"img", PageContext("D", 3, 4), "v1")
+
+    assert result["completion"]["is_complete"] is True
+    assert [payload["max_tokens"] for payload in stage1_payloads] == [4096, 8192, 16384]

@@ -257,6 +257,41 @@ function insertSubagent(nodes: SubagentNode[], node: SubagentNode): SubagentNode
   return [...nodes]
 }
 
+function traceItemFromEvent(event: PaaxEventEnvelope): TraceItem {
+  const p = event.params
+  return {
+    eventId: p.event_id,
+    sequence: p.sequence,
+    timestamp: p.timestamp,
+    type: p.type,
+    taskId: p.task_id,
+    agentId: p.agent_id,
+    workerId: p.worker_id,
+    provider: p.provider,
+    model: p.model,
+    summary: p.payload_summary,
+    payloadRef: p.payload_ref,
+    stage: p.stage,
+    redactionState: p.redaction_state,
+  }
+}
+
+function traceOrder(a: TraceItem, b: TraceItem): number {
+  if (a.sequence !== b.sequence) return a.sequence - b.sequence
+  const time = a.timestamp.localeCompare(b.timestamp)
+  return time !== 0 ? time : a.eventId.localeCompare(b.eventId)
+}
+
+function appendTraceItem(state: PaaxRuntimeState, event: PaaxEventEnvelope): PaaxRuntimeState {
+  if (state.trace.some(item => item.eventId === event.params.event_id)) return state
+  return {
+    ...state,
+    // Keep the transcript in runtime order even when SSE and replay frames
+    // arrive in different batches.
+    trace: [...state.trace, traceItemFromEvent(event)].sort(traceOrder),
+  }
+}
+
 /**
  * Reducer murni: terapkan satu event v2 ke runtime state. Semua transisi
  * berasal dari event nyata — tidak ada simulasi/timer.
@@ -575,7 +610,11 @@ export function reduceEvent(state: PaaxRuntimeState, event: PaaxEventEnvelope): 
       break
   }
 
-  return next
+  // Lifecycle, reasoning and approval events are transcript material too.
+  // The specialized branches above update their projections; this final
+  // append keeps the raw event visible in the sequence timeline without
+  // inventing a second event.
+  return appendTraceItem(next, event)
 }
 
 function updateStackState(
@@ -590,14 +629,13 @@ function updateStackState(
 
 /**
  * Rebuild penuh runtime state dari daftar event (dipakai replay/reconnect).
- * Deterministik; urutan = sequence asc per task (fix ordering v1).
+ * Deterministik; urutan = global sequence/timestamp (runtime transcript order).
  */
 export function buildStateFromEvents(events: readonly PaaxEventEnvelope[]): PaaxRuntimeState {
   const sorted = [...events].sort((a, b) => {
-    const ta = a.params.task_id ?? ''
-    const tb = b.params.task_id ?? ''
-    if (ta !== tb) return ta < tb ? -1 : 1
-    return a.params.sequence - b.params.sequence
+    if (a.params.sequence !== b.params.sequence) return a.params.sequence - b.params.sequence
+    const timestamp = a.params.timestamp.localeCompare(b.params.timestamp)
+    return timestamp !== 0 ? timestamp : a.params.event_id.localeCompare(b.params.event_id)
   })
   let state: PaaxRuntimeState = { ...EMPTY_RUNTIME_STATE }
   for (const e of sorted) {
@@ -606,9 +644,69 @@ export function buildStateFromEvents(events: readonly PaaxEventEnvelope[]): Paax
   return state
 }
 
+const LIVE_TASK_TYPES = new Set([
+  'task.started',
+  'task.progress',
+  'task.waiting_tool',
+  'task.waiting_subagent',
+  'task.waiting_approval',
+])
+
+const TERMINAL_TASK_TYPES = new Set(['task.completed', 'task.failed', 'task.cancelled'])
+const TERMINAL_RUN_TYPES = new Set(['run.completed', 'run.failed', 'run.stopped'])
+
+/** Current task derived from the latest task lifecycle event, never a timer. */
+export function getLiveTaskId(state: PaaxRuntimeState): string | null {
+  const latest = new Map<string, { sequence: number; timestamp: string; live: boolean }>()
+  const events = [...state.rawEvents].sort((a, b) => a.params.sequence - b.params.sequence)
+  for (const event of events) {
+    const id = event.params.task_id
+    if (!id) continue
+    const canonicalId = resolveCanonicalTaskId(id)
+    if (LIVE_TASK_TYPES.has(event.params.type)) {
+      latest.set(canonicalId, { sequence: event.params.sequence, timestamp: event.params.timestamp, live: true })
+    } else if (TERMINAL_TASK_TYPES.has(event.params.type)) {
+      latest.set(canonicalId, { sequence: event.params.sequence, timestamp: event.params.timestamp, live: false })
+    }
+  }
+
+  const candidates = state.tasks
+    .filter(task => ['queued', 'running', 'waiting_tool', 'waiting_subagent', 'waiting_approval', 'paused'].includes(task.state))
+    .map(task => ({ task, event: latest.get(resolveCanonicalTaskId(task.id)) }))
+    .filter((entry): entry is { task: TaskUiState; event: { sequence: number; timestamp: string; live: boolean } } => Boolean(entry.event?.live))
+    .sort((a, b) => {
+      if (a.event.sequence !== b.event.sequence) return a.event.sequence - b.event.sequence
+      return a.event.timestamp.localeCompare(b.event.timestamp)
+    })
+  return candidates.at(-1)?.task.id ?? null
+}
+
+export function isRunTerminal(state: PaaxRuntimeState): boolean {
+  const latestRunEvent = [...state.rawEvents]
+    .filter(event => event.params.type.startsWith('run.'))
+    .sort((a, b) => a.params.sequence - b.params.sequence)
+    .at(-1)
+  return latestRunEvent ? TERMINAL_RUN_TYPES.has(latestRunEvent.params.type) : false
+}
+
+function cloneEmptyState(runId: string | null = null): PaaxRuntimeState {
+  return {
+    ...EMPTY_RUNTIME_STATE,
+    runId,
+    tasks: EMPTY_RUNTIME_STATE.tasks.map(task => ({ ...task })),
+    trace: [],
+    rawEvents: [],
+    reasoningByTask: {},
+    subagents: [],
+    subagentByTask: {},
+    statusStack: [],
+    approvals: [],
+  }
+}
+
 /** Class wrapper dengan subscribe (dipakai komponen React via useSyncExternalStore). */
 export class PaaxRuntimeStore {
-  private state: PaaxRuntimeState = { ...EMPTY_RUNTIME_STATE }
+  private state: PaaxRuntimeState = cloneEmptyState()
   private listeners = new Set<() => void>()
 
   getState(): PaaxRuntimeState {
@@ -617,6 +715,9 @@ export class PaaxRuntimeStore {
 
   ingest(event: PaaxEventEnvelope): void {
     const prev = this.state
+    if (prev.runId && resolveRunId(prev.runId) !== resolveRunId(event.params.run_id)) {
+      return
+    }
     if (prev.rawEvents.some(e => e.params.event_id === event.params.event_id)) {
       return // dedup by event_id (rawEvents = log mentah lengkap)
     }
@@ -626,6 +727,11 @@ export class PaaxRuntimeStore {
 
   rebuild(events: readonly PaaxEventEnvelope[]): void {
     this.state = buildStateFromEvents(events)
+    this.notify()
+  }
+
+  resetForRun(runId: string | null): void {
+    this.state = cloneEmptyState(runId)
     this.notify()
   }
 
@@ -644,4 +750,9 @@ export class PaaxRuntimeStore {
       listener()
     }
   }
+}
+
+/** Accept both gateway `paax:run:<id>` and legacy raw `<id>` identifiers. */
+export function resolveRunId(runId: string): string {
+  return runId.replace(/^paax:run:/, '')
 }

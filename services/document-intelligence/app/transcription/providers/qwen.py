@@ -415,64 +415,98 @@ class QwenDemAdapter:
     # ------------------------------------------------------------------
 
     def _stage1_vision(self, image_bytes: bytes, page_context: PageContext) -> dict:
-        """Call mimo-v2.5 with image + simple schema. Returns raw extracted dict."""
+        """Call MiMo with the simple schema, retrying malformed output twice.
+
+        A vision response can be truncated despite requesting a strict JSON
+        schema.  Do not fail the page immediately in that case: retry at
+        progressively larger token budgets, while preserving the existing fail-closed
+        behavior for transport/provider errors.
+        """
         image_b64 = base64.b64encode(image_bytes).decode("ascii")
         url = f"{self.base_url.rstrip('/')}/chat/completions"
-        payload = {
-            "model": self.model,
-            "max_tokens": 4096,
-            "response_format": {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": "dem_raw_extraction",
-                    "strict": True,
-                    "schema": _STAGE1_SIMPLE_SCHEMA,
-                },
-            },
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": _STAGE1_INSTRUCTIONS,
-                        },
-                        {
-                            "type": "text",
-                            "text": (
-                                f"Halaman ke-{page_context.page_number} "
-                                f"(index {page_context.page_index}), "
-                                f"dokumen {page_context.document_id}."
-                            ),
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/png;base64,{image_b64}"},
-                        },
-                    ],
-                }
-            ],
-        }
-        body = _http_post(url, payload, self.api_key, _STAGE1_TIMEOUT_SECONDS, "Stage1[mimo]")
-        content = _extract_content_str(body, "Stage1[mimo]")
-        try:
-            result = json.loads(content)
-        except json.JSONDecodeError as exc:
-            raise DemProviderError(
-                f"Stage1[mimo] response not valid JSON: {exc}", kind="invalid_output"
-            ) from exc
-        if not isinstance(result, dict):
-            raise DemProviderError(
-                "Stage1[mimo] response JSON is not an object", kind="invalid_output"
-            )
-        logger.info(
-            "Stage1[mimo] OK — sheet=%r texts=%d dims=%d materials=%d",
-            result.get("sheet_number"),
-            len(result.get("texts", [])),
-            len(result.get("dimensions", [])),
-            len(result.get("materials", [])),
+        attempts = (
+            (4096, "Stage1[mimo][attempt1]"),
+            (8192, "Stage1[mimo][attempt2-extended]"),
+            (16384, "Stage1[mimo][attempt3-final]"),
         )
-        return result
+        last_error: DemProviderError | None = None
+
+        for max_tokens, attempt_label in attempts:
+            payload = {
+                "model": self.model,
+                "max_tokens": max_tokens,
+                "response_format": {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "dem_raw_extraction",
+                        "strict": True,
+                        "schema": _STAGE1_SIMPLE_SCHEMA,
+                    },
+                },
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": _STAGE1_INSTRUCTIONS,
+                            },
+                            {
+                                "type": "text",
+                                "text": (
+                                    f"Halaman ke-{page_context.page_number} "
+                                    f"(index {page_context.page_index}), "
+                                    f"dokumen {page_context.document_id}."
+                                ),
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/png;base64,{image_b64}"},
+                            },
+                        ],
+                    }
+                ],
+            }
+            body = _http_post(url, payload, self.api_key, _STAGE1_TIMEOUT_SECONDS, attempt_label)
+            finish_reason = _extract_finish_reason(body)
+            content = _extract_content_str(body, attempt_label)
+            if finish_reason == "length":
+                last_error = DemProviderError(
+                    f"{attempt_label} truncated (finish_reason=length, max_tokens={max_tokens})",
+                    kind="invalid_output",
+                )
+                logger.warning("%s truncated; retrying at a larger budget when available", attempt_label)
+                continue
+            try:
+                result = json.loads(content)
+            except json.JSONDecodeError as exc:
+                last_error = DemProviderError(
+                    f"{attempt_label} response not valid JSON (finish_reason={finish_reason!r}): {exc}",
+                    kind="invalid_output",
+                )
+                logger.warning("%s response not valid JSON; retrying at a larger budget when available", attempt_label)
+                continue
+            if not isinstance(result, dict):
+                last_error = DemProviderError(
+                    f"{attempt_label} response JSON is not an object (finish_reason={finish_reason!r})",
+                    kind="invalid_output",
+                )
+                logger.warning("%s response JSON is not an object; retrying at a larger budget when available", attempt_label)
+                continue
+            logger.info(
+                "%s OK (finish_reason=%r, max_tokens=%d) — sheet=%r texts=%d dims=%d materials=%d",
+                attempt_label,
+                finish_reason,
+                max_tokens,
+                result.get("sheet_number"),
+                len(result.get("texts", [])),
+                len(result.get("dimensions", [])),
+                len(result.get("materials", [])),
+            )
+            return result
+
+        assert last_error is not None
+        raise last_error
 
     # ------------------------------------------------------------------
     # Stage 2: formatting (deepseek-v4-flash, text-only)
