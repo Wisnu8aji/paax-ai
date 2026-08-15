@@ -1,6 +1,6 @@
 """
 Ekstraktor harga satuan Surakarta dari RAB PLHUT Kankemenag Surakarta 2024
-(sheet "HARGA BAHAN") -> G:/paax-data/harga-satuan/surakarta.json
+(sheet "HARGA BAHAN") -> D:/paax-data/harga-satuan/surakarta.json
 (format identik data/harga-satuan/semarang.json; loader menemukan otomatis
 lewat PAAX_DATA_DIR).
 
@@ -19,7 +19,7 @@ from pathlib import Path
 import pandas as pd
 
 DEFAULT_XLSX = r"C:\Users\Nothing\Downloads\rab gedung plhut surakarta ALFA.xlsx"
-DEFAULT_OUT = r"G:\paax-data\harga-satuan\surakarta.json"
+DEFAULT_OUT = r"D:\paax-data\harga-satuan\surakarta.json"
 
 # Header seksi pada sheet -> kategori + prefiks kode
 SECTIONS = {

@@ -78,9 +78,9 @@ AI_FEATURES = list(FEATURE_PRODUCT_MAPPING.keys())
 
 
 def load_api_key() -> str:
-    env_path = pathlib.Path(r"G:\paax-ai-main\.env.local")
+    env_path = pathlib.Path(r"D:\paax-ai-main\.env.local")
     if not env_path.exists():
-        raise RuntimeError("G:\\paax-ai-main\\.env.local missing")
+        raise RuntimeError("D:\\paax-ai-main\\.env.local missing")
     
     text = env_path.read_text(encoding="utf-8")
     for line in text.splitlines():

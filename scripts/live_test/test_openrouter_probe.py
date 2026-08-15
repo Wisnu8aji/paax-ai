@@ -4,7 +4,7 @@ import os
 import pathlib
 
 def test_probe():
-    env_path = pathlib.Path(r'G:\paax-ai-main\.env.local')
+    env_path = pathlib.Path(r'D:\paax-ai-main\.env.local')
     if not env_path.exists():
         print("ERROR: .env.local does not exist!")
         return

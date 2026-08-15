@@ -352,7 +352,7 @@ def main() -> int:
     args = parser.parse_args()
 
     items = build_golden_set(args.pages)
-    out_path = args.out or (Path(r"G:\PAAX-Orchestration\00_projects\2026-08-04-perbaikan-blur-quantities\04_execution\01_orion-f2\artifacts\k0_golden_set.json"))
+    out_path = args.out or (Path(r"D:\PAAX-Orchestration\00_projects\2026-08-04-perbaikan-blur-quantities\04_execution\01_orion-f2\artifacts\k0_golden_set.json"))
     payload = {
         "schema": "paax.quantities.k0-golden.v1",
         "validation": "engine-only deterministic (0% AI)",

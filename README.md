@@ -145,7 +145,7 @@ pnpm --filter @paax/web test
 Data di `data/` bersifat **ILUSTRATIF** untuk verifikasi engine. Sebelum
 produksi, ganti dengan koefisien AHSP resmi (Permen PUPR No. 8/2023 + SE DJBK)
 dan harga satuan SHSD daerah/harga pasar resmi. Katalog AHSP lengkap
-(2.542 item) ada di luar repo (`G:\paax-data`, via env `PAAX_DATA_DIR`).
+(2.542 item) ada di luar repo (`D:\paax-data`, via env `PAAX_DATA_DIR`).
 
 ## Kontribusi
 

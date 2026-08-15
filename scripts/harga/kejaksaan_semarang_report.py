@@ -25,7 +25,7 @@ from scripts.harga.extract_harga import (
 
 
 SOURCE_DEFAULT = Path(r"G:\AHSP\KEJAKSAAN.xlsx")
-CATALOG_DEFAULT = Path(r"G:\paax-data\harga-satuan\_resources_catalog.json")
+CATALOG_DEFAULT = Path(r"D:\paax-data\harga-satuan\_resources_catalog.json")
 SEMARANG_PRICE_DEFAULT = REPO_ROOT / "data" / "harga-satuan" / "semarang.json"
 REPORT_DEFAULT = REPO_ROOT / "report" / "HARGA_KEJAKSAAN_SEMARANG_2026-07-11.md"
 

@@ -8,14 +8,14 @@ engine PAAX.
 
 Dataset AHSP+harga adalah **moat PAAX** — **jangan commit ke repo / GitHub**.
 - **Kode** (script ini) → di repo.
-- **Data** (PDF sumber + hasil) → **di luar repo**, mis. `G:\paax-data\`.
+- **Data** (PDF sumber + hasil) → **di luar repo**, mis. `D:\paax-data\`.
 - Engine membaca data via env **`PAAX_DATA_DIR`** (lihat `services/core-engine/app/rab/loader.py`).
 - Repo hanya menyimpan `data/ahsp/*.sample.json` (ilustratif, untuk demo/CI).
 
 ## Pakai
 
 ```bash
-python scripts/ahsp/extract_ahsp.py --src "G:\AHSP" --out "G:\paax-data" --workers 8
+python scripts/ahsp/extract_ahsp.py --src "D:\paax-data\ahsp" --out "D:\paax-data" --workers 8
 ```
 
 Dependency: **PyMuPDF (fitz)** saja — sudah terpasang, tanpa Java/Ghostscript.

@@ -3,10 +3,10 @@ import * as fs from 'fs';
 import * as crypto from 'crypto';
 import { execSync } from 'child_process';
 
-const TARGET_PDF_PATH = 'G:\\paax-data\\gambar kerja\\gambar-kerja-arsitektur-gedung-a.pdf';
+const TARGET_PDF_PATH = 'D:\\paax-data\\gambar kerja\\gambar-kerja-arsitektur-gedung-a.pdf';
 const EXPECTED_PDF_HASH = '7B4151C7EC7C87588B1C858CB0FB77FFDECA550ECB4C041714B3643ECD4B4510';
 const EMPTY_FILE_HASH = 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855';
-const TOGGLE_SCRIPT_PATH = 'G:\\paax-ai-contextual-integration\\scripts\\live_test\\toggle_service_8002.py';
+const TOGGLE_SCRIPT_PATH = 'D:\\paax-ai-main\\scripts\\live_test\\toggle_service_8002.py';
 
 test.describe('Phase 11C Correction Round 1 — Real-Stack Browser, Viewer, Performance & Outage', () => {
 

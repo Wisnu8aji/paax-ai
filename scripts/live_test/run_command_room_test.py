@@ -16,8 +16,8 @@ def _load_key(name: str) -> str:
     val = os.environ.get(name, "").strip()
     if val:
         return val
-    # Try reading from G:\paax-ai-main\.env.local
-    env_local = pathlib.Path("G:/paax-ai-main/.env.local")
+    # Try reading from D:\paax-ai-main\.env.local
+    env_local = pathlib.Path("D:/paax-ai-main/.env.local")
     if env_local.exists():
         for line in env_local.read_text(encoding='utf-8').splitlines():
             line = line.strip()

@@ -8,7 +8,7 @@ import uuid
 import pathlib
 
 REPO_ROOT = pathlib.Path(r"G:\paax-ai-contextual-integration")
-ENV_LOCAL = pathlib.Path(r"G:\paax-ai-main\.env.local")
+ENV_LOCAL = pathlib.Path(r"D:\paax-ai-main\.env.local")
 
 LOG_DIR = REPO_ROOT / "report" / "report_drawing_intelligence" / "phase11d_cr4_service_logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)

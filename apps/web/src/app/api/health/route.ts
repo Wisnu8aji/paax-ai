@@ -40,7 +40,7 @@ export async function GET() {
       service_name: "web",
       pid: process.pid,
       process_start_time: START_TIME,
-      data_root: process.env.PAAX_DATA_ROOT || "G:\\PAAX-Data",
+      data_root: process.env.PAAX_DATA_ROOT || "D:\\paax-data",
     },
   });
 }

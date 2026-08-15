@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 
-const FIXTURE_PATH = 'G:\\paax-data\\gambar kerja\\gambar-kerja-arsitektur-gedung-a.pdf';
+const FIXTURE_PATH = 'D:\\paax-data\\gambar kerja\\gambar-kerja-arsitektur-gedung-a.pdf';
 const EXPECTED_HASH = '7B4151C7EC7C87588B1C858CB0FB77FFDECA550ECB4C041714B3643ECD4B4510';
 const RESULTS_DIR = path.join(__dirname, 'results');
 

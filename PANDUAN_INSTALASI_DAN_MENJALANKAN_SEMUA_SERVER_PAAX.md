@@ -13,25 +13,25 @@ Status `COMPLETED` pada file feedback bukan pengganti release gate. Versi remedi
 Repository produk terbaru:
 
 ```text
-G:\paax-ai-contextual-integration
+D:\paax-ai-main
 ```
 
 Data persisten:
 
 ```text
-G:\PAAX-Data
+D:\paax-data
 ```
 
-Data root kanonik ditandai oleh `G:\PAAX-Data\data-root.json` (schema `1.0`, berisi layout `db`, `objects`, `uploads`, `jobs`, `cache`, `models`, `runtime`, `backups`, `migration`, `bootstrap`). Semua script portable (`Resolve-PaaxDataRoot`) memakai penanda ini untuk memastikan `-DataRoot` menunjuk ke root yang sama; jangan membuat `data-root.json` kedua di lokasi lain.
+Data root kanonik ditandai oleh `D:\paax-data\data-root.json` (schema `1.0`, berisi layout `db`, `objects`, `uploads`, `jobs`, `cache`, `models`, `runtime`, `backups`, `migration`, `bootstrap`). Semua script portable (`Resolve-PaaxDataRoot`) memakai penanda ini untuk memastikan `-DataRoot` menunjuk ke root yang sama; jangan membuat `data-root.json` kedua di lokasi lain.
 
-Jangan menjalankan produk dari `G:\paax-ai-main` atau `G:\paax-ai-feedback1-remediation`. `G:\paax-ai-main` hanya menyimpan instruksi/koordinasi; menjalankan server dari sana akan membuka versi lama.
+Jangan menjalankan produk dari `D:\paax-ai-main` atau `G:\paax-ai-feedback1-remediation`. `D:\paax-ai-main` hanya menyimpan instruksi/koordinasi; menjalankan server dari sana akan membuka versi lama.
 
 ## 2. Aturan wajib untuk AI executor
 
 Sebelum instalasi atau startup, AI wajib:
 
 1. membaca panduan ini sampai selesai;
-2. memakai workdir absolut `G:\paax-ai-contextual-integration` pada setiap perintah;
+2. memakai workdir absolut `D:\paax-ai-main` pada setiap perintah;
 3. tidak membuka worktree/repository lain;
 4. tidak menjalankan service satu per satu dengan perintah buatan sendiri;
 5. tidak memakai `next dev`, `uvicorn`, atau script live-test sebagai pengganti startup resmi;
@@ -70,7 +70,7 @@ corepack prepare pnpm@9.15.0 --activate
 ## 4. Verifikasi repository
 
 ```powershell
-Set-Location -LiteralPath "G:\paax-ai-contextual-integration"
+Set-Location -LiteralPath "D:\paax-ai-main"
 
 $expectedRepo = (Resolve-Path ".").Path
 $expectedCommit = (git rev-parse HEAD).Trim()
@@ -81,7 +81,7 @@ Write-Host "Repository : $expectedRepo"
 Write-Host "Branch     : $branch"
 Write-Host "Commit     : $expectedCommit"
 
-if ($expectedRepo -ne "G:\paax-ai-contextual-integration") { throw "Folder repository salah." }
+if ($expectedRepo -ne "D:\paax-ai-main") { throw "Folder repository salah." }
 if ($dirty) { throw "Worktree memiliki perubahan belum di-commit. Jangan menjalankan build audit." }
 ```
 
@@ -106,8 +106,8 @@ Jika `git status --porcelain` masih menghasilkan output, jangan melakukan audit 
 ## 5. Hentikan runtime lama
 
 ```powershell
-Set-Location -LiteralPath "G:\paax-ai-contextual-integration"
-powershell -ExecutionPolicy Bypass -File .\scripts\portable\Stop-PLHUT-Local.ps1 -DataRoot "G:\PAAX-Data"
+Set-Location -LiteralPath "D:\paax-ai-main"
+powershell -ExecutionPolicy Bypass -File .\scripts\portable\Stop-PLHUT-Local.ps1 -DataRoot "D:\paax-data"
 ```
 
 Pastikan enam port bersih:
@@ -125,8 +125,8 @@ if ($listeners) {
 ## 6. Instalasi pertama atau dependency berubah
 
 ```powershell
-Set-Location -LiteralPath "G:\paax-ai-contextual-integration"
-powershell -ExecutionPolicy Bypass -File .\scripts\portable\Setup-PLHUT-Local.ps1 -DataRoot "G:\PAAX-Data"
+Set-Location -LiteralPath "D:\paax-ai-main"
+powershell -ExecutionPolicy Bypass -File .\scripts\portable\Setup-PLHUT-Local.ps1 -DataRoot "D:\paax-data"
 ```
 
 Setup memasang dependency Node/Python, membuat `.venv`, menyiapkan struktur data, memeriksa PLHUT 88 halaman, dan membuat `.env.local` jika belum ada. Setup tidak menimpa `.env.local` yang sudah ada.
@@ -142,7 +142,7 @@ pnpm --dir apps/web build
 Jangan lanjut jika build gagal atau file berikut tidak ada:
 
 ```text
-G:\paax-ai-contextual-integration\apps\web\.next\BUILD_ID
+D:\paax-ai-main\apps\web\.next\BUILD_ID
 ```
 
 Build ulang ini wajib setelah perubahan viewer PDF walaupun dependency tidak berubah. Jalur binary worker berada di bundle browser; menjalankan bundle lama akan tetap menghasilkan error viewer lama meskipun backend sudah diperbaiki.
@@ -161,14 +161,14 @@ Engine dan viewer dasar tidak boleh bergantung pada AI. Untuk Command Room/AI fa
 Jika database sudah ada, lakukan backup dan migration sebelum menjalankan versi baru:
 
 ```powershell
-if (Test-Path "G:\PAAX-Data\db\portable.sqlite") {
+if (Test-Path "D:\paax-data\db\portable.sqlite") {
   powershell -ExecutionPolicy Bypass -File `
     .\scripts\portable\Backup-PAAX-Portable.ps1 `
-    -OutputPath "G:\PAAX-Data\backups\PAAX-before-update-$(Get-Date -Format yyyyMMdd-HHmmss).zip"
+    -OutputPath "D:\paax-data\backups\PAAX-before-update-$(Get-Date -Format yyyyMMdd-HHmmss).zip"
 
   .\.venv\Scripts\python.exe `
     .\scripts\portable\migrate_portable_schema.py `
-    --database "G:\PAAX-Data\db\portable.sqlite"
+    --database "D:\paax-data\db\portable.sqlite"
 }
 ```
 
@@ -183,8 +183,8 @@ Jika migration gagal, jangan menjalankan server dan jangan menghapus database. J
 ## 9. Menjalankan semua server
 
 ```powershell
-Set-Location -LiteralPath "G:\paax-ai-contextual-integration"
-powershell -ExecutionPolicy Bypass -File .\scripts\portable\Start-PLHUT-Local.ps1 -DataRoot "G:\PAAX-Data"
+Set-Location -LiteralPath "D:\paax-ai-main"
+powershell -ExecutionPolicy Bypass -File .\scripts\portable\Start-PLHUT-Local.ps1 -DataRoot "D:\paax-data"
 ```
 
 Jangan menambahkan `-SkipOptionalServices`.
@@ -221,7 +221,7 @@ Buka aplikasi hanya melalui `http://127.0.0.1:3000`.
 ## 11. Verifikasi identitas — wajib
 
 ```powershell
-Set-Location -LiteralPath "G:\paax-ai-contextual-integration"
+Set-Location -LiteralPath "D:\paax-ai-main"
 $expectedRepo = (Resolve-Path ".").Path
 $expectedCommit = (git rev-parse HEAD).Trim()
 $healthUrls = @(
@@ -244,7 +244,7 @@ foreach ($url in $healthUrls) {
 }
 ```
 
-Semua service wajib melaporkan repository/commit sama. Variasi huruf besar-kecil `G:\PAAX-Data` tidak mengubah identitas path Windows.
+Semua service wajib melaporkan repository/commit sama. Variasi huruf besar-kecil `D:\paax-data` tidak mengubah identitas path Windows.
 
 ## 12. Verifikasi database PLHUT
 
@@ -253,7 +253,7 @@ Semua service wajib melaporkan repository/commit sama. Variasi huruf besar-kecil
 import sqlite3
 from pathlib import Path
 
-database = Path(r"G:\PAAX-Data\db\portable.sqlite")
+database = Path(r"D:\paax-data\db\portable.sqlite")
 if not database.is_file():
     raise SystemExit("portable.sqlite tidak ditemukan")
 
@@ -275,7 +275,7 @@ Jumlah receipt engine dapat tetap `0` bila evidence/fact PLHUT belum cukup. Nila
 Jalankan setelah enam health endpoint lulus. Pemeriksaan ini tidak memakai API key AI dan tidak melakukan analisis ulang 88 halaman.
 
 ```powershell
-Set-Location -LiteralPath "G:\paax-ai-contextual-integration"
+Set-Location -LiteralPath "D:\paax-ai-main"
 
 $runId = "514fb7f2-26fd-5816-9f22-a4a2412688bf"
 $base = "http://127.0.0.1:3000/api/document-intelligence/drawings/dem/$runId"
@@ -322,7 +322,7 @@ finally {
 Artifact dan thumbnail lokal merupakan data turunan yang direkonsiliasi dari PDF fixture resmi. Lokasi adapter lokal saat ini adalah:
 
 ```text
-G:\paax-ai-contextual-integration\services\document-intelligence\.artifacts
+D:\paax-ai-main\services\document-intelligence\.artifacts
 ```
 
 Folder tersebut bukan database pengguna dan tidak perlu disalin manual. Namun jangan menghapusnya ketika server sedang berjalan. Startup resmi harus mampu menyemai ulang PDF canonical bila artifact hilang atau tidak cocok.
@@ -345,7 +345,7 @@ Jangan mengganti empty, blocked, needs-review, atau missing-evidence dengan data
 Setelah perubahan pada `drawing-canvas`, `pdf-page-layer`, compositor, coverage, tile pool, atau worker, pemeriksaan UI awal di atas belum cukup. Jalankan seluruh instruksi manual rinci berikut:
 
 ```text
-G:\paax-ai-contextual-integration\docs\plans\2026-08-02-manual-acceptance-gambar-kerja-viewer-flicker-right-crop.md
+D:\paax-ai-main\docs\plans\2026-08-02-manual-acceptance-gambar-kerja-viewer-flicker-right-crop.md
 ```
 
 Minimum gate manual:
@@ -367,8 +367,8 @@ Validasi terhadap working tree yang belum di-commit hanya boleh disebut **manual
 ## 15. Menghentikan semua server
 
 ```powershell
-Set-Location -LiteralPath "G:\paax-ai-contextual-integration"
-powershell -ExecutionPolicy Bypass -File .\scripts\portable\Stop-PLHUT-Local.ps1 -DataRoot "G:\PAAX-Data"
+Set-Location -LiteralPath "D:\paax-ai-main"
+powershell -ExecutionPolicy Bypass -File .\scripts\portable\Stop-PLHUT-Local.ps1 -DataRoot "D:\paax-data"
 ```
 
 Database, PDF, artifact, registry, dan data proyek tidak dihapus.
@@ -376,16 +376,16 @@ Database, PDF, artifact, registry, dan data proyek tidak dihapus.
 ## 16. Menjalankan ulang setelah update source
 
 ```powershell
-Set-Location -LiteralPath "G:\paax-ai-contextual-integration"
-powershell -ExecutionPolicy Bypass -File .\scripts\portable\Stop-PLHUT-Local.ps1 -DataRoot "G:\PAAX-Data"
-powershell -ExecutionPolicy Bypass -File .\scripts\portable\Setup-PLHUT-Local.ps1 -DataRoot "G:\PAAX-Data"
+Set-Location -LiteralPath "D:\paax-ai-main"
+powershell -ExecutionPolicy Bypass -File .\scripts\portable\Stop-PLHUT-Local.ps1 -DataRoot "D:\paax-data"
+powershell -ExecutionPolicy Bypass -File .\scripts\portable\Setup-PLHUT-Local.ps1 -DataRoot "D:\paax-data"
 pnpm --dir apps/web build
 
-if (Test-Path "G:\PAAX-Data\db\portable.sqlite") {
-  .\.venv\Scripts\python.exe .\scripts\portable\migrate_portable_schema.py --database "G:\PAAX-Data\db\portable.sqlite"
+if (Test-Path "D:\paax-data\db\portable.sqlite") {
+  .\.venv\Scripts\python.exe .\scripts\portable\migrate_portable_schema.py --database "D:\paax-data\db\portable.sqlite"
 }
 
-powershell -ExecutionPolicy Bypass -File .\scripts\portable\Start-PLHUT-Local.ps1 -DataRoot "G:\PAAX-Data"
+powershell -ExecutionPolicy Bypass -File .\scripts\portable\Start-PLHUT-Local.ps1 -DataRoot "D:\paax-data"
 ```
 
 Ulangi verifikasi enam health endpoint.
@@ -429,7 +429,7 @@ Drawing index (`GET /api/document-intelligence/drawings/dem/{run_id}/index` di w
 | Aktor bukan anggota project | `403` | `{"detail":"not a member of this project"}` |
 | DB API tidak terjangkau / error upstream | `503` | `{"detail":"... service is unavailable"}` |
 
-Curl chain diagnostik (jalankan dari `G:\paax-ai-contextual-integration`):
+Curl chain diagnostik (jalankan dari `D:\paax-ai-main`):
 
 ```bash
 # 1) Web proxy → Document Intelligence → DB (jalur lengkap yang dipakai browser)
@@ -443,12 +443,12 @@ curl -s -w "DI health: HTTP %{http_code}\n" http://127.0.0.1:8083/health
 curl -s -w "DB health: HTTP %{http_code}\n" http://127.0.0.1:8001/health
 
 # 3) Cek sqlite langsung (data canonical)
-.\.venv\Scripts\python.exe -c "import sqlite3; c=sqlite3.connect(r'G:\PAAX-Data\db\portable.sqlite'); print('runs:', c.execute('SELECT COUNT(*) FROM dem_runs').fetchone()[0]); print('pages:', c.execute('SELECT COUNT(*) FROM dem_pages').fetchone()[0]); print('revision:', c.execute('SELECT version_num FROM alembic_version').fetchone()[0])"
+.\.venv\Scripts\python.exe -c "import sqlite3; c=sqlite3.connect(r'D:\paax-data\db\portable.sqlite'); print('runs:', c.execute('SELECT COUNT(*) FROM dem_runs').fetchone()[0]); print('pages:', c.execute('SELECT COUNT(*) FROM dem_pages').fetchone()[0]); print('revision:', c.execute('SELECT version_num FROM alembic_version').fetchone()[0])"
 ```
 
 Bila salah satu hop mengembalikan 500:
 
-- periksa `G:\PAAX-Data\runtime\document-intelligence.err.log` dan `db-plhut.err.log` untuk traceback;
+- periksa `D:\paax-data\runtime\document-intelligence.err.log` dan `db-plhut.err.log` untuk traceback;
 - pastikan service web berjalan dengan `PAAX_PORTABLE_ACTOR_ID=local-desktop-user` (lihat §10.1) dan bootstrap DB menyertakan `local-desktop-user` sebagai anggota project;
 - pastikan `INTERNAL_SERVICE_KEY` service web sama dengan key yang diterima `:8083` (proxy menolak 503 bila key tidak cocok);
 - jangan mengganti error 500 menjadi data dummy — 404/403/503 dengan detail jelas adalah perilaku yang benar.
@@ -456,7 +456,7 @@ Bila salah satu hop mengembalikan 500:
 ### Viewer Gambar Kerja berkedip atau sisi kanan terpotong
 
 - pastikan build web dibuat ulang setelah perubahan viewer dan browser sudah hard refresh;
-- pastikan runtime berasal dari `G:\paax-ai-contextual-integration`, bukan worktree lama;
+- pastikan runtime berasal dari `D:\paax-ai-main`, bukan worktree lama;
 - jalankan acceptance manual Bagian 14.1 dan simpan diagnostik `coverage`, committed/materialized tile, renderer, upload failure, dan context loss;
 - jika fallback hilang ketika `coverage-ready=false`, atau `coverage-ready=true` saat materialized tile kurang dari committed tile, hentikan acceptance dan laporkan sebagai kegagalan kritis;
 - jangan memperbaiki gejala dengan timeout/delay arbitrer, menyembunyikan fallback lebih cepat, mengganti PDF dengan gambar dummy, atau mematikan jalur GPU secara permanen;
@@ -476,7 +476,7 @@ Gunakan stop resmi. Jika port tetap aktif, periksa command line dan pastikan ben
 
 - jangan hapus `portable.sqlite`;
 - jangan jalankan `create_all` atau ubah `alembic_version` manual;
-- periksa backup di `G:\PAAX-Data\backups` dan file `.pre-cr2a.bak`;
+- periksa backup di `D:\paax-data\backups` dan file `.pre-cr2a.bak`;
 - simpan pesan error untuk audit.
 
 ### Server tidak sehat
@@ -484,9 +484,9 @@ Gunakan stop resmi. Jika port tetap aktif, periksa command line dan pastikan ben
 Periksa:
 
 ```text
-G:\PAAX-Data\runtime\*.out.log
-G:\PAAX-Data\runtime\*.err.log
-G:\PAAX-Data\runtime\runtime-manifest.json
+D:\paax-data\runtime\*.out.log
+D:\paax-data\runtime\*.err.log
+D:\paax-data\runtime\runtime-manifest.json
 ```
 
 Manifest/health tidak boleh memuat raw credential.
@@ -500,9 +500,9 @@ Periksa hanya nama variabel yang diperlukan pada `.env.local`, jangan nilainya. 
 Jika dependency, build, dan migration sudah siap:
 
 ```powershell
-Set-Location -LiteralPath "G:\paax-ai-contextual-integration"
-powershell -ExecutionPolicy Bypass -File .\scripts\portable\Stop-PLHUT-Local.ps1 -DataRoot "G:\PAAX-Data"
-powershell -ExecutionPolicy Bypass -File .\scripts\portable\Start-PLHUT-Local.ps1 -DataRoot "G:\PAAX-Data"
+Set-Location -LiteralPath "D:\paax-ai-main"
+powershell -ExecutionPolicy Bypass -File .\scripts\portable\Stop-PLHUT-Local.ps1 -DataRoot "D:\paax-data"
+powershell -ExecutionPolicy Bypass -File .\scripts\portable\Start-PLHUT-Local.ps1 -DataRoot "D:\paax-data"
 ```
 
 Tetap verifikasi enam health endpoint setelah startup.
@@ -535,13 +535,13 @@ Langkah cepat agar PLHUT tampil dan semua modul bisa di-testing setelah instalas
 
 ### 20.1 Start stack (wajib DataRoot)
 ```powershell
-Set-Location -LiteralPath "G:\paax-ai-contextual-integration"
+Set-Location -LiteralPath "D:\paax-ai-main"
 # 1) STOP semua (bila ada sisa):
-powershell -ExecutionPolicy Bypass -File .\scripts\portable\Stop-PLHUT-Local.ps1 -DataRoot "G:\PAAX-Data"
+powershell -ExecutionPolicy Bypass -File .\scripts\portable\Stop-PLHUT-Local.ps1 -DataRoot "D:\paax-data"
 # 2) START:
-powershell -ExecutionPolicy Bypass -File .\scripts\portable\Start-PLHUT-Local.ps1 -DataRoot "G:\PAAX-Data"
+powershell -ExecutionPolicy Bypass -File .\scripts\portable\Start-PLHUT-Local.ps1 -DataRoot "D:\paax-data"
 ```
-JANGAN start tanpa `-DataRoot "G:\PAAX-Data"` — tanpa itu service membaca `%LOCALAPPDATA%\PAAX-AI\data` (kosong) → project hilang / index 500.
+JANGAN start tanpa `-DataRoot "D:\paax-data"` — tanpa itu service membaca `%LOCALAPPDATA%\PAAX-AI\data` (kosong) → project hilang / index 500.
 Wajib juga `PYTHONPATH=` dan `PYTHONHOME=` kosong saat menjalankan (polusi venv Hermes).
 
 ### 20.2 Verifikasi 6/6 health
@@ -560,11 +560,11 @@ Gejala: halaman proyek kosong / daftar project kosong padahal DB ada isinya.
 Penyebab & perbaikan (lihat §19.1): aktor web = `local-desktop-user`, project lama ber-owner `paax-web`.
 ```powershell
 # cek:
-sqlite3 "G:\PAAX-Data\db\portable.sqlite" "SELECT id, owner_id, status FROM projects;"
+sqlite3 "D:\paax-data\db\portable.sqlite" "SELECT id, owner_id, status FROM projects;"
 # perbaiki (sekali saja):
-sqlite3 "G:\PAAX-Data\db\portable.sqlite" "UPDATE projects SET owner_id='local-desktop-user' WHERE id='PLHUT-SURAKARTA';"
+sqlite3 "D:\paax-data\db\portable.sqlite" "UPDATE projects SET owner_id='local-desktop-user' WHERE id='PLHUT-SURAKARTA';"
 # cek anggota (local-desktop-user harus ada sebagai owner):
-sqlite3 "G:\PAAX-Data\db\portable.sqlite" "SELECT * FROM project_members WHERE project_id='PLHUT-SURAKARTA';"
+sqlite3 "D:\paax-data\db\portable.sqlite" "SELECT * FROM project_members WHERE project_id='PLHUT-SURAKARTA';"
 ```
 
 ### 20.4 Verifikasi API PLHUT (curl chain)
@@ -582,7 +582,8 @@ Catatan: request pertama setelah start bisa lambat (±40 dtk) karena DI memparse
 
 ### 20.5 Auth & scope (jika 401 muncul)
 - `package-analysis` butuh scope `dem:read` pada identity `web-user-proxy` — sudah ditambahkan di `Start-PLHUT-Local.ps1` (commit 96bfd4df). Jika 401 muncul, restart stack (registry identitas dibuat ulang saat start).
-- Jangan ubah `INTERNAL_SERVICE_KEY` di `.env.local` web — service membaca credential dari registry `G:\PAAX-Datauntime\service-credentials\web.key`.
+- Jangan ubah `INTERNAL_SERVICE_KEY` di `.env.local` web — service membaca credential dari registry `D:\paax-data
+untime\service-credentials\web.key`.
 
 ### 20.6 Viewer PDF (legacy vs native)
 - Toggle viewer tersedia di halaman sheet (`legacy`/`native`); native = render base-once + crop-settle + pinned pixels (tanpa blur/loading saat zoom).

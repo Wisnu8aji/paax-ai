@@ -70,7 +70,7 @@ def get_runtime_identity(service_name: str) -> Dict[str, Any]:
 
     commit, branch, dirty = _get_git_info(repo_root)
 
-    data_root = os.environ.get("PAAX_DATA_ROOT", r"G:\PAAX-Data")
+    data_root = os.environ.get("PAAX_DATA_ROOT", r"D:\paax-data")
 
     return {
         "repo_root": str(repo_root),

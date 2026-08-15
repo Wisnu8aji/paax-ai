@@ -17,10 +17,10 @@ from scripts.harga.extract_harga import (  # noqa: E402
     normalize_name,
     normalize_unit,
 )
-AUDIT_DEFAULT = Path(r"G:\paax-data\_audit\harga_semarang.json")
-REVIEW_DEFAULT = Path(r"G:\paax-data\_audit\harga_semarang_review.csv")
-CATALOG_DEFAULT = Path(r"G:\paax-data\harga-satuan\_resources_catalog.json")
-EXISTING_PRICE_DEFAULT = Path(r"G:\paax-data\harga-satuan\semarang.json")
+AUDIT_DEFAULT = Path(r"D:\paax-data\_audit\harga_semarang.json")
+REVIEW_DEFAULT = Path(r"D:\paax-data\_audit\harga_semarang_review.csv")
+CATALOG_DEFAULT = Path(r"D:\paax-data\harga-satuan\_resources_catalog.json")
+EXISTING_PRICE_DEFAULT = Path(r"D:\paax-data\harga-satuan\semarang.json")
 REPORT_DEFAULT = REPO_ROOT / "report" / "HARGA_SEMARANG_BATCH2_FINDINGS_2026-07-10.md"
 
 
@@ -150,7 +150,7 @@ def build_report(
         "# Harga Semarang Batch 2 Findings - 2026-07-10",
         "",
         "Laporan ini adalah USULAN lanjutan untuk 68 baris harga Semarang yang belum cocok pada audit Fase A-2.",
-        "Tidak ada harga yang diterapkan ke `data/harga-satuan/semarang.json` atau `G:\\paax-data\\harga-satuan\\semarang.json` dalam fase ini.",
+        "Tidak ada harga yang diterapkan ke `data/harga-satuan/semarang.json` atau `D:\\paax-data\\harga-satuan\\semarang.json` dalam fase ini.",
         "",
         f"Acuan harga existing: `{existing_price_path}`",
         f"Audit manifest: `{audit_path}`",

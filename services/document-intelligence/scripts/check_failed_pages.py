@@ -9,7 +9,7 @@ sys.path.insert(0, "services/document-intelligence")
 os.environ.pop("PYTHONPATH", None)
 
 RUN_ID = "14a85e41-c73d-425f-a0e8-527eb0878058"
-DB_PATH = "G:/PAAX-Data/db/portable.sqlite"
+DB_PATH = "D:/paax-data/db/portable.sqlite"
 
 db = sqlite3.connect(DB_PATH, timeout=10)
 db.row_factory = sqlite3.Row

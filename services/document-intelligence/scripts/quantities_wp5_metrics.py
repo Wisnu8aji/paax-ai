@@ -30,7 +30,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 PDF_PATH = REPO_ROOT / "GAMBAR KERJA PLHUT SURAKARTA (1).pdf"
 DEM_PATH = REPO_ROOT / "dem_extraction_88pages" / "pages"
 DEFAULT_GOLDEN = Path(
-    r"G:\PAAX-Orchestration\00_projects\2026-08-04-perbaikan-blur-quantities"
+    r"D:\PAAX-Orchestration\00_projects\2026-08-04-perbaikan-blur-quantities"
     r"\04_execution\01_orion-f2\artifacts\k0_golden_set.json"
 )
 

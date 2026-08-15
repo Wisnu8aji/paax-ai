@@ -3,7 +3,7 @@
 PAAX - Extractor daftar harga bahan dan upah ke price book engine.
 
 Kode masuk repo; hasil JSON price book dan audit ditulis ke PAAX_DATA_DIR
-di luar repo (default: G:\\paax-data).
+di luar repo (default: D:\\paax-data).
 """
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 
 SOURCE_DEFAULT = r"G:\AHSP\Daftar harga bahan dan upah.xlsx"
-DATA_DEFAULT = r"G:\paax-data"
+DATA_DEFAULT = r"D:\paax-data"
 CATALOG_REL = r"harga-satuan\_resources_catalog.json"
 AHSP_REL = r"ahsp\cipta-karya-2026.json"
 REPO_ROOT = Path(__file__).resolve().parents[2]

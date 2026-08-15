@@ -770,7 +770,7 @@ async def get_page_thumbnail(id: str, page_index: int, width: int = Query(400, g
 )
 async def get_project_package_analysis(id: str, run_id: Optional[str] = None, db: AsyncSession = Depends(get_db)):
     # Canonical persisted index only.  This read endpoint never classifies or writes.
-    data_root_str = os.environ.get("PAAX_DATA_ROOT", "G:\\PAAX-Data")
+    data_root_str = os.environ.get("PAAX_DATA_ROOT", "D:\\paax-data")
     db_path = Path(data_root_str) / "db" / "portable.sqlite"
     if not db_path.is_file():
         raise HTTPException(status_code=503, detail="Canonical package index store is unavailable")
@@ -834,7 +834,7 @@ async def materialize_project_package_analysis(
 
 
 def _load_civil_work_items(project_id: str) -> dict[str, Any]:
-    data_root_str = os.environ.get("PAAX_DATA_ROOT", "G:\\PAAX-Data")
+    data_root_str = os.environ.get("PAAX_DATA_ROOT", "D:\\paax-data")
     db_path = Path(data_root_str) / "db" / "portable.sqlite"
     if not db_path.is_file():
         db_path = (_portable_repo_root() / "fixtures" / "plhut" / "portable.sqlite").resolve()

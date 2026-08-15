@@ -2,9 +2,9 @@
 """
 PAAX — Extractor AHSP Cipta Karya 2026 (SE DJBK No. 47/2026).
 
-Membaca 16 PDF di G:\\AHSP, mengekstrak tabel analisa (A Tenaga Kerja / B Bahan /
+Membaca 16 PDF di D:\\paax-data\\ahsp, mengekstrak tabel analisa (A Tenaga Kerja / B Bahan /
 C Peralatan + koefisien), lalu menyimpan dataset terstruktur (schema engine) +
-katalog resource ke G:\\paax-data (DI LUAR repo — data ini moat, jangan di-commit).
+katalog resource ke D:\\paax-data (DI LUAR repo — data ini moat, jangan di-commit).
 
 Catatan:
 - Sumber resmi hanya memberi KOEFISIEN; kolom harga KOSONG (diisi SHSD per wilayah).
@@ -12,7 +12,7 @@ Catatan:
 - Pakai PyMuPDF (fitz). Tanpa dependency baru. Paralel via ProcessPoolExecutor.
 
 Jalankan:
-    python scripts/ahsp/extract_ahsp.py --src "G:\\AHSP" --out "G:\\paax-data"
+    python scripts/ahsp/extract_ahsp.py --src "D:\\paax-data\\ahsp" --out "D:\\paax-data"
 """
 from __future__ import annotations
 import argparse
@@ -254,8 +254,8 @@ def build_resource_catalog(items):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--src", default=r"G:\AHSP")
-    ap.add_argument("--out", default=r"G:\paax-data")
+    ap.add_argument("--src", default=r"D:\paax-data\ahsp")
+    ap.add_argument("--out", default=r"D:\paax-data")
     ap.add_argument("--workers", type=int, default=8)
     args = ap.parse_args()
 

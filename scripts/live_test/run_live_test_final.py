@@ -8,7 +8,7 @@ def load_key(name):
     v = os.environ.get(name, '').strip()
     if v:
         return v
-    f = pathlib.Path('G:/paax-ai-main/.env.local')
+    f = pathlib.Path('D:/paax-ai-main/.env.local')
     if f.exists():
         for line in f.read_text(encoding='utf-8').splitlines():
             if line.strip().startswith(name + '='):

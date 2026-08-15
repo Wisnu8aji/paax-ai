@@ -9,13 +9,13 @@
 Contoh lokasi repository Anda:
 
 ```text
-G:\paax-ai-main
+D:\paax-ai-main
 ```
 
 Buat backup dan branch terlebih dahulu:
 
 ```powershell
-cd G:\paax-ai-main
+cd D:\paax-ai-main
 git status
 git switch -c test/pckm-v3-final
 git add -A
@@ -31,7 +31,7 @@ Jika belum ingin commit, salin seluruh folder repository ke lokasi backup terleb
 Ekstrak ZIP final ke:
 
 ```text
-G:\paax-ai-main-pckm-v3-final
+D:\paax-ai-main-pckm-v3-final
 ```
 
 Jangan ekstrak langsung di atas repository utama sebelum membandingkan file.
@@ -45,7 +45,7 @@ Jangan ekstrak langsung di atas repository utama sebelum membandingkan file.
 Dari PowerShell:
 
 ```powershell
-robocopy "G:\paax-ai-main-pckm-v3-final\paax-ai-main" "G:\paax-ai-main" /E `
+robocopy "D:\paax-ai-main-pckm-v3-final\paax-ai-main" "D:\paax-ai-main" /E `
   /XD .git node_modules .next dist build .turbo coverage .cache __pycache__ .pytest_cache .venv venv graphify-out `
   /XF .env .env.local *.pyc *.log *.tsbuildinfo
 ```
@@ -53,7 +53,7 @@ robocopy "G:\paax-ai-main-pckm-v3-final\paax-ai-main" "G:\paax-ai-main" /E `
 Robocopy exit code 0–7 masih dapat berarti sukses. Setelah itu:
 
 ```powershell
-cd G:\paax-ai-main
+cd D:\paax-ai-main
 git status --short
 git diff --stat
 ```
@@ -137,7 +137,7 @@ report\report_drawing_intelligence\pckm_v3_final_2026-07-21\
 ### Core Engine
 
 ```powershell
-cd G:\paax-ai-main\services\core-engine
+cd D:\paax-ai-main\services\core-engine
 pytest -q
 ```
 
@@ -150,7 +150,7 @@ Expected reference:
 ### Document Intelligence
 
 ```powershell
-cd G:\paax-ai-main\services\document-intelligence
+cd D:\paax-ai-main\services\document-intelligence
 pytest -q
 ```
 
@@ -165,7 +165,7 @@ Suite mengandung benchmark berat. Reference coverage dari paket final:
 Pastikan dependency test tersedia, lalu:
 
 ```powershell
-cd G:\paax-ai-main\services\db
+cd D:\paax-ai-main\services\db
 $env:PYTHONPATH="src;..\..\packages\schemas\python"
 pytest -q
 ```
@@ -220,7 +220,7 @@ Gunakan terminal terpisah.
 ### Database service — port 8084
 
 ```powershell
-cd G:\paax-ai-main\services\db
+cd D:\paax-ai-main\services\db
 $env:PYTHONPATH="src;..\..\packages\schemas\python"
 uvicorn paax_db.main:app --host 127.0.0.1 --port 8084 --reload
 ```
@@ -228,21 +228,21 @@ uvicorn paax_db.main:app --host 127.0.0.1 --port 8084 --reload
 ### Core Engine — port 8081
 
 ```powershell
-cd G:\paax-ai-main\services\core-engine
+cd D:\paax-ai-main\services\core-engine
 uvicorn app.main:app --host 127.0.0.1 --port 8081 --reload
 ```
 
 ### Document Intelligence — port 8083
 
 ```powershell
-cd G:\paax-ai-main\services\document-intelligence
+cd D:\paax-ai-main\services\document-intelligence
 uvicorn app.main:app --host 127.0.0.1 --port 8083 --reload
 ```
 
 ### Frontend
 
 ```powershell
-cd G:\paax-ai-main
+cd D:\paax-ai-main
 pnpm --filter @paax/web dev
 ```
 

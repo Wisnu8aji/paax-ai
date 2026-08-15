@@ -6,7 +6,7 @@ import requests
 
 DB_API_URL = os.environ.get("DB_API_URL", "http://localhost:8001")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-PAAX_DATA_DIR = os.environ.get("PAAX_DATA_DIR", "G:/paax-data")
+PAAX_DATA_DIR = os.environ.get("PAAX_DATA_DIR", "D:/paax-data")
 
 def get_embedding(text: str) -> list[float]:
     if not GEMINI_API_KEY:

@@ -187,7 +187,7 @@ def main() -> int:
     args = parser.parse_args()
 
     pages, summary = measure_all(args.pages)
-    out_path = args.out or (Path(r"G:\PAAX-Orchestration\00_projects\2026-08-04-perbaikan-blur-quantities\04_execution\01_orion-f2\artifacts\k0_baseline.json"))
+    out_path = args.out or (Path(r"D:\PAAX-Orchestration\00_projects\2026-08-04-perbaikan-blur-quantities\04_execution\01_orion-f2\artifacts\k0_baseline.json"))
 
     payload = {
         "schema": "paax.quantities.k0-baseline.v1",

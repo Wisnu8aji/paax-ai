@@ -12,7 +12,7 @@ from pathlib import Path
 # a portable launch to retain a caller's PostgreSQL URL.  The portable launcher
 # supplies PAAX_DATA_ROOT explicitly, while this fallback retains the documented
 # local default for direct invocation.
-data_root = Path(os.environ.get("PAAX_DATA_ROOT", "G:/PAAX-Data")).expanduser().resolve()
+data_root = Path(os.environ.get("PAAX_DATA_ROOT", "D:/paax-data")).expanduser().resolve()
 db_file = data_root / "db" / "portable.sqlite"
 db_file.parent.mkdir(parents=True, exist_ok=True)
 

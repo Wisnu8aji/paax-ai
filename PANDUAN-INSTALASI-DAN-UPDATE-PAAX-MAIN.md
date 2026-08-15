@@ -37,7 +37,7 @@ python --version
 1. Ekstrak ZIP ke folder final, misalnya:
 
 ```text
-G:\paax-ai-main
+D:\paax-ai-main
 ```
 
 2. Buka PowerShell di folder tersebut.
@@ -91,7 +91,7 @@ Verifikasi manual pada web:
 Contoh:
 
 - Release baru diekstrak ke `D:\Download\PAAX-NEW`.
-- Project utama lama berada di `G:\paax-ai-main`.
+- Project utama lama berada di `D:\paax-ai-main`.
 
 ### 5.1 Wajib sebelum update
 
@@ -104,7 +104,7 @@ Contoh:
 cd D:\Download\PAAX-NEW
 python .\scripts\portable\update_paax_main.py `
   --source . `
-  --target "G:\paax-ai-main" `
+  --target "D:\paax-ai-main" `
   --mode replace-managed `
   --dry-run
 ```
@@ -113,7 +113,7 @@ python .\scripts\portable\update_paax_main.py `
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\portable\Update-PAAX-Main.ps1 `
-  -TargetPath "G:\paax-ai-main" `
+  -TargetPath "D:\paax-ai-main" `
   -Mode replace-managed
 ```
 
@@ -132,14 +132,14 @@ Urutan script:
 Laporan update tersimpan di:
 
 ```text
-G:\paax-ai-main\report\PAAX_LAST_UPDATE_REPORT.json
+D:\paax-ai-main\report\PAAX_LAST_UPDATE_REPORT.json
 ```
 
 ### 5.3 Update tanpa langsung menyalakan server
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\portable\Update-PAAX-Main.ps1 `
-  -TargetPath "G:\paax-ai-main" `
+  -TargetPath "D:\paax-ai-main" `
   -Mode replace-managed `
   -SkipStart
 ```
@@ -149,7 +149,7 @@ Gunakan ini bila Anda ingin audit Git diff terlebih dahulu.
 ## 6. Penggabungan dengan repository Git lokal
 
 ```powershell
-cd G:\paax-ai-main
+cd D:\paax-ai-main
 git status
 git add -A
 git commit -m "checkpoint sebelum update agentic PAAX"
@@ -232,8 +232,8 @@ Gunakan path backup yang tercatat pada update report:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\portable\Rollback-PAAX-Update.ps1 `
-  -TargetPath "G:\paax-ai-main" `
-  -BackupPath "G:\paax-ai-main-backup-20260725-120000"
+  -TargetPath "D:\paax-ai-main" `
+  -BackupPath "D:\paax-ai-main-backup-20260725-120000"
 ```
 
 Rollback source tidak boleh menghapus runtime state terbaru. Untuk mengembalikan database/runtime state ke waktu sebelumnya, gunakan backup portable secara terpisah.

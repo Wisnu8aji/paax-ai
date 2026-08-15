@@ -9,19 +9,19 @@ Ikuti pola `scripts/ahsp`: kode extractor masuk repo, hasil data tetap di luar
 repo.
 
 - Script, test, dan README ini: di-commit ke repo.
-- File sumber: `G:\AHSP\Daftar harga bahan dan upah.xlsx`, read-only.
-- Output price book dan audit: `G:\paax-data`, tidak di-commit.
-- Engine membaca data nyata lewat env `PAAX_DATA_DIR=G:\paax-data`.
+- File sumber: `D:\paax-data\ahsp\Daftar harga bahan dan upah.xlsx`, read-only.
+- Output price book dan audit: `D:\paax-data`, tidak di-commit.
+- Engine membaca data nyata lewat env `PAAX_DATA_DIR=D:\paax-data`.
 
 ## Pakai
 
 ```bash
 python scripts/harga/extract_harga.py ^
-  --src "G:\AHSP\Daftar harga bahan dan upah.xlsx" ^
-  --catalog "G:\paax-data\harga-satuan\_resources_catalog.json" ^
-  --ahsp "G:\paax-data\ahsp\cipta-karya-2026.json" ^
-  --overrides "G:\paax-ai-main\data\harga-satuan\semarang_overrides.json" ^
-  --out "G:\paax-data" ^
+  --src "D:\paax-data\ahsp\Daftar harga bahan dan upah.xlsx" ^
+  --catalog "D:\paax-data\harga-satuan\_resources_catalog.json" ^
+  --ahsp "D:\paax-data\ahsp\cipta-karya-2026.json" ^
+  --overrides "D:\paax-ai-main\data\harga-satuan\semarang_overrides.json" ^
+  --out "D:\paax-data" ^
   --region "Semarang" ^
   --region-code "semarang" ^
   --effective-date "2026-06-28"
@@ -81,7 +81,7 @@ dimasukkan ke price book sampai ada review manual.
 
 ## Test
 
-Test extractor memakai fixture inline, bukan `G:\AHSP` atau `G:\paax-data`.
+Test extractor memakai fixture inline, bukan `D:\paax-data\ahsp` atau `D:\paax-data`.
 
 ```bash
 cd services/core-engine

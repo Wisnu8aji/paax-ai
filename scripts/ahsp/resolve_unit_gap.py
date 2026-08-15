@@ -13,7 +13,7 @@ import fitz
 REPO_ROOT = Path(__file__).resolve().parents[2]
 AHSP_DEFAULT = REPO_ROOT / "data" / "ahsp" / "cipta-karya-2026.json"
 FINDINGS_DEFAULT = REPO_ROOT / "report" / "AHSP_IMPORT_BATCH_FINDINGS_2026-07-08.md"
-PDF_DIR_DEFAULT = Path(r"G:\AHSP")
+PDF_DIR_DEFAULT = Path(r"D:\paax-data\ahsp")
 REPORT_DEFAULT = REPO_ROOT / "report" / "AHSP_UNIT_GAP_RESOLUTION_2026-07-10.md"
 
 
@@ -138,7 +138,7 @@ def build_report(ahsp_path: Path, findings_path: Path, pdf_dir: Path) -> str:
         "- Diinfer dari pola nama: **0**",
         f"- Tidak terselesaikan: **{len(unresolved)}**",
         "",
-        "Sumber PDF: `G:\\AHSP\\Lampiran-VI-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Cipta-Karya-{1..16}.pdf`.",
+        "Sumber PDF: `D:\\paax-data\\ahsp\\Lampiran-VI-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Cipta-Karya-{1..16}.pdf`.",
         "",
         "## Detail 188 Kode",
         "",

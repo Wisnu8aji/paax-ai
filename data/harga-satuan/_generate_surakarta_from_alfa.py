@@ -18,7 +18,7 @@ sbg grounding sistem per prinsip §0.1 roadmap (harga = pengecualian; yang dilar
 jadi template = koefisien/answer-key PLHUT, itu tetap di tests/fixtures/).
 
 CATATAN (ditemukan 2026-07-03): ada file SERUPA di luar repo,
-`G:\\paax-data\\harga-satuan\\surakarta.json` (109 resource, sumber sama — HARGA
+`D:\\paax-data\\harga-satuan\\surakarta.json` (109 resource, sumber sama — HARGA
 BAHAN ALFA — dibangun sesi sebelumnya), dipakai HANYA bila env `PAAX_DATA_DIR`
 diset (lihat services/core-engine/app/rab/loader.py). Kode SKA.* di file itu
 ASSIGNED BEDA (mis. SKA.L.001="Pekerja" di sana, ="1/3 GALIAN" di sini) — TIDAK
@@ -125,7 +125,7 @@ def build(src):
         "note": ("Price book HSD Surakarta UMUM (proyek Surakarta mana pun). Prinsip roadmap Sec 0.1: "
                  "harga = grounding regional sah; koefisien/answer-key PLHUT tetap di tests/fixtures/. "
                  f"{len(conflicts)} resource inkonsisten di ALFA (HARGA BAHAN vs analisa) -> HARGA BAHAN menang (RULE-HRG-02). "
-                 "CATATAN: ada file serupa (109 resource) di G:\\paax-data\\harga-satuan\\surakarta.json "
+                 "CATATAN: ada file serupa (109 resource) di D:\\paax-data\\harga-satuan\\surakarta.json "
                  "(dipakai bila env PAAX_DATA_DIR diset) dengan penomoran kode SKA.* BERBEDA -- belum "
                  "direkonsiliasi (di luar repo git). Lihat docs/plans/PAAX_FASE0B_GAP_HARGA_2026-07-03.md."),
         "alfa_price_conflicts": conflicts,

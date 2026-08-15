@@ -41,7 +41,7 @@ export function healthHandler(_req: Request, res: Response) {
       service_name: "ai-orchestrator",
       pid: process.pid,
       process_start_time: START_TIME,
-      data_root: process.env.PAAX_DATA_ROOT || "G:\\PAAX-Data",
+      data_root: process.env.PAAX_DATA_ROOT || "D:\\paax-data",
     },
   });
 }

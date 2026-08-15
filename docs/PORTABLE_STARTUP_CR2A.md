@@ -7,7 +7,7 @@ manifest, or log.
 1. Stop the existing stack and verify the six ports are clear.
 
 ```powershell
-.\scripts\portable\Stop-PLHUT-Local.ps1 -DataRoot G:\PAAX-Data
+.\scripts\portable\Stop-PLHUT-Local.ps1 -DataRoot D:\paax-data
 Get-NetTCPConnection -LocalPort 3000,8001,8081,8082,8083,8085 -State Listen
 ```
 
@@ -15,7 +15,7 @@ Get-NetTCPConnection -LocalPort 3000,8001,8081,8082,8083,8085 -State Listen
 
 ```powershell
 .\scripts\portable\Backup-PAAX-Portable.ps1
-.\.venv\Scripts\python.exe .\scripts\portable\migrate_portable_schema.py --database G:\PAAX-Data\db\portable.sqlite
+.\.venv\Scripts\python.exe .\scripts\portable\migrate_portable_schema.py --database D:\paax-data\db\portable.sqlite
 ```
 
 The migration validates legacy tables before stamping baseline `0036`, then
@@ -29,7 +29,7 @@ owner/PM DB endpoint. The reader endpoint never creates columns or entries.
 4. Start the stack.
 
 ```powershell
-.\scripts\portable\Start-PLHUT-Local.ps1 -DataRoot G:\PAAX-Data
+.\scripts\portable\Start-PLHUT-Local.ps1 -DataRoot D:\paax-data
 ```
 
 The launcher creates one user-only ACL credential file per service under

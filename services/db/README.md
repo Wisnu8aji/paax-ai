@@ -33,7 +33,7 @@ uvicorn src.paax_db.main:app --port 8084
 
 > **Belum diverifikasi ke Postgres/pgvector nyata** — hanya diuji lewat
 > fallback SQLite. Katalog AHSP asli juga belum di-index (indexer baca
-> `G:/paax-data/ahsp.json` eksternal, di luar repo).
+> `D:/paax-data/ahsp.json` eksternal, di luar repo).
 
 ## Adding a new migration
 
