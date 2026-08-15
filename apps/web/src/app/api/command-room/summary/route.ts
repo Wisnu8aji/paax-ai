@@ -4,9 +4,9 @@
  * Ringkasan progres percakapan Command Room — dipakai panel Summary (side
  * panel kanan). Bukan jalur perhitungan RAB/HSP (Aturan Emas §1 tidak
  * berlaku di sini): ini murni meringkas teks percakapan, jadi aman dikerjakan
- * LLM. Model: Mistral Small 3.1 via OpenRouter, 1 shared key yang sama dengan
- * Lucent/Arete/Noir (DEEPSEEK_API_KEY, format sk-or-v1-...). Non-streaming —
- * respons pendek, tidak butuh SSE.
+ * LLM. Model: DeepSeek V4 Flash via opencode-go, 1 shared key yang sama dengan
+ * Lucent/Arete/Noir (DEEPSEEK_API_KEY). Non-streaming — respons pendek, tidak
+ * butuh SSE.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -27,7 +27,7 @@ const SummaryRequestSchema = z.object({
     .min(1),
 });
 
-const SUMMARY_MODEL = "mistralai/mistral-small-24b-instruct-2501";
+const SUMMARY_MODEL = "deepseek-v4-flash";
 
 const SUMMARY_SYSTEM_PROMPT =
   "Anda meringkas progres sebuah percakapan teknik sipil untuk panel samping. " +
@@ -40,8 +40,11 @@ function getSharedKey(): string | undefined {
   return process.env.DEEPSEEK_API_KEY?.trim() || undefined;
 }
 
-function isOpenRouterKey(apiKey: string): boolean {
-  return apiKey.trim().startsWith("sk-or-v1-");
+function getBaseUrl(): string {
+  return (
+    process.env.DEEPSEEK_BASE_URL?.trim().replace(/\/$/, "") ||
+    "https://opencode.ai/zen/go/v1"
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -51,9 +54,9 @@ export async function POST(req: NextRequest) {
   }
 
   const apiKey = getSharedKey();
-  if (!apiKey || !isOpenRouterKey(apiKey)) {
+  if (!apiKey) {
     return NextResponse.json(
-      { error: "Ringkasan butuh OpenRouter API key (DEEPSEEK_API_KEY) yang belum terpasang di server ini." },
+      { error: "Ringkasan butuh API key (DEEPSEEK_API_KEY) yang belum terpasang di server ini." },
       { status: 503 },
     );
   }
@@ -64,7 +67,7 @@ export async function POST(req: NextRequest) {
     .join("\n\n");
 
   try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const res = await fetch(`${getBaseUrl()}/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
@@ -95,7 +98,7 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ summary });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Gagal menghubungi OpenRouter.";
+    const message = err instanceof Error ? err.message : "Gagal menghubungi provider ringkasan.";
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }

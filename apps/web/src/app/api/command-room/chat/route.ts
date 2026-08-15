@@ -2,16 +2,14 @@
  * POST /api/command-room/chat
  *
  * Server-side API route untuk Command Room (Streaming).
- * 3 model: Lucent (DeepSeek V4 Pro), Arete (Qwen3.7-Plus), Noir
- * (model reasoning native). Semua bisa lewat 1 API key OpenRouter (sk-or-v1-...) yang
- * dibaca dari DEEPSEEK_API_KEY, ATAU lewat API key native per-provider
- * (DASHSCOPE_API_KEY / ANTHROPIC_API_KEY) kalau ada — native diprioritaskan
- * kalau keduanya kebetulan terisi. API key TIDAK PERNAH dikirim ke client.
+ * 3 model: Lucent (DeepSeek V4 Flash), Arete (DeepSeek V4 Pro), Noir
+ * (DeepSeek V4 Pro, panel reasoning eksplisit). Semua memakai 1 API key
+ * opencode-go yang dibaca dari DEEPSEEK_API_KEY / DRAWING_INTELLIGENCE_API_KEY.
+ * API key TIDAK PERNAH dikirim ke client.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import Anthropic from "@anthropic-ai/sdk";
 import {
   type ModelAlias,
   type ReasoningEffort,
@@ -26,7 +24,6 @@ import {
   withToolSystemPrompt,
   runOpenRouterWithTools,
   runDeepSeekNativeWithTools,
-  runAnthropicWithTools,
   type ToolChatMessage,
 } from "./tools";
 import { evaluateEvidenceGate, buildIntentFrame, planDepthStatusMessage, buildExecutionPlan } from "@paax/ai-orchestrator/router";
@@ -120,21 +117,6 @@ function getDeepSeekBaseUrl(): string {
   );
 }
 
-function getDashScopeKey(): string | undefined {
-  return process.env.DASHSCOPE_API_KEY?.trim() || undefined;
-}
-
-function getDashScopeBaseUrl(): string {
-  return (
-    process.env.DASHSCOPE_BASE_URL?.trim().replace(/\/$/, "") ||
-    "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
-  );
-}
-
-function getAnthropicKey(): string | undefined {
-  return process.env.ANTHROPIC_API_KEY?.trim() || undefined;
-}
-
 function isOpenRouterKey(apiKey: string): boolean {
   return apiKey.trim().startsWith("sk-or-v1-");
 }
@@ -144,14 +126,14 @@ function getLucentModelSlug(): string {
   if (custom) {
     return custom.includes("/") ? custom : `deepseek/${custom}`;
   }
-  return "deepseek/deepseek-v4-pro";
+  return "deepseek/deepseek-v4-flash";
 }
 
 /** Slug model per provider di OpenRouter — dipakai kalau routing lewat 1 shared key. */
 const OPENROUTER_MODEL_SLUG: Record<ModelAlias, string> = {
   lucent: getLucentModelSlug(),
-  arete: "qwen/qwen3.7-plus",
-  noir: `anthropic/${getModel("noir").apiModel}`,
+  arete: "deepseek/deepseek-v4-pro",
+  noir: "deepseek/deepseek-v4-pro",
 };
 
 /**
@@ -162,7 +144,7 @@ const OPENROUTER_MODEL_SLUG: Record<ModelAlias, string> = {
  * sederhana (0 char), baru muncul jelas di "xhigh" (282 char) dan "max" (746
  * char) — jadi utk Noir, app "high" HARUS dipetakan ke provider "xhigh" biar
  * thinking benar-benar terasa aktif, bukan ke provider "high" yang literal.
- * DeepSeek (Lucent) dan Qwen (Arete) sudah terbukti reasoning-nya jelas di
+ * DeepSeek (Lucent/Arete) sudah terbukti reasoning-nya jelas di
  * kedua effort dengan mapping high/xhigh biasa.
  */
 const OPENROUTER_EFFORT_MAP: Record<ModelAlias, { high: string; max: string }> = {
@@ -174,10 +156,10 @@ const OPENROUTER_EFFORT_MAP: Record<ModelAlias, { high: string; max: string }> =
 type KeyResolution = { apiKey: string; viaOpenRouter: boolean };
 
 /**
- * Resolusi key per model: native key (DASHSCOPE_API_KEY/ANTHROPIC_API_KEY)
- * diprioritaskan kalau ada; kalau tidak, jatuh ke shared key (DEEPSEEK_API_KEY)
- * — dan HANYA dipakai untuk Arete/Noir kalau shared key itu memang key
- * OpenRouter (banyak user cuma punya 1 OpenRouter key untuk ketiga model).
+ * Resolusi key per model: semua model kini memakai 1 shared key
+ * (DEEPSEEK_API_KEY / DRAWING_INTELLIGENCE_API_KEY via opencode-go).
+ * Native key DashScope/Anthropic TIDAK dipakai lagi — tidak ada model Qwen/
+ * Claude di Command Room.
  */
 function resolveKeyForModel(modelAlias: ModelAlias): KeyResolution | null {
   const shared = getSharedKey();
@@ -188,15 +170,11 @@ function resolveKeyForModel(modelAlias: ModelAlias): KeyResolution | null {
     return { apiKey: shared, viaOpenRouter: sharedIsOr };
   }
   if (modelAlias === "arete") {
-    const native = getDashScopeKey();
-    if (native) return { apiKey: native, viaOpenRouter: false };
-    if (shared && sharedIsOr) return { apiKey: shared, viaOpenRouter: true };
+    if (shared) return { apiKey: shared, viaOpenRouter: sharedIsOr };
     return null;
   }
   // noir
-  const native = getAnthropicKey();
-  if (native) return { apiKey: native, viaOpenRouter: false };
-  if (shared && sharedIsOr) return { apiKey: shared, viaOpenRouter: true };
+  if (shared) return { apiKey: shared, viaOpenRouter: sharedIsOr };
   return null;
 }
 
@@ -371,9 +349,10 @@ function buildDeepSeekPayload(
   messages: ChatMessage[],
   thinking: ThinkingMode,
   effort: ReasoningEffort,
+  modelAlias: ModelAlias,
 ): Record<string, any> {
   const payload: Record<string, any> = {
-    model: getModel("lucent").apiModel,
+    model: getModel(modelAlias).apiModel,
     messages: withSystemPrompt(messages),
     stream: true,
   };
@@ -398,108 +377,16 @@ async function streamDeepSeekNative(
   sendEvent: SendEvent,
   runId: string | undefined,
   conversationId: string | undefined,
-  modelAlias?: ModelAlias,
+  modelAlias: ModelAlias = "lucent",
 ): Promise<void> {
-  const payload = buildDeepSeekPayload(messages, thinking, effort);
+  const payload = buildDeepSeekPayload(messages, thinking, effort, modelAlias);
   const res = await fetchOrThrow(`${getDeepSeekBaseUrl()}/chat/completions`, apiKey, payload, req);
   await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId, modelAlias, req);
 }
 
-// ─── Arete — Qwen3.7-Plus via DashScope native (OpenAI-compatible mode) ───────
-// NOTE: field enable_thinking/thinking_budget belum diverifikasi end-to-end
-// lewat DashScope langsung (tidak ada DASHSCOPE_API_KEY di lingkungan ini) —
-// path yang benar-benar teruji live adalah lewat OpenRouter (streamOpenRouter).
-const ARETE_THINKING_BUDGET_HIGH = 16384;
-
-function buildDashScopePayload(
-  messages: ChatMessage[],
-  thinking: ThinkingMode,
-  effort: ReasoningEffort,
-): Record<string, any> {
-  const payload: Record<string, any> = {
-    model: getModel("arete").apiModel,
-    messages: withSystemPrompt(messages),
-    stream: true,
-  };
-  if (thinking === "on") {
-    payload.enable_thinking = true;
-    payload.max_tokens = outputTokenLimit(thinking, effort);
-    // max effort = tanpa batas (thinking_budget dihilangkan); high = dibatasi.
-    if (effort !== "max") payload.thinking_budget = ARETE_THINKING_BUDGET_HIGH;
-  } else {
-    payload.enable_thinking = false;
-    payload.max_tokens = outputTokenLimit(thinking, effort);
-    payload.temperature = 0.2;
-  }
-  return payload;
-}
-
-async function streamDashScopeNative(
-  messages: ChatMessage[],
-  thinking: ThinkingMode,
-  effort: ReasoningEffort,
-  apiKey: string,
-  req: NextRequest,
-  sendEvent: SendEvent,
-  runId: string | undefined,
-  conversationId: string | undefined,
-  modelAlias?: ModelAlias,
-): Promise<void> {
-  const payload = buildDashScopePayload(messages, thinking, effort);
-  const res = await fetchOrThrow(`${getDashScopeBaseUrl()}/chat/completions`, apiKey, payload, req);
-  await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId, modelAlias, req);
-}
-
-// ─── Noir — provider native SDK resmi (native key saja) ─────────
-
-function splitSystemAndMessages(messages: ChatMessage[]): { system?: string; messages: { role: "user" | "assistant"; content: string }[] } {
-  const withSystem = withSystemPrompt(messages);
-  const systemParts = withSystem.filter((m) => m.role === "system").map((m) => m.content);
-  const rest = withSystem
-    .filter((m): m is { role: "user" | "assistant"; content: string } => m.role === "user" || m.role === "assistant");
-  return { system: systemParts.length ? systemParts.join("\n\n") : undefined, messages: rest };
-}
-
-async function streamAnthropicNative(
-  messages: ChatMessage[],
-  thinking: ThinkingMode,
-  effort: ReasoningEffort,
-  apiKey: string,
-  req: NextRequest,
-  sendEvent: SendEvent,
-  runId: string | undefined,
-  conversationId: string | undefined,
-): Promise<void> {
-  const client = new Anthropic({ apiKey });
-  const { system, messages: anthropicMessages } = splitSystemAndMessages(messages);
-
-  const stream = client.messages.stream(
-    {
-      model: getModel("noir").apiModel,
-      max_tokens: outputTokenLimit(thinking, effort),
-      system,
-      messages: anthropicMessages,
-      thinking: thinking === "on" ? { type: "adaptive", display: "summarized" } : { type: "disabled" },
-      output_config: { effort: effort === "max" ? "max" : "xhigh" },
-    },
-    { signal: req.signal },
-  );
-
-  for await (const event of stream) {
-    if (event.type === "content_block_delta") {
-      const delta: any = event.delta;
-      if (delta.type === "thinking_delta" && delta.thinking) {
-        sendEvent("message", { type: "reasoning", runId, conversationId, delta: delta.thinking, timestamp: new Date().toISOString() });
-      } else if (delta.type === "text_delta" && delta.text) {
-        sendEvent("message", { type: "content", runId, conversationId, delta: delta.text, timestamp: new Date().toISOString() });
-      }
-    }
-  }
-}
-
 // ─── Fase 0 tool-calling bridge ────────────────────────────────────────────
-// Jembatan antara 4 jalur provider Command Room (OpenRouter/DeepSeek-native/
-// DashScope-native/Anthropic-native) dan tool-loop provider-agnostic di tools.ts.
+// Jembatan antara 2 jalur provider Command Room (OpenRouter/DeepSeek-native)
+// dan tool-loop provider-agnostic di tools.ts.
 // Mengembalikan messages yang sudah diperkaya hasil tool (kalau ada tool dipakai)
 // untuk diteruskan ke fungsi stream*() yang sudah ada tanpa mengubahnya.
 
@@ -584,12 +471,11 @@ async function resolveToolsForModel(
   }
 
   if (modelAlias === "arete") {
-    // DashScope native belum diverifikasi live (lihat catatan di streamDashScopeNative) --
-    // pakai jalur OpenAI-compatible yang sama, base URL DashScope.
+    // Semua model kini deepseek via 1 shared key opencode-go.
     const { messages: resolved, usedTool } = await runDeepSeekNativeWithTools({
       apiModel: getModel("arete").apiModel,
       modelAlias,
-      baseUrl: getDashScopeBaseUrl(),
+      baseUrl: getDeepSeekBaseUrl(),
       apiKey,
       messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "", toolNames) }, ...withPrompt.slice(1)],
       context: toolContext,
@@ -600,25 +486,19 @@ async function resolveToolsForModel(
     return usedTool ? flattenToolHistoryToChatMessages(resolved) : messages;
   }
 
-  // noir — Anthropic native
-  const { system, messages: anthropicMessages } = splitSystemAndMessages(messages);
-  const { messages: resolved, usedTool } = await runAnthropicWithTools({
+  // noir — deepseek native (panel reasoning eksplisit tetap dipertahankan)
+  const { messages: resolved, usedTool } = await runDeepSeekNativeWithTools({
     apiModel: getModel("noir").apiModel,
     modelAlias,
+    baseUrl: getDeepSeekBaseUrl(),
     apiKey,
-    system: withToolSystemPrompt(system ?? SYSTEM_PROMPT, toolNames),
-    messages: anthropicMessages,
+    messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "", toolNames) }, ...withPrompt.slice(1)],
     context: toolContext,
     connectors,
     toolNames,
     req, sendEvent, runId, conversationId,
   });
-  if (!usedTool) return messages;
-  // runAnthropicWithTools sudah meratakan hasilnya jadi {role, content: string}[]
-  // biasa sebelum return (lihat catatan di tools.ts) -- tidak perlu flatten lagi di
-  // sini. Kembalikan dengan system prompt asli dipertahankan terpisah karena
-  // streamAnthropicNative men-split ulang system dari messages.
-  return [{ role: "system", content: SYSTEM_PROMPT }, ...resolved];
+  return usedTool ? flattenToolHistoryToChatMessages(resolved) : messages;
 }
 
 // ─── POST handler ─────────────────────────────────────────────────────────────
@@ -798,12 +678,8 @@ export async function POST(req: NextRequest) {
 
         if (resolved.viaOpenRouter) {
           await streamOpenRouter(modelAlias, finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId);
-        } else if (modelAlias === "lucent") {
-          await streamDeepSeekNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId, modelAlias);
-        } else if (modelAlias === "arete") {
-          await streamDashScopeNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId, modelAlias);
         } else {
-          await streamAnthropicNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId);
+          await streamDeepSeekNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId, modelAlias);
         }
 
         // Activity timeline berasal dari milestone aktual di route/tool pipeline.

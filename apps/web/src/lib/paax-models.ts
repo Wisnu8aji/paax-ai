@@ -2,9 +2,9 @@
  * paax-models.ts — Single source of truth untuk model internal PAAX AI.
  *
  * 3 model aktif (Command Room):
- *   - Lucent → DeepSeek V4 Pro   (default harian, thinking bisa on/off)
- *   - Arete  → Qwen3.7-Plus      (thinking bisa on/off via thinking budget)
- *   - Noir   → Claude Sonnet 5   (thinking bisa on/off via adaptive thinking)
+ *   - Lucent → DeepSeek V4 Flash (default harian, thinking bisa on/off)
+ *   - Arete  → DeepSeek V4 Pro   (thinking bisa on/off)
+ *   - Noir   → DeepSeek V4 Pro   (thinking bisa on/off, panel reasoning eksplisit)
  *
  * ATURAN EMAS: File ini hanya berisi definisi model.
  * Tidak ada kalkulasi angka RAB/HSP/volume di sini.
@@ -40,14 +40,14 @@ export const PAAX_MODELS: Record<ModelAlias, PaaxModelDef> = {
     id: "lucent",
     displayName: "Lucent",
     provider: "deepseek",
-    apiModel: "deepseek-reasoner",
+    apiModel: "deepseek-v4-flash",
     supportsThinking: true,
     forcedThinking: null,
     allowedReasoningEfforts: ["high", "max"],
     defaultReasoningEffort: "high",
     defaultThinking: "on",
     description: "Fast, capable default for daily engineering chat.",
-    descriptionLong: "DeepSeek V4 Pro. Model penalaran umum untuk konsultasi harian, analisa struktur, dan audit teknis.",
+    descriptionLong: "DeepSeek V4 Flash. Model penalaran cepat untuk konsultasi harian, analisa struktur, dan audit teknis.",
     thinkingOnLabel: "Deeper analysis for complex tasks.",
     thinkingOffLabel: "Faster response. No visible reasoning mode.",
     effortHighLabel: "Balanced reasoning.",
@@ -56,15 +56,15 @@ export const PAAX_MODELS: Record<ModelAlias, PaaxModelDef> = {
   arete: {
     id: "arete",
     displayName: "Arete",
-    provider: "qwen",
-    apiModel: "qwen3.7-plus",
+    provider: "deepseek",
+    apiModel: "deepseek-v4-pro",
     supportsThinking: true,
     forcedThinking: null,
     allowedReasoningEfforts: ["high", "max"],
     defaultReasoningEffort: "high",
     defaultThinking: "on",
-    description: "Alternative reasoning model — Qwen3.7 Plus.",
-    descriptionLong: "Qwen3.7 Plus (Alibaba, via DashScope). Model penalaran hybrid dengan thinking budget yang bisa diatur.",
+    description: "Alternative reasoning model — DeepSeek V4 Pro.",
+    descriptionLong: "DeepSeek V4 Pro (via opencode-go). Model penalaran mendalam untuk analisa kompleks dengan thinking yang bisa diatur.",
     thinkingOnLabel: "Deeper analysis for complex tasks.",
     thinkingOffLabel: "Faster response. No visible reasoning mode.",
     effortHighLabel: "Balanced reasoning.",
@@ -73,19 +73,19 @@ export const PAAX_MODELS: Record<ModelAlias, PaaxModelDef> = {
   noir: {
     id: "noir",
     displayName: "Noir",
-    provider: "anthropic",
-    apiModel: "claude-sonnet-5",
+    provider: "deepseek",
+    apiModel: "deepseek-v4-pro",
     supportsThinking: true,
     forcedThinking: null,
     allowedReasoningEfforts: ["high", "max"],
     defaultReasoningEffort: "high",
     defaultThinking: "on",
-    description: "Claude Sonnet 5 — strong on coding & agentic tasks.",
-    descriptionLong: "Claude Sonnet 5 (Anthropic). Kualitas mendekati Opus untuk coding dan tugas agentic pada biaya Sonnet.",
-    thinkingOnLabel: "Adaptive thinking — Claude decides depth automatically.",
+    description: "DeepSeek V4 Pro — reasoning mendalam dengan panel eksplisit.",
+    descriptionLong: "DeepSeek V4 Pro (via opencode-go). Mode reasoning eksplisit dengan panel berpikir untuk tugas agentic dan coding berat.",
+    thinkingOnLabel: "Deep reasoning with visible trace.",
     thinkingOffLabel: "Faster response. No visible reasoning mode.",
-    effortHighLabel: "Balanced reasoning (xhigh).",
-    effortMaxLabel: "Maximum reasoning depth (max).",
+    effortHighLabel: "Balanced reasoning.",
+    effortMaxLabel: "Maximum reasoning depth.",
   },
 } as const;
 

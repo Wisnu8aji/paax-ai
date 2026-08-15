@@ -23,9 +23,9 @@ describe("paax-models", () => {
   });
 
   it("maps each model to its provider and API model id", () => {
-    expect(PAAX_MODELS.lucent).toMatchObject({ provider: "deepseek", apiModel: "deepseek-reasoner" });
-    expect(PAAX_MODELS.arete).toMatchObject({ provider: "qwen", apiModel: "qwen3.7-plus" });
-    expect(PAAX_MODELS.noir).toMatchObject({ provider: "anthropic", apiModel: "claude-sonnet-5" });
+    expect(PAAX_MODELS.lucent).toMatchObject({ provider: "deepseek", apiModel: "deepseek-v4-flash" });
+    expect(PAAX_MODELS.arete).toMatchObject({ provider: "deepseek", apiModel: "deepseek-v4-pro" });
+    expect(PAAX_MODELS.noir).toMatchObject({ provider: "deepseek", apiModel: "deepseek-v4-pro" });
   });
 
   it("supports thinking on/off for all 3 models with default on", () => {
