@@ -11,6 +11,8 @@ const MAX_SEARCH_FILES = 300;
 const MAX_SEARCH_MATCHES = 60;
 const MAX_READ_CHARS = 48_000;
 const SKIPPED_DIRECTORIES = new Set([".git", ".next", "node_modules", "graphify-out", ".local-runtime"]);
+const PROTECTED_PATH = /(^|[\\/])(?:\.env(?:\.[^\\/]*)?|(?:id_(?:rsa|ed25519)|credentials(?:\.[^\\/]*)?|service-credentials)(?:[\\/]|$)|[^\\/]+\.(?:pem|key|p12|pfx|crt))$/i;
+const PROTECTED_REFERENCE = /(?:^|[\s"'=])(?:[A-Za-z0-9_.-]+[\\/])*?(?:\.env(?:\.[A-Za-z0-9_.-]*)?|id_(?:rsa|ed25519)|credentials(?:\.[A-Za-z0-9_.-]*)?|service-credentials|[A-Za-z0-9_.-]+\.(?:pem|key|p12|pfx|crt))(?=$|[\s"'=])/i;
 
 const WORK_TOOL_METADATA: Record<string, { description: string; available: boolean }> = {
   todo: { description: "Maintain the authoritative task ledger for this work session.", available: true },
@@ -36,6 +38,10 @@ function rootPath(input?: string): string {
 function cleanRelativePath(value: unknown): string {
   if (typeof value !== "string" || !value.trim()) return ".";
   return value.trim();
+}
+
+function isProtectedPath(value: string): boolean {
+  return PROTECTED_PATH.test(value.replace(/\\/g, "/"));
 }
 
 function resolveInside(root: string, requested: unknown): { absolute: string; relativePath: string } | null {
@@ -71,6 +77,7 @@ async function listWorkspace(root: string, args: Record<string, unknown>): Promi
 async function readWorkspaceFile(root: string, args: Record<string, unknown>): Promise<Record<string, unknown>> {
   const target = resolveInside(root, args.path);
   if (!target || target.relativePath === ".") return errorResult("file harus berada di dalam workspace yang diizinkan");
+  if (isProtectedPath(target.relativePath)) return errorResult("path dilindungi dan tidak dapat dibaca melalui Work");
   try {
     const info = await stat(target.absolute);
     if (!info.isFile()) return errorResult("path bukan file");
@@ -93,10 +100,13 @@ async function collectFiles(root: string, directory: string, output: string[]): 
   }
   for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
     if (output.length >= MAX_SEARCH_FILES) return;
+    const candidate = resolve(directory, entry.name);
+    const candidateRelativePath = relative(root, candidate);
+    if (isProtectedPath(candidateRelativePath)) continue;
     if (entry.isDirectory()) {
-      if (!SKIPPED_DIRECTORIES.has(entry.name)) await collectFiles(root, resolve(directory, entry.name), output);
+      if (!SKIPPED_DIRECTORIES.has(entry.name)) await collectFiles(root, candidate, output);
     } else {
-      output.push(resolve(directory, entry.name));
+      output.push(candidate);
     }
   }
 }
@@ -155,6 +165,7 @@ async function runTerminal(
 ): Promise<Record<string, unknown>> {
   const command = typeof args.command === "string" ? args.command.trim() : "";
   if (!command) return errorResult("command wajib diisi");
+  if (PROTECTED_REFERENCE.test(command)) return errorResult("referensi ke path dilindungi ditolak oleh Work");
   if (!safeTerminalCommand(command)) {
     if (!requestApproval) return { approval_required: true, executed: false, reason: "Perintah ini tidak termasuk allowlist baca-saja." };
     const approved = await requestApproval({
