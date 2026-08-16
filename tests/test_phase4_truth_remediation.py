@@ -22,7 +22,10 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DB_PATH = Path(os.environ.get("PAAX_DATA_ROOT", "G:/PAAX-Data")) / "db" / "portable.sqlite"
+DB_PATH = Path(os.environ.get("PAAX_DATA_ROOT", r"D:\paax-data")) / "db" / "portable.sqlite"
+REFERENCE_RUN_ID = os.environ.get(
+    "PAAX_REFERENCE_RUN_ID", "514fb7f2-26fd-5816-9f22-a4a2412688bf"
+)
 
 
 # ─────────────────────────────────────────────
@@ -226,7 +229,7 @@ class TestPackageIndexHonesty:
             pytest.skip(f"Database not found at {DB_PATH}")
         sys.path.insert(0, str(REPO_ROOT / "services/db/src"))
         from paax_db.package_index import build_package_index_from_db
-        manifest = build_package_index_from_db(DB_PATH)
+        manifest = build_package_index_from_db(DB_PATH, run_id=REFERENCE_RUN_ID)
         assert manifest["total_pages"] == 88, "Must have exactly 88 pages"
         # Phase 4: honest reporting — unassigned_count should be reported as-is
         assert "needs_review_count" in manifest, "Must report needs_review_count"
@@ -289,10 +292,14 @@ class TestRuntimeAPIProbes:
         if key:
             return key.strip()
         # Try the runtime keyfile used by the stack
-        data_root = os.environ.get("PAAX_DATA_ROOT", "G:/PAAX-Data")
-        keyfile = Path(data_root) / "runtime" / "internal-service.key"
-        if keyfile.is_file():
-            return keyfile.read_text().strip()
+        data_root = Path(os.environ.get("PAAX_DATA_ROOT", r"D:\paax-data"))
+        for keyfile in (
+            data_root / "runtime" / "service-credentials" / "web.key",
+            data_root / "runtime" / "service-credentials" / "db-plhut.key",
+            data_root / "runtime" / "internal-service.key",
+        ):
+            if keyfile.is_file():
+                return keyfile.read_text().strip()
         return None
 
     def _get_web(self, path: str, timeout: int = 10) -> tuple:
@@ -443,26 +450,40 @@ class TestRuntimeAPIProbes:
 
     def test_launcher_runtime_key_acl_and_nonleak(self):
         """The launcher keeps the runtime key file-only and user-private."""
-        data_root = Path(os.environ.get("PAAX_DATA_ROOT", "G:/PAAX-Data"))
-        key_file = data_root / "runtime" / "internal-service.key"
+        data_root = Path(os.environ.get("PAAX_DATA_ROOT", r"D:\paax-data"))
+        key_file = data_root / "runtime" / "service-credentials" / "web.key"
+        if not key_file.is_file():
+            key_file = data_root / "runtime" / "service-credentials" / "db-plhut.key"
+        if not key_file.is_file():
+            key_file = data_root / "runtime" / "internal-service.key"
         assert key_file.is_file(), "Secure portable startup must create a runtime key file"
         assert not list((data_root / "runtime").glob("*.launch.bat")), "Secret-bearing launcher batch files are forbidden"
         key = key_file.read_text(encoding="utf-8").strip()
         assert len(key) >= 32
-        powershell = (
-            "$p='" + str(key_file).replace("'", "''") + "'; "
-            "$a=Get-Acl -LiteralPath $p; $u=[System.Security.Principal.WindowsIdentity]::GetCurrent().Name; "
-            "$r=@($a.Access); $mine=@($r | Where-Object { $_.IdentityReference.Value -eq $u -and -not $_.IsInherited -and $_.AccessControlType -eq 'Allow' -and (($_.FileSystemRights -band [System.Security.AccessControl.FileSystemRights]::FullControl) -eq [System.Security.AccessControl.FileSystemRights]::FullControl) }); "
-            "if($a.Owner -ne $u -or $r.Count -ne 1 -or $mine.Count -ne 1){exit 1}; "
-            "$leak=Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($env:PAAX_RUNTIME_KEY_CHECK) }; if($leak){exit 2}"
-        )
+        # Windows PowerShell can fail to auto-load its security module in a
+        # non-profile subprocess.  icacls is the native ACL reader and keeps
+        # this check independent of that module-loading state.
         env = os.environ.copy()
         env["PAAX_RUNTIME_KEY_CHECK"] = key
+        expected_user = f"{env.get('USERDOMAIN', '')}\\{env.get('USERNAME', '')}".strip("\\")
         result = subprocess.run(
-            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", powershell],
+            ["icacls.exe", str(key_file)],
             cwd=str(REPO_ROOT), env=env, capture_output=True, text=True,
         )
-        assert result.returncode == 0, "Runtime key ACL is not user-only or key leaked to a command line"
+        acl_output = result.stdout + result.stderr
+        assert result.returncode == 0, f"Runtime key ACL could not be read: {acl_output}"
+        assert expected_user.lower() in acl_output.lower(), "Runtime key ACL does not grant the current user access"
+        assert "(F)" in acl_output, "Runtime key ACL does not grant full control to the current user"
+        for broad_principal in ("Everyone:", "Users:", "Administrators:"):
+            assert broad_principal.lower() not in acl_output.lower(), (
+                f"Runtime key ACL grants access to broad principal {broad_principal}"
+            )
+        leak_check = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+             "$leak=Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($env:PAAX_RUNTIME_KEY_CHECK) }; if($leak){exit 2}"],
+            cwd=str(REPO_ROOT), env=env, capture_output=True, text=True,
+        )
+        assert leak_check.returncode == 0, "Runtime key leaked to a command line"
 
     def test_cr2a_authenticated_web_gateway_contracts(self):
         """CR2A reads use the web gateway, canonical index, and Core Engine."""

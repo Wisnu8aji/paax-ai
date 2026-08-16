@@ -1,9 +1,11 @@
 import pathlib
 import hashlib
 import json
+import os
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-TARGET_PDF_PATH = pathlib.Path(r"G:\paax-data\gambar kerja\gambar-kerja-arsitektur-gedung-a.pdf")
+DATA_ROOT = pathlib.Path(os.environ.get("PAAX_DATA_ROOT", r"D:\paax-data"))
+TARGET_PDF_PATH = DATA_ROOT / "gambar kerja" / "gambar-kerja-arsitektur-gedung-a.pdf"
 REPORT_PATH = REPO_ROOT / "report" / "report_drawing_intelligence" / "VIEWER_IMAGE_QUALITY_FINAL_REPORT.md"
 
 EXPECTED_PDF_HASH = "7B4151C7EC7C87588B1C858CB0FB77FFDECA550ECB4C041714B3643ECD4B4510"

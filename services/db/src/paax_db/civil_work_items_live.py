@@ -7,9 +7,95 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger(__name__)
 
 
-def _node_evidence_pages(cur: sqlite3.Cursor, node_id: str) -> List[int]:
+def _load_evidence_cache(
+    cur: sqlite3.Cursor,
+) -> Optional[Dict[str, Dict[str, List[Dict[str, Any]]]]]:
+    """Load direct and edge-linked evidence once for the complete graph.
+
+    The work-item endpoint is read-only, but the previous implementation ran
+    two evidence queries per graph node.  With a large project graph that made
+    a normal page load depend on hundreds of round trips to SQLite.  Keeping
+    the same direct-then-edge fallback semantics in an in-memory cache makes
+    the projection bounded without changing its provenance.
+    """
+    direct: Dict[str, List[Dict[str, Any]]] = {}
+    edge: Dict[str, List[Dict[str, Any]]] = {}
+
+    def append_unique(
+        bucket: Dict[str, List[Dict[str, Any]]],
+        node_id: str,
+        record: Dict[str, Any],
+    ) -> None:
+        records = bucket.setdefault(node_id, [])
+        if record not in records:
+            records.append(record)
+
+    def columns(table: str) -> set[str]:
+        return {row[1] for row in cur.execute(f"PRAGMA table_info({table})").fetchall()}
+
+    evidence_columns = columns("project_graph_evidence")
+    junction_columns = columns("project_graph_node_evidence")
+    if not {"evidence_id", "page_index"} <= evidence_columns or "node_id" not in junction_columns:
+        # A small receipt-only fixture may omit the evidence detail tables.
+        # Keep the original query path available for those databases.
+        return None
+
+    document_expression = "e.document_id" if "document_id" in evidence_columns else "NULL"
+    role_expression = "ne.role" if "role" in junction_columns else "NULL"
+
+    cur.execute("""
+        SELECT DISTINCT ne.node_id, e.evidence_id,
+                        {document_expression}, e.page_index, {role_expression}
+        FROM project_graph_node_evidence ne
+        JOIN project_graph_evidence e ON e.evidence_id = ne.evidence_id
+        ORDER BY ne.node_id, e.page_index, e.evidence_id
+    """.format(document_expression=document_expression, role_expression=role_expression))
+    for node_id, evidence_id, document_id, page_index, role in cur.fetchall():
+        append_unique(direct, node_id, {
+            "evidence_id": evidence_id,
+            "document_id": document_id,
+            "page_index": page_index,
+            "role": role,
+        })
+
+    cur.execute("""
+        SELECT DISTINCT edge.source_node_id, edge.target_node_id,
+                        e.evidence_id, {document_expression}, e.page_index, {role_expression}
+        FROM project_graph_edges edge
+        JOIN project_graph_node_evidence ne ON (
+            ne.node_id = edge.source_node_id OR ne.node_id = edge.target_node_id
+        )
+        JOIN project_graph_evidence e ON e.evidence_id = ne.evidence_id
+        ORDER BY edge.source_node_id, edge.target_node_id, e.page_index, e.evidence_id
+    """.format(document_expression=document_expression, role_expression=role_expression))
+    for source_node_id, target_node_id, evidence_id, document_id, page_index, role in cur.fetchall():
+        record = {
+            "evidence_id": evidence_id,
+            "document_id": document_id,
+            "page_index": page_index,
+            "role": role,
+        }
+        append_unique(edge, source_node_id, record)
+        append_unique(edge, target_node_id, record)
+
+    return {"direct": direct, "edge": edge}
+
+
+def _node_evidence_pages(
+    cur: sqlite3.Cursor,
+    node_id: str,
+    evidence_cache: Optional[Dict[str, Dict[str, List[Dict[str, Any]]]]] = None,
+) -> List[int]:
     """Fetch page indices from project_graph_evidence linked to a node via node_evidence junction."""
     # Primary path: node -> node_evidence -> evidence -> page_index
+    if evidence_cache is not None:
+        direct = evidence_cache["direct"].get(node_id, [])
+        pages = sorted({record["page_index"] for record in direct if isinstance(record["page_index"], int)})
+        if pages:
+            return pages
+        edge = evidence_cache["edge"].get(node_id, [])
+        return sorted({record["page_index"] for record in edge if isinstance(record["page_index"], int)})
+
     cur.execute("""
         SELECT DISTINCT e.page_index
         FROM project_graph_node_evidence ne
@@ -41,8 +127,16 @@ def _node_evidence_pages(cur: sqlite3.Cursor, node_id: str) -> List[int]:
     return pages
 
 
-def _node_evidence_refs(cur: sqlite3.Cursor, node_id: str) -> List[Dict[str, Any]]:
+def _node_evidence_refs(
+    cur: sqlite3.Cursor,
+    node_id: str,
+    evidence_cache: Optional[Dict[str, Dict[str, List[Dict[str, Any]]]]] = None,
+) -> List[Dict[str, Any]]:
     """Return resolvable canonical evidence records, never fabricated IDs."""
+    if evidence_cache is not None:
+        direct = evidence_cache["direct"].get(node_id, [])
+        return direct or evidence_cache["edge"].get(node_id, [])
+
     cur.execute("""
         SELECT DISTINCT e.evidence_id, e.document_id, e.page_index, ne.role
         FROM project_graph_node_evidence ne
@@ -105,6 +199,7 @@ def build_live_civil_work_items(db_path: Path, project_id: str = "PLHUT-SURAKART
 
     conn = sqlite3.connect(str(db_path))
     cur = conn.cursor()
+    evidence_cache = _load_evidence_cache(cur)
 
     items: List[Dict[str, Any]] = []
     engine_verified = 0
@@ -167,7 +262,7 @@ def build_live_civil_work_items(db_path: Path, project_id: str = "PLHUT-SURAKART
             display_name = node_info.get("canonical_name") or f"Receipt {receipt_id}"
             level = node_info.get("level_id") or "Tidak Diketahui"
             discipline = node_info.get("discipline") or "STR"
-            source_pages = _node_evidence_pages(cur, node_id) if node_id else []
+            source_pages = _node_evidence_pages(cur, node_id, evidence_cache) if node_id else []
             domain = "Struktur Kolom" if "column" in (canonical.get("calculation_type") or "").lower() else "Lainnya / Tidak Terklasifikasi"
             domain_counts[domain] = domain_counts.get(domain, 0) + 1
             items.append({
@@ -281,7 +376,7 @@ def build_live_civil_work_items(db_path: Path, project_id: str = "PLHUT-SURAKART
             "result_display": "MeasurementFact terverifikasi; belum ada calculation receipt engine",
             "status": "measurement_verified",
             "source_authority": "measurement_fact_db",
-            "source_pages": _node_evidence_pages(cur, el_ids[0]) if el_ids else [],
+            "source_pages": _node_evidence_pages(cur, el_ids[0], evidence_cache) if el_ids else [],
             "source_refs": [
                 {"role": "evidence_ref", "ref": ref} for ref in ev_refs
             ],
@@ -331,7 +426,7 @@ def build_live_civil_work_items(db_path: Path, project_id: str = "PLHUT-SURAKART
         category, domain, unit, wbs_group = _classify_node(name_upper, disc or "")
 
         # Get real evidence pages for this node — no global page fallback
-        canonical_evidence = _node_evidence_refs(cur, node_id)
+        canonical_evidence = _node_evidence_refs(cur, node_id, evidence_cache)
         evidence_pages = sorted({e["page_index"] for e in canonical_evidence if e["page_index"] is not None})
 
         if node_type == "drawing_reference":

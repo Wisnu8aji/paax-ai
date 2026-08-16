@@ -15,6 +15,18 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # Alembic creates version_num as VARCHAR(32), while this revision ID is
+    # longer than that limit. Widen the metadata column before Alembic stamps
+    # the new revision so PostgreSQL upgrades remain valid.
+    if op.get_bind().dialect.name == "postgresql":
+        op.alter_column(
+            "alembic_version",
+            "version_num",
+            existing_type=sa.String(length=32),
+            type_=sa.String(length=64),
+            existing_nullable=False,
+        )
+
     inspector = inspect(op.get_bind())
     existing = {column["name"] for column in inspector.get_columns("dem_pages")}
     fields = (

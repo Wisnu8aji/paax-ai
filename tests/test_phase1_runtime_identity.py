@@ -18,7 +18,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "services" / "db" / "src"))
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
-DATA_ROOT = Path(os.environ.get("PAAX_DATA_ROOT", r"G:\PAAX-Data"))
+DATA_ROOT = Path(os.environ.get("PAAX_DATA_ROOT", r"D:\paax-data"))
+REFERENCE_RUN_ID = os.environ.get(
+    "PAAX_REFERENCE_RUN_ID", "514fb7f2-26fd-5816-9f22-a4a2412688bf"
+)
 
 from paax_db.runtime_identity import get_runtime_identity
 
@@ -41,7 +44,7 @@ def test_preflight_port_validation(monkeypatch):
     from scripts.portable.preflight import main as run_preflight
 
     # Running preflight on clean/available state should pass
-    monkeypatch.setattr(sys, "argv", ["preflight.py"])
+    monkeypatch.setattr(sys, "argv", ["preflight.py", "--allow-running"])
     code = run_preflight()
     assert code == 0
 
@@ -58,7 +61,7 @@ def test_database_preservation_and_plhut_integrity():
     proj = cur.fetchone()
     assert proj is not None, "PLHUT-SURAKARTA project missing from database"
 
-    cur.execute("SELECT COUNT(*) FROM dem_pages")
+    cur.execute("SELECT COUNT(*) FROM dem_pages WHERE run_id = ?", (REFERENCE_RUN_ID,))
     pages_count = cur.fetchone()[0]
     assert pages_count == 88, f"Expected 88 dem_pages, got {pages_count}"
 

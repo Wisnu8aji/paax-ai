@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import shutil
 import sqlite3
 import subprocess
@@ -9,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = Path("G:/PAAX-Data/db/portable.sqlite")
+SOURCE = Path(os.environ.get("PAAX_DATA_ROOT", r"D:\paax-data")) / "db" / "portable.sqlite"
 
 
 def _counts(database: Path) -> dict[str, int]:
@@ -49,7 +50,7 @@ def test_legacy_portable_copy_stamps_baseline_and_applies_0037(tmp_path: Path):
     assert _counts(target) == before_counts
     assert _checksum(target) == before_checksum
     with sqlite3.connect(target) as connection:
-        assert connection.execute("SELECT version_num FROM alembic_version").fetchone()[0] == "0038_agent_review_recommendations"
+        assert connection.execute("SELECT version_num FROM alembic_version").fetchone()[0] == "0039_calculation_receipts"
         assert connection.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='agent_review_recommendations'").fetchone()
         columns = {row[1] for row in connection.execute("PRAGMA table_info(dem_pages)")}
     assert {"paax_classification", "paax_discipline", "paax_level", "paax_classification_status"} <= columns

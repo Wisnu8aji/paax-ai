@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import shutil
 import sqlite3
 import sys
@@ -98,9 +99,17 @@ def migrate(repo_root: Path, database: Path, *, backup: bool) -> None:
         if digest(backup_path) != before:
             raise RuntimeError("Portable database backup checksum mismatch")
     config = migration_config(repo_root, database)
-    if stamp := migration_start_revision(database):
-        command.stamp(config, stamp)
-    command.upgrade(config, "head")
+    # Alembic's environment module also accepts DATABASE_URL for service
+    # migrations.  The portable bridge already supplies a validated sync
+    # SQLite URL, so keep the ambient async service URL from overriding it.
+    ambient_database_url = os.environ.pop("DATABASE_URL", None)
+    try:
+        if stamp := migration_start_revision(database):
+            command.stamp(config, stamp)
+        command.upgrade(config, "head")
+    finally:
+        if ambient_database_url is not None:
+            os.environ["DATABASE_URL"] = ambient_database_url
     audit_legacy_baseline(database)
     with sqlite3.connect(database) as connection:
         columns = {row[1] for row in connection.execute("PRAGMA table_info(dem_pages)")}
