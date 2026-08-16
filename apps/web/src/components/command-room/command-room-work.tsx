@@ -249,7 +249,7 @@ export function CommandRoomWorkSurface({ initialSessionId = null }: CommandRoomW
                     <div className="cr-work-commentary" key={`${comment}-${index}`}><span className="cr-work-commentary-mark">·</span><span>{comment}</span></div>
                   ))}
 
-                  {activeSession.events.filter((event) => event.type === "turn.started" || event.type === "status.update" || event.type === "tool.started" || event.type === "tool.completed" || event.type === "log.line").map((event) => (
+                  {activeSession.events.filter((event) => event.type === "turn.started" || event.type === "status.update" || event.type === "tool.generating" || event.type === "tool.started" || event.type === "tool.completed" || event.type === "log.line" || event.type === "artifact.created").map((event) => (
                     <div className="cr-work-event-row" key={event.eventId}>
                       <span className="cr-work-event-type">{event.type}</span>
                       <span>{eventLabel(event)}</span>
