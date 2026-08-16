@@ -6,6 +6,7 @@ import type {
   WorkTask,
   WorkToolRecord,
 } from "./work-agent-types";
+import { normalizeWorkEvent } from "./work-agent-types";
 
 export const WORK_STORAGE_KEY = "paax-work-sessions-v1";
 const MAX_EVENTS = 240;
@@ -100,14 +101,15 @@ export class WorkAgentStore {
   private readonly storage: WorkStorage | null;
   private readonly listeners = new Set<Listener>();
   private readonly seenEventIds = new Map<string, Set<string>>();
-  private readonly seenSequences = new Map<string, Set<number>>();
+  private readonly seenSequences = new Map<string, Set<string>>();
+  private readonly abortControllers = new Map<string, AbortController>();
 
   constructor(storage: WorkStorage | null = browserStorage()) {
     this.storage = storage;
     this.state = storageState(storage?.getItem(WORK_STORAGE_KEY) ?? null);
     for (const [sessionId, session] of Object.entries(this.state.sessionsById)) {
       this.seenEventIds.set(sessionId, new Set(session.events.map((event) => event.eventId)));
-      this.seenSequences.set(sessionId, new Set(session.events.map((event) => event.sequence)));
+      this.seenSequences.set(sessionId, new Set(session.events.map((event) => `${event.runId}:${event.sequence}`)));
     }
   }
 
@@ -135,7 +137,7 @@ export class WorkAgentStore {
       sessionOrder: [sessionId, ...this.state.sessionOrder.filter((id) => id !== sessionId)],
     };
     this.seenEventIds.set(sessionId, new Set());
-    this.seenSequences.set(sessionId, new Set());
+    this.seenSequences.set(sessionId, new Set<string>());
     this.persist();
     this.notify();
     return sessionId;
@@ -150,6 +152,8 @@ export class WorkAgentStore {
     };
     this.seenEventIds.delete(sessionId);
     this.seenSequences.delete(sessionId);
+    this.abortControllers.get(sessionId)?.abort();
+    this.abortControllers.delete(sessionId);
     this.persist();
     this.notify();
   }
@@ -159,70 +163,206 @@ export class WorkAgentStore {
     if (!session || event.conversationId !== sessionId) return;
     if (session.runId && session.runId !== event.runId) return;
 
+    const safeEvent = redactWorkPayload(event, 120_000) as WorkEvent;
+
     const eventIds = this.seenEventIds.get(sessionId) ?? new Set<string>();
-    const sequences = this.seenSequences.get(sessionId) ?? new Set<number>();
-    if (eventIds.has(event.eventId) || sequences.has(event.sequence)) return;
-    eventIds.add(event.eventId);
-    sequences.add(event.sequence);
+    const sequences = this.seenSequences.get(sessionId) ?? new Set<string>();
+    const sequenceKey = `${safeEvent.runId}:${safeEvent.sequence}`;
+    if (eventIds.has(safeEvent.eventId) || sequences.has(sequenceKey)) return;
+    eventIds.add(safeEvent.eventId);
+    sequences.add(sequenceKey);
     this.seenEventIds.set(sessionId, eventIds);
     this.seenSequences.set(sessionId, sequences);
 
     let next: WorkSessionSnapshot = {
       ...session,
-      runId: session.runId ?? event.runId,
-      events: [...session.events, { ...event, args: event.args === undefined ? undefined : redactWorkPayload(event.args) }].slice(-MAX_EVENTS),
-      lastSequence: Math.max(session.lastSequence, event.sequence),
-      updatedAt: event.timestamp || now(),
+      runId: session.runId ?? safeEvent.runId,
+      events: [...session.events, safeEvent].slice(-MAX_EVENTS),
+      lastSequence: Math.max(session.lastSequence, safeEvent.sequence),
+      updatedAt: safeEvent.timestamp || now(),
     };
 
-    switch (event.type) {
+    switch (safeEvent.type) {
       case "turn.started":
-        next = { ...next, state: "running", phase: event.phase ?? "starting", prompt: typeof event.message === "string" ? event.message : next.prompt };
+        next = { ...next, state: "running", phase: safeEvent.phase ?? "starting", prompt: typeof safeEvent.message === "string" ? safeEvent.message : next.prompt };
         break;
       case "status.update":
-        next = { ...next, state: next.state === "waiting_approval" ? next.state : "running", phase: event.phase ?? next.phase };
+        next = { ...next, state: next.state === "waiting_approval" ? next.state : "running", phase: safeEvent.phase ?? next.phase };
         break;
       case "assistant.interim":
-        if (typeof event.message === "string" && event.message.trim()) {
-          next = { ...next, commentary: [...next.commentary, event.message].slice(-MAX_COMMENTARY) };
+        if (typeof safeEvent.message === "string" && safeEvent.message.trim()) {
+          next = { ...next, commentary: [...next.commentary, safeEvent.message].slice(-MAX_COMMENTARY) };
         }
         break;
       case "reasoning.delta":
-        next = { ...next, reasoning: `${next.reasoning}${typeof event.delta === "string" ? event.delta : ""}`.slice(-MAX_TEXT) };
+        next = { ...next, reasoning: `${next.reasoning}${typeof safeEvent.delta === "string" ? safeEvent.delta : ""}`.slice(-MAX_TEXT) };
         break;
       case "plan.updated":
-        if (Array.isArray(event.tasks)) next = { ...next, tasks: event.tasks };
-        else if (event.task) next = { ...next, tasks: upsertTask(next.tasks, event.task) };
+        if (Array.isArray(safeEvent.tasks)) next = { ...next, tasks: safeEvent.tasks };
+        else if (safeEvent.task) next = { ...next, tasks: upsertTask(next.tasks, safeEvent.task) };
         break;
       case "tool.generating":
       case "tool.started":
       case "tool.progress":
       case "tool.completed":
-        if (event.tool) next = { ...next, tools: upsertTool(next.tools, event.tool) };
+        if (safeEvent.tool) next = { ...next, tools: upsertTool(next.tools, safeEvent.tool) };
         break;
       case "approval.requested":
-        next = { ...next, state: "waiting_approval", pendingApproval: event.approval ?? null };
+        next = { ...next, state: "waiting_approval", pendingApproval: safeEvent.approval ?? null };
         break;
       case "approval.resolved":
-        next = { ...next, state: event.approval?.state === "denied" ? "failed" : "running", pendingApproval: null };
+        next = { ...next, state: safeEvent.approval?.state === "denied" ? "failed" : "running", pendingApproval: null };
         break;
       case "log.line":
-        if (event.log) next = { ...next, logs: [...next.logs, { ...event.log, timestamp: event.timestamp }].slice(-MAX_LOGS) };
+        if (safeEvent.log) next = { ...next, logs: [...next.logs, { ...safeEvent.log, timestamp: safeEvent.timestamp }].slice(-MAX_LOGS) };
         break;
       case "assistant.delta":
-        next = { ...next, state: "running", answer: `${next.answer}${typeof event.delta === "string" ? event.delta : ""}`.slice(-MAX_TEXT) };
+        next = { ...next, state: "running", answer: `${next.answer}${typeof safeEvent.delta === "string" ? safeEvent.delta : ""}`.slice(-MAX_TEXT) };
         break;
       case "turn.completed":
-        next = { ...next, state: "completed", phase: "completed", answer: typeof event.finalMarkdown === "string" ? event.finalMarkdown : next.answer };
+        next = { ...next, state: "completed", phase: "completed", answer: typeof safeEvent.finalMarkdown === "string" ? safeEvent.finalMarkdown : next.answer };
         break;
       case "error":
-        next = { ...next, state: "failed", phase: "failed", errorMessage: event.errorMessage ?? event.message ?? "Work failed" };
+        next = { ...next, state: "failed", phase: "failed", errorMessage: safeEvent.errorMessage ?? safeEvent.message ?? "Work failed" };
         break;
       default:
         break;
     }
 
     this.state = { ...this.state, sessionsById: { ...this.state.sessionsById, [sessionId]: next }, sessionOrder: [sessionId, ...this.state.sessionOrder.filter((id) => id !== sessionId)] };
+    this.persist();
+    this.notify();
+  }
+
+  async startTurn(sessionId: string, prompt: string): Promise<void> {
+    const session = this.state.sessionsById[sessionId];
+    const cleanPrompt = prompt.trim();
+    if (!session || !cleanPrompt || this.abortControllers.has(sessionId)) return;
+
+    const runId = newId("work-run");
+    const startedAt = now();
+    const history: Array<{ role: "user" | "assistant"; content: string }> = [];
+    for (const event of session.events) {
+      if (event.type === "turn.started" && typeof event.message === "string" && event.message.trim()) {
+        history.push({ role: "user", content: event.message });
+      }
+      if (event.type === "turn.completed" && typeof event.finalMarkdown === "string" && event.finalMarkdown.trim()) {
+        history.push({ role: "assistant", content: event.finalMarkdown });
+      }
+    }
+    history.push({ role: "user", content: cleanPrompt });
+
+    this.state = {
+      ...this.state,
+      sessionsById: {
+        ...this.state.sessionsById,
+        [sessionId]: {
+          ...session,
+          runId,
+          state: "running",
+          phase: "starting",
+          prompt: cleanPrompt,
+          tasks: [],
+          tools: [],
+          commentary: [],
+          reasoning: "",
+          answer: "",
+          logs: [],
+          pendingApproval: null,
+          lastSequence: -1,
+          errorMessage: undefined,
+          updatedAt: startedAt,
+        },
+      },
+      sessionOrder: [sessionId, ...this.state.sessionOrder.filter((id) => id !== sessionId)],
+    };
+    this.seenEventIds.set(sessionId, new Set());
+    this.seenSequences.set(sessionId, new Set<string>());
+    this.persist();
+    this.notify();
+
+    const controller = new AbortController();
+    this.abortControllers.set(sessionId, controller);
+    try {
+      const response = await fetch("/api/command-room/work", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Conversation-Id": sessionId },
+        body: JSON.stringify({
+          mode: "work",
+          runId,
+          conversationId: sessionId,
+          messages: history,
+          modelAlias: "lucent",
+          reasoningEffort: "high",
+          thinking: "on",
+        }),
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        let message = `HTTP ${response.status} ${response.statusText}`;
+        try {
+          const body = await response.json() as { error?: string };
+          if (body.error) message = body.error;
+        } catch {
+          // Non-JSON error bodies are represented by the HTTP status.
+        }
+        throw new Error(message);
+      }
+      if (!response.body) throw new Error("Work response stream tidak tersedia.");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+      const consume = (block: string) => {
+        const dataLine = block.split(/\r?\n/).find((line) => line.startsWith("data: "));
+        if (!dataLine) return;
+        const raw = dataLine.slice(6).trim();
+        if (!raw || raw === "[DONE]") return;
+        let value: unknown;
+        try { value = JSON.parse(raw); } catch { return; }
+        const event = normalizeWorkEvent(value);
+        if (event) this.applyEvent(sessionId, event);
+      };
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const blocks = buffer.split(/\r?\n\r?\n/);
+        buffer = blocks.pop() ?? "";
+        blocks.forEach(consume);
+      }
+      if (buffer.trim()) consume(buffer);
+    } catch (error) {
+      if (!(error instanceof Error && error.name === "AbortError")) {
+        const current = this.state.sessionsById[sessionId];
+        const sequence = Math.max(0, current?.lastSequence ?? -1) + 1;
+        this.applyEvent(sessionId, {
+          type: "error",
+          runId,
+          conversationId: sessionId,
+          eventId: `${runId}:${sequence}`,
+          sequence,
+          timestamp: now(),
+          errorMessage: error instanceof Error ? error.message : "Work request gagal",
+        });
+      }
+    } finally {
+      this.abortControllers.delete(sessionId);
+    }
+  }
+
+  cancelTurn(sessionId: string): void {
+    const controller = this.abortControllers.get(sessionId);
+    const session = this.state.sessionsById[sessionId];
+    if (!controller || !session) return;
+    controller.abort();
+    this.abortControllers.delete(sessionId);
+    this.state = {
+      ...this.state,
+      sessionsById: {
+        ...this.state.sessionsById,
+        [sessionId]: { ...session, state: "cancelled", phase: "cancelled", updatedAt: now() },
+      },
+    };
     this.persist();
     this.notify();
   }

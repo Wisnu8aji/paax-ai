@@ -19,8 +19,9 @@ export class WorkEventEmitter {
   emit(type: WorkEventType, data: Record<string, unknown> = {}): WorkEvent {
     const sequence = this.sequence;
     this.sequence += 1;
+    const safeData = redactWorkPayload(data);
     const event = {
-      ...redactWorkPayload(data),
+      ...(safeData && typeof safeData === "object" && !Array.isArray(safeData) ? safeData : {}),
       type,
       runId: this.runId,
       conversationId: this.conversationId,

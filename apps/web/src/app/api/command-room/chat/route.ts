@@ -41,6 +41,11 @@ import {
   selectCommandRoomTools,
   type CommandRoomConnector,
 } from "./connector-permissions";
+import { buildWorkMessages, parseWorkRequest, type WorkRequest } from "../work/contract";
+import { WorkEventEmitter } from "../work/events";
+import { createWorkToolRegistry, getWorkToolNames } from "../work/tools";
+import { createWorkApproval, resolveWorkApproval } from "../work/approval";
+import type { WorkEvent } from "@/lib/command-room/work-agent-types";
 
 export const runtime = "nodejs";
 export const maxDuration = 600; // 10 menit
@@ -48,6 +53,7 @@ export const maxDuration = 600; // 10 menit
 // ─── Schema validasi request ─────────────────────────────────────────────────
 
 const CommandRoomChatSchema = z.object({
+  mode: z.enum(["chat", "work"]).default("chat"),
   runId: z.string().optional(),
   conversationId: z.string().optional(),
   // Fase 10 (PLAN.md §9): projectId OPSIONAL -- kalau dikirim, tool_call
@@ -501,10 +507,165 @@ async function resolveToolsForModel(
   return usedTool ? flattenToolHistoryToChatMessages(resolved) : messages;
 }
 
+async function handleWorkPost(req: NextRequest): Promise<Response> {
+  const body = await req.json().catch(() => null);
+  const parsed = parseWorkRequest(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Work request tidak valid.", details: parsed.error.flatten().fieldErrors },
+      { status: 400 },
+    );
+  }
+
+  const workRequest: WorkRequest = parsed.data;
+  const runId = workRequest.runId?.trim() || `work-run-${crypto.randomUUID()}`;
+  const conversationId = workRequest.conversationId?.trim() || `work-${crypto.randomUUID()}`;
+  const incomingCorrelation = req.headers.get("x-correlation-id");
+  const correlationId = incomingCorrelation && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(incomingCorrelation)
+    ? incomingCorrelation
+    : crypto.randomUUID();
+  const validation = validateChatPayload({ messages: workRequest.messages });
+  if (!validation.ok) return NextResponse.json({ error: validation.error }, { status: 413 });
+
+  const resolved = resolveKeyForModel(workRequest.modelAlias);
+  if (!resolved) {
+    return NextResponse.json({ error: "Work runtime belum siap. Konfigurasi runtime server belum lengkap." }, { status: 503 });
+  }
+
+  const workMessages = buildWorkMessages(workRequest.messages) as ChatMessage[];
+  const resolvedThinking = resolveThinking(workRequest.modelAlias, workRequest.thinking);
+  const effort = workRequest.reasoningEffort as ReasoningEffort;
+  const lastUserMessage = [...workRequest.messages].reverse().find((message) => message.role === "user")?.content ?? "";
+  const encoder = new TextEncoder();
+  const readableStream = new ReadableStream({
+    async start(controller) {
+      let finalContent = "";
+      let emitter: WorkEventEmitter;
+      const enqueue = (event: WorkEvent) => {
+        controller.enqueue(encoder.encode(`event: message\ndata: ${JSON.stringify(event)}\n\n`));
+      };
+
+      emitter = new WorkEventEmitter(runId, conversationId, enqueue);
+      const sendProviderEvent: SendEvent = (_type, data) => {
+        if (data.type === "content" && typeof data.delta === "string") finalContent += data.delta;
+        emitter.fromChatEvent(data);
+      };
+      const requestApproval = async (input: { action: string; reason: string; args: Record<string, unknown> }) => {
+        const gate = createWorkApproval({
+          approvalId: `approval-${crypto.randomUUID()}`,
+          sessionId: conversationId,
+          runId,
+          action: input.action,
+          reason: input.reason,
+          args: input.args,
+        });
+        emitter.emit("approval.requested", { approval: gate.request });
+        const approved = await gate.promise;
+        emitter.emit("approval.resolved", { approval: { ...gate.request, state: approved ? "approved" : "denied" } });
+        return approved;
+      };
+      const workTools = createWorkToolRegistry({
+        workspaceRoot: process.env.PAAX_WORKSPACE_ROOT?.trim() || process.cwd(),
+        requestApproval,
+      });
+
+      try {
+        emitter.emit("turn.started", { phase: "starting", message: lastUserMessage });
+        emitter.emit("assistant.interim", { message: "Saya menyiapkan konteks kerja dan batas tindakan." });
+        emitter.emit("plan.updated", {
+          tasks: [{ id: "work-request", title: "Menyelesaikan permintaan", state: "in_progress" }],
+        });
+        emitter.emit("status.update", { phase: "calling_model", statusLabel: "Agent menyusun langkah kerja" });
+
+        let finalMessages = workMessages as ToolChatMessage[];
+        let toolsWereUsed = false;
+        try {
+          const toolNames = getWorkToolNames();
+          const toolResult = resolved.viaOpenRouter
+            ? await runOpenRouterWithTools({
+                modelSlug: OPENROUTER_MODEL_SLUG[workRequest.modelAlias],
+                modelAlias: workRequest.modelAlias,
+                apiKey: resolved.apiKey,
+                messages: finalMessages,
+                context: undefined,
+                connectors: [],
+                toolNames,
+                toolRegistry: workTools,
+                req,
+                sendEvent: sendProviderEvent,
+                runId,
+                conversationId,
+              })
+            : await runDeepSeekNativeWithTools({
+                apiModel: getModel(workRequest.modelAlias).apiModel,
+                modelAlias: workRequest.modelAlias,
+                baseUrl: getDeepSeekBaseUrl(),
+                apiKey: resolved.apiKey,
+                messages: finalMessages,
+                context: undefined,
+                connectors: [],
+                toolNames,
+                toolRegistry: workTools,
+                req,
+                sendEvent: sendProviderEvent,
+                runId,
+                conversationId,
+              });
+          toolsWereUsed = toolResult.usedTool;
+          if (toolsWereUsed) finalMessages = toolResult.messages;
+        } catch (error) {
+          emitter.emit("status.update", {
+            phase: "tool_unavailable",
+            statusLabel: "Tool workspace tidak tersedia; agent melanjutkan dengan konteks percakapan.",
+            statusDetail: error instanceof Error ? error.message : "tool loop gagal",
+          });
+          finalMessages = workMessages as ToolChatMessage[];
+        }
+
+        if (toolsWereUsed) {
+          emitter.emit("assistant.interim", { message: "Tindakan workspace selesai; saya menyusun jawaban dari hasil yang teramati." });
+        }
+        emitter.emit("status.update", { phase: "streaming_response", statusLabel: "Agent menulis hasil akhir" });
+        if (resolved.viaOpenRouter) {
+          await streamOpenRouter(workRequest.modelAlias, flattenToolHistoryToChatMessages(finalMessages), resolvedThinking, effort, resolved.apiKey, req, sendProviderEvent, runId, conversationId);
+        } else {
+          await streamDeepSeekNative(flattenToolHistoryToChatMessages(finalMessages), resolvedThinking, effort, resolved.apiKey, req, sendProviderEvent, runId, conversationId, workRequest.modelAlias);
+        }
+
+        emitter.emit("plan.updated", {
+          tasks: [{ id: "work-request", title: "Menyelesaikan permintaan", state: "completed", completedAt: new Date().toISOString() }],
+        });
+        emitter.emit("log.line", { log: { level: "info", text: "turn completed" } });
+        emitter.emit("turn.completed", { finalMarkdown: finalContent });
+      } catch (error) {
+        emitter.emit("error", { errorMessage: error instanceof Error ? error.message : "Work stream error" });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(readableStream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+      "Connection": "keep-alive",
+      "X-Correlation-Id": correlationId,
+    },
+  });
+}
+
 // ─── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
+  if (body && typeof body === "object" && (body as Record<string, unknown>).mode === "work") {
+    return handleWorkPost(new NextRequest(req.url, {
+      method: "POST",
+      headers: req.headers,
+      body: JSON.stringify(body),
+    }));
+  }
   const parsed = CommandRoomChatSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(

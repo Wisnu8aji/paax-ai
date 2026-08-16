@@ -20,13 +20,13 @@ class MemoryStorage implements Pick<Storage, "getItem" | "setItem" | "removeItem
 
 function event(partial: Partial<WorkEvent> & Pick<WorkEvent, "type" | "sequence">): WorkEvent {
   return {
+    ...partial,
     type: partial.type,
     runId: "run-1",
     conversationId: "session-1",
     eventId: `evt-${partial.sequence}`,
     sequence: partial.sequence,
     timestamp: `2026-08-16T00:00:0${partial.sequence}.000Z`,
-    ...partial,
   };
 }
 

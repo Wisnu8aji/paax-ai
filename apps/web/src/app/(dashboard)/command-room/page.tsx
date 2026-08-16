@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   ArrowUp,
   AudioLines,
@@ -187,7 +187,6 @@ function CommandRoomContent() {
   const { openSettings } = useShell();
   const { projects, loading: projectsLoading, error: projectsError, backend, createProject } = useProjects();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [tab, setTab] = useState<SideTab>('home');
   const [roomMode, setRoomMode] = useState<'chat' | 'work'>('chat');
@@ -574,10 +573,6 @@ function CommandRoomContent() {
     return inside.length > 0 ? inside.map((c) => c.updatedAt).sort().reverse()[0] : project.updatedAt;
   };
   const openProject = openProjectId ? projects.find((project) => project.id === openProjectId) ?? null : null;
-  const workProjectId = searchParams.get('projectId') ?? openProjectId;
-  const workRunId = searchParams.get('runId');
-  const workProjectName = projectName(workProjectId) ?? 'Active project';
-
   const convRow = (c: ChatConversation) => (
     <div
       key={c.id}
@@ -1174,7 +1169,7 @@ function CommandRoomContent() {
 
 
   return (
-    <div className="pax-command" style={{ display: 'flex', flex: 1, minHeight: 0, height: '100%', borderRadius: 0, overflow: 'hidden' }}>
+    <div className="pax-command" data-room-mode={roomMode} style={{ display: 'flex', flex: 1, minHeight: 0, height: '100%', borderRadius: 0, overflow: 'hidden' }}>
 
       <button
         type="button"
@@ -1367,17 +1362,7 @@ function CommandRoomContent() {
         </div>
 
         {roomMode === 'work' ? (
-          <CommandRoomWorkSurface
-            projectId={workProjectId}
-            projectName={workProjectName}
-            initialRunId={workRunId}
-            onOpenDrawing={() => {
-              const params = new URLSearchParams();
-              if (workProjectId) params.set('projectId', workProjectId);
-              if (workRunId) params.set('runId', workRunId);
-              router.push(`/drawing-intelligence${params.toString() ? `?${params.toString()}` : ''}`);
-            }}
-          />
+          <CommandRoomWorkSurface />
         ) : (
           <>
         {note && (
