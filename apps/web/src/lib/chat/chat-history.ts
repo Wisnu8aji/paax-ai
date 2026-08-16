@@ -1,11 +1,15 @@
 /**
- * Riwayat percakapan Command Room — disimpan lokal di peramban.
+ * Riwayat percakapan Command Room — cache browser dengan server sebagai sumber
+ * durable ketika adapter tersedia.
  *
  * Ini murni STATE TAMPILAN (riwayat & pengelompokan percakapan), bukan jalur
  * angka: jawaban AI tetap datang dari /api/command-room/chat dan angka dari
  * Core Engine. Skema: percakapan bisa berdiri sendiri atau dikelompokkan ke
  * "Project Percakapan" (folder) — pola yang sama dengan workspace percakapan.
  */
+
+import type { ChatArtifactRef, ChatSourceRef } from "./command-room-chat-contract";
+import type { OrderedMessagePart } from "./command-room-chat-reducer";
 
 export interface StoredProcessingStep {
   id: string;
@@ -32,6 +36,13 @@ export interface StoredChatMessage {
   time: string;
   /** Ringkasan aktivitas yang aman ditampilkan; bukan chain-of-thought mentah. */
   processing?: StoredProcessingTrace;
+  /** Ordered visible parts are the v1.5 transcript; `text` remains a fallback projection. */
+  parts?: OrderedMessagePart[];
+  model?: { alias: string; displayName: string; provider?: string; providerModel?: string };
+  sources?: ChatSourceRef[];
+  artifacts?: ChatArtifactRef[];
+  turnId?: string;
+  status?: 'completed' | 'failed' | 'interrupted';
 }
 
 export interface ConversationConnectors {
@@ -58,6 +69,8 @@ export interface ChatConversation {
   connectors: ConversationConnectors;
   /** Diisi kalau percakapan ini adalah hasil "Open new branch" dari percakapan lain. */
   branchedFrom?: { sourceTitle: string; atMessageId: string } | null;
+  /** Server sync is explicit; `cache` means the browser copy is not durable. */
+  persistence?: 'server' | 'cache';
 }
 
 export interface ChatFolder {
@@ -93,6 +106,7 @@ function normalizeConversation(raw: Partial<ChatConversation>): ChatConversation
     updatedAt: raw.updatedAt ?? raw.createdAt ?? now,
     connectors: { ...EMPTY_CONNECTORS, ...raw.connectors },
     branchedFrom: raw.branchedFrom ?? null,
+    persistence: raw.persistence ?? 'cache',
   };
 }
 
@@ -122,7 +136,11 @@ function save(state: ChatHistoryState): void {
 }
 
 function newId(prefix: string): string {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return `${prefix}-${crypto.randomUUID()}`;
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    // Server DB conversations use UUID primary keys. Keep folder IDs readable,
+    // but make new conversation IDs directly portable to the server adapter.
+    return prefix === 'conv' ? crypto.randomUUID() : `${prefix}-${crypto.randomUUID()}`;
+  }
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
@@ -151,7 +169,10 @@ export function createConversation(projectId: string, folderId: string | null = 
     archived: false,
     createdAt: now,
     updatedAt: now,
-    connectors: { ...EMPTY_CONNECTORS, gambarKerja: Boolean(boundProjectId) },
+    // Project binding is presentation/context scope only. Chat v1.5 does not
+    // activate Work connectors from a project-bound conversation.
+    connectors: { ...EMPTY_CONNECTORS },
+    persistence: 'cache',
   };
   const state = load();
   state.conversations.push(conversation);

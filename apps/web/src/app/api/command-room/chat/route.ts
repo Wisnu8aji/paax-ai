@@ -20,13 +20,15 @@ import {
 } from "@/lib/paax-models";
 import { extractDelta } from "./sse-helpers";
 import {
-  isToolsEnabled,
-  withToolSystemPrompt,
   runOpenRouterWithTools,
   runDeepSeekNativeWithTools,
   type ToolChatMessage,
 } from "./tools";
-import { evaluateEvidenceGate, buildIntentFrame, planDepthStatusMessage, buildExecutionPlan } from "@paax/ai-orchestrator/router";
+import { ChatEventStream } from "./chat-event-stream";
+import { clearTurnControl, isTurnStopped, takeSteerMessages } from "./runtime-control";
+import { createGeneralChatToolRegistry, GENERAL_CHAT_TOOL_NAMES } from "./general-tools";
+import { analyzeChatAttachments, attachmentProcessingContext } from "./vision-router";
+import { evaluateEvidenceGate } from "@paax/ai-orchestrator/router";
 import {
   buildServerChatContext,
   CHAT_CONTEXT_LIMITS,
@@ -37,10 +39,6 @@ import {
 import { verifyAndComposeClaims } from "./claim-pipeline";
 import { shouldStreamRawReasoningToClient } from "./reasoning-visibility";
 import { persistConversationSummary } from "./memory-runtime";
-import {
-  selectCommandRoomTools,
-  type CommandRoomConnector,
-} from "./connector-permissions";
 import { buildWorkMessages, parseWorkRequest, type WorkRequest } from "../work/contract";
 import { WorkEventEmitter } from "../work/events";
 import { createWorkToolRegistry, getWorkToolNames } from "../work/tools";
@@ -55,19 +53,15 @@ export const maxDuration = 600; // 10 menit
 const CommandRoomChatSchema = z.object({
   mode: z.enum(["chat", "work"]).default("chat"),
   runId: z.string().optional(),
+  turnId: z.string().optional(),
   conversationId: z.string().optional(),
-  // Fase 10 (PLAN.md §9): projectId OPSIONAL -- kalau dikirim, tool_call
-  // (query_rab/query_schedule/export_rab_xlsx/project_diagnostics) bisa ambil
-  // data proyek nyata via DB_API_URL. Client saat ini (chat-run-store.ts) BELUM
-  // mengirim field ini -- context proyek masih lewat teks bebas di messages
-  // (lib/ai/project-context.ts, buildProjectContextPack). Field ini backward-
-  // compatible: tidak dikirim = tool tetap fallback "data tidak tersedia"
-  // seperti perilaku sebelumnya, TIDAK merusak apa pun yang sudah jalan.
+  // Project binding is retained for conversation scope and memory only. Chat
+  // never activates the operational Drawing/RAB/Schedule tool registry.
   projectId: z.string().optional(),
   connectors: z.array(z.enum(["gambarKerja", "rab", "jadwal"])).max(3).default([]),
   snapshotId: z.string().optional(),
-  // rabLines opsional -- alternatif projectId+DB_API_URL untuk kirim data RAB
-  // langsung tanpa services/db (mis. client sudah punya draft RAB di state lokal).
+  // Legacy fields remain accepted for old clients but are intentionally ignored
+  // by the Chat path; Work owns operational RAB/Schedule capabilities.
   rabLines: z
     .array(
       z.object({
@@ -79,6 +73,13 @@ const CommandRoomChatSchema = z.object({
       }),
     )
     .optional(),
+  attachments: z.array(z.object({
+    attachment_id: z.string().min(1).max(160),
+    name: z.string().max(240),
+    media_type: z.string().max(160),
+    size_bytes: z.number().int().nonnegative(),
+    status: z.enum(["staged", "processing", "ready", "failed"]),
+  })).max(4).default([]),
   messages: z
     .array(
       z.object({
@@ -98,8 +99,6 @@ interface ChatMessage {
   content: string;
 }
 
-type RabLineSnapshotInput = NonNullable<z.infer<typeof CommandRoomChatSchema>["rabLines"]>[number];
-
 const SYSTEM_PROMPT =
   "Anda adalah PAAX, asisten AI untuk insinyur sipil Indonesia. Anda WAJIB dan SELALU menjawab menggunakan Bahasa Indonesia yang natural dan profesional. Jangan pernah menjawab menggunakan bahasa Mandarin (Chinese). Jika pengguna menyapa dengan 'halo', balaslah dengan Bahasa Indonesia yang ramah.";
 
@@ -109,6 +108,13 @@ function withSystemPrompt(messages: ChatMessage[]): ChatMessage[] {
 }
 
 type SendEvent = (type: string, data: Record<string, unknown>) => void;
+
+class TurnInterruptedError extends Error {
+  constructor() {
+    super("Turn interrupted by user");
+    this.name = "TurnInterruptedError";
+  }
+}
 
 // ─── Helper: baca env ──────────
 
@@ -193,7 +199,7 @@ async function consumeOpenAiCompatibleStream(
   conversationId: string | undefined,
   modelAlias?: ModelAlias,
   req?: NextRequest,
-): Promise<{ finishedOnLength: boolean; fullContent: string }> {
+): Promise<{ finishedOnLength: boolean; fullContent: string; steerMessages: string[] }> {
   if (!res.body) throw new Error("No response stream");
   const reader = res.body.getReader();
   const decoder = new TextDecoder("utf-8");
@@ -201,7 +207,15 @@ async function consumeOpenAiCompatibleStream(
   let fullContent = "";
   let finishedOnLength = false;
   let reasoningActivityStarted = false;
+  const steerMessages: string[] = [];
   while (true) {
+    if (runId && isTurnStopped(runId)) {
+      await reader.cancel().catch(() => undefined);
+      throw new TurnInterruptedError();
+    }
+    if (runId) {
+      steerMessages.push(...takeSteerMessages(runId));
+    }
     const { done, value } = await reader.read();
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
@@ -249,10 +263,15 @@ async function consumeOpenAiCompatibleStream(
           fullContent += content;
           sendEvent("message", { type: "content", runId, conversationId, delta: content, timestamp: new Date().toISOString() });
         }
+        if (runId) {
+          steerMessages.push(...takeSteerMessages(runId));
+        }
       } catch { /* partial chunk, abaikan */ }
     }
   }
-  return { finishedOnLength, fullContent };
+  if (runId && isTurnStopped(runId)) throw new TurnInterruptedError();
+  if (runId) steerMessages.push(...takeSteerMessages(runId));
+  return { finishedOnLength, fullContent, steerMessages };
 }
 
 async function fetchOrThrow(url: string, apiKey: string, payload: unknown, req: NextRequest): Promise<Response> {
@@ -310,15 +329,17 @@ async function streamOpenRouter(
   }
 
   const MAX_CONTINUATIONS = CHAT_CONTEXT_LIMITS.maxContinuations;
+  const MAX_STEERS = 3;
   let currentMessages = [...basePayload.messages];
-  let hitLengthLimit = true;
+  let continueGeneration = true;
   let continuationCount = 0;
+  let steerCount = 0;
 
-  while (hitLengthLimit) {
-    hitLengthLimit = false;
+  while (continueGeneration) {
+    continueGeneration = false;
     const currentPayload: Record<string, any> = { ...basePayload, messages: currentMessages };
 
-    if (continuationCount > 0) {
+    if (continuationCount > 0 || steerCount > 0) {
       // Auto-continue: matikan reasoning agar fokus menulis sisa konten.
       // reasoning_effort TIDAK dihapus di sini akan bikin OpenRouter menolak
       // request ("reasoning_effort and reasoning.effort are both provided
@@ -331,13 +352,27 @@ async function streamOpenRouter(
     }
 
     const res = await fetchOrThrow("https://openrouter.ai/api/v1/chat/completions", apiKey, currentPayload, req);
-    const { finishedOnLength, fullContent } = await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId, modelAlias, req);
-    hitLengthLimit = finishedOnLength;
+    const { finishedOnLength, fullContent, steerMessages } = await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId, modelAlias, req);
 
-    if (hitLengthLimit) {
+    if (steerMessages.length > 0) {
+      if (steerCount >= MAX_STEERS) {
+        sendEvent("message", { type: "status", phase: "steer", statusLabel: "Batas steer turn ini tercapai; jawaban dilanjutkan tanpa instruksi tambahan." });
+      } else {
+        steerCount++;
+        if (fullContent.trim().length > 0) currentMessages.push({ role: "assistant", content: fullContent });
+        currentMessages.push(...steerMessages.map((message) => ({
+          role: "user" as const,
+          content: `[STEER TERARAH PENGGUNA]\n${message}`,
+        })));
+        sendEvent("message", { type: "status", phase: "steer", statusLabel: `Steer diterima; model menyesuaikan jawaban (${steerCount}/${MAX_STEERS}).` });
+        continueGeneration = true;
+        continue;
+      }
+    }
+
+    if (finishedOnLength) {
       continuationCount++;
       if (continuationCount >= MAX_CONTINUATIONS) {
-        hitLengthLimit = false;
         sendEvent("message", { type: "status", phase: "streaming_response", statusLabel: "Batas auto-lanjut tercapai, menghentikan generasi." });
         break;
       }
@@ -345,6 +380,7 @@ async function streamOpenRouter(
         currentMessages.push({ role: "assistant", content: fullContent });
       }
       sendEvent("message", { type: "status", phase: "streaming_response", statusLabel: `Melanjutkan jawaban bagian ${continuationCount + 1}` });
+      continueGeneration = true;
     }
   }
 }
@@ -385,9 +421,24 @@ async function streamDeepSeekNative(
   conversationId: string | undefined,
   modelAlias: ModelAlias = "lucent",
 ): Promise<void> {
-  const payload = buildDeepSeekPayload(messages, thinking, effort, modelAlias);
-  const res = await fetchOrThrow(`${getDeepSeekBaseUrl()}/chat/completions`, apiKey, payload, req);
-  await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId, modelAlias, req);
+  let currentMessages = [...messages];
+  for (let steerCount = 0; steerCount <= 3; steerCount++) {
+    const payload = buildDeepSeekPayload(currentMessages, thinking, effort, modelAlias);
+    const res = await fetchOrThrow(`${getDeepSeekBaseUrl()}/chat/completions`, apiKey, payload, req);
+    const result = await consumeOpenAiCompatibleStream(res, sendEvent, runId, conversationId, modelAlias, req);
+    if (!result.steerMessages.length || steerCount >= 3) {
+      if (result.steerMessages.length && steerCount >= 3) {
+        sendEvent("message", { type: "status", phase: "steer", statusLabel: "Batas steer turn ini tercapai; jawaban dilanjutkan tanpa instruksi tambahan." });
+      }
+      return;
+    }
+    if (result.fullContent.trim().length > 0) currentMessages.push({ role: "assistant", content: result.fullContent });
+    currentMessages.push(...result.steerMessages.map((message) => ({
+      role: "user" as const,
+      content: `[STEER TERARAH PENGGUNA]\n${message}`,
+    })));
+    sendEvent("message", { type: "status", phase: "steer", statusLabel: `Steer diterima; model menyesuaikan jawaban (${steerCount + 1}/3).` });
+  }
 }
 
 // ─── Fase 0 tool-calling bridge ────────────────────────────────────────────
@@ -419,92 +470,6 @@ function flattenToolHistoryToChatMessages(toolMessages: ToolChatMessage[]): Chat
     }
   }
   return flattened;
-}
-
-async function resolveToolsForModel(
-  modelAlias: ModelAlias,
-  messages: ChatMessage[],
-  apiKey: string,
-  viaOpenRouter: boolean,
-  req: NextRequest,
-  sendEvent: SendEvent,
-  runId: string | undefined,
-  conversationId: string | undefined,
-  projectId: string | undefined,
-  rabLines: RabLineSnapshotInput[] | undefined,
-  connectors: readonly CommandRoomConnector[],
-  toolNames: readonly string[],
-): Promise<ChatMessage[]> {
-  const withPrompt = withSystemPrompt(messages) as ToolChatMessage[];
-  // Fase 10 (PLAN.md §9): projectId/rabLines opsional dari request body ->
-  // ChatContext untuk tool query_rab/query_schedule/export_rab_xlsx/
-  // project_diagnostics. undefined kalau client tidak mengirim (perilaku lama
-  // tetap sama). rabLines dikirim langsung TIDAK butuh services/db.
-  const toolContext = (projectId || (connectors.includes("rab") && rabLines))
-    ? {
-        project_id: projectId,
-        conversation_id: conversationId,
-        rab_lines: connectors.includes("rab") ? rabLines?.map((line) => ({ ...line, duration_days: line.duration_days ?? null })) : undefined,
-      }
-    : undefined;
-  if (viaOpenRouter) {
-    const { messages: resolved, usedTool } = await runOpenRouterWithTools({
-      modelSlug: OPENROUTER_MODEL_SLUG[modelAlias],
-      modelAlias,
-      apiKey,
-      messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "", toolNames) }, ...withPrompt.slice(1)],
-      context: toolContext,
-      connectors,
-      toolNames,
-      req, sendEvent, runId, conversationId,
-    });
-    return usedTool ? flattenToolHistoryToChatMessages(resolved) : messages;
-  }
-
-  if (modelAlias === "lucent") {
-    const { messages: resolved, usedTool } = await runDeepSeekNativeWithTools({
-      apiModel: getModel("lucent").apiModel,
-      modelAlias,
-      baseUrl: getDeepSeekBaseUrl(),
-      apiKey,
-      messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "", toolNames) }, ...withPrompt.slice(1)],
-      context: toolContext,
-      connectors,
-      toolNames,
-      req, sendEvent, runId, conversationId,
-    });
-    return usedTool ? flattenToolHistoryToChatMessages(resolved) : messages;
-  }
-
-  if (modelAlias === "arete") {
-    // Semua model kini deepseek via 1 shared key opencode-go.
-    const { messages: resolved, usedTool } = await runDeepSeekNativeWithTools({
-      apiModel: getModel("arete").apiModel,
-      modelAlias,
-      baseUrl: getDeepSeekBaseUrl(),
-      apiKey,
-      messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "", toolNames) }, ...withPrompt.slice(1)],
-      context: toolContext,
-      connectors,
-      toolNames,
-      req, sendEvent, runId, conversationId,
-    });
-    return usedTool ? flattenToolHistoryToChatMessages(resolved) : messages;
-  }
-
-  // noir — deepseek native (panel reasoning eksplisit tetap dipertahankan)
-  const { messages: resolved, usedTool } = await runDeepSeekNativeWithTools({
-    apiModel: getModel("noir").apiModel,
-    modelAlias,
-    baseUrl: getDeepSeekBaseUrl(),
-    apiKey,
-    messages: [{ ...withPrompt[0], content: withToolSystemPrompt(withPrompt[0].content ?? "", toolNames) }, ...withPrompt.slice(1)],
-    context: toolContext,
-    connectors,
-    toolNames,
-    req, sendEvent, runId, conversationId,
-  });
-  return usedTool ? flattenToolHistoryToChatMessages(resolved) : messages;
 }
 
 async function handleWorkPost(req: NextRequest, requestBody?: unknown): Promise<Response> {
@@ -674,9 +639,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { runId, conversationId, projectId: requestedProjectId, snapshotId, rabLines, messages, modelAlias, reasoningEffort, thinking, connectors } = parsed.data;
+  const { runId, turnId: requestedTurnId, conversationId: requestedConversationId, projectId: requestedProjectId, snapshotId, attachments, messages, modelAlias, reasoningEffort, thinking } = parsed.data;
   // Project binding is an immutable conversation scope; connector toggles only control optional domain tools.
   const projectId = requestedProjectId;
+  const conversationId = requestedConversationId?.trim() || `conversation-${crypto.randomUUID()}`;
+  const turnId = requestedTurnId?.trim() || runId?.trim() || crypto.randomUUID();
   const incomingCorrelation = req.headers.get("x-correlation-id");
   const correlationId = incomingCorrelation && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(incomingCorrelation)
     ? incomingCorrelation : crypto.randomUUID();
@@ -696,20 +663,26 @@ export async function POST(req: NextRequest) {
   const resolvedThinking = resolveThinking(modelAlias, thinking);
   const effort = reasoningEffort as ReasoningEffort;
   const currentUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
-  const toolNames = selectCommandRoomTools(connectors, currentUserMessage);
   const serverContext = await buildServerChatContext({
     projectId,
-    allowProjectGraphRetrieval: Boolean(projectId),
+    // Project Chat may use project-scoped memory, files, and instructions, but
+    // it must never silently become the operational Drawing/RAB/Schedule path.
+    allowProjectGraphRetrieval: false,
     conversationId,
     messages,
     loaders: createDbContextLoaders({ authorization: req.headers.get("authorization") }),
   });
-  const serverMessages = serverContext.messages as ChatMessage[];
+  const serverMessages = [
+    ...(serverContext.messages as ChatMessage[]),
+    ...(attachments.length ? [{
+      role: "system" as const,
+      content: `[ATTACHMENTS STAGED]\n${attachments.map((attachment) => `- ${attachment.name} (${attachment.media_type}, ${attachment.status}, id ${attachment.attachment_id})`).join("\n")}\nGunakan attachment ID hanya melalui capability attachment/vision yang tersedia; jangan mengarang isi file yang belum terbaca.`,
+    }] : []),
+  ];
 
   const encoder = new TextEncoder();
   const readableStream = new ReadableStream({
     async start(controller) {
-      let sequenceCounter = 0;
       let finalContent = "";
       let emittingComposedAnswer = false;
       const toolsCalledThisTurn: string[] = [];
@@ -717,11 +690,22 @@ export async function POST(req: NextRequest) {
       // (claim-provenance.ts) -- never forwarded to the client as part of
       // the SSE payload; sendEvent below strips `result` before enqueueing.
       const toolResultsThisTurn: import("./claim-provenance").ToolResultRecord[] = [];
+      const chatEvents = new ChatEventStream({
+        conversationId,
+        turnId,
+        runtimeId: correlationId,
+        model: {
+          alias: modelAlias,
+          display_name: getModel(modelAlias).displayName,
+          provider: getModel(modelAlias).provider,
+          provider_model: getModel(modelAlias).apiModel,
+          reasoning_effort: reasoningEffort,
+          thinking,
+        },
+      }, (event) => {
+        controller.enqueue(encoder.encode(`event: message\ndata: ${JSON.stringify(event)}\n\n`));
+      });
       const sendEvent: SendEvent = (_type, data) => {
-        // Only opaque identifiers flow to clients/observability; never messages, prompts, or credentials.
-        data.correlationId = correlationId;
-        if (projectId) data.projectId = projectId;
-        if (snapshotId) data.snapshotId = snapshotId;
         // Fase 2 Evidence Gate (PLAN.md §9 Fase 2): akumulasi konten jawaban akhir
         // + nama tool yang dipanggil, murni dengan mengamati event yang sudah lewat
         // di sini -- tidak mengubah signature/perilaku fungsi stream*()/resolveTools*
@@ -732,115 +716,117 @@ export async function POST(req: NextRequest) {
         }
         if (data.type === "tool_call" && typeof data.tool === "string") toolsCalledThisTurn.push(data.tool);
         if (data.type === "tool_result" && typeof data.tool === "string" && "result" in data) {
+          const result = data.result && typeof data.result === "object" && !Array.isArray(data.result)
+            ? data.result as Record<string, unknown>
+            : null;
           toolResultsThisTurn.push({
             result_id: `${data.tool}:${toolResultsThisTurn.length}`,
             tool: data.tool,
             result: data.result,
           });
+          const sources = result?.sources;
+          if (Array.isArray(sources)) {
+            sources.forEach((source) => {
+              if (!source || typeof source !== "object" || Array.isArray(source)) return;
+              const candidate = source as Record<string, unknown>;
+              if (typeof candidate.source_id !== "string" || typeof candidate.title !== "string" || typeof candidate.provenance !== "string") return;
+              chatEvents.emit("source.added", { source: candidate });
+            });
+          }
           // `result` is captured above for claim provenance and must never
           // reach the client -- only `summary` (already client-facing) does.
           delete data.result;
         }
-        data.sequence = sequenceCounter++;
-        controller.enqueue(encoder.encode(`event: message\ndata: ${JSON.stringify(data)}\n\n`));
+        chatEvents.fromLegacy({ ...data, projectId, snapshotId });
       };
 
       try {
-        sendEvent("message", {
-          type: "activity", runId, conversationId,
-          activity: {
-            action: "complete",
-            step: { id: "request:inspect", kind: "inspect", label: "Memeriksa permintaan, konteks, dan batasan" },
-          },
-          timestamp: new Date().toISOString(),
+        chatEvents.turnStarted(currentUserMessage);
+        serverContext.sources.forEach((source) => chatEvents.emit("source.added", { source }));
+        chatEvents.emit("assistant.interim", {
+          message: projectId ? "Konteks proyek disiapkan untuk percakapan ini." : "Konteks percakapan disiapkan.",
+          phase: "context",
         });
-        sendEvent("message", {
-          type: "activity", runId, conversationId,
-          activity: {
-            action: "complete",
-            step: {
-              id: "context:load", kind: "context",
-              label: projectId ? "Memuat konteks proyek dan sumber data aktif" : "Menyiapkan konteks percakapan",
-              detail: projectId ? "Project context tersedia untuk retrieval terarah" : "Tidak ada proyek yang dihubungkan",
-            },
-          },
-          timestamp: new Date().toISOString(),
+        if (attachments.length) {
+          chatEvents.emit("assistant.interim", {
+            message: `${attachments.length} lampiran sudah di-stage; sistem memeriksa cara baca yang tersedia.`,
+            phase: "attachments",
+          });
+        }
+
+        const attachmentToolIds = new Map(attachments.map((attachment) => [
+          attachment.attachment_id,
+          `${attachment.media_type.startsWith("image/") ? "vision" : "file"}:${attachment.attachment_id}`,
+        ]));
+        for (const attachment of attachments) {
+          const tool = attachment.media_type.startsWith("image/") ? "vision_analyze" : "file_read";
+          chatEvents.emit("tool.started", {
+            tool_call_id: attachmentToolIds.get(attachment.attachment_id) ?? `attachment:${attachment.attachment_id}`,
+            tool,
+            label: attachment.media_type.startsWith("image/") ? `Membaca gambar ${attachment.name}` : `Membaca ${attachment.name}`,
+          });
+          toolsCalledThisTurn.push(tool);
+        }
+        const attachmentResult = await analyzeChatAttachments({ attachments, signal: req.signal });
+        if (isTurnStopped(turnId)) throw new TurnInterruptedError();
+        for (const observation of attachmentResult.observations) {
+          const tool = observation.kind === "vision" ? "vision_analyze" : "file_read";
+          const toolCallId = attachmentToolIds.get(observation.attachment_id) ?? `${tool}:${observation.attachment_id}`;
+          toolResultsThisTurn.push({
+            result_id: `${tool}:${toolResultsThisTurn.length}`,
+            tool,
+            result: observation,
+          });
+          chatEvents.emit("tool.completed", {
+            tool_call_id: toolCallId,
+            tool,
+            summary: observation.kind === "vision" ? `Observasi gambar ${observation.name} tersedia untuk model.` : `Isi ${observation.name} berhasil dibaca.`,
+          });
+        }
+        for (const failure of attachmentResult.failures) {
+          const tool = failure.media_type.startsWith("image/") ? "vision_analyze" : "file_read";
+          const toolCallId = attachmentToolIds.get(failure.attachment_id) ?? `${tool}:${failure.attachment_id}`;
+          toolResultsThisTurn.push({
+            result_id: `${tool}:${toolResultsThisTurn.length}`,
+            tool,
+            result: failure,
+          });
+          chatEvents.emit("tool.failed", { tool_call_id: toolCallId, tool, error: failure.error });
+        }
+        attachmentResult.sources.forEach((source) => chatEvents.emit("source.added", { source }));
+
+        // Chat v1.5 exposes only general capabilities. Work/project
+        // operational tools are intentionally absent from this registry.
+        const generalTools = createGeneralChatToolRegistry({ conversationId, turnId });
+        const processedAttachmentContext = attachmentProcessingContext(attachmentResult);
+        const attachmentMessages: ChatMessage[] = processedAttachmentContext
+          ? [...serverMessages, { role: "system", content: processedAttachmentContext }]
+          : serverMessages;
+        let finalMessages: ChatMessage[] = attachmentMessages;
+        if (generalTools.length) {
+          const toolResult = resolved.viaOpenRouter
+            ? await runOpenRouterWithTools({
+                modelSlug: OPENROUTER_MODEL_SLUG[modelAlias], modelAlias, apiKey: resolved.apiKey,
+                messages: attachmentMessages as ToolChatMessage[], context: undefined, connectors: [],
+                toolNames: GENERAL_CHAT_TOOL_NAMES, toolRegistry: generalTools, req, sendEvent, runId: turnId, conversationId,
+              })
+            : await runDeepSeekNativeWithTools({
+                apiModel: getModel(modelAlias).apiModel, modelAlias, baseUrl: getDeepSeekBaseUrl(), apiKey: resolved.apiKey,
+                messages: attachmentMessages as ToolChatMessage[], context: undefined, connectors: [],
+                toolNames: GENERAL_CHAT_TOOL_NAMES, toolRegistry: generalTools, req, sendEvent, runId: turnId, conversationId,
+              });
+          finalMessages = flattenToolHistoryToChatMessages(toolResult.messages);
+        }
+        chatEvents.emit("assistant.interim", {
+          message: "Model mulai menyusun jawaban dari konteks yang tersedia.",
+          phase: "model",
         });
-
-        // Fase 3 Capability Router/Intent Architect primitif (PLAN.md §9 Fase 3):
-        // klasifikasi plan_depth heuristik dari pesan user terakhir, tampilkan
-        // "Pendekatan" singkat untuk structured/controlled saja (blueprint §5 --
-        // plan tidak ditampilkan untuk pertanyaan direct/compact yang sederhana).
-        const lastUserMessage = [...serverMessages].reverse().find((m) => m.role === "user");
-        if (lastUserMessage) {
-          const intentFrame = buildIntentFrame(lastUserMessage.content);
-          const statusMessage = planDepthStatusMessage(intentFrame);
-          if (statusMessage) {
-            sendEvent("message", {
-              type: "activity", runId, conversationId,
-              activity: {
-                action: "complete",
-                step: { id: "plan:approach", kind: "inspect", label: statusMessage },
-              },
-              timestamp: new Date().toISOString(),
-            });
-          }
-          // Fase 6 Plan Executor (PLAN.md §9 Fase 6): ExecutionPlan DESKRIPTIF,
-          // dikirim sebagai event observability -- tidak membatasi tool_choice
-          // model (tetap "auto"). Hanya untuk structured/controlled.
-          const executionPlan = buildExecutionPlan(intentFrame);
-          if (executionPlan) {
-            sendEvent("message", { type: "execution_plan", plan: executionPlan });
-          }
-        }
-
-        // Fase 0 tool-calling (PLAN.md §Fase 0): resolve tool call dulu (non-stream,
-        // maks MAX_TOOL_TURNS giliran) sebelum stream jawaban final. Kalau flag off
-        // ATAU tool-loop error apa pun, jatuh diam-diam ke messages asli tanpa tools --
-        // Command Room tidak boleh pernah error total gara-gara jalur tools ini.
-        let effectiveMessages: ChatMessage[] = serverMessages;
-        let toolsWereUsed = false;
-        if (isToolsEnabled() && toolNames.length > 0) {
-          try {
-            effectiveMessages = await resolveToolsForModel(modelAlias, serverMessages, resolved.apiKey, resolved.viaOpenRouter, req, sendEvent, runId, conversationId, projectId, rabLines, connectors, toolNames);
-            toolsWereUsed = effectiveMessages !== serverMessages;
-          } catch (toolErr) {
-            sendEvent("message", {
-              type: "status", phase: "streaming_response",
-              statusLabel: "Tool-calling tidak tersedia untuk pertanyaan ini, melanjutkan tanpa tools.",
-            });
-            effectiveMessages = serverMessages;
-          }
-        }
-
-        // Kalau tool sudah dipakai, tambahkan instruksi tegas menulis laporan
-        // lengkap. Ditemukan lewat live-test (sesi sebelumnya): model reasoning
-        // (thinking=on) yang baru selesai tool-loop cenderung menaruh SEMUA
-        // angka hasil tool di reasoning trace lalu menulis content akhir yang
-        // pendek/generik ("hasil di atas jelas..."). Awalnya diperbaiki dengan
-        // mematikan thinking di giliran final untuk Lucent/Arete -- tapi itu
-        // berbenturan dengan fitur status-label berbasis fase reasoning: hampir
-        // semua pertanyaan Command Room nyata memicu tool call, jadi thinking
-        // mati persis di titik paling relevan. Thinking tetap ON pasca-tool untuk
-        // semua model. Arete/Lucent hanya menampilkan activity timeline aman yang
-        // berasal dari milestone server/tool; reasoning mentah tidak dipublikasikan.
-        // Noir mempertahankan panel reasoning eksplisit sesuai mode produknya.
-        let finalMessages = effectiveMessages;
-        if (toolsWereUsed) {
-          finalMessages = [
-            ...effectiveMessages,
-            {
-              role: "user",
-              content: "Tuliskan sekarang jawaban akhir yang LENGKAP dan BERDIRI SENDIRI berdasarkan hasil tool. Untuk Drawing Intelligence, prioritaskan human_drawing_view, gunakan istilah 'label/simbol teramati' persis seperti sumber, JANGAN mengubahnya menjadi jumlah fisik, dan sertakan citation lembar/halaman pada setiap fakta. Untuk tool deterministik lain, tulis ulang angka konkret beserta authority-nya. Jangan merujuk ke 'hasil di atas'.",
-            },
-          ];
-        }
         const finalThinking = resolvedThinking;
 
         if (resolved.viaOpenRouter) {
-          await streamOpenRouter(modelAlias, finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId);
+          await streamOpenRouter(modelAlias, finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, turnId, conversationId);
         } else {
-          await streamDeepSeekNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, runId, conversationId, modelAlias);
+          await streamDeepSeekNative(finalMessages, finalThinking, effort, resolved.apiKey, req, sendEvent, turnId, conversationId, modelAlias);
         }
 
         // Activity timeline berasal dari milestone aktual di route/tool pipeline.
@@ -849,14 +835,6 @@ export async function POST(req: NextRequest) {
         // Fase 10: candidate claims diverifikasi deterministik SEBELUM answer composer
         // mengirim konten ke klien. Provider tidak pernah diberi wewenang menampilkan
         // kuantitas tanpa provenance/authority yang cukup.
-        sendEvent("message", {
-          type: "activity", runId, conversationId,
-          activity: {
-            action: "start",
-            step: { id: "answer:verify", kind: "verify", label: "Memeriksa angka, authority, dan sumber evidence" },
-          },
-          timestamp: new Date().toISOString(),
-        });
         const claimResult = verifyAndComposeClaims({
           responseText: finalContent,
           toolsCalled: toolsCalledThisTurn,
@@ -868,22 +846,6 @@ export async function POST(req: NextRequest) {
           sendEvent("message", { type: "content", runId, conversationId, delta: claimResult.responseText, timestamp: new Date().toISOString() });
           emittingComposedAnswer = false;
         }
-        sendEvent("message", {
-          type: "activity", runId, conversationId,
-          activity: {
-            action: "complete",
-            step: { id: "answer:verify", kind: "verify", label: "Memeriksa angka, authority, dan sumber evidence" },
-          },
-          timestamp: new Date().toISOString(),
-        });
-        sendEvent("message", {
-          type: "activity", runId, conversationId,
-          activity: {
-            action: "start",
-            step: { id: "memory:save", kind: "save", label: "Menyimpan ringkasan percakapan" },
-          },
-          timestamp: new Date().toISOString(),
-        });
         void persistConversationSummary({
           dbApiUrl: process.env.DB_API_URL?.trim(), authorization: req.headers.get("authorization"),
           conversationId, content: claimResult.responseText,
@@ -910,25 +872,15 @@ export async function POST(req: NextRequest) {
           }
         } catch { /* evidence gate tidak boleh pernah menggagalkan response */ }
 
-        sendEvent("message", {
-          type: "activity", runId, conversationId,
-          activity: {
-            action: "complete",
-            step: { id: "memory:save", kind: "save", label: "Menyimpan ringkasan percakapan" },
-          },
-          timestamp: new Date().toISOString(),
-        });
-        sendEvent("message", { type: "done", runId, conversationId, timestamp: new Date().toISOString() });
+        sendEvent("message", { type: "done", runId, conversationId, finalMarkdown: claimResult.responseText, timestamp: new Date().toISOString() });
       } catch (err) {
-        const aborted = (err instanceof Error && err.name === "AbortError") || req.signal.aborted;
-        if (!aborted) {
-          sendEvent("message", {
-            type: "error", runId, conversationId,
-            errorMessage: err instanceof Error ? err.message : "Stream error",
-            timestamp: new Date().toISOString(),
-          });
+        if (isTurnStopped(turnId)) {
+          chatEvents.emit("turn.interrupted", { reason: "user_stop", resumable: true });
+        } else if (!req.signal.aborted) {
+          chatEvents.emit("turn.failed", { error: err instanceof Error ? err.message : "Stream error" });
         }
       } finally {
+        clearTurnControl(turnId);
         controller.close();
       }
     },

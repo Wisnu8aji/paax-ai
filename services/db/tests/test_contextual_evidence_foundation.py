@@ -44,7 +44,7 @@ def test_alembic_0036_is_single_head():
     script = _script_directory()
     heads = script.get_heads()
     assert len(heads) == 1
-    assert heads[0].startswith(("0036", "0039"))
+    assert heads[0].startswith(("0036", "0039", "0041"))
 
     rev_0036 = script.get_revision("0036")
     assert isinstance(rev_0036.down_revision, str)
