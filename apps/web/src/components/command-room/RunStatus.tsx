@@ -157,7 +157,7 @@ export function ProcessingTrace({ trace, autoCollapse = false }: { trace: Stored
   );
 }
 
-export function RunStatus({ run, onStop }: { run: ActiveRun; onStop: () => void }) {
+export function RunStatus({ run, onStop, showStop = true }: { run: ActiveRun; onStop: () => void; showStop?: boolean }) {
   const isRunning = run.state === 'queued' || run.state === 'running' || run.state === 'streaming';
   const [expanded, setExpanded] = useState(true);
   useEffect(() => {
@@ -214,7 +214,7 @@ export function RunStatus({ run, onStop }: { run: ActiveRun; onStop: () => void 
           </span>
         </button>
         <span style={{ flex: 1 }} />
-        {isRunning && (
+        {isRunning && showStop && (
           <button
             onClick={onStop}
             className="pax-cr-hover"
@@ -228,11 +228,6 @@ export function RunStatus({ run, onStop }: { run: ActiveRun; onStop: () => void 
       <ActivityDisclosure expanded={expanded}>
         <ActivityList steps={run.activitySteps} running />
       </ActivityDisclosure>
-      {run.modelName === 'Noir' && run.hasReasoningStarted && run.reasoningContent.trim() && expanded && (
-        <div style={{ fontSize: 11.5, lineHeight: 1.5, color: 'var(--cr-text3)', background: 'var(--cr-elev)', border: '1px solid var(--cr-border, rgba(255,255,255,0.08))', borderRadius: 8, padding: '10px 12px', maxHeight: 260, overflowY: 'auto', whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono, monospace)' }}>
-          {run.reasoningContent}
-        </div>
-      )}
     </div>
   );
 }

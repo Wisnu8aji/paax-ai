@@ -141,7 +141,10 @@ function buildToolRegistry(
 export interface ToolArtifact {
   tool: string;
   filename: string;
-  dataUri: string;
+  dataUri?: string;
+  artifactId?: string;
+  mediaType?: string;
+  downloadUrl?: string;
   sizeBytes: number;
 }
 
@@ -155,7 +158,22 @@ export interface ToolArtifact {
  * dikembalikan terpisah sebagai ToolArtifact untuk dikirim ke client via SSE.
  */
 function extractArtifact(toolName: string, result: Record<string, unknown>): { forModel: Record<string, unknown>; artifact: ToolArtifact | null } {
-  if (typeof result.data_uri !== "string") return { forModel: result, artifact: null };
+  if (typeof result.data_uri !== "string") {
+    if (typeof result.artifact_id === "string" && typeof result.download_url === "string") {
+      return {
+        forModel: { ...result, file_ready: true },
+        artifact: {
+          tool: toolName,
+          filename: typeof result.filename === "string" ? result.filename : "artifact.bin",
+          artifactId: result.artifact_id,
+          mediaType: typeof result.media_type === "string" ? result.media_type : "application/octet-stream",
+          downloadUrl: result.download_url,
+          sizeBytes: typeof result.size_bytes === "number" ? result.size_bytes : 0,
+        },
+      };
+    }
+    return { forModel: result, artifact: null };
+  }
   const { data_uri, ...rest } = result;
   return {
     forModel: { ...rest, file_ready: true, note: "File sudah dibuat dan siap diunduh user lewat UI -- Anda TIDAK perlu menampilkan data_uri, cukup beri tahu user filenya sudah siap." },
@@ -341,7 +359,7 @@ async function runOpenAiCompatibleToolLoop(params: {
       if (artifact) {
         params.sendEvent("message", {
           type: "artifact", runId: params.runId, conversationId: params.conversationId,
-          tool: artifact.tool, filename: artifact.filename, dataUri: artifact.dataUri, sizeBytes: artifact.sizeBytes,
+          tool: artifact.tool, filename: artifact.filename, dataUri: artifact.dataUri, artifact_id: artifact.artifactId, media_type: artifact.mediaType, download_url: artifact.downloadUrl, sizeBytes: artifact.sizeBytes,
           timestamp: new Date().toISOString(),
         });
       }
@@ -500,7 +518,7 @@ export async function runAnthropicWithTools(params: {
       if (artifact) {
         params.sendEvent("message", {
           type: "artifact", runId: params.runId, conversationId: params.conversationId,
-          tool: artifact.tool, filename: artifact.filename, dataUri: artifact.dataUri, sizeBytes: artifact.sizeBytes,
+          tool: artifact.tool, filename: artifact.filename, dataUri: artifact.dataUri, artifact_id: artifact.artifactId, media_type: artifact.mediaType, download_url: artifact.downloadUrl, sizeBytes: artifact.sizeBytes,
           timestamp: new Date().toISOString(),
         });
       }

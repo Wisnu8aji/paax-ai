@@ -5,15 +5,12 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowUp,
   AudioLines,
-  Calculator,
-  CalendarClock,
   ChevronDown,
   ChevronRight,
   ChevronUp,
   Cloud,
   Copy,
   Download,
-  FileImage,
   FileText,
   Filter,
   FolderPlus,
@@ -25,8 +22,8 @@ import {
   Home,
   ListTodo,
   Loader2,
-  Mail,
   MessageSquare,
+  Mail,
   Mic,
   MoreVertical,
   Paperclip,
@@ -37,7 +34,7 @@ import {
   Plus,
   RotateCcw,
   Search,
-  TrendingUp,
+  Square,
   Trash2,
   X,
 } from 'lucide-react';
@@ -62,12 +59,10 @@ import {
   moveConversation,
   renameConversation,
   saveConversation,
-  setConversationConnectors,
   titleFromMessage,
   toggleArchived,
   togglePinned,
   type ChatConversation,
-  type ConversationConnectors,
   type StoredChatMessage,
 } from '@/lib/chat/chat-history';
 import { currentUser } from '@/lib/mock/workspace';
@@ -76,19 +71,18 @@ import type { Project } from '@/lib/projects/types';
 import { chatRunStore } from '@/lib/chat/chat-run-store';
 import { useActiveChatRuns, useChatRuns } from '@/lib/chat/use-chat-runs';
 import { ProcessingTrace, RunStatus } from '@/components/command-room/RunStatus';
+import { ChatPartsRenderer } from '@/components/command-room/ChatPartsRenderer';
 import {
   clampComposerHeight,
   COMMAND_COMPOSER_MAX_HEIGHT,
-  COMMAND_CONNECTORS,
   COMMAND_EFFORT_OPTIONS,
   COMMAND_HEADER_ICON_SIZE,
   COMMAND_MODEL_MENU_ROWS,
   COMMAND_THINKING_OPTIONS,
   getDefaultCommandModelSettings,
 } from '@/components/command-room/command-room-ui';
-import { buildRabContextPack } from '@/lib/ai/project-context';
 import { CommandRoomWorkSurface } from '@/components/command-room/command-room-work';
-import type { CommandRoomConnector } from '@/app/api/command-room/chat/connector-permissions';
+import { validateAttachmentMeta, type ChatAttachmentRef } from '@/lib/chat/attachment-contract';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -97,8 +91,8 @@ import remarkGfm from 'remark-gfm';
  * referensi G:\Dashboard\Engineering chat). Dark ala Saya app:
  * sidebar Home/Project, hero "wisnu returns!", composer Lucent/Arete/Noir,
  * Projects grid + modal Create a project, Add to Project, connectors.
- * ATURAN EMAS tetap: AI menjelaskan — angka final dari Core Engine.
- * Riwayat lokal (lib/chat/chat-history) dengan scope global 'command-room'.
+ * ATURAN EMAS tetap: AI menjelaskan — angka final untuk Work tetap dari Core Engine.
+ * Chat memakai server history bila tersedia dan cache browser sebagai fallback.
  */
 
 const SCOPE = 'command-room';
@@ -114,17 +108,24 @@ const filterLabels: Record<FilterMode, string> = {
 
 interface PendingAttachment {
   id: string;
+  attachmentId?: string;
   name: string;
   sizeLabel: string;
+  sizeBytes: number;
   mimeType: string;
-  base64: string | null;
   supported: boolean;
+  status: 'uploading' | 'staged' | 'failed';
   error?: string;
 }
 
-const SUPPORTED_MIME = new Set(['image/png', 'image/jpeg', 'image/webp', 'application/pdf']);
+const SUPPORTED_MIME = new Set([
+  'image/png', 'image/jpeg', 'image/webp', 'image/gif', 'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'text/csv',
+]);
 const MAX_ATTACH = 4;
-const MAX_BYTES = 8 * 1024 * 1024;
 
 function nowLabel(): string {
   return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
@@ -140,18 +141,12 @@ function inferMime(file: File): string {
   if (n.endsWith('.pdf')) return 'application/pdf';
   if (n.endsWith('.jpg') || n.endsWith('.jpeg')) return 'image/jpeg';
   if (n.endsWith('.webp')) return 'image/webp';
+  if (n.endsWith('.gif')) return 'image/gif';
+  if (n.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if (n.endsWith('.xlsx') || n.endsWith('.xls')) return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  if (n.endsWith('.pptx')) return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+  if (n.endsWith('.csv')) return 'text/csv';
   return 'application/octet-stream';
-}
-function readBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const r = typeof reader.result === 'string' ? reader.result : '';
-      resolve(r.includes(',') ? r.split(',')[1] : r);
-    };
-    reader.onerror = () => reject(new Error(`Gagal membaca ${file.name}`));
-    reader.readAsDataURL(file);
-  });
 }
 function updatedLabel(iso: string): string {
   return `Updated ${new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
@@ -213,7 +208,7 @@ function CommandRoomContent() {
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [sidePanelTab, setSidePanelTab] = useState<'task' | 'summary'>('task');
+  const [sidePanelTab, setSidePanelTab] = useState<'activity' | 'sources' | 'summary'>('activity');
   const [summaryCache, setSummaryCache] = useState<Record<string, string>>({});
   const [summaryLoadingId, setSummaryLoadingId] = useState<string | null>(null);
   const [summaryError, setSummaryError] = useState<string | null>(null);
@@ -252,6 +247,8 @@ function CommandRoomContent() {
   const allRuns = useChatRuns(activeId);
   const pendingRuns = allRuns.filter((r) => r.state !== 'completed');
   const isBusy = pendingRuns.some((r) => r.state === 'running' || r.state === 'streaming' || r.state === 'queued');
+  const activeExecution = pendingRuns.find((r) => r.state === 'running' || r.state === 'streaming');
+  const queuedRuns = pendingRuns.filter((r) => r.state === 'queued');
 
   const chatStarted = messages.length > 0 || pendingRuns.length > 0;
 
@@ -261,8 +258,82 @@ function CommandRoomContent() {
     if (selectId !== undefined) setActiveId(selectId);
   }
 
+  function patchServerConversation(id: string, update: { title?: string; pinned?: boolean; archived?: boolean; projectId?: string | null }) {
+    void fetch(`/api/command-room/conversations/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(update),
+    }).catch(() => undefined);
+  }
+
+  function deleteServerConversation(id: string) {
+    void fetch(`/api/command-room/conversations/${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => undefined);
+  }
+
   useEffect(() => {
     refresh(null);
+    let disposed = false;
+    const hydrateServerHistory = async () => {
+      try {
+        const response = await fetch('/api/command-room/conversations', { cache: 'no-store' });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok || !body.durable || !Array.isArray(body.conversations)) return;
+        const serverConversations = await Promise.all(body.conversations.map(async (row: any): Promise<ChatConversation | null> => {
+          if (!row?.id) return null;
+          const messagesResponse = await fetch(`/api/command-room/conversations/${encodeURIComponent(row.id)}/messages`, { cache: 'no-store' });
+          const messagesBody = await messagesResponse.json().catch(() => ({}));
+          const queueResponse = await fetch(`/api/command-room/conversations/${encodeURIComponent(row.id)}/queue`, { cache: 'no-store' });
+          const queueBody = await queueResponse.json().catch(() => ({}));
+          if (queueResponse.ok && queueBody.durable && Array.isArray(queueBody.entries)) {
+            queueBody.entries
+              .filter((entry: any) => entry?.state === 'queued' || entry?.state === 'parked')
+              .forEach((entry: any) => chatRunStore.hydrateQueuedRun({ ...entry, conversation_id: row.id }));
+          }
+          const serverMessages = Array.isArray(messagesBody.messages) ? messagesBody.messages : [];
+          const messages: StoredChatMessage[] = serverMessages
+            .filter((item: any) => item?.role === 'user' || item?.role === 'assistant')
+            .map((item: any) => ({
+              id: item.id ?? `server-${item.sequence}`,
+              role: item.role,
+              text: typeof item.content === 'string' ? item.content : '',
+              time: item.created_at ? new Date(item.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : nowLabel(),
+              parts: Array.isArray(item.parts) ? item.parts : undefined,
+              model: item.model_alias ? { alias: item.model_alias, displayName: PAAX_MODELS[item.model_alias as ModelAlias]?.displayName ?? item.model_alias } : undefined,
+              sources: Array.isArray(item.sources) ? item.sources : undefined,
+              artifacts: Array.isArray(item.artifacts) ? item.artifacts : undefined,
+              turnId: item.turn_id ?? undefined,
+              status: item.role === 'assistant' ? 'completed' : undefined,
+            }));
+          return {
+            id: row.id,
+            projectId: SCOPE,
+            folderId: row.project_id ?? null,
+            boundProjectId: row.project_id ?? null,
+            title: row.title || 'Percakapan baru',
+            messages,
+            pinned: Boolean(row.pinned),
+            archived: Boolean(row.archived),
+            createdAt: row.created_at ?? new Date().toISOString(),
+            updatedAt: row.updated_at ?? row.created_at ?? new Date().toISOString(),
+            connectors: { gambarKerja: false, rab: false, jadwal: false },
+            persistence: 'server',
+          };
+        }));
+        if (disposed) return;
+        const local = listConversations(SCOPE);
+        const serverIds = new Set(serverConversations.filter(Boolean).map((item) => item!.id));
+        const merged = [
+          ...serverConversations.filter((item): item is ChatConversation => Boolean(item)),
+          ...local.filter((item) => !serverIds.has(item.id)),
+        ].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+        merged.filter((item) => item.persistence === 'server').forEach(saveConversation);
+        setConversations(merged);
+      } catch {
+        // local cache remains usable when the DB adapter is unavailable.
+      }
+    };
+    void hydrateServerHistory();
+    return () => { disposed = true; };
   }, []);
 
   const safeMessages = Array.isArray(messages) ? messages : [];
@@ -410,7 +481,11 @@ function CommandRoomContent() {
   }
 
   function submitRename() {
-    if (active) renameConversation(active.id, renameDraft);
+    if (active) {
+      const title = renameDraft.trim();
+      renameConversation(active.id, title);
+      patchServerConversation(active.id, { title });
+    }
     setRenaming(false);
     refresh(active?.id ?? null);
   }
@@ -458,37 +533,55 @@ function CommandRoomContent() {
       return;
     }
     const selected = Array.from(files).slice(0, remaining);
-    const picked: PendingAttachment[] = [];
     for (const file of selected) {
       const mimeType = inferMime(file);
-      const base = {
-        id: `att-${Date.now()}-${file.name}-${Math.random().toString(16).slice(2)}`,
+      const localId = `att-${Date.now()}-${file.name}-${Math.random().toString(16).slice(2)}`;
+      const base: PendingAttachment = {
+        id: localId,
         name: file.name,
         sizeLabel: formatSize(file.size),
+        sizeBytes: file.size,
         mimeType,
+        supported: false,
+        status: 'failed',
       };
-      if (!SUPPORTED_MIME.has(mimeType)) {
-        picked.push({ ...base, base64: null, supported: false, error: 'Format belum dibaca AI — pakai Drawing Intelligence / Smart Import.' });
+      const validation = validateAttachmentMeta({ name: file.name, mimeType, sizeBytes: file.size });
+      if (!validation.ok || !SUPPORTED_MIME.has(mimeType)) {
+        setAttachments((prev) => [...prev, { ...base, error: validation.ok ? 'Format belum didukung.' : validation.error }]);
         continue;
       }
-      if (file.size > MAX_BYTES) {
-        picked.push({ ...base, base64: null, supported: false, error: `Terlalu besar (maks ${formatSize(MAX_BYTES)}).` });
-        continue;
-      }
+      setAttachments((prev) => [...prev, { ...base, supported: true, status: 'uploading' }]);
       try {
-        picked.push({ ...base, base64: await readBase64(file), supported: true });
+        const form = new FormData();
+        form.append('file', file, file.name);
+        if (active?.id) form.append('conversationId', active.id);
+        const response = await fetch('/api/command-room/attachments', { method: 'POST', body: form });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok || !body.attachment) throw new Error(body.error || 'Lampiran gagal di-stage.');
+        const attachment = body.attachment as ChatAttachmentRef;
+        setAttachments((prev) => prev.map((item) => item.id === localId
+          ? { ...item, attachmentId: attachment.attachment_id, status: 'staged' }
+          : item));
       } catch (err) {
-        picked.push({ ...base, base64: null, supported: false, error: err instanceof Error ? err.message : 'Gagal dibaca.' });
+        setAttachments((prev) => prev.map((item) => item.id === localId
+          ? { ...item, supported: false, status: 'failed', error: err instanceof Error ? err.message : 'Lampiran gagal di-stage.' }
+          : item));
       }
     }
-    setAttachments((prev) => [...prev, ...picked]);
     setPlusOpen(false);
   }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     const message = draft.trim();
-    if (!message || isBusy) return;
+    if (!message) return;
+    const uploadingAttachment = attachments.some((attachment) => attachment.status === 'uploading');
+    if (uploadingAttachment) {
+      showNote('Tunggu sampai upload lampiran selesai sebelum mengirim.');
+      return;
+    }
+    const submittedAttachments = attachments.filter((attachment) => attachment.supported && attachment.status === 'staged' && attachment.attachmentId);
+    const steerActiveRun = isBusy && submittedAttachments.length === 0 ? activeExecution : undefined;
 
     let conversation = active;
     if (!conversation) conversation = createConversation(SCOPE, openProjectId, openProjectId);
@@ -510,22 +603,15 @@ function CommandRoomContent() {
       content: m.text,
     }));
 
-    const connectors = next.connectors;
-    const enabledConnectors = (Object.entries(connectors)
-      .filter(([, enabled]) => enabled)
-      .map(([connector]) => connector)) as CommandRoomConnector[];
-    // Drawing Intelligence relies exclusively on server-side DEM/PCKM retrieval.
-    if (next.folderId && connectors.rab) {
-      try {
-        const contextPack = await buildRabContextPack(next.folderId);
-        if (contextPack) {
-          const last = historyMessages[historyMessages.length - 1];
-          historyMessages[historyMessages.length - 1] = {
-            ...last,
-            content: `${contextPack}\n\n---\n\nPertanyaan user:\n${last.content}`,
-          };
-        }
-      } catch { /* konektor gagal ambil konteks — kirim tanpa konteks tambahan */ }
+    if (steerActiveRun) {
+      const steered = await chatRunStore.steerRun(steerActiveRun.runId, message);
+      if (steered) {
+        showNote('Steer diterima — jawaban aktif akan menyesuaikan instruksi ini.');
+        return;
+      }
+      // Redirect race: the active turn may have ended between the UI check and
+      // the control request. Keep the correction as a normal FIFO turn below.
+      showNote('Turn aktif selesai tepat saat steer dikirim; koreksi masuk antrian.');
     }
 
     await chatRunStore.startChatRun({
@@ -538,7 +624,17 @@ function CommandRoomContent() {
       effort: reasoningEffort,
       thinking: resolvedThinking,
       projectId: next.boundProjectId ?? next.folderId ?? undefined,
-      connectors: enabledConnectors,
+      conversationTitle: next.title,
+      messageSequence: next.messages.length - 1,
+      attachments: submittedAttachments.map((attachment) => ({
+        attachment_id: attachment.attachmentId as string,
+        conversation_id: next.id,
+        name: attachment.name,
+        media_type: attachment.mimeType,
+        size_bytes: attachment.sizeBytes,
+        sha256: '',
+        status: 'staged' as const,
+      })),
     });
   }
 
@@ -612,7 +708,7 @@ function CommandRoomContent() {
       </span>
       <span className="pax-cr-row-actions" style={{ display: 'flex', gap: 2 }}>
         <button
-          onClick={(e) => { e.stopPropagation(); togglePinned(c.id); refresh(activeId); }}
+          onClick={(e) => { e.stopPropagation(); patchServerConversation(c.id, { pinned: !c.pinned }); togglePinned(c.id); refresh(activeId); }}
           aria-label={`${c.pinned ? 'Lepas pin' : 'Pin'} ${c.title}`}
           title={c.pinned ? 'Lepas pin' : 'Pin'}
           style={{ border: 'none', background: 'transparent', color: c.pinned ? 'var(--cr-orange)' : 'var(--cr-text3)', cursor: 'pointer', padding: 2, display: 'flex' }}
@@ -620,7 +716,7 @@ function CommandRoomContent() {
           <Pin size={11} />
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); toggleArchived(c.id); refresh(activeId === c.id ? null : activeId); }}
+          onClick={(e) => { e.stopPropagation(); patchServerConversation(c.id, { archived: !c.archived }); toggleArchived(c.id); refresh(activeId === c.id ? null : activeId); }}
           aria-label={`${c.archived ? 'Keluarkan dari arsip' : 'Arsipkan'} ${c.title}`}
           title={c.archived ? 'Keluarkan dari arsip' : 'Arsipkan'}
           style={{ border: 'none', background: 'transparent', color: 'var(--cr-text3)', cursor: 'pointer', padding: 2, display: 'flex' }}
@@ -628,7 +724,7 @@ function CommandRoomContent() {
           <History size={11} />
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); deleteConversation(c.id); refresh(activeId === c.id ? null : activeId); }}
+          onClick={(e) => { e.stopPropagation(); deleteServerConversation(c.id); deleteConversation(c.id); refresh(activeId === c.id ? null : activeId); }}
           aria-label={`Hapus ${c.title}`}
           title="Hapus"
           style={{ border: 'none', background: 'transparent', color: 'var(--cr-text3)', cursor: 'pointer', padding: 2, display: 'flex' }}
@@ -660,46 +756,6 @@ function CommandRoomContent() {
       }}
     >
       <span style={{ display: 'flex', color: 'var(--cr-text3)' }}>{icon}</span>
-      {label}
-    </button>
-  );
-
-  /* ── Connector: sumber data proyek yang diikutkan sebagai konteks ── */
-  const activeConnectors: ConversationConnectors = active?.connectors ?? { gambarKerja: false, rab: false, jadwal: false };
-
-  const connectorIcons: Record<keyof ConversationConnectors, React.ReactNode> = {
-    gambarKerja: <FileImage size={13} />,
-    rab: <Calculator size={13} />,
-    jadwal: <CalendarClock size={13} />,
-  };
-
-  function toggleConnector(key: keyof ConversationConnectors) {
-    let conv = active;
-    if (!conv) {
-      conv = createConversation(SCOPE, openProjectId, openProjectId);
-      refresh(conv.id);
-    }
-    const next = !(conv.connectors?.[key] ?? false);
-    setConversationConnectors(conv.id, { [key]: next });
-    refresh(conv.id);
-  }
-
-  const connectorChip = (key: keyof ConversationConnectors, icon: React.ReactNode, label: string) => (
-    <button
-      key={key}
-      type="button"
-      onClick={() => toggleConnector(key)}
-      className="pax-cr-hover pax-press cr-connector-chip"
-      data-active={activeConnectors[key] ? 'true' : undefined}
-      title={activeConnectors[key] ? `${label} aktif — konteks proyek diikutkan ke AI` : `Sertakan konteks ${label} dari project yang di-attach`}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 5, height: 26, padding: '0 10px', borderRadius: 999,
-        border: 'none', background: activeConnectors[key] ? 'var(--cr-orange-soft)' : 'var(--cr-panel2)',
-        color: activeConnectors[key] ? 'var(--cr-orange)' : 'var(--cr-text3)', fontSize: 11, fontWeight: 600, cursor: 'pointer',
-        transition: 'background .16s var(--ease), color .16s var(--ease)',
-      }}
-    >
-      {icon}
       {label}
     </button>
   );
@@ -737,7 +793,7 @@ function CommandRoomContent() {
     <div className="pax-cr-panel-slide cr-side-panel" style={{ width: 312, flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--cr-panel)' }}>
       <div style={{ padding: '14px 14px 10px' }}>
         <div style={{ display: 'flex', background: 'var(--cr-bg)', borderRadius: 11, padding: 3 }}>
-          {(['task', 'summary'] as const).map((t) => (
+          {(['activity', 'sources', 'summary'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setSidePanelTab(t)}
@@ -745,29 +801,37 @@ function CommandRoomContent() {
               aria-selected={sidePanelTab === t}
               style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 28, borderRadius: 8, border: 'none', background: sidePanelTab === t ? 'var(--cr-elev)' : 'transparent', color: sidePanelTab === t ? 'var(--cr-text)' : 'var(--cr-text3)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', transition: 'background .2s var(--ease), color .2s var(--ease)' }}
             >
-              {t === 'task' ? <ListTodo size={12} /> : <FileText size={12} />}
-              {t === 'task' ? 'Task' : 'Summary'}
+              {t === 'activity' ? <ListTodo size={12} /> : t === 'sources' ? <Search size={12} /> : <FileText size={12} />}
+              {t === 'activity' ? 'Activity' : t === 'sources' ? 'Sources' : 'Summary'}
             </button>
           ))}
         </div>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 10px 12px' }}>
-        {sidePanelTab === 'task' ? (
-          conversations.filter((c) => !c.archived).length === 0 ? (
-            <div style={{ padding: '14px 8px', fontSize: 11.5, color: 'var(--cr-text3)', lineHeight: 1.5 }}>Belum ada percakapan aktif.</div>
+        {sidePanelTab === 'activity' ? (
+          allRuns.length === 0 ? (
+            <div style={{ padding: '14px 8px', fontSize: 11.5, color: 'var(--cr-text3)', lineHeight: 1.5 }}>Aktivitas turn akan muncul di sini.</div>
           ) : (
-            conversations.filter((c) => !c.archived).map((c) => (
-              <button
-                key={c.id}
-                onClick={() => { setActiveId(c.id); setTab('home'); }}
-                className="pax-cr-hover"
-                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 7, padding: '8px 9px', borderRadius: 9, border: 'none', background: activeId === c.id ? 'rgba(255,255,255,0.08)' : 'transparent', color: 'var(--cr-text)', fontSize: 12, cursor: 'pointer', textAlign: 'left' }}
-              >
-                {c.pinned && <Pin size={11} style={{ color: 'var(--cr-orange)', flexShrink: 0 }} />}
-                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</span>
-              </button>
-            ))
+            allRuns.flatMap((run) => run.activitySteps.map((step) => (
+              <div key={`${run.runId}-${step.id}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 9px', borderRadius: 9, background: step.state === 'active' ? 'rgba(217,119,87,0.08)' : 'transparent' }}>
+                <span style={{ width: 7, height: 7, marginTop: 4, borderRadius: '50%', background: step.state === 'failed' ? 'var(--cr-orange)' : step.state === 'active' ? 'var(--cr-orange)' : 'var(--cr-text3)', flexShrink: 0 }} />
+                <span style={{ minWidth: 0, fontSize: 11.5, color: 'var(--cr-text2)', lineHeight: 1.45 }}>{step.label}{step.detail ? <small style={{ display: 'block', color: 'var(--cr-text3)' }}>{step.detail}</small> : null}</span>
+              </div>
+            )))
           )
+        ) : sidePanelTab === 'sources' ? (
+          (() => {
+            const sources = allRuns.flatMap((run) => run.sources);
+            const artifacts = allRuns.flatMap((run) => run.artifacts);
+            return sources.length === 0 && artifacts.length === 0 ? (
+              <div style={{ padding: '14px 8px', fontSize: 11.5, color: 'var(--cr-text3)', lineHeight: 1.5 }}>Sumber dan artifact nyata akan tampil setelah runtime menambahkannya.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {sources.map((source) => <a key={source.source_id} href={source.uri || '#'} target="_blank" rel="noreferrer" style={{ padding: '8px 9px', borderRadius: 9, background: 'var(--cr-elev)', color: 'var(--cr-text2)', fontSize: 11.5, textDecoration: 'none' }}><strong style={{ display: 'block', color: 'var(--cr-text)' }}>{source.title}</strong><span>{source.provenance}{source.locator ? ` · ${source.locator}` : ''}</span></a>)}
+                {artifacts.map((artifact) => <a key={artifact.artifact_id} href={artifact.download_url || '#'} style={{ padding: '8px 9px', borderRadius: 9, background: 'var(--cr-elev)', color: 'var(--cr-text2)', fontSize: 11.5, textDecoration: 'none' }}><strong style={{ display: 'block', color: 'var(--cr-text)' }}>{artifact.name}</strong><span>{artifact.status}</span></a>)}
+              </div>
+            );
+          })()
         ) : !active ? (
           <div style={{ padding: '14px 8px', fontSize: 11.5, color: 'var(--cr-text3)', lineHeight: 1.5 }}>
             Pilih percakapan untuk melihat ringkasannya.
@@ -822,7 +886,7 @@ function CommandRoomContent() {
   /* ── Composer (dipakai di hero & mode chat) ── */
   const composer = (
     <div className="cr-composer-shell" style={{ width: '100%', maxWidth: 820, margin: '0 auto' }}>
-      {/* Project chip (kiri) + connector aktif (kanan) */}
+      {/* Optional project context; Chat capabilities remain independent from Work. */}
       <div className="cr-connector-row">
         <div ref={addToRef} style={{ position: 'relative' }}>
           <button
@@ -836,7 +900,7 @@ function CommandRoomContent() {
             style={{ display: 'flex', alignItems: 'center', gap: 7, height: 28, padding: '0 12px', borderRadius: 999, border: 'none', background: 'var(--cr-panel2)', color: active?.folderId ? 'var(--cr-orange)' : 'var(--cr-text2)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
           >
             <FolderPlus size={13} />
-            {projectName(active?.boundProjectId ?? active?.folderId) ?? 'New Project'}
+            {projectName(active?.boundProjectId ?? active?.folderId) ?? 'Home Chat'}
             <ChevronDown size={12} style={{ opacity: 0.6, transition: 'transform .2s var(--ease)', transform: addToOpen ? 'rotate(180deg)' : 'none' }} />
           </button>
           {addToOpen && (
@@ -853,6 +917,7 @@ function CommandRoomContent() {
                   role="menuitem"
                   onClick={() => {
                     if (active) {
+                      patchServerConversation(active.id, { projectId: project.id });
                       moveConversation(active.id, project.id);
                       refresh(active.id);
                       showNote(`Percakapan masuk ke "${project.name}".`);
@@ -883,11 +948,6 @@ function CommandRoomContent() {
           )}
         </div>
 
-        <div className="cr-connector-group">
-          {COMMAND_CONNECTORS.map((connector) =>
-            connectorChip(connector.id, connectorIcons[connector.id], connector.label),
-          )}
-        </div>
       </div>
 
       {!usageDismissed && (
@@ -929,6 +989,8 @@ function CommandRoomContent() {
               <Paperclip size={11} color="var(--cr-text3)" />
               <span style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
               <span className="pax-mono" style={{ color: 'var(--cr-text3)', fontSize: 10 }}>{a.sizeLabel}</span>
+              {a.status === 'uploading' && <span style={{ color: 'var(--cr-text3)', fontSize: 10.5 }}>mengunggah…</span>}
+              {a.status === 'staged' && <span style={{ color: 'var(--cr-green, #74c69d)', fontSize: 10.5 }}>siap</span>}
               {!a.supported && <span style={{ color: 'var(--cr-orange)', fontSize: 10.5 }}>{a.error}</span>}
               <button
                 onClick={() => setAttachments((prev) => prev.filter((x) => x.id !== a.id))}
@@ -971,7 +1033,6 @@ function CommandRoomContent() {
             placeholder="Bring the problem. I'll break it down."
             aria-label="Pesan"
             rows={1}
-            disabled={isBusy}
             className="pax-cr-textarea cr-composer-textarea"
             style={{
               width: '100%',
@@ -1036,7 +1097,7 @@ function CommandRoomContent() {
               ref={fileInputRef}
               type="file"
               multiple
-              accept="image/*,.pdf,.xlsx,.xls,.docx,.dwg"
+              accept="image/*,.pdf,.docx,.xlsx,.xls,.pptx,.csv"
               onChange={(e) => { void onPickFiles(e.target.files); e.target.value = ''; }}
               aria-label="Tambah file atau foto"
               style={{ display: 'none' }}
@@ -1056,6 +1117,33 @@ function CommandRoomContent() {
             <span className="cr-thinking-value">{resolvedThinking === 'on' ? 'Ultra' : 'Standard'}</span>
           </button>
 
+          {activeExecution && (
+            <button
+              type="button"
+              onClick={() => { void chatRunStore.stopRun(activeExecution.runId); }}
+              aria-label="Hentikan turn aktif"
+              title="Stop turn aktif"
+              className="pax-cr-hover pax-press"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 26, padding: '0 8px', borderRadius: 8, border: '1px solid var(--cr-border)', background: 'transparent', color: 'var(--cr-orange)', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+            >
+              <Square size={11} fill="currentColor" /> Stop
+            </button>
+          )}
+          {queuedRuns.length > 0 && (
+            <span className="pax-mono" aria-label={`${queuedRuns.length} turn dalam antrian`} style={{ color: 'var(--cr-text3)', fontSize: 10.5, whiteSpace: 'nowrap' }}>
+              {queuedRuns.length} antrian
+            </span>
+          )}
+          {queuedRuns.some((run) => run.parked) && active?.id && (
+            <button
+              type="button"
+              onClick={() => chatRunStore.resumeQueued(active.id)}
+              className="pax-cr-hover pax-press"
+              style={{ height: 26, padding: '0 8px', borderRadius: 8, border: 'none', background: 'var(--cr-orange-soft)', color: 'var(--cr-orange)', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+            >
+              Resume
+            </button>
+          )}
           <div style={{ flex: 1 }} />
 
           {/* Badge: model · thinking · effort */}
@@ -1134,39 +1222,13 @@ function CommandRoomContent() {
           <button type="button" onClick={() => showNote('Mode voice hadir di rilis berikutnya.')} aria-label="Mode voice" className="pax-cr-hover pax-press cr-icon-button cr-voice-button" style={{ width: 26, height: 26, borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--cr-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <AudioLines size={14} />
           </button>
-          <button type="submit" aria-label="Kirim" disabled={isBusy || !draft.trim()} className="pax-press cr-send-button" style={{ width: 28, height: 28, borderRadius: '50%', background: '#a9a9a9', color: '#1c1c1c', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isBusy ? 'wait' : 'pointer', opacity: isBusy || !draft.trim() ? 0.45 : 1, transition: 'opacity .2s var(--ease), transform .16s var(--ease)' }}>
-            {isBusy ? <Loader2 size={13} className="animate-spin" /> : <ArrowUp size={13} strokeWidth={2.4} />}
+          <button type="submit" aria-label={isBusy ? 'Steer atau masukkan ke antrian' : 'Kirim'} title={isBusy ? 'Teks akan men-steer turn aktif; lampiran masuk antrian' : 'Kirim'} disabled={!draft.trim()} className="pax-press cr-send-button" style={{ width: 28, height: 28, borderRadius: '50%', background: '#a9a9a9', color: '#1c1c1c', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', opacity: !draft.trim() ? 0.45 : 1, transition: 'opacity .2s var(--ease), transform .16s var(--ease)' }}>
+            <ArrowUp size={13} strokeWidth={2.4} />
           </button>
         </div>
       </form>
     </div>
   );
-
-  const quickActions = (
-    <div className="pax-stagger" style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginTop: 16 }}>
-      {[
-        { icon: <FileImage size={13} />, label: 'Analisa Gambar', prompt: 'Analisa gambar kerja saya: apa saja elemen yang terdeteksi dan bagian mana yang perlu direview?' },
-        { icon: <Calculator size={13} />, label: 'Buat RAB', prompt: 'Bantu saya menyusun draft RAB — jelaskan langkah dan data apa yang dibutuhkan. Angka final dihitung engine.' },
-        { icon: <TrendingUp size={13} />, label: 'Strategize', prompt: 'Bantu saya menyusun strategi pelaksanaan proyek: urutan pekerjaan, risiko jadwal, dan mitigasinya.' },
-        { icon: <HardDrive size={13} />, label: 'From Drive', note: true },
-        { icon: <Mail size={13} />, label: 'From Gmail', note: true },
-      ].map((qa) => (
-        <button
-          key={qa.label}
-          onClick={() => {
-            if (qa.note) showNote(`Konektor "${qa.label}" hadir di rilis berikutnya.`);
-            else setDraft(qa.prompt ?? '');
-          }}
-          className="pax-cr-hover pax-press"
-          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 13px', borderRadius: 10, border: 'none', background: 'var(--cr-panel2)', color: 'var(--cr-text2)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-        >
-          <span style={{ color: 'var(--cr-text3)', display: 'flex' }}>{qa.icon}</span>
-          {qa.label}
-        </button>
-      ))}
-    </div>
-  );
-
 
   return (
     <div className="pax-command" data-room-mode={roomMode} style={{ display: 'flex', flex: 1, minHeight: 0, height: '100%', borderRadius: 0, overflow: 'hidden' }}>
@@ -1251,7 +1313,6 @@ function CommandRoomContent() {
               />
             </div>
           )}
-          {sideBtn(<CalendarClock size={15} />, 'Schedule Task', () => showNote('Schedule Task (AI proaktif terjadwal) hadir di v1.5.'))}
           {sideBtn(<History size={15} />, 'Conversation History', () => { setFilterMode('all'); setSidebarSearch(''); })}
         </div>
 
@@ -1569,14 +1630,14 @@ function CommandRoomContent() {
                 </button>
                 {titleMenuOpen && active && (
                   <div className="pax-scale-in" role="menu" style={{ position: 'absolute', top: 28, left: 0, width: 208, borderRadius: 13, background: 'var(--cr-panel2)', border: 'none', boxShadow: '0 18px 44px rgba(0,0,0,0.5)', padding: 5, zIndex: 45 }}>
-                    <button type="button" role="menuitem" onClick={() => { togglePinned(active.id); refresh(active.id); setTitleMenuOpen(false); }} className="pax-cr-hover" style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '8px 9px', borderRadius: 9, border: 'none', background: 'transparent', color: active.pinned ? 'var(--cr-orange)' : 'var(--cr-text)', fontSize: 12.5, cursor: 'pointer', textAlign: 'left' }}>
-                      <Pin size={13} /> {active.pinned ? 'Lepas pin' : 'Pin task'}
+                    <button type="button" role="menuitem" onClick={() => { patchServerConversation(active.id, { pinned: !active.pinned }); togglePinned(active.id); refresh(active.id); setTitleMenuOpen(false); }} className="pax-cr-hover" style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '8px 9px', borderRadius: 9, border: 'none', background: 'transparent', color: active.pinned ? 'var(--cr-orange)' : 'var(--cr-text)', fontSize: 12.5, cursor: 'pointer', textAlign: 'left' }}>
+                       <Pin size={13} /> {active.pinned ? 'Lepas pin' : 'Pin conversation'}
                     </button>
                     <button type="button" role="menuitem" onClick={startRename} className="pax-cr-hover" style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '8px 9px', borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text)', fontSize: 12.5, cursor: 'pointer', textAlign: 'left' }}>
-                      <Pencil size={13} /> Rename task
+                       <Pencil size={13} /> Rename conversation
                     </button>
-                    <button type="button" role="menuitem" onClick={() => { toggleArchived(active.id); refresh(null); setTitleMenuOpen(false); }} className="pax-cr-hover" style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '8px 9px', borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text)', fontSize: 12.5, cursor: 'pointer', textAlign: 'left' }}>
-                      <History size={13} /> {active.archived ? 'Keluarkan dari arsip' : 'Archive task'}
+                    <button type="button" role="menuitem" onClick={() => { patchServerConversation(active.id, { archived: !active.archived }); toggleArchived(active.id); refresh(null); setTitleMenuOpen(false); }} className="pax-cr-hover" style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '8px 9px', borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text)', fontSize: 12.5, cursor: 'pointer', textAlign: 'left' }}>
+                       <History size={13} /> {active.archived ? 'Keluarkan dari arsip' : 'Archive conversation'}
                     </button>
                     <button type="button" role="menuitem" onClick={() => setMoveSubOpen((v) => !v)} className="pax-cr-hover" style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '8px 9px', borderRadius: 9, border: 'none', background: 'transparent', color: 'var(--cr-text)', fontSize: 12.5, cursor: 'pointer', textAlign: 'left' }}>
                       <FolderPlus size={13} /> Move to project
@@ -1592,7 +1653,7 @@ function CommandRoomContent() {
                           <button
                             key={project.id}
                             type="button"
-                            onClick={() => { moveConversation(active.id, project.id); refresh(active.id); setTitleMenuOpen(false); setMoveSubOpen(false); showNote(`Percakapan masuk ke "${project.name}".`); }}
+                            onClick={() => { patchServerConversation(active.id, { projectId: project.id }); moveConversation(active.id, project.id); refresh(active.id); setTitleMenuOpen(false); setMoveSubOpen(false); showNote(`Percakapan masuk ke "${project.name}".`); }}
                             className="pax-cr-hover"
                             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 7, padding: '6px 8px', borderRadius: 7, border: 'none', background: active.folderId === project.id ? 'rgba(255,255,255,0.08)' : 'transparent', color: 'var(--cr-text2)', fontSize: 12, cursor: 'pointer', textAlign: 'left' }}
                           >
@@ -1615,7 +1676,7 @@ function CommandRoomContent() {
                 onClick={() => setSidePanelOpen((v) => !v)}
                 aria-label="Toggle side panel"
                 aria-expanded={sidePanelOpen}
-                title="Task & Summary panel"
+                title="Activity, sources, and summary panel"
                 className="pax-cr-hover pax-press cr-header-icon-button"
                 style={{ width: COMMAND_HEADER_ICON_SIZE, height: COMMAND_HEADER_ICON_SIZE, borderRadius: 9, border: 'none', background: sidePanelOpen ? 'var(--cr-orange-soft)' : 'transparent', color: sidePanelOpen ? 'var(--cr-orange)' : 'var(--cr-text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
               >
@@ -1640,12 +1701,16 @@ function CommandRoomContent() {
                     <div key={m.id} className="pax-rise pax-msg-row" style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                         <span style={{ color: 'var(--cr-orange)', display: 'flex' }}><PaaxMark size={13} /></span>
-                        <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--cr-text2)' }}>PAAX · {activeModelDef.displayName}</span>
+                        <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--cr-text2)' }}>PAAX · {m.model?.displayName ?? activeModelDef.displayName}</span>
                       </div>
                       {m.processing && <ProcessingTrace trace={m.processing} />}
-                      <div className="cr-markdown" style={{ fontSize: 15, lineHeight: 1.68, color: 'var(--cr-text)' }}>
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.text}</ReactMarkdown>
-                      </div>
+                      {m.parts?.length ? (
+                        <ChatPartsRenderer parts={m.parts} sources={m.sources} artifacts={m.artifacts} />
+                      ) : (
+                        <div className="cr-markdown" style={{ fontSize: 15, lineHeight: 1.68, color: 'var(--cr-text)' }}>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.text}</ReactMarkdown>
+                        </div>
+                      )}
                       <div className="cr-message-meta" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {messageActions(m.id, m.text, 'assistant')}
                         <span style={{ flex: 1 }} />
@@ -1670,11 +1735,21 @@ function CommandRoomContent() {
                       <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--cr-text2)' }}>PAAX · {run.modelName}</span>
                     </div>
 
-                    <RunStatus run={run} onStop={() => chatRunStore.cancelRun(run.runId)} />
-
-                    {run.answerBuffer && (
-                      <div className="cr-markdown" style={{ fontSize: 15, lineHeight: 1.68, color: 'var(--cr-text)' }}>
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{run.answerBuffer}</ReactMarkdown>
+                    <RunStatus run={run} onStop={() => { void chatRunStore.stopRun(run.runId); }} showStop={false} />
+                    {run.messageParts.length ? (
+                      <ChatPartsRenderer parts={run.messageParts} sources={run.sources} artifacts={run.artifacts} />
+                    ) : (
+                      <>
+                        {run.answerBuffer && (
+                          <div className="cr-markdown" style={{ fontSize: 15, lineHeight: 1.68, color: 'var(--cr-text)' }}>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{run.answerBuffer}</ReactMarkdown>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {run.state === 'queued' && run.parked && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--cr-orange)', fontSize: 11 }}>
+                        <Square size={11} /> Antrian diparkir — tekan Resume di composer.
                       </div>
                     )}
                   </div>
@@ -1711,17 +1786,14 @@ function CommandRoomContent() {
             </div>
             <div className="pax-rise cr-composer-wrap" style={{ padding: '10px 22px 18px' }}>
               {composer}
-              <div style={{ textAlign: 'center', fontSize: 10.5, color: 'var(--cr-text3)', marginTop: 8 }}>
-                PAAX menjelaskan — angka final selalu dihitung Core Engine, bukan AI.
-              </div>
             </div>
           </>
         ) : (
           /* ── HERO AWAL ── */
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '22px 22px 96px' }}>
             <div className="cr-empty-hero pax-rise">
-              <h1>Hello World!</h1>
-              <p>What are we solving?</p>
+              <h1>What are we solving?</h1>
+              <p>Mulai dari pertanyaan, dokumen, atau konteks lapangan.</p>
             </div>
             <div className="pax-rise cr-new-task-panel" style={{ width: '100%' }}>
               {composer}

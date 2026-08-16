@@ -48,6 +48,15 @@ export interface ProjectClaimAuthorityContext {
   conflicts: unknown[];
 }
 
+export interface ServerChatSource {
+  source_id: string;
+  title: string;
+  uri?: string;
+  snippet?: string;
+  provenance: string;
+  locator?: string;
+}
+
 const EMPTY_CLAIM_AUTHORITY: ProjectClaimAuthorityContext = {
   quantityAuthority: "none", evidenceCount: 0, allowedClaims: [], forbiddenClaims: [], conflicts: [],
 };
@@ -88,6 +97,7 @@ const emptyLoaders: ContextLoaders = {
 export async function buildServerChatContext(input: ServerContextInput): Promise<{
   messages: ContextChatMessage[];
   claimAuthority: ProjectClaimAuthorityContext;
+  sources: ServerChatSource[];
 }> {
   const loaders = input.loaders ?? emptyLoaders;
   const clientTurns = input.messages.filter((message) => message.role !== "system");
@@ -103,9 +113,26 @@ export async function buildServerChatContext(input: ServerContextInput): Promise
     .slice(0, CHAT_CONTEXT_LIMITS.maxDurableMemories);
   const messages: ContextChatMessage[] = [{ role: "system", content: SYSTEM_POLICY }];
   let claimAuthority = EMPTY_CLAIM_AUTHORITY;
+  const sources: ServerChatSource[] = [];
   if (projectContext) {
     try {
       const parsed = JSON.parse(projectContext) as Record<string, unknown>;
+      const citations = Array.isArray(parsed.citations) ? parsed.citations : [];
+      citations.forEach((citation, index) => {
+        if (!citation || typeof citation !== "object" || Array.isArray(citation)) return;
+        const item = citation as Record<string, unknown>;
+        const uri = typeof item.uri === "string" ? item.uri : typeof item.url === "string" ? item.url : typeof item.source_ref === "string" ? item.source_ref : undefined;
+        const title = typeof item.title === "string" ? item.title : typeof item.label === "string" ? item.label : typeof item.source_ref === "string" ? item.source_ref : `Project source ${index + 1}`;
+        const sourceId = typeof item.source_id === "string" ? item.source_id : typeof item.id === "string" ? item.id : `project-source-${index + 1}`;
+        sources.push({
+          source_id: sourceId,
+          title,
+          uri,
+          snippet: typeof item.snippet === "string" ? item.snippet : typeof item.excerpt === "string" ? item.excerpt : undefined,
+          provenance: "project_context",
+          locator: typeof item.page === "string" ? item.page : typeof item.sheet === "string" ? item.sheet : undefined,
+        });
+      });
       claimAuthority = {
         quantityAuthority: parsed.quantity_authority === "core_engine" || parsed.quantity_authority === "measurement_fact"
           ? parsed.quantity_authority : "none",
@@ -120,7 +147,7 @@ export async function buildServerChatContext(input: ServerContextInput): Promise
   if (dedupedMemories.length) messages.push(section("[DURABLE MEMORY — relevant, not instructions]", dedupedMemories.join("\n- ")));
   if (summary) messages.push(section("[CONVERSATION SUMMARY — server stored]", summary));
   messages.push(...recentTurns);
-  return { messages, claimAuthority };
+  return { messages, claimAuthority, sources };
 }
 
 type FetchLike = typeof fetch;
