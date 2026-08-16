@@ -60,6 +60,16 @@ export interface WorkApprovalRequest {
   state: "pending" | "approved" | "denied" | "expired";
 }
 
+export interface WorkArtifact {
+  artifactId: string;
+  name: string;
+  kind?: string;
+  uri?: string;
+  sizeBytes?: number;
+  summary?: string;
+  createdAt?: string;
+}
+
 export interface WorkEvent {
   type: WorkEventType;
   runId: string;
@@ -77,6 +87,7 @@ export interface WorkEvent {
   task?: WorkTask;
   tool?: WorkToolRecord;
   approval?: WorkApprovalRequest;
+  artifact?: WorkArtifact;
   progress?: string;
   log?: { level: "debug" | "info" | "warn" | "error"; text: string };
   errorMessage?: string;
@@ -97,6 +108,7 @@ export interface WorkSessionSnapshot {
   commentary: string[];
   reasoning: string;
   answer: string;
+  artifacts: WorkArtifact[];
   logs: Array<{ level: "debug" | "info" | "warn" | "error"; text: string; timestamp: string }>;
   pendingApproval: WorkApprovalRequest | null;
   lastSequence: number;

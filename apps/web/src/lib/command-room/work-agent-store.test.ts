@@ -22,8 +22,8 @@ function event(partial: Partial<WorkEvent> & Pick<WorkEvent, "type" | "sequence"
   return {
     ...partial,
     type: partial.type,
-    runId: "run-1",
-    conversationId: "session-1",
+    runId: partial.runId ?? "run-1",
+    conversationId: partial.conversationId ?? "session-1",
     eventId: `evt-${partial.sequence}`,
     sequence: partial.sequence,
     timestamp: `2026-08-16T00:00:0${partial.sequence}.000Z`,
@@ -77,7 +77,25 @@ describe("Work agent store", () => {
     expect(snapshot?.reasoning).toContain("Menentukan batas baca.");
     expect(snapshot?.logs[0].text).toBe("workspace_list completed");
     expect(snapshot?.answer).toBe("Workspace siap.");
+    expect(snapshot?.artifacts).toEqual([]);
     expect(snapshot?.events).toHaveLength(9);
+  });
+
+  it("projects artifact metadata into the session without leaking payload data", () => {
+    const store = new WorkAgentStore(new MemoryStorage());
+    const sessionId = store.createSession("Artifacts", "session-artifacts");
+
+    store.applyEvent(sessionId, event({
+      type: "artifact.created",
+      sequence: 1,
+      conversationId: sessionId,
+      artifact: { artifactId: "artifact-1", name: "report.txt", kind: "text" },
+    }));
+
+    expect(store.getSession(sessionId)?.artifacts).toEqual([
+      { artifactId: "artifact-1", name: "report.txt", kind: "text" },
+    ]);
+    expect(JSON.stringify(store.getSession(sessionId))).not.toContain("dataUri");
   });
 
   it("ignores duplicate events and events routed to another session", () => {

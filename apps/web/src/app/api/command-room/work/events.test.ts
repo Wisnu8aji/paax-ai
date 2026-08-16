@@ -25,12 +25,47 @@ describe("Work event emitter", () => {
     emitter.fromChatEvent({ type: "done" });
 
     expect(events.map((event) => event.type)).toEqual([
+      "tool.generating",
       "tool.started",
       "tool.completed",
+      "log.line",
       "assistant.delta",
       "turn.completed",
     ]);
-    expect(events[1].tool).toMatchObject({ toolId: "tool-1", name: "file_read", state: "completed", summary: "file dibaca" });
-    expect(events[1].tool.result).toEqual({ content: "ok" });
+    expect(events[2].tool).toMatchObject({ toolId: "tool-1", name: "file_read", state: "completed", summary: "file dibaca" });
+    expect(events[2].tool.result).toEqual({ content: "ok" });
+  });
+
+  it("maps observable reasoning, task updates, and artifact metadata without binary payloads", () => {
+    const events: any[] = [];
+    const emitter = new WorkEventEmitter("run-2", "session-2", (event) => events.push(event));
+
+    emitter.fromChatEvent({
+      type: "activity",
+      phase: "reasoning",
+      activity: { step: { kind: "reason", label: "Menilai konteks kerja", detail: "Memilih sumber yang relevan." } },
+    });
+    emitter.fromChatEvent({
+      type: "tool_result",
+      tool: "todo",
+      toolCallId: "todo-1",
+      summary: "2 task tercatat",
+      result: { tasks: [{ id: "t1", title: "Inspect", state: "in_progress" }] },
+    });
+    emitter.fromChatEvent({
+      type: "artifact",
+      tool: "export",
+      filename: "report.txt",
+      dataUri: "data:text/plain;base64,SECRET_PAYLOAD",
+      sizeBytes: 42,
+    });
+
+    expect(events.map((event) => event.type)).toContain("reasoning.delta");
+    expect(events.find((event) => event.type === "plan.updated").tasks).toEqual([
+      { id: "t1", title: "Inspect", state: "in_progress" },
+    ]);
+    const artifact = events.find((event) => event.type === "artifact.created");
+    expect(artifact.artifact).toMatchObject({ name: "report.txt", sizeBytes: 42 });
+    expect(JSON.stringify(artifact)).not.toContain("SECRET_PAYLOAD");
   });
 });

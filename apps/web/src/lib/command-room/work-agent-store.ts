@@ -1,6 +1,7 @@
 import { redactWorkPayload } from "./work-agent-redaction";
 import type {
   WorkApprovalRequest,
+  WorkArtifact,
   WorkEvent,
   WorkSessionSnapshot,
   WorkTask,
@@ -55,6 +56,7 @@ function newSession(sessionId: string, title: string): WorkSessionSnapshot {
     commentary: [],
     reasoning: "",
     answer: "",
+    artifacts: [],
     logs: [],
     pendingApproval: null,
     lastSequence: -1,
@@ -70,7 +72,12 @@ function storageState(value: string | null): WorkAgentStoreSnapshot {
       return { sessionsById: {}, sessionOrder: [] };
     }
     const sessionsById = Object.fromEntries(
-      Object.entries(parsed.sessionsById).filter(([, session]) => Boolean(session && typeof session === "object")),
+      Object.entries(parsed.sessionsById)
+        .filter(([, session]) => Boolean(session && typeof session === "object"))
+        .map(([sessionId, session]) => [sessionId, {
+          ...(session as WorkSessionSnapshot),
+          artifacts: Array.isArray((session as WorkSessionSnapshot).artifacts) ? (session as WorkSessionSnapshot).artifacts : [],
+        }]),
     ) as Record<string, WorkSessionSnapshot>;
     const sessionOrder = parsed.sessionOrder.filter((id): id is string => typeof id === "string" && Boolean(sessionsById[id]));
     return { sessionsById, sessionOrder };
@@ -94,6 +101,37 @@ function upsertTool(tools: WorkToolRecord[], tool: WorkToolRecord): WorkToolReco
   const index = tools.findIndex((item) => item.toolId === tool.toolId);
   if (index < 0) return [...tools, safeTool];
   return tools.map((item, itemIndex) => (itemIndex === index ? { ...item, ...safeTool } : item));
+}
+
+function normalizeArtifact(value: unknown, sequence: number): WorkArtifact | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const raw = value as Record<string, unknown>;
+  const artifactId = typeof raw.artifactId === "string" && raw.artifactId.trim()
+    ? raw.artifactId
+    : typeof raw.id === "string" && raw.id.trim()
+      ? raw.id
+      : `artifact-${sequence}`;
+  const name = typeof raw.name === "string" && raw.name.trim()
+    ? raw.name
+    : typeof raw.filename === "string" && raw.filename.trim()
+      ? raw.filename
+      : "Unnamed artifact";
+  const artifact: WorkArtifact = {
+    artifactId: artifactId.slice(0, 160),
+    name: name.slice(0, 240),
+    kind: typeof raw.kind === "string" ? raw.kind.slice(0, 80) : typeof raw.type === "string" ? raw.type.slice(0, 80) : undefined,
+    uri: typeof raw.uri === "string" ? raw.uri.slice(0, 500) : undefined,
+    sizeBytes: typeof raw.sizeBytes === "number" && Number.isFinite(raw.sizeBytes) ? Math.max(0, Math.floor(raw.sizeBytes)) : undefined,
+    summary: typeof raw.summary === "string" ? raw.summary.slice(0, 500) : undefined,
+    createdAt: typeof raw.createdAt === "string" ? raw.createdAt : undefined,
+  };
+  return artifact;
+}
+
+function upsertArtifact(artifacts: WorkArtifact[], incoming: WorkArtifact): WorkArtifact[] {
+  const index = artifacts.findIndex((artifact) => artifact.artifactId === incoming.artifactId);
+  if (index < 0) return [...artifacts, incoming];
+  return artifacts.map((artifact, itemIndex) => itemIndex === index ? { ...artifact, ...incoming } : artifact);
 }
 
 export class WorkAgentStore {
@@ -216,6 +254,11 @@ export class WorkAgentStore {
       case "log.line":
         if (safeEvent.log) next = { ...next, logs: [...next.logs, { ...safeEvent.log, timestamp: safeEvent.timestamp }].slice(-MAX_LOGS) };
         break;
+      case "artifact.created": {
+        const artifact = normalizeArtifact(safeEvent.artifact, safeEvent.sequence);
+        if (artifact) next = { ...next, artifacts: upsertArtifact(next.artifacts, artifact) };
+        break;
+      }
       case "assistant.delta":
         next = { ...next, state: "running", answer: `${next.answer}${typeof safeEvent.delta === "string" ? safeEvent.delta : ""}`.slice(-MAX_TEXT) };
         break;
@@ -267,6 +310,7 @@ export class WorkAgentStore {
           commentary: [],
           reasoning: "",
           answer: "",
+          artifacts: [],
           logs: [],
           pendingApproval: null,
           lastSequence: -1,

@@ -277,6 +277,19 @@ export function CommandRoomWorkSurface({ initialSessionId = null }: CommandRoomW
                     </section>
                   )}
 
+                  {activeSession.artifacts.length > 0 && (
+                    <section className="cr-work-artifact-panel" aria-label="Artifacts">
+                      <div className="cr-work-panel-heading"><span><Archive size={15} /> Artifacts</span><span>{activeSession.artifacts.length}</span></div>
+                      {activeSession.artifacts.map((artifact) => (
+                        <div className="cr-work-artifact-card" key={artifact.artifactId}>
+                          <strong>{artifact.name}</strong>
+                          <span>{artifact.kind ?? "file"}{artifact.sizeBytes ? ` · ${artifact.sizeBytes} bytes` : ""}</span>
+                          {artifact.summary && <small>{artifact.summary}</small>}
+                        </div>
+                      ))}
+                    </section>
+                  )}
+
                   {activeSession.logs.length > 0 && (
                     <section className="cr-work-log-panel" aria-label="Terminal logs">
                       <div className="cr-work-panel-heading"><span><FileText size={15} /> Log tail</span><span>{activeSession.logs.length}</span></div>

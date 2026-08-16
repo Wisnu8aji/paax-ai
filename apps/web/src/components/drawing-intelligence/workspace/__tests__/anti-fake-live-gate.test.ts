@@ -148,7 +148,9 @@ describe('anti-fake gate: PaaxEventClient live menolak frame synthetic (SCAN_REJ
     const onEvent = vi.fn()
     const onStatus = vi.fn()
     const client = new PaaxEventClient({
-      runId: 'paax:run:gate-test',
+      // Keep the frame in the same session so this test exercises the
+      // synthetic-frame gate rather than the run-isolation filter.
+      runId: demoFrame.params.run_id,
       onEvent,
       onStatus,
       httpUrl: '/api/paax/events', // endpoint nyata tidak perlu dijangkau — deliver() langsung
@@ -178,7 +180,7 @@ describe('anti-fake gate: PaaxEventClient live menolak frame synthetic (SCAN_REJ
   it('mode demo (demoEvents eksplisit) tetap berjalan — jalur TEST berlabel', () => {
     const onEvent = vi.fn()
     const client = new PaaxEventClient({
-      runId: 'paax:run:demo-gate',
+      runId: demoFrame.params.run_id,
       demoEvents: demo,
       onEvent,
       onStatus: vi.fn(),

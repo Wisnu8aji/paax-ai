@@ -96,10 +96,11 @@ describe('AgentExecutionConsole runId binding — canonical activeRunId', () => 
     fireEvent.click(screen.getByRole('button', { name: /analyze selected/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/no run id available for synthesis/i)).toBeTruthy();
+      expect(screen.getAllByText(/run analisis belum tersedia/i).length).toBeGreaterThan(0);
     });
-    // Tidak ada run → konsol tidak mount; tidak ada bridge start ke run apa pun.
-    expect(screen.queryByTestId('agent-execution-console')).toBeNull();
+    // Tidak ada run → konsol tetap mount sebagai diagnostic surface; tidak ada
+    // bridge start ke run fiktif apa pun.
+    expect(screen.getByTestId('agent-execution-console')).toBeTruthy();
     expect(mockedStartBridge).not.toHaveBeenCalled();
   });
 });

@@ -1301,6 +1301,26 @@
   white-space: nowrap;
 }
 
+.cr-work-artifact-panel {
+  border: 1px solid var(--cr-border);
+  border-radius: 10px;
+  background: rgba(255,255,255,.025);
+  padding: 10px;
+}
+
+.cr-work-artifact-card {
+  display: grid;
+  gap: 3px;
+  padding: 9px 0 0;
+  color: var(--cr-text);
+}
+
+.cr-work-artifact-card span,
+.cr-work-artifact-card small {
+  color: var(--cr-muted);
+  font-size: 11px;
+}
+
 .cr-work-answer {
   width: min(100% - 36px, 780px);
   margin: 17px auto 0;

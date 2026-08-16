@@ -507,8 +507,8 @@ async function resolveToolsForModel(
   return usedTool ? flattenToolHistoryToChatMessages(resolved) : messages;
 }
 
-async function handleWorkPost(req: NextRequest): Promise<Response> {
-  const body = await req.json().catch(() => null);
+async function handleWorkPost(req: NextRequest, requestBody?: unknown): Promise<Response> {
+  const body = requestBody ?? await req.json().catch(() => null);
   const parsed = parseWorkRequest(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -548,7 +548,11 @@ async function handleWorkPost(req: NextRequest): Promise<Response> {
       emitter = new WorkEventEmitter(runId, conversationId, enqueue);
       const sendProviderEvent: SendEvent = (_type, data) => {
         if (data.type === "content" && typeof data.delta === "string") finalContent += data.delta;
-        emitter.fromChatEvent(data);
+        if (data.type === "tool_result" && data.result && typeof data.result === "object" && !Array.isArray(data.result) && (data.result as Record<string, unknown>).approval_required === true) {
+          emitter.fromChatEvent({ ...data, _workApprovalHandled: true });
+        } else {
+          emitter.fromChatEvent(data);
+        }
       };
       const requestApproval = async (input: { action: string; reason: string; args: Record<string, unknown> }) => {
         const gate = createWorkApproval({
@@ -660,11 +664,7 @@ async function handleWorkPost(req: NextRequest): Promise<Response> {
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (body && typeof body === "object" && (body as Record<string, unknown>).mode === "work") {
-    return handleWorkPost(new NextRequest(req.url, {
-      method: "POST",
-      headers: req.headers,
-      body: JSON.stringify(body),
-    }));
+    return handleWorkPost(req, body);
   }
   const parsed = CommandRoomChatSchema.safeParse(body);
   if (!parsed.success) {
