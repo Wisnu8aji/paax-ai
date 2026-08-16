@@ -25,6 +25,7 @@ import { allowedCommandRoomTools } from "./connector-permissions";
 import type { ModelAlias, ReasoningEffort, ThinkingMode } from "@/lib/paax-models";
 import { getModel } from "@/lib/paax-models";
 import { CHAT_CONTEXT_LIMITS } from "./context";
+import { redactWorkPayload } from "@/lib/command-room/work-agent-redaction";
 
 export const MAX_TOOL_TURNS = CHAT_CONTEXT_LIMITS.maxToolTurns;
 
@@ -107,9 +108,13 @@ function buildToolRegistry(
   context: ChatContext | undefined,
   connectors: readonly CommandRoomConnector[],
   explicitToolNames?: readonly string[],
+  overrideTools?: ToolDefinition[],
 ): ToolDefinition[] {
   const allowedTools = new Set(explicitToolNames ?? allowedCommandRoomTools(connectors));
   if (allowedTools.size === 0) return [];
+  if (overrideTools) {
+    return overrideTools.filter((tool) => allowedTools.has(tool.declaration.name));
+  }
   const tools = createToolRegistry({
     coreEngineUrl: getCoreEngineUrl(),
     documentIntelligenceUrl: getDocumentIntelligenceUrl(),
@@ -277,12 +282,13 @@ async function runOpenAiCompatibleToolLoop(params: {
   context: ChatContext | undefined;
   connectors: readonly CommandRoomConnector[];
   toolNames: readonly string[];
+  toolRegistry?: ToolDefinition[];
   req: NextRequest;
   sendEvent: SendEvent;
   runId: string | undefined;
   conversationId: string | undefined;
 }): Promise<{ finalMessages: ToolChatMessage[]; usedTool: boolean }> {
-  const tools = buildToolRegistry(params.context, params.connectors, params.toolNames);
+  const tools = buildToolRegistry(params.context, params.connectors, params.toolNames, params.toolRegistry);
   const toolsSchema = tools.map((t) => toOpenRouterTool(t.declaration));
   let currentMessages = [...params.messages];
   let usedTool = false;
@@ -320,7 +326,7 @@ async function runOpenAiCompatibleToolLoop(params: {
       try { args = JSON.parse(call.function.arguments || "{}"); } catch { /* args kosong/invalid */ }
       params.sendEvent("message", {
         type: "tool_call", runId: params.runId, conversationId: params.conversationId,
-        tool: call.function.name, toolCallId: call.id, timestamp: new Date().toISOString(),
+        tool: call.function.name, toolCallId: call.id, args: redactWorkPayload(args), timestamp: new Date().toISOString(),
       });
       const { result, summary, artifact } = await executeTool(tools, call.function.name, args, params.context, { modelAlias: params.modelAlias, conversationId: params.conversationId });
       params.sendEvent("message", {
@@ -354,6 +360,7 @@ export async function runOpenRouterWithTools(params: {
   context: ChatContext | undefined;
   connectors: readonly CommandRoomConnector[];
   toolNames: readonly string[];
+  toolRegistry?: ToolDefinition[];
   req: NextRequest;
   sendEvent: SendEvent;
   runId: string | undefined;
@@ -374,6 +381,7 @@ export async function runOpenRouterWithTools(params: {
     context: params.context,
     connectors: params.connectors,
     toolNames: params.toolNames,
+    toolRegistry: params.toolRegistry,
     req: params.req,
     sendEvent: params.sendEvent,
     runId: params.runId,
@@ -391,6 +399,7 @@ export async function runDeepSeekNativeWithTools(params: {
   context: ChatContext | undefined;
   connectors: readonly CommandRoomConnector[];
   toolNames: readonly string[];
+  toolRegistry?: ToolDefinition[];
   req: NextRequest;
   sendEvent: SendEvent;
   runId: string | undefined;
@@ -411,6 +420,7 @@ export async function runDeepSeekNativeWithTools(params: {
     context: params.context,
     connectors: params.connectors,
     toolNames: params.toolNames,
+    toolRegistry: params.toolRegistry,
     req: params.req,
     sendEvent: params.sendEvent,
     runId: params.runId,
@@ -438,13 +448,14 @@ export async function runAnthropicWithTools(params: {
   context: ChatContext | undefined;
   connectors: readonly CommandRoomConnector[];
   toolNames: readonly string[];
+  toolRegistry?: ToolDefinition[];
   req: NextRequest;
   sendEvent: SendEvent;
   runId: string | undefined;
   conversationId: string | undefined;
 }): Promise<{ messages: { role: "user" | "assistant"; content: string }[]; usedTool: boolean }> {
   const client = new Anthropic({ apiKey: params.apiKey });
-  const tools = buildToolRegistry(params.context, params.connectors, params.toolNames);
+  const tools = buildToolRegistry(params.context, params.connectors, params.toolNames, params.toolRegistry);
   const toolsSchema = tools.map((t) => toAnthropicTool(t.declaration));
   let currentMessages: AnthropicMsg[] = [...params.messages];
   let usedTool = false;
@@ -476,7 +487,7 @@ export async function runAnthropicWithTools(params: {
     for (const block of toolUseBlocks) {
       params.sendEvent("message", {
         type: "tool_call", runId: params.runId, conversationId: params.conversationId,
-        tool: block.name, toolCallId: block.id, timestamp: new Date().toISOString(),
+        tool: block.name, toolCallId: block.id, args: redactWorkPayload(block.input), timestamp: new Date().toISOString(),
       });
       const { result, summary, artifact } = await executeTool(tools, block.name, block.input as Record<string, unknown>, params.context, { modelAlias: params.modelAlias, conversationId: params.conversationId });
       params.sendEvent("message", {
