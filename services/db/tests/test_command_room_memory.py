@@ -124,3 +124,55 @@ async def test_project_fact_rejects_model_output_but_accepts_evidence():
             "source_type": "evidence", "source_id": "evidence-1",
         }, headers=HEADERS)
         assert accepted.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_conversation_and_messages_are_owner_scoped():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        created = await ac.post(
+            "/conversations",
+            json={"project_id": None, "model_alias": "lucent", "title": "private"},
+            headers=HEADERS,
+        )
+        assert created.status_code == 200
+        conversation_id = created.json()["id"]
+        message = await ac.post(
+            f"/conversations/{conversation_id}/messages",
+            json={"role": "user", "content": "secret", "sequence": 0, "parts": []},
+            headers=HEADERS,
+        )
+        assert message.status_code == 200
+
+        other_headers = {"X-Internal-Key": "test-internal-key", "X-User-Id": "other-user"}
+        assert (await ac.get(f"/conversations/{conversation_id}", headers=other_headers)).status_code == 404
+        assert (await ac.put(f"/conversations/{conversation_id}", json={"title": "tamper"}, headers=other_headers)).status_code == 404
+        assert (await ac.delete(f"/conversations/{conversation_id}", headers=other_headers)).status_code == 404
+        assert (await ac.get(f"/conversations/{conversation_id}/messages", headers=other_headers)).status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_chat_queue_is_fifo_idempotent_and_owner_scoped():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        created = await ac.post("/conversations", json={"model_alias": "lucent", "title": "queue"}, headers=HEADERS)
+        assert created.status_code == 200
+        conversation_id = created.json()["id"]
+        first_payload = {"turn_id": "turn-1", "sequence": 1, "state": "queued", "payload": {"message": "satu"}}
+        second_payload = {"turn_id": "turn-2", "sequence": 2, "state": "queued", "payload": {"message": "dua"}}
+        first = await ac.post(f"/conversations/{conversation_id}/queue", json=first_payload, headers=HEADERS)
+        second = await ac.post(f"/conversations/{conversation_id}/queue", json=second_payload, headers=HEADERS)
+        duplicate = await ac.post(f"/conversations/{conversation_id}/queue", json=first_payload, headers=HEADERS)
+        assert first.status_code == second.status_code == duplicate.status_code == 200
+        assert duplicate.json()["id"] == first.json()["id"]
+
+        listed = await ac.get(f"/conversations/{conversation_id}/queue", headers=HEADERS)
+        assert [entry["turn_id"] for entry in listed.json()] == ["turn-1", "turn-2"]
+        entry_id = first.json()["id"]
+        parked = await ac.put(f"/conversations/{conversation_id}/queue/{entry_id}", json={"state": "parked"}, headers=HEADERS)
+        assert parked.status_code == 200
+        assert parked.json()["state"] == "parked"
+
+        other_headers = {"X-Internal-Key": "test-internal-key", "X-User-Id": "other-user"}
+        assert (await ac.get(f"/conversations/{conversation_id}/queue", headers=other_headers)).status_code == 404
+        assert (await ac.put(f"/conversations/{conversation_id}/queue/{entry_id}", json={"state": "cancelled"}, headers=other_headers)).status_code == 404

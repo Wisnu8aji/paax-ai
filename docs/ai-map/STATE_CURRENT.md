@@ -1,9 +1,17 @@
 # 📍 PAAX — STATE_CURRENT (status aktif, ringkas)
 
-> Update terakhir: **2026-07-19**. Riwayat lengkap sebelum 2026-07-14 ada di
+> Update terakhir: **2026-08-17**. Riwayat lengkap sebelum 2026-07-14 ada di
 > `docs/history/STATE_ARCHIVE_2026-06_2026-07.md`. File ini HANYA status
 > aktif — jangan tambah narasi panjang di sini, tulis laporan detail ke
 > `report/` lalu ringkas 1-2 baris di sini.
+
+## Sesi aktif — Hermes & live readiness (2026-08-15)
+
+- Graphify proyek telah dipasang untuk Codex, Hermes, dan agents; graph AST modul tersedia untuk Document Intelligence, Core Engine, AI Orchestrator, dan Web.
+- Phase 1 Command Room Worker menambahkan identity/architecture map, scaffold runtime terisolasi, manifest terverifikasi (182 file), dan graph post-scaffold ai-orchestrator 546/945 serta web 2.751/5.670.
+- Phase 2 Command Room Worker selesai di copy worker: shared gateway contract, service preparation/session/profile/prompt boundary, web handoff service-vs-explicit-legacy, dan test/verification lengkap; siap review IRIS tanpa commit/push.
+- Kontrak aktif: agent tetap melakukan Vision/persepsi, ekstraksi, review, dan proposal; hanya rumus serta angka final wajib dari Core Engine.
+- Evidence dan acceptance matrix sesi ada di `D:\PAAX-Orchestration\00_projects\2026-08-15-paax-hermes-live-readiness`. Portable stack dan provider MiMo v2.5 belum terbukti live pada saat entri ini dibuat.
 
 ## Mandat strategis Drawing Intelligence (2026-07-19, Fase 0, 1 & 2 SELESAI)
 - Master Plan diratifikasi + Amendemen 1 + PAAX_DRAWING_INTELLIGENCE_SUPER_BIG_PLAN_REVISED.md.

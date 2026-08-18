@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -99,8 +100,50 @@ def test_portable_launcher_uses_per_service_key_files_and_hash_only_registry():
     assert '"service-credentials"' in source
     assert "credential_sha256" in source
     assert "[hashtable]$ServiceEnvironment" in source
-    assert "$psi.EnvironmentVariables[$name] = $value" in source
+    assert "$psi.EnvironmentVariables[$environmentName] = $value" in source
     assert "internal-service.key" not in source
+
+
+def test_portable_launcher_runs_pinned_pnpm_through_command_shell_shim():
+    """Regression: ProcessStartInfo with UseShellExecute=false cannot execute a
+    .cmd shim directly on Windows.  The portable launcher must route Corepack
+    through cmd.exe and use the pnpm version pinned by the workspace."""
+    source = (REPO_ROOT / "scripts/portable/Start-PLHUT-Local.ps1").read_text(encoding="utf-8")
+
+    assert "function Set-ProcessLaunchCommand" in source
+    assert "$Psi.FileName = $env:ComSpec" in source
+    assert '$Psi.Arguments = (' in source
+    assert "ArgumentList" not in source
+    assert 'Start-ServiceProcess "ai-orchestrator" "corepack.cmd" @($packageManager' in source
+    assert 'Start-ServiceProcess "web" "corepack.cmd" @($packageManager' in source
+
+
+def test_portable_launcher_validates_listener_identity_not_only_cmd_wrapper_pid():
+    """A Corepack launch records cmd.exe as the parent PID, while Next owns the
+    TCP port in a child process. The listener command line is the authoritative
+    repository identity for an already-running service."""
+    source = (REPO_ROOT / "scripts/portable/Start-PLHUT-Local.ps1").read_text(encoding="utf-8")
+
+    assert "function Test-ListenerOwnership" in source
+    assert "$listenerCmdLine.Contains($repoRoot)" in source
+    assert "Test-ListenerOwnership -Port $Port -ServiceName $Name" in source
+
+
+def test_portable_launcher_has_valid_powershell_syntax():
+    script = REPO_ROOT / "scripts/portable/Start-PLHUT-Local.ps1"
+    command = (
+        "$tokens = $null; $errors = $null; "
+        f"[System.Management.Automation.Language.Parser]::ParseFile('{script}', [ref]$tokens, [ref]$errors) | Out-Null; "
+        "if ($errors.Count) { $errors | ForEach-Object { Write-Error $_.Message }; exit 1 }"
+    )
+    result = subprocess.run(
+        ["powershell", "-NoProfile", "-Command", command],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def test_portable_launcher_document_intelligence_identity_grants_project_graph_synthesize_scope():

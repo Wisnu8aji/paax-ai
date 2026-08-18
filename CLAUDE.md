@@ -7,30 +7,33 @@
 
 ---
 
-## 1. ATURAN EMAS — AI TIDAK PERNAH MENGHITUNG
+## 1. ATURAN EMAS — FORMULA DAN ANGKA FINAL WAJIB DETERMINISTIK
 
-**Setiap angka** di RAB, BoQ, jadwal, Kurva S, dan skenario WAJIB berasal dari
-**engine deterministik** (`services/core-engine`, Python). LLM/TypeScript hanya
-boleh MENJELASKAN — tidak pernah MENGHITUNG atau MENGARANG.
+Determinisme berlaku **hanya** untuk eksekusi rumus dan angka final RAB, BoQ,
+jadwal, Kurva S, skenario, serta kuantitas fisik. Nilai tersebut wajib berasal
+dari `services/core-engine` (Python) dengan measurement facts yang sudah
+disetujui dan scoped. LLM, TypeScript, dan ringkasan agent tidak boleh
+dipresentasikan sebagai angka final.
 
-- ❌ Tidak ada perhitungan RAB/HSP/bobot/durasi di frontend. Frontend hanya **menampilkan** hasil engine.
-- ❌ Tidak ada LLM di jalur perhitungan — hanya klasifikasi/ekstraksi → **usulan/mapping**; angka tetap dari engine.
-- ✅ AHSP = sumber **koefisien**, bukan template output.
-- ✅ AI Agent otonom tunduk juga: boleh ubah **input terstruktur** lalu panggil ulang engine — tidak pernah menulis angka hasil sendiri.
+- ❌ Tidak ada perhitungan RAB/HSP/bobot/durasi di frontend. Frontend hanya menampilkan receipt hasil engine.
+- ❌ Tidak ada LLM di jalur eksekusi rumus atau otoritas kuantitas final.
+- ✅ Agent tetap agentic: boleh melakukan Vision/persepsi, ekstraksi, interpretasi, evidence reconciliation, klasifikasi, planning, review, penjelasan, dan proposal fakta terstruktur.
+- ✅ AHSP = sumber koefisien; Core Engine = pelaksana rumus dan pemilik output angka final.
+- ✅ AI Agent otonom boleh menulis usulan input terstruktur lalu meminta Core Engine menghitung ulang; tidak boleh menulis angka hasil sendiri.
 
-Jika sebuah task akan membuat LLM atau TypeScript menghitung angka final —
-**STOP dan lapor ke pemilik repo.** Itu pelanggaran aturan emas.
+Kalau task membuat LLM atau TypeScript menghitung atau menyatakan angka final,
+**STOP, jangan menebak, lapor ke pemilik repo.** Itu pelanggaran aturan emas.
 
-### 1.1 Batas AI-Assist (klasifikasi/binding gambar, bukan vision-piksel)
+### 1.1 Batas Vision dan AI-Assist Agentik
 
 Lapisan AI-assist (`services/document-intelligence/app/perception/ai_assist/`)
-adalah **fallback paralel**, bukan pengganti rule-based:
+melengkapi parser/rule-based, bukan menggantikan otoritas Core Engine:
 
-- Rule-based tetap fast-path utama; LLM hanya dipanggil saat regex/heuristik gagal/ambigu.
-- LLM membaca **teks+koordinat yang sudah diekstrak** (PyMuPDF) — **bukan piksel gambar mentah**.
-- Setiap usulan LLM **wajib divalidasi deterministik** (tidak boleh halusinasi, harus masuk rentang wajar) sebelum jadi kandidat `perlu_review`.
-- **Tidak ada auto-commit ke input engine** — selalu menunggu approval manusia.
-- Audit trail wajib: model, prompt/versi, input, output, reasoning dicatat.
+- Native PDF parsing, OCR, regex, dan geometri adalah fast-path bukti yang murah dan dapat diuji; bukan larangan bagi Vision agentik.
+- Vision provider yang dikonfigurasi (target live: MiMo v2.5) boleh membaca halaman/render gambar untuk tugas persepsi dan mengembalikan observasi ber-citation, confidence, serta status abstain.
+- Agent dapat dipanggil untuk ambiguitas **atau** review berbasis bukti yang bernilai; setiap proposal tetap melalui validasi fakta/constraint dan antrean review.
+- **Tidak ada auto-commit ke input engine** — approval manusia dan provenance tetap wajib.
+- Audit trail wajib menyimpan provider/model, prompt/versi, input, output, evidence refs, serta keputusan review; jangan menyimpan secret.
 
 ---
 
@@ -93,19 +96,19 @@ dulu lewat `graphify query`/`graphify path` + grep import + cek test:
 
 ## 7. WORKFLOW GRAPHIFY-FIRST
 
-Repo ini punya knowledge graph di `graphify-out/` (node/edge/community lintas
-`apps/web`, `services/*`, `packages/*`).
+PAAX memakai graph persistent **per modul aktif**, bukan mengasumsikan satu
+graph root: `services/document-intelligence`, `services/core-engine`,
+`services/ai-orchestrator`, dan `apps/web` masing-masing memiliki
+`graphify-out/`.
 
-- Untuk pertanyaan kode/arsitektur/dependency: `graphify query "<pertanyaan>"`
-  dulu, lalu `graphify path "<A>" "<B>"` (relasi antar simbol) atau
+- Untuk pertanyaan kode/arsitektur/dependency: jalankan `graphify query "<pertanyaan>"`
+  dari folder modul terkait dulu, lalu `graphify path "<A>" "<B>"` (relasi antar simbol) atau
   `graphify explain "<konsep>"` (penjelasan terfokus) — baru pakai
   Glob/Grep/Read kalau graph belum cukup menjawab.
-- Setelah mengubah kode: `graphify update .` (AST-only, tanpa biaya API). Hook
-  git (`post-commit`/`post-checkout`) sudah auto-rebuild — jalankan manual
-  hanya kalau perubahan belum tercakup hook.
-- Full rebuild (`graphify .`) hanya kalau graph hilang/rusak atau struktur
-  repo berubah besar — jangan rebuild ulang tiap sesi/chat.
-- Baca `graphify-out/GRAPH_REPORT.md` hanya untuk overview arsitektur luas saat
+- Setelah mengubah kode: refresh graph modul terdampak. Bila semantic backend belum
+  dikonfigurasi, gunakan `graphify <module> --code-only --no-viz` lalu
+  `graphify cluster-only <module> --no-viz`; jangan mengklaim graph kode mencakup isi Markdown.
+- Baca `graphify-out/GRAPH_REPORT.md` modul hanya untuk overview arsitektur luas saat
   query/path/explain tidak cukup.
 
 **WAJIB, bukan opsional.** Untuk setiap task yang menyentuh kode/arsitektur/dependency
@@ -118,10 +121,10 @@ muncul, tetap ikuti aturan ini secara manual — jangan menunggu hook.
 
 ## graphify
 
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+This project has module knowledge graphs at each active module's `graphify-out/` with god nodes, community structure, and cross-file relationships.
 
 Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- For codebase questions, first run `graphify query "<question>"` from the module when its graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- After modifying code, refresh the affected module graph and record its freshness.

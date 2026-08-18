@@ -87,19 +87,34 @@ describe("Command Room Work surface", () => {
   });
 
   it("submits a real Work turn through the session-scoped SSE endpoint", async () => {
-    workAgentStore.createSession("Live task", "session-live");
+    workAgentStore.createSession("Live task", "session-live", { channel: "command_room", conversationId: "session-live", projectId: "project-1" });
     const fetchMock = vi.fn((_url: string, init: RequestInit) => {
-      const body = JSON.parse(String(init.body)) as { conversationId: string; runId: string };
-      return Promise.resolve(sseResponse(body.conversationId, body.runId));
+      const body = JSON.parse(String(init.body)) as { session: { conversationId: string }; runId: string };
+      return Promise.resolve(sseResponse(body.session.conversationId, body.runId));
     });
     vi.stubGlobal("fetch", fetchMock);
-    render(<CommandRoomWorkSurface initialSessionId="session-live" />);
+    render(<CommandRoomWorkSurface initialSessionId="session-live" projectId="project-1" />);
 
     fireEvent.change(screen.getByRole("textbox", { name: "Instruksi kerja" }), { target: { value: "Read the workspace" } });
     fireEvent.click(screen.getByRole("button", { name: "Kirim instruksi" }));
 
     await waitFor(() => expect(screen.getByText("Selesai")).toBeTruthy());
     expect(fetchMock).toHaveBeenCalledWith("/api/command-room/work", expect.anything());
+    const body = JSON.parse(String(fetchMock.mock.calls[0][1].body));
+    expect(body.session).toEqual(expect.objectContaining({ channel: "command_room", conversationId: "session-live", projectId: "project-1" }));
+    expect(body).not.toHaveProperty("projectId");
+  });
+
+  it("creates a distinct idle session when the selected project changes", async () => {
+    const view = render(<CommandRoomWorkSurface projectId="project-1" />);
+    await waitFor(() => expect(workAgentStore.listSessions()).toHaveLength(1));
+    const first = workAgentStore.listSessions()[0];
+    expect(first.binding?.projectId).toBe("project-1");
+
+    view.rerender(<CommandRoomWorkSurface projectId="project-2" />);
+    await waitFor(() => expect(workAgentStore.listSessions()).toHaveLength(2));
+    expect(workAgentStore.listSessions().some((session) => session.binding?.projectId === "project-2")).toBe(true);
+    expect(workAgentStore.getSession(first.sessionId)?.binding?.projectId).toBe("project-1");
   });
 
   it("sends approval decisions to the scoped approval endpoint", async () => {

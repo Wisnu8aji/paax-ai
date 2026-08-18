@@ -6,12 +6,13 @@
 
 ---
 
-## 1. OCR vs Native PDF Text Parsing
+## 1. Native PDF, OCR, and Agentic Vision
 
 In PAAX Drawing Intelligence:
-- **Native PDF Text Parsing (PyMuPDF Fast-Path)** is the primary, deterministic fast-path for vector/digital engineering drawings. It extracts exact character strings, font metrics, and bounding boxes (`bbox`) directly from vector PDF streams with near-zero latency and 100% accuracy.
-- **OCR (Optical Character Recognition)** is a fallback extraction mechanism used **only** when reading raster scanned images or un-searchable drawing streams.
-- **Rule:** LLMs and AI assist routines do **not** perform OCR or image parsing; they receive pre-extracted text strings and coordinates already normalized by the deterministic PyMuPDF / PaddleOCR pipelines.
+- **Native PDF Text Parsing (PyMuPDF Fast-Path)** is the first deterministic evidence path for vector/digital drawings. It extracts character strings, font metrics, and bounding boxes (`bbox`) directly from vector PDF streams; outputs still require validation because source drawings can be incomplete or inconsistent.
+- **OCR** complements native parsing for raster, scanned, or unsearchable drawing content.
+- **Agentic Vision** may inspect rendered pages plus extracted evidence when visual structure, symbols, or cross-sheet context needs interpretation. The target live provider is MiMo v2.5 when configured. It returns cited observations, confidence, and abstention—not final quantities.
+- **Rule:** Security checks, artifact provenance, and evidence references precede any provider call. Vision output is a reviewable proposal and does not bypass Core Engine authority.
 
 ---
 
@@ -31,22 +32,21 @@ In PAAX Drawing Intelligence:
 
 ---
 
-## 4. YOLO vs DETR Machine Learning Vision Models and Deferral Decision
+## 4. Vision Provider and Object-Model Policy
 
 - **YOLO (You Only Look Once)**: A real-time convolutional object detection family optimized for rapid bounding box detection of visual symbols and structural components.
 - **DETR (DEtection TRansformer)**: A end-to-end transformer-based object detection architecture capable of capturing long-range spatial relationships across drawing sheets.
-- **Deferral Decision:** Training and deploying YOLO or DETR models is **explicitly deferred** for Phase 07 because:
-  1. Phase 07 focuses strictly on bounded text + bbox classification fallback where deterministic PyMuPDF extraction handles >95% of engineering drawings.
-  2. No labelled, object-level detection gap currently exists that justifies the cost and complexity of training custom vision detection models.
+- **MiMo v2.5** is the target general Vision agent for rendered-page interpretation and evidence-grounded review; it does not require PAAX to train a custom detector.
+- **YOLO/DETR** remain optional, measurable extensions. Train or deploy them only after an evidenced object-level detection gap and a labelled-dataset plan justify their operating cost.
 
 ---
 
 ## 5. Bounded AI Assist vs Core Engine Numeric Authority
 
 - **LLMs and AI Assist Services**:
-  - Activated **only** when deterministic rules return `abstain` or `ambiguous`.
-  - Assist in classifying drawing titles, binding ambiguous schedules, or resolving unassigned zones.
-  - Return proposals with confidence scores and citations.
+  - May perform Vision, extraction, classification, evidence reconciliation, planning, and review; deterministic fast paths remain preferred when they provide sufficient evidence.
+  - Assist in classifying drawing titles, binding schedules, resolving zones, and reviewing cross-sheet inconsistencies.
+  - Return proposals with confidence, citations, provider/model identity, and an abstention state when evidence is insufficient.
   - **CANNOT** write final quantities, compute RAB formulas, or set `sourceAuthority: core_engine`.
 - **Core Engine (`services/core-engine`, Python)**:
   - The **SOLE authority** for calculating RAB cost, HSP breakdown, physical volume, rebar weight, formwork area, and S-Curve scheduling.

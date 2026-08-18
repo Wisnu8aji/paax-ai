@@ -10,7 +10,7 @@ describe("Work event contract", () => {
       eventId: "evt-1",
       sequence: 4,
       timestamp: "2026-08-16T00:00:00.000Z",
-      tool: { toolId: "tool-1", name: "workspace_list", args: { path: "." } },
+      tool: { toolId: "tool-1", name: "workspace_list", state: "running", args: { path: "." } },
     });
 
     expect(event).toMatchObject<Partial<WorkEvent>>({

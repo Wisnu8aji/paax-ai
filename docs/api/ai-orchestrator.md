@@ -1,547 +1,184 @@
-# PAAX AI — AI Orchestrator API Documentation
+# PAAX AI Orchestrator — current worker API
 
-> **IMPORTANT STATE NOTE**: Service `services/ai-orchestrator` (port 8082) saat ini **TIDAK/BELUM dipanggil oleh apps/web**.
-> Rute chat Command Room aktif saat ini diimplementasikan langsung di Next.js API Routes (`apps/web/src/app/api/command-room/chat/route.ts`) menggunakan routing model Lucent (DeepSeek-chat), Arete (Qwen3.7-Plus), dan Noir (Claude Sonnet 5).
-> Dokumentasi di bawah menggambarkan spesifikasi internal flow AI yang akan diintegrasikan lebih lanjut.
+Status: reconciled by Phase 9 against the worker source, schemas, tests, and
+Graphify evidence. This document describes the current Command Room worker
+boundary; it is not a description of the historical Genkit/Gemini prototype.
 
-> API reference untuk AI Orchestrator (Firebase Genkit / TypeScript).
-> Service ini mengelola semua interaksi AI: chat, advisory, dan document understanding.
+## 1. Current request path
 
-**Base URL**: `http://localhost:8082` (development) | `https://ai-orchestrator-xxxxx.run.app` (production)
+The default web path is:
 
----
-
-## 1. Overview
-
-AI Orchestrator adalah **pusat koordinasi AI** di PAAX AI. Dibangun dengan Firebase Genkit,
-service ini mengelola:
-
-- Flow routing (memilih flow yang tepat berdasarkan intent)
-- Tool calling (memanggil Core Engine untuk data/kalkulasi)
-- Context assembly (mengumpulkan konteks proyek untuk LLM)
-- Prompt management (template prompt yang terstruktur)
-- Streaming responses (SSE untuk real-time chat)
-
-```mermaid
-graph TB
-    subgraph Input["User Input"]
-        Chat["💬 Chat Message"]
-        Review["📊 RAB Review Request"]
-        Drawing["📄 Drawing Question"]
-        Schedule["📅 Schedule Query"]
-    end
-
-    subgraph Router["Intent Router"]
-        R["🔀 Flow Router\n(classify intent)"]
-    end
-
-    subgraph Flows["Genkit Flows"]
-        F1["engineering-chat"]
-        F2["rab-advisor"]
-        F3["drawing-understanding"]
-        F4["schedule-advisor"]
-        F5["document-qa"]
-        F6["site-analysis"]
-    end
-
-    subgraph Tools["Available Tools"]
-        T1["calculate_rab"]
-        T2["lookup_ahsp"]
-        T3["get_material_price"]
-        T4["analyze_cost"]
-        T5["compare_benchmark"]
-        T6["search_standards"]
-        T7["get_project_context"]
-        T8["get_drawing_data"]
-    end
-
-    subgraph LLM["AI Model"]
-        Gemini["🧠 Gemini 2.0 Flash"]
-    end
-
-    Chat --> R
-    Review --> R
-    Drawing --> R
-    Schedule --> R
-
-    R --> F1
-    R --> F2
-    R --> F3
-    R --> F4
-    R --> F5
-    R --> F6
-
-    F1 --> Gemini
-    F2 --> Gemini
-    F3 --> Gemini
-    F4 --> Gemini
-
-    F1 --> T1
-    F1 --> T2
-    F1 --> T3
-    F2 --> T4
-    F2 --> T5
-    F3 --> T8
-    F4 --> T7
-
-    style Input fill:#e3f2fd
-    style Router fill:#fff3e0
-    style Flows fill:#e8f5e9
-    style Tools fill:#fce4ec
-    style LLM fill:#f3e5f5
+```text
+apps/web /api/command-room/work
+  -> gateway-client (internal key, bounded timeout, prepared-response validation)
+  -> services/ai-orchestrator /gateway/command-room/turn/stream
+  -> GatewayRunner.prepareExecution / AIAgent.initializeTurn
+  -> AIAgent.runPreparedTurn / provider transport / canonical ToolExecutor
+  -> bounded WorkEvent SSE stream
 ```
 
----
+`apps/web/src/app/api/command-room/work/route.ts` defaults
+`PAAX_COMMAND_ROOM_GATEWAY_MODE` to `service`. The explicit `legacy` mode is a
+compatibility handoff and is not current service evidence. The old Gemini
+routes and their tests remain frozen historical code; they are not part of the
+current Command Room contract.
 
-## 2. Authentication
+The service is mounted below `/gateway` by `createApp`. Development commonly
+uses `http://localhost:8082`; deployment URL and authentication are environment
+owned and must not be hard-coded into this document.
 
-Same as Core Engine — Firebase Auth JWT token required:
+## 2. Authentication and binding
 
-```http
-Authorization: Bearer <firebase-jwt-token>
-X-Project-Id: <project-id>
-Content-Type: application/json
-```
+The web gateway client sends the internal service credential through the
+runtime-configured header. Credential values are never part of this API
+document. The service applies its auth/rate-limit middleware, derives the
+actor and tenant binding, and validates the request/session/run relationship
+before agent preparation.
 
----
+The binding includes channel, tenant, actor, conversation, and optional
+project/thread/workspace/snapshot/document-revision identifiers. A reused
+`runId` must match the existing binding. Prepared responses expose binding and
+model metadata but do not expose the assembled prompt.
 
-## 3. Flows
+## 3. Turn endpoints
 
-### 3.1 Engineering Chat
+### `POST /gateway/command-room/turn/prepare`
 
-**Endpoint**: `POST /flow/engineering-chat`
+This validates and prepares a turn without executing the provider loop. The
+request is the `GatewayTurnRequestSchema` shape:
 
-**Description**: Flow utama untuk percakapan teknis. Bisa menjawab pertanyaan umum konstruksi,
-mengakses data proyek melalui tools, dan membantu revisi RAB.
-
-**Input**:
 ```json
 {
-  "projectId": "proj_abc123",
-  "threadId": "thread_xyz",
-  "message": "Kenapa biaya pekerjaan struktur sangat tinggi? Bisa breakdown detail?",
-  "context": {
-    "rabVersionId": "rab_v3_xyz",
-    "activeFileIds": ["file_001", "file_002"]
+  "mode": "work",
+  "runId": "optional-idempotency-key",
+  "session": {
+    "channel": "command_room",
+    "conversationId": "conversation-id",
+    "projectId": "optional-project-id"
   },
-  "stream": true
+  "messages": [{ "role": "user", "content": "user message" }],
+  "modelAlias": "lucent",
+  "reasoningEffort": "high",
+  "thinking": "on",
+  "clientCorrelationId": "optional-correlation-id"
 }
 ```
 
-**Output** (streamed via SSE):
-```
-event: token
-data: {"content": "Berdasarkan "}
+The response is validated by `GatewayTurnPreparedSchema` and contains:
 
-event: token
-data: {"content": "RAB v3 proyek "}
+- `protocolVersion`: `command-room.gateway.v1`;
+- `runId`, `sessionId`, and a session-key fingerprint;
+- the normalized tenant/actor/conversation binding;
+- the resolved provider profile (`alias`, provider, model, transport, request
+  style, thinking capability, selected effort);
+- prompt metadata only (version, stable hash, bounded section sizes, injection
+  findings); and
+- `handoff`: `service-conversation-loop` for the current path or
+  `legacy-web-provider` only for explicit compatibility mode.
 
-event: tool_call
-data: {"tool": "analyze_cost", "input": {"rabId": "rab_v3_xyz", "division": "struktur"}}
+### `POST /gateway/command-room/turn/stream`
 
-event: tool_result
-data: {"tool": "analyze_cost", "result": {"breakdown": [...]}}
+This prepares and executes one turn, then returns `text/event-stream`. The
+service validates request size and profile capability before opening the stream.
+`Last-Event-ID` may carry a numeric sequence (or a sequence suffix) for a
+bound durable replay; replay does not rerun the agent.
 
-event: token
-data: {"content": "Biaya pekerjaan struktur sebesar Rp 800 juta (41% dari total)..."}
+The shared event schema is `GatewayWorkEventSchema`. Event types are:
+`turn.started`, `status.update`, `assistant.interim`, `reasoning.delta`,
+`plan.updated`, `tool.generating`, `tool.started`, `tool.progress`,
+`tool.completed`, `tool.output_risk`, `approval.requested`,
+`approval.resolved`, `subagent.started`, `subagent.progress`,
+`subagent.completed`, `background.completed`, `artifact.created`, `log.line`,
+`assistant.delta`, `turn.completed`, and `error`.
 
-event: done
-data: {"messageId": "msg_123", "tokensUsed": 1250, "toolsUsed": ["analyze_cost"]}
-```
+Every event carries the bounded run/conversation/event identifiers, a
+non-negative sequence, and a timestamp. The stream consumer preserves producer
+sequence, bounds payloads, handles client disconnect/queue overflow, and emits
+one terminal completion or error path. `turn.completed` may contain the final
+Markdown response and stop reason; it is not an engineering calculation
+receipt.
 
-**Tools Available**:
+### `POST /gateway/command-room/approval/resolve`
 
-| Tool | Description | When Used |
-|------|-------------|-----------|
-| `calculate_rab` | Hitung RAB untuk item tertentu | User minta kalkulasi |
-| `lookup_ahsp` | Cari AHSP berdasarkan kode/nama | User tanya tentang analisa harga |
-| `get_material_price` | Cek harga material per wilayah | User tanya harga |
-| `analyze_cost` | Breakdown biaya per divisi/item | User minta analisis biaya |
-| `compare_benchmark` | Bandingkan dengan benchmark | User tanya wajar/tidak |
-| `search_standards` | Cari standar SNI terkait | User tanya standar |
-| `get_project_context` | Ambil data proyek aktif | Otomatis saat butuh konteks |
-| `update_rab_item` | Ubah volume/harga item RAB | User minta revisi RAB |
+The approval boundary accepts `approvalId`, `sessionId`, and `decision` (`approved`
+or `denied`), with optional note, arguments hash, and binding fingerprint. It
+checks tenant, actor, conversation, session, and approval binding before
+delegating to the approval service. Typical outcomes are `400` for malformed
+input, `403` for a binding failure, `503` when the approval service is absent,
+and a bounded success object containing `ok`, `approvalId`, and `decision`.
 
-**Routing Logic**:
-```
-IF message mentions RAB/biaya/harga AND has specific item
-  → Use tools: analyze_cost, lookup_ahsp
-IF message asks about standards/SNI
-  → Use tools: search_standards
-IF message requests RAB change
-  → Use tools: update_rab_item, calculate_rab
-ELSE
-  → General engineering knowledge (no tools)
-```
+## 4. Schema ownership
 
----
+The TypeScript Zod contract is
+`packages/schemas/src/command-room-worker.ts`, including
+`GatewayTurnRequestSchema`, `GatewayTurnPreparedSchema`, and
+`GatewayWorkEventSchema`. The corresponding Python schema must remain aligned;
+Phase 9 could not execute its Python test because the available interpreter has
+no `pytest` module. That is a verification blocker, not permission to loosen
+the schema.
 
-### 3.2 RAB Advisor
+The service and web code consume the same bounded request/prepared/event
+concepts. Frontend code projects WorkEvents for display; it does not calculate
+RAB/HSP, schedule, Kurva S, or physical quantities.
 
-**Endpoint**: `POST /flow/rab-advisor`
+## 5. Model profile boundary
 
-**Description**: Flow khusus untuk review dan advisory RAB. Menganalisis RAB secara menyeluruh
-dan memberikan rekomendasi.
+The current web catalog keeps the public aliases `lucent`, `arete`, and `noir`.
+The current configured catalog maps them to DeepSeek profiles (Lucent to the
+flash profile; Arete and Noir to the pro profile) through the
+OpenAI-compatible service path. The default is `lucent`, reasoning effort
+`high`, and thinking `on`. The service profile returned in the prepared receipt
+is authoritative for a particular run; historical Qwen/Claude/Gemini claims in
+older documents are stale.
 
-**Input**:
-```json
-{
-  "projectId": "proj_abc123",
-  "rabId": "rab_v3_xyz",
-  "analysisType": "comprehensive",
-  "focusAreas": ["cost_efficiency", "completeness", "risk_assessment"]
-}
-```
+Model aliases select a provider profile. They do not own construction formulas
+or final quantities. Any RAB/HSP/BoQ/schedule quantity must come from the
+deterministic Core Engine using approved, scoped measurement facts; an LLM
+response is explanatory/proposal content only.
 
-**Output**:
-```json
-{
-  "success": true,
-  "data": {
-    "advisorId": "adv_123",
-    "rabId": "rab_v3_xyz",
-    "analysis": {
-      "overallScore": 82,
-      "grade": "B+",
-      "summary": "RAB secara umum sudah baik. Ada beberapa area yang perlu perhatian...",
-      "sections": [
-        {
-          "area": "cost_efficiency",
-          "score": 78,
-          "findings": [
-            {
-              "severity": "warning",
-              "title": "Harga besi beton di atas rata-rata",
-              "description": "Harga besi beton D16 (Rp 14.000/kg) lebih tinggi 12% dari harga pasar Bandung (Rp 12.500/kg). Pertimbangkan negosiasi dengan supplier.",
-              "potentialSavings": 35000000,
-              "affectedItems": ["03.01", "03.02", "03.03"]
-            }
-          ],
-          "recommendations": [
-            "Negosiasi harga besi beton dengan minimal 3 supplier",
-            "Pertimbangkan pembelian bulk untuk penghematan 5-8%"
-          ]
-        },
-        {
-          "area": "completeness",
-          "score": 85,
-          "findings": [
-            {
-              "severity": "info",
-              "title": "Divisi MEP belum lengkap",
-              "description": "Pekerjaan mekanikal dan plumbing sudah ada, tapi instalasi fire protection belum dimasukkan."
-            }
-          ]
-        },
-        {
-          "area": "risk_assessment",
-          "score": 83,
-          "findings": [
-            {
-              "severity": "warning",
-              "title": "Harga material volatile",
-              "description": "Baja dan semen mengalami fluktuasi harga 10-15% dalam 6 bulan terakhir. Pertimbangkan contingency 5%."
-            }
-          ]
-        }
-      ]
-    },
-    "toolsUsed": ["analyze_cost", "compare_benchmark", "get_material_price"],
-    "model": "gemini-2.0-flash",
-    "tokensUsed": 3200
-  }
-}
-```
+## 6. Canonical tool boundary
 
----
+`createToolRegistry({ mode: "canonical" })` composes the domain tools, Command
+Room tools, optional validated MCP tools, and optional plugin tools. Registry
+collision checks, provider-neutral JSON schemas, tool policy, journal/approval
+handling, and the single ToolExecutor are the runtime boundaries.
 
-### 3.3 Drawing Understanding
+Skills are available through an explicit `skills` registry option and are
+documented in `services/ai-orchestrator/src/skills/README.md`; the default
+`createApp` path currently does not inject that option or a skill provider.
+MCP is lazy, bounded, provenance-preserving, and approval-first as documented
+in `services/ai-orchestrator/src/tools/mcp/README.md`.
 
-**Endpoint**: `POST /flow/drawing-understanding`
+The historical tool names `calculate_rab`, `get_drawing_data`, and similar
+Genkit examples in the former version of this page are not a current registry
+contract. Current domain tool schemas and policy are source-owned. No LLM,
+TypeScript, or documentation example is an authority for final engineering
+numbers.
 
-**Description**: Flow untuk memahami dan menjawab pertanyaan tentang gambar teknik yang sudah diproses.
+## 7. Error and lifecycle notes
 
-**Input**:
-```json
-{
-  "projectId": "proj_abc123",
-  "fileId": "file_001",
-  "pageNumber": 3,
-  "question": "Berapa dimensi ruang tamu di denah ini?",
-  "includeVisualContext": true
-}
-```
+The gateway returns safe bounded error bodies. Invalid input is normally `400`,
+oversized input `413`, unavailable configuration/preparation/state `503`, and
+binding failures are rejected before execution. Internal provider/tool details
+are not copied into the public error message.
 
-**Output**:
-```json
-{
-  "success": true,
-  "data": {
-    "answer": "Berdasarkan denah lantai 1 (halaman 3), ruang tamu memiliki dimensi 6.0m × 4.0m = 24 m². Ruangan ini terletak di bagian depan bangunan, bersebelahan dengan teras dan ruang makan.",
-    "extractedDimensions": [
-      { "label": "Ruang Tamu", "length": 6.0, "width": 4.0, "area": 24.0, "unit": "m" }
-    ],
-    "confidence": 0.91,
-    "sourcePages": [3],
-    "relatedPages": [1, 4],
-    "toolsUsed": ["get_drawing_data"]
-  }
-}
-```
+Durable run/session/event state is SQLite-backed when configured; in-memory
+fallbacks are explicit test/portable boundaries. The current source still has
+known follow-up gaps around MCP lifecycle reuse/concurrency, complete audit and
+provenance sinks, durable turn-journal injection, cron dispatch integration,
+subagent/child-run durability, deterministic replay clocking, and bounded
+reasoning-delta aggregation. The authoritative register is
+`docs/ai-map/PHASE_9_RECEIPT.md`.
 
-**Tools Available**:
+## 8. Evidence and maintenance rule
 
-| Tool | Description |
-|------|-------------|
-| `get_drawing_data` | Ambil data ekstraksi dari Document Intelligence |
-| `get_page_image` | Ambil gambar halaman untuk visual context |
-| `cross_reference_pages` | Cari halaman terkait (potongan dari denah, dll.) |
-| `calculate_area` | Hitung luas dari dimensi yang diekstrak |
-| `calculate_volume` | Hitung volume dari dimensi 3D |
+Phase 9 recorded the service runner at 90 files / 351 tests, the web runner at
+110 files / 867 tests, the schemas runner at 2 suites / 41 tests, and successful
+TypeScript builds/typechecks for the service, web, and schemas package. The
+Python schema test remains `NOT-RUN/BLOCKED` solely because `pytest` is absent.
 
----
-
-### 3.4 Schedule Advisor
-
-**Endpoint**: `POST /flow/schedule-advisor`
-
-**Description**: Flow untuk advisory jadwal pelaksanaan.
-
-**Input**:
-```json
-{
-  "projectId": "proj_abc123",
-  "scheduleId": "sched_v1_abc",
-  "question": "Apakah jadwal ini realistis untuk gedung 3 lantai?",
-  "analysisType": "feasibility"
-}
-```
-
-**Output**:
-```json
-{
-  "success": true,
-  "data": {
-    "answer": "Jadwal 298 hari kerja (sekitar 12 bulan) untuk gedung kantor 3 lantai dengan luas 1500 m² termasuk realistis. Beberapa catatan...",
-    "assessment": {
-      "feasibility": "realistic",
-      "risks": [
-        {
-          "task": "Pekerjaan Pondasi",
-          "risk": "Musim hujan (Nov-Feb) bisa menghambat galian tanah",
-          "mitigation": "Siapkan pompa air dan sheet pile"
-        }
-      ],
-      "suggestions": [
-        "Fast-track dinding Lt.1 bersamaan dengan struktur Lt.2 untuk hemat 2 minggu",
-        "Pesan material pre-fab untuk mempercepat pemasangan"
-      ]
-    },
-    "toolsUsed": ["get_project_context"],
-    "model": "gemini-2.0-flash"
-  }
-}
-```
-
----
-
-### 3.5 Document QA
-
-**Endpoint**: `POST /flow/document-qa`
-
-**Description**: Menjawab pertanyaan berdasarkan dokumen proyek (spesifikasi, kontrak).
-
-**Input**:
-```json
-{
-  "projectId": "proj_abc123",
-  "question": "Apa spesifikasi mutu beton yang disyaratkan di kontrak?",
-  "documentScope": ["specification", "contract"]
-}
-```
-
-**Output**:
-```json
-{
-  "success": true,
-  "data": {
-    "answer": "Berdasarkan dokumen spesifikasi teknis (halaman 12-15), mutu beton yang disyaratkan adalah:\n- Struktur utama (kolom, balok): K-350 (fc' 29.05 MPa)\n- Plat lantai: K-300 (fc' 24.9 MPa)\n- Pondasi: K-250 (fc' 20.75 MPa)\n- Sloof: K-250",
-    "sources": [
-      { "fileId": "file_003", "fileName": "Spesifikasi_Teknis.pdf", "pageNumbers": [12, 13, 14, 15] }
-    ],
-    "confidence": 0.94
-  }
-}
-```
-
----
-
-### 3.6 Site Analysis
-
-**Endpoint**: `POST /flow/site-analysis`
-
-**Description**: Analisis data lapangan dan generate insights.
-
-**Input**:
-```json
-{
-  "projectId": "proj_abc123",
-  "analysisType": "weekly_summary",
-  "dateRange": {
-    "start": "2026-06-15",
-    "end": "2026-06-21"
-  }
-}
-```
-
-**Output**:
-```json
-{
-  "success": true,
-  "data": {
-    "summary": "Minggu ini (15-21 Juni 2026) progress fisik mencapai 42%, sesuai dengan rencana (target 41.5%). Cuaca mendung 3 hari tidak berdampak signifikan...",
-    "metrics": {
-      "plannedProgress": 41.5,
-      "actualProgress": 42.0,
-      "deviation": "+0.5%",
-      "status": "on_track"
-    },
-    "highlights": [
-      "Pekerjaan kolom Lt.2 selesai lebih cepat 2 hari",
-      "Pengecoran plat Lt.1 sukses tanpa kendala"
-    ],
-    "concerns": [
-      "Stok semen menipis, perlu order dalam 3 hari"
-    ],
-    "weatherImpact": "minimal"
-  }
-}
-```
-
----
-
-## 4. Tool Definitions
-
-Setiap tool didefinisikan dengan schema input/output yang ketat:
-
-```typescript
-// services/ai-orchestrator/src/tools/calculate-rab.ts
-import { defineTool } from '@genkit-ai/ai';
-import { z } from 'zod';
-
-export const calculateRabTool = defineTool(
-  {
-    name: 'calculate_rab',
-    description: 'Hitung RAB untuk satu atau beberapa item pekerjaan. ' +
-      'Gunakan tool ini ketika user meminta kalkulasi biaya.',
-    inputSchema: z.object({
-      items: z.array(z.object({
-        itemName: z.string().describe('Nama item pekerjaan'),
-        volume: z.number().positive().describe('Volume pekerjaan'),
-        unit: z.string().describe('Satuan (m², m³, kg, dll.)'),
-        ahspCode: z.string().optional().describe('Kode AHSP jika diketahui'),
-      })),
-      wilayahHarga: z.string().describe('Wilayah harga satuan'),
-    }),
-    outputSchema: z.object({
-      calculations: z.array(z.object({
-        itemName: z.string(),
-        volume: z.number(),
-        unit: z.string(),
-        hsp: z.number(),
-        total: z.number(),
-        breakdown: z.object({
-          materials: z.array(z.object({ name: z.string(), cost: z.number() })),
-          labor: z.array(z.object({ name: z.string(), cost: z.number() })),
-          equipment: z.array(z.object({ name: z.string(), cost: z.number() })),
-        }),
-      })),
-      grandTotal: z.number(),
-    }),
-  },
-  async (input) => {
-    // Calls Core Engine API
-    const response = await fetch(`${CORE_ENGINE_URL}/rab/calculate-items`, {
-      method: 'POST',
-      body: JSON.stringify(input),
-    });
-    return response.json();
-  }
-);
-```
-
-### Complete Tool Registry
-
-| Tool Name | Input | Output | Calls Service |
-|-----------|-------|--------|---------------|
-| `calculate_rab` | items[], wilayahHarga | calculations[], grandTotal | Core Engine |
-| `lookup_ahsp` | query (name or code) | ahsp[] with coefficients | Core Engine |
-| `get_material_price` | materialName, wilayah | price, unit, supplier | Core Engine |
-| `analyze_cost` | rabId, division? | breakdown by category | Core Engine |
-| `compare_benchmark` | rabId, buildingType | benchmarkData, assessment | Core Engine |
-| `search_standards` | query, category | standards[] with references | Internal DB |
-| `get_project_context` | projectId | project summary, recent activity | PostgreSQL (services/db) |
-| `get_drawing_data` | fileId, pageNumber? | extractedData, dimensions | PostgreSQL (services/db) |
-| `update_rab_item` | rabId, itemCode, changes | updatedItem, newTotal | Core Engine |
-| `calculate_area` | dimensions[] | area, perimeter | Internal |
-| `calculate_volume` | dimensions[] | volume | Internal |
-
----
-
-## 5. Prompt Templates
-
-### System Prompt (Engineering Chat)
-
-```
-Kamu adalah PAAX AI, asisten teknik sipil untuk proyek konstruksi di Indonesia.
-
-ATURAN:
-1. Jawab dalam Bahasa Indonesia, gunakan istilah teknis standar (SNI, AHSP, RAB, dll.)
-2. Untuk kalkulasi angka, SELALU gunakan tool calculate_rab — jangan hitung manual
-3. Untuk data harga, SELALU gunakan tool get_material_price — jangan mengada-ada
-4. Jika tidak yakin, katakan "saya perlu cek data lebih lanjut"
-5. Jangan memberikan saran yang melanggar standar SNI
-6. Format angka dalam Rupiah: Rp 1.000.000 (titik sebagai pemisah ribuan)
-
-KONTEKS PROYEK:
-- Nama: {{projectName}}
-- Lokasi: {{projectLocation}}
-- Tipe: {{buildingType}}
-- RAB Aktif: v{{rabVersion}} — Total: Rp {{rabTotal}}
-```
-
----
-
-## 6. Error Handling
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "FLOW_ERROR",
-    "message": "Gagal menjalankan flow engineering-chat",
-    "details": {
-      "flow": "engineering-chat",
-      "step": "tool_call",
-      "tool": "calculate_rab",
-      "cause": "Core Engine unavailable"
-    }
-  }
-}
-```
-
-### Error Codes
-
-| Code | Description |
-|------|-------------|
-| `FLOW_ERROR` | Error dalam eksekusi flow |
-| `TOOL_ERROR` | Error saat memanggil tool |
-| `MODEL_ERROR` | Error dari Gemini API |
-| `CONTEXT_TOO_LARGE` | Konteks melebihi batas token |
-| `RATE_LIMITED` | Terlalu banyak request |
-| `SAFETY_BLOCKED` | Content blocked by safety filters |
-| `INVALID_FLOW` | Flow tidak ditemukan |
-
----
-
-*AI Orchestrator dikonfigurasi untuk logging semua interaksi ke `ai_usage_log` table untuk audit dan improvement.*
+Examples in this document are synthetic shapes and placeholders. They must not
+be copied as final construction quantities, prices, weights, durations, or
+progress values. Update this page whenever the gateway route, Zod schema,
+public model catalog, or canonical composition changes; record the evidence in
+the Phase receipt and keep stale legacy claims explicitly labeled.

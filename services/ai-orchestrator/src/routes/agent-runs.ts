@@ -9,6 +9,12 @@ import {
   type ProjectContextBinding,
 } from '../agentic/index';
 import { AgentToolRegistry, type AgentApprovalToken } from '../agentic/tool-contract';
+import type { SessionSource, SessionStore } from '../gateway/session';
+
+export interface AgentRunsRouterOptions {
+  sessionStore?: SessionStore;
+  agentRunStore?: AgentRunStore;
+}
 
 function actor(req: Request): string { return String((req as any).user?.uid || process.env.PAAX_PORTABLE_ACTOR_ID || 'paax-web'); }
 
@@ -26,10 +32,10 @@ function buildBinding(req: Request): ProjectContextBinding {
   };
 }
 
-export function createAgentRunsRouter(): Router {
+export function createAgentRunsRouter(options: AgentRunsRouterOptions = {}): Router {
   const router = Router();
   const path = process.env.PAAX_AGENT_RUN_STORE || resolve(process.cwd(), '../../data/portable/agent-runs.json');
-  const store = new AgentRunStore(path);
+  const store = options.agentRunStore ?? new AgentRunStore(path);
   const tools = registerDrawingIntelligenceTools(new AgentToolRegistry(), {
     async readActiveSheet(input) {
       const base = (process.env.PAAX_DOCUMENT_INTELLIGENCE_URL || process.env.DOCUMENT_INTELLIGENCE_URL || '').replace(/\/$/, '');
@@ -93,6 +99,19 @@ export function createAgentRunsRouter(): Router {
         riskTier: req.body?.riskTier || 'medium',
         completionCriteria: Array.isArray(req.body?.completionCriteria) ? req.body.completionCriteria : undefined,
       });
+      if (options.sessionStore) {
+        const source: SessionSource = {
+          channel: 'agent_runs',
+          tenantId: binding.tenantId,
+          actorId: binding.actorId,
+          conversationId: binding.conversationId,
+          projectId: binding.projectId,
+          ...(binding.snapshotId ? { snapshotId: binding.snapshotId } : {}),
+          ...(binding.documentRevisionId ? { documentRevisionId: binding.documentRevisionId } : {}),
+        };
+        const session = await options.sessionStore.resolve(source);
+        await options.sessionStore.attachRun(session.sessionId, run.runId);
+      }
       return res.status(201).json(run);
     } catch (error: any) { return res.status(422).json({ error: error.message }); }
   });

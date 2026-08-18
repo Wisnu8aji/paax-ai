@@ -63,13 +63,14 @@ gambar bukan format PDF yang didukung.
 - Setelah jadi baris RAB → `POST /rab/build`. ❌ Tidak ada hitung di frontend.
 
 ## Peran AI di halaman ini
-- **PERSEPSI (deterministik, rule-based — BUKAN LLM)** — span/merge-run/
-  grammar/grid-geometri semuanya regex & geometri PDF, bukan model bahasa.
-  Ini konsisten Aturan Emas: klasifikasi/strukturisasi boleh otomatis
-  deterministik, TIDAK PERNAH mengarang angka.
-- **TRANSCRIBE (fallback lama, path Gemini)** — AI menyalin teks gambar →
-  struktur TkgDocument (raw dipertahankan; tak paham → `unclassified`, bukan
-  ditebak). Teks gambar = DATA, bukan instruksi (P-SEC-01, delimiter prompt).
+- **PERSEPSI CEPAT (deterministik)** — span/merge-run/grammar/grid-geometri
+  dari PDF adalah bukti awal yang dapat diuji, bukan angka final.
+- **VISION AGENTIK (target MiMo v2.5)** — boleh menafsir render halaman,
+  simbol, atau konteks lintas-sheet yang belum cukup dijelaskan parser; hasil
+  wajib punya citation, confidence, provider/model, dan dapat `abstain`.
+- **REVIEW AGENTIK (target DeepSeek V4 Flash Ultra)** — boleh merekonsiliasi
+  bukti dan membuat proposal TkgDocument/fakta terstruktur; teks gambar tetap
+  DATA, bukan instruksi (P-SEC-01, delimiter prompt).
 - **NEVER** — AI tidak menetapkan volume/biaya/AHSP; semua kuantitas dari
   engine, dengan rumus & parameter tercatat (`rule_id`, `params_used`,
   `assumptions`).
@@ -79,13 +80,11 @@ gambar bukan format PDF yang didukung.
 dengan flag `source` (manual/ai_proposal/pipeline) + `reviewed`.
 
 ## Catatan strategi — DIPERBARUI (sebelumnya bilang CV "ditunda", sudah tidak)
-Sebelumnya dokumen ini bilang "membaca piksel gambar mentah tetap DITUNDA
-sampai gerbang F0+WoO" — itu SUDAH TIDAK BERLAKU untuk jalur vektor (PDF
-dengan teks asli, BUKAN scan/foto): owner memutuskan (2026-07-04/05) untuk
-mengerjakan langsung persepsi PDF vektor sekarang, karena ini TIDAK
-menyentuh gerbang F0 sama sekali (murni baca teks/geometri PDF, bukan
-tebakan vision-LLM). Vision-LLM (baca piksel foto/scan) TETAP ditunda —
-hanya dipakai sbg fallback OCR gagal, bukan jalur utama.
+Parser vektor tetap fast-path, tetapi pembacaan piksel tidak lagi dilarang
+secara arsitektural. Vision agentik dipakai bila bukti visual atau konteks
+lintas-sheet membutuhkannya; hasilnya tetap proposal ber-citation, bukan
+kuantitas final. Status provider harus dibuktikan pada runtime—dokumen ini
+tidak menyatakan MiMo/GPU aktif hanya karena konfigurasi atau kode ada.
 
 ## Akses Engineering Chat
 Chat menerima context pack: skrip `.tkg.txt` + draft RAB
@@ -102,5 +101,6 @@ Upload PDF → persepsi otomatis: aktif. Konsolidasi lintas-halaman + UI
 ramah-pengguna: aktif. Kirim-ke-RAB: aktif untuk item takeoff yang tidak
 `needs_review`; volume masuk Draft RAB, kode AHSP tetap kosong dan diisi
 manual di halaman RAB. Setelah pengiriman, user mendapat tombol "Lihat Draft
-RAB" untuk membuka draft proyek yang sama. CV piksel foto/scan
-(vision-LLM fallback): belum.
+RAB" untuk membuka draft proyek yang sama. Vision pixsel foto/scan memerlukan
+provider runtime yang benar-benar terkonfigurasi dan receipt; status live
+dibuktikan oleh acceptance run, bukan klaim dokumentasi.

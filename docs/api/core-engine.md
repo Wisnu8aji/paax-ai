@@ -19,6 +19,10 @@ Core Engine adalah service Python yang bertanggung jawab untuk:
 > **Prinsip Utama**: Semua kalkulasi di Core Engine bersifat **deterministik**.
 > Input yang sama SELALU menghasilkan output yang sama. Tidak ada LLM yang terlibat dalam perhitungan angka.
 
+Agent dapat melakukan persepsi, ekstraksi, review, dan proposal fakta
+terstruktur sebelum request ini dibuat. Namun hanya receipt Core Engine dari
+input yang approved dan scoped yang boleh disebut angka atau quantity final.
+
 ---
 
 ## 2. Authentication

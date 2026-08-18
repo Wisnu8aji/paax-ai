@@ -7,7 +7,7 @@ name = "paax-schemas"
 version = "0.1.0"
 description = "Shared Python taxonomy and schema helpers for PAAX services"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = ["pydantic>=2.0"]
 
 [tool.setuptools.packages.find]
 where = ["."]

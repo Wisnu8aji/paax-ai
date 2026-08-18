@@ -10,7 +10,23 @@
  * json-schema.ts.
  */
 export { createToolRegistry } from "./tools/registry";
-export type { ChatContext, RabLineSnapshot, ScheduleSnapshot, ScheduleTaskSnapshot, ToolDefinition, ToolExecutionParams } from "./tools/types";
+export type { ChatContext, RabLineSnapshot, ScheduleSnapshot, ScheduleTaskSnapshot, ToolApprovalReceipt, ToolBindingSnapshot, ToolDefinition, ToolExecutionContext, ToolExecutionParams, ToolPolicy, ToolPolicyMetadata } from "./tools/types";
 export { summarizeResult } from "./tools/types";
 export { toAnthropicTool, toOpenRouterTool, toJsonSchemaTool } from "./tools/json-schema";
 export type { JsonSchemaTool } from "./tools/json-schema";
+export { toProviderTool, toProviderTools } from "./tools/model-tools";
+export type { ProviderToolOptions } from "./tools/model-tools";
+export { getToolPolicy, toolRequiresApproval } from "./tools/tool-policy";
+export { DEFAULT_TOOLSETS, selectTools } from "./tools/toolsets";
+export type { ToolsetDescriptor, ToolsetId, ToolsetSelection } from "./tools/toolsets";
+export { scanToolThreats } from "./tools/threat-patterns";
+export type { ToolThreatCode, ToolThreatFinding } from "./tools/threat-patterns";
+export { createSkillsTools } from "./tools/skills-tool";
+export type { SkillsToolOptions } from "./tools/skills-tool";
+export { createSkillManagerTool } from "./tools/skill-manager-tool";
+export type { SkillManagerToolOptions } from "./tools/skill-manager-tool";
+export { createSkillLoader, FileSkillLoader } from "./skills/loader";
+export { parseSkillDocument } from "./skills/format";
+export type { SkillActorContext, SkillLoader, SkillMetadata, SkillMutationPort, SkillSummary } from "./skills/types";
+export * from "./tools/mcp";
+export { createToolApprovalReceipt, createToolExecutionContext, toolBindingFingerprint, validateEnvironmentInvocation, validateToolExecutionContext } from "./tools/environments/invocation-context";

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export * from "./command-room-worker";
+
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
 export const ProjectStatusEnum = z.enum([

@@ -1,28 +1,9 @@
-export const WORK_EVENT_TYPES = [
-  "turn.started",
-  "status.update",
-  "assistant.interim",
-  "reasoning.delta",
-  "plan.updated",
-  "tool.generating",
-  "tool.started",
-  "tool.progress",
-  "tool.completed",
-  "tool.output_risk",
-  "approval.requested",
-  "approval.resolved",
-  "subagent.started",
-  "subagent.progress",
-  "subagent.completed",
-  "background.completed",
-  "artifact.created",
-  "log.line",
-  "assistant.delta",
-  "turn.completed",
-  "error",
-] as const;
+import { GatewayWorkEventSchema, GatewayWorkEventTypeSchema } from "@paax/schemas";
+import type { GatewayCommandRoomSessionSource, GatewayWorkEventType } from "@paax/schemas";
 
-export type WorkEventType = (typeof WORK_EVENT_TYPES)[number];
+export const WORK_EVENT_TYPES = GatewayWorkEventTypeSchema.options;
+
+export type WorkEventType = GatewayWorkEventType;
 
 export type WorkTaskState = "pending" | "in_progress" | "completed" | "failed" | "cancelled";
 
@@ -70,6 +51,8 @@ export interface WorkArtifact {
   createdAt?: string;
 }
 
+export type WorkSessionBinding = GatewayCommandRoomSessionSource;
+
 export interface WorkEvent {
   type: WorkEventType;
   runId: string;
@@ -98,6 +81,7 @@ export interface WorkEvent {
 export interface WorkSessionSnapshot {
   sessionId: string;
   title: string;
+  binding?: WorkSessionBinding;
   runId: string | null;
   state: "idle" | "running" | "waiting_approval" | "completed" | "failed" | "cancelled";
   phase: string;
@@ -116,8 +100,6 @@ export interface WorkSessionSnapshot {
   errorMessage?: string;
 }
 
-const WORK_EVENT_TYPE_SET = new Set<string>(WORK_EVENT_TYPES);
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -127,12 +109,7 @@ function nonEmptyString(value: unknown): value is string {
 }
 
 export function normalizeWorkEvent(value: unknown): WorkEvent | null {
-  if (!isRecord(value)) return null;
-  if (!nonEmptyString(value.type) || !WORK_EVENT_TYPE_SET.has(value.type)) return null;
-  if (!nonEmptyString(value.runId) || !nonEmptyString(value.conversationId)) return null;
-  if (!nonEmptyString(value.eventId)) return null;
-  if (typeof value.sequence !== "number" || !Number.isSafeInteger(value.sequence) || value.sequence < 0) return null;
-  if (!nonEmptyString(value.timestamp)) return null;
-
-  return value as WorkEvent;
+  if (!isRecord(value) || !nonEmptyString(value.type) || !nonEmptyString(value.runId) || !nonEmptyString(value.conversationId) || !nonEmptyString(value.eventId) || !nonEmptyString(value.timestamp)) return null;
+  const parsed = GatewayWorkEventSchema.safeParse(value);
+  return parsed.success ? parsed.data as WorkEvent : null;
 }

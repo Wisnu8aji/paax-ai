@@ -3,8 +3,9 @@
 Engine **deterministik** PAAX: menghitung **HSP**, **RAB**, dan **Kurva S** dari koefisien
 AHSP (kerangka Permen PUPR No. 8/2023) × harga satuan regional.
 
-> **Aturan emas:** engine yang **menghitung**, LLM (di service lain) hanya **menjelaskan**.
-> Tidak ada LLM di jalur perhitungan. Semua angka **auditable** — setiap rupiah dapat ditelusuri
+> **Aturan emas:** engine yang mengeksekusi **rumus dan angka final**; agent di service lain
+> boleh memersepsi, menalar, meninjau, dan mengusulkan fakta terstruktur, tetapi tidak berada
+> di jalur perhitungan. Semua angka **auditable** — setiap rupiah dapat ditelusuri
 > ke koefisien dan harga sumbernya.
 
 ---

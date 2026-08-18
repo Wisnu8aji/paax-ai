@@ -109,7 +109,7 @@ Setiap service memiliki tanggung jawab yang jelas dan tidak overlap:
 
 ### 2.3 AI Orchestrator (Express / TypeScript) — `services/ai-orchestrator/`
 
-**Responsibility**: AI flow management, tool calling, chat
+**Responsibility**: Agentic flow management, tool calling, review, chat
 
 ```
 ✅ DOES:
@@ -117,6 +117,7 @@ Setiap service memiliki tanggung jawab yang jelas dan tidak overlap:
 - RAB advisory analysis
 - Schedule advisory
 - Drawing understanding coordination
+- Evidence-grounded proposal and review coordination
 - Tool calling to Core Engine
 - Prompt management
 - Context assembly from project data
@@ -130,13 +131,13 @@ Setiap service memiliki tanggung jawab yang jelas dan tidak overlap:
 
 ### 2.4 Document Intelligence — `services/document-intelligence/`
 
-**Responsibility**: File processing, OCR, extraction
+**Responsibility**: File processing, OCR/Vision, extraction, evidence
 
 ```
 ✅ DOES:
 - PDF page splitting
 - OCR processing
-- Page classification (via Gemini Vision)
+- Page classification and evidence-grounded Vision review (provider configured at runtime)
 - Dimension extraction
 - Quantity candidate generation
 - File format conversion

@@ -256,11 +256,13 @@ class ProjectMemberResponse(ProjectMemberCreate):
 # ─── Command Room memory layer (Fase 4, PLAN.md §5/§9) ─────────────────────
 
 class ConversationCreate(BaseModel):
+    id: Optional[uuid.UUID] = None
     project_id: Optional[str] = None
     model_alias: str
     title: Optional[str] = None
 
 class ConversationUpdate(BaseModel):
+    project_id: Optional[str] = None
     title: Optional[str] = None
     archived: Optional[bool] = None
     pinned: Optional[bool] = None
@@ -282,6 +284,11 @@ class ConversationResponse(BaseModel):
 class MessageCreate(BaseModel):
     role: str
     content: str
+    parts: List[dict] = Field(default_factory=list)
+    sources: List[dict] = Field(default_factory=list)
+    artifacts: List[dict] = Field(default_factory=list)
+    model_alias: Optional[str] = None
+    turn_id: Optional[str] = None
     sequence: int
 
 class MessageResponse(BaseModel):
@@ -289,8 +296,43 @@ class MessageResponse(BaseModel):
     conversation_id: uuid.UUID
     role: str
     content: str
+    parts: List[dict] = Field(default_factory=list)
+    sources: List[dict] = Field(default_factory=list)
+    artifacts: List[dict] = Field(default_factory=list)
+    model_alias: Optional[str] = None
+    turn_id: Optional[str] = None
     sequence: int
     created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+CHAT_QUEUE_STATES = {"queued", "parked", "running", "completed", "cancelled", "failed"}
+
+
+class ChatQueueEntryCreate(BaseModel):
+    turn_id: str = Field(min_length=1, max_length=160)
+    sequence: int = Field(ge=0)
+    payload: Dict[str, Any] = Field(default_factory=dict)
+    state: Literal["queued", "parked"] = "queued"
+
+
+class ChatQueueEntryUpdate(BaseModel):
+    state: Literal["queued", "parked", "running", "completed", "cancelled", "failed"]
+    error: Optional[str] = None
+
+
+class ChatQueueEntryResponse(BaseModel):
+    id: uuid.UUID
+    conversation_id: uuid.UUID
+    user_id: str
+    turn_id: str
+    sequence: int
+    state: str
+    payload: Dict[str, Any] = Field(default_factory=dict)
+    error: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 

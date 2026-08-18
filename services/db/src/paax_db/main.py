@@ -534,7 +534,15 @@ async def list_morning_reports(project_id: str, limit: int = 10, db: AsyncSessio
 
 @app.post("/conversations", response_model=schemas.ConversationResponse, dependencies=[Depends(get_current_user)])
 async def create_conversation(conv: schemas.ConversationCreate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    if conv.id:
+        existing_result = await db.execute(select(models.Conversation).where(models.Conversation.id == conv.id))
+        existing = existing_result.scalars().first()
+        if existing:
+            if existing.user_id != user.uid:
+                raise HTTPException(status_code=404, detail="Conversation not found")
+            return existing
     db_conv = models.Conversation(
+        id=conv.id or uuid.uuid4(),
         project_id=conv.project_id,
         user_id=user.uid,
         model_alias=conv.model_alias,
@@ -555,16 +563,16 @@ async def list_conversations(project_id: str | None = None, db: AsyncSession = D
     return result.scalars().all()
 
 @app.get("/conversations/{id}", response_model=schemas.ConversationResponse, dependencies=[Depends(get_current_user)])
-async def get_conversation(id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(models.Conversation).where(models.Conversation.id == id))
+async def get_conversation(id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    result = await db.execute(select(models.Conversation).where(models.Conversation.id == id, models.Conversation.user_id == user.uid))
     conv = result.scalars().first()
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
     return conv
 
 @app.put("/conversations/{id}", response_model=schemas.ConversationResponse, dependencies=[Depends(get_current_user)])
-async def update_conversation(id: str, update: schemas.ConversationUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(models.Conversation).where(models.Conversation.id == id))
+async def update_conversation(id: str, update: schemas.ConversationUpdate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    result = await db.execute(select(models.Conversation).where(models.Conversation.id == id, models.Conversation.user_id == user.uid))
     conv = result.scalars().first()
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
@@ -575,8 +583,8 @@ async def update_conversation(id: str, update: schemas.ConversationUpdate, db: A
     return conv
 
 @app.delete("/conversations/{id}", dependencies=[Depends(get_current_user)])
-async def delete_conversation(id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(models.Conversation).where(models.Conversation.id == id))
+async def delete_conversation(id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    result = await db.execute(select(models.Conversation).where(models.Conversation.id == id, models.Conversation.user_id == user.uid))
     conv = result.scalars().first()
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
@@ -585,11 +593,19 @@ async def delete_conversation(id: str, db: AsyncSession = Depends(get_db)):
     return {"status": "success"}
 
 @app.post("/conversations/{id}/messages", response_model=schemas.MessageResponse, dependencies=[Depends(get_current_user)])
-async def append_message(id: str, message: schemas.MessageCreate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(models.Conversation).where(models.Conversation.id == id))
+async def append_message(id: str, message: schemas.MessageCreate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    result = await db.execute(select(models.Conversation).where(models.Conversation.id == id, models.Conversation.user_id == user.uid))
     conv = result.scalars().first()
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
+    if message.turn_id:
+        existing_message = (await db.execute(select(models.Message).where(
+            models.Message.conversation_id == id,
+            models.Message.turn_id == message.turn_id,
+            models.Message.sequence == message.sequence,
+        ))).scalars().first()
+        if existing_message:
+            return existing_message
     db_message = models.Message(conversation_id=id, **message.model_dump())
     db.add(db_message)
     conv.updated_at = _utc_now()
@@ -598,10 +614,65 @@ async def append_message(id: str, message: schemas.MessageCreate, db: AsyncSessi
     return db_message
 
 @app.get("/conversations/{id}/messages", response_model=List[schemas.MessageResponse], dependencies=[Depends(get_current_user)])
-async def list_messages(id: str, db: AsyncSession = Depends(get_db)):
+async def list_messages(id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    owner = await db.execute(select(models.Conversation.id).where(models.Conversation.id == id, models.Conversation.user_id == user.uid))
+    if owner.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Conversation not found")
     query = select(models.Message).where(models.Message.conversation_id == id).order_by(models.Message.sequence.asc())
     result = await db.execute(query)
     return result.scalars().all()
+
+
+@app.post("/conversations/{id}/queue", response_model=schemas.ChatQueueEntryResponse, dependencies=[Depends(get_current_user)])
+async def create_chat_queue_entry(id: str, entry: schemas.ChatQueueEntryCreate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    owner = (await db.execute(select(models.Conversation).where(
+        models.Conversation.id == id, models.Conversation.user_id == user.uid,
+    ))).scalars().first()
+    if owner is None:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    existing = (await db.execute(select(models.ChatQueueEntry).where(
+        models.ChatQueueEntry.conversation_id == id,
+        models.ChatQueueEntry.user_id == user.uid,
+        models.ChatQueueEntry.turn_id == entry.turn_id,
+    ))).scalars().first()
+    if existing:
+        return existing
+    db_entry = models.ChatQueueEntry(conversation_id=id, user_id=user.uid, **entry.model_dump())
+    db.add(db_entry)
+    await db.commit()
+    await db.refresh(db_entry)
+    return db_entry
+
+
+@app.get("/conversations/{id}/queue", response_model=List[schemas.ChatQueueEntryResponse], dependencies=[Depends(get_current_user)])
+async def list_chat_queue_entries(id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    owner = (await db.execute(select(models.Conversation.id).where(
+        models.Conversation.id == id, models.Conversation.user_id == user.uid,
+    ))).scalar_one_or_none()
+    if owner is None:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    result = await db.execute(select(models.ChatQueueEntry).where(
+        models.ChatQueueEntry.conversation_id == id,
+        models.ChatQueueEntry.user_id == user.uid,
+    ).order_by(models.ChatQueueEntry.sequence.asc(), models.ChatQueueEntry.created_at.asc()))
+    return result.scalars().all()
+
+
+@app.put("/conversations/{id}/queue/{entry_id}", response_model=schemas.ChatQueueEntryResponse, dependencies=[Depends(get_current_user)])
+async def update_chat_queue_entry(id: str, entry_id: str, update: schemas.ChatQueueEntryUpdate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    entry = (await db.execute(select(models.ChatQueueEntry).where(
+        models.ChatQueueEntry.id == entry_id,
+        models.ChatQueueEntry.conversation_id == id,
+        models.ChatQueueEntry.user_id == user.uid,
+    ))).scalars().first()
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Queue entry not found")
+    entry.state = update.state
+    entry.error = update.error
+    entry.updated_at = _utc_now()
+    await db.commit()
+    await db.refresh(entry)
+    return entry
 
 @app.post("/memory/durable", response_model=schemas.DurableMemoryResponse, dependencies=[Depends(get_current_user)])
 async def create_durable_memory(memory: schemas.DurableMemoryCreate, db: AsyncSession = Depends(get_db)):

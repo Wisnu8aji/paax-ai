@@ -4,6 +4,7 @@ import type {
   WorkArtifact,
   WorkEvent,
   WorkSessionSnapshot,
+  WorkSessionBinding,
   WorkTask,
   WorkToolRecord,
 } from "./work-agent-types";
@@ -41,11 +42,17 @@ function newId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
 }
 
-function newSession(sessionId: string, title: string): WorkSessionSnapshot {
+function newSession(sessionId: string, title: string, binding?: WorkSessionBinding): WorkSessionSnapshot {
   const timestamp = now();
+  const sessionBinding: WorkSessionBinding = Object.freeze({
+    channel: "command_room",
+    conversationId: sessionId,
+    ...binding,
+  });
   return {
     sessionId,
     title: title.trim() || "New work",
+    binding: sessionBinding,
     runId: null,
     state: "idle",
     phase: "idle",
@@ -168,8 +175,8 @@ export class WorkAgentStore {
     return this.state.sessionsById[sessionId];
   }
 
-  createSession(title = "New work", sessionId = newId("work")): string {
-    const session = newSession(sessionId, title);
+  createSession(title = "New work", sessionId = newId("work"), binding?: WorkSessionBinding): string {
+    const session = newSession(sessionId, title, binding);
     this.state = {
       sessionsById: { ...this.state.sessionsById, [sessionId]: session },
       sessionOrder: [sessionId, ...this.state.sessionOrder.filter((id) => id !== sessionId)],
@@ -179,6 +186,20 @@ export class WorkAgentStore {
     this.persist();
     this.notify();
     return sessionId;
+  }
+
+  bindSession(sessionId: string, binding: WorkSessionBinding): boolean {
+    const session = this.state.sessionsById[sessionId];
+    if (!session) return false;
+    if (session.binding) {
+      return JSON.stringify(session.binding) === JSON.stringify(binding);
+    }
+    if (session.state !== "idle") return false;
+    const next: WorkSessionSnapshot = { ...session, binding: Object.freeze({ ...binding }) };
+    this.state = { ...this.state, sessionsById: { ...this.state.sessionsById, [sessionId]: next } };
+    this.persist();
+    this.notify();
+    return true;
   }
 
   removeSession(sessionId: string): void {
@@ -284,6 +305,7 @@ export class WorkAgentStore {
 
     const runId = newId("work-run");
     const startedAt = now();
+    const binding: WorkSessionBinding = session.binding ?? { channel: "command_room", conversationId: sessionId };
     const history: Array<{ role: "user" | "assistant"; content: string }> = [];
     for (const event of session.events) {
       if (event.type === "turn.started" && typeof event.message === "string" && event.message.trim()) {
@@ -301,6 +323,7 @@ export class WorkAgentStore {
         ...this.state.sessionsById,
         [sessionId]: {
           ...session,
+          binding,
           runId,
           state: "running",
           phase: "starting",
@@ -334,7 +357,7 @@ export class WorkAgentStore {
         body: JSON.stringify({
           mode: "work",
           runId,
-          conversationId: sessionId,
+          session: binding,
           messages: history,
           modelAlias: "lucent",
           reasoningEffort: "high",

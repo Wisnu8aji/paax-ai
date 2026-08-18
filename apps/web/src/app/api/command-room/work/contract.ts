@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { GatewayCommandRoomSessionSource } from "@paax/schemas";
 
 export const WORK_SYSTEM_PROMPT = [
   "Anda adalah agent kerja umum PAAX untuk membantu pengguna menyelesaikan tugas lokal secara aman dan dapat diaudit.",
@@ -10,24 +11,62 @@ export const WORK_SYSTEM_PROMPT = [
 ].join(" ");
 
 const workMessage = z.object({
-  role: z.enum(["user", "assistant", "system"]),
+  role: z.enum(["user", "assistant"]),
   content: z.string().min(1).max(32_000),
-});
-
-export const WorkRequestSchema = z.object({
-  mode: z.literal("work"),
-  runId: z.string().optional(),
-  conversationId: z.string().optional(),
-  messages: z.array(workMessage).min(1).max(40),
-  modelAlias: z.enum(["lucent", "arete", "noir"]).default("lucent"),
-  reasoningEffort: z.enum(["low", "medium", "high", "max"]).default("high"),
-  thinking: z.enum(["on", "off"]).default("on"),
 }).strict();
 
-export type WorkRequest = z.infer<typeof WorkRequestSchema>;
+const workSessionBinding = z.object({
+  channel: z.literal("command_room"),
+  conversationId: z.string().min(1).max(256),
+  projectId: z.string().min(1).max(256).optional(),
+  threadId: z.string().min(1).max(256).optional(),
+  workspaceId: z.string().min(1).max(256).optional(),
+  snapshotId: z.string().min(1).max(256).optional(),
+  documentRevisionId: z.string().min(1).max(256).optional(),
+}).strict();
 
-export function parseWorkRequest(value: unknown) {
-  return WorkRequestSchema.safeParse(value);
+const WorkRequestInputSchema = z.object({
+  mode: z.literal("work"),
+  runId: z.string().min(1).max(256).optional(),
+  session: workSessionBinding.optional(),
+  conversationId: z.string().min(1).max(256).optional(),
+  projectId: z.string().min(1).max(256).optional(),
+  messages: z.array(workMessage).min(1).max(40),
+  modelAlias: z.string().min(1).max(64).default("lucent"),
+  reasoningEffort: z.enum(["low", "medium", "high", "max"]).default("high"),
+  thinking: z.enum(["on", "off"]).default("on"),
+  clientCorrelationId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/).optional(),
+}).strict();
+
+export const WorkRequestSchema = WorkRequestInputSchema;
+
+type WorkRequestInput = z.infer<typeof WorkRequestInputSchema>;
+export type WorkRequest = Omit<WorkRequestInput, "session"> & { session: GatewayCommandRoomSessionSource };
+
+function invalidRequest(message: string, path: (string | number)[] = ["session"]): { success: false; error: z.ZodError } {
+  return { success: false, error: new z.ZodError([{ code: z.ZodIssueCode.custom, path, message }]) };
+}
+
+export function parseWorkRequest(value: unknown):
+  | { success: true; data: WorkRequest }
+  | { success: false; error: z.ZodError } {
+  const parsed = WorkRequestInputSchema.safeParse(value);
+  if (!parsed.success) return parsed;
+  const input = parsed.data;
+  if (!input.session && !input.conversationId?.trim()) return invalidRequest("session or conversationId is required");
+  if (input.session && input.conversationId && input.session.conversationId !== input.conversationId) {
+    return invalidRequest("flat conversationId conflicts with session.conversationId", ["conversationId"]);
+  }
+  if (input.session && input.projectId && input.session.projectId !== input.projectId) {
+    return invalidRequest("flat projectId conflicts with session.projectId", ["projectId"]);
+  }
+
+  const session: GatewayCommandRoomSessionSource = input.session ?? {
+    channel: "command_room",
+    conversationId: input.conversationId as string,
+    ...(input.projectId ? { projectId: input.projectId } : {}),
+  };
+  return { success: true, data: { ...input, session } };
 }
 
 export function buildWorkMessages(messages: WorkRequest["messages"] | Array<{ role: "user" | "assistant" | "system"; content: string }>) {

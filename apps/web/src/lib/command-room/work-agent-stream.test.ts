@@ -32,7 +32,7 @@ describe("Work agent SSE transport", () => {
 
     expect(fetchMock).toHaveBeenCalledWith("/api/command-room/work", expect.objectContaining({ method: "POST" }));
     const request = JSON.parse(fetchMock.mock.calls[0][1].body as string);
-    expect(request).toMatchObject({ mode: "work", conversationId: "session-1", thinking: "on" });
+    expect(request).toMatchObject({ mode: "work", session: { channel: "command_room", conversationId: "session-1" }, thinking: "on" });
     expect(request.messages).toEqual([{ role: "user", content: "List the files." }]);
     expect(store.getSession("session-1")).toMatchObject({ state: "completed", answer: "Selesai", lastSequence: 2 });
   });

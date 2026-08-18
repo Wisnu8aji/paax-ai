@@ -4,9 +4,10 @@ Workspace AI untuk insinyur sipil Indonesia. Mengubah data konstruksi menjadi
 **RAB patuh AHSP**, **jadwal Kurva S**, dan simulasi skenario — dengan **setiap
 angka yang dapat diaudit**.
 
-> **Aturan emas:** engine yang **menghitung**, AI yang **menjelaskan**. Semua
-> angka RAB/HSP/Kurva-S/skenario berasal dari `services/core-engine`
-> (deterministik); LLM tidak pernah menghasilkan angka final. Detail lengkap:
+> **Aturan emas:** engine yang **mengeksekusi rumus dan angka final**, agent AI
+> yang **memersepsi, menalar, meninjau, serta menjelaskan**. Semua angka
+> RAB/HSP/Kurva-S/skenario berasal dari `services/core-engine` (deterministik);
+> LLM tidak pernah menghasilkan angka final. Detail lengkap:
 > `CLAUDE.md` / `AGENTS.md`.
 
 > Status kerja aktif, blocker, dan langkah berikutnya: `docs/ai-map/STATE_CURRENT.md`.

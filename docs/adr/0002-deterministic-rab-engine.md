@@ -16,10 +16,10 @@ LLMs are probabilistic. They frequently hallucinate numbers, struggle with compl
 ## Decision
 We will enforce a strict separation between **understanding** and **calculation**.
 
-1. **AI (Probabilistic)**: Used exclusively for unstructured data extraction (parsing PDFs, understanding drawings, natural language engineering chat) and classification (mapping a drawing element to an AHSP code).
+1. **AI (Probabilistic / Agentic)**: Used for unstructured data extraction (parsing PDFs, understanding drawings), Vision, evidence reconciliation, classification, planning, review, and engineering chat. Its outputs remain attributed proposals or structured facts; they are not final numeric results.
 2. **Core Engine (Deterministic)**: A Python/FastAPI engine that handles all actual math, database lookups for AHSP rates, and schedule scenario calculations.
 
-The AI Orchestrator will extract "Quantity Candidates" and "Task Descriptions", but the Core Engine will multiply those quantities by the verified AHSP rates.
+The AI Orchestrator may extract, reconcile, and review "Quantity Candidates" and "Task Descriptions", but the Core Engine alone executes formulas and produces final quantities from approved, scoped facts and verified AHSP rates.
 
 ## Consequences
 

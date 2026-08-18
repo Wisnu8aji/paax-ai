@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import express from 'express';
 import { AgentRunStore } from '../../src/agentic/runtime-store';
 import { createAgentRunsRouter } from '../../src/routes/agent-runs';
+import { InMemorySessionStore } from '../../src/gateway/session';
 import type { MatureAgentRun, ProjectContextBinding } from '../../src/agentic/index';
 
 const testStorePath = resolve(process.cwd(), '.test-data/agent-runs-step-route-test-store.json');
@@ -157,6 +158,44 @@ describe('Phase 08B — Agent Runs Route Step API (POST /agent-runs/:runId/step)
       expect([200, 409]).toContain(response.status);
     } finally {
       server.close();
+    }
+  });
+
+  it('attaches a shared agent_runs session without changing the run response shape', async () => {
+    const store = new AgentRunStore(testStorePath);
+    const sessionStore = new InMemorySessionStore();
+    const router = createAgentRunsRouter({ agentRunStore: store, sessionStore });
+    const app = express();
+    app.use(express.json());
+    app.use((req: any, _res: any, next: any) => {
+      (req as any).user = { uid: 'actor-101' };
+      next();
+    });
+    app.use('/agent-runs', router);
+    const server = app.listen(0);
+    const port = (server.address() as any).port;
+
+    try {
+      const response = await fetch(`http://localhost:${port}/agent-runs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: 'proj-101', conversationId: 'conv-101', goal: 'Create a scoped review run' }),
+      });
+      expect(response.status).toBe(201);
+      const run = await response.json();
+      expect(run.runId).toBeTruthy();
+      expect(run.sessionId).toBeUndefined();
+
+      const session = await sessionStore.resolve({
+        channel: 'agent_runs',
+        tenantId: 'portable-local',
+        actorId: 'actor-101',
+        conversationId: 'conv-101',
+        projectId: 'proj-101',
+      });
+      expect((await sessionStore.get(session.sessionId))?.lastRunId).toBe(run.runId);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
     }
   });
 });

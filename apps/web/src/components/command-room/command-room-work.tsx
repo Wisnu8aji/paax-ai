@@ -25,10 +25,16 @@ import {
 import { useWorkAgentStore } from "@/lib/command-room/use-work-agent";
 import { workAgentStore } from "@/lib/command-room/work-agent-store";
 import type { WorkEvent, WorkSessionSnapshot, WorkTask } from "@/lib/command-room/work-agent-types";
+import type { WorkSessionBinding } from "@/lib/command-room/work-agent-types";
 import { DEFAULT_WORK_SETTINGS, loadWorkSettings, saveWorkSettings, type WorkSettings } from "@/lib/command-room/work-settings";
 
 export interface CommandRoomWorkSurfaceProps {
   initialSessionId?: string | null;
+  projectId?: string | null;
+  threadId?: string | null;
+  workspaceId?: string | null;
+  snapshotId?: string | null;
+  documentRevisionId?: string | null;
 }
 
 function taskStateLabel(state: WorkTask["state"]): string {
@@ -76,7 +82,14 @@ function sessionStatus(session: WorkSessionSnapshot): string {
   return "ready";
 }
 
-export function CommandRoomWorkSurface({ initialSessionId = null }: CommandRoomWorkSurfaceProps) {
+export function CommandRoomWorkSurface({
+  initialSessionId = null,
+  projectId = null,
+  threadId = null,
+  workspaceId = null,
+  snapshotId = null,
+  documentRevisionId = null,
+}: CommandRoomWorkSurfaceProps) {
   const storeSnapshot = useWorkAgentStore();
   const [activeId, setActiveId] = useState<string | null>(initialSessionId);
   const [draft, setDraft] = useState("");
@@ -84,6 +97,28 @@ export function CommandRoomWorkSurface({ initialSessionId = null }: CommandRoomW
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [approvalBusy, setApprovalBusy] = useState(false);
   const [approvalError, setApprovalError] = useState<string | null>(null);
+
+  function bindingFor(sessionId: string): WorkSessionBinding {
+    return {
+      channel: "command_room",
+      conversationId: sessionId,
+      ...(projectId?.trim() ? { projectId: projectId.trim() } : {}),
+      ...(threadId?.trim() ? { threadId: threadId.trim() } : {}),
+      ...(workspaceId?.trim() ? { workspaceId: workspaceId.trim() } : {}),
+      ...(snapshotId?.trim() ? { snapshotId: snapshotId.trim() } : {}),
+      ...(documentRevisionId?.trim() ? { documentRevisionId: documentRevisionId.trim() } : {}),
+    };
+  }
+
+  function bindingMatchesSelection(binding?: WorkSessionBinding): boolean {
+    if (!binding || binding.channel !== "command_room") return false;
+    const value = (candidate: string | null | undefined) => candidate?.trim() || undefined;
+    return binding.projectId === value(projectId)
+      && binding.threadId === value(threadId)
+      && binding.workspaceId === value(workspaceId)
+      && binding.snapshotId === value(snapshotId)
+      && binding.documentRevisionId === value(documentRevisionId);
+  }
 
   useEffect(() => {
     setSettings(loadWorkSettings());
@@ -95,19 +130,39 @@ export function CommandRoomWorkSurface({ initialSessionId = null }: CommandRoomW
   }, [settings, settingsLoaded]);
 
   useEffect(() => {
-    if (initialSessionId) {
-      if (!storeSnapshot.sessionsById[initialSessionId]) workAgentStore.createSession("New work", initialSessionId);
-      setActiveId(initialSessionId);
+    if (initialSessionId && (!activeId || activeId === initialSessionId)) {
+      const initialSession = storeSnapshot.sessionsById[initialSessionId];
+      if (!initialSession) {
+        workAgentStore.createSession("New work", initialSessionId, bindingFor(initialSessionId));
+        setActiveId(initialSessionId);
+      } else if (!bindingMatchesSelection(initialSession.binding)) {
+        const sessionId = `work-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+        workAgentStore.createSession("New work", sessionId, bindingFor(sessionId));
+        setActiveId(sessionId);
+      } else {
+        if (!initialSession.binding && initialSession.state === "idle") workAgentStore.bindSession(initialSessionId, bindingFor(initialSessionId));
+        setActiveId(initialSessionId);
+      }
       return;
     }
-    if (activeId && storeSnapshot.sessionsById[activeId]) return;
-    const first = storeSnapshot.sessionOrder[0];
+    const activeSession = activeId ? storeSnapshot.sessionsById[activeId] : undefined;
+    if (activeSession) {
+      if (bindingMatchesSelection(activeSession.binding)) return;
+      const sessionId = `work-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+      workAgentStore.createSession("New work", sessionId, bindingFor(sessionId));
+      setActiveId(sessionId);
+      setDraft("");
+      return;
+    }
+    const first = storeSnapshot.sessionOrder.find((id) => bindingMatchesSelection(storeSnapshot.sessionsById[id]?.binding));
     if (first) {
       setActiveId(first);
       return;
     }
-    setActiveId(workAgentStore.createSession("New work"));
-  }, [activeId, initialSessionId, storeSnapshot.sessionOrder, storeSnapshot.sessionsById]);
+    const sessionId = `work-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+    workAgentStore.createSession("New work", sessionId, bindingFor(sessionId));
+    setActiveId(sessionId);
+  }, [activeId, initialSessionId, projectId, threadId, workspaceId, snapshotId, documentRevisionId, storeSnapshot.sessionOrder, storeSnapshot.sessionsById]);
 
   const sessions = useMemo(
     () => storeSnapshot.sessionOrder.map((id) => storeSnapshot.sessionsById[id]).filter(Boolean),
@@ -118,7 +173,8 @@ export function CommandRoomWorkSurface({ initialSessionId = null }: CommandRoomW
 
   function createSession() {
     if (busy) return;
-    setActiveId(workAgentStore.createSession("New work"));
+    const sessionId = `work-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+    setActiveId(workAgentStore.createSession("New work", sessionId, bindingFor(sessionId)));
     setDraft("");
     setApprovalError(null);
   }

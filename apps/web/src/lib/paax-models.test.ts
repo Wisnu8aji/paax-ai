@@ -23,9 +23,9 @@ describe("paax-models", () => {
   });
 
   it("maps each model to its provider and API model id", () => {
-    expect(PAAX_MODELS.lucent).toMatchObject({ provider: "deepseek", apiModel: "deepseek-v4-flash" });
-    expect(PAAX_MODELS.arete).toMatchObject({ provider: "deepseek", apiModel: "deepseek-v4-pro" });
-    expect(PAAX_MODELS.noir).toMatchObject({ provider: "deepseek", apiModel: "deepseek-v4-pro" });
+    expect(PAAX_MODELS.lucent).toMatchObject({ provider: "opencode-go", apiModel: "mimo-v2.5" });
+    expect(PAAX_MODELS.arete).toMatchObject({ provider: "opencode-go", apiModel: "mimo-v2.5" });
+    expect(PAAX_MODELS.noir).toMatchObject({ provider: "opencode-go", apiModel: "mimo-v2.5" });
   });
 
   it("supports thinking on/off for all 3 models with default on", () => {

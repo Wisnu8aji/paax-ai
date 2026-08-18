@@ -176,8 +176,35 @@ class Message(Base):
     conversation_id = Column(GUID(), ForeignKey("conversations.id", ondelete="CASCADE"), index=True, nullable=False)
     role = Column(String, nullable=False)  # 'user' | 'assistant' | 'system'
     content = Column(String, nullable=False)
+    # v1.5 preserves the ordered visible parts separately from flattened text.
+    # The JSON is presentation/provenance metadata only; it never becomes
+    # authority for deterministic construction quantities.
+    parts = Column(JSON_DOCUMENT, nullable=False, default=list)
+    sources = Column(JSON_DOCUMENT, nullable=False, default=list)
+    artifacts = Column(JSON_DOCUMENT, nullable=False, default=list)
+    model_alias = Column(String, nullable=True)
+    turn_id = Column(String, nullable=True, index=True)
     sequence = Column(Integer, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ChatQueueEntry(Base):
+    __tablename__ = "chat_queue_entries"
+    __table_args__ = (
+        UniqueConstraint("user_id", "turn_id", name="uq_chat_queue_user_turn"),
+        Index("ix_chat_queue_conversation_state", "conversation_id", "state"),
+    )
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    conversation_id = Column(GUID(), ForeignKey("conversations.id", ondelete="CASCADE"), index=True, nullable=False)
+    user_id = Column(String, index=True, nullable=False)
+    turn_id = Column(String, index=True, nullable=False)
+    sequence = Column(Integer, nullable=False)
+    state = Column(String, nullable=False, default="queued")  # queued|parked|running|completed|cancelled|failed
+    payload = Column(JSON_DOCUMENT, nullable=False, default=dict)
+    error = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
 # scope/type: enum blueprint §9.2/§9.3 disimpan sbg String (bukan Postgres ENUM)
 # -- lihat catatan yg sama di alembic/versions/0007_command_room_memory.py.

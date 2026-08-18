@@ -2,16 +2,16 @@
  * paax-models.ts — Single source of truth untuk model internal PAAX AI.
  *
  * 3 model aktif (Command Room):
- *   - Lucent → DeepSeek V4 Flash (default harian, thinking bisa on/off)
- *   - Arete  → DeepSeek V4 Pro   (thinking bisa on/off)
- *   - Noir   → DeepSeek V4 Pro   (thinking bisa on/off, panel reasoning eksplisit)
+ *   - Lucent → Mimo v2.5 (default harian, thinking bisa on/off)
+ *   - Arete  → Mimo v2.5 (thinking bisa on/off)
+ *   - Noir   → Mimo v2.5 (thinking bisa on/off, panel reasoning eksplisit)
  *
  * ATURAN EMAS: File ini hanya berisi definisi model.
  * Tidak ada kalkulasi angka RAB/HSP/volume di sini.
  */
 
 export type ModelAlias = "lucent" | "arete" | "noir";
-export type ModelProvider = "deepseek" | "qwen" | "anthropic";
+export type ModelProvider = "opencode-go" | "deepseek" | "qwen" | "anthropic";
 export type ReasoningEffort = "high" | "max";
 export type ThinkingMode = "on" | "off";
 
@@ -39,15 +39,15 @@ export const PAAX_MODELS: Record<ModelAlias, PaaxModelDef> = {
   lucent: {
     id: "lucent",
     displayName: "Lucent",
-    provider: "deepseek",
-    apiModel: "deepseek-v4-flash",
+    provider: "opencode-go",
+    apiModel: "mimo-v2.5",
     supportsThinking: true,
     forcedThinking: null,
     allowedReasoningEfforts: ["high", "max"],
     defaultReasoningEffort: "high",
     defaultThinking: "on",
     description: "Fast, capable default for daily engineering chat.",
-    descriptionLong: "DeepSeek V4 Flash. Model penalaran cepat untuk konsultasi harian, analisa struktur, dan audit teknis.",
+    descriptionLong: "Mimo v2.5 via opencode-go. Model penalaran cepat untuk konsultasi harian, analisa struktur, dan audit teknis.",
     thinkingOnLabel: "Deeper analysis for complex tasks.",
     thinkingOffLabel: "Faster response. No visible reasoning mode.",
     effortHighLabel: "Balanced reasoning.",
@@ -56,15 +56,15 @@ export const PAAX_MODELS: Record<ModelAlias, PaaxModelDef> = {
   arete: {
     id: "arete",
     displayName: "Arete",
-    provider: "deepseek",
-    apiModel: "deepseek-v4-pro",
+    provider: "opencode-go",
+    apiModel: "mimo-v2.5",
     supportsThinking: true,
     forcedThinking: null,
     allowedReasoningEfforts: ["high", "max"],
     defaultReasoningEffort: "high",
     defaultThinking: "on",
-    description: "Alternative reasoning model — DeepSeek V4 Pro.",
-    descriptionLong: "DeepSeek V4 Pro (via opencode-go). Model penalaran mendalam untuk analisa kompleks dengan thinking yang bisa diatur.",
+    description: "Alternative reasoning mode — Mimo v2.5.",
+    descriptionLong: "Mimo v2.5 via opencode-go. Model penalaran mendalam untuk analisa kompleks dengan thinking yang bisa diatur.",
     thinkingOnLabel: "Deeper analysis for complex tasks.",
     thinkingOffLabel: "Faster response. No visible reasoning mode.",
     effortHighLabel: "Balanced reasoning.",
@@ -73,15 +73,15 @@ export const PAAX_MODELS: Record<ModelAlias, PaaxModelDef> = {
   noir: {
     id: "noir",
     displayName: "Noir",
-    provider: "deepseek",
-    apiModel: "deepseek-v4-pro",
+    provider: "opencode-go",
+    apiModel: "mimo-v2.5",
     supportsThinking: true,
     forcedThinking: null,
     allowedReasoningEfforts: ["high", "max"],
     defaultReasoningEffort: "high",
     defaultThinking: "on",
-    description: "DeepSeek V4 Pro — reasoning mendalam dengan panel eksplisit.",
-    descriptionLong: "DeepSeek V4 Pro (via opencode-go). Mode reasoning eksplisit dengan panel berpikir untuk tugas agentic dan coding berat.",
+    description: "Mimo v2.5 — reasoning mendalam dengan panel eksplisit.",
+    descriptionLong: "Mimo v2.5 via opencode-go. Mode reasoning eksplisit dengan panel berpikir untuk tugas agentic dan coding berat.",
     thinkingOnLabel: "Deep reasoning with visible trace.",
     thinkingOffLabel: "Faster response. No visible reasoning mode.",
     effortHighLabel: "Balanced reasoning.",

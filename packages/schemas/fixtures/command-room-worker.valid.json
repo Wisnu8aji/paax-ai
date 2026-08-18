@@ -1,0 +1,70 @@
+{
+  "request": {
+    "mode": "work",
+    "runId": "run-1",
+    "session": {
+      "channel": "command_room",
+      "conversationId": "conversation-1",
+      "projectId": "project-1",
+      "threadId": "thread-1",
+      "workspaceId": "workspace-1",
+      "snapshotId": "snapshot-1",
+      "documentRevisionId": "revision-1"
+    },
+    "messages": [
+      {
+        "role": "user",
+        "content": "Siapkan konteks pekerjaan proyek ini."
+      },
+      {
+        "role": "assistant",
+        "content": "Saya akan menyiapkan konteks tanpa menjalankan tindakan."
+      }
+    ],
+    "modelAlias": "lucent",
+    "reasoningEffort": "high",
+    "thinking": "on",
+    "clientCorrelationId": "corr-1"
+  },
+  "prepared": {
+    "protocolVersion": "command-room.gateway.v1",
+    "runId": "run-1",
+    "sessionId": "session-1",
+    "sessionKeyFingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "binding": {
+      "channel": "command_room",
+      "tenantId": "tenant-1",
+      "actorId": "actor-1",
+      "conversationId": "conversation-1",
+      "projectId": "project-1",
+      "threadId": "thread-1",
+      "workspaceId": "workspace-1",
+      "snapshotId": "snapshot-1",
+      "documentRevisionId": "revision-1"
+    },
+    "profile": {
+      "alias": "lucent",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "transport": "openai-compatible",
+      "supportsThinking": true,
+      "selectedEffort": "high",
+      "thinking": "on",
+      "reasoningEffortMap": {
+        "high": "high",
+        "max": "xhigh"
+      }
+    },
+    "prompt": {
+      "version": "command-room-worker.phase2.v1",
+      "stableHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "sectionSizes": {
+        "stable": 100,
+        "context": 200,
+        "volatile": 300
+      },
+      "injectionFindings": []
+    },
+    "handoff": "legacy-web-provider"
+  }
+}
