@@ -6,7 +6,7 @@
  *   - Arete  → Mimo v2.5 (thinking bisa on/off)
  *   - Noir   → Mimo v2.5 (thinking bisa on/off, panel reasoning eksplisit)
  *
- * ATURAN EMAS: File ini hanya berisi definisi model.
+ * ATURAN EMAS: File ini hanya berisi definisi model dan routing.
  * Tidak ada kalkulasi angka RAB/HSP/volume di sini.
  */
 
@@ -14,6 +14,7 @@ export type ModelAlias = "lucent" | "arete" | "noir";
 export type ModelProvider = "opencode-go" | "deepseek" | "qwen" | "anthropic";
 export type ReasoningEffort = "high" | "max";
 export type ThinkingMode = "on" | "off";
+export type TaskType = "daily_chat" | "planning" | "execution" | "review" | "complex_reasoning";
 
 export interface PaaxModelDef {
   id: ModelAlias;
@@ -97,6 +98,63 @@ export function getModel(alias: ModelAlias): PaaxModelDef {
 export const DEFAULT_MODEL_ALIAS: ModelAlias = "lucent";
 export const DEFAULT_REASONING_EFFORT: ReasoningEffort = "high";
 export const DEFAULT_THINKING: ThinkingMode = "on";
+
+/** Model Task Routing Presets */
+export interface ModelRoutingPreset {
+  alias: ModelAlias;
+  thinking: ThinkingMode;
+  effort: ReasoningEffort;
+  label: string;
+  description: string;
+}
+
+export const MODEL_ROUTING_PRESETS: Record<TaskType, ModelRoutingPreset> = {
+  daily_chat: {
+    alias: "lucent",
+    thinking: "on",
+    effort: "high",
+    label: "Daily Chat",
+    description: "Lucent Mimo v2.5 — respons cepat untuk tanya jawab teknis harian",
+  },
+  planning: {
+    alias: "noir",
+    thinking: "on",
+    effort: "max",
+    label: "Strategic Planning",
+    description: "Noir Mimo v2.5 (Max) — penalaran mendalam untuk strategi proyek & WBS",
+  },
+  execution: {
+    alias: "lucent",
+    thinking: "on",
+    effort: "high",
+    label: "Task Execution",
+    description: "Lucent Mimo v2.5 — eksekusi cepat untuk kalkulasi RAB dan query data",
+  },
+  review: {
+    alias: "arete",
+    thinking: "on",
+    effort: "high",
+    label: "Quality Review",
+    description: "Arete Mimo v2.5 — audit seimbang untuk review gambar dan spesifikasi",
+  },
+  complex_reasoning: {
+    alias: "noir",
+    thinking: "on",
+    effort: "max",
+    label: "Deep Agentic Reasoning",
+    description: "Noir Mimo v2.5 (Max) — penalaran maksimal dengan visualisasi trace eksplisit",
+  },
+};
+
+/** Resolve model alias for a specific engineering task type */
+export function routeModelForTask(taskType: TaskType): ModelAlias {
+  return MODEL_ROUTING_PRESETS[taskType]?.alias ?? DEFAULT_MODEL_ALIAS;
+}
+
+/** Get recommended model, thinking mode, and effort for a task */
+export function getRecommendedSettingsForTask(taskType: TaskType): ModelRoutingPreset {
+  return MODEL_ROUTING_PRESETS[taskType] ?? MODEL_ROUTING_PRESETS.daily_chat;
+}
 
 /** Resolve thinking mode dengan memperhatikan constraint model. */
 export function resolveThinking(

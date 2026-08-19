@@ -8,6 +8,8 @@ export * from './runtime-store';
 export * from './event-bus';
 export * from './memory-store';
 export * from './approval-service';
+export * from './approval-policy';
+export * from './approval-queue';
 export * from './worker-router';
 export * from './claim-validator';
 export * from './skills';
